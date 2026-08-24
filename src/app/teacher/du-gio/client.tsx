@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-24T04:48:48.133Z
+// Forced Vercel Deployment: 2026-08-24T06:18:11.672Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1991,22 +1991,38 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* TAB 2: 2. TỔNG HỢP KẾT QUẢ ĐĂNG KÝ */}
       {activeMainTab === "overview_slots" && (
         <div className="w-full space-y-6 animate-in fade-in duration-300">
-          {/* Panel 2: Quick Register Suggestions */}
-        <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-4 border-t-4 border-t-[#003B3A]">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
-            <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-[#008B82]" />
+          {/* Panel 2: Quick Register Suggestions - High Impact & Vibrant */}
+        <div className="w-full bg-gradient-to-br from-slate-950 via-[#003B3A] to-[#005c56] text-white rounded-3xl p-6 sm:p-7 shadow-xl border-2 border-teal-400/30 relative overflow-hidden">
+          {/* Ambient Glow Background */}
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-teal-400/15 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Header */}
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-4 mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30 font-black">
+                <Sparkles className="w-6 h-6 animate-spin-slow" />
+              </div>
               <div>
-                <span className="font-black text-sm text-[#003B3A] uppercase tracking-wider">Đăng ký nhanh tiết dạy</span>
-                <p className="text-xs text-slate-400 font-medium">Các tiết dạy mới nhất của đồng nghiệp còn chỗ dự</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-base text-white uppercase tracking-wider">⚡ Đăng ký nhanh tiết dạy</h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black uppercase">
+                    Ưu tiên cao
+                  </span>
+                </div>
+                <p className="text-xs text-teal-100/80 font-medium mt-0.5">Các tiết dạy mới nhất của đồng nghiệp còn chỗ trống đăng ký</p>
               </div>
             </div>
-            <span className="text-xs font-black bg-teal-50 text-[#008B82] px-3 py-1 rounded-full border border-teal-200/60 animate-pulse">
-              ⚡ Gợi ý tối ưu
-            </span>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-black uppercase shadow-md shadow-orange-500/30 animate-pulse flex items-center gap-1.5">
+                <span>🔥 Gợi ý tối ưu</span>
+              </span>
+            </div>
           </div>
 
-          <div className="flex-1 flex flex-col gap-3">
+          {/* Cards Grid */}
+          <div className="relative z-10">
             {(() => {
               const today = new Date();
               const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -2065,8 +2081,8 @@ export function ObservationClient(props: ObservationClientProps) {
               
               if (suggested.length === 0) {
                 return (
-                  <div className="flex flex-col items-center justify-center flex-1 py-10 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                    <CheckCircle className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
+                  <div className="flex flex-col items-center justify-center py-12 text-teal-200/70 border border-dashed border-teal-400/30 rounded-2xl bg-white/5">
+                    <CheckCircle className="w-10 h-10 text-teal-300 mb-2 stroke-1" />
                     <p className="text-xs font-bold text-center">Chưa có tiết dạy dự giờ nào khả dụng.</p>
                   </div>
                 );
@@ -2082,48 +2098,87 @@ export function ObservationClient(props: ObservationClientProps) {
                     const remainingSeats = Math.max(0, slot.maxSeats - slot.registrations.length);
 
                     return (
-                      <div key={slot.id} className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 text-xs transition-all hover:shadow-md ${isMamNon ? "bg-amber-50/30 hover:bg-amber-50/50 border-amber-200/70" : "bg-slate-50/70 hover:bg-teal-50/30 border-slate-200/70"}`}>
-                        <div className="min-w-0 space-y-2">
-                          <div className="flex items-center justify-between gap-2">
+                      <div 
+                        key={slot.id} 
+                        className="bg-white text-slate-800 rounded-3xl p-5 shadow-lg border-2 border-teal-300/80 hover:border-amber-400 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between gap-4 relative overflow-hidden group"
+                      >
+                        {/* Top Gradient Strip */}
+                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#008B82] via-emerald-400 to-amber-400" />
+
+                        <div className="space-y-3 pt-1">
+                          {/* Tags Top Row */}
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`px-2 py-0.5 text-[10px] font-black uppercase rounded-md ${isMamNon ? "bg-amber-100 text-amber-900" : "bg-teal-100/80 text-teal-800"}`}>
+                              <span className={`px-2.5 py-1 text-[11px] font-black uppercase rounded-xl shadow-xs text-white ${
+                                isMamNon ? "bg-gradient-to-r from-amber-500 to-amber-600" : "bg-gradient-to-r from-[#008B82] to-teal-700"
+                              }`}>
                                 {isMamNon ? "Mầm non" : "K-12"}
                               </span>
-                              <span className="text-xs font-black text-slate-700 truncate">{slot.subjectName}</span>
+                              <span className="px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-200">
+                                {slot.subjectName}
+                              </span>
                             </div>
+
                             {campusDisplay && (
-                              <span className="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-slate-200/80 text-slate-700 shrink-0">
+                              <span className="px-2.5 py-1 text-[11px] font-black rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs">
                                 {campusDisplay}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug">{slot.topic}</p>
-                          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 flex-wrap pt-1 border-t border-slate-200/60">
-                            <span className="text-slate-800 font-black">{slot.teacher.teacherName}</span>
-                            <span>•</span>
-                            <span>Lớp: {slot.className || "Chưa xếp"}</span>
-                            <span>•</span>
-                            <span>{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</span>
-                            <span>•</span>
-                            <span className="text-teal-700 font-bold">{slot.startTime}</span>
+
+                          {/* Topic Title */}
+                          <div>
+                            <h4 className="text-sm font-black text-[#003B3A] group-hover:text-[#008B82] transition-colors leading-snug line-clamp-2" title={slot.topic}>
+                              {slot.topic}
+                            </h4>
+                          </div>
+
+                          {/* Teacher & Class Info */}
+                          <div className="flex items-center gap-2.5 pt-2 border-t border-slate-100">
+                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher.teacherName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs`}>
+                              {slot.teacher.teacherName.charAt(0)}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-extrabold text-slate-900 text-xs truncate">{slot.teacher.teacherName}</p>
+                              <p className="text-[11px] text-slate-500 font-semibold truncate">Lớp: {slot.className || "Chưa xếp"}</p>
+                            </div>
+                          </div>
+
+                          {/* Time & Date Box */}
+                          <div className="bg-teal-50/70 rounded-2xl p-2.5 border border-teal-100 flex items-center justify-between text-xs font-bold text-slate-700">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5 text-teal-600" />
+                              {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                            </span>
+                            <span className="flex items-center gap-1 text-teal-800 font-extrabold">
+                              <Clock className="w-3.5 h-3.5 text-teal-600" />
+                              {slot.startTime}
+                            </span>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-150">
+
+                        {/* Card Footer: Remaining Seats & Registration Button */}
+                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-150">
                           {!isPastSlot ? (
-                            <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/60">
+                            <span className="text-[11px] font-black text-emerald-950 bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-xl shadow-2xs flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                               Còn {remainingSeats} chỗ
                             </span>
-                          ) : <span />}
+                          ) : (
+                            <span className="text-[11px] font-bold text-slate-400 italic">Đã kết thúc</span>
+                          )}
+
                           <button 
                             disabled={isPastSlot}
                             onClick={() => setRegisterDetailSlot(slot)}
-                            className={`px-4 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-xs shrink-0 cursor-pointer ${
+                            className={`px-4 py-2.5 text-xs font-black uppercase rounded-2xl transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 ${
                               isPastSlot
                                 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                                : "bg-gradient-to-r from-[#008B82] to-[#007068] hover:from-[#007068] hover:to-[#005c56] text-white hover:scale-105 active:scale-95 shadow-md shadow-teal-900/15"
+                                : "bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white hover:scale-105 active:scale-95 shadow-md shadow-orange-500/25 border border-orange-300/40"
                             }`}
                           >
-                            {isPastSlot ? (slot.registrations.length >= slot.maxSeats ? "Đầy chỗ" : "Hết hạn") : "Đăng ký"}
+                            <Sparkles className="w-3.5 h-3.5" />
+                            {isPastSlot ? (slot.registrations.length >= slot.maxSeats ? "Đầy chỗ" : "Hết hạn") : "Đăng ký ngay"}
                           </button>
                         </div>
                       </div>
@@ -2134,7 +2189,8 @@ export function ObservationClient(props: ObservationClientProps) {
             })()}
           </div>
         </div>
-          {/* ROW 2: Danh sách tiết dạy đăng ký dự giờ (Full-width Data Table) */}
+
+        {/* ROW 2: Danh sách tiết dạy đăng ký dự giờ (Full-width Data Table) */}
       <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2.5">
