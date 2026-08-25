@@ -751,13 +751,31 @@ export function SupportClient({
     })
 
     const ws = XLSX.utils.json_to_sheet(exportRows)
+    
+    // Explicit standard column widths in characters (wch)
+    ws['!cols'] = [
+      { wch: 6 },   // STT
+      { wch: 22 },  // Họ tên
+      { wch: 10 },  // Giới tính
+      { wch: 14 },  // Mã HS
+      { wch: 12 },  // Bậc học
+      { wch: 10 },  // Khối
+      { wch: 12 },  // Lớp
+      { wch: 10 },  // Cơ sở
+      { wch: 16 },  // Môn Cam kết
+      { wch: 15 },  // Tình trạng
+      { wch: 12 },  // Điểm Toán
+      { wch: 26 },  // Điểm Tiếng Việt / Ngữ Văn
+      { wch: 18 },  // Điểm Anh (Viết)
+      { wch: 18 },  // Điểm Anh (Nói)
+      { wch: 14 },  // Điểm Tâm lý
+      { wch: 55 },  // Kết quả Khảo sát & Ghi chú
+      { wch: 35 },  // Chi tiết đề xuất
+    ]
+    ws['!views'] = [{ topLeftCell: 'A1', activeCell: 'A1', state: 'normal' }]
+
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_Cam_Ket")
-
-    const maxLens = Object.keys(exportRows[0]).map(key => 
-      Math.max(key.length + 4, ...exportRows.map(row => String((row as any)[key] || '').length + 2))
-    )
-    ws['!cols'] = maxLens.map(w => ({ w: Math.min(Math.max(w, 10), 50) }))
 
     const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "NamHoc"
     XLSX.writeFile(wb, `Danh_Sach_HS_Cam_Ket_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
@@ -805,14 +823,29 @@ export function SupportClient({
     })
 
     const ws = XLSX.utils.json_to_sheet(exportRows)
+    ws['!cols'] = [
+      { wch: 6 },   // STT
+      { wch: 14 },  // Mã HS
+      { wch: 22 },  // Họ tên
+      { wch: 12 },  // Bậc học
+      { wch: 10 },  // Khối
+      { wch: 12 },  // Lớp
+      { wch: 10 },  // Cơ sở
+      { wch: 18 },  // Loại hỗ trợ
+      { wch: 18 },  // Nguồn đề xuất
+      { wch: 28 },  // Chương trình / Lý do
+      { wch: 22 },  // Cam kết đầu vào
+      { wch: 30 },  // Giáo viên phụ trách
+      { wch: 16 },  // Thời gian bắt đầu
+      { wch: 16 },  // Thời gian kết thúc
+      { wch: 18 },  // Trạng thái
+      { wch: 30 },  // Ghi chú
+    ]
+    ws['!views'] = [{ topLeftCell: 'A1', activeCell: 'A1', state: 'normal' }]
+
     const wb = XLSX.utils.book_new()
     const sheetName = type === "PSYCHOLOGICAL" ? "Ho_Tro_Tam_Ly" : type === "ACADEMIC" ? "Boi_Duong_Hoc_Tap" : "Danh_Sach_Ho_Tro"
     XLSX.utils.book_append_sheet(wb, ws, sheetName)
-
-    const maxLens = Object.keys(exportRows[0]).map(key => 
-      Math.max(key.length + 4, ...exportRows.map(row => String((row as any)[key] || '').length + 2))
-    )
-    ws['!cols'] = maxLens.map(w => ({ w: Math.min(Math.max(w, 10), 45) }))
 
     const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "NamHoc"
     XLSX.writeFile(wb, `${sheetName}_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
@@ -854,6 +887,7 @@ export function SupportClient({
         }
       })
       const ws = XLSX.utils.json_to_sheet(exportRows)
+      ws['!views'] = [{ topLeftCell: 'A1', activeCell: 'A1', state: 'normal' }]
       XLSX.utils.book_append_sheet(wb, ws, "Theo_Hoc_Sinh")
       XLSX.writeFile(wb, `Bao_Cao_Theo_Hoc_Sinh_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
     } else if (reportSubTab === "grade") {
@@ -869,6 +903,7 @@ export function SupportClient({
         "Đã kết thúc": g.terminatedCount
       }))
       const ws = XLSX.utils.json_to_sheet(exportRows)
+      ws['!views'] = [{ topLeftCell: 'A1', activeCell: 'A1', state: 'normal' }]
       XLSX.utils.book_append_sheet(wb, ws, "Theo_Khoi")
       XLSX.writeFile(wb, `Bao_Cao_Theo_Khoi_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
     } else if (reportSubTab === "class") {
@@ -884,6 +919,7 @@ export function SupportClient({
         "Đã kết thúc": c.terminatedCount
       }))
       const ws = XLSX.utils.json_to_sheet(exportRows)
+      ws['!views'] = [{ topLeftCell: 'A1', activeCell: 'A1', state: 'normal' }]
       XLSX.utils.book_append_sheet(wb, ws, "Theo_Lop")
       XLSX.writeFile(wb, `Bao_Cao_Theo_Lop_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
     } else {
@@ -898,6 +934,7 @@ export function SupportClient({
         "Trạng thái": t.status
       }))
       const ws = XLSX.utils.json_to_sheet(exportRows)
+      ws['!views'] = [{ topLeftCell: 'A1', activeCell: 'A1', state: 'normal' }]
       XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao")
       XLSX.writeFile(wb, `Bao_Cao_Tong_Hop_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
     }
