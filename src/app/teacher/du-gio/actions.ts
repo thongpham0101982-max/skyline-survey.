@@ -821,7 +821,7 @@ export async function registerObservation(slotId: string) {
     }
 
     if (slot.registrations.length >= Math.min(slot.maxSeats || 4, 4)) {
-      return { success: false, error: "This slot is fully booked" }
+      return { success: false, error: "Tiết dạy này đã đủ số lượng giáo viên đăng ký (đã đóng đăng ký)" }
     }
 
     await prisma.observationRegistration.create({

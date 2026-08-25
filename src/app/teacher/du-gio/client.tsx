@@ -2657,6 +2657,11 @@ export function ObservationClient(props: ObservationClientProps) {
                             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                             Hết hạn
                           </span>
+                        ) : observerCount >= (slot.maxSeats || 4) ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-slate-100 border border-slate-200 text-slate-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            Đóng ĐK
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -2686,6 +2691,10 @@ export function ObservationClient(props: ObservationClientProps) {
                               Hủy dự
                             </button>
                           )
+                        ) : observerCount >= (slot.maxSeats || 4) ? (
+                          <button disabled className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
+                            Khóa
+                          </button>
                         ) : (
                           <button 
                             onClick={() => setRegisterDetailSlot(slot)}
