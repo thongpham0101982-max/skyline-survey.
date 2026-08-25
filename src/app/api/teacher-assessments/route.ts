@@ -466,6 +466,26 @@ export async function GET(req: any) {
     
     if (action === "getDashboardMetrics") {
         const academicYearId = searchParams.get("academicYearId");
+        
+        let targetYearId = academicYearId;
+        if (!targetYearId) {
+            const activeYear = await prisma.academicYear.findFirst({
+                where: { isCurrent: true }
+            }) || await prisma.academicYear.findFirst({
+                where: { status: "ACTIVE" }
+            }) || await prisma.academicYear.findFirst({
+                orderBy: { startDate: 'desc' }
+            });
+            if (activeYear) targetYearId = activeYear.id;
+        }
+
+        let targetYear = null;
+        let academicYearName = "";
+        if (targetYearId) {
+            targetYear = await prisma.academicYear.findUnique({ where: { id: targetYearId } });
+            if (targetYear) academicYearName = targetYear.name;
+        }
+
         // Count assignments
         const assignments = await prisma.inputAssessmentTeacherAssignment.findMany({
             where: { userId: session.user.id },
@@ -473,12 +493,6 @@ export async function GET(req: any) {
         });
         
         let validAssignments = assignments;
-        if (academicYearId) {
-            // Check if period belongs to academic year. If academicYear isn't on period, this might not work perfectly, 
-            // but we'll approximate or just return all assignments if period doesn't have academicYearId.
-            // Let's just return all for the teacher for now, since period filtering is complex if not directly linked.
-        }
-        
         const totalAssignments = validAssignments.length;
         
         // Get teacher record & homeroom classes
@@ -488,6 +502,8 @@ export async function GET(req: any) {
 
         let homeroomClassesCount = 0;
         let homeroomStudentsCount = 0;
+        let remedialStudentsCount = 0;
+        let totalObservedLessons = 0;
 
         if (teacher) {
             const homeroomClasses = await prisma.class.findMany({
@@ -496,7 +512,7 @@ export async function GET(req: any) {
                         { homeroomTeacherId: teacher.id },
                         { homeroomTeacherId: { contains: teacher.id } }
                     ],
-                    ...(academicYearId ? { academicYearId } : {})
+                    ...(targetYearId ? { academicYearId: targetYearId } : {})
                 },
                 include: {
                     _count: { select: { students: true } }
@@ -504,27 +520,8 @@ export async function GET(req: any) {
             });
             homeroomClassesCount = homeroomClasses.length;
             homeroomStudentsCount = homeroomClasses.reduce((sum, c) => sum + (c._count?.students || 0), 0);
-        }
-        
-        let academicYearName = "";
-        if (academicYearId) {
-            const year = await prisma.academicYear.findUnique({ where: { id: academicYearId } });
-            if (year) academicYearName = year.name;
-        }
 
-        let remedialStudentsCount = 0;
-        if (teacher) {
-            let targetYearId = academicYearId;
-            if (!targetYearId) {
-                const activeYear = await prisma.academicYear.findFirst({
-                    where: { isCurrent: true }
-                }) || await prisma.academicYear.findFirst({
-                    orderBy: { startDate: 'desc' }
-                });
-                if (activeYear) targetYearId = activeYear.id;
-            }
-
-            const [teachingAssignments, homeroomClasses] = await Promise.all([
+            const [teachingAssignments, homeroomClassesWithStudents] = await Promise.all([
                 prisma.teachingAssignment.findMany({
                     where: {
                         teacherId: teacher.id,
@@ -548,11 +545,11 @@ export async function GET(req: any) {
 
             const teacherClassIds = Array.from(new Set([
                 ...teachingAssignments.map((a: any) => a.classId),
-                ...homeroomClasses.map((c: any) => c.id)
+                ...homeroomClassesWithStudents.map((c: any) => c.id)
             ]));
 
             const homeroomStudentIds = new Set(
-                homeroomClasses.flatMap(c => (c.students || []).map((s: any) => s.id))
+                homeroomClassesWithStudents.flatMap(c => (c.students || []).map((s: any) => s.id))
             );
 
             const whereClause: any = {
@@ -599,6 +596,43 @@ export async function GET(req: any) {
 
             const uniqueStudentIds = new Set(filteredTargets.map(t => t.studentId));
             remedialStudentsCount = uniqueStudentIds.size;
+
+            // Calculate totalObservedLessons (Observation lessons completed & submitted evaluation)
+            const slotAndConditions: any[] = [
+                { status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED", "COMPLETED"] } }
+            ];
+
+            if (targetYear) {
+                const yearOrConditions: any[] = [
+                    { academicYearId: targetYear.id },
+                    { academicYearId: null }
+                ];
+                if (targetYear.startDate && targetYear.endDate) {
+                    yearOrConditions.push({
+                        date: {
+                            gte: targetYear.startDate,
+                            lte: targetYear.endDate
+                        }
+                    });
+                }
+                slotAndConditions.push({ OR: yearOrConditions });
+            }
+
+            const observedRegs = await prisma.observationRegistration.findMany({
+                where: {
+                    teacherId: teacher.id,
+                    isApproved: true,
+                    evaluation: { isNot: null },
+                    slot: {
+                        AND: slotAndConditions
+                    }
+                },
+                include: {
+                    slot: true
+                }
+            });
+
+            totalObservedLessons = observedRegs.reduce((sum, reg) => sum + (reg.slot?.isDoublePeriod ? 2 : 1), 0);
         }
         
         return NextResponse.json({
@@ -607,6 +641,7 @@ export async function GET(req: any) {
             totalAssignments,
             scoredStudents: 0,
             academicYearName,
+            totalObservedLessons,
             remedialStudentsCount
         });
     }

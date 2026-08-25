@@ -180,7 +180,7 @@ export default function TeacherDashboard() {
       id: "observations",
       label: "Tiết dự giờ",
       value: finalMetrics.totalObservedLessons || 0,
-      unit: "tiết dạy",
+      unit: "tiết",
       subtext: "Phiếu dự giờ chuyên môn",
       icon: Eye,
       cardBg: "bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-white",
