@@ -7,6 +7,7 @@ import { Building2, ChevronDown, Mail, Send, Sparkles, CheckSquare, Square, File
   MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
 } from "lucide-react"
 import toast from "react-hot-toast"
+import * as XLSX from "xlsx"
 import { OverviewDashboard } from "./overview"
 
 interface Props {
@@ -704,9 +705,114 @@ export function SupportClient({
     }
   }
 
-  // Export reports to Excel logic (Simulated file download for UI completeness)
+  // Export Commitment candidates to Excel with full fields including Bậc Học
+  const handleExportCommitmentsExcel = () => {
+    if (filteredCommitments.length === 0) {
+      toast.error("Không có dữ liệu học sinh cam kết để xuất Excel")
+      return
+    }
+
+    const exportRows = filteredCommitments.map((row, idx) => {
+      const isPrimary = /^[1-5][._\s]|lớp\s*[1-5]/i.test(row.className || "")
+      const litLabel = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
+      const num = parseInt((row.grade || "").replace(/\D/g, ""), 10)
+      let rowLevel = row.level
+      if (!rowLevel) {
+        if (num >= 1 && num <= 5) rowLevel = "Tiểu học"
+        else if (num >= 6 && num <= 12) rowLevel = "Trung học"
+        else if (row.grade === "Mầm non" || (row.className || "").includes("Mầm")) rowLevel = "Mầm non"
+        else rowLevel = isPrimary ? "Tiểu học" : "Trung học"
+      }
+      const gradeStr = row.grade ? (row.grade.startsWith("Khối") ? row.grade : "Khối " + row.grade) : ((row.className || "").match(/^(\d+)/) ? "Khối " + (row.className || "").match(/^(\d+)/)[1] : (row.className?.includes("Mầm") ? "Mầm non" : "-"))
+      const campusStr = row.campusName ? row.campusName : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")
+
+      const scoreDetails = []
+      if (row.mathScore !== null && row.mathScore !== undefined) scoreDetails.push(`Toán: ${row.mathScore}`)
+      if (row.literatureScore !== null && row.literatureScore !== undefined) scoreDetails.push(`${litLabel}: ${row.literatureScore}`)
+      if (row.writtenEnglishScore !== null && row.writtenEnglishScore !== undefined) scoreDetails.push(`Anh viết: ${row.writtenEnglishScore}`)
+      if (row.oralEnglishScore !== null && row.oralEnglishScore !== undefined) scoreDetails.push(`Anh nói: ${row.oralEnglishScore}`)
+      if (row.psychologyScore !== null && row.psychologyScore !== undefined) scoreDetails.push(`Tâm lý: ${row.psychologyScore}`)
+
+      const proposedDetails = row.allTargets && row.allTargets.length > 0 
+        ? row.allTargets.map((st: any) => `${st.supportType === "ACADEMIC" ? "Phụ đạo" : "Tâm lý"} (${st.status || "Đang hỗ trợ"})`).join("; ")
+        : ""
+
+      return {
+        "STT": idx + 1,
+        "Họ và tên": row.fullName || "",
+        "Giới tính": row.gender || "",
+        "Mã học sinh": row.studentCode || "",
+        "Bậc học": rowLevel,
+        "Khối": gradeStr,
+        "Lớp": row.className || "",
+        "Cơ sở": campusStr,
+        "Môn Cam kết": row.committedSubject || "",
+        "Tình trạng": row.isProposed ? "Đã đề xuất" : "Chưa đề xuất",
+        "Chi tiết đề xuất": proposedDetails,
+        "Điểm khảo sát": scoreDetails.join(" | "),
+        "Kết quả & Ghi chú khảo sát": row.directorNote || row.admissionResult || ""
+      }
+    })
+
+    const ws = XLSX.utils.json_to_sheet(exportRows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_Cam_Ket")
+
+    const maxLens = Object.keys(exportRows[0]).map(key => 
+      Math.max(key.length + 4, ...exportRows.map(row => String((row as any)[key] || '').length + 2))
+    )
+    ws['!cols'] = maxLens.map(w => ({ w: Math.min(Math.max(w, 10), 50) }))
+
+    const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "NamHoc"
+    XLSX.writeFile(wb, `Danh_Sach_HS_Cam_Ket_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    toast.success(`Đã xuất thành công ${exportRows.length} lượt cam kết ra file Excel!`)
+  }
+
+  // Export reports to Excel logic
   const handleExportExcel = () => {
-    toast.success("Đã xuất báo cáo Excel thành công!")
+    if (!targets || targets.length === 0) {
+      toast.error("Không có dữ liệu để xuất Excel")
+      return
+    }
+
+    const exportRows = targets.map((t: any, idx: number) => {
+      const cls = t.student?.class
+      const num = parseInt((cls?.grade || "").replace(/\D/g, ""), 10)
+      let rowLevel = cls?.level
+      if (!rowLevel) {
+        if (num >= 1 && num <= 5) rowLevel = "Tiểu học"
+        else if (num >= 6 && num <= 12) rowLevel = "Trung học"
+        else if (cls?.grade === "Mầm non" || (cls?.className || "").includes("Mầm")) rowLevel = "Mầm non"
+        else rowLevel = "Tiểu học"
+      }
+
+      return {
+        "STT": idx + 1,
+        "Mã HS": t.student?.studentCode || "",
+        "Họ và tên": t.student?.studentName || "",
+        "Bậc học": rowLevel,
+        "Lớp": cls?.className || "",
+        "Cơ sở": cls?.campus?.campusName || "",
+        "Loại hỗ trợ": t.supportType === "ACADEMIC" ? "Bồi dưỡng học tập" : "Hỗ trợ Tâm lý",
+        "Chương trình / Lý do": t.reason || "",
+        "Thời gian bắt đầu": t.startDate ? new Date(t.startDate).toLocaleDateString("vi-VN") : "",
+        "Thời gian kết thúc": t.endDate ? new Date(t.endDate).toLocaleDateString("vi-VN") : "Đang theo dõi",
+        "Trạng thái": t.terminationStatus === "TERMINATED" ? (t.outcome || "Đã kết thúc") : t.status
+      }
+    })
+
+    const ws = XLSX.utils.json_to_sheet(exportRows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao_Boi_Duong")
+
+    const maxLens = Object.keys(exportRows[0]).map(key => 
+      Math.max(key.length + 4, ...exportRows.map(row => String((row as any)[key] || '').length + 2))
+    )
+    ws['!cols'] = maxLens.map(w => ({ w: Math.min(Math.max(w, 10), 40) }))
+
+    const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "NamHoc"
+    XLSX.writeFile(wb, `Bao_Cao_Boi_Duong_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    toast.success(`Đã xuất báo cáo ${exportRows.length} học sinh ra Excel thành công!`)
   }
 
   // Count pending targets requiring review/approval for Academic and Psychology
@@ -1676,7 +1782,17 @@ export function SupportClient({
                 </select>
               </div>
 
-                            {/* Send Email to QLCM Button */}
+                            {/* Export to Excel Button */}
+              <button
+                onClick={handleExportCommitmentsExcel}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Xuất danh sách học sinh cam kết kèm Bậc học ra file Excel"
+              >
+                <Download className="h-4 w-4" />
+                <span>Xuất Excel</span>
+              </button>
+
+              {/* Send Email to QLCM Button */}
               <button
                 onClick={() => {
                   setEmailQLCMCampus(commitmentCampusFilter === "ALL" ? "ALL" : commitmentCampusFilter)
@@ -1749,6 +1865,15 @@ export function SupportClient({
                         const isLiterature = row.committedSubject?.toLowerCase().includes("văn") || row.committedSubject?.toLowerCase().includes("việt")
                         const isPsychology = row.committedSubject?.toLowerCase().includes("lý") || row.committedSubject?.toLowerCase().includes("tâm")
 
+                        const num = parseInt((row.grade || "").replace(/\D/g, ""), 10)
+                        let rowLevel = row.level
+                        if (!rowLevel) {
+                          if (num >= 1 && num <= 5) rowLevel = "Tiểu học"
+                          else if (num >= 6 && num <= 12) rowLevel = "Trung học"
+                          else if (row.grade === "Mầm non" || (row.className || "").includes("Mầm")) rowLevel = "Mầm non"
+                          else rowLevel = isPrimary ? "Tiểu học" : "Trung học"
+                        }
+
                         return (
                           <tr key={row.uniqueKey || `${row.id}_${idx}`} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-4 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
@@ -1760,6 +1885,17 @@ export function SupportClient({
                             </td>
                             <td className="px-4 py-3.5">
                               <span className="font-mono font-bold text-slate-600 text-[11px]">{row.studentCode}</span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span className={`px-2 py-0.5 rounded-md font-bold text-[11px] border inline-block ${
+                                rowLevel === "Tiểu học" 
+                                  ? "bg-sky-50 text-sky-700 border-sky-200" 
+                                  : rowLevel === "Trung học" 
+                                  ? "bg-purple-50 text-purple-700 border-purple-200" 
+                                  : "bg-rose-50 text-rose-700 border-rose-200"
+                              }`}>
+                                {rowLevel}
+                              </span>
                             </td>
                             <td className="px-4 py-3.5">
                               <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-slate-100 text-slate-700 border border-slate-200 inline-block">
