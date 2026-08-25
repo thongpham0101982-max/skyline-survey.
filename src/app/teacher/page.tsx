@@ -183,12 +183,15 @@ export default function TeacherDashboard() {
       unit: "tiết",
       subtext: "Phiếu dự giờ chuyên môn",
       icon: Eye,
-      cardBg: "bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-white",
-      topAccent: "from-amber-500 via-orange-400 to-yellow-500",
-      iconGradient: "bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-amber-500/30",
-      borderHover: "hover:border-amber-400 hover:shadow-amber-500/15",
-      badge: "Học kỳ này",
-      badgeClass: "bg-amber-100 text-amber-900 border-amber-300 font-bold",
+      cardBg: "bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-50/30",
+      topAccent: "from-amber-500 via-orange-400 to-yellow-400",
+      iconGradient: "bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 text-white shadow-md shadow-amber-500/40 ring-2 ring-amber-200/80",
+      borderHover: "hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/20",
+      borderDefault: "border-amber-300 ring-2 ring-amber-400/25 shadow-sm shadow-amber-500/10",
+      valueColor: "text-amber-600",
+      badge: "✨ Dự giờ CM",
+      badgeClass: "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-950 border-amber-300 font-black shadow-2xs",
+      highlight: true,
       href: "/teacher/du-gio"
     },
     {
@@ -566,7 +569,7 @@ export default function TeacherDashboard() {
           {statCards.map((card) => {
             const Icon = card.icon
             const CardWrapper = (
-              <div className={`group relative ${card.cardBg} rounded-2xl p-4 border border-slate-200/90 shadow-xs hover:shadow-xl ${card.borderHover} transition-all duration-300 flex flex-col justify-between h-full hover:-translate-y-1 overflow-hidden cursor-pointer`}>
+              <div className={`group relative ${card.cardBg} rounded-2xl p-4 border ${(card as any).borderDefault || "border-slate-200/90"} shadow-xs hover:shadow-xl ${card.borderHover} transition-all duration-300 flex flex-col justify-between h-full hover:-translate-y-1 overflow-hidden cursor-pointer`}>
                 {/* Top Glowing Color Accent Bar */}
                 <div className={`absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r ${card.topAccent}`} />
 
@@ -585,11 +588,11 @@ export default function TeacherDashboard() {
                       {card.label}
                     </p>
                     <div className="flex items-baseline gap-1 mt-0.5">
-                      <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                      <span className={`text-2xl sm:text-3xl font-black tracking-tight ${(card as any).valueColor || "text-slate-900"}`}>
                         {card.value}
                       </span>
                       {card.unit && (
-                        <span className="text-[11px] font-bold text-slate-400">
+                        <span className={`text-[11px] font-bold ${(card as any).highlight ? "text-amber-700 font-extrabold" : "text-slate-400"}`}>
                           {card.unit}
                         </span>
                       )}
