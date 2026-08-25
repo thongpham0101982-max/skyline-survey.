@@ -6,23 +6,35 @@ import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 
 export function AcademicYearSelector() {
   const pathname = usePathname();
-  const [years, setYears] = useState<any[]>([]);
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
+  const [years, setYears] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("sqms_academic_years_cache");
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return [];
+  });
+  const [selectedYear, setSelectedYear] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("selectedAcademicYear") || null;
+    }
+    return null;
+  });
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(years.length === 0);
 
   useEffect(() => {
-    // Tạm thời lấy danh sách năm học từ localStorage hoặc default
-    // Thực tế sẽ fetch từ API: /api/academic-years
     const fetchYears = async () => {
       try {
-        // Mock data cho giao diện, vì endpoint cụ thể có thể yêu cầu xác thực hoặc cấu trúc khác
-        // Nếu có endpoint chuẩn, có thể thay đổi ở đây.
         const res = await fetch("/api/academic-years").catch(() => null);
         if (res && res.ok) {
           const data = await res.json();
           if (Array.isArray(data)) {
             setYears(data);
+            try {
+              sessionStorage.setItem("sqms_academic_years_cache", JSON.stringify(data));
+            } catch (e) {}
             const active = data.find(y => y.status === "ACTIVE");
             const defaultId = active ? active.id : (data.length > 0 ? data[0].id : null);
             if (defaultId) {
@@ -36,10 +48,6 @@ export function AcademicYearSelector() {
               }
             }
           }
-        } else {
-          // Fallback if API doesn't exist or isn't accessible this way
-          setYears([{ id: "mock-1", name: "2025-2026", status: "ACTIVE" }]);
-          setSelectedYear("mock-1");
         }
       } catch (error) {
         console.error(error);

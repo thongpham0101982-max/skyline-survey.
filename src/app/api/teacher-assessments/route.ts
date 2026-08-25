@@ -467,46 +467,61 @@ export async function GET(req: any) {
     if (action === "getDashboardMetrics") {
         const academicYearId = searchParams.get("academicYearId");
         
-        let targetYearId = academicYearId;
-        if (!targetYearId) {
-            const activeYear = await prisma.academicYear.findFirst({
-                where: { isCurrent: true }
-            }) || await prisma.academicYear.findFirst({
-                where: { status: "ACTIVE" }
-            }) || await prisma.academicYear.findFirst({
-                orderBy: { startDate: 'desc' }
+        // 1. Parallel initial query: teacher record, academic year, total assignments count
+        const [teacher, targetYear, totalAssignments] = await Promise.all([
+            prisma.teacher.findUnique({
+                where: { userId: session.user.id },
+                select: { id: true }
+            }),
+            academicYearId
+                ? prisma.academicYear.findUnique({ where: { id: academicYearId } })
+                : (prisma.academicYear.findFirst({ where: { isCurrent: true } }) || 
+                   prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }) || 
+                   prisma.academicYear.findFirst({ orderBy: { startDate: 'desc' } })),
+            prisma.inputAssessmentTeacherAssignment.count({
+                where: { userId: session.user.id }
+            })
+        ]);
+
+        if (!teacher) {
+            return NextResponse.json({
+                totalClasses: 0,
+                totalStudents: 0,
+                totalAssignments,
+                scoredStudents: 0,
+                academicYearName: targetYear?.name || "",
+                totalObservedLessons: 0,
+                remedialStudentsCount: 0
             });
-            if (activeYear) targetYearId = activeYear.id;
         }
 
-        let targetYear = null;
-        let academicYearName = "";
-        if (targetYearId) {
-            targetYear = await prisma.academicYear.findUnique({ where: { id: targetYearId } });
-            if (targetYear) academicYearName = targetYear.name;
+        const targetYearId = targetYear?.id || null;
+        const academicYearName = targetYear?.name || "";
+
+        // Build slot filter for observation registrations
+        const slotAndConditions: any[] = [
+            { status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED", "COMPLETED"] } }
+        ];
+
+        if (targetYear) {
+            const yearOrConditions: any[] = [
+                { academicYearId: targetYear.id },
+                { academicYearId: null }
+            ];
+            if (targetYear.startDate && targetYear.endDate) {
+                yearOrConditions.push({
+                    date: {
+                        gte: targetYear.startDate,
+                        lte: targetYear.endDate
+                    }
+                });
+            }
+            slotAndConditions.push({ OR: yearOrConditions });
         }
 
-        // Count assignments
-        const assignments = await prisma.inputAssessmentTeacherAssignment.findMany({
-            where: { userId: session.user.id },
-            include: { period: true }
-        });
-        
-        let validAssignments = assignments;
-        const totalAssignments = validAssignments.length;
-        
-        // Get teacher record & homeroom classes
-        const teacher = await prisma.teacher.findUnique({
-            where: { userId: session.user.id }
-        });
-
-        let homeroomClassesCount = 0;
-        let homeroomStudentsCount = 0;
-        let remedialStudentsCount = 0;
-        let totalObservedLessons = 0;
-
-        if (teacher) {
-            const homeroomClasses = await prisma.class.findMany({
+        // 2. Parallel secondary query: homeroom classes, teaching assignments, observation registrations
+        const [homeroomClasses, teachingAssignments, observedRegs] = await Promise.all([
+            prisma.class.findMany({
                 where: {
                     OR: [
                         { homeroomTeacherId: teacher.id },
@@ -514,111 +529,19 @@ export async function GET(req: any) {
                     ],
                     ...(targetYearId ? { academicYearId: targetYearId } : {})
                 },
-                include: {
-                    _count: { select: { students: true } }
+                select: {
+                    id: true,
+                    students: { select: { id: true } }
                 }
-            });
-            homeroomClassesCount = homeroomClasses.length;
-            homeroomStudentsCount = homeroomClasses.reduce((sum, c) => sum + (c._count?.students || 0), 0);
-
-            const [teachingAssignments, homeroomClassesWithStudents] = await Promise.all([
-                prisma.teachingAssignment.findMany({
-                    where: {
-                        teacherId: teacher.id,
-                        ...(targetYearId ? { academicYearId: targetYearId } : {})
-                    },
-                    select: { classId: true }
-                }),
-                prisma.class.findMany({
-                    where: {
-                        ...(targetYearId ? { academicYearId: targetYearId } : {}),
-                        OR: [
-                            { homeroomTeacherId: teacher.id },
-                            { homeroomTeacherId: { contains: teacher.id } }
-                        ]
-                    },
-                    include: {
-                        students: { select: { id: true } }
-                    }
-                })
-            ]);
-
-            const teacherClassIds = Array.from(new Set([
-                ...teachingAssignments.map((a: any) => a.classId),
-                ...homeroomClassesWithStudents.map((c: any) => c.id)
-            ]));
-
-            const homeroomStudentIds = new Set(
-                homeroomClassesWithStudents.flatMap(c => (c.students || []).map((s: any) => s.id))
-            );
-
-            const whereClause: any = {
-                ...(targetYearId ? { academicYearId: targetYearId } : {})
-            };
-
-            const orConditions: any[] = [
-                { createdById: teacher.id },
-                { assignments: { some: { teacherId: teacher.id } } }
-            ];
-            if (teacherClassIds.length > 0) {
-                orConditions.push({ student: { classId: { in: teacherClassIds } } });
-            }
-            whereClause.OR = orConditions;
-
-            const targets = await prisma.learningSupportTarget.findMany({
-                where: whereClause,
-                include: {
-                    assignments: true,
-                    student: { select: { id: true, classId: true } }
-                }
-            });
-
-            const seenKeys = new Set<string>();
-            const filteredTargets = targets.filter(t => {
-                const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
-                const isCreatedByMe = t.createdById === teacher.id;
-                const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher.id);
-                const isHomeroomStudent = homeroomStudentIds.has(t.studentId);
-                const isClassTeacher = teacherClassIds.includes(t.student?.classId);
-
-                const isCKDV = isCommitmentTarget && (isHomeroomStudent || isClassTeacher);
-                const isBSTD = !isCommitmentTarget && (isCreatedByMe || isAssignedToMe);
-
-                if (!isCKDV && !isBSTD) return false;
-
-                const targetCategory = isCommitmentTarget ? "CKDV" : "BSTD";
-                const dedupeKey = `${t.studentId}_${t.supportType}_${targetCategory}`;
-                if (seenKeys.has(dedupeKey)) return false;
-                seenKeys.add(dedupeKey);
-
-                return true;
-            });
-
-            const uniqueStudentIds = new Set(filteredTargets.map(t => t.studentId));
-            remedialStudentsCount = uniqueStudentIds.size;
-
-            // Calculate totalObservedLessons (Observation lessons completed & submitted evaluation)
-            const slotAndConditions: any[] = [
-                { status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED", "COMPLETED"] } }
-            ];
-
-            if (targetYear) {
-                const yearOrConditions: any[] = [
-                    { academicYearId: targetYear.id },
-                    { academicYearId: null }
-                ];
-                if (targetYear.startDate && targetYear.endDate) {
-                    yearOrConditions.push({
-                        date: {
-                            gte: targetYear.startDate,
-                            lte: targetYear.endDate
-                        }
-                    });
-                }
-                slotAndConditions.push({ OR: yearOrConditions });
-            }
-
-            const observedRegs = await prisma.observationRegistration.findMany({
+            }),
+            prisma.teachingAssignment.findMany({
+                where: {
+                    teacherId: teacher.id,
+                    ...(targetYearId ? { academicYearId: targetYearId } : {})
+                },
+                select: { classId: true }
+            }),
+            prisma.observationRegistration.findMany({
                 where: {
                     teacherId: teacher.id,
                     isApproved: true,
@@ -627,14 +550,71 @@ export async function GET(req: any) {
                         AND: slotAndConditions
                     }
                 },
-                include: {
-                    slot: true
+                select: {
+                    slot: {
+                        select: { isDoublePeriod: true }
+                    }
                 }
-            });
+            })
+        ]);
 
-            totalObservedLessons = observedRegs.reduce((sum, reg) => sum + (reg.slot?.isDoublePeriod ? 2 : 1), 0);
-        }
-        
+        const homeroomClassesCount = homeroomClasses.length;
+        const homeroomStudentsCount = homeroomClasses.reduce((sum, c) => sum + (c.students?.length || 0), 0);
+        const totalObservedLessons = observedRegs.reduce((sum, reg) => sum + (reg.slot?.isDoublePeriod ? 2 : 1), 0);
+
+        const teacherClassIds = Array.from(new Set([
+            ...teachingAssignments.map((a: any) => a.classId),
+            ...homeroomClasses.map((c: any) => c.id)
+        ]));
+
+        const homeroomStudentIds = new Set(
+            homeroomClasses.flatMap(c => (c.students || []).map((s: any) => s.id))
+        );
+
+        // 3. Fast query for remedial targets with projected fields only
+        const targets = await prisma.learningSupportTarget.findMany({
+            where: {
+                ...(targetYearId ? { academicYearId: targetYearId } : {}),
+                OR: [
+                    { createdById: teacher.id },
+                    { assignments: { some: { teacherId: teacher.id } } },
+                    ...(teacherClassIds.length > 0 ? [{ student: { classId: { in: teacherClassIds } } }] : [])
+                ]
+            },
+            select: {
+                studentId: true,
+                supportType: true,
+                sourceType: true,
+                notes: true,
+                createdById: true,
+                assignments: { select: { teacherId: true } },
+                student: { select: { id: true, classId: true } }
+            }
+        });
+
+        const seenKeys = new Set<string>();
+        const filteredTargets = targets.filter(t => {
+            const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+            const isCreatedByMe = t.createdById === teacher.id;
+            const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher.id);
+            const isHomeroomStudent = homeroomStudentIds.has(t.studentId);
+            const isClassTeacher = teacherClassIds.includes(t.student?.classId);
+
+            const isCKDV = isCommitmentTarget && (isHomeroomStudent || isClassTeacher);
+            const isBSTD = !isCommitmentTarget && (isCreatedByMe || isAssignedToMe);
+
+            if (!isCKDV && !isBSTD) return false;
+
+            const targetCategory = isCommitmentTarget ? "CKDV" : "BSTD";
+            const dedupeKey = `${t.studentId}_${t.supportType}_${targetCategory}`;
+            if (seenKeys.has(dedupeKey)) return false;
+            seenKeys.add(dedupeKey);
+
+            return true;
+        });
+
+        const remedialStudentsCount = new Set(filteredTargets.map(t => t.studentId)).size;
+
         return NextResponse.json({
             totalClasses: homeroomClassesCount,
             totalStudents: homeroomStudentsCount,

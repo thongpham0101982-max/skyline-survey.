@@ -43,8 +43,16 @@ interface ActionItem {
 
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
-  const [metrics, setMetrics] = useState<MetricData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [metrics, setMetrics] = useState<MetricData | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("sqms_teacher_dashboard_metrics");
+        if (cached) return JSON.parse(cached);
+      } catch (e) {}
+    }
+    return null;
+  })
+  const [loading, setLoading] = useState(!metrics)
   const [currentDateStr, setCurrentDateStr] = useState("")
   const [currentTimeStr, setCurrentTimeStr] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
@@ -71,7 +79,6 @@ export default function TeacherDashboard() {
 
     async function fetchMetrics() {
       try {
-        setLoading(true)
         const yearId = typeof window !== "undefined"
           ? (localStorage.getItem("academicYearId") || localStorage.getItem("selectedAcademicYear") || "")
           : ""
@@ -79,6 +86,11 @@ export default function TeacherDashboard() {
         if (r.ok) {
           const data = await r.json()
           setMetrics(data)
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem("sqms_teacher_dashboard_metrics", JSON.stringify(data));
+            } catch (e) {}
+          }
         }
       } catch (e) {
         console.error("Failed to load dashboard metrics:", e)
@@ -467,21 +479,13 @@ export default function TeacherDashboard() {
     })
   }, [actionItems, activeTab, searchQuery])
 
-  if (status === "loading" || loading) {
+  if (status === "loading" && !metrics) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[65vh] space-y-5 font-sans">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-3xl flex items-center justify-center bg-gradient-to-tr from-[#003B3A] via-[#48BFE3] to-emerald-400 shadow-xl text-white animate-pulse">
-            <Loader2 className="w-8 h-8 animate-spin" />
-          </div>
-          <div className="absolute -inset-3 rounded-3xl bg-[#48BFE3]/30 blur-xl -z-10 animate-pulse" />
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 font-sans">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-tr from-[#003B3A] to-[#48BFE3] shadow-lg text-white animate-pulse">
+          <Loader2 className="w-6 h-6 animate-spin text-[#80FFDB]" />
         </div>
-        <div className="text-center space-y-1">
-          <p className="text-slate-800 font-black text-sm tracking-wide uppercase">
-            Đang tải dữ liệu tổng quan...
-          </p>
-          <p className="text-xs text-slate-400 font-medium">Hệ thống Sky-Line SQMS đang đồng bộ dữ liệu thời gian thực</p>
-        </div>
+        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Đang tải trang tổng quan...</p>
       </div>
     )
   }
