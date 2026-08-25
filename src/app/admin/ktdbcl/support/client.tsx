@@ -705,7 +705,7 @@ export function SupportClient({
     }
   }
 
-  // Export Commitment candidates to Excel with full fields including Bậc Học
+  // Export Commitment candidates to Excel with full fields including Bậc Học and separate score columns
   const handleExportCommitmentsExcel = () => {
     if (filteredCommitments.length === 0) {
       toast.error("Không có dữ liệu học sinh cam kết để xuất Excel")
@@ -714,7 +714,6 @@ export function SupportClient({
 
     const exportRows = filteredCommitments.map((row, idx) => {
       const isPrimary = /^[1-5][._\s]|lớp\s*[1-5]/i.test(row.className || "")
-      const litLabel = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
       const num = parseInt((row.grade || "").replace(/\D/g, ""), 10)
       let rowLevel = row.level
       if (!rowLevel) {
@@ -726,31 +725,28 @@ export function SupportClient({
       const gradeStr = row.grade ? (row.grade.startsWith("Khối") ? row.grade : "Khối " + row.grade) : ((row.className || "").match(/^(\d+)/) ? "Khối " + (row.className || "").match(/^(\d+)/)[1] : (row.className?.includes("Mầm") ? "Mầm non" : "-"))
       const campusStr = row.campusName ? row.campusName : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")
 
-      const scoreDetails = []
-      if (row.mathScore !== null && row.mathScore !== undefined) scoreDetails.push(`Toán: ${row.mathScore}`)
-      if (row.literatureScore !== null && row.literatureScore !== undefined) scoreDetails.push(`${litLabel}: ${row.literatureScore}`)
-      if (row.writtenEnglishScore !== null && row.writtenEnglishScore !== undefined) scoreDetails.push(`Anh viết: ${row.writtenEnglishScore}`)
-      if (row.oralEnglishScore !== null && row.oralEnglishScore !== undefined) scoreDetails.push(`Anh nói: ${row.oralEnglishScore}`)
-      if (row.psychologyScore !== null && row.psychologyScore !== undefined) scoreDetails.push(`Tâm lý: ${row.psychologyScore}`)
-
       const proposedDetails = row.allTargets && row.allTargets.length > 0 
         ? row.allTargets.map((st: any) => `${st.supportType === "ACADEMIC" ? "Phụ đạo" : "Tâm lý"} (${st.status || "Đang hỗ trợ"})`).join("; ")
         : ""
 
       return {
         "STT": idx + 1,
-        "Họ và tên": row.fullName || "",
+        "Họ tên": row.fullName || "",
         "Giới tính": row.gender || "",
-        "Mã học sinh": row.studentCode || "",
+        "Mã HS": row.studentCode || "",
         "Bậc học": rowLevel,
         "Khối": gradeStr,
         "Lớp": row.className || "",
         "Cơ sở": campusStr,
         "Môn Cam kết": row.committedSubject || "",
         "Tình trạng": row.isProposed ? "Đã đề xuất" : "Chưa đề xuất",
-        "Chi tiết đề xuất": proposedDetails,
-        "Điểm khảo sát": scoreDetails.join(" | "),
-        "Kết quả & Ghi chú khảo sát": row.directorNote || row.admissionResult || ""
+        "Điểm Toán": row.mathScore !== null && row.mathScore !== undefined ? row.mathScore : "",
+        "Điểm Tiếng Việt / Ngữ Văn": row.literatureScore !== null && row.literatureScore !== undefined ? row.literatureScore : "",
+        "Điểm Anh (Viết)": row.writtenEnglishScore !== null && row.writtenEnglishScore !== undefined ? row.writtenEnglishScore : "",
+        "Điểm Anh (Nói)": row.oralEnglishScore !== null && row.oralEnglishScore !== undefined ? row.oralEnglishScore : "",
+        "Điểm Tâm lý": row.psychologyScore !== null && row.psychologyScore !== undefined ? row.psychologyScore : "",
+        "Kết quả Khảo sát & Ghi chú": row.directorNote || row.admissionResult || "",
+        "Chi tiết đề xuất": proposedDetails
       }
     })
 
@@ -768,14 +764,15 @@ export function SupportClient({
     toast.success(`Đã xuất thành công ${exportRows.length} lượt cam kết ra file Excel!`)
   }
 
-  // Export reports to Excel logic
-  const handleExportExcel = () => {
-    if (!targets || targets.length === 0) {
+  // Export Academic / Psychology targets to Excel
+  const handleExportTargetsExcel = (type?: string) => {
+    const list = filteredTargets.filter((t: any) => !type || type === "ALL" || t.supportType === type)
+    if (list.length === 0) {
       toast.error("Không có dữ liệu để xuất Excel")
       return
     }
 
-    const exportRows = targets.map((t: any, idx: number) => {
+    const exportRows = list.map((t: any, idx: number) => {
       const cls = t.student?.class
       const num = parseInt((cls?.grade || "").replace(/\D/g, ""), 10)
       let rowLevel = cls?.level
@@ -785,34 +782,127 @@ export function SupportClient({
         else if (cls?.grade === "Mầm non" || (cls?.className || "").includes("Mầm")) rowLevel = "Mầm non"
         else rowLevel = "Tiểu học"
       }
+      const assignedTeachers = t.assignments?.map((a: any) => `${a.teacher?.teacherName || ""} (${a.subject?.subjectName || ""})`).filter(Boolean).join("; ") || "Chưa phân công"
 
       return {
         "STT": idx + 1,
         "Mã HS": t.student?.studentCode || "",
-        "Họ và tên": t.student?.studentName || "",
+        "Họ tên": t.student?.studentName || "",
         "Bậc học": rowLevel,
+        "Khối": cls?.grade ? (cls.grade.startsWith("Khối") ? cls.grade : "Khối " + cls.grade) : "-",
         "Lớp": cls?.className || "",
         "Cơ sở": cls?.campus?.campusName || "",
         "Loại hỗ trợ": t.supportType === "ACADEMIC" ? "Bồi dưỡng học tập" : "Hỗ trợ Tâm lý",
+        "Nguồn đề xuất": t.sourceType === "GVCN" || t.sourceType === "TAM_LY" ? "GV Chủ nhiệm" : t.sourceType === "GVBM" ? "GV Bộ môn" : "Khảo sát đầu vào",
         "Chương trình / Lý do": t.reason || "",
+        "Cam kết đầu vào": t.commitmentNote || "",
+        "Giáo viên phụ trách": assignedTeachers,
         "Thời gian bắt đầu": t.startDate ? new Date(t.startDate).toLocaleDateString("vi-VN") : "",
         "Thời gian kết thúc": t.endDate ? new Date(t.endDate).toLocaleDateString("vi-VN") : "Đang theo dõi",
-        "Trạng thái": t.terminationStatus === "TERMINATED" ? (t.outcome || "Đã kết thúc") : t.status
+        "Trạng thái": t.terminationStatus === "TERMINATED" ? (t.outcome || "Đã kết thúc") : t.status,
+        "Ghi chú": t.notes || ""
       }
     })
 
     const ws = XLSX.utils.json_to_sheet(exportRows)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao_Boi_Duong")
+    const sheetName = type === "PSYCHOLOGICAL" ? "Ho_Tro_Tam_Ly" : type === "ACADEMIC" ? "Boi_Duong_Hoc_Tap" : "Danh_Sach_Ho_Tro"
+    XLSX.utils.book_append_sheet(wb, ws, sheetName)
 
     const maxLens = Object.keys(exportRows[0]).map(key => 
       Math.max(key.length + 4, ...exportRows.map(row => String((row as any)[key] || '').length + 2))
     )
-    ws['!cols'] = maxLens.map(w => ({ w: Math.min(Math.max(w, 10), 40) }))
+    ws['!cols'] = maxLens.map(w => ({ w: Math.min(Math.max(w, 10), 45) }))
 
     const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "NamHoc"
-    XLSX.writeFile(wb, `Bao_Cao_Boi_Duong_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
-    toast.success(`Đã xuất báo cáo ${exportRows.length} học sinh ra Excel thành công!`)
+    XLSX.writeFile(wb, `${sheetName}_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    toast.success(`Đã xuất thành công ${exportRows.length} hồ sơ ra file Excel!`)
+  }
+
+  // Export reports to Excel logic based on active subtab
+  const handleExportExcel = () => {
+    const wb = XLSX.utils.book_new()
+    const yearName = academicYears.find(y => y.id === selectedYearId)?.name || "NamHoc"
+
+    if (reportSubTab === "student") {
+      if (!targets || targets.length === 0) {
+        toast.error("Không có dữ liệu để xuất Excel")
+        return
+      }
+      const exportRows = targets.map((t: any, idx: number) => {
+        const cls = t.student?.class
+        const num = parseInt((cls?.grade || "").replace(/\D/g, ""), 10)
+        let rowLevel = cls?.level
+        if (!rowLevel) {
+          if (num >= 1 && num <= 5) rowLevel = "Tiểu học"
+          else if (num >= 6 && num <= 12) rowLevel = "Trung học"
+          else if (cls?.grade === "Mầm non" || (cls?.className || "").includes("Mầm")) rowLevel = "Mầm non"
+          else rowLevel = "Tiểu học"
+        }
+        return {
+          "STT": idx + 1,
+          "Mã HS": t.student?.studentCode || "",
+          "Họ tên": t.student?.studentName || "",
+          "Bậc học": rowLevel,
+          "Lớp": cls?.className || "",
+          "Cơ sở": cls?.campus?.campusName || "",
+          "Loại hỗ trợ": t.supportType === "ACADEMIC" ? "Bồi dưỡng học tập" : "Hỗ trợ Tâm lý",
+          "Chương trình / Lý do": t.reason || "",
+          "Thời gian bắt đầu": t.startDate ? new Date(t.startDate).toLocaleDateString("vi-VN") : "",
+          "Thời gian kết thúc": t.endDate ? new Date(t.endDate).toLocaleDateString("vi-VN") : "Đang theo dõi",
+          "Mức tiến bộ / Kết quả": t.terminationStatus === "TERMINATED" ? (t.outcome || "Đã kết thúc") : t.status
+        }
+      })
+      const ws = XLSX.utils.json_to_sheet(exportRows)
+      XLSX.utils.book_append_sheet(wb, ws, "Theo_Hoc_Sinh")
+      XLSX.writeFile(wb, `Bao_Cao_Theo_Hoc_Sinh_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } else if (reportSubTab === "grade") {
+      const exportRows = gradeStats.filter((g: any) => g.totalCount > 0).map((g: any, idx: number) => ({
+        "STT": idx + 1,
+        "Tên Khối": g.name,
+        "Tổng số HS bồi dưỡng": g.totalCount,
+        "Học tập (Môn học)": g.academicCount,
+        "Hỗ trợ Tâm lý": g.psychologyCount,
+        "Chờ duyệt": g.pendingCount,
+        "Đang bồi dưỡng": g.approvedCount,
+        "Chờ kết thúc": g.pendingTerminationCount,
+        "Đã kết thúc": g.terminatedCount
+      }))
+      const ws = XLSX.utils.json_to_sheet(exportRows)
+      XLSX.utils.book_append_sheet(wb, ws, "Theo_Khoi")
+      XLSX.writeFile(wb, `Bao_Cao_Theo_Khoi_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } else if (reportSubTab === "class") {
+      const exportRows = classStats.filter((c: any) => c.totalCount > 0).map((c: any, idx: number) => ({
+        "STT": idx + 1,
+        "Tên lớp": c.name,
+        "Tổng số HS": c.totalCount,
+        "Hỗ trợ Văn hóa (Môn)": c.academicCount,
+        "Hỗ trợ Tâm lý": c.psychologyCount,
+        "Chờ duyệt": c.pendingCount,
+        "Đang bồi dưỡng": c.approvedCount,
+        "Chờ kết thúc": c.pendingTerminationCount,
+        "Đã kết thúc": c.terminatedCount
+      }))
+      const ws = XLSX.utils.json_to_sheet(exportRows)
+      XLSX.utils.book_append_sheet(wb, ws, "Theo_Lop")
+      XLSX.writeFile(wb, `Bao_Cao_Theo_Lop_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    } else {
+      // General report
+      const exportRows = targets.map((t: any, idx: number) => ({
+        "STT": idx + 1,
+        "Mã HS": t.student?.studentCode || "",
+        "Họ tên": t.student?.studentName || "",
+        "Lớp": t.student?.class?.className || "",
+        "Cơ sở": t.student?.class?.campus?.campusName || "",
+        "Chương trình / Lý do": t.reason || "",
+        "Trạng thái": t.status
+      }))
+      const ws = XLSX.utils.json_to_sheet(exportRows)
+      XLSX.utils.book_append_sheet(wb, ws, "Bao_Cao")
+      XLSX.writeFile(wb, `Bao_Cao_Tong_Hop_${yearName.replace(/\s+/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    }
+
+    toast.success("Đã xuất báo cáo Excel thành công!")
   }
 
   // Count pending targets requiring review/approval for Academic and Psychology
@@ -2094,6 +2184,15 @@ export function SupportClient({
                   <option value="TERMINATED">Đã kết thúc</option>
                 </select>
               </div>
+
+              <button
+                onClick={() => handleExportTargetsExcel(activeTab === "psychology" ? "PSYCHOLOGICAL" : "ACADEMIC")}
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Xuất danh sách ra file Excel"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Xuất Excel</span>
+              </button>
             </div>
           </div>
 
