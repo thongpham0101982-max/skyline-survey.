@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-25T09:52:26.021Z
+// Forced Vercel Deployment: 2026-08-25T14:37:40.063Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -48,7 +48,7 @@ interface ObservationClientProps {
   teachers: any[]
   campuses: CampusInfo[]
   classes: ClassInfo[]
-  initialFilters: { level: string; period: string; grade: string; classId?: string; date: string; campusId: string; deptId: string; academicYearId?: string }
+  initialFilters: { level: string; period: string; grade: string; classId?: string; date: string; month?: string; campusId: string; deptId: string; academicYearId?: string }
   academicYears?: { id: string; name: string; status: string }[]
   selectedYearId?: string
 }
@@ -183,6 +183,51 @@ const mapTabToMainTab = (tab: string | null | undefined): "register_request" | "
   return "register_request";
 };
 
+const isPreschoolDepartment = (deptNameOrCode: string) => {
+  if (!deptNameOrCode) return false;
+  const norm = deptNameOrCode
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+  const raw = deptNameOrCode.toLowerCase().trim();
+
+  return (
+    raw.includes("bghmn") ||
+    raw.includes("bgh mn") ||
+    raw.includes("bgh_mn") ||
+    norm.includes("bghmn") ||
+    norm.includes("bgh mn") ||
+    norm.includes("ban giam hieu mam non") ||
+    norm.includes("mau giao be") ||
+    norm.includes("mau giao nho") ||
+    norm.includes("mau giao lon") ||
+    norm.includes("nha tre") ||
+    norm === "mgb" ||
+    norm === "mgn" ||
+    norm === "mgl" ||
+    norm === "nt" ||
+    norm.includes("to mau giao") ||
+    norm.includes("to nha tre")
+  );
+};
+
+const getKhacChuyenDeSubjectId = (subjectsList: any[]) => {
+  const found = subjectsList.find((s: any) => {
+    const name = (s.subjectName || "").toLowerCase().trim();
+    const norm = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return (
+      name === "khác/chuyên đề" ||
+      name === "khác / chuyên đề" ||
+      name === "môn học khác / chuyên đề" ||
+      norm === "khac/chuyen de" ||
+      norm === "khac / chuyen de" ||
+      (norm.includes("khac") && norm.includes("chuyen de"))
+    );
+  });
+  return found ? found.id : "Khác/Chuyên đề";
+};
+
 export function ObservationClient(props: ObservationClientProps) {
   const {
     initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
@@ -244,6 +289,46 @@ export function ObservationClient(props: ObservationClientProps) {
       setSelectedEmailTeacherIds(myDeptTeachers.map((t: any) => t.id));
     }
   }, [myDeptTeachers]);
+
+  const [filterMonth, setFilterMonth] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const urlM = sp.get("month");
+      if (urlM) return urlM;
+      const stored = localStorage.getItem("skyline_du_gio_filter_month");
+      if (stored) return stored;
+    }
+    return initialFilters.month || "all";
+  });
+
+  const handleMonthChange = (newMonth: string) => {
+    setFilterMonth(newMonth);
+    if (typeof window !== "undefined") {
+      if (newMonth && newMonth !== "all") {
+        localStorage.setItem("skyline_du_gio_filter_month", newMonth);
+      } else {
+        localStorage.removeItem("skyline_du_gio_filter_month");
+      }
+    }
+  };
+
+  const availableMonths = useMemo(() => {
+    const monthsSet = new Set<string>();
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}`;
+    monthsSet.add(currentMonthKey);
+
+    slots.forEach((slot: any) => {
+      if (slot.date) {
+        const d = new Date(slot.date);
+        if (!isNaN(d.getTime())) {
+          monthsSet.add(`${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`);
+        }
+      }
+    });
+
+    return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
+  }, [slots]);
 
   const [filterLevel, setFilterLevel] = useState(initialFilters.level || "all")
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade || "all")
@@ -591,6 +676,7 @@ export function ObservationClient(props: ObservationClientProps) {
     if (filterGrade && filterGrade !== "all") params.set("grade", filterGrade); else params.delete("grade")
     if (filterClassId && filterClassId !== "all") params.set("classId", filterClassId); else params.delete("classId")
     if (filterDate) params.set("date", filterDate); else params.delete("date")
+    if (filterMonth && filterMonth !== "all") params.set("month", filterMonth); else params.delete("month")
     if (filterPeriod && filterPeriod !== "all") params.set("period", filterPeriod); else params.delete("period")
     
     setIsSearching(true)
@@ -605,6 +691,7 @@ export function ObservationClient(props: ObservationClientProps) {
         classId: filterClassId, 
         period: filterPeriod, 
         date: filterDate,
+        month: filterMonth,
         academicYearId: filterAcademicYearId
       })
       if (res.success && res.slots) { setSlots(res.slots) }
@@ -613,7 +700,7 @@ export function ObservationClient(props: ObservationClientProps) {
     } finally {
       setIsSearching(false)
     }
-  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterAcademicYearId, router, pathname])
+  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, filterAcademicYearId, router, pathname])
 
   useEffect(() => {
     if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current)
@@ -621,7 +708,7 @@ export function ObservationClient(props: ObservationClientProps) {
       handleSearch()
     }, 400)
     return () => { if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current) }
-  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, handleSearch])
+  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, handleSearch])
 
   const filterAvailableClasses = useMemo(() => {
     return classes.filter(c => {
@@ -657,9 +744,10 @@ export function ObservationClient(props: ObservationClientProps) {
     if (filterGrade && filterGrade !== "all") count++
     if (filterClassId && filterClassId !== "all") count++
     if (filterDate) count++
+    if (filterMonth && filterMonth !== "all") count++
     if (filterPeriod && filterPeriod !== "all") count++
     return count
-  }, [filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterPeriod])
+  }, [filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod])
 
   const activeFilterTags = useMemo(() => {
     const tags: { key: string; label: string; value: string; onRemove: () => void }[] = []
@@ -686,11 +774,15 @@ export function ObservationClient(props: ObservationClientProps) {
       const formatted = d.getDate().toString().padStart(2,"0") + "/" + (d.getMonth()+1).toString().padStart(2,"0") + "/" + d.getFullYear()
       tags.push({ key: "date", label: "Ngày", value: formatted, onRemove: () => setFilterDate("") })
     }
+    if (filterMonth && filterMonth !== "all") {
+      const [y, m] = filterMonth.split("-");
+      tags.push({ key: "month", label: "Tháng", value: `Tháng ${m}/${y}`, onRemove: () => handleMonthChange("all") })
+    }
     if (filterPeriod && filterPeriod !== "all") {
       tags.push({ key: "period", label: "Tiết", value: filterPeriod, onRemove: () => setFilterPeriod("all") })
     }
     return tags
-  }, [filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterPeriod, campuses, departments, classes])
+  }, [filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod, campuses, departments, classes])
 
   const clearAllFilters = () => {
     setFilterCampusId("all")
@@ -699,6 +791,7 @@ export function ObservationClient(props: ObservationClientProps) {
     setFilterGrade("all")
     setFilterClassId("all")
     setFilterDate("")
+    handleMonthChange("all")
     setFilterPeriod("all")
     setFilterSchoolBlock("all")
   }
@@ -713,6 +806,7 @@ export function ObservationClient(props: ObservationClientProps) {
       classId: filterClassId, 
       period: filterPeriod, 
       date: filterDate,
+      month: filterMonth,
       academicYearId: filterAcademicYearId
     })
     if (res.success && res.slots) setSlots(res.slots)
@@ -912,6 +1006,10 @@ export function ObservationClient(props: ObservationClientProps) {
 
     const selectedClass = classes.find(c => c.id === reqClassId)
     const selectedSub = subjects.find(s => s.id === reqSubjectId)
+    const resolvedSubjectName = selectedSub
+      ? selectedSub.subjectName
+      : (reqSubjectId === "Khác/Chuyên đề" || reqSubjectId === "other" ? "Khác/Chuyên đề" : reqSubjectId || "Khác/Chuyên đề")
+    const resolvedSubjectId = selectedSub ? selectedSub.id : null
 
     setSubmitting(true)
     startTransition(async () => {
@@ -922,8 +1020,8 @@ export function ObservationClient(props: ObservationClientProps) {
         className: selectedClass ? selectedClass.className : undefined,
         level: reqLevel || (selectedClass ? selectedClass.level : "ALL"),
         grade: reqGrade || (selectedClass ? selectedClass.grade : "Khối"),
-        subjectId: reqSubjectId,
-        subjectName: selectedSub ? selectedSub.subjectName : "Môn học",
+        subjectId: resolvedSubjectId || undefined,
+        subjectName: resolvedSubjectName,
         topic: reqTopic || "Yêu cầu dự giờ",
         date: reqDate,
         period: reqPeriod,
@@ -1122,7 +1220,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-    return slots.filter(slot => {
+    const filtered = slots.filter(slot => {
       const slotDate = new Date(slot.date);
       const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
       const isMyDept = checkIsMyDept(slot);
@@ -1147,6 +1245,41 @@ export function ObservationClient(props: ObservationClientProps) {
         return !isMyDept;
       }
       return true;
+    });
+
+    // Thuật toán sắp xếp ưu tiên:
+    // 1. Tiết còn hạn (hôm nay và tương lai) lên trước. Tiết hết hạn đẩy xuống dưới cùng.
+    // 2. Nhóm còn hạn: Sắp xếp theo ngày tăng dần (gần hôm nay nhất xếp đầu).
+    // 3. Nhóm hết hạn: Sắp xếp theo ngày giảm dần (tiết mới hết hạn gần đây nhất xếp trên, tiết cũ hơn xếp dưới).
+    // 4. Cùng ngày: Sắp xếp theo thứ tự tiết dạy.
+    return filtered.sort((slotA, slotB) => {
+      const dateA = new Date(slotA.date);
+      const dateB = new Date(slotB.date);
+
+      const isExpiredA = dateA < todayStart || slotA.status === "EXPIRED";
+      const isExpiredB = dateB < todayStart || slotB.status === "EXPIRED";
+
+      // 1. Phân cấp độ ưu tiên hiệu lực
+      if (isExpiredA !== isExpiredB) {
+        return isExpiredA ? 1 : -1;
+      }
+
+      const getPeriodOrder = (startTimeStr: string) => {
+        const m = (startTimeStr || "").match(/\d+/);
+        return m ? parseInt(m[0], 10) : 99;
+      };
+
+      // 2. Nhóm còn hạn: Sắp xếp tăng dần theo ngày (gần hôm nay nhất xếp trước)
+      if (!isExpiredA) {
+        const timeDiff = dateA.getTime() - dateB.getTime();
+        if (timeDiff !== 0) return timeDiff;
+        return getPeriodOrder(slotA.startTime) - getPeriodOrder(slotB.startTime);
+      }
+
+      // 3. Nhóm hết hạn: Sắp xếp giảm dần theo ngày (gần hôm nay nhất xếp trước trong nhóm hết hạn)
+      const expiredDiff = dateB.getTime() - dateA.getTime();
+      if (expiredDiff !== 0) return expiredDiff;
+      return getPeriodOrder(slotA.startTime) - getPeriodOrder(slotB.startTime);
     });
   }, [slots, activeFilterTab, checkIsMyDept]);
 
@@ -1515,7 +1648,21 @@ export function ObservationClient(props: ObservationClientProps) {
                   <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">1. Chọn Tổ chuyên môn</label>
                   <select
                     value={reqDeptId}
-                    onChange={e => { setReqDeptId(e.target.value); setReqTeacherId(""); }}
+                    onChange={e => {
+                      const newDeptId = e.target.value;
+                      setReqDeptId(newDeptId);
+                      setReqTeacherId("");
+                      if (newDeptId) {
+                        const selectedDept = departments.find((d: any) => d.id === newDeptId);
+                        if (selectedDept && isPreschoolDepartment(selectedDept.name || selectedDept.code || "")) {
+                          const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
+                          setReqSubjectId(khacChuyenDeId);
+                          if (!reqLevel || reqLevel === "ALL") {
+                            setReqLevel("Mầm non");
+                          }
+                        }
+                      }
+                    }}
                     className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">Tất cả các Tổ chuyên môn</option>
@@ -1529,7 +1676,24 @@ export function ObservationClient(props: ObservationClientProps) {
                   <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">2. Chọn Giáo viên dạy *</label>
                   <select
                     value={reqTeacherId}
-                    onChange={e => setReqTeacherId(e.target.value)}
+                    onChange={e => {
+                      const tId = e.target.value;
+                      setReqTeacherId(tId);
+                      if (tId) {
+                        const tObj = teachers.find((t: any) => t.id === tId);
+                        const tDept = departments.find((d: any) => d.id === tObj?.departmentId) || tObj?.departmentRel;
+                        if (tDept && isPreschoolDepartment(tDept.name || tDept.code || "")) {
+                          const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
+                          setReqSubjectId(khacChuyenDeId);
+                          if (!reqLevel || reqLevel === "ALL") {
+                            setReqLevel("Mầm non");
+                          }
+                          if (!reqDeptId && tDept.id) {
+                            setReqDeptId(tDept.id);
+                          }
+                        }
+                      }
+                    }}
                     required
                     className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
@@ -1557,6 +1721,13 @@ export function ObservationClient(props: ObservationClientProps) {
                     {subjects.map((s: any) => (
                       <option key={s.id} value={s.id}>{s.subjectName}</option>
                     ))}
+                    {!subjects.some((s: any) => {
+                      const sName = (s.subjectName || "").toLowerCase();
+                      const sNorm = sName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                      return (sNorm.includes("khac") && sNorm.includes("chuyen de")) || sName === "khác/chuyên đề";
+                    }) && (
+                      <option value="Khác/Chuyên đề">Khác/Chuyên đề</option>
+                    )}
                   </select>
                 </div>
 
@@ -2301,7 +2472,24 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
         
         {/* Compact Advanced Filter Bar (7 Filters) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+          {/* 1. Tháng */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Tháng</span>
+            <select value={filterMonth} onChange={e => handleMonthChange(e.target.value)}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
+              <option value="all">Tất cả tháng</option>
+              {availableMonths.map(m => {
+                const [y, mon] = m.split("-");
+                const isCurrent = m === `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`;
+                return (
+                  <option key={m} value={m}>
+                    Tháng ${mon}/${y} ${isCurrent ? "(Hiện tại)" : ""}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
           {/* 1. Cơ sở */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Cơ sở</span>
@@ -2459,7 +2647,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   
                   const today = new Date();
                   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                  const isExpired = slotDate < todayStart;
+                  const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
 
                   if (activeFilterTab === "gbm_request") {
                     const observerReg = slot.registrations?.[0];

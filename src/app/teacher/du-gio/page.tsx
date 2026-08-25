@@ -22,6 +22,7 @@ export default async function ObservationPage(props: {
   const grade = searchParams.grade || "all"
   const period = searchParams.period || "all"
   const date = searchParams.date || ""
+  const month = searchParams.month || ""
   const campusId = searchParams.campusId || "all"
   const deptId = searchParams.deptId || "all"
   const classId = searchParams.classId || "all"
@@ -42,6 +43,7 @@ export default async function ObservationPage(props: {
     classId,
     period,
     date,
+    month,
     campusId,
     deptId
   })
@@ -55,7 +57,7 @@ export default async function ObservationPage(props: {
       teachers={refDataResult.teachers || []}
       campuses={refDataResult.campuses || []}
       classes={refDataResult.classes || []}
-      initialFilters={{ level, grade, classId, period, date, campusId, deptId, academicYearId }}
+      initialFilters={{ level, grade, classId, period, date, month, campusId, deptId, academicYearId }}
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
     />

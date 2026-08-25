@@ -222,6 +222,7 @@ export async function getObservationSlots(filters: {
     classId?: string
     period?: string
     date?: string
+    month?: string
     academicYearId?: string
 }) {
   try {
@@ -259,6 +260,24 @@ export async function getObservationSlots(filters: {
           { academicYearId: null }
         ]
       })
+    }
+
+    if (filters.month && filters.month !== "all") {
+      const parts = filters.month.split("-");
+      if (parts.length === 2) {
+        const mYear = parseInt(parts[0], 10);
+        const mMonth = parseInt(parts[1], 10);
+        if (!isNaN(mYear) && !isNaN(mMonth)) {
+          const startOfMonth = new Date(mYear, mMonth - 1, 1);
+          const endOfMonth = new Date(mYear, mMonth, 1);
+          andConditions.push({
+            date: {
+              gte: startOfMonth,
+              lt: endOfMonth
+            }
+          });
+        }
+      }
     }
 
     if (filters.level && filters.level !== "all") {
@@ -453,6 +472,9 @@ export async function createObservationSlot(data: {
   className?: string
   lessonPlanName?: string
   lessonPlanData?: string
+  sendEmailNotif?: boolean
+  notifMode?: string
+  selectedMemberIds?: string[]
 }) {
   try {
     const session = await auth()
@@ -1179,6 +1201,9 @@ export async function updateObservationSlot(slotId: string, data: {
   className?: string
   lessonPlanName?: string
   lessonPlanData?: string
+  sendEmailNotif?: boolean
+  notifMode?: string
+  selectedMemberIds?: string[]
 }) {
   try {
     const session = await auth()
