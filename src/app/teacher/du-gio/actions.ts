@@ -591,7 +591,7 @@ export async function createObservationSlot(data: {
           userId: m.user!.id,
           title: "Tiết dạy dự giờ mới trong Tổ chuyên môn",
           message: `Thầy/Cô ${currentTeacher.teacherName} vừa mở tiết dạy dự giờ mới (${newSlot.subjectName} - ${newSlot.topic}). Kính mời Thầy/Cô đăng ký tham dự.`,
-          link: "/teacher/du-gio?tab=dang-ky",
+          link: "/teacher/du-gio?tab=register_request",
           isRead: false
         }));
 
@@ -1661,7 +1661,7 @@ export async function requestObservationSlot(data: {
                 userId: t.user.id,
                 title: "Thông báo đăng ký tiết dự giờ mới",
                 message: `Thầy/Cô ${currentTeacher.teacherName} vừa khởi tạo tiết dạy đăng ký dự giờ (${data.subjectName || "Môn học"} - ${data.topic || "Tiết dạy mở"}). Vui lòng đăng nhập hệ thống để đăng ký dự giờ.`,
-                link: "/teacher/du-gio",
+                link: "/teacher/du-gio?tab=register_request",
                 isRead: false
               }
             });
@@ -1978,7 +1978,7 @@ export async function processExpiredSlotsNotifications() {
           userId: uId,
           title: "Hết hạn đăng ký dự giờ & Nhắc lịch dạy",
           message: `Tiết dạy dự giờ (${slot.subjectName} - ${slot.topic}) đã hết hạn đăng ký (Có ${registeredCount}/4 GV tham dự). Vui lòng thực hiện tiết dạy theo đúng lịch.`,
-          link: "/teacher/du-gio",
+          link: "/teacher/du-gio?tab=my_schedule",
           isRead: false
         }));
         await prisma.notification.createMany({ data: notifData }).catch(e => console.error("Notif error:", e));
@@ -2100,7 +2100,7 @@ export async function sendPendingEvaluationReminder(registrationId: string) {
           userId: observer.user.id,
           title: "Nhắc nhở hoàn tất nhập đánh giá dự giờ",
           message: `Vui lòng hoàn tất nhập đánh giá tiết dạy "${slot.topic}" của Thầy/Cô ${hostTeacher?.teacherName}. Hệ thống chỉ ghi nhận khi hoàn tất đánh giá.`,
-          link: "/teacher/du-gio",
+          link: "/teacher/du-gio?tab=evaluations",
           isRead: false
         }
       }).catch(e => console.error("In-app notif error:", e));
@@ -2240,7 +2240,7 @@ export async function sendBatchPendingEvaluationReminders() {
               userId: observerUserId,
               title: "Nhắc nhở hoàn tất nhập đánh giá dự giờ",
               message: `[Dự giờ #${reg.id}] Vui lòng hoàn tất nhập đánh giá tiết dạy "${slot.topic}" của Thầy/Cô ${hostTeacher?.teacherName}. Hệ thống chỉ ghi nhận khi hoàn tất đánh giá.`,
-              link: "/teacher/du-gio",
+              link: "/teacher/du-gio?tab=evaluations",
               isRead: false
             }
           }).catch(e => console.error("Batch notif error:", e));

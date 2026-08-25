@@ -174,6 +174,15 @@ const getAvatarGradient = (name: string) => {
   return gradients[Math.abs(hash) % gradients.length];
 };
 
+
+const mapTabToMainTab = (tab: string | null | undefined): "register_request" | "overview_slots" | "my_schedule" | "evaluations" => {
+  if (!tab) return "register_request";
+  if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview") return "overview_slots";
+  if (tab === "my_schedule" || tab === "my-schedule" || tab === "lich-day" || tab === "schedule") return "my_schedule";
+  if (tab === "evaluations" || tab === "evaluation" || tab === "danh-gia") return "evaluations";
+  return "register_request";
+};
+
 export function ObservationClient(props: ObservationClientProps) {
   const {
     initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
@@ -218,7 +227,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
-  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations">("register_request");
+  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
@@ -393,10 +402,19 @@ export function ObservationClient(props: ObservationClientProps) {
   const [evalOverall, setEvalOverall] = useState("")
   const [evalSubmitting, setEvalSubmitting] = useState(false)
 
-  useEffect(() => { setActiveTab(activeTabParam) }, [activeTabParam])
+  useEffect(() => { 
+    setActiveTab(activeTabParam);
+    const tab = searchParams.get("tab");
+    if (tab) {
+      setActiveMainTab(mapTabToMainTab(tab));
+    }
+  }, [activeTabParam, searchParams])
 
   useEffect(() => {
     const evalSlotIdParam = searchParams.get("evalSlotId");
+    if (evalSlotIdParam) {
+      setActiveMainTab("evaluations");
+    }
     if (evalSlotIdParam && slots.length > 0) {
       const targetSlot = slots.find((s: any) => s.id === evalSlotIdParam);
       if (targetSlot) {

@@ -98,7 +98,8 @@ export async function sendClassReminderAction(classId: string, surveyPeriodId: s
         data: {
           userId: form.parent.userId,
           title: "Lời nhắc: Hoàn thành khảo sát",
-          message: `Kính gửi Phụ huynh, phiếu khảo sát đánh giá "${form.surveyPeriod?.name}" cho học sinh ${form.student?.studentName} vẫn đang trong trạng thái chưa hoàn thành. Quý vị vui lòng dành ít phút thực hiện.`
+          message: `Kính gửi Phụ huynh, phiếu khảo sát đánh giá "${form.surveyPeriod?.name}" cho học sinh ${form.student?.studentName} vẫn đang trong trạng thái chưa hoàn thành. Quý vị vui lòng dành ít phút thực hiện.`,
+          link: "/parent/surveys"
         }
       })
       notifiedParents++
@@ -121,7 +122,8 @@ export async function sendClassReminderAction(classId: string, surveyPeriodId: s
         data: {
           userId: gvcn.teacher.userId,
           title: "Hệ thống cập nhật tiến độ Survey",
-          message: `Lớp ${cls?.className} hiện còn ${pendingForms.length} phụ huynh chưa làm khảo sát. Thầy/Cô vui lòng đôn đốc học sinh nhắc nhở ba mẹ nhé.`
+          message: `Lớp ${cls?.className} hiện còn ${pendingForms.length} phụ huynh chưa làm khảo sát. Thầy/Cô vui lòng đôn đốc học sinh nhắc nhở ba mẹ nhé.`,
+          link: "/teacher/nps"
         }
      })
      gvcnNotified = true

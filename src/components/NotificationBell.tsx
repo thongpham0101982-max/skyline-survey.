@@ -4,6 +4,57 @@ import { Bell, CheckCircle2, MessageSquare, ExternalLink } from "lucide-react"
 import { getUserNotificationsAction, markNotificationsAsReadAction } from "@/lib/notification_actions"
 import Link from "next/link"
 
+export function resolveNotificationLink(n: { title?: string; message?: string; link?: string | null }): string {
+  const text = ((n.title || "") + " " + (n.message || "")).toLowerCase()
+
+  if (n.link && n.link.trim() !== "") {
+    // If link is already pointing to du-gio, route to proper tab
+    if (n.link === "/teacher/du-gio" || n.link === "/teacher/du-gio?tab=dang-ky") {
+      if (text.includes("đánh giá") || text.includes("hoàn tất nhập")) {
+        return "/teacher/du-gio?tab=evaluations"
+      }
+      if (text.includes("đề xuất") || text.includes("xác nhận") || text.includes("hết hạn") || text.includes("nhắc lịch") || text.includes("đã đăng ký")) {
+        return "/teacher/du-gio?tab=my_schedule"
+      }
+      if (text.includes("mở tiết") || text.includes("tổ chuyên môn") || text.includes("đăng ký")) {
+        return "/teacher/du-gio?tab=register_request"
+      }
+    }
+    return n.link
+  }
+
+  // Fallback if link was missing
+  if (text.includes("dự giờ") || text.includes("tiết dạy") || text.includes("tiết học")) {
+    if (text.includes("đánh giá") || text.includes("hoàn tất nhập")) {
+      return "/teacher/du-gio?tab=evaluations"
+    }
+    if (text.includes("đề xuất") || text.includes("xác nhận") || text.includes("hết hạn") || text.includes("nhắc lịch") || text.includes("đã đăng ký")) {
+      return "/teacher/du-gio?tab=my_schedule"
+    }
+    return "/teacher/du-gio?tab=register_request"
+  }
+  if (text.includes("khảo sát") || text.includes("nps") || text.includes("survey")) {
+    return "/teacher/nps"
+  }
+  if (text.includes("cố vấn") || text.includes("check-in") || text.includes("mục tiêu") || text.includes("k12")) {
+    return "/teacher/co-van-hoc-tap"
+  }
+  if (text.includes("hồ sơ") || text.includes("học sinh")) {
+    return "/teacher/ho-so-hoc-sinh"
+  }
+  if (text.includes("công việc") || text.includes("nhiệm vụ") || text.includes("giao việc")) {
+    return "/admin/tasks"
+  }
+  if (text.includes("xét duyệt") || text.includes("phê duyệt") || text.includes("học thử") || text.includes("tuyển sinh")) {
+    return "/admin/xet-duyet-ket-qua"
+  }
+  if (text.includes("xếp lớp") || text.includes("chuyển lớp")) {
+    return "/admin/student-transfers"
+  }
+
+  return "/teacher"
+}
+
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [notifs, setNotifs] = useState<any[]>([])
@@ -85,18 +136,23 @@ export function NotificationBell() {
               </div>
             ) : (
               notifs.map(n => {
-                const ContentWrapper = n.link ? Link : 'div';
-                const wrapperProps = n.link ? { href: n.link, onClick: () => setOpen(false) } : {};
+                const targetLink = resolveNotificationLink(n)
 
                 return (
-                  <ContentWrapper 
+                  <Link 
                     key={n.id} 
-                    {...(wrapperProps as any)}
-                    className={`block p-3.5 hover:bg-slate-50/80 transition-colors cursor-pointer ${!n.isRead ? 'bg-teal-50/40' : ''}`}
+                    href={targetLink}
+                    onClick={() => {
+                      setOpen(false)
+                      if (!n.isRead) {
+                        markNotificationsAsReadAction()
+                      }
+                    }}
+                    className={"block p-3.5 hover:bg-teal-50/60 transition-colors cursor-pointer group " + (!n.isRead ? "bg-teal-50/30" : "")}
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 leading-snug">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#48BFE3] shrink-0" />
+                      <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 leading-snug group-hover:text-[#008B82] transition-colors">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#48BFE3] shrink-0 group-hover:text-[#008B82]" />
                         {n.title}
                       </h4>
                       <span className="text-[10px] text-slate-400 font-normal whitespace-nowrap shrink-0">
@@ -104,12 +160,10 @@ export function NotificationBell() {
                       </span>
                     </div>
                     <p className="text-slate-600 text-xs leading-relaxed pl-5 font-normal">{n.message}</p>
-                    {n.link && (
-                      <div className="mt-1.5 pl-5 flex items-center text-[10px] text-[#48BFE3] font-medium gap-1">
-                        Xem chi tiết <ExternalLink className="w-2.5 h-2.5" />
-                      </div>
-                    )}
-                  </ContentWrapper>
+                    <div className="mt-1.5 pl-5 flex items-center text-[10px] text-[#48BFE3] group-hover:text-[#008B82] font-semibold gap-1">
+                      Xem chi tiết <ExternalLink className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  </Link>
                 )
               })
             )}

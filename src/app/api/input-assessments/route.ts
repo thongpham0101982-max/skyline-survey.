@@ -247,7 +247,8 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
         data: {
           userId,
           title,
-          message
+          message,
+          link: "/admin/xet-duyet-ket-qua"
         }
       });
     }
