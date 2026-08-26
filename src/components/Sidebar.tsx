@@ -205,7 +205,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">1. Dự giờ đánh giá Giáo viên</span>}
               </Link>
 
-              {/* 2. Tổng hợp kết quả (Dropdown block) */}
+              {/* 3. Tổng hợp kết quả (Dropdown block) */}
               <div className="flex flex-col">
                 <button 
                   onClick={() => setObservesExpanded(!observesExpanded)}
@@ -264,7 +264,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 )}
               </div>
 
-              {/* 3. Xét duyệt đánh giá lại */}
+              {/* 4. Xét duyệt đánh giá lại */}
               <Link 
                 href="/admin/du-gio?tab=xet-duyet-danh-gia-lai" 
                 onClick={() => setIsOpen(false)} 

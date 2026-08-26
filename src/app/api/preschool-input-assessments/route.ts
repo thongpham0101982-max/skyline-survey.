@@ -277,53 +277,94 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
       recipientEmails.push(fbEmail);
     }
 
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; font-size: 14px; color: #1E1B4B; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-        <div style="background-color: #48BFE3; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; color: #ffffff;">
-          <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">Thông báo phân công khảo sát</h2>
-        </div>
-        <div style="padding: 20px 10px;">
-          <p>Kính gửi quý thầy/cô Giáo vụ Cơ sở,</p>
-          <p>Hệ thống trân trọng thông báo thông tin đợt khảo sát mới đã được gán người phụ trách:</p>
-          <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-            <table width="100%" cellpadding="5" cellspacing="0" style="border-collapse: collapse;" className="border border-slate-200 border-collapse">
-              <tr>
-                <td width="35%" style="font-weight: bold; color: #475569;" className="p-2 border border-slate-200">Mã Đợt:</td>
-                <td className="p-2 border border-slate-200"><strong>${batchCode}</strong> (${batch.name || ""})</td>
-              </tr>
-              <tr>
-                <td style="font-weight: bold; color: #475569;" className="p-2 border border-slate-200">Nội dung khảo sát:</td>
-                <td className="p-2 border border-slate-200">${surveyContent}</td>
-              </tr>
-              <tr>
-                <td style="font-weight: bold; color: #475569;" className="p-2 border border-slate-200">Cơ sở:</td>
-                <td className="p-2 border border-slate-200">${campusName}</td>
-              </tr>
-              <tr>
-                <td style="font-weight: bold; color: #475569;" className="p-2 border border-slate-200">Thời gian:</td>
-                <td className="p-2 border border-slate-200">${timeDisplay}</td>
-              </tr>
-            </table>
-          </div>
-          <p style="font-style: italic; color: #0d9488; font-weight: bold;">
-            Kính nhờ thầy cô giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát.
-          </p>
-          <div style="background-color: #f0fdfa; padding: 15px; border-radius: 8px; border: 1px solid #ccfbf1; margin-top: 15px; margin-bottom: 20px; font-size: 13.5px; color: #0f766e;">
-            <p style="margin: 0; line-height: 1.6;">
-              Để đăng nhập hệ thống và phân công giáo viên, thầy/cô vui lòng đăng nhập:<br/>
-              - <strong>Tài khoản và mật khẩu:</strong> Mã số SKL.<br/>
-              - <strong>Lưu ý:</strong> Vui lòng đổi Mật khẩu khi đăng nhập.
-            </p>
-          </div>
-          <div style="text-align: center; margin: 25px 0;">
-            <a href="${loginUrl}" target="_blank" style="background-color: #48BFE3; color: #ffffff; padding: 12px 30px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(0, 166, 169, 0.2);">Đăng nhập Hệ thống</a>
-          </div>
-        </div>
-        <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; border-radius: 0 0 8px 8px;">
-          <p style="margin: 0; font-weight: bold; color: #1E1B4B;">Hệ thống Quản trị Chất lượng Dạy và Học</p>
-          <p style="margin: 4px 0 0 0;">Email tự động gửi từ Hệ thống Khảo sát Tuyển sinh Sky-Line</p>
-        </div>
-      </div>
+        const emailHtml = `
+      <!DOCTYPE html>
+      <html lang="vi">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Thông báo phân công khảo sát</title>
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 12px;">
+          <tr>
+            <td align="center">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 660px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 166, 169, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0;">
+                <!-- Header -->
+                <tr>
+                  <td style="background: #ffffff; padding: 32px 28px 24px; text-align: center; border-bottom: 3px solid #00A6A9;">
+                    <div style="display: inline-block; background: rgba(0, 166, 169, 0.08); padding: 5px 16px; border-radius: 50px; margin-bottom: 12px; border: 1px solid rgba(0, 166, 169, 0.25);">
+                      <span style="color: #00A6A9; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;">BẬC MẦM NON • HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    </div>
+                    <h1 style="margin: 0; color: #1E1B4B; font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.3px; line-height: 1.3;">THÔNG BÁO PHÂN CÔNG KHẢO SÁT</h1>
+                    <p style="margin: 8px 0 0 0; color: #007A87; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">ĐỢT ${batchCode}</p>
+                  </td>
+                </tr>
+                <!-- Body -->
+                <tr>
+                  <td style="padding: 28px 32px 16px 32px;">
+                    <p style="margin: 0; font-size: 15px; font-weight: 800; color: #1E1B4B;">Kính gửi Quý Thầy/Cô Giáo vụ Cơ sở,</p>
+                    <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                      Hệ thống trân trọng thông báo thông tin đợt khảo sát mới đã được giao trách nhiệm phụ trách. Chi tiết đợt khảo sát như sau:
+                    </p>
+                  </td>
+                </tr>
+                <!-- Info Card -->
+                <tr>
+                  <td style="padding: 0 32px 20px 32px;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f0fdfa; border-radius: 14px; border: 1px solid #ccfbf1; padding: 18px 20px;">
+                      <tr>
+                        <td style="padding-bottom: 10px; width: 35%; font-size: 11px; font-weight: 800; color: #008899; text-transform: uppercase; letter-spacing: 0.5px;">MÃ ĐỢT:</td>
+                        <td style="padding-bottom: 10px; font-size: 14px; font-weight: 800; color: #1E1B4B;"><strong>${batchCode}</strong> (${batch.name || ""})</td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom: 10px; font-size: 11px; font-weight: 800; color: #008899; text-transform: uppercase; letter-spacing: 0.5px;">NỘI DUNG:</td>
+                        <td style="padding-bottom: 10px; font-size: 14px; font-weight: 800; color: #1E1B4B;">${surveyContent}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding-bottom: 10px; font-size: 11px; font-weight: 800; color: #008899; text-transform: uppercase; letter-spacing: 0.5px;">CƠ SỞ:</td>
+                        <td style="padding-bottom: 10px; font-size: 14px; font-weight: 800; color: #1E1B4B;">${campusName}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size: 11px; font-weight: 800; color: #008899; text-transform: uppercase; letter-spacing: 0.5px;">THỜI GIAN:</td>
+                        <td style="font-size: 14px; font-weight: 800; color: #1E1B4B;">${timeDisplay}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Notice Card -->
+                <tr>
+                  <td style="padding: 0 32px 24px 32px;">
+                    <div style="background-color: #f8fafc; border-left: 4px solid #00A6A9; border-radius: 8px; padding: 14px 18px;">
+                      <p style="margin: 0; font-size: 13.5px; color: #334155; line-height: 1.6;">
+                        <strong style="color: #007A87;">Lưu ý:</strong> Kính nhờ Thầy/Cô Giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát trên hệ thống để đảm bảo tiến độ.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Action Link -->
+                <tr>
+                  <td style="padding: 0 32px 30px 32px; text-align: center;">
+                    <a href="${loginUrl}/admin/phan-cong-khao-sat?tab=mam-non" target="_blank" style="display: inline-block; padding: 13px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; color: #ffffff; background: linear-gradient(135deg, #00A6A9 0%, #48BFE3 100%); text-decoration: none; box-shadow: 0 4px 14px rgba(0, 166, 169, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
+                      Thực hiện Phân công Giáo viên
+                    </a>
+                  </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
+                    <img src="${loginUrl}/images/logo.png" alt="Sky-Line" style="height: 32px; margin-bottom: 10px;" onerror="this.style.display='none'">
+                    <p style="margin: 0; font-size: 12px; font-weight: 800; color: #1E1B4B; text-transform: uppercase; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</p>
+                    <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">Nơi học sinh học cách yêu thương, chia sẻ, tự lập &amp; có trách nhiệm.</p>
+                    <p style="margin: 6px 0 0 0; font-size: 10px; color: #94a3b8;">Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
     `;
 
     for (const email of recipientEmails) {

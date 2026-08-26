@@ -563,7 +563,7 @@ export async function createObservationSlot(data: {
       })
     })
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
 
     
@@ -909,7 +909,7 @@ export async function registerObservation(slotId: string) {
       console.error("Error sending registerObservation notification:", notifErr);
     }
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {
@@ -953,7 +953,7 @@ export async function cancelObservation(slotId: string) {
       }
     })
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {
@@ -1000,7 +1000,7 @@ export async function deleteObservationSlot(slotId: string) {
       where: { id: slotId }
     })
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {
@@ -1097,7 +1097,7 @@ export async function approveRegistration(registrationId: string) {
       console.error("Teams approval dispatch error:", apprTeamsErr);
     }
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) { return { success: false, error: e.message } }
@@ -1177,7 +1177,7 @@ export async function submitEvaluation(data: {
         data: { registrationId: data.registrationId, slotId: data.slotId, evaluatorId: currentTeacher.id, ...evalData }
       })
     }
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) { return { success: false, error: e.message } }
@@ -1284,7 +1284,7 @@ export async function updateObservationSlot(slotId: string, data: {
       }
     })
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true, slot: updatedSlot }
   } catch (e: any) {
@@ -1375,7 +1375,7 @@ export async function updateTeacherObservationTargets(
       }
     })
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     revalidatePath("/admin/tong-hop-du-gio")
     return { success: true }
@@ -1681,7 +1681,7 @@ export async function requestObservationSlot(data: {
       console.error("Error sending requestObservationSlot notification:", notifErr);
     }
 
-        revalidatePath("/teacher/du-gio")
+        revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
 
     // Notify all subject teachers (GVBM) in the same TCM (Tổ Chuyên Môn)
@@ -1812,7 +1812,7 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
       }
     }
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
 
     return { success: true }
@@ -2348,7 +2348,7 @@ export async function requestReEvaluation(data: {
       }
     })
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {
@@ -2502,7 +2502,7 @@ export async function approveReEvaluation(data: {
       await sendEmail({ to: gvbmEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Re-evaluation approve email error:", e))
     }
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {
@@ -2593,7 +2593,7 @@ export async function rejectReEvaluation(data: {
       await sendEmail({ to: gvbmEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Re-evaluation reject email error:", e))
     }
 
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {

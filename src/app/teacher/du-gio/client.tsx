@@ -66,6 +66,7 @@ interface CampusInfo { id: string; campusCode: string; campusName: string }
 interface ClassInfo { id: string; classCode: string; className: string; level: string; grade: string; campusId: string; academicYearId?: string }
 
 interface ObservationClientProps {
+  isPreschoolPage?: boolean
   initialSlots: any[]
   currentTeacher?: TeacherInfo | null
   subjects: SubjectInfo[]
@@ -259,10 +260,13 @@ export function ObservationClient(props: ObservationClientProps) {
     initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
   } = props;
 
-  const isMamNonTeacher = 
-    currentTeacher?.user?.role === "GV_MN" || 
-    currentTeacher?.user?.role === "BGH_MN" ||
-    (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+  const isMamNonTeacher = typeof props.isPreschoolPage === "boolean"
+    ? props.isPreschoolPage
+    : (
+        currentTeacher?.user?.role === "GV_MN" || 
+        currentTeacher?.user?.role === "BGH_MN" ||
+        (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non")
+      );
 
   const router = useRouter()
   const pathname = usePathname()
@@ -1584,10 +1588,12 @@ export function ObservationClient(props: ObservationClientProps) {
               <span>SKY-LINE SYSTEM • ĐÁNH GIÁ CHUYÊN MÔN</span>
             </div>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-3">
-              Dự giờ đánh giá Giáo viên
+              {isMamNonTeacher ? "Dự giờ đánh giá Mầm non" : "Dự giờ đánh giá Giáo viên"}
             </h1>
             <p className="text-emerald-100/90 text-xs sm:text-sm max-w-2xl font-medium leading-relaxed">
-              Phân hệ quản trị tiết dạy, đăng ký dự giờ trực tuyến, theo dõi chỉ tiêu chuyên môn và thực hiện phiếu đánh giá chuẩn mực Sky-Line.
+              {isMamNonTeacher 
+                ? "Phân hệ quản trị tiết dạy, đăng ký dự giờ trực tuyến bậc Mầm non, theo dõi chỉ tiêu chuyên môn và thực hiện phiếu đánh giá chuẩn mực Sky-Line Mầm non."
+                : "Phân hệ quản trị tiết dạy, đăng ký dự giờ trực tuyến, theo dõi chỉ tiêu chuyên môn và thực hiện phiếu đánh giá chuẩn mực Sky-Line."}
             </p>
           </div>
 
