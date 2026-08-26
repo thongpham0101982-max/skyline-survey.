@@ -1,11 +1,12 @@
 "use client";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { 
   ArrowLeft, Settings, Save, Search, CheckSquare,
   CheckCircle2, Plus, X, Hash, Edit3, Loader2,
   Square, Users, BookOpen, Calendar, Tag, ChevronDown,
-  CheckCheck, Sparkles, Award, Filter, ShieldCheck, CheckCircle, Download
+  CheckCheck, Sparkles, Award, Filter, ShieldCheck, CheckCircle, 
+  Download, Upload, FileSpreadsheet
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -14,9 +15,11 @@ export default function ActivityResultInput() {
   const router = useRouter();
   const params = useParams();
   const { id } = params as { id: string };
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [search, setSearch] = useState('');
@@ -75,7 +78,7 @@ export default function ActivityResultInput() {
             evalLevelId: p.evalLevelId || '',
             achievementId: p.achievementId || '',
             absenceReasonId: p.absenceReasonId || '',
-            note: p.note || '{}'
+            note: p.note || ''
           })));
         }
       } else {
@@ -200,6 +203,7 @@ export default function ActivityResultInput() {
     <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
   );
 
+  // 1. XUẤT FILE EXCEL
   const handleExportExcel = () => {
     if (students.length === 0) {
       toast.error('Không có dữ liệu học sinh để xuất file Excel');
@@ -207,42 +211,42 @@ export default function ActivityResultInput() {
     }
     try {
       const dataToExport = filteredStudents.map((s, idx) => {
-        const roleObj = categories.role.find((c: any) => c.code === s.roleId);
-        const levelObj = categories.result.find((c: any) => c.code === s.evalLevelId);
-        const achObj = categories.achievement.find((c: any) => c.code === s.achievementId);
+        const roleObj = categories.role.find((c: any) => c.code === s.roleId || c.id === s.roleId);
+        const levelObj = categories.result.find((c: any) => c.code === s.evalLevelId || c.id === s.evalLevelId);
+        const achObj = categories.achievement.find((c: any) => c.code === s.achievementId || c.id === s.achievementId);
+
+        let cleanNote = s.note || '';
+        if (cleanNote.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(cleanNote);
+            cleanNote = parsed.note || parsed.comment || '';
+          } catch {}
+        }
 
         const row: any = {
           'STT': idx + 1,
-          'Mã Học Sinh': s.code || '',
-          'Họ và Tên': s.name || '',
+          'Mã học sinh': s.code || '',
+          'Họ và tên': s.name || '',
           'Lớp': s.class || '',
-          'Giới Tính': s.gender === 'male' ? 'Nam' : (s.gender === 'female' ? 'Nữ' : s.gender || ''),
-          'Vai Trò Tham Gia': roleObj ? roleObj.name : (s.roleId || ''),
-          'Mức Đánh Giá': levelObj ? levelObj.name : (s.evalLevelId || ''),
-          'Thành Tích': achObj ? achObj.name : (s.achievementId || ''),
-          'Lý Do Vắng': s.absenceReasonId || '',
-          'Ghi Chú': s.note && !s.note.startsWith('{') ? s.note : ''
+          'Vai trò tham gia': roleObj ? roleObj.name : (s.roleId || ''),
+          'Mức đánh giá': levelObj ? levelObj.name : (s.evalLevelId || ''),
+          'Thành tích': achObj ? achObj.name : (s.achievementId || ''),
+          'Ghi chú chung': cleanNote
         };
-
-        config.customColumns.forEach(col => {
-          row[col.name] = getCustomValue(s.note, col.id);
-        });
 
         return row;
       });
 
       const ws = XLSX.utils.json_to_sheet(dataToExport);
       ws['!cols'] = [
-        { wch: 6 },
-        { wch: 15 },
-        { wch: 25 },
-        { wch: 12 },
-        { wch: 10 },
-        { wch: 22 },
-        { wch: 20 },
-        { wch: 20 },
-        { wch: 16 },
-        { wch: 25 }
+        { wch: 6 },  // STT
+        { wch: 16 }, // Mã học sinh
+        { wch: 28 }, // Họ và tên
+        { wch: 14 }, // Lớp
+        { wch: 22 }, // Vai trò tham gia
+        { wch: 20 }, // Mức đánh giá
+        { wch: 22 }, // Thành tích
+        { wch: 30 }  // Ghi chú chung
       ];
 
       const wb = XLSX.utils.book_new();
@@ -250,11 +254,112 @@ export default function ActivityResultInput() {
       const safeName = (activityName || 'Hoat_Dong').replace(/[^a-zA-Z0-9_À-ỹ]/g, '_');
       const dateStr = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(wb, `Ket_Qua_${safeName}_${dateStr}.xlsx`);
-      toast.success('Đã xuất file Excel kết quả thành công!');
+      toast.success('Đã xuất file Excel kết quả học sinh thành công!');
     } catch (err) {
       console.error('Export excel error:', err);
       toast.error('Lỗi khi xuất file Excel');
     }
+  };
+
+  // 2. NHẬP (IMPORT) LẠI FILE EXCEL
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+
+    reader.onload = (evt) => {
+      try {
+        const buffer = evt.target?.result;
+        const wb = XLSX.read(buffer, { type: 'array' });
+        const firstSheetName = wb.SheetNames[0];
+        const ws = wb.Sheets[firstSheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' }) as any[];
+
+        if (!rows || rows.length === 0) {
+          toast.error('File Excel không có dữ liệu');
+          setIsImporting(false);
+          return;
+        }
+
+        // Helper match category code by name or code
+        const findCatCode = (catList: any[], val: string) => {
+          if (!val) return '';
+          const trimmed = String(val).trim().toLowerCase();
+          const match = catList.find(c => 
+            (c.name && c.name.trim().toLowerCase() === trimmed) ||
+            (c.code && c.code.trim().toLowerCase() === trimmed)
+          );
+          return match ? match.code : val;
+        };
+
+        let updatedCount = 0;
+        const newStudents = [...students];
+
+        rows.forEach(row => {
+          // Normalize row keys
+          const getRowVal = (keys: string[]) => {
+            for (const k of keys) {
+              for (const rowKey of Object.keys(row)) {
+                if (rowKey.trim().toLowerCase() === k.trim().toLowerCase()) {
+                  return String(row[rowKey]).trim();
+                }
+              }
+            }
+            return '';
+          };
+
+          const rowStudentCode = getRowVal(['Mã học sinh', 'Mã HS', 'Ma hoc sinh', 'Ma HS', 'Code', 'studentCode']);
+          const rowStudentName = getRowVal(['Họ và tên', 'Họ tên', 'Tên học sinh', 'Ho va ten', 'studentName', 'Học sinh']);
+          const rowRole = getRowVal(['Vai trò tham gia', 'Vai trò', 'Vai tro tham gia', 'Vai tro', 'Role']);
+          const rowLevel = getRowVal(['Mức đánh giá', 'Mức độ', 'Đánh giá', 'Muc danh gia', 'Ket qua', 'Result', 'Level']);
+          const rowAchievement = getRowVal(['Thành tích', 'Thanh tich', 'Khen thưởng', 'Achievement']);
+          const rowNote = getRowVal(['Ghi chú chung', 'Ghi chú', 'Ghi chu chung', 'Ghi chu', 'Note']);
+
+          // Find student in current list
+          let targetIndex = -1;
+          if (rowStudentCode) {
+            targetIndex = newStudents.findIndex(s => s.code && s.code.trim().toLowerCase() === rowStudentCode.toLowerCase());
+          }
+          if (targetIndex === -1 && rowStudentName) {
+            targetIndex = newStudents.findIndex(s => s.name && s.name.trim().toLowerCase() === rowStudentName.toLowerCase());
+          }
+
+          if (targetIndex !== -1) {
+            const current = newStudents[targetIndex];
+            const newRole = rowRole ? findCatCode(categories.role, rowRole) : current.roleId;
+            const newLevel = rowLevel ? findCatCode(categories.result, rowLevel) : current.evalLevelId;
+            const newAchievement = rowAchievement ? findCatCode(categories.achievement, rowAchievement) : current.achievementId;
+            const newNote = rowNote !== '' ? rowNote : current.note;
+
+            newStudents[targetIndex] = {
+              ...current,
+              roleId: newRole || current.roleId,
+              evalLevelId: newLevel || current.evalLevelId,
+              achievementId: newAchievement || current.achievementId,
+              note: newNote
+            };
+            updatedCount++;
+          }
+        });
+
+        if (updatedCount > 0) {
+          setStudents(newStudents);
+          toast.success(`Đã nhập thành công kết quả cho ${updatedCount}/${newStudents.length} học sinh từ file Excel!`, { duration: 5000 });
+        } else {
+          toast.error('Không tìm thấy học sinh nào khớp mã/tên trong file Excel');
+        }
+      } catch (err) {
+        console.error('Import excel error:', err);
+        toast.error('Lỗi khi đọc file Excel. Vui lòng kiểm tra lại định dạng file');
+      } finally {
+        setIsImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   };
 
   if (loading) return (
@@ -283,6 +388,15 @@ export default function ActivityResultInput() {
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/30 to-indigo-50/20 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-sans overflow-hidden">
       
+      {/* Hidden File Input for Excel Import */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept=".xlsx, .xls, .csv" 
+        className="hidden" 
+        onChange={handleImportExcel} 
+      />
+
       {/* Background Ambient Glow Orbs */}
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-gradient-to-br from-indigo-300/30 via-purple-300/20 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute top-1/4 -right-24 w-96 h-96 bg-gradient-to-bl from-cyan-300/30 via-teal-300/20 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
@@ -364,25 +478,40 @@ export default function ActivityResultInput() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-2.5 flex-wrap self-end lg:self-center shrink-0">
+              {/* Import File Excel Button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
+                className="px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs"
+                title="Nhập kết quả từ file Excel (.xlsx)"
+              >
+                {isImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5 text-indigo-600" />}
+                <span>Nhập File Excel</span>
+              </button>
+
+              {/* Export File Excel Button */}
               <button
                 onClick={handleExportExcel}
                 className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
-                title="Xuất kết quả đánh giá ra file Excel"
+                title="Xuất kết quả học sinh ra file Excel"
               >
-                <Download className="w-3.5 h-3.5" /> Xuất Excel
+                <Download className="w-3.5 h-3.5" /> Xuất File Excel
               </button>
+
               <button
                 onClick={() => setShowEditModal(true)}
                 className="px-4 py-2.5 bg-slate-100/90 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs"
               >
                 <Edit3 className="w-3.5 h-3.5" /> Hiệu chỉnh
               </button>
+
               <button
                 onClick={() => { setEditConfig(config); setShowConfigModal(true); }}
                 className="px-4 py-2.5 bg-slate-100/90 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs"
               >
                 <Settings className="w-3.5 h-3.5" /> Cấu hình Cột
               </button>
+
               <button
                 onClick={handleSaveResults}
                 disabled={saving}
@@ -475,13 +604,25 @@ export default function ActivityResultInput() {
               {search && <span className="text-slate-400 ml-1.5">(lọc từ tổng số {students.length})</span>}
             </div>
             <div className="flex items-center gap-3">
+              {/* Import Excel in Table header */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isImporting}
+                className="text-xs font-black text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1 rounded-xl flex items-center gap-1.5 transition-all shadow-2xs"
+              >
+                {isImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5 text-indigo-600" />}
+                <span>Nhập File Excel</span>
+              </button>
+
+              {/* Export Excel in Table header */}
               <button
                 onClick={handleExportExcel}
                 className="text-xs font-black text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-xl flex items-center gap-1.5 transition-all shadow-2xs"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Xuất Excel</span>
+                <span>Xuất File Excel</span>
               </button>
+
               <button onClick={toggleAll} className="text-xs font-black text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 transition-colors">
                 {allSelected
                   ? <><CheckSquare className="w-4 h-4 text-indigo-600" /> Bỏ chọn tất cả</>
