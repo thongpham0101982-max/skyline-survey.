@@ -8,6 +8,7 @@ import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { prisma } from "@/lib/db"
+import { APP_CATEGORIES } from "@/config/modules"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   let session: any = null
@@ -41,7 +42,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       }).catch(() => [])
       readableModules = permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
 
-      const { APP_CATEGORIES: categories } = require("@/config/modules")
+      const categories = APP_CATEGORIES
       categories.forEach((cat: any) => {
         cat.modules.forEach((m: any) => {
           if (m.subModules && m.subModules.length > 0) {
