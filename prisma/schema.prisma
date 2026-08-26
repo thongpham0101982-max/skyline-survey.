@@ -1141,6 +1141,13 @@ model ObservationEvaluation {
   overallRating  String?
   submittedAt    DateTime @default(now())
 
+  reEvaluationStatus      String?
+  reEvaluationReason      String?
+  reEvaluationRequestedAt DateTime?
+  reEvaluationApprovedAt  DateTime?
+  reEvaluationApprovedBy  String?
+  reEvaluationNote        String?
+
   registration ObservationRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
   @@index([slotId])

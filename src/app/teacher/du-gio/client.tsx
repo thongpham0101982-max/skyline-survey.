@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-25T14:37:40.063Z
+// Forced Vercel Deployment: 2026-08-26T03:47:19.530Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -8,13 +8,38 @@ import {
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
   Eye, TrendingUp, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
-  CheckCircle2, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck
+  CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
+  BarChart3, PieChart
 } from "lucide-react"
+
+const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+const k12Labels = [
+  "Y1: Chuẩn bị giáo án, bám sát kiến thức kỹ năng",
+  "Y2: Sử dụng đồ dùng, thiết bị dạy học phù hợp",
+  "Y3: Nội dung bài giảng chính xác, khoa học",
+  "Y4: Đảm bảo tính hệ thống, trọng tâm bài dạy",
+  "Y5: Liên hệ thực tế đời sống, tính giáo dục",
+  "Y6: Không đọc chép, hỗ trợ kịp thời học sinh",
+  "Y7: Tổ chức học tập chủ động, hợp tác nhóm",
+  "Y8: Linh hoạt các khâu, phân phối thời gian hợp lý",
+  "Y9: Kết hợp các phương pháp, khuyến khích tư duy",
+  "Y10: Đánh giá quá trình học, học sinh nắm vững bài",
+  "Y11: Tiết dạy nhuần nhuyễn, sinh động, sáng tạo"
+];
+
+const preschoolLabels = [
+  "T1: Nội dung bài dạy phù hợp, chính xác",
+  "T2: Phương pháp giảng dạy hiệu quả, sáng tạo",
+  "T3: Tổ chức hoạt động học tập tích cực",
+  "T4: Sử dụng CNTT và phương tiện dạy học",
+  "T5: Kết quả học tập và tương tác của học sinh"
+];
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,
   requestObservationSlot, respondToObservationRequest,
   deleteObservationSlot, getCreatedCountInMonth, getObservationSlots, triggerSlotReminder,
-  approveRegistration, submitEvaluation, updateTeacherObservationTargets, sendPendingEvaluationReminder
+  approveRegistration, submitEvaluation, updateTeacherObservationTargets, sendPendingEvaluationReminder,
+  requestReEvaluation, approveReEvaluation, rejectReEvaluation, getReEvaluationRequests
 } from "./actions"
 
 interface TeacherInfo {
@@ -175,11 +200,12 @@ const getAvatarGradient = (name: string) => {
 };
 
 
-const mapTabToMainTab = (tab: string | null | undefined): "register_request" | "overview_slots" | "my_schedule" | "evaluations" => {
+const mapTabToMainTab = (tab: string | null | undefined): "register_request" | "overview_slots" | "my_schedule" | "evaluations" | "re_evaluations" => {
   if (!tab) return "register_request";
   if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview") return "overview_slots";
   if (tab === "my_schedule" || tab === "my-schedule" || tab === "lich-day" || tab === "schedule") return "my_schedule";
   if (tab === "evaluations" || tab === "evaluation" || tab === "danh-gia") return "evaluations";
+  if (tab === "re_evaluations" || tab === "re-evaluations" || tab === "xet-duyet" || tab === "xet-duyet-danh-gia-lai") return "re_evaluations";
   return "register_request";
 };
 
@@ -246,6 +272,16 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const [slots, setSlots] = useState(initialSlots)
   const [activeTab, setActiveTab] = useState(activeTabParam)
+  
+  // Re-evaluation States
+  const [reEvalModal, setReEvalModal] = useState<{ registration: any; slot: any } | null>(null)
+  const [reEvalReason, setReEvalReason] = useState("")
+  const [reEvalSubmitting, setReEvalSubmitting] = useState(false)
+  const [adminReEvalModal, setAdminReEvalModal] = useState<{ request: any; action: "approve" | "reject" } | null>(null)
+  const [adminReEvalNote, setAdminReEvalNote] = useState("")
+  const [adminReEvalSubmitting, setAdminReEvalSubmitting] = useState(false)
+  const [reEvalFilterStatus, setReEvalFilterStatus] = useState<"ALL" | "REQUESTED" | "APPROVED" | "REJECTED" | "COMPLETED">("ALL")
+  const [reEvalSearchQuery, setReEvalSearchQuery] = useState("")
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -272,7 +308,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
-  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
+  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
@@ -852,6 +888,121 @@ export function ObservationClient(props: ObservationClientProps) {
     })
   }
 
+  const isAdminUser = useMemo(() => {
+    const roleCode = currentTeacher?.user?.role || currentTeacher?.position || "";
+    return ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode) || (typeof pathname === "string" && pathname.startsWith("/admin"));
+  }, [currentTeacher, pathname]);
+
+  const allReEvalRequests = useMemo(() => {
+    const list: any[] = [];
+    slots.forEach((slot: any) => {
+      slot.registrations?.forEach((reg: any) => {
+        if (reg.evaluation && reg.evaluation.reEvaluationStatus) {
+          list.push({
+            evaluation: reg.evaluation,
+            registration: reg,
+            slot: slot,
+            evaluator: reg.teacher,
+            hostTeacher: slot.teacher
+          });
+        }
+      });
+    });
+    return list.sort((a, b) => {
+      const tA = a.evaluation.reEvaluationRequestedAt ? new Date(a.evaluation.reEvaluationRequestedAt).getTime() : 0;
+      const tB = b.evaluation.reEvaluationRequestedAt ? new Date(b.evaluation.reEvaluationRequestedAt).getTime() : 0;
+      return tB - tA;
+    });
+  }, [slots]);
+
+  const pendingReEvalCount = useMemo(() => {
+    return allReEvalRequests.filter(r => r.evaluation.reEvaluationStatus === "REQUESTED").length;
+  }, [allReEvalRequests]);
+
+  const filteredReEvalRequests = useMemo(() => {
+    return allReEvalRequests.filter((item) => {
+      if (reEvalFilterStatus !== "ALL" && item.evaluation.reEvaluationStatus !== reEvalFilterStatus) {
+        return false;
+      }
+      if (reEvalSearchQuery.trim()) {
+        const q = reEvalSearchQuery.toLowerCase();
+        const matchEvaluator = (item.evaluator?.teacherName || "").toLowerCase().includes(q) || (item.evaluator?.email || "").toLowerCase().includes(q);
+        const matchHost = (item.hostTeacher?.teacherName || "").toLowerCase().includes(q);
+        const matchTopic = (item.slot?.topic || "").toLowerCase().includes(q);
+        const matchClass = (item.slot?.className || item.slot?.grade || "").toLowerCase().includes(q);
+        const matchSubject = (item.slot?.subjectName || "").toLowerCase().includes(q);
+        return matchEvaluator || matchHost || matchTopic || matchClass || matchSubject;
+      }
+      return true;
+    });
+  }, [allReEvalRequests, reEvalFilterStatus, reEvalSearchQuery]);
+
+  const handleRequestReEval = async () => {
+    if (!reEvalModal) return;
+    if (!reEvalReason.trim()) {
+      showToast("Vui lòng nhập lý do xin đánh giá lại!", "error");
+      return;
+    }
+    setReEvalSubmitting(true);
+    const res = await requestReEvaluation({
+      registrationId: reEvalModal.registration.id,
+      evaluationId: reEvalModal.registration.evaluation?.id,
+      reason: reEvalReason.trim()
+    });
+    setReEvalSubmitting(false);
+    if (res.success) {
+      showToast("Đã gửi yêu cầu xét duyệt đánh giá lại tới Ban Quản trị!", "success");
+      setReEvalModal(null);
+      setReEvalReason("");
+      if (evalModal) setEvalModal(null);
+      refreshSlots();
+    } else {
+      showToast(res.error || "Gửi yêu cầu thất bại", "error");
+    }
+  };
+
+  const handleApproveReEval = async () => {
+    if (!adminReEvalModal) return;
+    setAdminReEvalSubmitting(true);
+    const res = await approveReEvaluation({
+      evaluationId: adminReEvalModal.request.evaluation.id,
+      registrationId: adminReEvalModal.request.registration.id,
+      adminNote: adminReEvalNote.trim()
+    });
+    setAdminReEvalSubmitting(false);
+    if (res.success) {
+      showToast("Đã phê duyệt mở lại phiếu và gửi Email thông báo tới GVBM thành công!", "success");
+      setAdminReEvalModal(null);
+      setAdminReEvalNote("");
+      refreshSlots();
+    } else {
+      showToast(res.error || "Phê duyệt thất bại", "error");
+    }
+  };
+
+  const handleRejectReEval = async () => {
+    if (!adminReEvalModal) return;
+    if (!adminReEvalNote.trim()) {
+      showToast("Vui lòng nhập lý do từ chối để phản hồi cho GVBM!", "error");
+      return;
+    }
+    setAdminReEvalSubmitting(true);
+    const res = await rejectReEvaluation({
+      evaluationId: adminReEvalModal.request.evaluation.id,
+      registrationId: adminReEvalModal.request.registration.id,
+      adminNote: adminReEvalNote.trim()
+    });
+    setAdminReEvalSubmitting(false);
+    if (res.success) {
+      showToast("Đã từ chối yêu cầu và gửi Email phản hồi tới GVBM!", "info");
+      setAdminReEvalModal(null);
+      setAdminReEvalNote("");
+      refreshSlots();
+    } else {
+      showToast(res.error || "Từ chối thất bại", "error");
+    }
+  };
+
   const openEvalModal = (registration: any, slot: any) => {
     const isMN = slot.level === "Mầm non";
     if (registration.evaluation) {
@@ -1182,6 +1333,96 @@ export function ObservationClient(props: ObservationClientProps) {
     return list.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
   }, [slots, currentTeacher?.id]);
 
+  const isPreschoolEvaluations = useMemo(() => {
+    if (isMamNonTeacher) return true;
+    if (receivedEvaluations.length === 0) return false;
+    return receivedEvaluations.every(e => e.slot.level === "Mầm non");
+  }, [isMamNonTeacher, receivedEvaluations]);
+
+    const teacherCompetencyResult = useMemo(() => {
+    const competencyData: any[] = [];
+    const weaknessData: any[] = [];
+    const hasEvals = receivedEvaluations.length > 0;
+
+    if (!isPreschoolEvaluations) {
+      for (let i = 1; i <= 11; i++) {
+        const scoreKey = "score" + i;
+        const maxVal = maxScoresK12[i - 1];
+        const sum = hasEvals ? receivedEvaluations.reduce((acc, curr) => acc + (curr.evaluation[scoreKey] || 0), 0) : 0;
+        const avg = hasEvals ? (sum / receivedEvaluations.length) : 0;
+        const pct = Math.round((avg / maxVal) * 100);
+
+        const lowCount = hasEvals ? receivedEvaluations.filter(curr => {
+          const val = curr.evaluation[scoreKey] !== null ? Number(curr.evaluation[scoreKey]) : 0;
+          return val < maxVal * 0.70;
+        }).length : 0;
+        const lowPct = hasEvals ? Math.round((lowCount / receivedEvaluations.length) * 100) : 0;
+
+        competencyData.push({
+          id: "Y" + i,
+          label: k12Labels[i - 1],
+          avg: avg,
+          max: maxVal,
+          pct: pct,
+          standard: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4
+        });
+
+        if (hasEvals) {
+          weaknessData.push({
+            id: "Y" + i,
+            label: k12Labels[i - 1],
+            lowCount: lowCount,
+            lowPct: lowPct,
+            avgPct: pct
+          });
+        }
+      }
+    } else {
+      for (let i = 1; i <= 5; i++) {
+        const critKey = "criterion" + i;
+        const sum = hasEvals ? receivedEvaluations.reduce((acc, curr) => acc + (curr.evaluation[critKey] || 0), 0) : 0;
+        const avg = hasEvals ? (sum / receivedEvaluations.length) : 0;
+        const pct = Math.round((avg / 4) * 100);
+
+        const lowCount = hasEvals ? receivedEvaluations.filter(curr => (curr.evaluation[critKey] || 0) <= 2).length : 0;
+        const lowPct = hasEvals ? Math.round((lowCount / receivedEvaluations.length) * 100) : 0;
+
+        competencyData.push({
+          id: "T" + i,
+          label: preschoolLabels[i - 1],
+          avg: avg,
+          max: 4,
+          pct: pct,
+          standard: 1
+        });
+
+        if (hasEvals) {
+          weaknessData.push({
+            id: "T" + i,
+            label: preschoolLabels[i - 1],
+            lowCount: lowCount,
+            lowPct: lowPct,
+            avgPct: pct
+          });
+        }
+      }
+    }
+
+    const sortedWeaknesses = [...weaknessData].sort((a, b) => b.lowPct - a.lowPct);
+    const sortedStrengths = [...weaknessData].sort((a, b) => b.avgPct - a.avgPct);
+    return { competencyData, sortedWeaknesses, sortedStrengths, hasEvals };
+  }, [receivedEvaluations, isPreschoolEvaluations]);
+
+  const teacherAvgScore = useMemo(() => {
+    if (receivedEvaluations.length === 0) return null;
+    if (isPreschoolEvaluations) return null;
+    const scores = receivedEvaluations
+      .map(e => e.evaluation?.totalScore)
+      .filter(s => s !== null && s !== undefined && typeof s === "number");
+    if (scores.length === 0) return null;
+    return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2);
+  }, [receivedEvaluations, isPreschoolEvaluations]);
+
   const tabCounts = useMemo(() => {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -1510,7 +1751,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
       {/* MAIN TOP NAVIGATION TABS */}
       <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 p-2 shadow-sm sticky top-2 z-20">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className={`grid grid-cols-2 ${isAdminUser ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-4"} gap-2`}>
           {/* Tab 1: Emerald / Teal */}
           <button
             type="button"
@@ -1587,6 +1828,27 @@ export function ObservationClient(props: ObservationClientProps) {
               {receivedEvaluations.length}
             </span>
           </button>
+
+          {/* Tab 5: Rose / Red - Admin / BGH Only */}
+          {isAdminUser && (
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("re_evaluations")}
+              className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeMainTab === "re_evaluations"
+                  ? "bg-gradient-to-r from-rose-600 via-pink-600 to-red-600 text-white shadow-lg shadow-rose-700/30 scale-[1.02] border border-rose-400/40"
+                  : "text-rose-950 bg-rose-50/70 hover:bg-rose-100/90 border border-rose-200/80 hover:scale-[1.01]"
+              }`}
+            >
+              <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
+              <span className="truncate">5. XÉT DUYỆT ĐÁNH GIÁ LẠI</span>
+              {pendingReEvalCount > 0 && (
+                <span className="px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 bg-red-500 text-white border border-white animate-pulse">
+                  {pendingReEvalCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -3282,6 +3544,21 @@ export function ObservationClient(props: ObservationClientProps) {
                                 >
                                   Xem phiếu
                                 </button>
+                                {myReg.evaluation.reEvaluationStatus === "REQUESTED" && (
+                                  <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
+                                    ⏳ Chờ duyệt mở lại
+                                  </span>
+                                )}
+                                {myReg.evaluation.reEvaluationStatus === "APPROVED" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => openEvalModal(myReg, slot)}
+                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs animate-pulse flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    <span>Đánh giá lại</span>
+                                  </button>
+                                )}
                               </div>
                             ) : myReg?.isApproved ? (
                               <button
@@ -3333,6 +3610,193 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* TAB 4: 4. KẾT QUẢ ĐÁNH GIÁ TIẾT DẠY NHẬN ĐƯỢC */}
       {activeMainTab === "evaluations" && (
         <div className="w-full space-y-6 animate-in fade-in duration-300">
+          {/* Card: Năng lực cá nhân & Biểu đồ Ra đa */}
+          {(() => {
+            const { competencyData, sortedWeaknesses, sortedStrengths, hasEvals } = teacherCompetencyResult;
+            const size = 260;
+            const center = size / 2;
+            const radius = 90;
+            const totalPoints = isPreschoolEvaluations ? 5 : 11;
+            const angleStep = (2 * Math.PI) / totalPoints;
+
+            const gridLayers = [25, 50, 75, 100];
+            const gridPaths = gridLayers.map(level => {
+              const points = [];
+              for (let i = 0; i < totalPoints; i++) {
+                const angle = i * angleStep;
+                const r = radius * (level / 100);
+                points.push((center + r * Math.sin(angle)) + "," + (center - r * Math.cos(angle)));
+              }
+              return points.join(" ");
+            });
+
+            const axisLines = [];
+            for (let i = 0; i < totalPoints; i++) {
+              const angle = i * angleStep;
+              axisLines.push({
+                x1: center,
+                y1: center,
+                x2: center + radius * Math.sin(angle),
+                y2: center - radius * Math.cos(angle),
+                label: isPreschoolEvaluations ? "T" + (i + 1) : "Y" + (i + 1),
+                lx: center + (radius + 18) * Math.sin(angle),
+                ly: center - (radius + 18) * Math.cos(angle)
+              });
+            }
+
+            const valuePoints = competencyData.map((d, i) => {
+              const angle = i * angleStep;
+              const r = radius * (d.pct / 100);
+              return (center + r * Math.sin(angle)) + "," + (center - r * Math.cos(angle));
+            });
+            const valuePath = valuePoints.join(" ");
+
+            return (
+              <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-indigo-600">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-xs">
+                      <BarChart3 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
+                        Năng lực cá nhân & Biểu đồ Ra-đa
+                      </h3>
+                      <p className="text-xs text-slate-400 font-medium">
+                        Phân tích năng lực chuyên môn dựa trên các phiếu đánh giá dự giờ nhận được
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quick Summary Pill / KPIs */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs font-bold text-slate-700 shadow-2xs">
+                      <ClipboardList className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Tổng phiếu: <strong className="text-slate-900">{receivedEvaluations.length}</strong></span>
+                    </div>
+                    {teacherAvgScore ? (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200/70 text-xs font-bold text-teal-800 shadow-2xs">
+                        <Award className="w-3.5 h-3.5 text-[#008B82]" />
+                        <span>Điểm TB: <strong className="text-teal-950 font-black">{teacherAvgScore}/20.0đ</strong></span>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 font-bold">
+                        Chưa có điểm đánh giá
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    {/* Radar Chart SVG */}
+                    <div className="md:col-span-5 flex flex-col items-center justify-center p-3 bg-slate-50/60 rounded-2xl border border-slate-100">
+                      <span className="text-[11px] font-black text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+                        Biểu đồ Năng lực ({isPreschoolEvaluations ? "5 tiêu chí Mầm non" : "11 yêu cầu Chuẩn nghề nghiệp"})
+                      </span>
+                      <svg width="250" height="250" viewBox="0 0 260 260" className="overflow-visible">
+                        {gridLayers.map((level, idx) => (
+                          <polygon key={level} points={gridPaths[idx]} fill="none" stroke="#e2e8f0" strokeWidth="1" strokeDasharray={level === 100 ? "none" : "3,3"} />
+                        ))}
+                        {gridLayers.map(level => (
+                          <text key={level} x={center} y={center - radius * (level / 100) + 4} textAnchor="middle" className="text-[8px] fill-slate-400 font-bold">
+                            {level}%
+                          </text>
+                        ))}
+                        {axisLines.map((axis, idx) => (
+                          <g key={idx}>
+                            <line x1={axis.x1} y1={axis.y1} x2={axis.x2} y2={axis.y2} stroke="#e2e8f0" strokeWidth="1" />
+                            <text x={axis.lx} y={axis.ly + 3} textAnchor="middle" className="text-[10px] font-black fill-[#003B3A]">
+                              {axis.label}
+                            </text>
+                          </g>
+                        ))}
+                        {hasEvals && valuePoints.length > 0 && (
+                          <polygon points={valuePath} fill="rgba(72, 191, 227, 0.35)" stroke="#003B3A" strokeWidth="2.5" />
+                        )}
+                      </svg>
+                      <div className="mt-2 text-[10px] text-slate-500 text-center font-medium">
+                        {hasEvals 
+                          ? "Biểu đồ diện tích thể hiện tỷ lệ đạt chuẩn (%) theo từng yêu cầu chuyên môn" 
+                          : "Khung biểu đồ ra-đa chuẩn. Khi có phiếu đánh giá, diện tích điểm số sẽ hiển thị trực quan."}
+                      </div>
+                    </div>
+
+                    {/* Criteria Detail Bars */}
+                    <div className="md:col-span-7 space-y-2.5 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+                      <h4 className="text-xs font-black text-slate-600 uppercase tracking-wider pb-1.5 border-b border-slate-100 flex items-center justify-between">
+                        <span>Chi tiết các tiêu chí năng lực</span>
+                        <span className="text-[10px] font-semibold text-slate-400">
+                          {hasEvals ? "Điểm TB / Chuẩn (%)" : "Thang chuẩn"}
+                        </span>
+                      </h4>
+                      {competencyData.map(item => (
+                        <div key={item.id} className="space-y-1 bg-slate-50/70 hover:bg-slate-50 p-2 rounded-xl transition-colors border border-slate-100/60">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-800 text-[11px] truncate max-w-[240px] sm:max-w-[320px]">
+                              {item.id}. {item.label.split(":")[1] || item.label}
+                            </span>
+                            <span className="font-black text-slate-700 text-[10px] shrink-0 ml-2">
+                              {hasEvals ? (
+                                <>
+                                  {item.avg.toFixed(2)}/{item.max}đ <span className="text-indigo-600">({item.pct}%)</span>
+                                </>
+                              ) : (
+                                <span className="text-slate-400">Tối đa {item.max}đ</span>
+                              )}
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-teal-500 via-[#008B82] to-[#48BFE3] transition-all duration-500"
+                              style={{ width: hasEvals ? `${item.pct}%` : "0%" }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Strength & Improvement Highlights */}
+                  {hasEvals && sortedStrengths.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+                      <div className="p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-2xl flex items-start gap-2.5">
+                        <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg shrink-0">
+                          <Award className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h5 className="text-xs font-black text-emerald-900 uppercase">Thế mạnh nổi bật</h5>
+                          <p className="text-xs font-bold text-emerald-800 mt-0.5 truncate">
+                            {sortedStrengths[0]?.id}: {sortedStrengths[0]?.label.split(":")[1] || sortedStrengths[0]?.label}
+                          </p>
+                          <span className="text-[10px] font-black text-emerald-700">
+                            Đạt {sortedStrengths[0]?.avgPct}% mức chuẩn
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-amber-50/70 border border-amber-200/70 rounded-2xl flex items-start gap-2.5">
+                        <div className="p-1.5 bg-amber-100 text-amber-800 rounded-lg shrink-0">
+                          <TrendingUp className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <h5 className="text-xs font-black text-amber-900 uppercase">Cần phát huy / Cải thiện</h5>
+                          <p className="text-xs font-bold text-amber-800 mt-0.5 truncate">
+                            {sortedWeaknesses[0]?.id}: {sortedWeaknesses[0]?.label.split(":")[1] || sortedWeaknesses[0]?.label}
+                          </p>
+                          <span className="text-[10px] font-black text-amber-700">
+                            Mức đạt {sortedWeaknesses[0]?.avgPct}% ({sortedWeaknesses[0]?.lowPct}% đánh giá dưới 70%)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ROW 4: Kết quả đánh giá gần đây */}
       <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#008B82]">
         <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
@@ -3487,7 +3951,8 @@ export function ObservationClient(props: ObservationClientProps) {
 
       {/* Evaluation Modal (Phiếu đánh giá chuyên môn chuẩn) */}
       {evalModal && (() => {
-        const isReadOnly = !!evalModal.registration.evaluation;
+        const isApprovedForReEval = evalModal.registration.evaluation?.reEvaluationStatus === "APPROVED";
+        const isReadOnly = !!evalModal.registration.evaluation && !isApprovedForReEval;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
@@ -3508,6 +3973,52 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar text-xs font-semibold">
+                {/* Re-evaluation Status Alert Banners */}
+                {isApprovedForReEval && (
+                  <div className="p-4 bg-emerald-50/90 rounded-2xl border border-emerald-300 flex items-start gap-3 shadow-xs">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="text-xs font-black text-emerald-950 uppercase tracking-wide">Phiếu đánh giá đã được Admin phê duyệt mở lại</h5>
+                      <p className="text-xs text-emerald-800 font-medium mt-0.5">
+                        Thầy/Cô có thể chỉnh sửa lại điểm các tiêu chí, nhận xét và xếp loại. Sau khi chỉnh sửa, vui lòng bấm nút "Cập nhật phiếu đánh giá" bên dưới.
+                      </p>
+                      {evalModal.registration.evaluation?.reEvaluationNote && (
+                        <p className="text-[11px] text-emerald-900 font-bold mt-1.5 bg-white/80 p-2 rounded-xl border border-emerald-200">
+                          💬 Ghi chú từ Admin: {evalModal.registration.evaluation.reEvaluationNote}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {evalModal.registration.evaluation?.reEvaluationStatus === "REQUESTED" && (
+                  <div className="p-4 bg-amber-50/90 rounded-2xl border border-amber-300 flex items-start gap-3 shadow-xs">
+                    <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="text-xs font-black text-amber-950 uppercase tracking-wide">Đang chờ Ban Quản trị / Admin xét duyệt mở lại phiếu</h5>
+                      <p className="text-xs text-amber-800 font-medium mt-0.5">
+                        Lý do xin mở lại: "{evalModal.registration.evaluation.reEvaluationReason}"
+                      </p>
+                      <p className="text-[10px] text-amber-600 font-bold mt-1">
+                        Thời gian gửi: {evalModal.registration.evaluation.reEvaluationRequestedAt ? new Date(evalModal.registration.evaluation.reEvaluationRequestedAt).toLocaleString("vi-VN") : ""}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {evalModal.registration.evaluation?.reEvaluationStatus === "REJECTED" && (
+                  <div className="p-4 bg-rose-50/90 rounded-2xl border border-rose-300 flex items-start gap-3 shadow-xs">
+                    <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="text-xs font-black text-rose-950 uppercase tracking-wide">Yêu cầu mở lại phiếu chưa được phê duyệt</h5>
+                      {evalModal.registration.evaluation?.reEvaluationNote && (
+                        <p className="text-xs text-rose-800 font-medium mt-0.5">
+                          Lý do từ chối: {evalModal.registration.evaluation.reEvaluationNote}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
                 {/* Score Summary Box */}
                 {evalModal.slot.level !== "Mầm non" ? (
                   <div className="space-y-6">
@@ -3701,29 +4212,507 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-end gap-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setEvalModal(null)}
-                  className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all text-xs cursor-pointer"
-                >
-                  Đóng
-                </button>
-                {!isReadOnly && (
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-between gap-3 shrink-0">
+                <div>
+                  {isReadOnly && evalModal.registration.teacherId === currentTeacher?.id && (
+                    <>
+                      {evalModal.registration.evaluation?.reEvaluationStatus === "REQUESTED" ? (
+                        <span className="px-3 py-1.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-black inline-flex items-center gap-1.5">
+                          ⏳ Đang chờ BGH/Admin xét duyệt
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReEvalModal(evalModal);
+                            setReEvalReason("");
+                          }}
+                          className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black rounded-xl text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>Yêu cầu đánh giá lại</span>
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={handleSubmitEval}
-                    disabled={evalSubmitting}
-                    className="px-6 py-2 bg-[#008B82] hover:bg-[#007068] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer"
+                    onClick={() => setEvalModal(null)}
+                    className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all text-xs cursor-pointer"
                   >
-                    {evalSubmitting ? "Đang nộp..." : "Nộp phiếu đánh giá"}
+                    Đóng
                   </button>
-                )}
+                  {!isReadOnly && (
+                    <button
+                      type="button"
+                      onClick={handleSubmitEval}
+                      disabled={evalSubmitting}
+                      className="px-6 py-2 bg-[#008B82] hover:bg-[#007068] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer flex items-center gap-1.5"
+                    >
+                      {evalSubmitting ? "Đang lưu..." : isApprovedForReEval ? "💾 Lưu & Cập nhật phiếu đánh giá" : "Nộp phiếu đánh giá"}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         );
       })()}
+
+      {/* ======================================================== */}
+      {/* TAB 5: 5. XÉT DUYỆT ĐÁNH GIÁ LẠI (ADMIN / BGH / QUẢN LÝ) */}
+      {/* ======================================================== */}
+      {activeMainTab === "re_evaluations" && isAdminUser && (
+        <div className="w-full space-y-6 animate-in fade-in duration-300">
+          {/* Header & Filter Card */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-rose-500">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
+                  <RotateCcw className="w-5 h-5 text-rose-600" />
+                  DANH SÁCH YÊU CẦU XÉT DUYỆT MỞ LẠI PHIẾU ĐÁNH GIÁ
+                </h3>
+                <p className="text-xs text-slate-500 mt-1 font-medium">
+                  Tiếp nhận thông tin yêu cầu từ GVBM, phê duyệt mở lại phiếu và hệ thống tự động gửi Email thông báo tới GVBM.
+                </p>
+              </div>
+
+              {/* Status Filter Badges */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[
+                  { id: "ALL", label: "Tất cả", count: allReEvalRequests.length, color: "bg-slate-100 text-slate-700 border-slate-200" },
+                  { id: "REQUESTED", label: "Chờ xét duyệt", count: allReEvalRequests.filter(r => r.evaluation.reEvaluationStatus === "REQUESTED").length, color: "bg-amber-50 text-amber-800 border-amber-300" },
+                  { id: "APPROVED", label: "Đã phê duyệt", count: allReEvalRequests.filter(r => r.evaluation.reEvaluationStatus === "APPROVED").length, color: "bg-emerald-50 text-emerald-800 border-emerald-300" },
+                  { id: "REJECTED", label: "Đã từ chối", count: allReEvalRequests.filter(r => r.evaluation.reEvaluationStatus === "REJECTED").length, color: "bg-rose-50 text-rose-800 border-rose-300" },
+                  { id: "COMPLETED", label: "Đã nộp lại", count: allReEvalRequests.filter(r => r.evaluation.reEvaluationStatus === "COMPLETED").length, color: "bg-teal-50 text-teal-800 border-teal-300" }
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => setReEvalFilterStatus(item.id as any)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 border cursor-pointer ${
+                      reEvalFilterStatus === item.id
+                        ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                        : `${item.color} hover:bg-slate-200/70`
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-bold ${
+                      reEvalFilterStatus === item.id ? "bg-white/20 text-white" : "bg-white text-slate-800"
+                    }`}>
+                      {item.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search Input Bar */}
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                placeholder="🔍 Tìm kiếm theo tên GVBM, GV Dạy, Môn học, Lớp, Tiết dạy..."
+                value={reEvalSearchQuery}
+                onChange={(e) => setReEvalSearchQuery(e.target.value)}
+                className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-rose-500 focus:bg-white outline-none"
+              />
+              {reEvalSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setReEvalSearchQuery("")}
+                  className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                >
+                  Xóa tìm kiếm
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Stat Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 bg-white rounded-3xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tổng số yêu cầu</p>
+                <p className="text-2xl font-black text-slate-900 mt-1">{allReEvalRequests.length}</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-600">
+                <Layers className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border border-amber-200 shadow-xs flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-black text-amber-800 uppercase tracking-wider">Chờ xét duyệt</p>
+                <p className="text-2xl font-black text-amber-950 mt-1">{pendingReEvalCount}</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-amber-200/80 flex items-center justify-center text-amber-800">
+                <Clock className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl border border-emerald-200 shadow-xs flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-black text-emerald-800 uppercase tracking-wider">Đã phê duyệt</p>
+                <p className="text-2xl font-black text-emerald-950 mt-1">
+                  {allReEvalRequests.filter(r => r.evaluation.reEvaluationStatus === "APPROVED").length}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-200/80 flex items-center justify-center text-emerald-800">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-br from-rose-50 to-red-50 rounded-3xl border border-rose-200 shadow-xs flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-black text-rose-800 uppercase tracking-wider">Đã từ chối</p>
+                <p className="text-2xl font-black text-rose-950 mt-1">
+                  {allReEvalRequests.filter(r => r.evaluation.reEvaluationStatus === "REJECTED").length}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-rose-200/80 flex items-center justify-center text-rose-800">
+                <XCircle className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          {/* Table List of Requests */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+            {filteredReEvalRequests.length === 0 ? (
+              <div className="p-12 text-center text-slate-400">
+                <RotateCcw className="w-12 h-12 mx-auto text-slate-300 mb-3 opacity-60" />
+                <p className="font-bold text-sm text-slate-600">Không có yêu cầu đánh giá lại nào</p>
+                <p className="text-xs text-slate-400 mt-1">Hiện không có yêu cầu nào phù hợp với bộ lọc hiện tại</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-100/80 border-b border-slate-200 text-slate-700 font-black uppercase text-[11px] tracking-wider">
+                      <th className="p-4">STT</th>
+                      <th className="p-4">GVBM Đánh giá</th>
+                      <th className="p-4">Tiết dạy & GV Dạy</th>
+                      <th className="p-4">Thời gian dạy</th>
+                      <th className="p-4">Điểm / Xếp loại cũ</th>
+                      <th className="p-4">Lý do xin mở lại</th>
+                      <th className="p-4">Trạng thái</th>
+                      <th className="p-4 text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 font-medium">
+                    {filteredReEvalRequests.map((req, idx) => {
+                      const status = req.evaluation.reEvaluationStatus;
+                      const statusMap: Record<string, { label: string; bg: string }> = {
+                        REQUESTED: { label: "Chờ xét duyệt", bg: "bg-amber-100 text-amber-900 border-amber-300" },
+                        APPROVED: { label: "Đã phê duyệt", bg: "bg-emerald-100 text-emerald-900 border-emerald-300" },
+                        REJECTED: { label: "Đã từ chối", bg: "bg-rose-100 text-rose-900 border-rose-300" },
+                        COMPLETED: { label: "Đã nộp lại", bg: "bg-teal-100 text-teal-900 border-teal-300" }
+                      };
+                      const statusBadge = (status && statusMap[status]) ? statusMap[status] : { label: status || "Chưa rõ", bg: "bg-slate-100 text-slate-700 border-slate-200" };
+
+                      return (
+                        <tr key={req.evaluation.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="p-4 text-slate-400 font-bold">{idx + 1}</td>
+
+                          {/* GVBM Đánh giá */}
+                          <td className="p-4">
+                            <div className="font-bold text-slate-900">{req.evaluator?.teacherName || "Chưa rõ"}</div>
+                            <div className="text-[11px] text-slate-500 font-normal">{req.evaluator?.email || ""}</div>
+                            {req.evaluator?.departmentRel?.name && (
+                              <span className="inline-block mt-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-semibold">
+                                {req.evaluator.departmentRel.name}
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Tiết dạy & GV Dạy */}
+                          <td className="p-4">
+                            <div className="font-extrabold text-slate-900 text-xs">{req.slot?.topic}</div>
+                            <div className="text-[11px] text-teal-800 font-bold mt-0.5">
+                              GV Dạy: {req.hostTeacher?.teacherName}
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                              Lớp: {req.slot?.className || req.slot?.grade} • Môn: {req.slot?.subjectName}
+                            </div>
+                          </td>
+
+                          {/* Thời gian dạy */}
+                          <td className="p-4">
+                            <div className="font-bold text-slate-800">
+                              {new Date(req.slot.date).toLocaleDateString("vi-VN")}
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-semibold">
+                              {req.slot.startTime} {req.slot.endTime ? "- " + req.slot.endTime : ""}
+                            </div>
+                          </td>
+
+                          {/* Điểm / Xếp loại cũ */}
+                          <td className="p-4">
+                            <div className="font-black text-slate-900">
+                              {req.evaluation.totalScore ? req.evaluation.totalScore + " điểm" : "—"}
+                            </div>
+                            <span className="inline-block mt-0.5 px-2 py-0.5 bg-slate-200/80 text-slate-800 rounded-md text-[10px] font-black">
+                              {req.evaluation.overallRating || "Chưa xếp loại"}
+                            </span>
+                          </td>
+
+                          {/* Lý do xin mở lại */}
+                          <td className="p-4 max-w-xs">
+                            <p className="text-xs text-slate-800 font-semibold line-clamp-2" title={req.evaluation.reEvaluationReason}>
+                              "{req.evaluation.reEvaluationReason || "—"}"
+                            </p>
+                            <span className="text-[10px] text-slate-400 font-bold block mt-1">
+                              Gửi: {req.evaluation.reEvaluationRequestedAt ? new Date(req.evaluation.reEvaluationRequestedAt).toLocaleString("vi-VN") : ""}
+                            </span>
+                            {req.evaluation.reEvaluationNote && (
+                              <p className="text-[10px] text-emerald-800 font-bold mt-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 line-clamp-1" title={req.evaluation.reEvaluationNote}>
+                                Admin: {req.evaluation.reEvaluationNote}
+                              </p>
+                            )}
+                          </td>
+
+                          {/* Trạng thái */}
+                          <td className="p-4">
+                            <span className={`px-2.5 py-1 rounded-xl text-[11px] font-black border inline-block ${statusBadge.bg}`}>
+                              {statusBadge.label}
+                            </span>
+                          </td>
+
+                          {/* Thao tác */}
+                          <td className="p-4 text-center">
+                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                              {status === "REQUESTED" ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAdminReEvalModal({ request: req, action: "approve" });
+                                      setAdminReEvalNote("");
+                                    }}
+                                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Đồng ý</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAdminReEvalModal({ request: req, action: "reject" });
+                                      setAdminReEvalNote("");
+                                    }}
+                                    className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5" />
+                                    <span>Từ chối</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setAdminReEvalModal({ request: req, action: "approve" });
+                                    setAdminReEvalNote(req.evaluation.reEvaluationNote || "");
+                                  }}
+                                  className="px-3 py-1 text-slate-600 hover:bg-slate-100 border border-slate-200 rounded-xl text-[11px] font-bold transition-all cursor-pointer"
+                                >
+                                  Cập nhật duyệt
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => openEvalModal(req.registration, req.slot)}
+                                className="px-2.5 py-1 text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl text-[11px] font-bold transition-all cursor-pointer"
+                              >
+                                Xem phiếu
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 1: GVBM YÊU CẦU ĐÁNH GIÁ LẠI */}
+      {/* ======================================================== */}
+      {reEvalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 bg-gradient-to-r from-amber-600 to-orange-600 text-white flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-base flex items-center gap-2">
+                  <RotateCcw className="w-5 h-5" /> GỬI YÊU CẦU ĐÁNH GIÁ LẠI
+                </h3>
+                <p className="text-white/80 text-xs mt-0.5 font-medium">
+                  Tiết dạy: {reEvalModal.slot?.topic} • GV Dạy: {reEvalModal.slot?.teacher?.teacherName}
+                </p>
+              </div>
+              <button
+                onClick={() => setReEvalModal(null)}
+                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs font-semibold">
+              <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-amber-900 text-xs font-medium leading-relaxed">
+                ℹ️ Sau khi Thầy/Cô gửi yêu cầu, Ban Quản trị / Admin sẽ tiến hành xét duyệt. Khi được phê duyệt mở lại, hệ thống sẽ tự động gửi Email thông báo và mở khóa để Thầy/Cô cập nhật lại phiếu đánh giá.
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wide">
+                  Lý do xin đánh giá lại <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Ví dụ: Cần điều chỉnh lại điểm tiêu chí phương pháp, bổ sung góp ý chi tiết cho giáo viên dạy..."
+                  value={reEvalReason}
+                  onChange={(e) => setReEvalReason(e.target.value)}
+                  className="w-full p-3.5 rounded-2xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setReEvalModal(null)}
+                className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleRequestReEval}
+                disabled={reEvalSubmitting}
+                className="px-6 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 disabled:bg-slate-200 text-white font-extrabold rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {reEvalSubmitting ? "Đang gửi..." : "Gửi yêu cầu xét duyệt"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 2: ADMIN PHÊ DUYỆT / TỪ CHỐI ĐÁNH GIÁ LẠI */}
+      {/* ======================================================== */}
+      {adminReEvalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className={`px-6 py-5 text-white flex items-center justify-between ${
+              adminReEvalModal.action === "approve"
+                ? "bg-gradient-to-r from-[#003B3A] to-[#008B82]"
+                : "bg-gradient-to-r from-rose-700 to-red-600"
+            }`}>
+              <div>
+                <h3 className="font-black text-base flex items-center gap-2">
+                  {adminReEvalModal.action === "approve" ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5" /> PHÊ DUYỆT MỞ LẠI PHIẾU ĐÁNH GIÁ
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-5 h-5" /> TỪ CHỐI YÊU CẦU ĐÁNH GIÁ LẠI
+                    </>
+                  )}
+                </h3>
+                <p className="text-white/80 text-xs mt-0.5 font-medium">
+                  GVBM: {adminReEvalModal.request.evaluator?.teacherName} • Tiết dạy: {adminReEvalModal.request.slot?.topic}
+                </p>
+              </div>
+              <button
+                onClick={() => setAdminReEvalModal(null)}
+                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs font-semibold">
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-slate-700 space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-bold">Giáo viên dạy:</span>
+                  <span className="font-bold text-slate-900">{adminReEvalModal.request.hostTeacher?.teacherName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-bold">Lớp & Ngày dạy:</span>
+                  <span className="font-bold text-slate-900">
+                    {adminReEvalModal.request.slot?.className || adminReEvalModal.request.slot?.grade} • {new Date(adminReEvalModal.request.slot?.date).toLocaleDateString("vi-VN")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400 font-bold">Lý do GVBM xin mở lại:</span>
+                  <span className="font-bold text-teal-800 text-right max-w-[260px]">{adminReEvalModal.request.evaluation?.reEvaluationReason}</span>
+                </div>
+              </div>
+
+              {adminReEvalModal.action === "approve" ? (
+                <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-emerald-900 text-xs leading-relaxed font-medium">
+                  📧 Khi bấm xác nhận, hệ thống sẽ <strong>mở khóa phiếu đánh giá</strong> cho GVBM và <strong>tự động gửi Email thông báo</strong> tới hòm thư của GVBM ({adminReEvalModal.request.evaluator?.email || "Email GVBM"}).
+                </div>
+              ) : (
+                <div className="p-3.5 bg-rose-50 rounded-2xl border border-rose-200 text-rose-900 text-xs leading-relaxed font-medium">
+                  ⚠️ Thầy/Cô vui lòng nhập lý do từ chối để hệ thống gửi Email phản hồi đến GVBM.
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-black text-slate-800 uppercase tracking-wide">
+                  {adminReEvalModal.action === "approve" ? "Ghi chú / Lưu ý từ Admin (Tùy chọn)" : "Lý do từ chối *"}
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder={
+                    adminReEvalModal.action === "approve"
+                      ? "Ví dụ: Đã đồng ý mở lại phiếu. Thầy/Cô vui lòng cập nhật lại trước ngày..."
+                      : "Ví dụ: Phiếu đánh giá đã được tổng hợp báo cáo kỳ, không thể chỉnh sửa..."
+                  }
+                  value={adminReEvalNote}
+                  onChange={(e) => setAdminReEvalNote(e.target.value)}
+                  className="w-full p-3.5 rounded-2xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-teal-500 outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setAdminReEvalModal(null)}
+                className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={adminReEvalModal.action === "approve" ? handleApproveReEval : handleRejectReEval}
+                disabled={adminReEvalSubmitting}
+                className={`px-6 py-2 text-white font-extrabold rounded-xl text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                  adminReEvalModal.action === "approve"
+                    ? "bg-[#008B82] hover:bg-[#007068] disabled:bg-slate-200"
+                    : "bg-rose-600 hover:bg-rose-700 disabled:bg-slate-200"
+                }`}
+              >
+                {adminReEvalSubmitting
+                  ? "Đang xử lý..."
+                  : adminReEvalModal.action === "approve"
+                  ? "✅ Đồng ý & Gửi Email"
+                  : "❌ Xác nhận từ chối"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

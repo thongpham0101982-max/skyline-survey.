@@ -648,7 +648,7 @@ export async function createObservationSlot(data: {
             <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa mở một tiết dạy dự giờ mới cho Tổ chuyên môn. Kính mời Thầy/Cô đăng ký tham dự.</p>
             
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #48BFE3; font-weight: bold;">${newSlot.topic}</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.subjectName} (${newSlot.grade} - ${newSlot.className || "Lớp học"})</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.campusName || "Trường"} - ${newSlot.room || "Phòng học"}</td></tr>
@@ -1166,7 +1166,9 @@ export async function submitEvaluation(data: {
       strengths: data.strengths,
       improvements: data.improvements,
       generalComment: data.generalComment,
-      overallRating: data.overallRating
+      overallRating: data.overallRating,
+      submittedAt: new Date(),
+      reEvaluationStatus: registration.evaluation?.reEvaluationStatus === "APPROVED" ? "COMPLETED" : registration.evaluation?.reEvaluationStatus
     }
     if (registration.evaluation) {
       await prisma.observationEvaluation.update({ where: { registrationId: data.registrationId }, data: evalData })
@@ -1401,6 +1403,24 @@ async function ensureDbColumns() {
   } catch (e) {}
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "rejectionReason" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "reEvaluationStatus" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "reEvaluationReason" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "reEvaluationRequestedAt" DATETIME;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "reEvaluationApprovedAt" DATETIME;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "reEvaluationApprovedBy" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "reEvaluationNote" TEXT;`);
   } catch (e) {}
 }
 
@@ -1666,12 +1686,12 @@ export async function requestObservationSlot(data: {
 
     // Notify all subject teachers (GVBM) in the same TCM (Tổ Chuyên Môn)
     try {
-      const hostDeptId = currentTeacher.departmentId || data.targetDeptId;
+      const hostDeptId = hostTeacher.departmentId || data.targetDeptId;
       if (hostDeptId) {
         const tcmTeachers = await prisma.teacher.findMany({
           where: {
             departmentId: hostDeptId,
-            id: { not: currentTeacher.id },
+            id: { not: hostTeacher.id },
             status: "ACTIVE"
           },
           include: { user: true }
@@ -1685,7 +1705,7 @@ export async function requestObservationSlot(data: {
               data: {
                 userId: t.user.id,
                 title: "Thông báo đăng ký tiết dự giờ mới",
-                message: `Thầy/Cô ${currentTeacher.teacherName} vừa khởi tạo tiết dạy đăng ký dự giờ (${data.subjectName || "Môn học"} - ${data.topic || "Tiết dạy mở"}). Vui lòng đăng nhập hệ thống để đăng ký dự giờ.`,
+                message: `Thầy/Cô ${hostTeacher.teacherName} vừa có tiết dạy đăng ký dự giờ (${data.subjectName || "Môn học"} - ${data.topic || "Tiết dạy mở"}). Vui lòng đăng nhập hệ thống để đăng ký dự giờ.`,
                 link: "/teacher/du-gio?tab=register_request",
                 isRead: false
               }
@@ -1698,7 +1718,7 @@ export async function requestObservationSlot(data: {
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
                 <h2 style="color: #48BFE3; margin-top: 0;">Thông Báo Tiết Dạy Đăng Ký Dự Giờ Mới (Tổ Chuyên Môn)</h2>
                 <p>Kính gửi Thầy/Cô <strong>${t.teacherName}</strong>,</p>
-                <p>Thầy/Cô <strong>${currentTeacher.teacherName}</strong> thuộc Tổ Chuyên Môn vừa khởi tạo tiết dạy đăng ký dự giờ. Kính mời Thầy/Cô đăng nhập hệ thống để đăng ký dự giờ.</p>
+                <p>Thầy/Cô <strong>${hostTeacher.teacherName}</strong> thuộc Tổ Chuyên Môn vừa khởi tạo tiết dạy đăng ký dự giờ. Kính mời Thầy/Cô đăng nhập hệ thống để đăng ký dự giờ.</p>
                 <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
                   <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 40%;">Giáo viên đăng ký tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tên bài dạy / Chủ đề:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.topic || "Tiết dạy đăng ký dự giờ"}</td></tr>
@@ -1717,7 +1737,7 @@ export async function requestObservationSlot(data: {
             `;
 
             try {
-              await sendEmail({ to: teacherEmail, subject: "[Skyline Dự Giờ] Thông báo tiết dạy mới từ " + currentTeacher.teacherName, html: emailHtml });
+              await sendEmail({ to: teacherEmail, subject: "[Skyline Dự Giờ] Thông báo tiết dạy từ " + hostTeacher.teacherName, html: emailHtml });
               console.log("[Skyline Email] Sent TCM slot email to:", teacherEmail);
             } catch (mailErr) {
               console.error("Failed to send email to TCM teacher:", mailErr);
@@ -2277,5 +2297,365 @@ export async function sendBatchPendingEvaluationReminders() {
   } catch (error: any) {
     console.error("[sendBatchPendingEvaluationReminders Error]:", error);
     return { success: false, error: error.message };
+  }
+}
+
+
+// ==========================================
+// CHỨC NĂNG ĐÁNH GIÁ LẠI & XÉT DUYỆT (RE-EVALUATION)
+// ==========================================
+
+export async function requestReEvaluation(data: {
+  registrationId?: string
+  evaluationId?: string
+  reason: string
+}) {
+  try {
+    await ensureDbColumns();
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+
+    const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+    if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
+
+    let evaluation = null
+    if (data.evaluationId) {
+      evaluation = await prisma.observationEvaluation.findUnique({
+        where: { id: data.evaluationId },
+        include: { registration: { include: { slot: true } } }
+      })
+    } else if (data.registrationId) {
+      evaluation = await prisma.observationEvaluation.findUnique({
+        where: { registrationId: data.registrationId },
+        include: { registration: { include: { slot: true } } }
+      })
+    }
+
+    if (!evaluation) return { success: false, error: "Không tìm thấy phiếu đánh giá cần xin đánh giá lại" }
+    if (evaluation.evaluatorId !== currentTeacher.id && evaluation.registration.teacherId !== currentTeacher.id) {
+      return { success: false, error: "Bạn không phải là người đánh giá của phiếu này" }
+    }
+
+    await prisma.observationEvaluation.update({
+      where: { id: evaluation.id },
+      data: {
+        reEvaluationStatus: "REQUESTED",
+        reEvaluationReason: data.reason,
+        reEvaluationRequestedAt: new Date(),
+        reEvaluationApprovedAt: null,
+        reEvaluationApprovedBy: null,
+        reEvaluationNote: null
+      }
+    })
+
+    revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
+    return { success: true }
+  } catch (e: any) {
+    console.error("[requestReEvaluation Error]:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function approveReEvaluation(data: {
+  evaluationId?: string
+  registrationId?: string
+  adminNote?: string
+}) {
+  try {
+    await ensureDbColumns();
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
+    if (!isAdmin) {
+      return { success: false, error: "Bạn không có quyền xét duyệt đánh giá lại" }
+    }
+
+    let evaluation = null
+    if (data.evaluationId) {
+      evaluation = await prisma.observationEvaluation.findUnique({
+        where: { id: data.evaluationId },
+        include: {
+          registration: {
+            include: {
+              teacher: { include: { user: true } },
+              slot: { include: { teacher: { include: { user: true } } } }
+            }
+          }
+        }
+      })
+    } else if (data.registrationId) {
+      evaluation = await prisma.observationEvaluation.findUnique({
+        where: { registrationId: data.registrationId },
+        include: {
+          registration: {
+            include: {
+              teacher: { include: { user: true } },
+              slot: { include: { teacher: { include: { user: true } } } }
+            }
+          }
+        }
+      })
+    }
+
+    if (!evaluation) return { success: false, error: "Không tìm thấy phiếu đánh giá" }
+
+    const adminName = session.user.name || session.user.email || "Ban Quản trị / Admin"
+
+    await prisma.observationEvaluation.update({
+      where: { id: evaluation.id },
+      data: {
+        reEvaluationStatus: "APPROVED",
+        reEvaluationApprovedAt: new Date(),
+        reEvaluationApprovedBy: adminName,
+        reEvaluationNote: data.adminNote || null
+      }
+    })
+
+    // Gửi Email thông báo trực tiếp đến GVBM
+    const gvbm = evaluation.registration.teacher
+    const hostTeacher = evaluation.registration.slot.teacher
+    const slot = evaluation.registration.slot
+    const gvbmEmail = getTeacherResolvedEmail(gvbm)
+
+    if (gvbmEmail && gvbmEmail.includes("@")) {
+      const formattedDate = new Date(slot.date).toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      })
+
+      const baseUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
+      const accessUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`
+
+      const emailSubject = `[Skyline Dự Giờ] Phê duyệt mở lại phiếu đánh giá tiết dạy - ${slot.topic || "Tiết dự giờ"}`
+      const emailHtml = `
+        <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <div style="background: linear-gradient(135deg, #003B3A 0%, #008B82 100%); padding: 24px 20px; text-align: center; color: white;">
+            <h2 style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px;">HỆ THỐNG QUẢN LÝ DỰ GIỜ SKYLINE</h2>
+            <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Thông báo xét duyệt mở lại phiếu đánh giá chuyên môn</p>
+          </div>
+          
+          <div style="padding: 24px 28px; background: white;">
+            <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
+              Kính gửi Thầy/Cô <strong>${gvbm?.teacherName || "Giáo viên"}</strong>,
+            </p>
+            <p style="font-size: 14px; color: #334155; line-height: 1.6;">
+              Hệ thống đã ghi nhận <strong>Admin đã xét duyệt mở lại phiếu đánh giá</strong> theo yêu cầu của Thầy/Cô. Thầy/Cô vui lòng truy cập hệ thống để tiến hành cập nhật lại điểm số và nhận xét cho tiết dự giờ:
+            </p>
+
+            <div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 16px 20px; margin: 20px 0;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; width: 140px; font-weight: 600;">👨‍🏫 Giáo viên dạy:</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${hostTeacher?.teacherName || "Chưa xác định"}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">📖 Bài dạy:</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${slot.topic || "Tiết dạy chuyên môn"}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">📚 Môn học:</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${slot.subjectName || ""}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">🏫 Lớp / Cấp:</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${slot.className || slot.grade || ""} ${slot.level ? `(${slot.level})` : ""}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">📅 Ngày & Tiết:</td>
+                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${formattedDate} (${slot.startTime}${slot.endTime ? " - " + slot.endTime : ""})</td>
+                </tr>
+                ${evaluation.reEvaluationReason ? `
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">📝 Lý do xin mở lại:</td>
+                  <td style="padding: 6px 0; color: #0284c7; font-weight: 600;">${evaluation.reEvaluationReason}</td>
+                </tr>` : ""}
+                ${data.adminNote ? `
+                <tr>
+                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">💬 Ghi chú từ Admin:</td>
+                  <td style="padding: 6px 0; color: #059669; font-weight: 600;">${data.adminNote}</td>
+                </tr>` : ""}
+              </table>
+            </div>
+
+            <div style="text-align: center; margin: 28px 0 16px 0;">
+              <a href="${accessUrl}" 
+                 style="display: inline-block; background: linear-gradient(135deg, #008B82 0%, #007068 100%); color: white; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 139, 130, 0.3);">
+                👉 Mở Phiếu & Đánh Giá Lại Ngay
+              </a>
+            </div>
+            
+            <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px;">
+              Phiếu đánh giá đã được mở khóa và có thể chỉnh sửa trực tiếp trên Skyline Survey System.
+            </p>
+          </div>
+
+          <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+            Hệ thống Đánh giá & Khảo sát Chuyên môn - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
+          </div>
+        </div>
+      `;
+
+      await sendEmail({ to: gvbmEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Re-evaluation approve email error:", e))
+    }
+
+    revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
+    return { success: true }
+  } catch (e: any) {
+    console.error("[approveReEvaluation Error]:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function rejectReEvaluation(data: {
+  evaluationId?: string
+  registrationId?: string
+  adminNote: string
+}) {
+  try {
+    await ensureDbColumns();
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
+    if (!isAdmin) {
+      return { success: false, error: "Bạn không có quyền xét duyệt đánh giá lại" }
+    }
+
+    let evaluation = null
+    if (data.evaluationId) {
+      evaluation = await prisma.observationEvaluation.findUnique({
+        where: { id: data.evaluationId },
+        include: {
+          registration: {
+            include: {
+              teacher: { include: { user: true } },
+              slot: { include: { teacher: { include: { user: true } } } }
+            }
+          }
+        }
+      })
+    } else if (data.registrationId) {
+      evaluation = await prisma.observationEvaluation.findUnique({
+        where: { registrationId: data.registrationId },
+        include: {
+          registration: {
+            include: {
+              teacher: { include: { user: true } },
+              slot: { include: { teacher: { include: { user: true } } } }
+            }
+          }
+        }
+      })
+    }
+
+    if (!evaluation) return { success: false, error: "Không tìm thấy phiếu đánh giá" }
+
+    const adminName = session.user.name || session.user.email || "Ban Quản trị / Admin"
+
+    await prisma.observationEvaluation.update({
+      where: { id: evaluation.id },
+      data: {
+        reEvaluationStatus: "REJECTED",
+        reEvaluationApprovedAt: new Date(),
+        reEvaluationApprovedBy: adminName,
+        reEvaluationNote: data.adminNote
+      }
+    })
+
+    // Gửi Email thông báo từ chối
+    const gvbm = evaluation.registration.teacher
+    const slot = evaluation.registration.slot
+    const gvbmEmail = getTeacherResolvedEmail(gvbm)
+
+    if (gvbmEmail && gvbmEmail.includes("@")) {
+      const emailSubject = `[Skyline Dự Giờ] Phản hồi yêu cầu mở lại phiếu đánh giá - ${slot.topic || "Tiết dự giờ"}`
+      const emailHtml = `
+        <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; border-radius: 14px; overflow: hidden; border: 1px solid #e2e8f0;">
+          <div style="background: #dc2626; padding: 20px; text-align: center; color: white;">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 800;">THÔNG BÁO XÉT DUYỆT ĐÁNH GIÁ LẠI</h3>
+          </div>
+          <div style="padding: 24px; background: white;">
+            <p style="font-size: 14px; color: #334155;">Kính gửi Thầy/Cô <strong>${gvbm?.teacherName}</strong>,</p>
+            <p style="font-size: 14px; color: #334155;">Yêu cầu mở lại phiếu đánh giá tiết dạy <strong>"${slot.topic}"</strong> chưa được phê duyệt với lý do:</p>
+            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px; color: #991b1b; font-size: 13px; font-weight: 600;">
+              ${data.adminNote || "Không có ghi chú cụ thể"}
+            </div>
+            <p style="font-size: 13px; color: #64748b; margin-top: 16px;">Nếu cần hỗ trợ thêm, Thầy/Cô vui lòng liên hệ trực tiếp Ban Quản trị / Ban Khảo thí & ĐBCL.</p>
+          </div>
+        </div>
+      `;
+      await sendEmail({ to: gvbmEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Re-evaluation reject email error:", e))
+    }
+
+    revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
+    return { success: true }
+  } catch (e: any) {
+    console.error("[rejectReEvaluation Error]:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function getReEvaluationRequests(academicYearId?: string) {
+  try {
+    await ensureDbColumns();
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+
+    const evaluations = await prisma.observationEvaluation.findMany({
+      where: {
+        reEvaluationStatus: {
+          in: ["REQUESTED", "APPROVED", "REJECTED", "COMPLETED"]
+        }
+      },
+      include: {
+        registration: {
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                teacherName: true,
+                teacherCode: true,
+                email: true,
+                departmentId: true,
+                campusId: true,
+                departmentRel: true,
+                campus: true
+              }
+            },
+            slot: {
+              include: {
+                teacher: {
+                  select: {
+                    id: true,
+                    teacherName: true,
+                    teacherCode: true,
+                    email: true,
+                    departmentId: true,
+                    campusId: true,
+                    departmentRel: true,
+                    campus: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        reEvaluationRequestedAt: "desc"
+      }
+    })
+
+    return { success: true, requests: evaluations }
+  } catch (e: any) {
+    console.error("[getReEvaluationRequests Error]:", e)
+    return { success: false, error: e.message }
   }
 }

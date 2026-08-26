@@ -24,7 +24,8 @@ import {
   Eye,
   Bell,
   UserPlus,
-  Calendar
+  Calendar,
+  RotateCcw
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
@@ -262,6 +263,28 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </div>
                 )}
               </div>
+
+              {/* 3. Xét duyệt đánh giá lại */}
+              <Link 
+                href="/admin/du-gio?tab=xet-duyet-danh-gia-lai" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                  (pathname === "/admin/du-gio" && (searchParams?.get("tab") === "xet-duyet-danh-gia-lai" || searchParams?.get("tab") === "re_evaluations"))
+                    ? "bg-gradient-to-r from-rose-500/20 to-rose-600/10 border border-rose-500/30 text-rose-300 shadow-md shadow-black/10" 
+                    : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                  (pathname === "/admin/du-gio" && (searchParams?.get("tab") === "xet-duyet-danh-gia-lai" || searchParams?.get("tab") === "re_evaluations"))
+                    ? "bg-rose-500/20 border border-rose-500/40 shadow-[0_0_8px_rgba(244,63,94,0.25)]"
+                    : "bg-white/5 border border-white/10 group-hover:border-rose-500/30"
+                }`}>
+                  <RotateCcw className={`w-4 h-4 transition-all ${
+                    (pathname === "/admin/du-gio" && (searchParams?.get("tab") === "xet-duyet-danh-gia-lai" || searchParams?.get("tab") === "re_evaluations")) ? "text-rose-400" : "text-slate-400 group-hover:text-rose-400 group-hover:scale-110"
+                  }`} />
+                </div>
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">3. Xét duyệt đánh giá lại</span>}
+              </Link>
             </div>
           )}
 
