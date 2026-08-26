@@ -189,26 +189,48 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 )}
               </div>
 
-              {/* 1. Dự giờ đánh giá Giáo viên */}
+              {/* 1. Dự giờ đánh giá Giáo viên (K-12) */}
               <Link 
                 href="/admin/du-gio" 
                 onClick={() => setIsOpen(false)} 
                 className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                  (pathname === "/admin/du-gio" || pathname.startsWith("/admin/du-gio?"))
+                  (pathname === "/admin/du-gio" || (pathname.startsWith("/admin/du-gio?") && !pathname.includes("tab=xet-duyet-danh-gia-lai") && !pathname.includes("tab=re_evaluations")))
                     ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                     : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
                 }`}
               >
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                  (pathname === "/admin/du-gio" || pathname.startsWith("/admin/du-gio?"))
+                  (pathname === "/admin/du-gio" || (pathname.startsWith("/admin/du-gio?") && !pathname.includes("tab=xet-duyet-danh-gia-lai") && !pathname.includes("tab=re_evaluations")))
                     ? "bg-teal-500/20 border border-teal-500/40 shadow-[0_0_8px_rgba(20,184,166,0.25)]"
                     : "bg-white/5 border border-white/10 group-hover:border-teal-500/30"
                 }`}>
                   <ClipboardCheck className={`w-4 h-4 transition-all ${
-                    (pathname === "/admin/du-gio" || pathname.startsWith("/admin/du-gio?")) ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
+                    (pathname === "/admin/du-gio" || (pathname.startsWith("/admin/du-gio?") && !pathname.includes("tab=xet-duyet-danh-gia-lai") && !pathname.includes("tab=re_evaluations"))) ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
                   }`} />
                 </div>
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">1. Dự giờ đánh giá Giáo viên</span>}
+              </Link>
+
+              {/* 2. Dự giờ đánh giá Mầm non */}
+              <Link 
+                href="/admin/du-gio-mam-non" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                  pathname.startsWith("/admin/du-gio-mam-non")
+                    ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                    : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                  pathname.startsWith("/admin/du-gio-mam-non")
+                    ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                    : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
+                }`}>
+                  <Baby className={`w-4 h-4 transition-all ${
+                    pathname.startsWith("/admin/du-gio-mam-non") ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
+                  }`} />
+                </div>
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">2. Dự giờ đánh giá Mầm non</span>}
               </Link>
 
               {/* 3. Tổng hợp kết quả (Dropdown block) */}

@@ -215,6 +215,28 @@ export const APP_CATEGORIES = [
     ]
   },
   {
+    id: "OBSERVATION",
+    name: "Quản lý Dự giờ",
+    color: "teal",
+    icon: ClipboardCheck,
+    modules: [
+      { code: "DU_GIO_K12", name: "Dự giờ đánh giá Giáo viên (K-12)", icon: ClipboardCheck, href: "/admin/du-gio" },
+      { code: "DU_GIO_MAM_NON", name: "Dự giờ đánh giá Mầm non", icon: Baby, href: "/admin/du-gio-mam-non" },
+      {
+        code: "TONG_HOP_DU_GIO",
+        name: "Tổng hợp kết quả",
+        icon: PieChart,
+        href: "/admin/tong-hop-du-gio",
+        subModules: [
+          { code: "TONG_HOP_DU_GIO_K12", name: "Phổ thông K-12", href: "/admin/tong-hop-du-gio?block=k12" },
+          { code: "TONG_HOP_DU_GIO_MN", name: "Mầm non", href: "/admin/tong-hop-du-gio?block=mammon" },
+          { code: "TONG_HOP_DU_GIO_DIEU_HANH", name: "Điều hành", href: "/admin/tong-hop-du-gio?block=dieuhan" },
+        ]
+      },
+      { code: "XET_DUYET_DANH_GIA_LAI", name: "Xét duyệt đánh giá lại", icon: RefreshCcw, href: "/admin/du-gio?tab=xet-duyet-danh-gia-lai" }
+    ]
+  },
+  {
     id: "OTHER",
     name: "Công việc khác",
     color: "slate",
