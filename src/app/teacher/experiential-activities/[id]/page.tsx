@@ -88,11 +88,29 @@ export default function ActivityResultInput() {
 
       if (catRes.ok) {
         const catData = await catRes.json();
-        if (catData.success) {
+        if (catData.success && Array.isArray(catData.data)) {
+          // Find dynamic system category types
+          const allCats = catData.data;
+
+          // 1. Roles
+          const roles = allCats.filter((c: any) => 
+            (c.type === 'ROLE' || c.type === 'VAITRO') && c.status === 'ACTIVE'
+          );
+
+          // 2. Results / Eval Levels
+          const results = allCats.filter((c: any) => 
+            (c.type === 'KQUA' || c.type === 'EVAL_LEVEL' || c.type === 'RESULT' || c.type === 'MUC') && c.status === 'ACTIVE'
+          );
+
+          // 3. Achievements (Lấy theo cấu hình danh mục Hoạt động trải nghiệm: TT, ACHIEVEMENT, THANH_TICH,...)
+          const achievements = allCats.filter((c: any) => 
+            (c.type === 'TT' || c.type === 'ACHIEVEMENT' || c.type === 'THANHTICH' || c.type === 'THANH_TICH') && c.status === 'ACTIVE'
+          );
+
           setCategories({
-            role: catData.data.filter((c: any) => c.type === 'ROLE' && c.status === 'ACTIVE'),
-            result: catData.data.filter((c: any) => c.type === 'KQUA' && c.status === 'ACTIVE'),
-            achievement: catData.data.filter((c: any) => c.type === 'ACHIEVEMENT' && c.status === 'ACTIVE')
+            role: roles,
+            result: results,
+            achievement: achievements
           });
         }
       }
@@ -298,7 +316,6 @@ export default function ActivityResultInput() {
         const newStudents = [...students];
 
         rows.forEach(row => {
-          // Normalize row keys
           const getRowVal = (keys: string[]) => {
             for (const k of keys) {
               for (const rowKey of Object.keys(row)) {
@@ -317,7 +334,6 @@ export default function ActivityResultInput() {
           const rowAchievement = getRowVal(['Thành tích', 'Thanh tich', 'Khen thưởng', 'Achievement']);
           const rowNote = getRowVal(['Ghi chú chung', 'Ghi chú', 'Ghi chu chung', 'Ghi chu', 'Note']);
 
-          // Find student in current list
           let targetIndex = -1;
           if (rowStudentCode) {
             targetIndex = newStudents.findIndex(s => s.code && s.code.trim().toLowerCase() === rowStudentCode.toLowerCase());
@@ -690,7 +706,7 @@ export default function ActivityResultInput() {
                           <div className="relative">
                             <select value={student.roleId || ''} onChange={e => handleChange(student.id, 'roleId', e.target.value)}
                               className={getSelectClass(student.roleId)}>
-                              <option value="">-- Chọn --</option>
+                              <option value="">-- Chọn vai trò --</option>
                               {categories.role.map(c => <option key={c.id} value={c.code}>{c.name}</option>)}
                             </select>
                             <SelectArrow />
@@ -703,7 +719,7 @@ export default function ActivityResultInput() {
                           <div className="relative">
                             <select value={student.evalLevelId || ''} onChange={e => handleChange(student.id, 'evalLevelId', e.target.value)}
                               className={getSelectClass(student.evalLevelId)}>
-                              <option value="">-- Chọn --</option>
+                              <option value="">-- Chọn mức đánh giá --</option>
                               {categories.result.map(c => <option key={c.id} value={c.code}>{c.name}</option>)}
                             </select>
                             <SelectArrow />
@@ -716,7 +732,7 @@ export default function ActivityResultInput() {
                           <div className="relative">
                             <select value={student.achievementId || ''} onChange={e => handleChange(student.id, 'achievementId', e.target.value)}
                               className={getSelectClass(student.achievementId)}>
-                              <option value="">-- Chọn --</option>
+                              <option value="">-- Chọn thành tích --</option>
                               {categories.achievement.map(c => <option key={c.id} value={c.code}>{c.name}</option>)}
                             </select>
                             <SelectArrow />
