@@ -36,6 +36,7 @@ interface SidebarProps {
   taskCount?: number
   isTTCM?: boolean
   isGVCN?: boolean
+  isPreschoolTeacher?: boolean
 }
 
 function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false, isGVCN = false, isPreschoolTeacher = false }: SidebarProps) {
@@ -46,9 +47,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const isSuperAdmin = actualRole === "ADMIN" || actualRole === "Admin"
   const normalizedRole = (actualRole || "").toUpperCase()
   const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "BGH", "BGH_CS", "BGH_MN", "BGH MN", "BGH_MAM_NON"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS")
-  const isPreschoolRole = isPreschoolTeacher || ['GV_MN', 'BGH_MN', 'MN', 'MAM_NON', 'BGH MAM NON', 'BGH_MAM_NON'].includes(normalizedRole);
-  const showPreschoolObservation = isPreschoolRole || hasPreschool || isSuperAdmin;
-  const showK12Observation = (!isPreschoolRole && !hasPreschool) || hasGeneral || isSuperAdmin;
+  
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hasPreschool, setHasPreschool] = useState(false)
@@ -56,6 +55,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [loadingAssignments, setLoadingAssignments] = useState(true)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
   const [observesExpanded, setObservesExpanded] = useState(pathname.startsWith("/admin/du-gio"))
+
+  const isPreschoolRole = isPreschoolTeacher || ['GV_MN', 'BGH_MN', 'MN', 'MAM_NON', 'BGH MAM NON', 'BGH_MAM_NON'].includes(normalizedRole);
+  const showPreschoolObservation = isPreschoolRole || hasPreschool || isSuperAdmin;
+  const showK12Observation = (!isPreschoolRole && !hasPreschool) || hasGeneral || isSuperAdmin;
 
   useEffect(() => {
     if (pathname.startsWith("/admin/du-gio")) {
