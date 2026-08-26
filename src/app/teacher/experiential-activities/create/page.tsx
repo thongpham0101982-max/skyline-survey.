@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { 
   Info, Users, Settings, CheckSquare, 
   ArrowLeft, Save, Send, Plus, X, Search, Loader2,
-  Calendar, Layers, CheckCircle2, FileText, Check, ChevronRight, Sparkles, Filter
+  Calendar, Layers, CheckCircle2, FileText, Check, ChevronRight, Sparkles, Filter,
+  School, Award, BookOpen, Clock, Tag
 } from 'lucide-react';
 
 const STEP3_TYPES = ['ROLE', 'EVAL_LEVEL', 'ACHIEVEMENT'];
@@ -26,7 +27,7 @@ function getAbbreviation(str: string) {
     .replace(/đ/g, 'd')
     .replace(/Đ/g, 'D');
   const capitalized = noAccents
-    .split(/s+/)
+    .split(/\s+/)
     .map(word => {
       if (!word) return '';
       return word.charAt(0).toUpperCase() + word.slice(1);
@@ -43,7 +44,6 @@ export default function CreateActivityWizard() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedStudentsData, setSelectedStudentsData] = useState<any[]>([]);
 
   const [catalogs, setCatalogs] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -145,7 +145,7 @@ export default function CreateActivityWizard() {
     }
   }, [studentFilterClass, studentFilterLevel, info.academicYear]);
 
-const getCampusCodeOfClass = (c: any) => {
+  const getCampusCodeOfClass = (c: any) => {
     if (c?.campus?.campusCode) return c.campus.campusCode.toUpperCase();
     if (c?.campus?.code) return c.campus.code.toUpperCase();
     const match = (c?.className || '').match(/CS\d+/i);
@@ -309,18 +309,23 @@ const getCampusCodeOfClass = (c: any) => {
     if (!sys || !sys.code) return null;
     const options = getOptionsForType(sys.code) as any[];
     return (
-      <div key={sys.code} className="space-y-1.5">
+      <div key={sys.code} className="space-y-2">
         <label className="text-xs font-bold text-slate-700">{sys.name || sys.code} <span className="text-rose-500">*</span></label>
-        <select 
-          className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3]/30 focus:border-[#48BFE3] block p-3 outline-none transition-all"
-          value={stateValue || ''} 
-          onChange={e => onChange(e.target.value)}
-        >
-          <option value="">-- Chọn {(sys.name || sys.code).toLowerCase()} --</option>
-          {options.map((opt: any) => (
-            <option key={opt.id} value={opt.code}>{opt.name}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select 
+            className="w-full bg-slate-50/80 border border-slate-200/90 text-slate-800 text-xs font-bold rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 block p-3.5 outline-none transition-all appearance-none"
+            value={stateValue || ''} 
+            onChange={e => onChange(e.target.value)}
+          >
+            <option value="">-- Chọn {(sys.name || sys.code).toLowerCase()} --</option>
+            {options.map((opt: any) => (
+              <option key={opt.id} value={opt.code}>{opt.name}</option>
+            ))}
+          </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+            ▼
+          </div>
+        </div>
       </div>
     );
   };
@@ -335,7 +340,6 @@ const getCampusCodeOfClass = (c: any) => {
         alert('Vui lòng nhập Tên hoạt động!');
         return false;
       }
-
       if (!info.date) {
         alert('Vui lòng chọn Ngày tổ chức!');
         return false;
@@ -386,54 +390,67 @@ const getCampusCodeOfClass = (c: any) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#48BFE3] border-t-transparent"></div>
-          <span className="text-xs font-bold text-slate-500">Đang khởi tạo biểu mẫu...</span>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50/80">
+        <div className="flex flex-col items-center gap-4 backdrop-blur-xl bg-white/80 p-8 rounded-3xl border border-white/90 shadow-xl">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600"></div>
+          <span className="text-xs font-black text-slate-600">Đang khởi tạo biểu mẫu hoạt động...</span>
         </div>
       </div>
     );
   }
 
   const steps = [
-    { num: 1, title: 'Thông tin chung', sub: 'Tên, nhóm, học kỳ & ngày' },
-    { num: 2, title: 'Đối tượng tham gia', sub: 'Bậc, cơ sở, khối & lớp' },
+    { num: 1, title: 'Thông tin chung', sub: 'Tên, nhóm, học kỳ & ngày tổ chức' },
+    { num: 2, title: 'Đối tượng tham gia', sub: 'Bậc, cơ sở, khối & lớp áp dụng' },
     { num: 3, title: 'Đánh giá & Hoàn tất', sub: 'Mức độ, vai trò & lưu kế hoạch' },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50/60 py-6 px-4 sm:px-6 font-sans">
+    <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-sky-50/30 to-indigo-50/20 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-sans overflow-hidden">
+      
+      {/* Background Ambient Glow Orbs */}
+      <div className="absolute -top-24 -left-24 w-96 h-96 bg-gradient-to-br from-indigo-300/30 via-purple-300/20 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-1/4 -right-24 w-96 h-96 bg-gradient-to-bl from-cyan-300/30 via-teal-300/20 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute bottom-12 left-1/3 w-96 h-96 bg-gradient-to-tr from-pink-200/20 via-sky-200/20 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+
       <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* Top Sticky Header */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        {/* TOP HERO BANNER (Glassmorphism & Action Bar) */}
+        <div className="backdrop-blur-xl bg-white/85 rounded-3xl p-5 sm:p-6 border border-white/90 shadow-xl shadow-slate-200/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <Link 
               href="/teacher/experiential-activities" 
-              className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center hover:bg-[#6930C3]/10 text-slate-500 hover:text-[#6930C3] transition-colors shrink-0"
-              title="Quay lại"
+              className="w-11 h-11 rounded-2xl bg-slate-100/90 border border-slate-200/80 flex items-center justify-center hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 transition-colors shrink-0 shadow-2xs group"
+              title="Quay lại danh sách"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" />
             </Link>
             <div>
-              <h1 className="text-xl font-black text-slate-800 tracking-tight">Tạo Hoạt động Trải nghiệm</h1>
-              <p className="text-xs text-slate-400 font-semibold">Quy trình 3 bước tạo kế hoạch & thiết lập đánh giá khoa học</p>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-indigo-500/10 to-cyan-500/10 text-indigo-700 border border-indigo-200/60">
+                  Tạo kế hoạch mới
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black bg-gradient-to-r from-slate-900 to-indigo-950 bg-clip-text text-transparent tracking-tight">
+                Hoạt động trải nghiệm
+              </h1>
+              <p className="text-xs text-slate-400 font-bold mt-0.5">Quy trình 3 bước thiết lập kế hoạch & cấu hình đánh giá khoa học</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2.5 self-end sm:self-auto">
             <button 
               onClick={() => handleSubmit(true)}
               disabled={isSubmitting}
-              className="px-4 py-2.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center gap-1.5"
+              className="px-4 py-2.5 bg-slate-100/90 hover:bg-slate-200 text-slate-700 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-2xs"
             >
-              <Save className="w-4 h-4" />
+              <Save className="w-4 h-4 text-slate-500" />
               <span>Lưu nháp</span>
             </button>
             <button 
               onClick={() => handleSubmit(false)}
               disabled={isSubmitting}
-              className="px-5 py-2.5 bg-gradient-to-r from-[#6930C3] to-[#48BFE3] text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-[#6930C3]/20 transition-all flex items-center gap-1.5"
+              className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 via-cyan-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white text-xs font-black rounded-xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all flex items-center gap-2 transform active:scale-95"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               <span>Hoàn tất & Lưu</span>
@@ -441,8 +458,8 @@ const getCampusCodeOfClass = (c: any) => {
           </div>
         </div>
 
-        {/* Step Indicator Bar */}
-        <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-sm">
+        {/* STEPPER PROGRESS INDICATOR BAR (Floating Glass Pills) */}
+        <div className="backdrop-blur-xl bg-white/80 p-2.5 rounded-2xl border border-white/90 shadow-md shadow-slate-200/40">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {steps.map(s => {
               const isCurrent = activeStep === s.num;
@@ -455,26 +472,26 @@ const getCampusCodeOfClass = (c: any) => {
                       setActiveStep(s.num);
                     }
                   }}
-                  className={`p-3 rounded-xl transition-all text-left flex items-start gap-3 border ${
+                  className={`p-3.5 rounded-xl transition-all text-left flex items-start gap-3 border ${
                     isCurrent
-                      ? 'bg-[#6930C3]/5 border-[#6930C3] text-[#6930C3] shadow-sm'
+                      ? 'bg-gradient-to-r from-indigo-500/10 via-cyan-500/10 to-teal-500/10 border-indigo-400 text-indigo-700 shadow-sm ring-1 ring-indigo-400/50'
                       : isDone
-                        ? 'bg-slate-50 border-slate-200 text-slate-700'
-                        : 'bg-white border-transparent text-slate-400 opacity-60'
+                        ? 'bg-emerald-50/50 border-emerald-200 text-slate-700'
+                        : 'bg-white/50 border-slate-200/60 text-slate-400 opacity-70 hover:opacity-100'
                   }`}
                 >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 transition-transform duration-300 ${
                     isCurrent
-                      ? 'bg-[#6930C3] text-white'
+                      ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-md shadow-indigo-500/30 scale-105'
                       : isDone
-                        ? 'bg-[#48BFE3] text-white'
+                        ? 'bg-emerald-500 text-white shadow-sm'
                         : 'bg-slate-200 text-slate-500'
                   }`}>
                     {isDone ? <Check className="w-4 h-4" /> : s.num}
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-black truncate">{s.title}</p>
-                    <p className="text-[10px] font-medium opacity-80 truncate hidden sm:block">{s.sub}</p>
+                    <p className="text-[10px] font-semibold opacity-80 truncate hidden sm:block mt-0.5">{s.sub}</p>
                   </div>
                 </button>
               );
@@ -484,76 +501,84 @@ const getCampusCodeOfClass = (c: any) => {
 
         {/* STEP 1: Thông tin chung */}
         {activeStep === 1 && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in duration-300">
+          <div className="backdrop-blur-xl bg-white/85 rounded-3xl p-6 sm:p-8 border border-white/90 shadow-xl shadow-slate-200/40 space-y-6 animate-in fade-in duration-300">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                  <span className="w-6 h-6 bg-[#6930C3] text-white rounded-lg flex items-center justify-center text-xs font-black">1</span>
+                <h2 className="text-base font-black text-slate-800 flex items-center gap-2.5">
+                  <span className="w-7 h-7 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white rounded-xl flex items-center justify-center text-xs font-black shadow-xs">1</span>
                   <span>Thông tin chung về Hoạt động</span>
                 </h2>
-                <p className="text-xs text-slate-400 font-semibold mt-0.5">Khai báo thông tin định danh và ngày tổ chức</p>
+                <p className="text-xs text-slate-400 font-bold mt-1">Khai báo thông tin định danh, nhóm chủ đề và ngày tổ chức</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-1.5 md:col-span-2">
-                <label className="text-xs font-bold text-slate-700">Nhóm hoạt động <span className="text-rose-500">*</span></label>
-                <select 
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3]/30 focus:border-[#48BFE3] block p-3.5 outline-none transition-all"
-                  value={info.GROU || ''} 
-                  onChange={e => setInfo({...info, GROU: e.target.value})}
-                >
-                  <option value="">-- Chọn nhóm hoạt động --</option>
-                  {getOptionsForType('GROU').map((opt: any) => (
-                    <option key={opt.id} value={opt.code}>{opt.name}</option>
-                  ))}
-                </select>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black text-slate-700">Nhóm hoạt động <span className="text-rose-500">*</span></label>
+                <div className="relative">
+                  <select 
+                    className="w-full bg-slate-50/80 border border-slate-200/90 text-slate-800 text-xs font-bold rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 block p-3.5 outline-none transition-all appearance-none"
+                    value={info.GROU || ''} 
+                    onChange={e => setInfo({...info, GROU: e.target.value})}
+                  >
+                    <option value="">-- Chọn nhóm hoạt động --</option>
+                    {getOptionsForType('GROU').map((opt: any) => (
+                      <option key={opt.id} value={opt.code}>{opt.name}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    ▼
+                  </div>
+                </div>
               </div>
               
-              <div className="space-y-1.5 md:col-span-2">
-                <label className="text-xs font-bold text-slate-700">Tên hoạt động <span className="text-rose-500">*</span></label>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-xs font-black text-slate-700">Tên hoạt động <span className="text-rose-500">*</span></label>
                 <input 
                   type="text"
                   placeholder="Ví dụ: Chuyến đi thực tế tìm hiểu di tích lịch sử..."
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl focus:ring-2 focus:ring-[#48BFE3]/30 focus:border-[#48BFE3] block p-3.5 outline-none transition-all"
+                  className="w-full bg-slate-50/80 border border-slate-200/90 text-slate-800 text-xs font-black rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 block p-3.5 outline-none transition-all placeholder:text-slate-400"
                   value={info.name || ''} 
                   onChange={e => setInfo({...info, name: e.target.value})}
                 />
               </div>
 
-
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Mã hoạt động (Tự sinh)</label>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-700">Mã hoạt động (Tự sinh)</label>
                 <input 
                   type="text" 
                   readOnly
-                  className="w-full bg-slate-100 border border-slate-200 text-[#6930C3] text-xs font-black rounded-xl block p-3.5 cursor-not-allowed"
+                  className="w-full bg-slate-100/90 border border-slate-200 text-indigo-700 text-xs font-black rounded-2xl block p-3.5 cursor-not-allowed shadow-inner tracking-wide"
                   value={generatedCode || 'HĐ-TỰ-SINH'} 
                 />
               </div>
               
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Ngày tổ chức <span className="text-rose-500">*</span></label>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-700">Ngày tổ chức <span className="text-rose-500">*</span></label>
                 <input 
                   type="date" 
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3]/30 focus:border-[#48BFE3] block p-3.5 outline-none transition-all"
+                  className="w-full bg-slate-50/80 border border-slate-200/90 text-slate-800 text-xs font-bold rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 block p-3.5 outline-none transition-all"
                   value={info.date} 
                   onChange={e => setInfo({...info, date: e.target.value})} 
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Học kỳ</label>
-                <select 
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3]/30 focus:border-[#48BFE3] block p-3.5 outline-none transition-all"
-                  value={info.semester} 
-                  onChange={e => setInfo({...info, semester: e.target.value})}
-                >
-                  <option value="1">Học kỳ 1</option>
-                  <option value="2">Học kỳ 2</option>
-                  <option value="3">Học kỳ Hè</option>
-                </select>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-700">Học kỳ</label>
+                <div className="relative">
+                  <select 
+                    className="w-full bg-slate-50/80 border border-slate-200/90 text-slate-800 text-xs font-bold rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 block p-3.5 outline-none transition-all appearance-none"
+                    value={info.semester} 
+                    onChange={e => setInfo({...info, semester: e.target.value})}
+                  >
+                    <option value="1">Học kỳ 1</option>
+                    <option value="2">Học kỳ 2</option>
+                    <option value="3">Học kỳ Hè</option>
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                    ▼
+                  </div>
+                </div>
               </div>
 
               {/* Dynamic fields */}
@@ -568,7 +593,7 @@ const getCampusCodeOfClass = (c: any) => {
                 onClick={() => {
                   if (validateStep(1)) setActiveStep(2);
                 }}
-                className="px-6 py-3 bg-[#6930C3] text-white text-xs font-bold rounded-2xl hover:bg-[#7400B8] transition-all flex items-center gap-2"
+                className="px-6 py-3.5 bg-gradient-to-r from-indigo-600 via-cyan-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white text-xs font-black rounded-2xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all flex items-center gap-2 transform active:scale-95"
               >
                 <span>Tiếp theo: Chọn đối tượng</span>
                 <ChevronRight className="w-4 h-4" />
@@ -579,34 +604,34 @@ const getCampusCodeOfClass = (c: any) => {
 
         {/* STEP 2: Đối tượng tham gia */}
         {activeStep === 2 && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in duration-300">
+          <div className="backdrop-blur-xl bg-white/85 rounded-3xl p-6 sm:p-8 border border-white/90 shadow-xl shadow-slate-200/40 space-y-6 animate-in fade-in duration-300">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                  <span className="w-6 h-6 bg-[#6930C3] text-white rounded-lg flex items-center justify-center text-xs font-black">2</span>
+                <h2 className="text-base font-black text-slate-800 flex items-center gap-2.5">
+                  <span className="w-7 h-7 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white rounded-xl flex items-center justify-center text-xs font-black shadow-xs">2</span>
                   <span>Đối tượng tham gia <span className="text-rose-500">*</span></span>
                 </h2>
-                <p className="text-xs text-slate-400 font-semibold mt-0.5">Phạm vi khối, lớp hoặc học sinh cụ thể</p>
+                <p className="text-xs text-slate-400 font-bold mt-1">Chọn phạm vi tổ chức theo Khối / Lớp hoặc chỉ định theo Đội nhóm</p>
               </div>
             </div>
 
-            {/* Target Mode Segmented Control */}
-            <div className="flex bg-slate-100 p-1 rounded-2xl max-w-sm">
+            {/* Target Mode Segmented Capsule */}
+            <div className="flex bg-slate-100/90 p-1.5 rounded-2xl max-w-sm border border-slate-200/80 shadow-inner">
               <button
                 onClick={() => setTargetMode('class')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                  targetMode === 'class' ? 'bg-white text-[#6930C3] shadow-sm font-black' : 'text-slate-500 hover:text-slate-700'
+                className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
+                  targetMode === 'class' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
                 Theo Khối / Lớp
               </button>
               <button
                 onClick={() => setTargetMode('student')}
-                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                  targetMode === 'student' ? 'bg-white text-[#6930C3] shadow-sm font-black' : 'text-slate-500 hover:text-slate-700'
+                className={`flex-1 py-2 text-xs font-black rounded-xl transition-all ${
+                  targetMode === 'student' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Theo Đội/Nhóm
+                Theo Đội / Nhóm
               </button>
             </div>
 
@@ -614,14 +639,14 @@ const getCampusCodeOfClass = (c: any) => {
               <div className="space-y-6">
                 
                 {/* 1. Bậc học Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <div className="space-y-2.5">
+                  <label className="text-xs font-black text-slate-700 flex items-center justify-between">
                     <span>1. Chọn Bậc học</span>
                     {target.levels.length > 0 && (
                       <button type="button" onClick={() => setTarget({ ...target, levels: [], campuses: [], grades: [], classes: [] })} className="text-[11px] font-bold text-rose-500 hover:underline">Bỏ chọn tất cả</button>
                     )}
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2.5">
                     {availableLevels.map(lvl => {
                       const isSelected = lvl.originalLevels.some((l: any) => target.levels.includes(l));
                       return (
@@ -634,13 +659,13 @@ const getCampusCodeOfClass = (c: any) => {
                               : [...target.levels, ...lvl.originalLevels];
                             setTarget({ ...target, levels: newLevels, campuses: [], grades: [], classes: [] });
                           }}
-                          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 " + (
+                          className={"px-4 py-2.5 rounded-2xl text-xs font-black transition-all border flex items-center gap-2 " + (
                             isSelected 
-                              ? 'bg-[#6930C3]/10 border-[#6930C3] text-[#6930C3] font-black shadow-sm ring-1 ring-[#6930C3]' 
-                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                              ? 'bg-gradient-to-r from-indigo-500/15 to-cyan-500/15 border-indigo-400 text-indigo-700 shadow-sm ring-1 ring-indigo-400' 
+                              : 'bg-white/80 border-slate-200 text-slate-600 hover:bg-slate-50'
                           )}
                         >
-                          <Check className={"w-3.5 h-3.5 " + (isSelected ? 'opacity-100' : 'opacity-0')} />
+                          <Check className={"w-3.5 h-3.5 " + (isSelected ? 'opacity-100 text-indigo-600' : 'opacity-0')} />
                           <span>{lvl.name}</span>
                         </button>
                       );
@@ -649,14 +674,14 @@ const getCampusCodeOfClass = (c: any) => {
                 </div>
 
                 {/* 2. Cơ sở Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <div className="space-y-2.5">
+                  <label className="text-xs font-black text-slate-700 flex items-center justify-between">
                     <span>2. Chọn Cơ sở</span>
                     {target.campuses.length > 0 && (
                       <button type="button" onClick={() => setTarget({ ...target, campuses: [], grades: [], classes: [] })} className="text-[11px] font-bold text-rose-500 hover:underline">Bỏ chọn tất cả</button>
                     )}
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2.5">
                     {availableCampuses.length === 0 ? (
                       <p className="text-xs text-slate-400 italic">Chọn Bậc học ở trên để hiển thị cơ sở.</p>
                     ) : (
@@ -672,13 +697,13 @@ const getCampusCodeOfClass = (c: any) => {
                                 : [...target.campuses, cs.code];
                               setTarget({ ...target, campuses: newCampuses, grades: [], classes: [] });
                             }}
-                            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 " + (
+                            className={"px-4 py-2.5 rounded-2xl text-xs font-black transition-all border flex items-center gap-2 " + (
                               isSelected 
-                                ? 'bg-[#5E60CE]/15 border-[#5E60CE] text-[#5E60CE] font-black shadow-sm ring-1 ring-[#5E60CE]' 
-                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                ? 'bg-gradient-to-r from-cyan-500/15 to-teal-500/15 border-cyan-400 text-cyan-800 shadow-sm ring-1 ring-cyan-400' 
+                                : 'bg-white/80 border-slate-200 text-slate-600 hover:bg-slate-50'
                             )}
                           >
-                            <Check className={"w-3.5 h-3.5 " + (isSelected ? 'opacity-100' : 'opacity-0')} />
+                            <Check className={"w-3.5 h-3.5 " + (isSelected ? 'opacity-100 text-cyan-600' : 'opacity-0')} />
                             <span>{cs.name}</span>
                           </button>
                         );
@@ -688,14 +713,14 @@ const getCampusCodeOfClass = (c: any) => {
                 </div>
 
                 {/* 3. Khối học Selector */}
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                <div className="space-y-2.5">
+                  <label className="text-xs font-black text-slate-700 flex items-center justify-between">
                     <span>3. Chọn Khối học</span>
                     {target.grades.length > 0 && (
                       <button type="button" onClick={() => setTarget({ ...target, grades: [], classes: [] })} className="text-[11px] font-bold text-rose-500 hover:underline">Bỏ chọn tất cả</button>
                     )}
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2.5">
                     {availableGrades.length === 0 ? (
                       <p className="text-xs text-slate-400 italic">Chọn Bậc học và Cơ sở ở trên để hiển thị khối học.</p>
                     ) : (
@@ -711,10 +736,10 @@ const getCampusCodeOfClass = (c: any) => {
                                 : [...target.grades, grade];
                               setTarget({ ...target, grades: newGrades, classes: [] });
                             }}
-                            className={"px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 " + (
+                            className={"px-4 py-2 rounded-2xl text-xs font-black transition-all border flex items-center gap-1.5 " + (
                               isSelected 
-                                ? 'bg-[#48BFE3]/15 border-[#48BFE3] text-[#6930C3] font-black shadow-sm ring-1 ring-[#48BFE3]' 
-                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                                ? 'bg-gradient-to-r from-indigo-500/15 to-purple-500/15 border-indigo-400 text-indigo-700 shadow-sm ring-1 ring-indigo-400' 
+                                : 'bg-white/80 border-slate-200 text-slate-600 hover:bg-slate-50'
                             )}
                           >
                             <span>Khối {grade}</span>
@@ -726,9 +751,9 @@ const getCampusCodeOfClass = (c: any) => {
                 </div>
 
                 {/* 4. Lớp học cụ thể Selector */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700">4. Chọn Lớp cụ thể ({target.classes.length} đã chọn)</label>
+                    <label className="text-xs font-black text-slate-700">4. Chọn Lớp cụ thể ({target.classes.length} đã chọn)</label>
                     {availableClasses.length > 0 && (
                       <button
                         type="button"
@@ -737,16 +762,16 @@ const getCampusCodeOfClass = (c: any) => {
                           const isAllSelected = availableClasses.length > 0 && availableClasses.every(c => target.classes.includes(c.id));
                           setTarget({ ...target, classes: isAllSelected ? [] : Array.from(new Set([...target.classes, ...allIds])) });
                         }}
-                        className="text-xs font-bold text-[#6930C3] hover:underline"
+                        className="text-xs font-black text-indigo-600 hover:underline"
                       >
                         {availableClasses.length > 0 && availableClasses.every(c => target.classes.includes(c.id)) ? 'Bỏ chọn tất cả lớp' : 'Chọn tất cả lớp'}
                       </button>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80">
                     {availableClasses.length === 0 ? (
-                      <div className="col-span-full py-4 text-center text-xs text-slate-400 font-medium">
+                      <div className="col-span-full py-6 text-center text-xs text-slate-400 font-medium">
                         Chọn Bậc học, Cơ sở và Khối học ở trên để hiển thị danh sách lớp.
                       </div>
                     ) : (
@@ -762,15 +787,15 @@ const getCampusCodeOfClass = (c: any) => {
                                 : [...target.classes, cls.id];
                               setTarget({ ...target, classes: newClasses });
                             }}
-                            className={"p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between " + (
+                            className={"p-3 rounded-2xl border text-xs font-black transition-all text-left flex items-center justify-between " + (
                               isChecked
-                                ? 'bg-white border-[#6930C3] text-[#6930C3] shadow-sm ring-1 ring-[#6930C3]'
-                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                                ? 'bg-white border-indigo-400 text-indigo-700 shadow-sm ring-1 ring-indigo-400'
+                                : 'bg-white/80 border-slate-200 text-slate-600 hover:border-slate-300'
                             )}
                           >
-                            <span>{cls.className}</span>
-                            <span className={"w-4 h-4 rounded-full flex items-center justify-center text-[10px] " + (
-                              isChecked ? 'bg-[#6930C3] text-white' : 'border border-slate-300'
+                            <span className="truncate">{cls.className}</span>
+                            <span className={"w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ml-2 " + (
+                              isChecked ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-xs' : 'border border-slate-300'
                             )}>
                               {isChecked && <Check className="w-3 h-3" />}
                             </span>
@@ -785,7 +810,7 @@ const getCampusCodeOfClass = (c: any) => {
             ) : (
               /* Specific Students Search Mode */
               <div className="space-y-4">
-                <div className="p-4 bg-[#72EFDD]/15 border border-[#72EFDD]/40 rounded-2xl text-xs text-slate-700 font-medium leading-relaxed">
+                <div className="p-4 bg-gradient-to-r from-indigo-500/10 via-cyan-500/10 to-teal-500/10 border border-indigo-200/60 rounded-2xl text-xs text-slate-700 font-semibold leading-relaxed">
                   Chọn danh sách học sinh theo Đội/Nhóm áp dụng cho các CLB, đội tuyển ngoại khóa hoặc dự án chuyên đề. Học sinh được chọn ở đây sẽ được lập danh sách riêng.
                 </div>
 
@@ -793,7 +818,7 @@ const getCampusCodeOfClass = (c: any) => {
                   <div className="space-y-3">
                     <div className="flex gap-2">
                       <select 
-                        className="w-1/2 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl p-2.5 outline-none"
+                        className="w-1/2 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl p-3 outline-none"
                         value={studentFilterLevel}
                         onChange={e => {
                           setStudentFilterLevel(e.target.value);
@@ -809,7 +834,7 @@ const getCampusCodeOfClass = (c: any) => {
                       </select>
 
                       <select 
-                        className="w-1/2 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl p-2.5 outline-none"
+                        className="w-1/2 bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl p-3 outline-none"
                         value={studentFilterClass}
                         onChange={e => setStudentFilterClass(e.target.value)}
                       >
@@ -823,11 +848,11 @@ const getCampusCodeOfClass = (c: any) => {
                     </div>
 
                     <div className="relative">
-                      <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                      <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
                       <input 
                         type="text" 
                         placeholder="Tìm tên hoặc mã học sinh..." 
-                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl pl-10 pr-4 py-2.5 outline-none focus:border-[#48BFE3]"
+                        className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold rounded-xl pl-10 pr-4 py-3 outline-none focus:border-indigo-500"
                         value={studentSearch}
                         onChange={e => setStudentSearch(e.target.value)}
                       />
@@ -845,7 +870,7 @@ const getCampusCodeOfClass = (c: any) => {
                             <div key={st.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-all text-xs">
                               <div>
                                 <p className="font-bold text-slate-800">{st.fullName || st.studentName || st.name}</p>
-                                <p className="text-[10px] text-slate-400">{st.studentCode || st.code} • {st.className || st.class?.className || 'Lớp'}</p>
+                                <p className="text-[10px] text-slate-400 font-semibold">{st.studentCode || st.code} • {st.className || st.class?.className || 'Lớp'}</p>
                               </div>
                               <button 
                                 type="button"
@@ -856,8 +881,8 @@ const getCampusCodeOfClass = (c: any) => {
                                     setTarget({ ...target, specificStudents: [...(target.specificStudents || []), st.id] });
                                   }
                                 }}
-                                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                                  isAdded ? 'bg-rose-50 text-rose-600' : 'bg-[#6930C3]/10 text-[#6930C3]'
+                                className={`px-3 py-1 rounded-xl text-xs font-black transition-all ${
+                                  isAdded ? 'bg-rose-50 text-rose-600 border border-rose-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
                                 }`}
                               >
                                 {isAdded ? 'Xóa' : '+ Chọn'}
@@ -869,19 +894,19 @@ const getCampusCodeOfClass = (c: any) => {
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
-                    <p className="text-xs font-bold text-slate-700">Đã chọn ({target.specificStudents.length} học sinh)</p>
-                    <div className="max-h-64 overflow-y-auto space-y-1">
+                  <div className="bg-slate-50/90 p-4 rounded-2xl border border-slate-200 space-y-2">
+                    <p className="text-xs font-black text-slate-700">Đã chọn ({target.specificStudents.length} học sinh)</p>
+                    <div className="max-h-64 overflow-y-auto space-y-1.5">
                       {target.specificStudents.length === 0 ? (
-                        <p className="text-xs text-slate-400 italic">Chưa chọn học sinh nào.</p>
+                        <p className="text-xs text-slate-400 italic py-4 text-center">Chưa chọn học sinh nào.</p>
                       ) : (
                         target.specificStudents.map(id => (
-                          <div key={id} className="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between text-xs font-semibold">
+                          <div key={id} className="bg-white p-2.5 rounded-xl border border-slate-200/80 flex items-center justify-between text-xs font-bold shadow-2xs">
                             <span className="truncate">{id}</span>
                             <button
                               type="button"
                               onClick={() => setTarget({ ...target, specificStudents: target.specificStudents.filter(sId => sId !== id) })}
-                              className="text-rose-500 hover:text-rose-700 text-xs font-bold ml-2"
+                              className="text-rose-500 hover:text-rose-700 text-xs font-black ml-2"
                             >
                               Xóa
                             </button>
@@ -905,7 +930,7 @@ const getCampusCodeOfClass = (c: any) => {
                 onClick={() => {
                   if (validateStep(2)) setActiveStep(3);
                 }}
-                className="px-6 py-2.5 bg-[#6930C3] text-white text-xs font-bold rounded-2xl hover:bg-[#7400B8] transition-all flex items-center gap-2"
+                className="px-6 py-3.5 bg-gradient-to-r from-indigo-600 via-cyan-600 to-teal-500 hover:from-indigo-700 hover:to-teal-600 text-white text-xs font-black rounded-2xl shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35 transition-all flex items-center gap-2 transform active:scale-95"
               >
                 <span>Tiếp theo: Thiết lập đánh giá</span>
                 <ChevronRight className="w-4 h-4" />
@@ -916,33 +941,33 @@ const getCampusCodeOfClass = (c: any) => {
 
         {/* STEP 3: Thiết lập đánh giá mặc định */}
         {activeStep === 3 && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 animate-in fade-in duration-300">
+          <div className="backdrop-blur-xl bg-white/85 rounded-3xl p-6 sm:p-8 border border-white/90 shadow-xl shadow-slate-200/40 space-y-6 animate-in fade-in duration-300">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div>
-                <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
-                  <span className="w-6 h-6 bg-[#6930C3] text-white rounded-lg flex items-center justify-center text-xs font-black">3</span>
+                <h2 className="text-base font-black text-slate-800 flex items-center gap-2.5">
+                  <span className="w-7 h-7 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white rounded-xl flex items-center justify-center text-xs font-black shadow-xs">3</span>
                   <span>Thiết lập kết quả & Đánh giá mặc định</span>
                 </h2>
-                <p className="text-xs text-slate-400 font-semibold mt-0.5">Gán nhanh giá trị mặc định cho toàn bộ danh sách học sinh</p>
+                <p className="text-xs text-slate-400 font-bold mt-1">Gán nhanh giá trị mặc định cho toàn bộ danh sách học sinh tham gia</p>
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+            <div className="p-5 bg-gradient-to-br from-slate-50/90 to-indigo-50/40 rounded-2xl border border-slate-200/80 space-y-4">
               <label className="flex items-center gap-3 cursor-pointer select-none">
                 <input 
                   type="checkbox"
-                  className="w-5 h-5 accent-[#6930C3] rounded-lg cursor-pointer"
+                  className="w-5 h-5 accent-indigo-600 rounded-lg cursor-pointer"
                   checked={defaults.allParticipate}
                   onChange={e => setDefaults({...defaults, allParticipate: e.target.checked})}
                 />
                 <div>
                   <p className="text-xs font-black text-slate-800">Áp dụng kết quả mặc định cho tất cả học sinh</p>
-                  <p className="text-[11px] text-slate-500 font-medium">Tự động gán vai trò & mức độ đánh giá đồng loạt</p>
+                  <p className="text-[11px] text-slate-500 font-semibold mt-0.5">Tự động gán vai trò & mức độ đánh giá đồng loạt (có thể chỉnh sửa từng em sau)</p>
                 </div>
               </label>
 
               {defaults.allParticipate && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-200">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200/80">
                   {systemTypes
                     .filter((sys: any) => STEP3_TYPES.includes(sys?.code))
                     .map((sys: any) => renderDynamicField(sys, defaults[sys.code], (val) => setDefaults({...defaults, [sys.code]: val})))}
@@ -960,7 +985,7 @@ const getCampusCodeOfClass = (c: any) => {
               <button
                 onClick={() => handleSubmit(false)}
                 disabled={isSubmitting}
-                className="px-6 py-3 bg-gradient-to-r from-[#6930C3] to-[#48BFE3] text-white text-xs sm:text-sm font-black rounded-2xl hover:shadow-xl hover:shadow-[#6930C3]/30 transition-all flex items-center gap-2"
+                className="px-7 py-3.5 bg-gradient-to-r from-indigo-600 via-cyan-600 to-teal-500 text-white text-xs sm:text-sm font-black rounded-2xl shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/40 transition-all flex items-center gap-2 transform active:scale-95"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 <span>Hoàn tất & Lưu hoạt động</span>
@@ -968,7 +993,6 @@ const getCampusCodeOfClass = (c: any) => {
             </div>
           </div>
         )}
-
 
       </div>
     </div>
