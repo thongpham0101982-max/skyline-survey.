@@ -38,7 +38,7 @@ interface SidebarProps {
   isGVCN?: boolean
 }
 
-function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false, isGVCN = false }: SidebarProps) {
+function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false, isGVCN = false, isPreschoolTeacher = false }: SidebarProps) {
   const rawPathname = usePathname()
   const pathname = rawPathname || ""
   const searchParams = useSearchParams()
@@ -46,6 +46,9 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const isSuperAdmin = actualRole === "ADMIN" || actualRole === "Admin"
   const normalizedRole = (actualRole || "").toUpperCase()
   const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "BGH", "BGH_CS", "BGH_MN", "BGH MN", "BGH_MAM_NON"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS")
+  const isPreschoolRole = isPreschoolTeacher || ['GV_MN', 'BGH_MN', 'MN', 'MAM_NON', 'BGH MAM NON', 'BGH_MAM_NON'].includes(normalizedRole);
+  const showPreschoolObservation = isPreschoolRole || hasPreschool || isSuperAdmin;
+  const showK12Observation = (!isPreschoolRole && !hasPreschool) || hasGeneral || isSuperAdmin;
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hasPreschool, setHasPreschool] = useState(false)
@@ -645,27 +648,53 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </div>
                 )}
 
-                {/* 2. Dự giờ Giáo viên */}
-                <Link 
-                  href="/teacher/du-gio" 
-                  onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                    pathname.includes('/teacher/du-gio')
-                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
-                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                    pathname.includes('/teacher/du-gio')
-                      ? "bg-indigo-500/20 border border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.25)]"
-                      : "bg-white/5 border border-white/10 group-hover:border-indigo-500/30"
-                  }`}>
-                    <ClipboardCheck className={`w-4 h-4 transition-all ${
-                      pathname.includes('/teacher/du-gio') ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
-                    }`} />
-                  </div>
-                  {!isCollapsed && <span>2. Dự giờ đánh giá Giáo viên</span>}
-                </Link>
+                {/* 2. Dự giờ Giáo viên (K-12) */}
+                {showK12Observation && (
+                  <Link 
+                    href="/teacher/du-gio" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                      (pathname === '/teacher/du-gio' || (pathname.startsWith('/teacher/du-gio') && !pathname.startsWith('/teacher/du-gio-mam-non')))
+                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      (pathname === '/teacher/du-gio' && !pathname.startsWith('/teacher/du-gio-mam-non'))
+                        ? "bg-indigo-500/20 border border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.25)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-indigo-500/30"
+                    }`}>
+                      <ClipboardCheck className={`w-4 h-4 transition-all ${
+                        (pathname === '/teacher/du-gio' && !pathname.startsWith('/teacher/du-gio-mam-non')) ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
+                      }`} />
+                    </div>
+                    {!isCollapsed && <span>2. Dự giờ đánh giá Giáo viên</span>}
+                  </Link>
+                )}
+
+                {/* 2. Dự giờ đánh giá Mầm non */}
+                {showPreschoolObservation && (
+                  <Link 
+                    href="/teacher/du-gio-mam-non" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                      pathname.startsWith('/teacher/du-gio-mam-non')
+                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      pathname.startsWith('/teacher/du-gio-mam-non')
+                        ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
+                    }`}>
+                      <Baby className={`w-4 h-4 transition-all ${
+                        pathname.startsWith('/teacher/du-gio-mam-non') ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
+                      }`} />
+                    </div>
+                    {!isCollapsed && <span>2. Dự giờ đánh giá Mầm non</span>}
+                  </Link>
+                )}
 
                 {/* 3. Đánh giá nhận xét: Hướng nghiệp */}
                 <Link 
