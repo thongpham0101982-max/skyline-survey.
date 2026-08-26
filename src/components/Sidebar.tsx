@@ -25,7 +25,8 @@ import {
   Bell,
   UserPlus,
   Calendar,
-  RotateCcw
+  RotateCcw,
+  Baby
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
