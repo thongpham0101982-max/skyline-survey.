@@ -269,6 +269,41 @@ export default function ActivityResultInput() {
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Ket_Qua_Danh_Gia');
+
+      // SHEET 2: HƯỚNG DẪN & DANH MỤC THAM CHIẾU
+      const guideAOA: any[][] = [
+        ['HƯỚNG DẪN ĐIỀN THÔNG TIN ĐÁNH GIÁ HOẠT ĐỘNG TRẢI NGHIỆM'],
+        ['Lưu ý: Quý thầy/cô điền đúng các giá trị hợp lệ dưới đây vào Sheet "Ket_Qua_Danh_Gia" trước khi thực hiện Import lại file.'],
+        [],
+        ['1. VAI TRÒ THAM GIA', '', '2. MỨC ĐÁNH GIÁ', '', '3. THÀNH TÍCH', ''],
+        ['Mã', 'Tên vai trò', 'Mã', 'Tên mức đánh giá', 'Mã', 'Tên thành tích']
+      ];
+
+      const maxLen = Math.max(categories.role.length, categories.result.length, categories.achievement.length, 1);
+      for (let i = 0; i < maxLen; i++) {
+        const r = categories.role[i] || { code: '', name: '' };
+        const res = categories.result[i] || { code: '', name: '' };
+        const ach = categories.achievement[i] || { code: '', name: '' };
+        guideAOA.push([r.code || '', r.name || '', res.code || '', res.name || '', ach.code || '', ach.name || '']);
+      }
+
+      guideAOA.push([]);
+      guideAOA.push(['HƯỚNG DẪN NHẬP (IMPORT) FILE:']);
+      guideAOA.push(['1. Điền thông tin tại Sheet "Ket_Qua_Danh_Gia" theo đúng các giá trị danh mục được liệt kê ở trên.']);
+      guideAOA.push(['2. Không thay đổi hoặc xóa cột "Mã học sinh" để hệ thống nhận diện và cập nhật chính xác cho từng học sinh.']);
+      guideAOA.push(['3. Sau khi cập nhật và lưu file Excel, quay lại trang này và nhấn nút "Nhập File Excel", sau đó bấm "Lưu kết quả".']);
+
+      const guideWs = XLSX.utils.aoa_to_sheet(guideAOA);
+      guideWs['!cols'] = [
+        { wch: 12 }, // Mã vai trò
+        { wch: 22 }, // Tên vai trò
+        { wch: 12 }, // Mã mức đánh giá
+        { wch: 22 }, // Tên mức đánh giá
+        { wch: 12 }, // Mã thành tích
+        { wch: 25 }  // Tên thành tích
+      ];
+
+      XLSX.utils.book_append_sheet(wb, guideWs, 'Huong_Dan');
       const safeName = (activityName || 'Hoat_Dong').replace(/[^a-zA-Z0-9_À-ỹ]/g, '_');
       const dateStr = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(wb, `Ket_Qua_${safeName}_${dateStr}.xlsx`);
