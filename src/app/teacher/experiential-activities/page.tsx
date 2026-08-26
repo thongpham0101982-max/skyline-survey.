@@ -5,9 +5,10 @@ import {
   Plus, Search, Calendar, Users, ChevronRight, Activity, 
   Trash2, Edit3, Tag, CheckCircle2, Clock, List, LayoutGrid,
   Sparkles, Filter, FileCheck, Layers, ArrowUpRight, CheckCircle,
-  BarChart3, RefreshCw, X, Eye, FileSpreadsheet
+  BarChart3, RefreshCw, X, Eye, FileSpreadsheet, Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 
 export default function ExperientialActivitiesList() {
   const router = useRouter();
@@ -71,7 +72,6 @@ export default function ExperientialActivitiesList() {
     if (saved === 'list' || saved === 'grid') {
       setViewMode(saved);
     } else {
-      // Default to list view
       setViewMode('list');
     }
   }, []);
@@ -109,6 +109,45 @@ export default function ExperientialActivitiesList() {
       containerCls: 'bg-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-2xs',
       dot: 'bg-indigo-500 ring-2 ring-indigo-300'
     };
+  };
+
+  // Export to Excel handler
+  const handleExportExcel = () => {
+    if (filtered.length === 0) {
+      toast.error('Không có dữ liệu hoạt động để xuất file Excel');
+      return;
+    }
+    try {
+      const dataToExport = filtered.map((act, idx) => ({
+        'STT': idx + 1,
+        'Mã Hoạt Động': act.code || 'Tự động',
+        'Tên Hoạt Động': act.name || '',
+        'Nhóm / Danh Mục': act.catalogName || '',
+        'Ngày Tổ Chức': act.date ? new Date(act.date).toLocaleDateString('vi-VN') : '',
+        'Số HS Tham Gia': act.participants || 0,
+        'Trạng Thái': act.status === 'SUBMITTED' ? 'Đã hoàn thành' : 'Đang thực hiện (Nháp)'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 18 },
+        { wch: 36 },
+        { wch: 25 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 24 },
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Hoat_Dong_Trai_Nghiem');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `Danh_Sach_Hoat_Dong_Trai_Nghiem_${dateStr}.xlsx`);
+      toast.success('Đã xuất file Excel thành công!');
+    } catch (err) {
+      console.error('Export excel error:', err);
+      toast.error('Lỗi khi xuất file Excel');
+    }
   };
 
   return (
@@ -150,7 +189,18 @@ export default function ExperientialActivitiesList() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-3 shrink-0 flex-wrap">
+              {/* Xuất File Excel Button */}
+              <button
+                onClick={handleExportExcel}
+                className="px-5 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all duration-300 flex items-center gap-2 group transform active:scale-95"
+                title="Xuất danh sách ra file Excel (.xlsx)"
+              >
+                <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+                <span>Xuất File Excel</span>
+              </button>
+
+              {/* Tạo hoạt động mới Button */}
               <button
                 onClick={() => router.push('/teacher/experiential-activities/create')}
                 className="px-6 py-3.5 bg-gradient-to-r from-indigo-600 via-cyan-600 to-teal-500 hover:from-indigo-700 hover:via-cyan-700 hover:to-teal-600 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 transition-all duration-300 flex items-center gap-2.5 group transform active:scale-95"
@@ -272,6 +322,16 @@ export default function ExperientialActivitiesList() {
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              {/* Export Button in toolbar */}
+              <button
+                onClick={handleExportExcel}
+                className="p-2.5 bg-white border border-slate-200/90 rounded-xl text-emerald-700 hover:bg-emerald-50 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+                title="Xuất file Excel"
+              >
+                <Download className="w-4 h-4 text-emerald-600" />
+                <span className="hidden sm:inline">Xuất Excel</span>
+              </button>
+
               <div className="flex bg-slate-100/90 p-1 rounded-xl items-center border border-slate-200/80 shadow-inner">
                 <button 
                   onClick={() => handleSetViewMode('list')} 
@@ -357,9 +417,18 @@ export default function ExperientialActivitiesList() {
                     Danh sách Hoạt động ({filtered.length} bản ghi)
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-400 font-bold">
-                  Nhấn vào hàng để xem chi tiết & nhập điểm
-                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleExportExcel}
+                    className="text-xs font-black text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-xl flex items-center gap-1.5 transition-all shadow-2xs"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Xuất Excel</span>
+                  </button>
+                  <span className="text-[11px] text-slate-400 font-bold hidden sm:inline">
+                    Nhấn vào hàng để xem chi tiết & nhập điểm
+                  </span>
+                </div>
               </div>
 
               <div className="overflow-x-auto">

@@ -5,9 +5,10 @@ import {
   ArrowLeft, Settings, Save, Search, CheckSquare,
   CheckCircle2, Plus, X, Hash, Edit3, Loader2,
   Square, Users, BookOpen, Calendar, Tag, ChevronDown,
-  CheckCheck, Sparkles, Award, Filter, ShieldCheck, CheckCircle
+  CheckCheck, Sparkles, Award, Filter, ShieldCheck, CheckCircle, Download
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
 
 export default function ActivityResultInput() {
   const router = useRouter();
@@ -199,6 +200,63 @@ export default function ActivityResultInput() {
     <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
   );
 
+  const handleExportExcel = () => {
+    if (students.length === 0) {
+      toast.error('Không có dữ liệu học sinh để xuất file Excel');
+      return;
+    }
+    try {
+      const dataToExport = filteredStudents.map((s, idx) => {
+        const roleObj = categories.role.find((c: any) => c.code === s.roleId);
+        const levelObj = categories.result.find((c: any) => c.code === s.evalLevelId);
+        const achObj = categories.achievement.find((c: any) => c.code === s.achievementId);
+
+        const row: any = {
+          'STT': idx + 1,
+          'Mã Học Sinh': s.code || '',
+          'Họ và Tên': s.name || '',
+          'Lớp': s.class || '',
+          'Giới Tính': s.gender === 'male' ? 'Nam' : (s.gender === 'female' ? 'Nữ' : s.gender || ''),
+          'Vai Trò Tham Gia': roleObj ? roleObj.name : (s.roleId || ''),
+          'Mức Đánh Giá': levelObj ? levelObj.name : (s.evalLevelId || ''),
+          'Thành Tích': achObj ? achObj.name : (s.achievementId || ''),
+          'Lý Do Vắng': s.absenceReasonId || '',
+          'Ghi Chú': s.note && !s.note.startsWith('{') ? s.note : ''
+        };
+
+        config.customColumns.forEach(col => {
+          row[col.name] = getCustomValue(s.note, col.id);
+        });
+
+        return row;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      ws['!cols'] = [
+        { wch: 6 },
+        { wch: 15 },
+        { wch: 25 },
+        { wch: 12 },
+        { wch: 10 },
+        { wch: 22 },
+        { wch: 20 },
+        { wch: 20 },
+        { wch: 16 },
+        { wch: 25 }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Ket_Qua_Danh_Gia');
+      const safeName = (activityName || 'Hoat_Dong').replace(/[^a-zA-Z0-9_À-ỹ]/g, '_');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `Ket_Qua_${safeName}_${dateStr}.xlsx`);
+      toast.success('Đã xuất file Excel kết quả thành công!');
+    } catch (err) {
+      console.error('Export excel error:', err);
+      toast.error('Lỗi khi xuất file Excel');
+    }
+  };
+
   if (loading) return (
     <div className="min-h-screen bg-slate-50/80 flex justify-center items-center">
       <div className="flex flex-col items-center gap-4 backdrop-blur-xl bg-white/80 p-8 rounded-3xl border border-white/90 shadow-xl">
@@ -307,6 +365,13 @@ export default function ActivityResultInput() {
             {/* Action Buttons */}
             <div className="flex items-center gap-2.5 flex-wrap self-end lg:self-center shrink-0">
               <button
+                onClick={handleExportExcel}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-600/20"
+                title="Xuất kết quả đánh giá ra file Excel"
+              >
+                <Download className="w-3.5 h-3.5" /> Xuất Excel
+              </button>
+              <button
                 onClick={() => setShowEditModal(true)}
                 className="px-4 py-2.5 bg-slate-100/90 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs"
               >
@@ -409,12 +474,21 @@ export default function ActivityResultInput() {
               Danh sách: <span className="font-black text-slate-800">{filteredStudents.length}</span> học sinh
               {search && <span className="text-slate-400 ml-1.5">(lọc từ tổng số {students.length})</span>}
             </div>
-            <button onClick={toggleAll} className="text-xs font-black text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 transition-colors">
-              {allSelected
-                ? <><CheckSquare className="w-4 h-4 text-indigo-600" /> Bỏ chọn tất cả</>
-                : <><Square className="w-4 h-4" /> Chọn tất cả ({filteredStudents.length} HS)</>
-              }
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleExportExcel}
+                className="text-xs font-black text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1 rounded-xl flex items-center gap-1.5 transition-all shadow-2xs"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Xuất Excel</span>
+              </button>
+              <button onClick={toggleAll} className="text-xs font-black text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 transition-colors">
+                {allSelected
+                  ? <><CheckSquare className="w-4 h-4 text-indigo-600" /> Bỏ chọn tất cả</>
+                  : <><Square className="w-4 h-4" /> Chọn tất cả ({filteredStudents.length} HS)</>
+                }
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
