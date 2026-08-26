@@ -24,6 +24,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const roleCode = (session?.user as any)?.role || "TEACHER"
 
   let isGVCN = false
+  let isPreschoolTeacher = false
   let readableModules: string[] = []
   try {
     const pAny = prisma as any
@@ -62,7 +63,10 @@ export default async function TeacherLayout({ children }: { children: React.Reac
 
   if (session?.user?.id) {
     try {
-      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } }).catch(() => null)
+      const teacher = await prisma.teacher.findUnique({ 
+        where: { userId: session.user.id },
+        include: { departmentRel: true }
+      }).catch(() => null)
       if (teacher) {
         const homeroomClassesCount = await prisma.class.count({
           where: {
@@ -73,9 +77,16 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           }
         }).catch(() => 0)
         isGVCN = homeroomClassesCount > 0
+
+        const blockCMClean = (teacher.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const deptNameClean = (teacher.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        isPreschoolTeacher = 
+          ['GV_MN', 'BGH_MN', 'MN', 'MAM_NON', 'BGH MAM NON', 'BGH_MAM_NON'].includes((roleCode || '').toUpperCase()) ||
+          blockCMClean.includes("mam non") ||
+          deptNameClean.includes("mam non");
       }
     } catch (err) {
-      console.error("Error querying isGVCN in layout:", err)
+      console.error("Error querying teacher in layout:", err)
     }
   }
 
