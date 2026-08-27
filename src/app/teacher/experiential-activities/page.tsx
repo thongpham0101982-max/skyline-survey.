@@ -71,7 +71,7 @@ export default function ExperientialActivitiesList() {
         const err = await res.json();
         toast.error(err.error || "Lỗi khi xóa");
       }
-    } catch { toast.error("Lỗi kết nối my ch?"); }
+    } catch { toast.error("Lỗi kết nối máy chủ"); }
   };
 
   const handleDuplicate = async (e, act) => {
@@ -159,7 +159,7 @@ export default function ExperientialActivitiesList() {
   const totalActivities = activities.length;
   const completedActivities = activities.filter(a => a.status === "COMPLETED").length;
   const activeActivities = activities.filter(a => a.status === "ASSIGNED" || a.status === "IN_PROGRESS").length;
-  const totalStudents = activities.reduce((acc, curr) => acc + (curr.participantsCount || 0), 0);
+  const totalStudents = activities.reduce((acc, curr) => acác + (curr.participantsCount || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/15 to-sky-50/20 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-sans">
@@ -478,7 +478,7 @@ export default function ExperientialActivitiesList() {
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {getStrandBadge(act.strand)}
                               <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                                {act.activityTypeName || 'S? ki?n'}
+                                {act.activityTypeName || 'Sự kiện'}
                               </span>
                             </div>
                           </div>
@@ -533,7 +533,7 @@ export default function ExperientialActivitiesList() {
                             <button
                               onClick={() => setProgressModalActivity(act)}
                               className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D]/10 text-slate-600 hover:text-[#003B3A] transition-colors"
-                              title="Theo dõi tiến độ nộp của cc lớp"
+                              title="Theo dõi tiến độ nộp của các lớp"
                             >
                               <BarChart3 className="w-4 h-4 text-[#00A99D]" />
                             </button>

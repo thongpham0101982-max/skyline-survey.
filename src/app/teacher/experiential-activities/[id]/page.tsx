@@ -91,7 +91,7 @@ export default function ActivityResultInput() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      toast.error('Lỗi khi t?i thng tin hoạt động');
+      toast.error('Lỗi khi t?i thông tin hoạt động');
       setLoading(false);
     }
   }, [id, selectedClassId]);
@@ -174,7 +174,7 @@ export default function ActivityResultInput() {
         toast.error(err.error || 'Lỗi khi lu kết quả');
       }
     } catch {
-      toast.error('Lỗi kết nối my ch?');
+      toast.error('Lỗi kết nối máy chủ');
     } finally {
       setSaving(false);
     }
@@ -198,7 +198,7 @@ export default function ActivityResultInput() {
   // Bulk Evaluation Handler
   const handleApplyBulk = () => {
     if (selectedIds.size === 0) {
-      toast.error('Vui l?ng ch?n t nhĐạt mĐạt học sinh');
+      toast.error('Vui l?ng ch?n ít nhất một học sinh');
       return;
     }
 
@@ -404,7 +404,7 @@ export default function ActivityResultInput() {
             <button
               onClick={() => router.push('/teacher/experiential-activities')}
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors shrink-0"
-              title="Quay lỗi danh sách"
+              title="Quay lại danh sách"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>

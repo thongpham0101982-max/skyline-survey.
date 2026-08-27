@@ -37,7 +37,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
         {/* Overall Progress Bar */}
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
           <div className="flex items-center justify-between text-xs font-black">
-            <span className="text-slate-700">Tiến độ hoàn thành ton b?:</span>
+            <span className="text-slate-700">Tiến độ hoàn thành toàn bộ:</span>
             <span className="text-[#00A99D]">{completedClasses}/{totalClasses} lớp ({progressPercent}%)</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
