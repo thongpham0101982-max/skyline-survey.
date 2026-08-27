@@ -23,8 +23,8 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
               <span className="text-[11px] font-black text-[#003B3A] bg-[#00A99D]/10 px-2.5 py-0.5 rounded-lg border border-[#00A99D]/20">
                 {activity.code || 'HDTN'}
               </span>
-              <span className="text-xs font-bold text-slate-400">�</span>
-              <span className="text-xs font-bold text-slate-500">{activity.activityTypeName || 'Ho?t �?ng tr?i nghi?m'}</span>
+              <span className="text-xs font-bold text-slate-400"></span>
+              <span className="text-xs font-bold text-slate-500">{activity.activityTypeName || 'Hoạt động trải nghiệm'}</span>
             </div>
             <h3 className="text-base font-black text-slate-900 line-clamp-1">{activity.name}</h3>
           </div>
@@ -37,7 +37,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
         {/* Overall Progress Bar */}
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
           <div className="flex items-center justify-between text-xs font-black">
-            <span className="text-slate-700">Ti?n �? ho�n th�nh to�n b?:</span>
+            <span className="text-slate-700">Ti?n ? hon thnh ton b?:</span>
             <span className="text-[#00A99D]">{completedClasses}/{totalClasses} l?p ({progressPercent}%)</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
@@ -52,7 +52,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
           {assignedClasses.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-400 font-bold">
-              Ch�a c� l?p n�o ��?c g�n cho ho?t �?ng n�y
+              Cha c l?p no ?c gn cho hoạt động ny
             </div>
           ) : (
             assignedClasses.map((cls: any, idx: number) => {
@@ -75,10 +75,10 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
 
                     <div>
                       <div className="text-xs font-black text-slate-800">
-                        {cls.campusName || cls.campusCode} � Kh?i {cls.grade}
+                        {cls.campusName || cls.campusCode}  Khối {cls.grade}
                       </div>
                       <div className="text-[11px] text-slate-400 font-bold">
-                        GVCN: <span className="text-slate-700">{cls.homeroomTeacherName || 'Ch�a g�n'}</span>
+                        GVCN: <span className="text-slate-700">{cls.homeroomTeacherName || 'Cha gn'}</span>
                       </div>
                     </div>
                   </div>
@@ -87,7 +87,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
                     <div className="text-right">
                       <div className="text-xs font-black text-slate-800">{evalSt}/{totalSt} HS</div>
                       <div className={"text-[10px] font-black " + (isCompleted ? 'text-emerald-600' : 'text-[#00A99D]')}>
-                        {pct}% ({isCompleted ? '�? n?p' : isInProgress ? '�ang ch?m' : 'Ch�a ch?m'})
+                        {pct}% ({isCompleted ? '? n?p' : isInProgress ? 'Đang chấm' : 'Cha ch?m'})
                       </div>
                     </div>
 
@@ -97,7 +97,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
                         router.push("/teacher/experiential-activities/" + activity.id + "?classId=" + cls.classId);
                       }}
                       className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D] hover:text-white text-slate-600 transition-all"
-                      title="M? s? ��nh gi� c?a l?p n�y"
+                      title="M? s? đánh giá c?a l?p ny"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </button>
@@ -114,7 +114,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
             onClick={onClose}
             className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black rounded-xl transition-all"
           >
-            ��ng
+            ng
           </button>
         </div>
 

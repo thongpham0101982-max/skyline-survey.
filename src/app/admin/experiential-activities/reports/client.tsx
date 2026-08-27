@@ -68,40 +68,40 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
   const handleExportExcel = () => {
     if (!stats || !stats.classProgress || stats.classProgress.length === 0) {
-      toast.error('Kh�ng c� d? li?u �? xu?t Excel');
+      toast.error('Khng c d? li?u ? xu?t Excel');
       return;
     }
     try {
       const dataToExport = stats.classProgress.map((cp, idx) => ({
         'STT': idx + 1,
-        'C� s?': cp.campusName || cp.campusCode || '',
-        'Kh?i': cp.grade || '',
-        'L?p': cp.className || '',
+        'Cơ sở': cp.campusName || cp.campusCode || '',
+        'Khối': cp.grade || '',
+        'Lớp': cp.className || '',
         'GVCN': cp.homeroomTeacherName || '',
-        'Ho?t �?ng': cp.activityName || '',
-        'M?ch': cp.strand || '',
-        'S? s? HS': cp.totalStudents || 0,
-        '�? ��nh gi�': cp.evaluatedStudents || 0,
-        'T? l? ho�n th�nh': `${cp.progressPercent || 0}%`,
-        'Tr?ng th�i': cp.status === 'COMPLETED' ? 'Ho�n th�nh' : '�ang th?c hi?n'
+        'Hoạt động': cp.activityName || '',
+        'Mạch': cp.strand || '',
+        'Sĩ số HS': cp.totalStudents || 0,
+        'Đã đánh giá': cp.evaluatedStudents || 0,
+        'Tỷ lệ hoàn thành': `${cp.progressPercent || 0}%`,
+        'Trạng thái': cp.status === 'COMPLETED' ? 'Hoàn thành' : 'Đang thực hiện'
       }));
 
       const ws = XLSX.utils.json_to_sheet(dataToExport);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Tien_Do_Danh_Gia_HDTN');
       XLSX.writeFile(wb, `Bao_Cao_Tien_Do_HDTN_${new Date().toISOString().slice(0, 10)}.xlsx`);
-      toast.success('�? xu?t b�o c�o Excel th�nh c�ng!');
+      toast.success('Đã xuất báo cáo Excel thành công!');
     } catch {
-      toast.error('L?i khi xu?t file Excel');
+      toast.error('Lỗi khi xuất file Excel');
     }
   };
 
   const kpis = stats?.kpis || { totalActivities: 0, totalClassesAssigned: 0, totalStudentsEvaluated: 0, overallCompletionRate: 0 };
   const ratingData = [
-    { name: 'N?i b?t', value: stats?.ratingDistribution?.OUTSTANDING || 0, color: '#9333EA' },
-    { name: 'T?t', value: stats?.ratingDistribution?.GOOD || 0, color: '#059669' },
-    { name: '�?t', value: stats?.ratingDistribution?.PASS || 0, color: '#0284C7' },
-    { name: 'C?n h? tr?', value: stats?.ratingDistribution?.NEEDS_SUPPORT || 0, color: '#D97706' }
+    { name: 'Nổi bật', value: stats?.ratingDistribution?.OUTSTANDING || 0, color: '#9333EA' },
+    { name: 'Tốt', value: stats?.ratingDistribution?.GOOD || 0, color: '#059669' },
+    { name: 'Đạt', value: stats?.ratingDistribution?.PASS || 0, color: '#0284C7' },
+    { name: 'Cần hỗ trợ', value: stats?.ratingDistribution?.NEEDS_SUPPORT || 0, color: '#D97706' }
   ];
 
   const strandData = (stats?.strandDistribution || []).map(s => ({
@@ -135,16 +135,16 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A99D]/10 text-[#003B3A] border border-[#00A99D]/20">
-                    B�o C�o & Th?ng K�
+                    Bo Co & Th?ng K
                   </span>
-                  <span className="text-slate-300 text-xs">�</span>
-                  <span className="text-xs font-bold text-slate-500">Qu?n tr? Ch?t l�?ng Sky-Line</span>
+                  <span className="text-slate-300 text-xs"></span>
+                  <span className="text-xs font-bold text-slate-500">Quản trị Ch?t l?ng Sky-Line</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A99D] bg-clip-text text-transparent tracking-tight">
-                  Dashboard ��nh Gi� Ho?t �?ng Tr?i Nghi?m
+                  Dashboard nh Gi Hoạt động Tr?i Nghi?m
                 </h1>
                 <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1">
-                  B�o c�o �a chi?u theo N�m h?c, C� s?, Kh?i, 4 M?ch ho?t �?ng v� gi�m s�t ti?n �? GVCN
+                  Bo co a chi?u theo Năm học, Cơ sở, Khối, 4 Mạch hoạt động v gim st ti?n ? GVCN
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
               className="px-5 py-3 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black rounded-2xl border border-slate-200 shadow-2xs transition-all flex items-center gap-2"
             >
               <Download className="w-4 h-4 text-emerald-600" />
-              <span>Xu?t B�o C�o Excel</span>
+              <span>Xu?t Bo Co Excel</span>
             </button>
           </div>
 
@@ -162,7 +162,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100">
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">T?ng Ho?t �?ng</p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">T?ng Hoạt động</p>
                 <p className="text-2xl font-black text-slate-800 mt-1">{kpis.totalActivities}</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">
@@ -172,7 +172,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">L?p Tham gia</p>
+                <p className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">Lớp Tham gia</p>
                 <p className="text-2xl font-black text-sky-700 mt-1">{kpis.totalClassesAssigned}</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200">
@@ -182,7 +182,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">L�?t HS ��nh gi�</p>
+                <p className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">L?t HS đánh giá</p>
                 <p className="text-2xl font-black text-[#003B3A] mt-1">{kpis.totalStudentsEvaluated}</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center border border-[#00A99D]/30">
@@ -192,7 +192,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">T? l? Ho�n th�nh</p>
+                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">T? l? Hon thnh</p>
                 <p className="text-2xl font-black text-emerald-700 mt-1">{kpis.overallCompletionRate}%</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
@@ -205,7 +205,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
         {/* MULTI-FILTER BAR */}
         <div className="bg-white/90 p-4 rounded-3xl border border-white shadow-md shadow-slate-200/40 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">N�m h?c</label>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Năm học</label>
             <select
               value={selectedYearId}
               onChange={e => setSelectedYearId(e.target.value)}
@@ -218,13 +218,13 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">C� s?</label>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cơ sở</label>
             <select
               value={selectedCampusId}
               onChange={e => setSelectedCampusId(e.target.value)}
               className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
             >
-              <option value="ALL">T?t c? c� s?</option>
+              <option value="ALL">Tất cả cơ sở</option>
               {campuses.map(c => (
                 <option key={c.id} value={c.id}>{c.campusName || c.campusCode}</option>
               ))}
@@ -232,42 +232,42 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">C?p h?c</label>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cấp học</label>
             <select
               value={selectedLevel}
               onChange={e => setSelectedLevel(e.target.value)}
               className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
             >
-              <option value="ALL">T?t c? c?p h?c</option>
-              <option value="Tieu hoc">Ti?u h?c</option>
+              <option value="ALL">Tất cả cấp học</option>
+              <option value="Tieu hoc">Tiểu học</option>
               <option value="THCS">THCS</option>
               <option value="THPT">THPT</option>
-              <option value="Mam non">M?m non</option>
+              <option value="Mam non">Mầm non</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Kh?i</label>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Khối</label>
             <select
               value={selectedGrade}
               onChange={e => setSelectedGrade(e.target.value)}
               className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
             >
-              <option value="ALL">T?t c? kh?i</option>
+              <option value="ALL">Tất cả khối</option>
               {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => (
-                <option key={g} value={String(g)}>Kh?i {g}</option>
+                <option key={g} value={String(g)}>Khối {g}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">M?ch ho?t �?ng</label>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Mạch hoạt động</label>
             <select
               value={selectedStrand}
               onChange={e => setSelectedStrand(e.target.value)}
               className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
             >
-              <option value="ALL">T?t c? 4 m?ch</option>
+              <option value="ALL">Tất cả 4 mạch</option>
               {ACTIVITY_STRANDS.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
@@ -282,7 +282,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-purple-600" />
-              Ph�n b? X?p lo?i K?t qu? H?c sinh (Thang 4 m?c)
+              Phn b? X?p lo?i K?t qu? Học sinh (Thang 4 m?c)
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -312,7 +312,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#00A99D]" />
-              S? l�?ng Ho?t �?ng theo 4 M?ch Tr?i nghi?m
+              S? l?ng Hoạt động theo 4 Mạch Trải nghiệm
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -320,7 +320,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                   <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 'bold' }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" name="S? ho?t �?ng" fill="#00A99D" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="count" name="S? hoạt động" fill="#00A99D" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -330,7 +330,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4 lg:col-span-2">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-600" />
-              �i?m ��nh gi� Trung b?nh theo 12 Ti�u ch� N�ng l?c Sky-Line (Thang 4 m?c)
+              i?m đánh giá Trung b?nh theo 12 Tiu ch Nng l?c Sky-Line (Thang 4 m?c)
             </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -338,7 +338,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                   <PolarGrid />
                   <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 10, fontWeight: 'bold' }} />
                   <PolarRadiusAxis angle={30} domain={[0, 4]} />
-                  <Radar name="�i?m TB" dataKey="avg" stroke="#6366F1" fill="#6366F1" fillOpacity={0.4} />
+                  <Radar name="i?m TB" dataKey="avg" stroke="#6366F1" fill="#6366F1" fillOpacity={0.4} />
                   <Tooltip />
                   <Legend />
                 </RadarChart>
@@ -351,11 +351,11 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
         <div className="bg-white rounded-3xl border border-slate-200 shadow-md shadow-slate-200/40 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-black text-slate-800">Gi�m S�t Ti?n �? ��nh Gi� C?a Gi�o Vi�n Ch? Nhi?m</h3>
-              <p className="text-xs text-slate-500 font-medium">Theo d?i th?i gian th?c ti?n �? n?p s? ��nh gi� c?a t?ng l?p</p>
+              <h3 className="text-sm font-black text-slate-800">Gim St Ti?n ? nh Gi C?a Gio Vin Ch? Nhi?m</h3>
+              <p className="text-xs text-slate-500 font-medium">Theo d?i th?i gian th?c ti?n ? n?p sĐã đánh giá c?a t?ng l?p</p>
             </div>
             <span className="text-xs font-bold text-slate-400">
-              T?ng c?ng: {(stats?.classProgress || []).length} l�?t ph�n c�ng
+              T?ng c?ng: {(stats?.classProgress || []).length} l?t phân công
             </span>
           </div>
 
@@ -364,20 +364,20 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
                   <th className="py-3.5 px-4 text-center w-12">#</th>
-                  <th className="py-3.5 px-4 min-w-[120px]">C� s? / Kh?i</th>
-                  <th className="py-3.5 px-4 min-w-[100px]">L?p</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">GVCN Ph? tr�ch</th>
-                  <th className="py-3.5 px-4 min-w-[240px]">T�n Ho?t �?ng & M?ch</th>
-                  <th className="py-3.5 px-4 text-center min-w-[120px]">�? ��nh gi�</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Ti?n �? %</th>
-                  <th className="py-3.5 px-4 min-w-[120px]">Tr?ng th�i</th>
+                  <th className="py-3.5 px-4 min-w-[120px]">Cơ sở / Khối</th>
+                  <th className="py-3.5 px-4 min-w-[100px]">Lớp</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">GVCN Ph? trch</th>
+                  <th className="py-3.5 px-4 min-w-[240px]">Tn Hoạt động & Mạch</th>
+                  <th className="py-3.5 px-4 text-center min-w-[120px]">Đã đánh giá</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Ti?n ? %</th>
+                  <th className="py-3.5 px-4 min-w-[120px]">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {(stats?.classProgress || []).length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400 font-bold">
-                      Ch�a c� l?p n�o ��?c ph�n c�ng ho?t �?ng
+                      Cha c l?p no ?c phân công hoạt động
                     </td>
                   </tr>
                 ) : (
@@ -389,7 +389,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                         <td className="py-3.5 px-4 text-center text-slate-400 font-bold">{idx + 1}</td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className="font-bold text-slate-800">{cp.campusName || cp.campusCode}</span>
-                          <span className="text-[11px] text-slate-400 block">Kh?i {cp.grade}</span>
+                          <span className="text-[11px] text-slate-400 block">Khối {cp.grade}</span>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className="font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
@@ -397,7 +397,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                           </span>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="font-bold text-slate-800">{cp.homeroomTeacherName || 'Ch�a g�n'}</span>
+                          <span className="font-bold text-slate-800">{cp.homeroomTeacherName || 'Cha gn'}</span>
                         </td>
                         <td className="py-3.5 px-4">
                           <div className="font-black text-slate-800 line-clamp-1">{cp.activityName}</div>
@@ -426,7 +426,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                               : 'bg-sky-50 text-sky-700 border-sky-200'
                           }`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-sky-500'}`} />
-                            <span>{isCompleted ? 'Ho�n th�nh' : '�ang th?c hi?n'}</span>
+                            <span>{isCompleted ? 'Hoàn thành' : 'Đang thực hiện'}</span>
                           </span>
                         </td>
                       </tr>
