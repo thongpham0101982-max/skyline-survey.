@@ -159,7 +159,7 @@ export default function ExperientialActivitiesList() {
   const totalActivities = activities.length;
   const completedActivities = activities.filter(a => a.status === "COMPLETED").length;
   const activeActivities = activities.filter(a => a.status === "ASSIGNED" || a.status === "IN_PROGRESS").length;
-  const totalStudents = activities.reduce((acc, curr) => acác + (curr.participantsCount || 0), 0);
+  const totalStudents = activities.reduce((acc, curr) => acc + (curr.participantsCount || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/15 to-sky-50/20 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-sans">
