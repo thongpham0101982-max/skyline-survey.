@@ -190,6 +190,7 @@ export function ExamsClient({
 
   const openCreate = () => {
     const autoCode = generateNextExamCode(exams)
+    const validCat = filteredCategoriesForSelect[0]?.id || categories[0]?.id || ""
     setEditingId(null)
     setForm({
       name: "",
@@ -197,7 +198,7 @@ export function ExamsClient({
       description: "",
       startDate: "",
       endDate: "",
-      categoryId: categories[0]?.id || "",
+      categoryId: validCat,
       roundId: "",
       departmentId: "",
       plan: "HE_THONG",

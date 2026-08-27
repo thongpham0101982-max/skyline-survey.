@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-27T01:37:34.450Z
+// Forced Vercel Deployment: 2026-08-27T01:54:41.662Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -298,9 +298,9 @@ export function ObservationClient(props: ObservationClientProps) {
   const [surpriseClassId, setSurpriseClassId] = useState<string>("")
   const [surpriseClassName, setSurpriseClassName] = useState<string>("")
   const [surpriseSubjectId, setSurpriseSubjectId] = useState<string>("")
-  const [surpriseSubjectName, setSurpriseSubjectName] = useState<string>("")
-  const [surpriseLevel, setSurpriseLevel] = useState<string>("Phổ thông K-12")
-  const [surpriseGrade, setSurpriseGrade] = useState<string>("Khối 10")
+  const [surpriseSubjectName, setSurpriseSubjectName] = useState<string>(() => isMamNonTeacher ? "Khác/Chuyên đề" : "")
+  const [surpriseLevel, setSurpriseLevel] = useState<string>(() => isMamNonTeacher ? "Mầm non" : "Phổ thông K-12")
+  const [surpriseGrade, setSurpriseGrade] = useState<string>(() => isMamNonTeacher ? "Mầm non" : "Khối 10")
   const [surpriseTopic, setSurpriseTopic] = useState<string>("")
   const [surpriseDate, setSurpriseDate] = useState<string>(() => new Date().toISOString().split("T")[0])
   const [surprisePeriod, setSurprisePeriod] = useState<string>("Tiết 1")
@@ -310,7 +310,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [surpriseStrengths, setSurpriseStrengths] = useState<string>("")
   const [surpriseImprovements, setSurpriseImprovements] = useState<string>("")
   const [surpriseGeneral, setSurpriseGeneral] = useState<string>("")
-  const [surpriseOverall, setSurpriseOverall] = useState<string>("Giỏi")
+  const [surpriseOverall, setSurpriseOverall] = useState<string>(() => isMamNonTeacher ? "Tốt" : "Giỏi")
   const [surpriseSubmitting, setSurpriseSubmitting] = useState<boolean>(false)
 
   
@@ -934,8 +934,12 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [isAdminUser, isTTCM]);
 
   const ttcmAllowedDepartments = useMemo(() => {
-    if (isAdminUser) return departments;
-    if (!isTTCM) return [];
+    let depts = departments;
+    if (isMamNonTeacher) {
+      depts = depts.filter(d => isPreschoolDepartment(d.name || d.code || "") || (d as any).blockCM === "Mầm non");
+    }
+    if (isAdminUser) return depts;
+    if (!isTTCM) return depts;
     const deptIds = new Set<string>();
     if (currentTeacher?.departmentId) deptIds.add(currentTeacher.departmentId);
     if (currentTeacher?.departmentAssignments) {
@@ -945,40 +949,50 @@ export function ObservationClient(props: ObservationClientProps) {
         }
       });
     }
-    return departments.filter(d => deptIds.has(d.id));
-  }, [departments, currentTeacher, isTTCM, isAdminUser]);
+    return depts.filter(d => deptIds.has(d.id));
+  }, [departments, currentTeacher, isTTCM, isAdminUser, isMamNonTeacher]);
 
-  // Set default surprise department for TTCM
+  // Set default surprise department for TTCM or Preschool
   useEffect(() => {
-    if (isTTCM && !isAdminUser && ttcmAllowedDepartments.length > 0 && !surpriseDeptId) {
+    if (ttcmAllowedDepartments.length > 0 && !surpriseDeptId) {
       setSurpriseDeptId(ttcmAllowedDepartments[0].id);
     }
-  }, [isTTCM, isAdminUser, ttcmAllowedDepartments, surpriseDeptId]);
+  }, [ttcmAllowedDepartments, surpriseDeptId]);
 
   const filteredTeachersForSurprise = useMemo(() => {
+    let baseTeachers = teachers;
+    if (isMamNonTeacher) {
+      baseTeachers = baseTeachers.filter((t: any) => {
+        const dName = t.departmentRel?.name || t.departmentRel?.code || "";
+        const block = t.departmentRel?.blockCM || "";
+        return isPreschoolDepartment(dName) || block.toLowerCase().includes("mam non") || (t.position || "").includes("MN") || (t.user?.role || "").includes("MN");
+      });
+    }
     if (!surpriseDeptId) {
       if (!isAdminUser && isTTCM) {
         const allowedIds = new Set(ttcmAllowedDepartments.map(d => d.id));
-        return teachers.filter((t: any) => allowedIds.has(t.departmentId));
+        return baseTeachers.filter((t: any) => allowedIds.has(t.departmentId));
       }
-      return teachers;
+      return baseTeachers;
     }
-    return teachers.filter((t: any) => {
+    return baseTeachers.filter((t: any) => {
       if (t.departmentId === surpriseDeptId) return true;
       if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
         return t.departmentAssignments.some((da: any) => da.departmentId === surpriseDeptId);
       }
       return false;
     });
-  }, [teachers, surpriseDeptId, isAdminUser, isTTCM, ttcmAllowedDepartments]);
+  }, [teachers, surpriseDeptId, isAdminUser, isTTCM, ttcmAllowedDepartments, isMamNonTeacher]);
 
   const filteredClassesForSurprise = useMemo(() => {
     if (!classes || classes.length === 0) return [];
     return classes.filter(c => {
+      if (isMamNonTeacher && c.level !== "Mầm non") return false;
+      if (!isMamNonTeacher && surpriseLevel !== "Mầm non" && c.level === "Mầm non") return false;
       if (surpriseCampusId && c.campusId !== surpriseCampusId) return false;
       return true;
     });
-  }, [classes, surpriseCampusId]);
+  }, [classes, surpriseCampusId, isMamNonTeacher, surpriseLevel]);
 
 
 
@@ -2093,20 +2107,28 @@ export function ObservationClient(props: ObservationClientProps) {
             /* ===== FORM 3: DỰ GIỜ ĐỘT XUẤT (TTCM & BAN ĐHCM / GĐCS) ===== */
             <div className="flex flex-col gap-6 text-xs font-semibold bg-gradient-to-b from-rose-50/30 via-white to-amber-50/20 p-5 sm:p-7 rounded-3xl border border-rose-200/80 shadow-sm animate-in fade-in duration-300">
               {/* Header Banner */}
-              <div className="bg-gradient-to-r from-rose-900 via-[#003B3A] to-rose-950 text-white p-5 rounded-2xl border border-rose-700/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className={`p-5 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white ${
+                isMamNonTeacher || surpriseLevel === "Mầm non"
+                  ? "bg-gradient-to-r from-amber-700 via-amber-800 to-[#003B3A] border-amber-500/40"
+                  : "bg-gradient-to-r from-rose-900 via-[#003B3A] to-rose-950 border-rose-700/40"
+              }`}>
                 <div className="flex items-start sm:items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center shrink-0 text-amber-300 shadow-inner">
+                  <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 text-amber-300 shadow-inner">
                     <Zap className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="text-sm sm:text-base font-black tracking-wide">DỰ GIỜ ĐỘT XUẤT</h4>
+                      <h4 className="text-sm sm:text-base font-black tracking-wide">
+                        {isMamNonTeacher || surpriseLevel === "Mầm non" ? "DỰ GIỜ ĐỘT XUẤT MẦM NON" : "DỰ GIỜ ĐỘT XUẤT"}
+                      </h4>
                       <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-amber-950 uppercase">
-                        {isAdminUser ? "Ban ĐHCM / GĐCS / Quản lý" : "Tổ trưởng chuyên môn (TTCM)"}
+                        {isAdminUser ? "Ban ĐHCM / GĐCS / Quản lý" : (isMamNonTeacher ? "TTCM / BGH Mầm non" : "Tổ trưởng chuyên môn (TTCM)")}
                       </span>
                     </div>
-                    <p className="text-[11px] text-rose-100/80 font-medium mt-0.5">
-                      Đánh giá trực tiếp tiết dạy đột xuất. Hệ thống tự động ghi nhận dữ liệu đánh giá mà không cần quy trình phê duyệt trước.
+                    <p className="text-[11px] text-rose-100/90 font-medium mt-0.5">
+                      {isMamNonTeacher || surpriseLevel === "Mầm non"
+                        ? "Đánh giá hoạt động học / chuyên đề Mầm non (18 tiêu chí - Tổng 10 điểm). Tự động ghi nhận không cần duyệt trước."
+                        : "Đánh giá trực tiếp tiết dạy đột xuất (11 tiêu chí - Tổng 20 điểm). Hệ thống tự động ghi nhận dữ liệu đánh giá mà không cần phê duyệt trước."}
                     </p>
                   </div>
                 </div>
