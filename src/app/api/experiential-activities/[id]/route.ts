@@ -64,6 +64,8 @@ export async function GET(
       campusId: activity.campusId,
       educationLevel: activity.educationLevel,
       grades: activity.grades ? activity.grades.split(",") : [],
+      subjectId: meta.subjectId || null,
+      subjectName: meta.subjectName || null,
       date: activity.date ? activity.date.toISOString().split("T")[0] : "",
       timeRange: meta.timeRange || "",
       location: meta.location || "",
@@ -168,7 +170,9 @@ export async function PUT(
       thresholds: body.thresholds ?? currentMeta.thresholds,
       mandatoryRules: body.mandatoryRules ?? currentMeta.mandatoryRules,
       deadline: body.deadline ?? currentMeta.deadline,
-      assignedClasses: body.assignedClasses ?? currentMeta.assignedClasses
+      assignedClasses: body.assignedClasses ?? currentMeta.assignedClasses,
+      subjectId: body.subjectId !== undefined ? body.subjectId : currentMeta.subjectId,
+      subjectName: body.subjectName !== undefined ? body.subjectName : currentMeta.subjectName
     };
 
     const updated = await prisma.activityRecord.update({

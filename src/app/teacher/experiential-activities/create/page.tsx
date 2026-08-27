@@ -27,6 +27,7 @@ export default function CreateActivityWizard() {
   const [academicYears, setAcademicYears] = useState([]);
   const [campuses, setCampuses] = useState([]);
   const [classes, setClasses] = useState([]);
+  const [subjects, setSubjects] = useState([]);
 
   // Step 1: Info & Classification
   const [formData, setFormData] = useState({
@@ -38,6 +39,8 @@ export default function CreateActivityWizard() {
     campusName: '',
     educationLevel: 'Tieu hoc',
     grades: ['1'],
+    subjectId: '',
+    subjectName: '',
     date: new Date().toISOString().split('T')[0],
     timeRange: '08:00 - 11:30',
     location: '',
@@ -78,6 +81,8 @@ export default function CreateActivityWizard() {
               campusName: data.campusName || '',
               educationLevel: data.educationLevel || 'Tieu hoc',
               grades: Array.isArray(data.grades) ? data.grades : (data.grades ? [data.grades] : ['1']),
+              subjectId: data.subjectId || '',
+              subjectName: data.subjectName || '',
               date: data.date || new Date().toISOString().split('T')[0],
               timeRange: data.timeRange || '08:00 - 11:30',
               location: data.location || '',
@@ -113,8 +118,10 @@ export default function CreateActivityWizard() {
   useEffect(() => {
     Promise.all([
       fetch('/api/academic-years').then(r => r.json()).catch(() => []),
-      fetch('/api/campuses').then(r => r.json()).catch(() => [])
-    ]).then(([years, camps]) => {
+      fetch('/api/campuses').then(r => r.json()).catch(() => []),
+      fetch('/api/subjects').then(r => r.json()).catch(() => [])
+    ]).then(([years, camps, subs]) => {
+      if (Array.isArray(subs)) setSubjects(subs);
       if (Array.isArray(years) && years.length > 0) {
         setAcademicYears(years);
         const active = years.find(y => y.status === 'ACTIVE' && !y.isOff) || years[0];
@@ -455,6 +462,35 @@ export default function CreateActivityWizard() {
                     <option key={sc.id} value={sc.id}>{sc.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-black text-slate-700 mb-1.5">
+                  Bộ môn liên quan (Môn học tích hợp nếu có)
+                </label>
+                <select
+                  value={formData.subjectId || ''}
+                  onChange={e => {
+                    const sId = e.target.value;
+                    const sub = subjects.find(s => s.id === sId);
+                    setFormData({
+                      ...formData,
+                      subjectId: sId,
+                      subjectName: sub ? sub.subjectName : ''
+                    });
+                  }}
+                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                >
+                  <option value="">Hoạt động chung / Liên môn (Không gắn riêng môn học)</option>
+                  {subjects.map(sub => (
+                    <option key={sub.id} value={sub.id}>
+                      Môn {sub.subjectName} {sub.subjectCode ? `(${sub.subjectCode})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[10px] text-slate-400 font-medium block mt-1">
+                  Khi chọn môn học, GVBM phụ trách môn đó tại các lớp được gán sẽ tự động thấy hoạt động và có thể đánh giá học sinh.
+                </span>
               </div>
 
               <div>

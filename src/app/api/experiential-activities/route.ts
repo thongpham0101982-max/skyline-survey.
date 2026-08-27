@@ -16,6 +16,7 @@ export async function GET(req: Request) {
     const level = searchParams.get('level');
     const strand = searchParams.get('strand');
     const status = searchParams.get('status');
+    const subjectId = searchParams.get('subjectId');
     const scopeType = searchParams.get('scopeType'); // 'ALL' | 'ASSIGNED' | 'MY_CREATED'
     const q = searchParams.get('q');
 
@@ -23,7 +24,8 @@ export async function GET(req: Request) {
     const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN'].includes(userRole);
 
     let teacherRecord: any = null;
-    let teacherClassIds = new Set<string>();
+    let homeroomClassIds = new Set<string>();
+    let teachingAssignmentsList: any[] = [];
 
     if (!isManagement || userRole === 'TEACHER') {
       teacherRecord = await prisma.teacher.findUnique({
@@ -31,19 +33,27 @@ export async function GET(req: Request) {
       });
 
       if (teacherRecord) {
-        // Find both Homeroom (GVCN) and Subject (GVBM) classes
-        const teacherClasses = await prisma.class.findMany({
+        // 1. Find Homeroom (GVCN) classes
+        const homeroomClasses = await prisma.class.findMany({
           where: {
             OR: [
               { homeroomTeacherId: teacherRecord.id },
               { homeroomTeacherId: { contains: teacherRecord.id } },
-              { teachers: { some: { teacherId: teacherRecord.id } } },
-              { teachingAssignments: { some: { teacherId: teacherRecord.id } } }
+              { teachers: { some: { teacherId: teacherRecord.id, roleInClass: "GVCN" } } }
             ]
           },
           select: { id: true, className: true, campusId: true, grade: true, level: true }
         });
-        teacherClassIds = new Set(teacherClasses.map(c => c.id));
+        homeroomClassIds = new Set(homeroomClasses.map(c => c.id));
+
+        // 2. Find Subject Teaching (GVBM) assignments
+        teachingAssignmentsList = await prisma.teachingAssignment.findMany({
+          where: { teacherId: teacherRecord.id },
+          include: {
+            class: { select: { id: true, className: true, campusId: true, grade: true, level: true } },
+            subject: { select: { id: true, subjectName: true, subjectCode: true } }
+          }
+        });
       }
     }
 
@@ -132,18 +142,53 @@ export async function GET(req: Request) {
       // Check if this activity is created by this teacher
       const isMyCreated = !!(teacherRecord && (act.teacherId === teacherRecord.id || act.teacher?.userId === session.user.id));
 
-      // Find teacher's assigned classes in this activity
+      // Check GVCN assignment match
       let myAssignedClass: any = null;
-      if (teacherRecord) {
-        myAssignedClass = assignedClasses.find((c: any) => 
-          (c.classId && teacherClassIds.has(c.classId)) ||
-          (c.homeroomTeacherId && (c.homeroomTeacherId === teacherRecord.id || c.homeroomTeacherId === teacherRecord.userId)) ||
-          (c.homeroomTeacherName && c.homeroomTeacherName.trim().toLowerCase() === teacherRecord.teacherName.trim().toLowerCase())
-        );
+      let matchedRoleLabel = '';
 
-        // Fallback: Check if participants contain this teacher's class
-        if (!myAssignedClass && teacherClassIds.size > 0) {
-          const matchParticipant = act.participants.find(p => p.student?.classId && teacherClassIds.has(p.student.classId));
+      if (teacherRecord) {
+        // 1. Direct GVCN match
+        const gvcnClass = assignedClasses.find((c: any) => c.classId && homeroomClassIds.has(c.classId));
+        if (gvcnClass) {
+          myAssignedClass = gvcnClass;
+          matchedRoleLabel = 'GVCN (Chủ nhiệm)';
+        }
+
+        // 2. GVBM match (if activity is linked to a subject or assigned to classes teacher teaches)
+        if (!myAssignedClass && extraData.subjectId) {
+          const matchedTeaching = teachingAssignmentsList.find(ta => 
+            ta.subjectId === extraData.subjectId && 
+            assignedClasses.some((c: any) => c.classId === ta.classId)
+          );
+
+          if (matchedTeaching) {
+            const cls = assignedClasses.find((c: any) => c.classId === matchedTeaching.classId) || {
+              classId: matchedTeaching.classId,
+              className: matchedTeaching.class?.className,
+              status: 'DRAFT'
+            };
+            myAssignedClass = cls;
+            matchedRoleLabel = `GVBM ${matchedTeaching.subject?.subjectName || ''}`;
+          }
+        }
+
+        // 3. Fallback check: if no subject linked, but teacher teaches one of the assigned classes
+        if (!myAssignedClass && !extraData.subjectId) {
+          const generalTeaching = teachingAssignmentsList.find(ta => 
+            assignedClasses.some((c: any) => c.classId === ta.classId)
+          );
+          if (generalTeaching) {
+            const cls = assignedClasses.find((c: any) => c.classId === generalTeaching.classId);
+            if (cls) {
+              myAssignedClass = cls;
+              matchedRoleLabel = `GVBM ${generalTeaching.subject?.subjectName || ''}`;
+            }
+          }
+        }
+
+        // 4. Participant fallback
+        if (!myAssignedClass && homeroomClassIds.size > 0) {
+          const matchParticipant = act.participants.find(p => p.student?.classId && homeroomClassIds.has(p.student.classId));
           if (matchParticipant?.student?.class) {
             myAssignedClass = {
               classId: matchParticipant.student.class.id,
@@ -152,6 +197,7 @@ export async function GET(req: Request) {
               totalStudents: act.participants.filter(p => p.student?.classId === matchParticipant.student.classId).length,
               evaluatedStudents: 0
             };
+            matchedRoleLabel = 'GVCN';
           }
         }
       }
@@ -172,6 +218,8 @@ export async function GET(req: Request) {
         campusName: extraData.campusName || act.teacher?.campus?.campusName || '',
         educationLevel: extraData.educationLevel || act.levelId || '',
         grades: extraData.grades || [],
+        subjectId: extraData.subjectId || null,
+        subjectName: extraData.subjectName || null,
         date: act.date ? act.date.toISOString().split('T')[0] : '',
         timeRange: extraData.timeRange || '',
         location: extraData.locationText || (act.locationId && !act.locationId.startsWith('{') ? act.locationId : ''),
@@ -192,6 +240,7 @@ export async function GET(req: Request) {
         status: extraData.status || act.status || 'DRAFT',
         assignedClasses: assignedClasses,
         myAssignedClass: myAssignedClass || null,
+        matchedRoleLabel: matchedRoleLabel || (isMyCreated ? 'Người tạo' : ''),
         isMyCreated,
         isAssignedToMe,
         canManage,
@@ -219,6 +268,11 @@ export async function GET(req: Request) {
       result = result.filter(a => a.isMyCreated);
     }
 
+    // Filter by Subject
+    if (subjectId && subjectId !== 'ALL') {
+      result = result.filter(a => a.subjectId === subjectId);
+    }
+
     // Client/Filter in memory for advanced filters
     if (campusId && campusId !== 'ALL') {
       result = result.filter(a => a.campusId === campusId || a.campusCode === campusId || a.assignedClasses.some((c: any) => c.campusId === campusId || c.campusCode === campusId));
@@ -241,6 +295,7 @@ export async function GET(req: Request) {
         a.name.toLowerCase().includes(query) ||
         a.code.toLowerCase().includes(query) ||
         a.activityTypeName.toLowerCase().includes(query) ||
+        (a.subjectName && a.subjectName.toLowerCase().includes(query)) ||
         a.location.toLowerCase().includes(query)
       );
     }
@@ -277,6 +332,8 @@ export async function POST(req: Request) {
       campusName,
       educationLevel,
       grades = [],
+      subjectId = null,
+      subjectName = null,
       date,
       timeRange,
       location,
@@ -349,6 +406,8 @@ export async function POST(req: Request) {
       campusName: campusName || '',
       educationLevel,
       grades,
+      subjectId,
+      subjectName,
       timeRange,
       locationText: location || '',
       description,

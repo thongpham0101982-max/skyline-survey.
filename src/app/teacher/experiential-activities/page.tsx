@@ -492,6 +492,16 @@ export default function ExperientialActivitiesList() {
                               <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                                 {act.activityTypeName || 'Sự kiện'}
                               </span>
+                              {act.subjectName && (
+                                <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/80">
+                                  Môn: {act.subjectName}
+                                </span>
+                              )}
+                              {act.matchedRoleLabel && (
+                                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                  ({act.matchedRoleLabel})
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>
