@@ -412,23 +412,6 @@ export function ObservationClient(props: ObservationClientProps) {
   const [surpriseOverall, setSurpriseOverall] = useState<string>(() => isMamNonTeacher ? "Tốt" : "Giỏi")
   const [surpriseSubmitting, setSurpriseSubmitting] = useState<boolean>(false)
 
-  // Auto-sync ranking when surprise scores change
-  useEffect(() => {
-    const isMN = surpriseLevel === "Mầm non" || isMamNonTeacher;
-    const rankInfo = isMN ? getMamNonRankingDetails(surpriseScoresMN) : getK12RankingDetails(surpriseScoresK12);
-    setSurpriseOverall(rankInfo.rating);
-  }, [surpriseScoresK12, surpriseScoresMN, surpriseLevel, isMamNonTeacher]);
-
-  // Auto-sync ranking when evalModal scores change
-  useEffect(() => {
-    if (!evalModal) return;
-    const isMN = evalModal.slot?.level === "Mầm non";
-    const rankInfo = isMN ? getMamNonRankingDetails(evalCriteria) : getK12RankingDetails(evalK12Scores);
-    setEvalOverall(rankInfo.rating);
-  }, [evalK12Scores, evalCriteria, evalModal]);
-
-
-  
   // Request Observation Form States
   const [reqCampusId, setReqCampusId] = useState("")
   const [reqDeptId, setReqDeptId] = useState("")
@@ -760,6 +743,41 @@ export function ObservationClient(props: ObservationClientProps) {
     setTimeout(() => setToast(null), 4000)
   }
 
+  const mamNonGrades = useMemo(() => {
+    const effectiveCampusId = newCampusId || reqCampusId || currentTeacher?.campusId || "";
+    const gradeSet = new Set<string>();
+    classes.forEach((cls: any) => {
+      if (effectiveCampusId && cls.campusId !== effectiveCampusId) return;
+      const lvlClean = (cls.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      if (lvlClean !== "mam non") return;
+      if (cls.grade) gradeSet.add(cls.grade);
+    });
+    const ORDER = ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+    return [...gradeSet].sort((a, b) => {
+      const idxA = ORDER.indexOf(a);
+      const idxB = ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b, "vi");
+    });
+  }, [classes, newCampusId, reqCampusId, currentTeacher?.campusId]);
+
+  // Auto-sync ranking when surprise scores change
+  useEffect(() => {
+    const isMN = surpriseLevel === "Mầm non" || isMamNonTeacher;
+    const rankInfo = isMN ? getMamNonRankingDetails(surpriseScoresMN) : getK12RankingDetails(surpriseScoresK12);
+    setSurpriseOverall(rankInfo.rating);
+  }, [surpriseScoresK12, surpriseScoresMN, surpriseLevel, isMamNonTeacher]);
+
+  // Auto-sync ranking when evalModal scores change
+  useEffect(() => {
+    if (!evalModal) return;
+    const isMN = evalModal.slot?.level === "Mầm non";
+    const rankInfo = isMN ? getMamNonRankingDetails(evalCriteria) : getK12RankingDetails(evalK12Scores);
+    setEvalOverall(rankInfo.rating);
+  }, [evalK12Scores, evalCriteria, evalModal]);
+
   const periodOptions = ["Tiết 1","Tiết 2","Tiết 3","Tiết 4","Tiết 5","Tiết 6","Tiết 7","Tiết 8"]
 
   const getGradesForLevel = (level: string) => {
@@ -811,25 +829,7 @@ export function ObservationClient(props: ObservationClientProps) {
     });
   }, [classes, newCampusId, currentTeacher?.campusId, newLevel, newGrade]);
 
-  const mamNonGrades = useMemo(() => {
-    const effectiveCampusId = newCampusId || reqCampusId || currentTeacher?.campusId || "";
-    const gradeSet = new Set<string>();
-    classes.forEach((cls: any) => {
-      if (effectiveCampusId && cls.campusId !== effectiveCampusId) return;
-      const lvlClean = (cls.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      if (lvlClean !== "mam non") return;
-      if (cls.grade) gradeSet.add(cls.grade);
-    });
-    const ORDER = ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
-    return [...gradeSet].sort((a, b) => {
-      const idxA = ORDER.indexOf(a);
-      const idxB = ORDER.indexOf(b);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return a.localeCompare(b, "vi");
-    });
-  }, [classes, newCampusId, reqCampusId, currentTeacher?.campusId]);
+  
 
   const getNextPeriod = (p: string) => { const m = p.match(/\d+/); if (m) { const n = parseInt(m[0]); if (n < 8) return `Tiết ${n+1}` } return p }
   const handleStartTimeChange = (val: string) => { setNewStartTime(val); setNewEndTime(newIsDoublePeriod ? getNextPeriod(val) : val) }
