@@ -541,6 +541,16 @@ export default function ExperientialActivitiesList() {
                                 <BarChart3 className="w-4 h-4 text-[#00A99D]" />
                               </button>
                               <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  router.push(`/teacher/experiential-activities/create?editId=${act.id}`);
+                                }}
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#00A99D] transition-colors"
+                                title="Hiệu chỉnh kế hoạch hoạt động"
+                              >
+                                <Edit3 className="w-4 h-4 text-[#00A99D]" />
+                              </button>
+                              <button
                                 onClick={e => handleDuplicate(e, act)}
                                 className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 transition-colors"
                                 title="Nhân bản hoạt động"
@@ -615,6 +625,16 @@ export default function ExperientialActivitiesList() {
                             title="Theo dõi tiến độ"
                           >
                             <BarChart3 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              router.push(`/teacher/experiential-activities/create?editId=${act.id}`);
+                            }}
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-teal-50 flex items-center justify-center text-[#00A99D]"
+                            title="Hiệu chỉnh kế hoạch"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={e => handleDuplicate(e, act)}

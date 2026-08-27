@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   ArrowLeft, Check, CheckCircle2, ChevronRight, Save, Send, Plus, 
   Trash2, Layers, Calendar, Users, Building2, BookOpen, Clock, 
@@ -15,6 +15,9 @@ import {
 
 export default function CreateActivityWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('editId') || searchParams.get('id') || '';
+  const isEditMode = !!editId;
 
   // Wizard Step (1 to 4)
   const [currentStep, setCurrentStep] = useState(1);
@@ -58,6 +61,53 @@ export default function CreateActivityWizard() {
 
   // Step 3: Class Assignment
   const [assignedClasses, setAssignedClasses] = useState([]);
+
+  // Load existing activity if in Edit mode
+  useEffect(() => {
+    if (editId) {
+      fetch(`/api/experiential-activities/${editId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data && !data.error) {
+            setFormData({
+              code: data.code || '',
+              name: data.name || '',
+              academicYearId: data.academicYearId || '',
+              campusId: data.campusId || '',
+              campusCode: data.campusCode || '',
+              campusName: data.campusName || '',
+              educationLevel: data.educationLevel || 'Tieu hoc',
+              grades: Array.isArray(data.grades) ? data.grades : (data.grades ? [data.grades] : ['1']),
+              date: data.date || new Date().toISOString().split('T')[0],
+              timeRange: data.timeRange || '08:00 - 11:30',
+              location: data.location || '',
+              description: data.description || '',
+              objectives: data.objectives || '',
+              evidenceUrls: data.evidenceUrls || [''],
+              strand: data.strand || 'BAN_THAN',
+              activityTypeId: data.activityTypeId || 'SU_KIEN',
+              activityTypeName: data.activityTypeName || 'Sự kiện / Lễ hội',
+              scale: data.scale || 'KHOI',
+              deadline: data.deadline || ''
+            });
+
+            if (data.evalMode) setEvalMode(data.evalMode);
+            if (Array.isArray(data.criteria) && data.criteria.length > 0) {
+              setCriteria(data.criteria);
+              if (data.criteria.length === 1) setCriteriaPreset('1');
+              else if (data.criteria.length === 3) setCriteriaPreset('3');
+              else if (data.criteria.length === 5) setCriteriaPreset('5');
+              else setCriteriaPreset('custom');
+            }
+            if (data.formulaType) setFormulaType(data.formulaType);
+            if (data.thresholds) setThresholds(data.thresholds);
+            if (data.mandatoryRules) setMandatoryRules(data.mandatoryRules);
+            if (Array.isArray(data.assignedClasses)) setAssignedClasses(data.assignedClasses);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [editId]);
 
   // Load Years, Campuses & Classes
   useEffect(() => {
@@ -232,19 +282,21 @@ export default function CreateActivityWizard() {
         assignedClasses
       };
 
-      const res = await fetch('/api/experiential-activities', {
-        method: 'POST',
+      const url = isEditMode ? `/api/experiential-activities/${editId}` : '/api/experiential-activities';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       if (res.ok) {
-        const data = await res.json();
-        toast.success(isDraft ? '? lưu nháp hoạt động thành công!' : 'Đã giao hoạt động thành công cho GVCN!');
+        toast.success(isEditMode ? 'Đã cập nhật kế hoạch hoạt động thành công!' : (isDraft ? 'Đã lưu nháp hoạt động thành công!' : 'Đã giao hoạt động thành công cho GVCN!'));
         router.push('/teacher/experiential-activities');
       } else {
         const err = await res.json();
-        toast.error(err.error || 'Lỗi khi lưu hoạt động');
+        toast.error(err.error || 'Lỗi khi lưu kế hoạch hoạt động');
       }
     } catch {
       toast.error('Lỗi kết nối máy chủ');
@@ -267,7 +319,7 @@ export default function CreateActivityWizard() {
             <span>Quay lại danh sách</span>
           </button>
           <div className="text-xs font-black text-slate-400">
-            Hệ thống Quản trị Chất lượng Giáo dục Sky-Line
+            {isEditMode ? 'Hiệu chỉnh Kế hoạch Hoạt động' : 'Hệ thống Quản trị Chất lượng Giáo dục Sky-Line'}
           </div>
         </div>
 
@@ -1033,7 +1085,7 @@ export default function CreateActivityWizard() {
                   className="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 transition-all flex items-center justify-center gap-2.5 transform active:scale-95"
                 >
                   <Send className="w-4 h-4 text-white" />
-                  <span>Giao hoạt động ngay</span>
+                  <span>{isEditMode ? 'Cập nhật kế hoạch ngay' : 'Giao hoạt động ngay'}</span>
                 </button>
               </div>
             </div>
