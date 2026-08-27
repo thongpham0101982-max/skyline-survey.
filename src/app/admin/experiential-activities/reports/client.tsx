@@ -1,491 +1,446 @@
-"use client"
-import React, { useState, useEffect } from 'react'
-import { ExperientialTabs } from '@/components/ExperientialTabs'
+"use client";
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
-  Calendar, Layers, Award, ClipboardList, Users, User, Landmark, 
-  BarChart3, RefreshCw, AlertCircle, FileBarChart, FolderTree 
-} from 'lucide-react'
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell, Radar, RadarChart, PolarGrid, 
+  PolarAngleAxis, PolarRadiusAxis, Legend 
+} from 'recharts';
+import { 
+  BarChart3, Users, FileCheck, Layers, Calendar, 
+  Building2, GraduationCap, Download, CheckCircle2, 
+  Clock, AlertCircle, Sparkles, Filter, ChevronRight, Activity
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import * as XLSX from 'xlsx';
+import { ACTIVITY_STRANDS } from '@/lib/experiential/constants';
+import { ExperientialTabs } from '@/components/ExperientialTabs';
 
-interface AcademicYear {
-  id: string
-  name: string
-}
+const COLORS = ['#9333EA', '#059669', '#0284C7', '#D97706'];
 
-interface ClientProps {
-  academicYears: AcademicYear[]
-  activeYearId: string
-  activeYearName: string
-}
+export function ExperientialReportsClient(props?: { academicYears?: any[]; activeYearId?: string; activeYearName?: string }) {
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
 
-export function ExperientialReportsClient({ academicYears, activeYearId }: ClientProps) {
-  const [selectedYearId, setSelectedYearId] = useState(activeYearId)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  
-  const [stats, setStats] = useState<any>(null)
-  const [activeReportTab, setActiveReportTab] = useState<'grade' | 'campus' | 'group' | 'gvbm' | 'gvcn' | 'activity'>('grade')
-
-  const fetchStats = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(`/api/admin/experiential-activities/stats?academicYearId=${selectedYearId}`)
-      const json = await res.json()
-      if (json.success) {
-        setStats(json.data)
-      } else {
-        setError(json.error || "Không thể tải số liệu thống kê")
-      }
-    } catch (err: any) {
-      console.error(err)
-      setError("Lỗi kết nối máy chủ")
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Filters
+  const [academicYears, setAcademicYears] = useState([]);
+  const [campuses, setCampuses] = useState([]);
+  const [selectedYearId, setSelectedYearId] = useState(props?.activeYearId || '');
+  const [selectedCampusId, setSelectedCampusId] = useState('ALL');
+  const [selectedLevel, setSelectedLevel] = useState('ALL');
+  const [selectedGrade, setSelectedGrade] = useState('ALL');
+  const [selectedStrand, setSelectedStrand] = useState('ALL');
 
   useEffect(() => {
-    if (selectedYearId) {
-      fetchStats()
-    }
-  }, [selectedYearId])
+    Promise.all([
+      fetch('/api/academic-years').then(r => r.json()).catch(() => []),
+      fetch('/api/campuses').then(r => r.json()).catch(() => [])
+    ]).then(([years, camps]) => {
+      if (Array.isArray(years) && years.length > 0) {
+        setAcademicYears(years);
+        const active = years.find(y => y.status === 'ACTIVE' && !y.isOff) || years[0];
+        setSelectedYearId(active?.id || '');
+      }
+      if (Array.isArray(camps)) setCampuses(camps);
+    });
+  }, []);
 
-  const reportTabs = [
-    { id: 'grade', label: 'Thống kê Khối lớp', icon: Layers },
-    { id: 'campus', label: 'Thống kê Cơ sở', icon: Landmark },
-    { id: 'group', label: 'Thống kê Nhóm hoạt động', icon: FolderTree },
-    { id: 'gvbm', label: 'Thống kê GVBM', icon: User },
-    { id: 'gvcn', label: 'Thống kê GVCN', icon: Users },
-    { id: 'activity', label: 'Chi tiết Hoạt động', icon: Award }
-  ] as const;
+  const loadStats = useCallback(() => {
+    if (!selectedYearId) return;
+    setLoading(true);
+    let url = `/api/admin/experiential-activities/stats?academicYearId=${selectedYearId}`;
+    if (selectedCampusId !== 'ALL') url += `&campusId=${selectedCampusId}`;
+    if (selectedLevel !== 'ALL') url += `&level=${encodeURIComponent(selectedLevel)}`;
+    if (selectedGrade !== 'ALL') url += `&grade=${encodeURIComponent(selectedGrade)}`;
+    if (selectedStrand !== 'ALL') url += `&strand=${selectedStrand}`;
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [selectedYearId, selectedCampusId, selectedLevel, selectedGrade, selectedStrand]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  const handleExportExcel = () => {
+    if (!stats || !stats.classProgress || stats.classProgress.length === 0) {
+      toast.error('Kh�ng c� d? li?u �? xu?t Excel');
+      return;
+    }
+    try {
+      const dataToExport = stats.classProgress.map((cp, idx) => ({
+        'STT': idx + 1,
+        'C� s?': cp.campusName || cp.campusCode || '',
+        'Kh?i': cp.grade || '',
+        'L?p': cp.className || '',
+        'GVCN': cp.homeroomTeacherName || '',
+        'Ho?t �?ng': cp.activityName || '',
+        'M?ch': cp.strand || '',
+        'S? s? HS': cp.totalStudents || 0,
+        '�? ��nh gi�': cp.evaluatedStudents || 0,
+        'T? l? ho�n th�nh': `${cp.progressPercent || 0}%`,
+        'Tr?ng th�i': cp.status === 'COMPLETED' ? 'Ho�n th�nh' : '�ang th?c hi?n'
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Tien_Do_Danh_Gia_HDTN');
+      XLSX.writeFile(wb, `Bao_Cao_Tien_Do_HDTN_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      toast.success('�? xu?t b�o c�o Excel th�nh c�ng!');
+    } catch {
+      toast.error('L?i khi xu?t file Excel');
+    }
+  };
+
+  const kpis = stats?.kpis || { totalActivities: 0, totalClassesAssigned: 0, totalStudentsEvaluated: 0, overallCompletionRate: 0 };
+  const ratingData = [
+    { name: 'N?i b?t', value: stats?.ratingDistribution?.OUTSTANDING || 0, color: '#9333EA' },
+    { name: 'T?t', value: stats?.ratingDistribution?.GOOD || 0, color: '#059669' },
+    { name: '�?t', value: stats?.ratingDistribution?.PASS || 0, color: '#0284C7' },
+    { name: 'C?n h? tr?', value: stats?.ratingDistribution?.NEEDS_SUPPORT || 0, color: '#D97706' }
+  ];
+
+  const strandData = (stats?.strandDistribution || []).map(s => ({
+    name: ACTIVITY_STRANDS.find(item => item.id === s.strand)?.name || s.strand,
+    count: s.count,
+    avg: s.avgScore
+  }));
+
+  const criteriaData = (stats?.criteriaAverages || []).map(c => ({
+    criterion: c.name,
+    avg: c.avgLevel,
+    fullMark: 4
+  }));
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 lg:p-8 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/15 to-sky-50/20 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Navigation Tabs */}
         <ExperientialTabs activeTab="reports" />
 
-        {/* Header Block & Year Selector */}
-        <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#48BFE3]/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none"></div>
-          <div className="relative z-10">
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-              <FileBarChart className="w-8 h-8 text-[#48BFE3]" />
-              Báo cáo Thống kê Hoạt động Trải nghiệm
-            </h1>
-            <p className="text-slate-500 mt-2 text-sm font-medium">
-              Theo dõi, tổng hợp và đo lường sự tham gia hoạt động trải nghiệm của học sinh và giáo viên
-            </p>
+        {/* HERO BANNER */}
+        <div className="relative backdrop-blur-xl bg-white/90 rounded-3xl p-6 sm:p-8 border border-white shadow-xl shadow-slate-200/50 overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A99D] via-[#48BFE3] to-[#6366F1]" />
+
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+            <div className="flex items-start sm:items-center gap-4 sm:gap-5">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#003B3A] via-[#00A99D] to-[#48BFE3] p-0.5 shadow-lg shadow-[#00A99D]/20 shrink-0">
+                <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
+                  <BarChart3 className="w-8 h-8 text-[#00A99D]" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A99D]/10 text-[#003B3A] border border-[#00A99D]/20">
+                    B�o C�o & Th?ng K�
+                  </span>
+                  <span className="text-slate-300 text-xs">�</span>
+                  <span className="text-xs font-bold text-slate-500">Qu?n tr? Ch?t l�?ng Sky-Line</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A99D] bg-clip-text text-transparent tracking-tight">
+                  Dashboard ��nh Gi� Ho?t �?ng Tr?i Nghi?m
+                </h1>
+                <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1">
+                  B�o c�o �a chi?u theo N�m h?c, C� s?, Kh?i, 4 M?ch ho?t �?ng v� gi�m s�t ti?n �? GVCN
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleExportExcel}
+              className="px-5 py-3 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black rounded-2xl border border-slate-200 shadow-2xs transition-all flex items-center gap-2"
+            >
+              <Download className="w-4 h-4 text-emerald-600" />
+              <span>Xu?t B�o C�o Excel</span>
+            </button>
           </div>
 
-          <div className="flex flex-col space-y-1.5 z-10 w-full md:w-56">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-[#48BFE3]" />
-              Niên khóa
-            </label>
+          {/* KPI CARDS */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100">
+            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">T?ng Ho?t �?ng</p>
+                <p className="text-2xl font-black text-slate-800 mt-1">{kpis.totalActivities}</p>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">
+                <Layers className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">L?p Tham gia</p>
+                <p className="text-2xl font-black text-sky-700 mt-1">{kpis.totalClassesAssigned}</p>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200">
+                <Building2 className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">L�?t HS ��nh gi�</p>
+                <p className="text-2xl font-black text-[#003B3A] mt-1">{kpis.totalStudentsEvaluated}</p>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center border border-[#00A99D]/30">
+                <Users className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">T? l? Ho�n th�nh</p>
+                <p className="text-2xl font-black text-emerald-700 mt-1">{kpis.overallCompletionRate}%</p>
+              </div>
+              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
+                <FileCheck className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* MULTI-FILTER BAR */}
+        <div className="bg-white/90 p-4 rounded-3xl border border-white shadow-md shadow-slate-200/40 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">N�m h?c</label>
             <select
               value={selectedYearId}
-              onChange={(e) => setSelectedYearId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
+              onChange={e => setSelectedYearId(e.target.value)}
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
             >
               {academicYears.map(y => (
                 <option key={y.id} value={y.id}>{y.name}</option>
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">C� s?</label>
+            <select
+              value={selectedCampusId}
+              onChange={e => setSelectedCampusId(e.target.value)}
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+            >
+              <option value="ALL">T?t c? c� s?</option>
+              {campuses.map(c => (
+                <option key={c.id} value={c.id}>{c.campusName || c.campusCode}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">C?p h?c</label>
+            <select
+              value={selectedLevel}
+              onChange={e => setSelectedLevel(e.target.value)}
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+            >
+              <option value="ALL">T?t c? c?p h?c</option>
+              <option value="Tieu hoc">Ti?u h?c</option>
+              <option value="THCS">THCS</option>
+              <option value="THPT">THPT</option>
+              <option value="Mam non">M?m non</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Kh?i</label>
+            <select
+              value={selectedGrade}
+              onChange={e => setSelectedGrade(e.target.value)}
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+            >
+              <option value="ALL">T?t c? kh?i</option>
+              {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => (
+                <option key={g} value={String(g)}>Kh?i {g}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">M?ch ho?t �?ng</label>
+            <select
+              value={selectedStrand}
+              onChange={e => setSelectedStrand(e.target.value)}
+              className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+            >
+              <option value="ALL">T?t c? 4 m?ch</option>
+              {ACTIVITY_STRANDS.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Loading and Error States */}
-        {loading && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-3xl border border-slate-200/60 shadow-sm">
-            <RefreshCw className="animate-spin h-10 w-10 text-[#48BFE3] mb-4" />
-            <p className="text-sm font-bold">Đang tổng hợp số liệu thống kê...</p>
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="flex flex-col items-center justify-center py-16 text-rose-500 bg-white rounded-3xl border border-slate-200/60 shadow-sm">
-            <AlertCircle className="h-12 w-12 mb-3" />
-            <p className="text-sm font-bold">{error}</p>
-            <button onClick={fetchStats} className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all">
-              Thử lại
-            </button>
-          </div>
-        )}
-
-        {/* Stats Dashboard Grid */}
-        {!loading && !error && stats && (
-          <div className="space-y-6">
-            
-            {/* KPI Overview Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              
-              {/* Card 1: Total Activities */}
-              <div className="bg-gradient-to-br from-teal-50/90 via-emerald-50/30 to-teal-100/60 p-6 rounded-3xl shadow-xs border border-teal-200/80 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-extrabold text-teal-800 uppercase tracking-widest block">Tổng số Hoạt động</span>
-                  <span className="text-3xl font-black text-teal-950 block">
-                    {stats.summary.totalActivities}
-                  </span>
-                </div>
-                <div className="p-4 bg-[#48BFE3] text-white rounded-2xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
-                  <Award className="w-6 h-6" />
-                </div>
-              </div>
-
-              {/* Card 2: Total Grades */}
-              <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/30 to-indigo-100/60 p-6 rounded-3xl shadow-xs border border-indigo-200/80 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-extrabold text-indigo-800 uppercase tracking-widest block">Khối lớp tham gia</span>
-                  <span className="text-3xl font-black text-indigo-950 block">
-                    {stats.summary.totalGrades}
-                  </span>
-                </div>
-                <div className="p-4 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform">
-                  <Layers className="w-6 h-6" />
-                </div>
-              </div>
-
-              {/* Card 3: GVCN */}
-              <div className="bg-gradient-to-br from-pink-50/90 via-rose-50/30 to-pink-100/60 p-6 rounded-3xl shadow-xs border border-pink-200/80 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-extrabold text-pink-800 uppercase tracking-widest block">Tổng GVCN tham gia</span>
-                  <span className="text-3xl font-black text-pink-950 block">
-                    {stats.summary.totalGvcn}
-                  </span>
-                </div>
-                <div className="p-4 bg-pink-600 text-white rounded-2xl shadow-md shadow-pink-500/20 group-hover:scale-110 transition-transform">
-                  <Users className="w-6 h-6" />
-                </div>
-              </div>
-
-              {/* Card 4: GVBM */}
-              <div className="bg-gradient-to-br from-sky-50/90 via-blue-50/30 to-sky-100/60 p-6 rounded-3xl shadow-xs border border-sky-200/80 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-extrabold text-sky-800 uppercase tracking-widest block">Tổng GVBM tham gia</span>
-                  <span className="text-3xl font-black text-sky-950 block">
-                    {stats.summary.totalGvbm}
-                  </span>
-                </div>
-                <div className="p-4 bg-sky-600 text-white rounded-2xl shadow-md shadow-sky-500/20 group-hover:scale-110 transition-transform">
-                  <User className="w-6 h-6" />
-                </div>
-              </div>
-
+        {/* CHARTS GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* CHART 1: RATING DISTRIBUTION */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
+            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-600" />
+              Ph�n b? X?p lo?i K?t qu? H?c sinh (Thang 4 m?c)
+            </h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={ratingData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={85}
+                    paddingAngle={4}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {ratingData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-
-            {/* Reports Section with tabs selector */}
-            <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden">
-              
-              {/* Tab Selector Headers */}
-              <div className="flex border-b border-slate-100 overflow-x-auto bg-slate-50/50 p-2.5 gap-1.5">
-                {reportTabs.map(tab => {
-                  const isActive = activeReportTab === tab.id;
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveReportTab(tab.id)}
-                      className={"flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer " + (
-                        isActive 
-                          ? "bg-[#48BFE3] text-white shadow-xs" 
-                          : "text-slate-600 hover:bg-white hover:text-slate-800 border-transparent"
-                      )}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {tab.label}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Tab Content Panels */}
-              <div className="p-6">
-                
-                {/* 1. Tab Khối lớp */}
-                {activeReportTab === 'grade' && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Thống kê theo khối lớp tham gia</h3>
-                    
-                    {stats.statsByGrade.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400 text-xs italic">Không tìm thấy số liệu theo khối lớp.</div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                              <th className="py-3.5 px-4 text-center w-16">STT</th>
-                              <th className="py-3.5 px-4">Khối lớp</th>
-                              <th className="py-3.5 px-4 text-center">Hoạt động do GVBM</th>
-                              <th className="py-3.5 px-4 text-center">Dự án do GVCN</th>
-                              <th className="py-3.5 px-4 text-center">Tổng số Hoạt động</th>
-                              <th className="py-3.5 px-4 text-center">Học sinh tham gia</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                            {stats.statsByGrade.map((g: any, idx: number) => (
-                              <tr key={g.grade} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                <td className="py-3.5 px-4 font-black text-slate-800 text-sm">Khối {g.grade}</td>
-                                <td className="py-3.5 px-4 text-center text-sky-600 font-extrabold">{g.gvbmCount}</td>
-                                <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{g.gvcbCount}</td>
-                                <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{g.totalCount}</td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-3 py-1 rounded-full text-[10px] font-black">
-                                    {g.studentCount} học sinh
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Tab Cơ sở */}
-                {activeReportTab === 'campus' && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
-                        Thống kê Hoạt động theo Cơ sở học sinh tham gia
-                      </h3>
-                      <span className="text-xs font-bold text-slate-400">
-                        Tổng số cơ sở: {stats.statsByCampus?.length || 0}
-                      </span>
-                    </div>
-                    
-                    {!stats.statsByCampus || stats.statsByCampus.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400 text-xs italic">Không tìm thấy số liệu theo cơ sở.</div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                              <th className="py-3.5 px-4 text-center w-16">STT</th>
-                              <th className="py-3.5 px-4">Tên cơ sở</th>
-                              <th className="py-3.5 px-4 text-center">Hoạt động do GVBM</th>
-                              <th className="py-3.5 px-4 text-center">Dự án do GVCN</th>
-                              <th className="py-3.5 px-4 text-center">Tổng số Hoạt động</th>
-                              <th className="py-3.5 px-4 text-center">Học sinh tham gia</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                            {stats.statsByCampus.map((c: any, idx: number) => (
-                              <tr key={c.id || idx} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                <td className="py-3.5 px-4 font-black text-slate-800 text-sm flex items-center gap-2">
-                                  <Landmark className="w-4 h-4 text-[#48BFE3]" />
-                                  {c.name}
-                                </td>
-                                <td className="py-3.5 px-4 text-center text-sky-600 font-extrabold">{c.gvbmCount}</td>
-                                <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{c.gvcnCount}</td>
-                                <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{c.totalCount}</td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-3 py-1 rounded-full text-[10px] font-black">
-                                    {c.studentCount} học sinh
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 2. Tab Nhóm hoạt động */}
-                {activeReportTab === 'group' && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
-                        Thống kê Hoạt động theo Nhóm phân loại
-                      </h3>
-                      <span className="text-xs font-bold text-slate-400">
-                        Tổng số nhóm: {stats.statsByGroup?.length || 0}
-                      </span>
-                    </div>
-                    
-                    {!stats.statsByGroup || stats.statsByGroup.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400 text-xs italic">Không tìm thấy số liệu theo nhóm hoạt động.</div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                              <th className="py-3.5 px-4 text-center w-16">STT</th>
-                              <th className="py-3.5 px-4 w-28">Mã nhóm</th>
-                              <th className="py-3.5 px-4">Tên nhóm hoạt động</th>
-                              <th className="py-3.5 px-4 text-center">Hoạt động do GVBM</th>
-                              <th className="py-3.5 px-4 text-center">Dự án do GVCN</th>
-                              <th className="py-3.5 px-4 text-center">Tổng số Hoạt động</th>
-                              <th className="py-3.5 px-4 text-center">Học sinh tham gia</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                            {stats.statsByGroup.map((g: any, idx: number) => (
-                              <tr key={g.code || idx} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                <td className="py-3.5 px-4 font-mono font-bold text-[#48BFE3]">{g.code}</td>
-                                <td className="py-3.5 px-4 font-black text-slate-800 text-sm">{g.name}</td>
-                                <td className="py-3.5 px-4 text-center text-sky-600 font-extrabold">{g.gvbmCount}</td>
-                                <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{g.gvcnCount}</td>
-                                <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{g.totalCount}</td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-3 py-1 rounded-full text-[10px] font-black">
-                                    {g.studentCount} học sinh
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 2. Tab GVBM */}
-                {activeReportTab === 'gvbm' && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Danh sách Giáo viên Bộ môn (GVBM) tổ chức hoạt động</h3>
-                    
-                    {stats.statsByGvbm.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400 text-xs italic">Không tìm thấy giáo viên bộ môn nào tổ chức hoạt động.</div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                              <th className="py-3.5 px-4 text-center w-16">STT</th>
-                              <th className="py-3.5 px-4">Họ và tên Giáo viên</th>
-                              <th className="py-3.5 px-4 text-center">Vai trò</th>
-                              <th className="py-3.5 px-4 text-center">Số Hoạt động tổ chức</th>
-                              <th className="py-3.5 px-4 text-center">Số lượt học sinh tham gia</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                            {stats.statsByGvbm.map((g: any, idx: number) => (
-                              <tr key={g.teacherName} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                <td className="py-3.5 px-4 font-black text-slate-800 text-sm">{g.teacherName}</td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-sky-50 text-sky-700 border border-sky-200 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase">GV Bộ Môn</span>
-                                </td>
-                                <td className="py-3.5 px-4 text-center font-black text-slate-850 text-sm">{g.activityCount}</td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#48BFE3]/10 text-[#48BFE3] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                                    {g.studentCount} học sinh
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 3. Tab GVCN */}
-                {activeReportTab === 'gvcn' && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Danh sách Giáo viên Chủ nhiệm (GVCN) tổ chức dự án</h3>
-                    
-                    {stats.statsByGvcn.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400 text-xs italic">Không tìm thấy giáo viên chủ nhiệm nào tổ chức dự án học tập.</div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                              <th className="py-3.5 px-4 text-center w-16">STT</th>
-                              <th className="py-3.5 px-4">Họ và tên Giáo viên</th>
-                              <th className="py-3.5 px-4 text-center">Vai trò</th>
-                              <th className="py-3.5 px-4 text-center">Số Dự án tổ chức</th>
-                              <th className="py-3.5 px-4 text-center">Học sinh tham gia</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                            {stats.statsByGvcn.map((g: any, idx: number) => (
-                              <tr key={g.teacherName} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                <td className="py-3.5 px-4 font-black text-slate-800 text-sm">{g.teacherName}</td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-pink-50 text-pink-700 border border-pink-200 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase">GV Chủ Nhiệm</span>
-                                </td>
-                                <td className="py-3.5 px-4 text-center font-black text-slate-850 text-sm">{g.projectCount}</td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#48BFE3]/10 text-[#48BFE3] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                                    {g.studentCount} học sinh
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 4. Tab Hoạt động chi tiết */}
-                {activeReportTab === 'activity' && (
-                  <div className="space-y-4 animate-in fade-in duration-200">
-                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Danh sách tổng hợp Hoạt động Trải nghiệm</h3>
-                    
-                    {stats.statsByActivity.length === 0 ? (
-                      <div className="text-center py-12 text-slate-400 text-xs italic">Không tìm thấy hoạt động nào.</div>
-                    ) : (
-                      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                              <th className="py-3.5 px-4 text-center w-16">STT</th>
-                              <th className="py-3.5 px-4">Tên hoạt động trải nghiệm</th>
-                              <th className="py-3.5 px-4 text-center">Đơn vị chủ trì tổ chức</th>
-                              <th className="py-3.5 px-4 text-center">Số học sinh tham gia</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                            {stats.statsByActivity.map((act: any, idx: number) => (
-                              <tr key={act.name} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                <td className="py-3.5 px-4 font-black text-slate-800 text-sm">{act.name}</td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className={"px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase " + (
-                                    act.creatorType === "GVBM" 
-                                      ? "bg-sky-50 text-sky-700 border border-sky-200" 
-                                      : "bg-pink-50 text-pink-700 border border-pink-200"
-                                  )}>
-                                    {act.creatorType === "GVBM" ? "GV Bộ môn (GVBM)" : "GV Chủ nhiệm (GVCN)"}
-                                  </span>
-                                </td>
-                                <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#48BFE3]/10 text-[#48BFE3] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                                    {act.participantCount} học sinh
-                                  </span>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-              </div>
-
-            </div>
-
           </div>
-        )}
+
+          {/* CHART 2: 4-STRAND DISTRIBUTION */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
+            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#00A99D]" />
+              S? l�?ng Ho?t �?ng theo 4 M?ch Tr?i nghi?m
+            </h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={strandData}>
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 'bold' }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Bar dataKey="count" name="S? ho?t �?ng" fill="#00A99D" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* CHART 3: RADAR CHART OF COMPETENCIES */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4 lg:col-span-2">
+            <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-indigo-600" />
+              �i?m ��nh gi� Trung b?nh theo 12 Ti�u ch� N�ng l?c Sky-Line (Thang 4 m?c)
+            </h3>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={criteriaData}>
+                  <PolarGrid />
+                  <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 4]} />
+                  <Radar name="�i?m TB" dataKey="avg" stroke="#6366F1" fill="#6366F1" fillOpacity={0.4} />
+                  <Tooltip />
+                  <Legend />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* HOMEROOM CLASS PROGRESS MONITORING TABLE */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-md shadow-slate-200/40 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-black text-slate-800">Gi�m S�t Ti?n �? ��nh Gi� C?a Gi�o Vi�n Ch? Nhi?m</h3>
+              <p className="text-xs text-slate-500 font-medium">Theo d?i th?i gian th?c ti?n �? n?p s? ��nh gi� c?a t?ng l?p</p>
+            </div>
+            <span className="text-xs font-bold text-slate-400">
+              T?ng c?ng: {(stats?.classProgress || []).length} l�?t ph�n c�ng
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                  <th className="py-3.5 px-4 text-center w-12">#</th>
+                  <th className="py-3.5 px-4 min-w-[120px]">C� s? / Kh?i</th>
+                  <th className="py-3.5 px-4 min-w-[100px]">L?p</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">GVCN Ph? tr�ch</th>
+                  <th className="py-3.5 px-4 min-w-[240px]">T�n Ho?t �?ng & M?ch</th>
+                  <th className="py-3.5 px-4 text-center min-w-[120px]">�? ��nh gi�</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Ti?n �? %</th>
+                  <th className="py-3.5 px-4 min-w-[120px]">Tr?ng th�i</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                {(stats?.classProgress || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400 font-bold">
+                      Ch�a c� l?p n�o ��?c ph�n c�ng ho?t �?ng
+                    </td>
+                  </tr>
+                ) : (
+                  (stats?.classProgress || []).map((cp, idx) => {
+                    const isCompleted = cp.status === 'COMPLETED' || cp.progressPercent === 100;
+
+                    return (
+                      <tr key={idx} className="hover:bg-teal-50/20 transition-colors">
+                        <td className="py-3.5 px-4 text-center text-slate-400 font-bold">{idx + 1}</td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="font-bold text-slate-800">{cp.campusName || cp.campusCode}</span>
+                          <span className="text-[11px] text-slate-400 block">Kh?i {cp.grade}</span>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="font-black text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
+                            {cp.className}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="font-bold text-slate-800">{cp.homeroomTeacherName || 'Ch�a g�n'}</span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-black text-slate-800 line-clamp-1">{cp.activityName}</div>
+                          <span className="text-[10px] text-slate-400 font-bold">{cp.strand}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="font-black text-slate-800">{cp.evaluatedStudents}</span> / {cp.totalStudents} HS
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px] font-black">
+                              <span>{cp.progressPercent}%</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-[#00A99D]'}`}
+                                style={{ width: `${cp.progressPercent}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${
+                            isCompleted
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-sky-50 text-sky-700 border-sky-200'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-sky-500'}`} />
+                            <span>{isCompleted ? 'Ho�n th�nh' : '�ang th?c hi?n'}</span>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
       </div>
     </div>
-  )
+  );
 }
+
+export default ExperientialReportsClient;

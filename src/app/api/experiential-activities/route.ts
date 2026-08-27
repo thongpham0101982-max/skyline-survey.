@@ -1,40 +1,173 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
 
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    let teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
-    if (!teacher) {
-      teacher = await prisma.teacher.findFirst();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (!teacher) return NextResponse.json({ error: 'Only teachers can view activities' }, { status: 403 });
+
+    const { searchParams } = new URL(req.url);
+    const academicYearId = searchParams.get('academicYearId');
+    const campusId = searchParams.get('campusId');
+    const grade = searchParams.get('grade');
+    const level = searchParams.get('level');
+    const strand = searchParams.get('strand');
+    const status = searchParams.get('status');
+    const q = searchParams.get('q');
+
+    // Build filter
+    const where: any = {};
+
+    if (academicYearId) {
+      where.academicYearId = academicYearId;
+    }
 
     const activities = await prisma.activityRecord.findMany({
-      where: { teacherId: teacher.id },
+      where,
       include: {
-        catalog: true,
-        _count: { select: { participants: true } }
+        catalog: {
+          include: {
+            group: true,
+            type: true,
+            theme: true
+          }
+        },
+        academicYear: true,
+        teacher: {
+          include: {
+            campus: true
+          }
+        },
+        participants: {
+          select: {
+            id: true,
+            studentId: true,
+            roleId: true,
+            evalLevelId: true,
+            note: true,
+            student: {
+              select: {
+                id: true,
+                studentCode: true,
+                studentName: true,
+                classId: true,
+                class: {
+                  select: {
+                    id: true,
+                    className: true,
+                    grade: true,
+                    level: true,
+                    campusId: true,
+                    campus: {
+                      select: {
+                        id: true,
+                        campusCode: true,
+                        campusName: true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    const formattedActivities = activities.map(act => ({
-      id: act.id,
-      code: act.code || '',
-      name: act.name || act.catalog?.name || 'Hoạt động',
-      catalogName: act.catalog?.name || 'Chưa phân loại',
-      academicYearId: act.academicYearId,
-      date: act.date ? act.date.toISOString().split('T')[0] : '',
-      location: act.locationId || 'Không rõ',
-      status: act.status,
-      participants: act._count?.participants || 0,
-    }));
+    const formatted = activities.map(act => {
+      let extraData: any = {};
+      try {
+        if (act.locationId && act.locationId.startsWith('{')) {
+          extraData = JSON.parse(act.locationId);
+        }
+      } catch {}
 
-    return NextResponse.json(formattedActivities);
+      // Calculate class progress
+      const assignedClasses = extraData.assignedClasses || [];
+      const totalClasses = assignedClasses.length;
+      const completedClasses = assignedClasses.filter((c: any) => c.status === 'COMPLETED').length;
+      const inProgressClasses = assignedClasses.filter((c: any) => c.status === 'IN_PROGRESS').length;
+
+      // Extract unique classes from participants if assignedClasses is empty
+      const participantClassIds = new Set(
+        act.participants.map(p => p.student?.classId).filter(Boolean)
+      );
+
+      const calculatedTotalClasses = totalClasses > 0 ? totalClasses : participantClassIds.size;
+      const participantCount = act.participants.length;
+
+      return {
+        id: act.id,
+        code: act.code || '',
+        name: act.name || act.catalog?.name || 'Hoạt động',
+        catalogName: act.catalog?.name || '',
+        academicYearId: act.academicYearId,
+        academicYearName: act.academicYear?.name || '',
+        campusId: extraData.campusId || act.teacher?.campusId || '',
+        campusCode: extraData.campusCode || act.teacher?.campus?.campusCode || '',
+        campusName: extraData.campusName || act.teacher?.campus?.campusName || '',
+        educationLevel: extraData.educationLevel || act.levelId || '',
+        grades: extraData.grades || [],
+        date: act.date ? act.date.toISOString().split('T')[0] : '',
+        timeRange: extraData.timeRange || '',
+        location: extraData.locationText || (act.locationId && !act.locationId.startsWith('{') ? act.locationId : ''),
+        teacherId: act.teacherId,
+        teacherName: act.teacher?.teacherName || '',
+        description: extraData.description || '',
+        objectives: extraData.objectives || '',
+        strand: extraData.strand || 'BAN_THAN',
+        activityTypeId: extraData.activityTypeId || 'SU_KIEN',
+        activityTypeName: extraData.activityTypeName || act.catalog?.type?.name || 'Sự kiện / Lễ hội',
+        scale: extraData.scale || 'LOP',
+        evalMode: extraData.evalMode || 'CRITERIA',
+        criteria: extraData.criteria || [],
+        formulaType: extraData.formulaType || 'EQUAL_WEIGHT',
+        thresholds: extraData.thresholds || { outstanding: 85, good: 70, pass: 50 },
+        mandatoryRules: extraData.mandatoryRules || [],
+        deadline: extraData.deadline || '',
+        status: extraData.status || act.status || 'DRAFT',
+        assignedClasses: assignedClasses,
+        participantsCount: participantCount,
+        totalClassesCount: calculatedTotalClasses,
+        completedClassesCount: completedClasses,
+        inProgressClassesCount: inProgressClasses,
+        createdAt: act.createdAt.toISOString(),
+        updatedAt: act.updatedAt.toISOString()
+      };
+    });
+
+    // Client/Filter in memory for advanced filters
+    let result = formatted;
+    if (campusId) {
+      result = result.filter(a => a.campusId === campusId || a.campusCode === campusId || a.assignedClasses.some((c: any) => c.campusId === campusId || c.campusCode === campusId));
+    }
+    if (grade) {
+      result = result.filter(a => a.grades.includes(grade) || a.assignedClasses.some((c: any) => c.grade === grade));
+    }
+    if (level) {
+      result = result.filter(a => a.educationLevel === level || a.assignedClasses.some((c: any) => c.level === level));
+    }
+    if (strand) {
+      result = result.filter(a => a.strand === strand);
+    }
+    if (status && status !== 'ALL') {
+      result = result.filter(a => a.status === status);
+    }
+    if (q) {
+      const query = q.toLowerCase().trim();
+      result = result.filter(a => 
+        a.name.toLowerCase().includes(query) ||
+        a.code.toLowerCase().includes(query) ||
+        a.activityTypeName.toLowerCase().includes(query) ||
+        a.location.toLowerCase().includes(query)
+      );
+    }
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching activities:', error);
     return NextResponse.json({ error: error?.message || 'Internal Server Error' }, { status: 500 });
@@ -44,146 +177,179 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     let teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
     if (!teacher) {
       teacher = await prisma.teacher.findFirst();
     }
-    if (!teacher) return NextResponse.json({ error: 'Không tìm thấy tài khoản Giáo viên trong hệ thống' }, { status: 403 });
+    if (!teacher) {
+      return NextResponse.json({ error: 'Không tìm thấy tài khoản Giáo viên trong hệ thống' }, { status: 403 });
+    }
 
     const body = await req.json();
-    const { info = {}, target = {}, defaults = {}, studentResults = {}, isDraft = false } = body;
+    const {
+      code,
+      name,
+      academicYearId,
+      campusId,
+      campusCode,
+      campusName,
+      educationLevel,
+      grades = [],
+      date,
+      timeRange,
+      location,
+      description,
+      objectives,
+      evidenceUrls = [],
+      strand = 'BAN_THAN',
+      activityTypeId = 'SU_KIEN',
+      activityTypeName,
+      scale = 'LOP',
+      evalMode = 'CRITERIA',
+      criteria = [],
+      formulaType = 'EQUAL_WEIGHT',
+      thresholds = { outstanding: 85, good: 70, pass: 50 },
+      mandatoryRules = [],
+      deadline,
+      status = 'ASSIGNED',
+      assignedClasses = []
+    } = body;
 
-    if (!info.name || !info.name.trim()) {
+    if (!name || !name.trim()) {
       return NextResponse.json({ error: 'Vui lòng nhập Tên hoạt động' }, { status: 400 });
     }
 
-    // Resolve valid AcademicYear ID (defaulting to ACTIVE year)
-    let yearRecord = null;
-    if (info.academicYear) {
-      yearRecord = await prisma.academicYear.findFirst({
-        where: { OR: [{ id: info.academicYear }, { name: info.academicYear }] }
-      });
+    // Resolve valid AcademicYear
+    let validAcademicYearId = academicYearId;
+    if (!validAcademicYearId) {
+      const activeYear = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } }) || await prisma.academicYear.findFirst();
+      validAcademicYearId = activeYear?.id || '';
     }
-    if (!yearRecord) {
-      yearRecord = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } }) || await prisma.academicYear.findFirst();
-    }
-    if (!yearRecord) {
-      return NextResponse.json({ error: 'Không tìm thấy dữ liệu Năm học hợp lệ' }, { status: 400 });
-    }
-    const validAcademicYearId = yearRecord.id;
 
-    const fallbackCategory = await prisma.activityCategory.findFirst({ where: { status: 'ACTIVE' } });
-    const fallbackCatId = fallbackCategory?.id || 'default-category';
+    if (!validAcademicYearId) {
+      return NextResponse.json({ error: 'Không tìm thấy Năm học hợp lệ' }, { status: 400 });
+    }
 
-    let catalog = await prisma.activityCatalog.findFirst({ where: { name: info.name } });
+    // Resolve or create catalog
+    let catalog = await prisma.activityCatalog.findFirst({ where: { name } });
     if (!catalog) {
-      const grouCat = info.GROU ? await prisma.activityCategory.findFirst({
-        where: { type: 'GROU', code: info.GROU }
-      }) : null;
-      let groupCategory = null;
-      if (grouCat) {
-        groupCategory = await prisma.activityCategory.findFirst({
-          where: { type: 'GROUP', name: grouCat.name }
-        });
-      }
-      const groupId = groupCategory?.id || fallbackCatId;
-
-      const typeCategory = await prisma.activityCategory.findFirst({
-        where: { type: 'TYPE', status: 'ACTIVE' }
-      });
-      const typeId = typeCategory?.id || fallbackCatId;
-
-      let catalogCode = info.code || ('ACT' + Date.now());
-      const existingCatalog = await prisma.activityCatalog.findUnique({ where: { code: catalogCode } });
-      if (existingCatalog) {
-        catalogCode = `${catalogCode}-${Date.now().toString().slice(-4)}`;
-      }
-
+      const fallbackCat = await prisma.activityCategory.findFirst({ where: { status: 'ACTIVE' } });
+      const fallbackId = fallbackCat?.id || 'default-id';
+      const catCode = 'CAT-' + Date.now();
       catalog = await prisma.activityCatalog.create({
         data: {
-          code: catalogCode,
-          name: info.name,
-          groupId: groupId,
-          typeId: typeId,
-          level: info.LEVEL || null,
+          code: catCode,
+          name: name.trim(),
+          groupId: fallbackId,
+          typeId: fallbackId,
+          level: educationLevel || null,
+          description: description || null
         }
       });
     }
 
-    const baseCode = catalog.code || ('ACT' + Date.now());
-    let recordCode = info.code || baseCode;
-    
-    const existingRecord = await prisma.activityRecord.findUnique({
-      where: { code: recordCode }
-    });
-    
-    if (existingRecord) {
+    // Auto-generate code if empty
+    let recordCode = code;
+    if (!recordCode || !recordCode.trim()) {
+      const prefix = strand.substring(0, 2);
+      recordCode = `HDTN-${prefix}-${Date.now().toString().slice(-6)}`;
+    }
+
+    const existing = await prisma.activityRecord.findUnique({ where: { code: recordCode } });
+    if (existing) {
       recordCode = `${recordCode}-${Date.now().toString().slice(-4)}`;
     }
+
+    // Prepare full metadata payload to store in locationId JSON container
+    const fullMetadata = {
+      campusId,
+      campusCode,
+      campusName,
+      educationLevel,
+      grades,
+      timeRange,
+      locationText: location || '',
+      description,
+      objectives,
+      evidenceUrls,
+      strand,
+      activityTypeId,
+      activityTypeName: activityTypeName || 'Hoạt động trải nghiệm',
+      scale,
+      evalMode,
+      criteria,
+      formulaType,
+      thresholds,
+      mandatoryRules,
+      deadline,
+      status: status || 'ASSIGNED',
+      assignedClasses: assignedClasses.map((cls: any) => ({
+        ...cls,
+        status: cls.status || 'DRAFT',
+        evaluatedStudents: cls.evaluatedStudents || 0
+      }))
+    };
 
     const activityRecord = await prisma.activityRecord.create({
       data: {
         code: recordCode,
-        name: info.name || catalog.name,
+        name: name.trim(),
         catalogId: catalog.id,
-        date: info.date ? new Date(info.date) : new Date(),
-        semester: parseInt(info.semester) || 1,
+        date: date ? new Date(date) : new Date(),
+        semester: 1,
         academicYearId: validAcademicYearId,
-        levelId: info.LEVEL || null,
-        formatId: info.FORMAT || null,
-        organizerId: info.ORGANIZER || null,
+        levelId: educationLevel || null,
+        formatId: scale || null,
+        organizerId: campusId || null,
         teacherId: teacher.id,
-        locationId: info.location || null,
-        status: isDraft ? 'DRAFT' : 'SUBMITTED',
+        locationId: JSON.stringify(fullMetadata),
+        status: status === 'DRAFT' ? 'DRAFT' : 'SUBMITTED'
       }
     });
 
-    const selectedStudentIds = new Set<string>();
-    if (target) {
-      if (target.classes && Array.isArray(target.classes) && target.classes.length > 0) {
-        const studentsInClasses = await prisma.student.findMany({
-          where: { classId: { in: target.classes } },
-          select: { id: true }
+    // Populate initial ActivityParticipant records for all students in assigned classes
+    const classIds = assignedClasses.map((c: any) => c.classId).filter(Boolean);
+    if (classIds.length > 0) {
+      const students = await prisma.student.findMany({
+        where: {
+          classId: { in: classIds },
+          status: 'ACTIVE'
+        },
+        select: { id: true, classId: true }
+      });
+
+      if (students.length > 0) {
+        const participantRows = students.map(s => ({
+          recordId: activityRecord.id,
+          studentId: s.id,
+          roleId: 'TV', // Default Thành viên
+          evalLevelId: evalMode === 'PARTICIPATION_ONLY' ? 'DAT' : null,
+          note: JSON.stringify({
+            attendance: 'PRESENT',
+            roles: ['Thành viên'],
+            criteriaScores: {},
+            calculatedPercent: evalMode === 'PARTICIPATION_ONLY' ? 100 : 0,
+            finalResult: evalMode === 'PARTICIPATION_ONLY' ? 'THAM_GIA' : 'CAN_HO_TRO',
+            remarksQuick: [],
+            remarksCustom: ''
+          })
+        }));
+
+        await prisma.activityParticipant.createMany({
+          data: participantRows
         });
-        studentsInClasses.forEach(s => selectedStudentIds.add(s.id));
-      }
-      if (target.specificStudents && Array.isArray(target.specificStudents) && target.specificStudents.length > 0) {
-        target.specificStudents.forEach((id: string) => selectedStudentIds.add(id));
-      }
-      if (target.students && Array.isArray(target.students) && target.students.length > 0) {
-        target.students.forEach((s: any) => selectedStudentIds.add(s?.id || s));
       }
     }
 
-    if (studentResults) {
-      Object.keys(studentResults).forEach(studentId => selectedStudentIds.add(studentId));
-    }
-
-    const participantsData = Array.from(selectedStudentIds).map(studentId => {
-      const individualResult = studentResults?.[studentId]?.results || studentResults?.[studentId]?.result || {};
-      return {
-        recordId: activityRecord.id,
-        studentId: studentId,
-        roleId: individualResult.ROLE || defaults?.ROLE || null,
-        evalLevelId: individualResult.EVAL_LEVEL || defaults?.EVAL_LEVEL || null,
-        achievementId: individualResult.ACHIEVEMENT || defaults?.ACHIEVEMENT || null,
-        absenceReasonId: individualResult.ABSENCE_REASON || defaults?.ABSENCE_REASON || null,
-        note: null,
-      };
+    return NextResponse.json({
+      success: true,
+      activityId: activityRecord.id,
+      code: recordCode
     });
-
-    if (participantsData.length > 0) {
-      await prisma.activityParticipant.deleteMany({
-        where: { recordId: activityRecord.id }
-      });
-      await prisma.activityParticipant.createMany({ 
-        data: participantsData
-      });
-    }
-
-    return NextResponse.json({ success: true, activityId: activityRecord.id });
   } catch (error: any) {
     console.error('Error creating activity:', error);
     return NextResponse.json({ error: error?.message || 'Internal Server Error' }, { status: 500 });

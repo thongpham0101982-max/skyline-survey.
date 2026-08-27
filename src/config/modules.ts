@@ -1,4 +1,5 @@
-import { 
+import {
+  Activity, 
   ClipboardCheck,
   Eye,
   Shield, 
