@@ -19,7 +19,7 @@ export async function saveExamResultsGridAction(
 ) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   if (!examId || !academicYearId) return
 
@@ -381,7 +381,7 @@ export async function upsertExamResultsAction(
 ) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   if (!examId || !academicYearId || !changedRows || changedRows.length === 0) return
 

@@ -6,7 +6,7 @@ import { getAdminSession } from "@/lib/session"
 export async function createExamRoundAction(data: { name: string; code: string; description?: string; academicYearId?: string | null }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   await prisma.examRound.create({
     data: {
@@ -22,7 +22,7 @@ export async function createExamRoundAction(data: { name: string; code: string; 
 export async function updateExamRoundAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string | null }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   const { id, ...rest } = data
   await prisma.examRound.update({
@@ -35,7 +35,7 @@ export async function updateExamRoundAction(data: { id: string; name?: string; c
 export async function deleteExamRoundAction(id: string) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   await prisma.examRound.delete({ where: { id } })
   revalidatePath("/admin/ktdbcl/rounds")

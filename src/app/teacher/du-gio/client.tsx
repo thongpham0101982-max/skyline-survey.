@@ -1,10 +1,9 @@
-// Forced Vercel Deployment: 2026-08-26T09:34:52.066Z
+// Forced Vercel Deployment: 2026-08-27T01:37:34.450Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { 
-  Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
+import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
   Eye, TrendingUp, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
@@ -39,7 +38,8 @@ import {
   requestObservationSlot, respondToObservationRequest,
   deleteObservationSlot, getCreatedCountInMonth, getObservationSlots, triggerSlotReminder,
   approveRegistration, submitEvaluation, updateTeacherObservationTargets, sendPendingEvaluationReminder,
-  requestReEvaluation, approveReEvaluation, rejectReEvaluation, getReEvaluationRequests
+  requestReEvaluation, approveReEvaluation, rejectReEvaluation, getReEvaluationRequests,
+  createSurpriseObservation
 } from "./actions"
 
 interface TeacherInfo {
@@ -289,7 +289,30 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST">("TEACHER_OPEN")
+  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE">("TEACHER_OPEN")
+
+  // Surprise Observation States
+  const [surpriseDeptId, setSurpriseDeptId] = useState<string>("")
+  const [surpriseTeacherId, setSurpriseTeacherId] = useState<string>("")
+  const [surpriseCampusId, setSurpriseCampusId] = useState<string>("")
+  const [surpriseClassId, setSurpriseClassId] = useState<string>("")
+  const [surpriseClassName, setSurpriseClassName] = useState<string>("")
+  const [surpriseSubjectId, setSurpriseSubjectId] = useState<string>("")
+  const [surpriseSubjectName, setSurpriseSubjectName] = useState<string>("")
+  const [surpriseLevel, setSurpriseLevel] = useState<string>("Phổ thông K-12")
+  const [surpriseGrade, setSurpriseGrade] = useState<string>("Khối 10")
+  const [surpriseTopic, setSurpriseTopic] = useState<string>("")
+  const [surpriseDate, setSurpriseDate] = useState<string>(() => new Date().toISOString().split("T")[0])
+  const [surprisePeriod, setSurprisePeriod] = useState<string>("Tiết 1")
+  const [surpriseRoom, setSurpriseRoom] = useState<string>("Phòng học")
+  const [surpriseScoresK12, setSurpriseScoresK12] = useState<number[]>([1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0])
+  const [surpriseScoresMN, setSurpriseScoresMN] = useState<number[]>(() => Array(18).fill(0.5))
+  const [surpriseStrengths, setSurpriseStrengths] = useState<string>("")
+  const [surpriseImprovements, setSurpriseImprovements] = useState<string>("")
+  const [surpriseGeneral, setSurpriseGeneral] = useState<string>("")
+  const [surpriseOverall, setSurpriseOverall] = useState<string>("Giỏi")
+  const [surpriseSubmitting, setSurpriseSubmitting] = useState<boolean>(false)
+
   
   // Request Observation Form States
   const [reqCampusId, setReqCampusId] = useState("")
@@ -892,10 +915,72 @@ export function ObservationClient(props: ObservationClientProps) {
     })
   }
 
+  
   const isAdminUser = useMemo(() => {
     const roleCode = currentTeacher?.user?.role || currentTeacher?.position || "";
     return ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode) || (typeof pathname === "string" && pathname.startsWith("/admin"));
   }, [currentTeacher, pathname]);
+
+  const isTTCM = useMemo(() => {
+    const pos = currentTeacher?.position || "";
+    const hasDeptPos = currentTeacher?.departmentAssignments?.some((da: any) => 
+      ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position)
+    );
+    return ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(pos) || !!hasDeptPos;
+  }, [currentTeacher]);
+
+  const canCreateSurprise = useMemo(() => {
+    return isAdminUser || isTTCM;
+  }, [isAdminUser, isTTCM]);
+
+  const ttcmAllowedDepartments = useMemo(() => {
+    if (isAdminUser) return departments;
+    if (!isTTCM) return [];
+    const deptIds = new Set<string>();
+    if (currentTeacher?.departmentId) deptIds.add(currentTeacher.departmentId);
+    if (currentTeacher?.departmentAssignments) {
+      currentTeacher.departmentAssignments.forEach((da: any) => {
+        if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position) && da.departmentId) {
+          deptIds.add(da.departmentId);
+        }
+      });
+    }
+    return departments.filter(d => deptIds.has(d.id));
+  }, [departments, currentTeacher, isTTCM, isAdminUser]);
+
+  // Set default surprise department for TTCM
+  useEffect(() => {
+    if (isTTCM && !isAdminUser && ttcmAllowedDepartments.length > 0 && !surpriseDeptId) {
+      setSurpriseDeptId(ttcmAllowedDepartments[0].id);
+    }
+  }, [isTTCM, isAdminUser, ttcmAllowedDepartments, surpriseDeptId]);
+
+  const filteredTeachersForSurprise = useMemo(() => {
+    if (!surpriseDeptId) {
+      if (!isAdminUser && isTTCM) {
+        const allowedIds = new Set(ttcmAllowedDepartments.map(d => d.id));
+        return teachers.filter((t: any) => allowedIds.has(t.departmentId));
+      }
+      return teachers;
+    }
+    return teachers.filter((t: any) => {
+      if (t.departmentId === surpriseDeptId) return true;
+      if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+        return t.departmentAssignments.some((da: any) => da.departmentId === surpriseDeptId);
+      }
+      return false;
+    });
+  }, [teachers, surpriseDeptId, isAdminUser, isTTCM, ttcmAllowedDepartments]);
+
+  const filteredClassesForSurprise = useMemo(() => {
+    if (!classes || classes.length === 0) return [];
+    return classes.filter(c => {
+      if (surpriseCampusId && c.campusId !== surpriseCampusId) return false;
+      return true;
+    });
+  }, [classes, surpriseCampusId]);
+
+
 
   const allReEvalRequests = useMemo(() => {
     const list: any[] = [];
@@ -1088,6 +1173,95 @@ export function ObservationClient(props: ObservationClientProps) {
     }
     return "Không xếp loại"
   }
+
+  
+  const handleSurpriseSubmit = async (isDraft: boolean) => {
+    if (!surpriseTeacherId) {
+      showToast("Vui lòng chọn Giáo viên được dự giờ!", "error");
+      return;
+    }
+    if (!surpriseSubjectName && !surpriseSubjectId) {
+      showToast("Vui lòng chọn hoặc nhập Môn học!", "error");
+      return;
+    }
+    if (!surpriseTopic.trim()) {
+      showToast("Vui lòng nhập Chủ đề / Nội dung bài dạy!", "error");
+      return;
+    }
+    if (!surpriseDate) {
+      showToast("Vui lòng chọn Ngày dự giờ!", "error");
+      return;
+    }
+
+    const isK12 = surpriseLevel !== "Mầm non";
+    const totalScore = isK12 
+      ? surpriseScoresK12.reduce((a, b) => a + b, 0)
+      : surpriseScoresMN.reduce((a, b) => a + b, 0);
+
+    const payload: any = {
+      teacherId: surpriseTeacherId,
+      targetDeptId: surpriseDeptId || undefined,
+      campusId: surpriseCampusId || undefined,
+      classId: surpriseClassId || undefined,
+      className: surpriseClassName || undefined,
+      level: surpriseLevel || "Phổ thông K-12",
+      grade: surpriseGrade || "Khối",
+      subjectId: surpriseSubjectId || undefined,
+      subjectName: surpriseSubjectName || "Môn học",
+      topic: surpriseTopic.trim(),
+      date: surpriseDate,
+      period: surprisePeriod,
+      room: surpriseRoom || "Phòng học",
+      totalScore: totalScore,
+      overallRating: surpriseOverall || (isK12 ? calculateK12Ranking(surpriseScoresK12) : calculateMamNonRanking(surpriseScoresMN)),
+      strengths: surpriseStrengths.trim(),
+      improvements: surpriseImprovements.trim(),
+      generalComment: surpriseGeneral.trim(),
+      isDraft: isDraft
+    };
+
+    if (isK12) {
+      payload.score1 = surpriseScoresK12[0];
+      payload.score2 = surpriseScoresK12[1];
+      payload.score3 = surpriseScoresK12[2];
+      payload.score4 = surpriseScoresK12[3];
+      payload.score5 = surpriseScoresK12[4];
+      payload.score6 = surpriseScoresK12[5];
+      payload.score7 = surpriseScoresK12[6];
+      payload.score8 = surpriseScoresK12[7];
+      payload.score9 = surpriseScoresK12[8];
+      payload.score10 = surpriseScoresK12[9];
+      payload.score11 = surpriseScoresK12[10];
+    } else {
+      payload.criterion1 = Math.round(surpriseScoresMN[0] || 0);
+      payload.criterion2 = Math.round(surpriseScoresMN[1] || 0);
+      payload.criterion3 = Math.round(surpriseScoresMN[2] || 0);
+      payload.criterion4 = Math.round(surpriseScoresMN[3] || 0);
+      payload.criterion5 = Math.round(surpriseScoresMN[4] || 0);
+      payload.generalComment = JSON.stringify({
+        scores: surpriseScoresMN,
+        text: surpriseGeneral.trim()
+      });
+    }
+
+    setSurpriseSubmitting(true);
+    const res = await createSurpriseObservation(payload);
+    setSurpriseSubmitting(false);
+
+    if (res.success) {
+      showToast(res.message || (isDraft ? "Đã lưu nháp phiếu đánh giá!" : "Đã hoàn thành đánh giá dự giờ đột xuất!"), "success");
+      refreshSlots();
+      // Reset form
+      setSurpriseTopic("");
+      setSurpriseStrengths("");
+      setSurpriseImprovements("");
+      setSurpriseGeneral("");
+      // Switch to overview or evaluations tab
+      setActiveMainTab("overview_slots");
+    } else {
+      showToast(res.error || "Không thể tạo dự giờ đột xuất!", "error");
+    }
+  };
 
   const handleSubmitEval = async () => {
     if (!evalModal) return
@@ -1891,6 +2065,20 @@ export function ObservationClient(props: ObservationClientProps) {
                 <Sparkles className="w-4 h-4" />
                 2. GVBM XIN DỰ GIỜ
               </button>
+              {canCreateSurprise && (
+                <button
+                  type="button"
+                  onClick={() => setCreationMode("SURPRISE")}
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                    creationMode === "SURPRISE"
+                      ? "bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 text-white shadow-md shadow-rose-800/25 border border-rose-400/40 scale-[1.02]"
+                      : "text-rose-900 bg-rose-50/70 hover:bg-rose-100 border border-rose-200/60"
+                  }`}
+                >
+                  <Zap className="w-4 h-4 text-amber-300 animate-pulse" />
+                  3. DỰ GIỜ ĐỘT XUẤT ⚡
+                </button>
+              )}
             </div>
 
             {creationMode === "TEACHER_OPEN" && (
@@ -1900,7 +2088,506 @@ export function ObservationClient(props: ObservationClientProps) {
             )}
           </div>
 
-          {creationMode === "OBSERVER_REQUEST" ? (
+          
+          {creationMode === "SURPRISE" ? (
+            /* ===== FORM 3: DỰ GIỜ ĐỘT XUẤT (TTCM & BAN ĐHCM / GĐCS) ===== */
+            <div className="flex flex-col gap-6 text-xs font-semibold bg-gradient-to-b from-rose-50/30 via-white to-amber-50/20 p-5 sm:p-7 rounded-3xl border border-rose-200/80 shadow-sm animate-in fade-in duration-300">
+              {/* Header Banner */}
+              <div className="bg-gradient-to-r from-rose-900 via-[#003B3A] to-rose-950 text-white p-5 rounded-2xl border border-rose-700/40 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-400/30 flex items-center justify-center shrink-0 text-amber-300 shadow-inner">
+                    <Zap className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h4 className="text-sm sm:text-base font-black tracking-wide">DỰ GIỜ ĐỘT XUẤT</h4>
+                      <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-amber-950 uppercase">
+                        {isAdminUser ? "Ban ĐHCM / GĐCS / Quản lý" : "Tổ trưởng chuyên môn (TTCM)"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-rose-100/80 font-medium mt-0.5">
+                      Đánh giá trực tiếp tiết dạy đột xuất. Hệ thống tự động ghi nhận dữ liệu đánh giá mà không cần quy trình phê duyệt trước.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl border border-white/20 text-[11px] font-bold text-rose-100 shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Hình thức: Mặc định đột xuất</span>
+                </div>
+              </div>
+
+              {/* SECTION 1: THÔNG TIN TIẾT DẠY & GIÁO VIÊN */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+                <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
+                  <span className="w-5 h-5 bg-rose-100 text-rose-800 rounded-md flex items-center justify-center text-xs font-black">1</span>
+                  Thông tin Giáo viên & Tiết học
+                </h5>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Tổ chuyên môn */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                      <span>Tổ chuyên môn *</span>
+                      {!isAdminUser && isTTCM && (
+                        <span className="text-[10px] text-amber-600 font-bold">🔒 Khóa theo TCM</span>
+                      )}
+                    </label>
+                    <select
+                      value={surpriseDeptId}
+                      onChange={e => {
+                        const newDeptId = e.target.value;
+                        setSurpriseDeptId(newDeptId);
+                        setSurpriseTeacherId("");
+                        if (newDeptId) {
+                          const selectedDept = departments.find((d: any) => d.id === newDeptId);
+                          if (selectedDept && isPreschoolDepartment(selectedDept.name || selectedDept.code || "")) {
+                            setSurpriseLevel("Mầm non");
+                            const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
+                            setSurpriseSubjectId(khacChuyenDeId);
+                            setSurpriseSubjectName("Khác/Chuyên đề");
+                          } else {
+                            if (surpriseLevel === "Mầm non") setSurpriseLevel("Phổ thông K-12");
+                          }
+                        }
+                      }}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      {isAdminUser && <option value="">-- Tất cả Tổ chuyên môn --</option>}
+                      {ttcmAllowedDepartments.map((d: any) => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Giáo viên dạy */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                      Giáo viên dạy được dự *
+                    </label>
+                    <select
+                      value={surpriseTeacherId}
+                      onChange={e => {
+                        const tId = e.target.value;
+                        setSurpriseTeacherId(tId);
+                        if (tId) {
+                          const tObj = teachers.find((t: any) => t.id === tId);
+                          if (tObj) {
+                            if (tObj.campusId) setSurpriseCampusId(tObj.campusId);
+                            if (tObj.mainSubjectRel?.subjectName) {
+                              setSurpriseSubjectName(tObj.mainSubjectRel.subjectName);
+                              if (tObj.mainSubjectId) setSurpriseSubjectId(tObj.mainSubjectId);
+                            }
+                            const tDept = departments.find((d: any) => d.id === tObj.departmentId) || tObj.departmentRel;
+                            if (tDept && isPreschoolDepartment(tDept.name || tDept.code || "")) {
+                              setSurpriseLevel("Mầm non");
+                            }
+                          }
+                        }
+                      }}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      <option value="">-- Chọn Giáo viên dạy --</option>
+                      {filteredTeachersForSurprise.map((t: any) => (
+                        <option key={t.id} value={t.id}>
+                          {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {t.departmentRel?.name ? `• ${t.departmentRel.name}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Cơ sở */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cơ sở trường</label>
+                    <select
+                      value={surpriseCampusId}
+                      onChange={e => setSurpriseCampusId(e.target.value)}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      <option value="">-- Chọn cơ sở --</option>
+                      {campuses.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.campusName}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Ngày dự giờ */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Ngày dự giờ *</label>
+                    <input
+                      type="date"
+                      value={surpriseDate}
+                      onChange={e => setSurpriseDate(e.target.value)}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    />
+                  </div>
+
+                  {/* Tiết dự */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Tiết dự *</label>
+                    <select
+                      value={surprisePeriod}
+                      onChange={e => setSurprisePeriod(e.target.value)}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      <option value="Tiết 1">Tiết 1 (07:30 - 08:15)</option>
+                      <option value="Tiết 2">Tiết 2 (08:20 - 09:05)</option>
+                      <option value="Tiết 3">Tiết 3 (09:20 - 10:05)</option>
+                      <option value="Tiết 4">Tiết 4 (10:10 - 10:55)</option>
+                      <option value="Tiết 5">Tiết 5 (13:30 - 14:15)</option>
+                      <option value="Tiết 6">Tiết 6 (14:20 - 15:05)</option>
+                      <option value="Tiết 7">Tiết 7 (15:10 - 15:55)</option>
+                      <option value="Tiết 8">Tiết 8 (15:55 - 16:40)</option>
+                    </select>
+                  </div>
+
+                  {/* Lớp học */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Lớp học *</label>
+                    <div className="flex gap-2">
+                      <select
+                        value={surpriseClassId}
+                        onChange={e => {
+                          const clsId = e.target.value;
+                          setSurpriseClassId(clsId);
+                          const clsObj = classes.find((c: any) => c.id === clsId);
+                          if (clsObj) {
+                            setSurpriseClassName(clsObj.className);
+                            if (clsObj.grade) setSurpriseGrade(clsObj.grade);
+                            if (clsObj.level) setSurpriseLevel(clsObj.level);
+                            if (clsObj.campusId && !surpriseCampusId) setSurpriseCampusId(clsObj.campusId);
+                          }
+                        }}
+                        className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                      >
+                        <option value="">-- Chọn danh sách lớp --</option>
+                        {filteredClassesForSurprise.map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.className}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Môn học */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Môn học *</label>
+                    <select
+                      value={surpriseSubjectId}
+                      onChange={e => {
+                        const sId = e.target.value;
+                        setSurpriseSubjectId(sId);
+                        const sObj = subjects.find((s: any) => s.id === sId);
+                        if (sObj) setSurpriseSubjectName(sObj.subjectName);
+                      }}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      <option value="">-- Chọn môn học --</option>
+                      {subjects.map((s: any) => (
+                        <option key={s.id} value={s.id}>{s.subjectName}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Phòng học */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Phòng học</label>
+                    <input
+                      type="text"
+                      placeholder="VD: Phòng 204, Phòng Lab..."
+                      value={surpriseRoom}
+                      onChange={e => setSurpriseRoom(e.target.value)}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    />
+                  </div>
+
+                  {/* Cấp học */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cấp học</label>
+                    <select
+                      value={surpriseLevel}
+                      onChange={e => setSurpriseLevel(e.target.value)}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      <option value="Phổ thông K-12">Phổ thông K-12</option>
+                      <option value="Tiểu học">Tiểu học</option>
+                      <option value="THCS">THCS</option>
+                      <option value="THPT">THPT</option>
+                      <option value="Mầm non">Mầm non</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Chủ đề / Nội dung bài dạy */}
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    Chủ đề / Nội dung bài dạy *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="VD: Bài 12: Phân tích số liệu và biểu đồ thống kê..."
+                    value={surpriseTopic}
+                    onChange={e => setSurpriseTopic(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800 placeholder:text-slate-400"
+                  />
+                </div>
+
+                {/* Thẻ Người dự giờ tự động */}
+                <div className="bg-rose-50/60 rounded-xl p-3.5 border border-rose-100 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-xs">
+                      {currentTeacher?.teacherName ? currentTeacher.teacherName.charAt(0) : "U"}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-rose-800 uppercase tracking-wider">Người dự giờ (Tự động):</span>
+                        <span className="font-extrabold text-slate-900 text-xs">{currentTeacher?.teacherName || "Tài khoản đăng nhập"}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        {currentTeacher?.email || "Email"} • Chức vụ: {isTTCM ? "Tổ trưởng chuyên môn" : (currentTeacher?.position || "Ban ĐHCM / Quản lý")}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-white border border-rose-200 text-rose-700 shrink-0">
+                    Tự động ghi nhận
+                  </span>
+                </div>
+              </div>
+
+              {/* SECTION 2: FORM ĐÁNH GIÁ 11 TIÊU CHÍ (CHUẨN 20 ĐIỂM) */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-5 h-5 bg-rose-100 text-rose-800 rounded-md flex items-center justify-center text-xs font-black">2</span>
+                    {surpriseLevel !== "Mầm non" ? "Phiếu Đánh Giá 11 Tiêu Chí (Tổng 20 điểm)" : "Phiếu Đánh Giá Mầm Non (Tổng 10 điểm)"}
+                  </h5>
+
+                  {/* Summary Score Box */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-black text-slate-600 uppercase">Tổng điểm:</span>
+                    <span className="text-sm font-black text-rose-950 bg-rose-50 px-3.5 py-1.5 rounded-xl border border-rose-200 shadow-2xs">
+                      {surpriseLevel !== "Mầm non" 
+                        ? `${surpriseScoresK12.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00đ`
+                        : `${surpriseScoresMN.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00đ`
+                      }
+                    </span>
+                    <span className="text-xs font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                      Xếp loại: {surpriseLevel !== "Mầm non" ? calculateK12Ranking(surpriseScoresK12) : calculateMamNonRanking(surpriseScoresMN)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Tiêu chí K-12 */}
+                {surpriseLevel !== "Mầm non" ? (
+                  <div className="space-y-6">
+                    {K12_SECTIONS.map((sec, sIdx) => {
+                      let reqStartIdx = 0;
+                      for (let i = 0; i < sIdx; i++) {
+                        reqStartIdx += K12_SECTIONS[i].requirements.length;
+                      }
+
+                      return (
+                        <div key={sIdx} className="space-y-3">
+                          <h6 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <span className="w-5 h-5 bg-rose-600 text-white rounded-md flex items-center justify-center text-xs font-black">{sIdx + 1}</span>
+                            {sec.name}
+                          </h6>
+
+                          <div className="space-y-2.5">
+                            {sec.requirements.map((req, rSubIdx) => {
+                              const globalIdx = reqStartIdx + rSubIdx;
+                              const options = [];
+                              for (let v = 0; v <= req.max; v += 0.25) {
+                                options.push(Math.round(v * 100) / 100);
+                              }
+
+                              return (
+                                <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
+                                  <div className="space-y-1 min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                      <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
+                                    <span className="text-xs font-bold text-slate-500">Điểm:</span>
+                                    <select
+                                      value={surpriseScoresK12[globalIdx]}
+                                      onChange={e => {
+                                        const nextScores = [...surpriseScoresK12];
+                                        nextScores[globalIdx] = parseFloat(e.target.value);
+                                        setSurpriseScoresK12(nextScores);
+                                        const nextRank = calculateK12Ranking(nextScores);
+                                        setSurpriseOverall(nextRank);
+                                      }}
+                                      className="rounded-xl border border-rose-200 p-2 bg-white text-xs font-black text-slate-800 outline-none w-24 shadow-2xs focus:ring-2 focus:ring-rose-500"
+                                    >
+                                      {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
+                                    </select>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {MAMNON_SECTIONS.map((sec, sIdx) => {
+                      let reqStartIdx = 0;
+                      for (let i = 0; i < sIdx; i++) {
+                        reqStartIdx += MAMNON_SECTIONS[i].requirements.length;
+                      }
+
+                      return (
+                        <div key={sIdx} className="space-y-3">
+                          <h6 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 bg-amber-50 p-2.5 rounded-xl border border-amber-100">
+                            <span className="w-5 h-5 bg-amber-600 text-white rounded-md flex items-center justify-center text-xs font-black">{sIdx + 1}</span>
+                            {sec.name}
+                          </h6>
+
+                          <div className="space-y-2.5">
+                            {sec.requirements.map((req, rSubIdx) => {
+                              const globalIdx = reqStartIdx + rSubIdx;
+                              const options = [];
+                              for (let v = 0; v <= req.max; v += 0.25) {
+                                options.push(Math.round(v * 100) / 100);
+                              }
+
+                              return (
+                                <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
+                                  <div className="space-y-1 min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                      <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
+                                    <span className="text-xs font-bold text-slate-500">Điểm:</span>
+                                    <select
+                                      value={surpriseScoresMN[globalIdx]}
+                                      onChange={e => {
+                                        const nextScores = [...surpriseScoresMN];
+                                        nextScores[globalIdx] = parseFloat(e.target.value);
+                                        setSurpriseScoresMN(nextScores);
+                                        const nextRank = calculateMamNonRanking(nextScores);
+                                        setSurpriseOverall(nextRank);
+                                      }}
+                                      className="rounded-xl border border-amber-200 p-2 bg-white text-xs font-black text-slate-800 outline-none w-24 shadow-2xs focus:ring-2 focus:ring-amber-500"
+                                    >
+                                      {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
+                                    </select>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Qualitative Feedback Textareas */}
+                <div className="space-y-4 pt-2">
+                  <h6 className="font-black text-xs text-slate-800 uppercase tracking-wider">Nhận xét & Góp ý chuyên môn</h6>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-slate-700">1. Ưu điểm nổi bật của tiết dạy</label>
+                    <textarea
+                      placeholder="Những điểm mạnh, sáng tạo trong phương pháp và tổ chức hoạt động của giáo viên..."
+                      rows={2}
+                      value={surpriseStrengths}
+                      onChange={e => setSurpriseStrengths(e.target.value)}
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none resize-none bg-slate-50/50"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-slate-700">2. Nội dung cần cải thiện / Góp ý phát triển</label>
+                    <textarea
+                      placeholder="Các gợi ý phương pháp, phân bổ thời gian hoặc điều chỉnh hoạt động học sinh tốt hơn..."
+                      rows={2}
+                      value={surpriseImprovements}
+                      onChange={e => setSurpriseImprovements(e.target.value)}
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none resize-none bg-slate-50/50"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-bold text-slate-700">3. Đề xuất & Kiến nghị chuyên môn</label>
+                    <textarea
+                      placeholder="Đề xuất bồi dưỡng chuyên môn, nhân rộng tiết dạy mẫu hoặc kế hoạch hỗ trợ tiếp theo..."
+                      rows={2}
+                      value={surpriseGeneral}
+                      onChange={e => setSurpriseGeneral(e.target.value)}
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none resize-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Overall Rating Selection */}
+                <div className="flex flex-col gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-wide">Xếp loại tiết dạy tổng thể *</label>
+                    <span className="text-xs font-extrabold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-md border border-rose-200">
+                      Gợi ý: {surpriseLevel !== "Mầm non" ? calculateK12Ranking(surpriseScoresK12) : calculateMamNonRanking(surpriseScoresMN)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {(surpriseLevel !== "Mầm non"
+                      ? [["Giỏi","bg-emerald-600"],["Khá","bg-sky-600"],["Trung bình","bg-amber-500"],["Không xếp loại","bg-rose-600"]]
+                      : [["Tốt","bg-emerald-600"],["Khá","bg-sky-600"],["Đạt","bg-teal-600"],["Không đạt","bg-rose-600"]]
+                    ).map(([r, color]) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setSurpriseOverall(r)}
+                        className={`py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                          surpriseOverall === r
+                            ? `${color} text-white shadow-md`
+                            : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons: Lưu nháp / Hoàn thành */}
+              <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={surpriseSubmitting}
+                  onClick={() => handleSurpriseSubmit(true)}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  <Save className="w-4 h-4 text-slate-500" />
+                  {surpriseSubmitting ? "Đang lưu..." : "Lưu nháp"}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={surpriseSubmitting}
+                  onClick={() => handleSurpriseSubmit(false)}
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-black text-xs transition-all shadow-md shadow-rose-700/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-amber-200" />
+                  {surpriseSubmitting ? "Đang xử lý..." : "Hoàn thành đánh giá"}
+                </button>
+              </div>
+            </div>
+          ) : creationMode === "OBSERVER_REQUEST" ? (
             /* ===== FORM 2: GVBM XIN ĐĂNG KÝ DỰ GIỜ ===== */
             <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/80">
               <div className="bg-indigo-500/10 border border-indigo-200/70 rounded-xl p-3.5 flex items-start gap-3">
@@ -2574,9 +3261,16 @@ export function ObservationClient(props: ObservationClientProps) {
                                   {campusDisplay}
                                 </span>
                               )}
-                              <span className="font-black text-slate-900 truncate text-xs" title={slot.topic}>
-                                {slot.topic}
-                              </span>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="font-black text-slate-900 truncate text-xs" title={slot.topic}>
+                                  {slot.topic}
+                                </span>
+                                {slot.requestOrigin === "SURPRISE" && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
+                                    ⚡ Đột xuất
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium truncate">
                               <span className="font-bold text-slate-700 truncate max-w-[100px]">{slot.teacher.teacherName}</span>
@@ -3266,9 +3960,16 @@ export function ObservationClient(props: ObservationClientProps) {
                           {/* Môn học & Chủ đề */}
                           <td className="p-3.5">
                             <div className="space-y-1 max-w-[280px]">
-                              <p className="font-black text-[#003B3A] text-xs leading-snug" title={slot.topic}>
-                                {slot.topic}
-                              </p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="font-black text-[#003B3A] text-xs leading-snug" title={slot.topic}>
+                                  {slot.topic}
+                                </p>
+                                {slot.requestOrigin === "SURPRISE" && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
+                                    ⚡ Đột xuất
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
                                 <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60 font-bold">
                                   {slot.subjectName}
@@ -3495,9 +4196,16 @@ export function ObservationClient(props: ObservationClientProps) {
                           {/* Môn học & Chủ đề */}
                           <td className="p-3.5">
                             <div className="space-y-1 max-w-[280px]">
-                              <p className="font-black text-[#003B3A] text-xs leading-snug" title={slot.topic}>
-                                {slot.topic}
-                              </p>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="font-black text-[#003B3A] text-xs leading-snug" title={slot.topic}>
+                                  {slot.topic}
+                                </p>
+                                {slot.requestOrigin === "SURPRISE" && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
+                                    ⚡ Đột xuất
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
                                 <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60 font-bold">
                                   {slot.subjectName}
@@ -3849,7 +4557,14 @@ export function ObservationClient(props: ObservationClientProps) {
                         </div>
                       </td>
                       <td className="p-4">
-                        <p className="font-black text-[#003B3A]">{evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-black text-[#003B3A]">{evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
+                          {evalItem.slot.requestOrigin === "SURPRISE" && (
+                            <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md">
+                              ⚡ Dự giờ đột xuất
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 mt-0.5">
                           {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"}
                         </p>
@@ -3965,9 +4680,16 @@ export function ObservationClient(props: ObservationClientProps) {
               <div className="px-6 py-5 bg-gradient-to-r from-[#003B3A] to-[#007068] text-white flex items-center justify-between shrink-0">
                 <div>
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h3 className="font-black text-base sm:text-lg flex items-center gap-2">
-                      <ClipboardList className="w-5 h-5" /> Phiếu Đánh Giá Tiết Dự Giờ
-                    </h3>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-black text-base sm:text-lg flex items-center gap-2">
+                        <ClipboardList className="w-5 h-5" /> Phiếu Đánh Giá Tiết Dự Giờ
+                      </h3>
+                      {evalModal.slot.requestOrigin === "SURPRISE" && (
+                        <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-rose-500/90 text-white border border-rose-300/40 shadow-2xs">
+                          ⚡ Dự giờ đột xuất
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p className="text-white/80 text-xs mt-0.5 font-medium">
                     GV Dạy: <span className="font-bold text-white">{evalModal.slot.teacher?.teacherName}</span> • Bài dạy: <span className="font-bold text-white">{evalModal.slot.topic}</span>

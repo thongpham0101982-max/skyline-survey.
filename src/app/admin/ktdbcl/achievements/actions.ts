@@ -8,7 +8,7 @@ import { getAdminSession } from "@/lib/session"
 export async function createAchievementCategoryAction(data: { name: string; code: string; description?: string; academicYearId?: string | null }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   await prisma.achievementCategory.create({
     data: {
@@ -24,7 +24,7 @@ export async function createAchievementCategoryAction(data: { name: string; code
 export async function updateAchievementCategoryAction(data: { id: string; name?: string; code?: string; description?: string; academicYearId?: string | null }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   const { id, ...rest } = data
   await prisma.achievementCategory.update({
@@ -37,7 +37,7 @@ export async function updateAchievementCategoryAction(data: { id: string; name?:
 export async function deleteAchievementCategoryAction(id: string) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   await prisma.achievementCategory.delete({ where: { id } })
   revalidatePath("/admin/ktdbcl/achievements")
@@ -48,7 +48,7 @@ export async function deleteAchievementCategoryAction(id: string) {
 export async function createAchievementLevelAction(data: { name: string; code: string; description?: string; categoryId?: string | null; academicYearId?: string | null }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   await prisma.achievementLevel.create({
     data: {
@@ -65,7 +65,7 @@ export async function createAchievementLevelAction(data: { name: string; code: s
 export async function updateAchievementLevelAction(data: { id: string; name?: string; code?: string; description?: string; categoryId?: string | null; academicYearId?: string | null }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   const { id, ...rest } = data
   await prisma.achievementLevel.update({
@@ -78,7 +78,7 @@ export async function updateAchievementLevelAction(data: { id: string; name?: st
 export async function deleteAchievementLevelAction(id: string) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   await prisma.achievementLevel.delete({ where: { id } })
   revalidatePath("/admin/ktdbcl/achievements")

@@ -5,7 +5,7 @@ import { getAdminSession } from "@/lib/session"
 
 export async function createExamAction(data: {
   name: string
-  code: string
+  code?: string
   description?: string
   startDate?: string
   endDate?: string
@@ -19,12 +19,49 @@ export async function createExamAction(data: {
 }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền tạo kỳ thi.");
   }
+
+  let finalCode = (data.code || "").trim();
+  const currentYear = new Date().getFullYear();
+  const yearSuffix = String(currentYear).slice(-2);
+  const prefix = `CT-${yearSuffix}-`;
+
+  // Auto-generate or resolve code collision
+  if (!finalCode) {
+    const existing = await prisma.exam.findMany({
+      where: { code: { startsWith: prefix } },
+      select: { code: true }
+    });
+    let maxSeq = 0;
+    for (const e of existing) {
+      const num = parseInt(e.code.replace(prefix, ""), 10);
+      if (!isNaN(num) && num > maxSeq) maxSeq = num;
+    }
+    finalCode = `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
+  } else {
+    const existing = await prisma.exam.findUnique({
+      where: { code: finalCode }
+    });
+    if (existing) {
+      // If code already taken, auto-increment to next free sequence
+      const allExams = await prisma.exam.findMany({
+        where: { code: { startsWith: prefix } },
+        select: { code: true }
+      });
+      let maxSeq = 0;
+      for (const e of allExams) {
+        const num = parseInt(e.code.replace(prefix, ""), 10);
+        if (!isNaN(num) && num > maxSeq) maxSeq = num;
+      }
+      finalCode = `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
+    }
+  }
+
   await prisma.exam.create({
     data: {
-      name: data.name,
-      code: data.code,
+      name: data.name.trim(),
+      code: finalCode,
       description: data.description || null,
       startDate: data.startDate ? new Date(data.startDate) : null,
       endDate: data.endDate ? new Date(data.endDate) : null,
@@ -57,7 +94,7 @@ export async function updateExamAction(data: {
 }) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền cập nhật kỳ thi.");
   }
   const { id, ...rest } = data
   const updateData: any = { ...rest }
@@ -79,7 +116,7 @@ export async function updateExamAction(data: {
 export async function deleteExamAction(id: string) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền xóa kỳ thi.");
   }
   await prisma.exam.delete({ where: { id } })
   revalidatePath("/admin/ktdbcl/exams")

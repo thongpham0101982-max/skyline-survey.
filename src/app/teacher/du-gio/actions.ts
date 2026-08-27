@@ -2659,3 +2659,261 @@ export async function getReEvaluationRequests(academicYearId?: string) {
     return { success: false, error: e.message }
   }
 }
+
+
+export async function createSurpriseObservation(data: {
+  teacherId: string
+  targetDeptId?: string
+  campusId?: string
+  classId?: string
+  className?: string
+  level?: string
+  grade?: string
+  subjectId?: string
+  subjectName: string
+  topic: string
+  date: string
+  period?: string
+  room?: string
+  
+  criterion1?: number
+  criterion2?: number
+  criterion3?: number
+  criterion4?: number
+  criterion5?: number
+  score1?: number
+  score2?: number
+  score3?: number
+  score4?: number
+  score5?: number
+  score6?: number
+  score7?: number
+  score8?: number
+  score9?: number
+  score10?: number
+  score11?: number
+  totalScore: number
+  overallRating: string
+  strengths: string
+  improvements: string
+  generalComment: string
+  isDraft?: boolean
+}) {
+  try {
+    await ensureDbColumns();
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isAdminOrLeader = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "GIAO_VU_CS"].includes(roleCode)
+
+    let currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        departmentRel: true,
+        departmentAssignments: {
+          include: { department: true }
+        },
+        campus: true,
+        user: { select: { role: true } }
+      }
+    })
+
+    if (!currentTeacher && !isAdminOrLeader) {
+      return { success: false, error: "Không tìm thấy hồ sơ giáo viên." }
+    }
+
+    if (!currentTeacher && isAdminOrLeader) {
+      const adminTeacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { user: { role: { in: ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS"] } } },
+            { position: { in: ["ADMIN", "BGH", "GDCS", "KT_DBCL"] } }
+          ]
+        },
+        include: { departmentRel: true, departmentAssignments: { include: { department: true } }, campus: true, user: { select: { role: true } } }
+      })
+      if (adminTeacher) currentTeacher = adminTeacher
+    }
+
+    if (!currentTeacher) {
+      return { success: false, error: "Không tìm thấy người đánh giá hợp lệ." }
+    }
+
+    const isTTCM = currentTeacher?.position === "TTCM" ||
+                   ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(currentTeacher?.position || "") ||
+                   currentTeacher?.departmentAssignments?.some((da: any) => ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position));
+
+    if (!isAdminOrLeader && !isTTCM) {
+      return { success: false, error: "Bạn không có quyền thực hiện chức năng Dự giờ đột xuất." }
+    }
+
+    const hostTeacher = await prisma.teacher.findUnique({
+      where: { id: data.teacherId },
+      include: { campus: true, departmentRel: true, departmentAssignments: true }
+    })
+    if (!hostTeacher) return { success: false, error: "Không tìm thấy giáo viên được dự giờ." }
+
+    if (!isAdminOrLeader && isTTCM) {
+      const ttcmDeptIds = new Set<string>()
+      if (currentTeacher.departmentId) ttcmDeptIds.add(currentTeacher.departmentId)
+      if (currentTeacher.departmentAssignments) {
+        currentTeacher.departmentAssignments.forEach((da: any) => {
+          if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position) && da.departmentId) {
+            ttcmDeptIds.add(da.departmentId)
+          }
+        })
+      }
+
+      const hostDeptIds = new Set<string>()
+      if (hostTeacher.departmentId) hostDeptIds.add(hostTeacher.departmentId)
+      if (hostTeacher.departmentAssignments) {
+        hostTeacher.departmentAssignments.forEach((da: any) => {
+          if (da.departmentId) hostDeptIds.add(da.departmentId)
+        })
+      }
+
+      const hasCommonDept = Array.from(ttcmDeptIds).some(id => hostDeptIds.has(id))
+      if (!hasCommonDept) {
+        return { success: false, error: "TTCM chỉ có quyền thực hiện dự giờ đột xuất cho Giáo viên thuộc Tổ chuyên môn của mình." }
+      }
+    }
+
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" },
+      orderBy: { startDate: "desc" }
+    })
+
+    const periodMap: Record<string, { start: string, end: string }> = {
+      "Tiết 1": { start: "07:30", end: "08:15" },
+      "Tiết 2": { start: "08:20", end: "09:05" },
+      "Tiết 3": { start: "09:20", end: "10:05" },
+      "Tiết 4": { start: "10:10", end: "10:55" },
+      "Tiết 5": { start: "13:30", end: "14:15" },
+      "Tiết 6": { start: "14:20", end: "15:05" },
+      "Tiết 7": { start: "15:10", end: "15:55" },
+      "Tiết 8": { start: "15:55", end: "16:40" }
+    }
+
+    const timeRange = periodMap[data.period || "Tiết 1"] || { start: "07:30", end: "08:15" }
+    const slotDate = new Date(data.date)
+
+    // 1. Create ObservationSlot
+    let newSlot: any;
+    try {
+      newSlot = await prisma.observationSlot.create({
+        data: {
+          teacherId: hostTeacher.id,
+          targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+          classId: data.classId || null,
+          className: data.className || "Lớp học",
+          level: data.level || "Phổ thông K-12",
+          grade: data.grade || "Khối",
+          subjectId: data.subjectId || null,
+          subjectName: data.subjectName || "Môn học",
+          topic: data.topic || "Dự giờ đột xuất",
+          date: slotDate,
+          startTime: data.period || timeRange.start,
+          endTime: timeRange.end,
+          room: data.room || "Phòng học",
+          description: "Dự giờ đột xuất (" + (isTTCM ? "Tổ trưởng chuyên môn" : "Ban ĐHCM / BGH / GĐCS") + ")",
+          visibilityType: "PUBLIC",
+          maxSeats: 1,
+          status: "ACTIVE",
+          requestOrigin: "SURPRISE",
+          academicYearId: activeYear?.id || null,
+          campusId: hostTeacher.campusId || null,
+          campusName: hostTeacher.campus?.campusName || null
+        }
+      })
+    } catch (createErr: any) {
+      if (createErr?.message?.includes("requestOrigin") || createErr?.message?.includes("no column named")) {
+        newSlot = await prisma.observationSlot.create({
+          data: {
+            teacherId: hostTeacher.id,
+            targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+            classId: data.classId || null,
+            className: data.className || "Lớp học",
+            level: data.level || "Phổ thông K-12",
+            grade: data.grade || "Khối",
+            subjectId: data.subjectId || null,
+            subjectName: data.subjectName || "Môn học",
+            topic: data.topic || "Dự giờ đột xuất",
+            date: slotDate,
+            startTime: data.period || timeRange.start,
+            endTime: timeRange.end,
+            room: data.room || "Phòng học",
+            description: "Dự giờ đột xuất [SURPRISE]",
+            visibilityType: "PUBLIC",
+            maxSeats: 1,
+            status: "ACTIVE",
+            academicYearId: activeYear?.id || null,
+            campusId: hostTeacher.campusId || null,
+            campusName: hostTeacher.campus?.campusName || null
+          }
+        })
+      } else {
+        throw createErr
+      }
+    }
+
+    // 2. Create ObservationRegistration (Auto-approved)
+    const registration = await prisma.observationRegistration.create({
+      data: {
+        slotId: newSlot.id,
+        teacherId: currentTeacher.id,
+        isApproved: true,
+        approvedAt: new Date()
+      }
+    })
+
+    // 3. Create ObservationEvaluation
+    const evalData: any = {
+      registrationId: registration.id,
+      slotId: newSlot.id,
+      evaluatorId: currentTeacher.id,
+      criterion1: data.criterion1 ?? null,
+      criterion2: data.criterion2 ?? null,
+      criterion3: data.criterion3 ?? null,
+      criterion4: data.criterion4 ?? null,
+      criterion5: data.criterion5 ?? null,
+      score1: data.score1 ?? null,
+      score2: data.score2 ?? null,
+      score3: data.score3 ?? null,
+      score4: data.score4 ?? null,
+      score5: data.score5 ?? null,
+      score6: data.score6 ?? null,
+      score7: data.score7 ?? null,
+      score8: data.score8 ?? null,
+      score9: data.score9 ?? null,
+      score10: data.score10 ?? null,
+      score11: data.score11 ?? null,
+      totalScore: data.totalScore ?? null,
+      strengths: data.strengths || "",
+      improvements: data.improvements || "",
+      generalComment: data.generalComment || "",
+      overallRating: data.overallRating || "Đạt",
+      submittedAt: new Date(),
+      reEvaluationStatus: data.isDraft ? "DRAFT" : null
+    }
+
+    await prisma.observationEvaluation.create({
+      data: evalData
+    })
+
+    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio-mam-non")
+    revalidatePath("/admin/du-gio")
+    revalidatePath("/admin/du-gio-mam-non")
+
+    return { 
+      success: true, 
+      slot: newSlot, 
+      registrationId: registration.id,
+      message: data.isDraft ? "Đã lưu nháp phiếu đánh giá dự giờ đột xuất!" : "Đã hoàn thành đánh giá dự giờ đột xuất thành công!" 
+    }
+  } catch (e: any) {
+    console.error("[createSurpriseObservation Error]:", e)
+    return { success: false, error: e.message || "Lỗi khi tạo dự giờ đột xuất" }
+  }
+}

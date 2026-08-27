@@ -47,7 +47,7 @@ export async function getStudentsByClassAction(classId: string, examId: string) 
 export async function registerStudentsAction(examId: string, studentIds: string[]) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   if (!examId || studentIds.length === 0) return
 
@@ -77,7 +77,7 @@ export async function registerStudentsAction(examId: string, studentIds: string[
 export async function deregisterStudentsAction(examId: string, studentIds: string[]) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
-    throw new Error("Forbidden: Quyền truy cập bị từ chối.");
+    throw new Error("Forbidden: Bạn không có quyền thực hiện thao tác này.");
   }
   if (!examId || studentIds.length === 0) return
 

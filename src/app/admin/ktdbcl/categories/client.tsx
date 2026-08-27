@@ -77,8 +77,8 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
       window.location.reload()
-    } catch (e) {
-      setErrorMsg("Mã danh mục đã tồn tại hoặc có lỗi xảy ra. Vui lòng thử lại!")
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Mã danh mục đã tồn tại hoặc có lỗi xảy ra. Vui lòng thử lại!")
     } finally {
       setSaving(false)
     }
@@ -100,8 +100,8 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
       await updateExamCategoryAction({ id, ...editForm, academicYearId: null })
       setCategories(categories.map((c) => c.id === id ? { ...c, ...editForm } : c))
       setEditingId(null)
-    } catch (e) {
-      setErrorMsg("Mã danh mục đã tồn tại hoặc xảy ra lỗi.")
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Mã danh mục đã tồn tại hoặc xảy ra lỗi.")
     } finally {
       setSaving(false)
     }

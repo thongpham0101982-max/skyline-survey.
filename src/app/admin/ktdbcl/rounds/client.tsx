@@ -79,8 +79,8 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
       setNewForm({ name: "", code: "", description: "" })
       setCreating(false)
       window.location.reload()
-    } catch (e) {
-      setErrorMsg("Mã vòng thi đã tồn tại hoặc có lỗi xảy ra. Vui lòng thử lại!")
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Mã vòng thi đã tồn tại hoặc có lỗi xảy ra. Vui lòng thử lại!")
     } finally {
       setSaving(false)
     }
@@ -102,8 +102,8 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
       await updateExamRoundAction({ id, ...editForm, academicYearId: null })
       setRounds(rounds.map((r) => r.id === id ? { ...r, ...editForm } : r))
       setEditingId(null)
-    } catch (e) {
-      setErrorMsg("Mã vòng thi đã tồn tại hoặc xảy ra lỗi.")
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Mã vòng thi đã tồn tại hoặc xảy ra lỗi.")
     } finally {
       setSaving(false)
     }

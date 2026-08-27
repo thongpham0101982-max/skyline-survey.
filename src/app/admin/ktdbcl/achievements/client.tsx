@@ -76,8 +76,8 @@ export function AchievementsClient({
       setNewCatForm({ name: "", code: "", description: "" })
       setCreatingCat(false)
       window.location.reload()
-    } catch (e) {
-      setErrorMsg("Mã loại thành tích đã tồn tại hoặc có lỗi xảy ra.")
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Mã loại thành tích đã tồn tại hoặc có lỗi xảy ra.")
     } finally {
       setSaving(false)
     }
@@ -131,8 +131,8 @@ export function AchievementsClient({
       setNewLvlForm({ name: "", code: "", description: "", categoryId: "" })
       setCreatingLvl(false)
       window.location.reload()
-    } catch (e) {
-      setErrorMsg("Mã mức giải đã tồn tại hoặc có lỗi xảy ra.")
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Mã mức giải đã tồn tại hoặc có lỗi xảy ra.")
     } finally {
       setSaving(false)
     }

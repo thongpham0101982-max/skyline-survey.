@@ -255,8 +255,8 @@ export function ExamsClient({
         alert("Tạo kỳ thi thành công!")
         window.location.reload()
       }
-    } catch (e) {
-      setErrorMsg("Mã kỳ thi đã tồn tại hoặc xảy ra lỗi. Vui lòng kiểm tra lại!")
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Mã kỳ thi đã tồn tại hoặc xảy ra lỗi. Vui lòng kiểm tra lại!")
     } finally {
       setSaving(false)
     }
