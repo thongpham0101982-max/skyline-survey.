@@ -61,12 +61,12 @@ export default function ExperientialActivitiesList() {
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
-    if (!confirm("Bạn có chắc chắn muốn xóa hoạt động trải nghiệm ny?")) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa hoạt động trải nghiệm này?")) return;
     try {
       const res = await fetch(`/api/experiential-activities/${id}`, { method: "DELETE" });
       if (res.ok) {
         setActivities(prev => prev.filter(a => a.id !== id));
-        toast.success("? xóa hoạt động thành công");
+        toast.success("Đã xóa hoạt động thành công");
       } else {
         const err = await res.json();
         toast.error(err.error || "Lỗi khi xóa");
@@ -76,7 +76,7 @@ export default function ExperientialActivitiesList() {
 
   const handleDuplicate = async (e, act) => {
     e.stopPropagation();
-    if (!confirm(`B?n c mu?n nhân bản hoạt động "${act.name}"?`)) return;
+    if (!confirm(`Bạn có muốn nhân bản hoạt động "${act.name}"?`)) return;
     try {
       const res = await fetch(`/api/experiential-activities/${act.id}`, {
         method: "PUT",
@@ -113,18 +113,18 @@ export default function ExperientialActivitiesList() {
     try {
       const dataToExport = activities.map((act, idx) => ({
         "STT": idx + 1,
-        "Mã HĐoạt động": act.code || "T? ?ng",
+        "Mã Hoạt động": act.code || "Tự động",
         "Tên Hoạt động": act.name || "",
         "Mạch Hoạt động": ACTIVITY_STRANDS.find(s => s.id === act.strand)?.name || act.strand || "",
-        "Lo?i Hoạt động": act.activityTypeName || act.catalogName || "",
-        "C S?": act.campusName || act.campusCode || "",
-        "C?p Hđược": act.educationLevel || "",
+        "Loại Hoạt động": act.activityTypeName || act.catalogName || "",
+        "Cơ Sở": act.campusName || act.campusCode || "",
+        "Cấp Học": act.educationLevel || "",
         "Khối": (act.grades || []).join(", "),
-        "Ngày T? Chđược": act.date ? new Date(act.date).toLocaleDateString("vi-VN") : "",
+        "Ngày Tổ Chức": act.date ? new Date(act.date).toLocaleDateString("vi-VN") : "",
         "Số Lớp Tham Gia": act.totalClassesCount || 0,
         "Số HS Tham Gia": act.participantsCount || 0,
-        "S? Tiu Ch": (act.criteria || []).length,
-        "Tiến độ nh Gi": `${act.completedClassesCount || 0}/${act.totalClassesCount || 0} lớp`,
+        "Số Tiêu Chí": (act.criteria || []).length,
+        "Tiến độ Đánh Giá": `${act.completedClassesCount || 0}/${act.totalClassesCount || 0} lớp`,
         "Trạng Thái": getStatusBadge(act.status).label
       }));
       const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -132,13 +132,13 @@ export default function ExperientialActivitiesList() {
       XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_HDTN");
       const dateStr = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(wb, `Danh_Sach_Hoat_Dong_Trai_Nghiem_${dateStr}.xlsx`);
-      toast.success("? xuất file Excel thành công!");
+      toast.success("Đã xuất file Excel thành công!");
     } catch (err) { toast.error("Lỗi khi xuất file Excel"); }
   };
   const getStatusBadge = (status) => {
     switch (status) {
       case "COMPLETED": return { label: "Hoàn thành", containerCls: "bg-emerald-50 text-emerald-700 border-emerald-200/80", dot: "bg-emerald-500 ring-2 ring-emerald-300" };
-      case "IN_PROGRESS": return { label: "ĐĐang đánh giá", containerCls: "bg-sky-50 text-sky-700 border-sky-200/80", dot: "bg-sky-500 ring-2 ring-sky-300" };
+      case "IN_PROGRESS": return { label: "Đang đánh giá", containerCls: "bg-sky-50 text-sky-700 border-sky-200/80", dot: "bg-sky-500 ring-2 ring-sky-300" };
       case "ASSIGNED": return { label: "Đã giao", containerCls: "bg-indigo-50 text-indigo-700 border-indigo-200/80", dot: "bg-indigo-500 ring-2 ring-indigo-300" };
       case "LOCKED": return { label: "Đã khóa", containerCls: "bg-slate-100 text-slate-700 border-slate-300", dot: "bg-slate-500 ring-2 ring-slate-300" };
       default: return { label: "Nháp", containerCls: "bg-amber-50 text-amber-700 border-amber-200/80", dot: "bg-amber-500 ring-2 ring-amber-300" };
