@@ -16,6 +16,7 @@ export async function GET(req: Request) {
     const level = searchParams.get('level');
     const strand = searchParams.get('strand');
     const status = searchParams.get('status');
+    const scopeType = searchParams.get('scopeType'); // 'ALL' | 'ASSIGNED' | 'MY_CREATED'
     const q = searchParams.get('q');
 
     const userRole = (session?.user as any)?.role || '';
@@ -30,12 +31,14 @@ export async function GET(req: Request) {
       });
 
       if (teacherRecord) {
+        // Find both Homeroom (GVCN) and Subject (GVBM) classes
         const teacherClasses = await prisma.class.findMany({
           where: {
             OR: [
               { homeroomTeacherId: teacherRecord.id },
               { homeroomTeacherId: { contains: teacherRecord.id } },
-              { teachers: { some: { teacherId: teacherRecord.id } } }
+              { teachers: { some: { teacherId: teacherRecord.id } } },
+              { teachingAssignments: { some: { teacherId: teacherRecord.id } } }
             ]
           },
           select: { id: true, className: true, campusId: true, grade: true, level: true }
@@ -126,7 +129,10 @@ export async function GET(req: Request) {
       const calculatedTotalClasses = totalClasses > 0 ? totalClasses : participantClassIds.size;
       const participantCount = act.participants.length;
 
-      // Find my assigned class for GVCN
+      // Check if this activity is created by this teacher
+      const isMyCreated = !!(teacherRecord && (act.teacherId === teacherRecord.id || act.teacher?.userId === session.user.id));
+
+      // Find teacher's assigned classes in this activity
       let myAssignedClass: any = null;
       if (teacherRecord) {
         myAssignedClass = assignedClasses.find((c: any) => 
@@ -135,7 +141,7 @@ export async function GET(req: Request) {
           (c.homeroomTeacherName && c.homeroomTeacherName.trim().toLowerCase() === teacherRecord.teacherName.trim().toLowerCase())
         );
 
-        // Fallback: If no direct match in assignedClasses, check if participants contain this teacher's class
+        // Fallback: Check if participants contain this teacher's class
         if (!myAssignedClass && teacherClassIds.size > 0) {
           const matchParticipant = act.participants.find(p => p.student?.classId && teacherClassIds.has(p.student.classId));
           if (matchParticipant?.student?.class) {
@@ -150,7 +156,9 @@ export async function GET(req: Request) {
         }
       }
 
-      const isMyActivity = !teacherRecord || isManagement || !!myAssignedClass || (teacherRecord && act.teacherId === teacherRecord.id);
+      const isAssignedToMe = !!myAssignedClass && !isMyCreated;
+      const isVisibleToTeacher = isManagement || isMyCreated || !!myAssignedClass;
+      const canManage = isManagement || isMyCreated;
 
       return {
         id: act.id,
@@ -184,22 +192,31 @@ export async function GET(req: Request) {
         status: extraData.status || act.status || 'DRAFT',
         assignedClasses: assignedClasses,
         myAssignedClass: myAssignedClass || null,
-        canManage: isManagement,
+        isMyCreated,
+        isAssignedToMe,
+        canManage,
         isTeacherOnly: !isManagement,
         participantsCount: participantCount,
         totalClassesCount: calculatedTotalClasses,
         completedClassesCount: completedClasses,
         inProgressClassesCount: inProgressClasses,
-        isMyActivity,
+        isVisibleToTeacher,
         createdAt: act.createdAt.toISOString(),
         updatedAt: act.updatedAt.toISOString()
       };
     });
 
-    // For GVCN (Teacher), strictly filter to ONLY activities assigned to their class
+    // For regular teachers, strictly filter to ONLY visible activities (created by them OR assigned to their classes)
     let result = formatted;
     if (!isManagement) {
-      result = result.filter(a => a.isMyActivity);
+      result = result.filter(a => a.isVisibleToTeacher);
+    }
+
+    // Filter by Scope Type: ALL | ASSIGNED | MY_CREATED
+    if (scopeType === 'ASSIGNED') {
+      result = result.filter(a => a.isAssignedToMe);
+    } else if (scopeType === 'MY_CREATED') {
+      result = result.filter(a => a.isMyCreated);
     }
 
     // Client/Filter in memory for advanced filters
@@ -327,9 +344,9 @@ export async function POST(req: Request) {
 
     // Prepare full metadata payload to store in locationId JSON container
     const fullMetadata = {
-      campusId,
-      campusCode,
-      campusName,
+      campusId: campusId || teacher.campusId || '',
+      campusCode: campusCode || '',
+      campusName: campusName || '',
       educationLevel,
       grades,
       timeRange,
@@ -365,7 +382,7 @@ export async function POST(req: Request) {
         academicYearId: validAcademicYearId,
         levelId: educationLevel || null,
         formatId: scale || null,
-        organizerId: campusId || null,
+        organizerId: campusId || teacher.campusId || null,
         teacherId: teacher.id,
         locationId: JSON.stringify(fullMetadata),
         status: status === 'DRAFT' ? 'DRAFT' : 'SUBMITTED'

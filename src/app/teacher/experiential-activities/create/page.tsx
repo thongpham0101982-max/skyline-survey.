@@ -135,7 +135,7 @@ export default function CreateActivityWizard() {
   // Fetch classes when year or campus changes
   useEffect(() => {
     if (formData.academicYearId) {
-      let url = `/api/classes?academicYearId=${formData.academicYearId}`;
+      let url = `/api/classes?academicYearId=${formData.academicYearId}&scope=my_teaching_classes`;
       fetch(url)
         .then(r => r.json())
         .then(data => {
@@ -250,12 +250,12 @@ export default function CreateActivityWizard() {
   // Submit handler
   const handleSubmit = async (isDraft = false) => {
     if (!formData.name.trim()) {
-      toast.error('Vui l?ng nh?p Tên hoạt động');
+      toast.error('Vui lòng nhập Tên hoạt động');
       setCurrentStep(1);
       return;
     }
     if (assignedClasses.length === 0) {
-      toast.error('Vui l?ng gán ít nhất một lớp tham gia');
+      toast.error('Vui lòng gán ít nhất một lớp tham gia');
       setCurrentStep(3);
       return;
     }
@@ -649,7 +649,7 @@ export default function CreateActivityWizard() {
                 {/* Preset Selector */}
                 <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <span className="text-xs font-black text-slate-800">Chọn nhanh bđủ tiêu chí chuẩn:</span>
+                    <span className="text-xs font-black text-slate-800">Chọn nhanh bộ tiêu chí chuẩn:</span>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <button
                         type="button"
@@ -701,14 +701,14 @@ export default function CreateActivityWizard() {
                               value={crit.name}
                               onChange={e => handleUpdateCriterion(crit.id, 'name', e.target.value)}
                               className="w-full font-black text-xs text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#00A99D] outline-none"
-                              placeholder="Tn tiêu chí"
+                              placeholder="Tên tiêu chí"
                             />
                             <input
                               type="text"
                               value={crit.description || ''}
                               onChange={e => handleUpdateCriterion(crit.id, 'description', e.target.value)}
                               className="w-full text-[11px] text-slate-500 font-medium bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#00A99D] outline-none"
-                              placeholder="Mô tả h?ng d?n ch?m (hi?n th? tooltip)"
+                              placeholder="Mô tả hướng dẫn chấm (hiển thị tooltip)"
                             />
                           </div>
                         </div>
@@ -716,7 +716,7 @@ export default function CreateActivityWizard() {
                         <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                           {formulaType === 'WEIGHTED' && (
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[11px] text-slate-400 font-bold">Tr?ng s?:</span>
+                              <span className="text-[11px] text-slate-400 font-bold">Trọng số:</span>
                               <input
                                 type="number"
                                 min={1}
@@ -736,7 +736,7 @@ export default function CreateActivityWizard() {
                               onChange={e => handleUpdateCriterion(crit.id, 'isRequired', e.target.checked)}
                               className="rounded text-[#00A99D] focus:ring-0"
                             />
-                            <span className="text-[11px] font-bold text-slate-600">BĐạt buđược</span>
+                            <span className="text-[11px] font-bold text-slate-600">Bắt buộc</span>
                           </label>
 
                           <button
@@ -755,7 +755,7 @@ export default function CreateActivityWizard() {
                   {/* TH VI?N TIU CH G?I ? (12 TIU CH) */}
                   <div className="pt-3 border-t border-slate-200">
                     <span className="block text-[11px] font-black text-slate-600 mb-2 uppercase tracking-wider">
-                      Ch?n thm t? th vi?n tiêu chí chuẩn (12 tiêu chí):
+                      Chọn thêm từ thư viện tiêu chí chuẩn (12 tiêu chí):
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {CRITERIA_LIBRARY.map(libItem => (
@@ -777,7 +777,7 @@ export default function CreateActivityWizard() {
                 <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-slate-800">ThĐang đánh giá 4 mục th?ng nhất:</span>
-                    <span className="text-[11px] text-slate-400 font-bold">Hi?n th? tn mục trđược quan cho GVCN</span>
+                    <span className="text-[11px] text-slate-400 font-bold">Hiển thị trực quan cho GVCN</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {EVAL_LEVELS.map(lvl => (
@@ -787,7 +787,7 @@ export default function CreateActivityWizard() {
                           <span className="text-[10px] font-black uppercase opacity-70">{lvl.points}</span>
                         </div>
                         <p className="text-[10px] opacity-80 leading-tight">
-                          {lvl.level === 4 ? 'VĐạt tr?i, sáng tạo xuất sđược' : lvl.level === 3 ? 'Hoàn thành tĐạt, ch? ?ng' : lvl.level === 2 ? 'Đạt yu c?u c b?n' : 'Còn h?ng d?n v h? tr?'}
+                          {lvl.level === 4 ? 'Vượt trội, sáng tạo xuất sắc' : lvl.level === 3 ? 'Hoàn thành tốt, chủ động' : lvl.level === 2 ? 'Đạt yêu cầu cơ bản' : 'Cần hướng dẫn và hỗ trợ'}
                         </p>
                       </div>
                     ))}
@@ -797,7 +797,7 @@ export default function CreateActivityWizard() {
                 {/* CNG TH?C V NG?NG TNH */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                    <span className="text-xs font-black text-slate-800 block">Cng thực tính kết quả:</span>
+                    <span className="text-xs font-black text-slate-800 block">Công thức tính kết quả:</span>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -808,7 +808,7 @@ export default function CreateActivityWizard() {
                           onChange={() => setFormulaType('EQUAL_WEIGHT')}
                           className="text-[#00A99D]"
                         />
-                        <span className="text-xs font-bold text-slate-700">Cng thực A: Đồng trọng số (Tổng Điểm / Điểm max * 100%)</span>
+                        <span className="text-xs font-bold text-slate-700">Công thức A: Đồng trọng số (Tổng Điểm / Điểm max * 100%)</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -819,16 +819,16 @@ export default function CreateActivityWizard() {
                           onChange={() => setFormulaType('WEIGHTED')}
                           className="text-[#00A99D]"
                         />
-                        <span className="text-xs font-bold text-slate-700">Cng thực B: Theo trọng số ring tổng tiêu chí</span>
+                        <span className="text-xs font-bold text-slate-700">Công thức B: Theo trọng số riêng tổng tiêu chí</span>
                       </label>
                     </div>
                   </div>
 
                   <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                    <span className="text-xs font-black text-slate-800 block">Ng?ng xếp loại kết quả:</span>
+                    <span className="text-xs font-black text-slate-800 block">Ngưỡng xếp loại kết quả:</span>
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold block">Nổi bật (? %)</span>
+                        <span className="text-[10px] text-slate-500 font-bold block">Nổi bật (≥ %)</span>
                         <input
                           type="number"
                           value={thresholds.outstanding}
@@ -837,7 +837,7 @@ export default function CreateActivityWizard() {
                         />
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold block">Tốt (? %)</span>
+                        <span className="text-[10px] text-slate-500 font-bold block">Tốt (≥ %)</span>
                         <input
                           type="number"
                           value={thresholds.good}
@@ -846,7 +846,7 @@ export default function CreateActivityWizard() {
                         />
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-500 font-bold block">Đạt (? %)</span>
+                        <span className="text-[10px] text-slate-500 font-bold block">Đạt (≥ %)</span>
                         <input
                           type="number"
                           value={thresholds.pass}
@@ -884,15 +884,39 @@ export default function CreateActivityWizard() {
         {/* STEP 3: GN L?P & GVCN */}
         {currentStep === 3 && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md shadow-slate-200/40 space-y-6">
-            <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
+            <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-black text-slate-800">Bước 3  Gán Lớp Tham Gia & Phân Công GVCN</h2>
+                <h2 className="text-lg font-black text-slate-800">Bước 3: Gán Lớp Tham Gia & Phân Công GVCN</h2>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Chọn các lớp theo Cơ sở &rarr; Khối &rarr; Lớp. Hệ thống tự động lấy danh sách GVCN và học sinh.
+                  Chọn các lớp theo Cơ sở &rarr; Khối &rarr; Lớp. GVCN và GVBM có thể chọn nhanh các lớp mình phụ trách.
                 </p>
               </div>
-              <div className="text-xs font-black text-[#003B3A] bg-[#00A99D]/10 px-3 py-1.5 rounded-xl border border-[#00A99D]/20">
-                Đã chọn: {assignedClasses.length} lớp
+              <div className="flex items-center gap-2">
+                {classes.some(cls => cls.teacherRole) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const myClasses = classes.filter(cls => cls.teacherRole);
+                      const myAssignments = myClasses.map(cls => ({
+                        classId: cls.id,
+                        className: cls.className,
+                        campusId: cls.campusId,
+                        grade: cls.grade,
+                        level: cls.level,
+                        homeroomTeacherId: cls.homeroomTeacherId,
+                        homeroomTeacherName: cls.teacherRole === 'GVCN' ? 'Tôi (Chủ nhiệm)' : (cls.roleLabel || 'GVBM')
+                      }));
+                      setAssignedClasses(myAssignments);
+                    }}
+                    className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>⚡ Chọn tất cả lớp tôi phụ trách</span>
+                  </button>
+                )}
+                <div className="text-xs font-black text-[#003B3A] bg-[#00A99D]/10 px-3 py-1.5 rounded-xl border border-[#00A99D]/20">
+                  Đã chọn: {assignedClasses.length} lớp
+                </div>
               </div>
             </div>
 
@@ -900,7 +924,7 @@ export default function CreateActivityWizard() {
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <span className="text-xs font-black text-slate-800 block">Thời hạn GVCN hoàn thành đánh giá (Deadline):</span>
-                <span className="text-[11px] text-slate-500">GVCơ sở nh?n được thng bo nhđược nh? khi đến hạn</span>
+                <span className="text-[11px] text-slate-500">GVCN sẽ nhận được thông báo nhắc nhở khi đến hạn</span>
               </div>
               <input
                 type="date"
@@ -941,7 +965,7 @@ export default function CreateActivityWizard() {
                                 onClick={() => handleSelectAllClassesInGrade(gradeClasses)}
                                 className="text-[11px] font-black text-[#00A99D] hover:underline"
                               >
-                                {isGradeAllSelected ? 'B? ch?n ton kh?i' : 'Ch?n ton kh?i'}
+                                {isGradeAllSelected ? 'Bỏ chọn toàn khối' : 'Chọn toàn khối'}
                               </button>
                             </div>
 
