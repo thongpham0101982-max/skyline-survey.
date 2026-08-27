@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-27T02:15:42.355Z
+// Forced Vercel Deployment: 2026-08-27T02:23:37.040Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -918,8 +918,23 @@ export function ObservationClient(props: ObservationClientProps) {
   
   const isAdminUser = useMemo(() => {
     const roleCode = currentTeacher?.user?.role || currentTeacher?.position || "";
-    return ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode) || (typeof pathname === "string" && pathname.startsWith("/admin"));
+    return ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "QLCM", "QUAN_LY_CM", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN"].includes(roleCode) || (typeof pathname === "string" && pathname.startsWith("/admin"));
   }, [currentTeacher, pathname]);
+
+  const isQLCM = useMemo(() => {
+    const pos = currentTeacher?.position || "";
+    const role = currentTeacher?.user?.role || "";
+    const hasDeptPos = currentTeacher?.departmentAssignments?.some((da: any) => 
+      ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(da.position)
+    );
+    return ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(pos) || ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(role) || !!hasDeptPos;
+  }, [currentTeacher]);
+
+  const isBGHMN = useMemo(() => {
+    const pos = currentTeacher?.position || "";
+    const role = currentTeacher?.user?.role || "";
+    return ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(pos) || ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(role);
+  }, [currentTeacher]);
 
   const isTTCM = useMemo(() => {
     const pos = currentTeacher?.position || "";
@@ -930,15 +945,15 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [currentTeacher]);
 
   const canCreateSurprise = useMemo(() => {
-    return isAdminUser || isTTCM;
-  }, [isAdminUser, isTTCM]);
+    return isAdminUser || isTTCM || isQLCM || isBGHMN;
+  }, [isAdminUser, isTTCM, isQLCM, isBGHMN]);
 
   const ttcmAllowedDepartments = useMemo(() => {
     let depts = departments;
     if (isMamNonTeacher) {
       depts = depts.filter(d => isPreschoolDepartment(d.name || d.code || "") || (d as any).blockCM === "Mầm non");
     }
-    if (isAdminUser) return depts;
+    if (isAdminUser || isQLCM || isBGHMN) return depts;
     if (!isTTCM) return depts;
     const deptIds = new Set<string>();
     if (currentTeacher?.departmentId) deptIds.add(currentTeacher.departmentId);
@@ -969,7 +984,7 @@ export function ObservationClient(props: ObservationClientProps) {
       });
     }
     if (!surpriseDeptId) {
-      if (!isAdminUser && isTTCM) {
+      if (!isAdminUser && !isQLCM && !isBGHMN && isTTCM) {
         const allowedIds = new Set(ttcmAllowedDepartments.map(d => d.id));
         return baseTeachers.filter((t: any) => allowedIds.has(t.departmentId));
       }

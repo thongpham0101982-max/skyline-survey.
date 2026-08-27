@@ -2705,7 +2705,7 @@ export async function createSurpriseObservation(data: {
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdminOrLeader = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "GIAO_VU_CS"].includes(roleCode)
+    const isAdminOrLeader = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"].includes(roleCode)
 
     let currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
@@ -2744,7 +2744,14 @@ export async function createSurpriseObservation(data: {
                    ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(currentTeacher?.position || "") ||
                    currentTeacher?.departmentAssignments?.some((da: any) => ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position));
 
-    if (!isAdminOrLeader && !isTTCM) {
+    const isQLCM = ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(currentTeacher?.position || "") ||
+                   ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(roleCode) ||
+                   currentTeacher?.departmentAssignments?.some((da: any) => ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(da.position));
+
+    const isBGHMN = ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(currentTeacher?.position || "") ||
+                    ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(roleCode);
+
+    if (!isAdminOrLeader && !isTTCM && !isQLCM && !isBGHMN) {
       return { success: false, error: "Bạn không có quyền thực hiện chức năng Dự giờ đột xuất." }
     }
 
