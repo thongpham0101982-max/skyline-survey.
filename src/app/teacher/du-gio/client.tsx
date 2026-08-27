@@ -1,3 +1,38 @@
+// Forced Vercel Deployment: 2026-08-27T03:47:32.592Z
+"use client"
+
+import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
+  AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
+  ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
+  Eye, TrendingUp, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
+  CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
+  BarChart3, PieChart
+} from "lucide-react"
+
+const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+const k12Labels = [
+  "Y1: Chuẩn bị giáo án, bám sát kiến thức kỹ năng",
+  "Y2: Sử dụng đồ dùng, thiết bị dạy học phù hợp",
+  "Y3: Nội dung bài giảng chính xác, khoa học",
+  "Y4: Đảm bảo tính hệ thống, trọng tâm bài dạy",
+  "Y5: Liên hệ thực tế đời sống, tính giáo dục",
+  "Y6: Không đọc chép, hỗ trợ kịp thời học sinh",
+  "Y7: Tổ chức học tập chủ động, hợp tác nhóm",
+  "Y8: Linh hoạt các khâu, phân phối thời gian hợp lý",
+  "Y9: Kết hợp các phương pháp, khuyến khích tư duy",
+  "Y10: Đánh giá quá trình học, học sinh nắm vững bài",
+  "Y11: Tiết dạy nhuần nhuyễn, sinh động, sáng tạo"
+];
+
+const preschoolLabels = [
+  "T1: Nội dung bài dạy phù hợp, chính xác",
+  "T2: Phương pháp giảng dạy hiệu quả, sáng tạo",
+  "T3: Tổ chức hoạt động học tập tích cực",
+  "T4: Sử dụng CNTT và phương tiện dạy học",
+  "T5: Kết quả học tập và tương tác của học sinh"
+];
 
 export const getK12RankingDetails = (scores: number[]) => {
   const sum = Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100;
@@ -97,41 +132,6 @@ export const getMamNonRankingDetails = (scores: number[]) => {
   };
 };
 
-// Forced Vercel Deployment: 2026-08-27T02:35:01.316Z
-"use client"
-
-import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
-  AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
-  ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
-  Eye, TrendingUp, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
-  CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
-  BarChart3, PieChart
-} from "lucide-react"
-
-const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
-const k12Labels = [
-  "Y1: Chuẩn bị giáo án, bám sát kiến thức kỹ năng",
-  "Y2: Sử dụng đồ dùng, thiết bị dạy học phù hợp",
-  "Y3: Nội dung bài giảng chính xác, khoa học",
-  "Y4: Đảm bảo tính hệ thống, trọng tâm bài dạy",
-  "Y5: Liên hệ thực tế đời sống, tính giáo dục",
-  "Y6: Không đọc chép, hỗ trợ kịp thời học sinh",
-  "Y7: Tổ chức học tập chủ động, hợp tác nhóm",
-  "Y8: Linh hoạt các khâu, phân phối thời gian hợp lý",
-  "Y9: Kết hợp các phương pháp, khuyến khích tư duy",
-  "Y10: Đánh giá quá trình học, học sinh nắm vững bài",
-  "Y11: Tiết dạy nhuần nhuyễn, sinh động, sáng tạo"
-];
-
-const preschoolLabels = [
-  "T1: Nội dung bài dạy phù hợp, chính xác",
-  "T2: Phương pháp giảng dạy hiệu quả, sáng tạo",
-  "T3: Tổ chức hoạt động học tập tích cực",
-  "T4: Sử dụng CNTT và phương tiện dạy học",
-  "T5: Kết quả học tập và tương tác của học sinh"
-];
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,
   requestObservationSlot, respondToObservationRequest,
@@ -411,6 +411,22 @@ export function ObservationClient(props: ObservationClientProps) {
   const [surpriseGeneral, setSurpriseGeneral] = useState<string>("")
   const [surpriseOverall, setSurpriseOverall] = useState<string>(() => isMamNonTeacher ? "Tốt" : "Giỏi")
   const [surpriseSubmitting, setSurpriseSubmitting] = useState<boolean>(false)
+
+  // Auto-sync ranking when surprise scores change
+  useEffect(() => {
+    const isMN = surpriseLevel === "Mầm non" || isMamNonTeacher;
+    const rankInfo = isMN ? getMamNonRankingDetails(surpriseScoresMN) : getK12RankingDetails(surpriseScoresK12);
+    setSurpriseOverall(rankInfo.rating);
+  }, [surpriseScoresK12, surpriseScoresMN, surpriseLevel, isMamNonTeacher]);
+
+  // Auto-sync ranking when evalModal scores change
+  useEffect(() => {
+    if (!evalModal) return;
+    const isMN = evalModal.slot?.level === "Mầm non";
+    const rankInfo = isMN ? getMamNonRankingDetails(evalCriteria) : getK12RankingDetails(evalK12Scores);
+    setEvalOverall(rankInfo.rating);
+  }, [evalK12Scores, evalCriteria, evalModal]);
+
 
   
   // Request Observation Form States
