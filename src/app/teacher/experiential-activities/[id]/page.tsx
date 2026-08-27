@@ -164,7 +164,7 @@ export default function ActivityResultInput() {
       if (res.ok) {
         setLastSavedTime(new Date().toLocaleTimeString('vi-VN'));
         if (isSubmittingFinal) {
-          toast.success('? n?p kết quả đáđánh giáá thành công!');
+          toast.success('đã nộp kết quả đánh giá thành công!');
           router.push('/teacher/experiential-activities');
         } else {
           toast.success('? lu kết quả thành công');
@@ -198,7 +198,7 @@ export default function ActivityResultInput() {
   // Bulk Evaluation Handler
   const handleApplyBulk = () => {
     if (selectedIds.size === 0) {
-      toast.error('Vui l?ng ch?n t nh?t m?t học sinh');
+      toast.error('Vui l?ng ch?n t nhĐạt mĐạt học sinh');
       return;
     }
 
@@ -241,7 +241,7 @@ export default function ActivityResultInput() {
     }));
 
     setShowBulkModal(false);
-    toast.success(`? ch?m hng lo?t cho ${selectedIds.size} học sinh`);
+    toast.success(`? ch?m hng loĐạt cho ${selectedIds.size} học sinh`);
   };
 
   // Toggle selection
@@ -269,7 +269,7 @@ export default function ActivityResultInput() {
     const dataToExport = filteredStudents.map((st, idx) => {
       const row = {
         'STT': idx + 1,
-        'Mã HĐ?c Sinh': st.studentCode || '',
+        'Mã HĐđược Sinh': st.studentCode || '',
         'H? v Tn': st.fullName || '',
         'Lớp': st.className || '',
         'điểm danh': ATTENDANCE_OPTIONS.find(a => a.id === st.attendance)?.name || 'Có mặt',
@@ -282,7 +282,7 @@ export default function ActivityResultInput() {
         row[c.name] = lvlName;
       });
 
-      row['i?m %'] = st.calculatedPercent !== null ? `${st.calculatedPercent}%` : '';
+      row['Điểm %'] = st.calculatedPercent !== null ? `${st.calculatedPercent}%` : '';
       row['X?p Lo?i'] = getRatingLabel(st.finalResult);
       row['Nhận xét'] = [...(st.remarksQuick || []), st.remarksCustom].filter(Boolean).join('; ');
 
@@ -318,7 +318,7 @@ export default function ActivityResultInput() {
         let updatedCount = 0;
         setStudents(prev => prev.map(st => {
           const matched = rawData.find(row => 
-            (row['Mã HĐ?c Sinh'] && String(row['Mã HĐ?c Sinh']).trim() === String(st.studentCode).trim()) ||
+            (row['Mã HĐđược Sinh'] && String(row['Mã HĐđược Sinh']).trim() === String(st.studentCode).trim()) ||
             (row['H? v Tn'] && String(row['H? v Tn']).trim().toLowerCase() === String(st.fullName).trim().toLowerCase())
           );
 
@@ -353,10 +353,10 @@ export default function ActivityResultInput() {
           };
         }));
 
-        toast.success(`? import i?m thành công cho ${updatedCount} học sinh!`);
+        toast.success(`? import Điểm thành công cho ${updatedCount} học sinh!`);
       } catch (err) {
         console.error(err);
-        toast.error('Lỗi khi ?c file Excel');
+        toast.error('Lỗi khi được file Excel');
       }
     };
     reader.readAsBinaryString(file);
@@ -381,7 +381,7 @@ export default function ActivityResultInput() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 space-y-4">
         <div className="w-10 h-10 border-4 border-[#00A99D]/20 border-t-[#00A99D] rounded-full animate-spin" />
-        <p className="text-xs font-black text-slate-600">ang t?i s? theo dõi đáđánh giáá hoạt động...</p>
+        <p className="text-xs font-black text-slate-600">ang t?i s? theo dõi đánh giá hoạt động...</p>
       </div>
     );
   }
@@ -457,7 +457,7 @@ export default function ActivityResultInput() {
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div>
-              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Ch?n Lớp đáđánh giáá</label>
+              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Ch?n Lớp đánh giá</label>
               <select
                 value={selectedClassId}
                 onChange={e => setSelectedClassId(e.target.value)}
@@ -532,7 +532,7 @@ export default function ActivityResultInput() {
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="COMPLETED">Đã chấm xong</option>
-              <option value="INCOMPLETE">Chưa chấm xong</option>
+              <option value="INCOMPLETE">Chưa cóhấm xong</option>
             </select>
           </div>
 
@@ -555,7 +555,7 @@ export default function ActivityResultInput() {
             <button
               onClick={() => fileInputRef.current?.click()}
               className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-black rounded-xl border border-slate-200 flex items-center gap-1.5"
-              title="Nh?p i?m t? file Excel"
+              title="Nh?p Điểm t? file Excel"
             >
               <Upload className="w-3.5 h-3.5 text-slate-500" />
               <span>Import Excel</span>
@@ -564,7 +564,7 @@ export default function ActivityResultInput() {
             <button
               onClick={handleExportExcel}
               className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-black rounded-xl border border-emerald-200 flex items-center gap-1.5"
-              title="Xu?t b?ng đáđánh giáá ra file Excel"
+              title="Xuất b?ng đánh giá ra file Excel"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600" />
               <span>Xuất Excel</span>
@@ -602,13 +602,13 @@ export default function ActivityResultInput() {
                     <th key={crit.id} className="py-3.5 px-3 min-w-[180px] text-center border-l border-slate-100 bg-slate-50/90" title={crit.description || crit.name}>
                       <div className="font-black text-slate-800 line-clamp-1">{crit.name}</div>
                       <div className="text-[10px] text-slate-400 font-bold">
-                        {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : `Tiêu chí ${idx + 1}`} {crit.isRequired ? '(B?t bu?c)' : ''}
+                        {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : `Tiêu chí ${idx + 1}`} {crit.isRequired ? '(BĐạt buđược)' : ''}
                       </div>
                     </th>
                   ))}
 
                   {/* SUMMARY & REMARK */}
-                  <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">i?m %</th>
+                  <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">Điểm %</th>
                   <th className="py-3.5 px-3 min-w-[130px] text-center">Xếp loại</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Nhận xét GVCN</th>
                 </tr>
@@ -712,7 +712,7 @@ export default function ActivityResultInput() {
                                             : 'bg-amber-500 text-white shadow-xs'
                                           : 'text-slate-500 hover:bg-white hover:text-slate-900'
                                       }`}
-                                      title={`M?c ${lvl}  ${lvlInfo?.name}`}
+                                      title={`Mức ${lvl}  ${lvlInfo?.name}`}
                                     >
                                       {lvl}
                                     </button>
@@ -808,8 +808,8 @@ export default function ActivityResultInput() {
             <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 space-y-5">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">Chấm điểm Hng Lo?t</h3>
-                  <p className="text-xs text-slate-500 font-medium">p d?ng cho {selectedIds.size} học sinh ? ch?n</p>
+                  <h3 className="text-sm font-black text-slate-900">Chấm điểm Hng LoĐạt</h3>
+                  <p className="text-xs text-slate-500 font-medium">ááp dụng cho {selectedIds.size} học sinh ? ch?n</p>
                 </div>
                 <button onClick={() => setShowBulkModal(false)} className="text-slate-400 hover:text-slate-600">
                   <X className="w-4 h-4" />
@@ -818,13 +818,13 @@ export default function ActivityResultInput() {
 
               <div className="space-y-4 text-xs">
                 <div>
-                  <label className="block font-black text-slate-700 mb-1">Ch?n Tiêu chí p d?ng:</label>
+                  <label className="block font-black text-slate-700 mb-1">Chọn tiêu chí ááp dụng:</label>
                   <select
                     value={bulkCriterionId}
                     onChange={e => setBulkCriterionId(e.target.value)}
                     className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none"
                   >
-                    <option value="ALL">T?t c? tiêu chí</option>
+                    <option value="ALL">Tốt cđủ tiêu chí</option>
                     {(activity?.criteria || []).map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -832,7 +832,7 @@ export default function ActivityResultInput() {
                 </div>
 
                 <div>
-                  <label className="block font-black text-slate-700 mb-1">Ch?n M?c i?m:</label>
+                  <label className="block font-black text-slate-700 mb-1">Chọn Mức điểm:</label>
                   <div className="grid grid-cols-4 gap-2">
                     {EVAL_LEVELS.map(lvl => (
                       <button
@@ -845,7 +845,7 @@ export default function ActivityResultInput() {
                             : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                         }`}
                       >
-                        <div>M?c {lvl.level}</div>
+                        <div>Mức {lvl.level}</div>
                         <div className="text-[10px] opacity-80">{lvl.name}</div>
                       </button>
                     ))}
@@ -859,14 +859,14 @@ export default function ActivityResultInput() {
                   onClick={() => setShowBulkModal(false)}
                   className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl"
                 >
-                  H?y
+                  Hủy
                 </button>
                 <button
                   type="button"
                   onClick={handleApplyBulk}
                   className="px-5 py-2 bg-[#00A99D] hover:bg-[#008F85] text-white font-black rounded-xl shadow-md"
                 >
-                  p d?ng ngay
+                  ááp dụng ngay
                 </button>
               </div>
             </div>
@@ -882,7 +882,7 @@ export default function ActivityResultInput() {
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">Xc nh?n n?p kết quả đáđánh giáá</h3>
+                  <h3 className="text-sm font-black text-slate-900">Xác nhận nộp kết quả đánh giá</h3>
                   <p className="text-xs text-slate-500 font-medium">Lớp: {currentClassObj.className}</p>
                 </div>
               </div>
@@ -890,7 +890,7 @@ export default function ActivityResultInput() {
               {uncompletedStudents.length > 0 ? (
                 <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 space-y-2 text-xs">
                   <div className="font-black text-amber-800">
-                    C?nh bo: C?n {uncompletedStudents.length} học sinh có mặt nhng cha ch?m ? tiêu chí!
+                    Cảnh báo: Còn {uncompletedStudents.length} học sinh có mặt nhưng chưa chấm đủ tiêu chí!
                   </div>
                   <div className="max-h-32 overflow-y-auto text-[11px] text-amber-900 font-medium space-y-0.5">
                     {uncompletedStudents.map(s => (
@@ -900,7 +900,7 @@ export default function ActivityResultInput() {
                 </div>
               ) : (
                 <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 text-xs text-emerald-800 font-bold">
-                  Tuy?t v?i! T?t c? học sinh trong lớp ? ?c đáđánh giáá ?y ?.
+                  Tuyệt vời! Tất cả học sinh trong lớp đã được đánh giá đầy đủ.
                 </div>
               )}
 
@@ -910,7 +910,7 @@ export default function ActivityResultInput() {
                   onClick={() => setShowConfirmSubmitModal(false)}
                   className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
                 >
-                  Ki?m tra lỗi
+                  Kiểm tra lỗi
                 </button>
                 <button
                   type="button"
@@ -920,7 +920,7 @@ export default function ActivityResultInput() {
                   }}
                   className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-600/20"
                 >
-                  Xc nh?n n?p ngay
+                  Xác nhận nộp ngay
                 </button>
               </div>
             </div>

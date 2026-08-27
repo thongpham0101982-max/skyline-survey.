@@ -68,7 +68,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
   const handleExportExcel = () => {
     if (!stats || !stats.classProgress || stats.classProgress.length === 0) {
-      toast.error('Không có dữ liệu ? xu?t Excel');
+      toast.error('Không có dữ liệu ? xuất Excel');
       return;
     }
     try {
@@ -81,7 +81,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
         'Hoạt động': cp.activityName || '',
         'Mạch': cp.strand || '',
         'Sĩ số HS': cp.totalStudents || 0,
-        'Đã đáđánh giáá': cp.evaluatedStudents || 0,
+        'Đã đánh giá': cp.evaluatedStudents || 0,
         'Tỷ lệ hoàn thành': `${cp.progressPercent || 0}%`,
         'Trạng thái': cp.status === 'COMPLETED' ? 'Hoàn thành' : 'Đang thực hiện'
       }));
@@ -135,16 +135,16 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A99D]/10 text-[#003B3A] border border-[#00A99D]/20">
-                    Bo Co & Th?ng K
+                    Báo Cáo & Thống Kê
                   </span>
                   <span className="text-slate-300 text-xs"></span>
-                  <span className="text-xs font-bold text-slate-500">Quản trị Ch?t l?ng Sky-Line</span>
+                  <span className="text-xs font-bold text-slate-500">Quản trị Chất lượng Sky-Line</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A99D] bg-clip-text text-transparent tracking-tight">
-                  Dashboard nh Gi Hoạt động Tr?i Nghi?m
+                  Dashboard Đánh Giá Hoạt động Trải Nghiệm
                 </h1>
                 <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1">
-                  Báo cáo a chi?u theo Năm học, Cơ sở, Khối, 4 Mạch hoạt động v gim st tiến độ GVCN
+                  Báo cáo đa chiều theo Năm học, Cơ sở, Khối, 4 Mạch hoạt động và giám sát tiến độ GVCN
                 </p>
               </div>
             </div>
@@ -154,7 +154,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
               className="px-5 py-3 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black rounded-2xl border border-slate-200 shadow-2xs transition-all flex items-center gap-2"
             >
               <Download className="w-4 h-4 text-emerald-600" />
-              <span>Xu?t Bo Co Excel</span>
+              <span>Xuất Báo Cáo Excel</span>
             </button>
           </div>
 
@@ -162,7 +162,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100">
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">T?ng Hoạt động</p>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tổng Hoạt động</p>
                 <p className="text-2xl font-black text-slate-800 mt-1">{kpis.totalActivities}</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-200">
@@ -182,7 +182,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">L?t HS đáđánh giáá</p>
+                <p className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">Lượt HS đánh giá</p>
                 <p className="text-2xl font-black text-[#003B3A] mt-1">{kpis.totalStudentsEvaluated}</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center border border-[#00A99D]/30">
@@ -282,7 +282,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-purple-600" />
-              Phn b? Xếp loại Kết quả Học sinh (Thang 4 m?c)
+              Phân bố Xếp loại Kết quả Học sinh (Thang 4 mđược)
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -312,7 +312,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#00A99D]" />
-              S? l?ng Hoạt động theo 4 Mạch Trải nghiệm
+              Số lượng Hoạt động theo 4 Mạch Trải nghiệm
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -330,7 +330,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4 lg:col-span-2">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-600" />
-              i?m đáđánh giáá Trung b?nh theo 12 Tiêu chí Nng l?c Sky-Line (Thang 4 m?c)
+              Điểm đánh giá Trung bình theo 12 Tiêu chí Nng lđược Sky-Line (Thang 4 mđược)
             </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -338,7 +338,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                   <PolarGrid />
                   <PolarAngleAxis dataKey="criterion" tick={{ fontSize: 10, fontWeight: 'bold' }} />
                   <PolarRadiusAxis angle={30} domain={[0, 4]} />
-                  <Radar name="i?m TB" dataKey="avg" stroke="#6366F1" fill="#6366F1" fillOpacity={0.4} />
+                  <Radar name="Điểm TB" dataKey="avg" stroke="#6366F1" fill="#6366F1" fillOpacity={0.4} />
                   <Tooltip />
                   <Legend />
                 </RadarChart>
@@ -351,11 +351,11 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
         <div className="bg-white rounded-3xl border border-slate-200 shadow-md shadow-slate-200/40 overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-black text-slate-800">Gim St Tiến độ nh Gi C?a Gio Vin Ch? Nhi?m</h3>
-              <p className="text-xs text-slate-500 font-medium">Theo d?i th?i gian th?c tiến độ n?p sĐã đáđánh giáá của t?ng lớp</p>
+              <h3 className="text-sm font-black text-slate-800">Giám Sát Tiến độ nh Gi C?a Giáo Viên Ch? Nhđiểm</h3>
+              <p className="text-xs text-slate-500 font-medium">Theo dõi thời gian thđược tiến độ nộp sổổ đánh giá của tổng lớp</p>
             </div>
             <span className="text-xs font-bold text-slate-400">
-              T?ng c?ng: {(stats?.classProgress || []).length} l?t phân công
+              Tổng c?ng: {(stats?.classProgress || []).length} lượt phân công
             </span>
           </div>
 
@@ -368,7 +368,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                   <th className="py-3.5 px-4 min-w-[100px]">Lớp</th>
                   <th className="py-3.5 px-4 min-w-[160px]">GVCN Ph? trch</th>
                   <th className="py-3.5 px-4 min-w-[240px]">Tên Hoạt động & Mạch</th>
-                  <th className="py-3.5 px-4 text-center min-w-[120px]">Đã đáđánh giáá</th>
+                  <th className="py-3.5 px-4 text-center min-w-[120px]">Đã đánh giá</th>
                   <th className="py-3.5 px-4 min-w-[160px]">Tiến độ %</th>
                   <th className="py-3.5 px-4 min-w-[120px]">Trạng thái</th>
                 </tr>
@@ -377,7 +377,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                 {(stats?.classProgress || []).length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-400 font-bold">
-                      Cha c lớp no ?c phân công hoạt động
+                      Chưa cóó lớp nào được phân công hoạt động
                     </td>
                   </tr>
                 ) : (

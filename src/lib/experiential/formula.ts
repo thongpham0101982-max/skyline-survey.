@@ -141,11 +141,11 @@ export function calculateStudentResult(params: {
       if (rule.maxAllowedRating === 'PASS' && (baseRating === 'OUTSTANDING' || baseRating === 'GOOD')) {
         baseRating = 'PASS';
         isRestricted = true;
-        reason = rule.reason || 'B? gi?i h?n do ti�u ch� b?t bu?c ch�a �?t';
+        reason = rule.reason || 'Bị giới hạn do tiu ch bĐạt buđược chưa Đạt';
       } else if (rule.maxAllowedRating === 'NEEDS_SUPPORT' && baseRating !== 'NEEDS_SUPPORT') {
         baseRating = 'NEEDS_SUPPORT';
         isRestricted = true;
-        reason = rule.reason || 'B? gi?i h?n do ti�u ch� b?t bu?c';
+        reason = rule.reason || 'Bị giới hạn do tiu ch bĐạt buđược';
       }
     }
   }
@@ -167,7 +167,7 @@ export function getRatingBadgeProps(rating: string | ResultRating) {
     case 'NOI_BAT':
     case 'XS':
       return {
-        label: 'N?i b?t',
+        label: 'Nổi bật',
         containerCls: 'bg-purple-50 text-purple-700 border-purple-200 shadow-2xs font-black',
         color: '#9333EA'
       };
@@ -175,7 +175,7 @@ export function getRatingBadgeProps(rating: string | ResultRating) {
     case 'TOT':
     case 'TO':
       return {
-        label: 'T?t',
+        label: 'Tốt',
         containerCls: 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs font-black',
         color: '#059669'
       };
@@ -183,7 +183,7 @@ export function getRatingBadgeProps(rating: string | ResultRating) {
     case 'DAT':
     case 'DA':
       return {
-        label: '�?t',
+        label: 'Đạt',
         containerCls: 'bg-sky-50 text-sky-700 border-sky-200 shadow-2xs font-black',
         color: '#0284C7'
       };
@@ -191,7 +191,7 @@ export function getRatingBadgeProps(rating: string | ResultRating) {
     case 'CAN_HO_TRO':
     case 'KDA':
       return {
-        label: 'C?n h? tr?',
+        label: 'Còn h? tr?',
         containerCls: 'bg-amber-50 text-amber-700 border-amber-200 shadow-2xs font-black',
         color: '#D97706'
       };
@@ -205,20 +205,20 @@ export function getRatingBadgeProps(rating: string | ResultRating) {
     case 'NOT_PARTICIPATED':
     case 'KHONG_THAM_GIA':
       return {
-        label: 'Kh�ng tham gia',
+        label: 'Không tham gia',
         containerCls: 'bg-rose-50 text-rose-700 border-rose-200 shadow-2xs font-bold',
         color: '#E11D48'
       };
     case 'EXEMPTED':
     case 'MIEN':
       return {
-        label: 'Mi?n',
+        label: 'Miễn',
         containerCls: 'bg-slate-100 text-slate-600 border-slate-300 shadow-2xs font-bold',
         color: '#64748B'
       };
     default:
       return {
-        label: 'Ch�a ��nh gi�',
+        label: 'Chưa đánh giá',
         containerCls: 'bg-slate-100 text-slate-500 border-slate-200 font-bold',
         color: '#94A3B8'
       };

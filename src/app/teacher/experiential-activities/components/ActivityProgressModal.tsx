@@ -52,7 +52,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
           {assignedClasses.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-400 font-bold">
-              Cha c lớp no ?c gn cho hoạt động ny
+              Chưa cóó lớp nào được gán cho hoạt động này
             </div>
           ) : (
             assignedClasses.map((cls: any, idx: number) => {
@@ -87,17 +87,17 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
                     <div className="text-right">
                       <div className="text-xs font-black text-slate-800">{evalSt}/{totalSt} HS</div>
                       <div className={"text-[10px] font-black " + (isCompleted ? 'text-emerald-600' : 'text-[#00A99D]')}>
-                        {pct}% ({isCompleted ? '? n?p' : isInProgress ? 'Đang chấm' : 'Cha ch?m'})
+                        {pct}% ({isCompleted ? 'đã nộp' : isInProgress ? 'Đang chấm' : 'Chưa cóóh?m'})
                       </div>
                     </div>
 
                     <button
                       onClick={() => {
                         onClose();
-                        router.push("/teacher/experiential-activities/" + activity.id + "?classId=" + cls.classId);
+                        router.push("/teacher/experiential-activities/" + activity.id + "đượclassId=" + cls.classId);
                       }}
                       className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D] hover:text-white text-slate-600 transition-all"
-                      title="M? sổ đáđánh giáá của lớp ny"
+                      title="M? sổ đánh giá của lớp này"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </button>

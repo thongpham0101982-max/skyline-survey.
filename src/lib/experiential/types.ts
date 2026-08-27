@@ -31,7 +31,7 @@ export type AttendanceStatus =
   | 'EXCUSED'       // Vắng có phép
   | 'UNEXCUSED'     // Vắng không phép
   | 'NOT_ATTENDED'  // Không tham gia
-  | 'EXEMPT';       // Miễn/Không áp dụng
+  | 'EXEMPT';       // Miễn/Không ááp dụng
 
 export type EvalLevel = 1 | 2 | 3 | 4; // 1: Cần hỗ trợ, 2: Đạt, 3: Tốt, 4: Nổi bật
 

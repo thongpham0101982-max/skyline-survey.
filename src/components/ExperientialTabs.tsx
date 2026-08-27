@@ -8,11 +8,11 @@ interface ExperientialTabsProps {
 
 export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
   const tabs = [
-    { id: 'activities', label: 'Qu?n l? Ho?t �?ng & ��nh gi�', href: '/teacher/experiential-activities', icon: Activity },
-    { id: 'reports', label: 'Dashboard & Th?ng k�', href: '/admin/experiential-activities/reports', icon: BarChart3 },
-    { id: 'categories', label: 'Danh m?c', href: '/admin/experiential-activities/categories', icon: Layers },
-    { id: 'catalog', label: 'Ho?t �?ng m?u', href: '/admin/experiential-activities/catalog', icon: Award },
-    { id: 'config', label: 'C?u h?nh ti�u ch�', href: '/admin/experiential-activities/config', icon: Settings }
+    { id: 'activities', label: 'Quản lý Hoạt động & Đánh giá', href: '/teacher/experiential-activities', icon: Activity },
+    { id: 'reports', label: 'Dashboard & Thống kê', href: '/admin/experiential-activities/reports', icon: BarChart3 },
+    { id: 'categories', label: 'Danh mđược', href: '/admin/experiential-activities/categories', icon: Layers },
+    { id: 'catalog', label: 'Hoạt động mẫu', href: '/admin/experiential-activities/catalog', icon: Award },
+    { id: 'config', label: 'Cấu hình tiêu chí', href: '/admin/experiential-activities/config', icon: Settings }
   ]
 
   return (
