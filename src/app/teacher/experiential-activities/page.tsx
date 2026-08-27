@@ -202,15 +202,17 @@ export default function ExperientialActivitiesList() {
                 <span>Xuất Excel</span>
               </button>
 
-              <button
-                onClick={() => router.push('/teacher/experiential-activities/create')}
-                className="px-6 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 transition-all flex items-center gap-2.5 group transform active:scale-95"
-              >
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
-                  <Plus className="w-3.5 h-3.5 text-white" />
-                </div>
-                <span>+ Tạo hoạt động</span>
-              </button>
+              {(activities.length === 0 || activities.some(a => a.canManage)) && (
+                <button
+                  onClick={() => router.push('/teacher/experiential-activities/create')}
+                  className="px-6 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 transition-all flex items-center gap-2.5 group transform active:scale-95"
+                >
+                  <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
+                    <Plus className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span>+ Tạo hoạt động</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -461,7 +463,7 @@ export default function ExperientialActivitiesList() {
                     return (
                       <tr
                         key={act.id}
-                        onClick={() => router.push(`/teacher/experiential-activities/${act.id}`)}
+                        onClick={() => router.push(act.myAssignedClass?.classId ? `/teacher/experiential-activities/${act.id}?classId=${act.myAssignedClass.classId}` : `/teacher/experiential-activities/${act.id}`)}
                         className="hover:bg-teal-50/30 cursor-pointer transition-colors group"
                       >
                         <td className="py-4 px-4 text-center text-slate-400 font-bold">{index + 1}</td>
@@ -529,40 +531,52 @@ export default function ExperientialActivitiesList() {
                           </span>
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap text-right" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => setProgressModalActivity(act)}
-                              className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D]/10 text-slate-600 hover:text-[#003B3A] transition-colors"
-                              title="Theo dõi tiến độ nộp của các lớp"
-                            >
-                              <BarChart3 className="w-4 h-4 text-[#00A99D]" />
-                            </button>
-                            <button
-                              onClick={e => handleDuplicate(e, act)}
-                              className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 transition-colors"
-                              title="Nhân bản hoạt động"
-                            >
-                              <Copy className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={e => handleToggleLock(e, act)}
-                              className={`p-2 rounded-xl transition-colors ${
-                                isLocked 
-                                  ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' 
-                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                              }`}
-                              title={isLocked ? 'Mở khóa hoạt động' : 'Khóa hoạt động'}
-                            >
-                              {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-                            </button>
-                            <button
-                              onClick={e => handleDelete(e, act.id)}
-                              className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
-                              title="Xóa hoạt động"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {act.canManage ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => setProgressModalActivity(act)}
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D]/10 text-slate-600 hover:text-[#003B3A] transition-colors"
+                                title="Theo dõi tiến độ nộp của các lớp"
+                              >
+                                <BarChart3 className="w-4 h-4 text-[#00A99D]" />
+                              </button>
+                              <button
+                                onClick={e => handleDuplicate(e, act)}
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 transition-colors"
+                                title="Nhân bản hoạt động"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={e => handleToggleLock(e, act)}
+                                className={`p-2 rounded-xl transition-colors ${
+                                  isLocked 
+                                    ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' 
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                }`}
+                                title={isLocked ? 'Mở khóa hoạt động' : 'Khóa hoạt động'}
+                              >
+                                {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                              </button>
+                              <button
+                                onClick={e => handleDelete(e, act.id)}
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
+                                title="Xóa hoạt động"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end">
+                              <button
+                                onClick={() => router.push(act.myAssignedClass?.classId ? `/teacher/experiential-activities/${act.id}?classId=${act.myAssignedClass.classId}` : `/teacher/experiential-activities/${act.id}`)}
+                                className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A99D] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs font-black rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Tiến hành nhập</span>
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -593,6 +607,7 @@ export default function ExperientialActivitiesList() {
                         <span className="text-[11px] font-black text-[#003B3A] bg-[#00A99D]/10 border border-[#00A99D]/20 px-2.5 py-1 rounded-xl">
                           {act.code || 'HDTN'}
                         </span>
+                        {act.canManage ? (
                         <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                           <button
                             onClick={() => setProgressModalActivity(act)}
@@ -616,6 +631,13 @@ export default function ExperientialActivitiesList() {
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
+                      ) : (
+                        act.myAssignedClass && (
+                          <span className="text-[11px] font-black text-[#003B3A] bg-teal-50 border border-[#00A99D]/30 px-2.5 py-0.5 rounded-lg">
+                            Lớp {act.myAssignedClass.className}
+                          </span>
+                        )
+                      )}
                       </div>
 
                       <h3 className="text-base font-black text-slate-800 group-hover:text-[#00A99D] transition-colors line-clamp-2 leading-snug">

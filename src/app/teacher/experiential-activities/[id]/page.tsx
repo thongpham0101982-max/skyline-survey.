@@ -507,7 +507,7 @@ export default function ActivityResultInput() {
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="T?m tn, m? học sinh..."
+                placeholder="Tìm tên, mã học sinh..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
@@ -532,7 +532,7 @@ export default function ActivityResultInput() {
             >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="COMPLETED">Đã chấm xong</option>
-              <option value="INCOMPLETE">Chưa cóhấm xong</option>
+              <option value="INCOMPLETE">Chưa chấm xong</option>
             </select>
           </div>
 
@@ -555,7 +555,7 @@ export default function ActivityResultInput() {
             <button
               onClick={() => fileInputRef.current?.click()}
               className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-black rounded-xl border border-slate-200 flex items-center gap-1.5"
-              title="Nh?p Điểm t? file Excel"
+              title="Nhập điểm từ file Excel"
             >
               <Upload className="w-3.5 h-3.5 text-slate-500" />
               <span>Import Excel</span>
@@ -564,7 +564,7 @@ export default function ActivityResultInput() {
             <button
               onClick={handleExportExcel}
               className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-black rounded-xl border border-emerald-200 flex items-center gap-1.5"
-              title="Xuất b?ng đánh giá ra file Excel"
+              title="Xuất bảng đánh giá ra file Excel"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600" />
               <span>Xuất Excel</span>

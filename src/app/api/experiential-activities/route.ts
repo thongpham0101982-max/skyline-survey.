@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
 
@@ -17,6 +17,32 @@ export async function GET(req: Request) {
     const strand = searchParams.get('strand');
     const status = searchParams.get('status');
     const q = searchParams.get('q');
+
+    const userRole = (session?.user as any)?.role || '';
+    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN'].includes(userRole);
+
+    let teacherRecord: any = null;
+    let teacherClassIds = new Set<string>();
+
+    if (!isManagement || userRole === 'TEACHER') {
+      teacherRecord = await prisma.teacher.findUnique({
+        where: { userId: session.user.id }
+      });
+
+      if (teacherRecord) {
+        const teacherClasses = await prisma.class.findMany({
+          where: {
+            OR: [
+              { homeroomTeacherId: teacherRecord.id },
+              { homeroomTeacherId: { contains: teacherRecord.id } },
+              { teachers: { some: { teacherId: teacherRecord.id } } }
+            ]
+          },
+          select: { id: true, className: true, campusId: true, grade: true, level: true }
+        });
+        teacherClassIds = new Set(teacherClasses.map(c => c.id));
+      }
+    }
 
     // Build filter
     const where: any = {};
@@ -100,6 +126,32 @@ export async function GET(req: Request) {
       const calculatedTotalClasses = totalClasses > 0 ? totalClasses : participantClassIds.size;
       const participantCount = act.participants.length;
 
+      // Find my assigned class for GVCN
+      let myAssignedClass: any = null;
+      if (teacherRecord) {
+        myAssignedClass = assignedClasses.find((c: any) => 
+          (c.classId && teacherClassIds.has(c.classId)) ||
+          (c.homeroomTeacherId && (c.homeroomTeacherId === teacherRecord.id || c.homeroomTeacherId === teacherRecord.userId)) ||
+          (c.homeroomTeacherName && c.homeroomTeacherName.trim().toLowerCase() === teacherRecord.teacherName.trim().toLowerCase())
+        );
+
+        // Fallback: If no direct match in assignedClasses, check if participants contain this teacher's class
+        if (!myAssignedClass && teacherClassIds.size > 0) {
+          const matchParticipant = act.participants.find(p => p.student?.classId && teacherClassIds.has(p.student.classId));
+          if (matchParticipant?.student?.class) {
+            myAssignedClass = {
+              classId: matchParticipant.student.class.id,
+              className: matchParticipant.student.class.className,
+              status: 'DRAFT',
+              totalStudents: act.participants.filter(p => p.student?.classId === matchParticipant.student.classId).length,
+              evaluatedStudents: 0
+            };
+          }
+        }
+      }
+
+      const isMyActivity = !teacherRecord || isManagement || !!myAssignedClass || (teacherRecord && act.teacherId === teacherRecord.id);
+
       return {
         id: act.id,
         code: act.code || '',
@@ -131,27 +183,36 @@ export async function GET(req: Request) {
         deadline: extraData.deadline || '',
         status: extraData.status || act.status || 'DRAFT',
         assignedClasses: assignedClasses,
+        myAssignedClass: myAssignedClass || null,
+        canManage: isManagement,
+        isTeacherOnly: !isManagement,
         participantsCount: participantCount,
         totalClassesCount: calculatedTotalClasses,
         completedClassesCount: completedClasses,
         inProgressClassesCount: inProgressClasses,
+        isMyActivity,
         createdAt: act.createdAt.toISOString(),
         updatedAt: act.updatedAt.toISOString()
       };
     });
 
-    // Client/Filter in memory for advanced filters
+    // For GVCN (Teacher), strictly filter to ONLY activities assigned to their class
     let result = formatted;
-    if (campusId) {
+    if (!isManagement) {
+      result = result.filter(a => a.isMyActivity);
+    }
+
+    // Client/Filter in memory for advanced filters
+    if (campusId && campusId !== 'ALL') {
       result = result.filter(a => a.campusId === campusId || a.campusCode === campusId || a.assignedClasses.some((c: any) => c.campusId === campusId || c.campusCode === campusId));
     }
-    if (grade) {
+    if (grade && grade !== 'ALL') {
       result = result.filter(a => a.grades.includes(grade) || a.assignedClasses.some((c: any) => c.grade === grade));
     }
-    if (level) {
+    if (level && level !== 'ALL') {
       result = result.filter(a => a.educationLevel === level || a.assignedClasses.some((c: any) => c.level === level));
     }
-    if (strand) {
+    if (strand && strand !== 'ALL') {
       result = result.filter(a => a.strand === strand);
     }
     if (status && status !== 'ALL') {
@@ -181,12 +242,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
+    const teacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id }
+    });
+
     if (!teacher) {
-      teacher = await prisma.teacher.findFirst();
-    }
-    if (!teacher) {
-      return NextResponse.json({ error: 'Không tìm thấy tài khoản Giáo viên trong hệ thống' }, { status: 403 });
+      return NextResponse.json({ error: 'Không tìm thấy hồ sơ giáo viên của bạn' }, { status: 403 });
     }
 
     const body = await req.json();
