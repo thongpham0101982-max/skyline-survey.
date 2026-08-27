@@ -1,4 +1,4 @@
-﻿import { CriterionConfig, ThresholdConfig } from './types';
+import { CriterionConfig, ThresholdConfig } from './types';
 
 // 4 Mạch hoạt động chuẩn
 export const ACTIVITY_STRANDS = [

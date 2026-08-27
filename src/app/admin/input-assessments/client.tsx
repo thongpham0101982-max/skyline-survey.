@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
 

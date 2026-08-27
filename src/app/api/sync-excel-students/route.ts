@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 
 const SYNC_API_SECRET = process.env.SYNC_API_SECRET || "skyline_sync_secret_token_2026"

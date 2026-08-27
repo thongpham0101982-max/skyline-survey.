@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { useState } from "react"
 import { Plus, Edit2, Trash2, Check, X, MapPin, Building2, Search } from "lucide-react"
 import { createCampus, updateCampus, deleteCampus } from "./actions"

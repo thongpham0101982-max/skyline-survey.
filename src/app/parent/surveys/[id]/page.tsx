@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { notFound, redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { SurveyFormClient } from "./client"

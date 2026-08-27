@@ -1,4 +1,4 @@
-﻿export type ActivityStrand = 
+export type ActivityStrand = 
   | 'BAN_THAN'      // Hướng vào bản thân
   | 'XA_HOI'        // Hướng đến xã hội
   | 'TU_NHIEN'      // Hướng đến tự nhiên

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 function PositionBadge({ position }: { position?: string | null }) {
   if (position === "TTCM") return (
     <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-amber-700">

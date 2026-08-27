@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { AdminClassesClient } from "./client"
 import { getAdminSession } from "@/lib/session"
 

@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { AdminSurveysClient } from "./client"
 import { createSurveyPeriodAction, updateSurveyPeriodAction, deleteSurveyPeriodAction, deleteMultipleSurveysAction } from "./actions"
 import { CalendarDays, Sparkles, AlertCircle } from "lucide-react"

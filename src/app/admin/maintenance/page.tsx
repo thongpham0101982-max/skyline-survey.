@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { ShieldAlert, RefreshCcw, CheckCircle2 } from "lucide-react"
 import { syncPortalAccountsAction } from "./actions"
 import { SyncButton } from "./SyncButton"

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * session.ts - Helper for campus-scoped access control.
  * Non-ADMIN roles (e.g. GD_CS) can only see data for their assigned campuses.
  */

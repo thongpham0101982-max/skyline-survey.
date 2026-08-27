@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { Menu } from "lucide-react"
 
 export function MobileMenuTrigger() {

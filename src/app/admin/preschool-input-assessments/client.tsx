@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"

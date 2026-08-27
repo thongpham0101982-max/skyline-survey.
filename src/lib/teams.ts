@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Microsoft Teams Notification Utility for Skyline Observation (Dự Giờ) System
  * Guarantees 100% non-blocking async execution and zero page crashes.
  */

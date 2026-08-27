@@ -1,4 +1,4 @@
-﻿import { auth } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import TeacherAssessmentsClient from "./client"
 import { prisma } from "@/lib/db"
