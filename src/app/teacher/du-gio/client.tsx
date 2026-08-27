@@ -1,4 +1,103 @@
-// Forced Vercel Deployment: 2026-08-27T02:23:37.040Z
+
+export const getK12RankingDetails = (scores: number[]) => {
+  const sum = Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100;
+  const yq1 = scores[0] || 0;
+  const yq3 = scores[2] || 0;
+  const yq6 = scores[5] || 0;
+  const yq7 = scores[6] || 0;
+
+  const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+  const failed50 = scores
+    .map((s, idx) => (s < maxScores[idx] * 0.5 ? `Y${idx + 1} (${s}/${maxScores[idx]}đ)` : null))
+    .filter(Boolean);
+
+  const zeroScores = scores
+    .map((s, idx) => (s === 0 ? `Y${idx + 1}` : null))
+    .filter(Boolean);
+
+  // 1. Giỏi: sum >= 17, Y1=1.5, Y3=2.0, Y6=2.0, Y7=3.0, others >= 50%
+  if (sum >= 17.0 && yq1 === 1.5 && yq3 === 2.0 && yq6 === 2.0 && yq7 === 3.0 && failed50.length === 0) {
+    return {
+      rating: "Giỏi",
+      reason: `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 17.0đ); đạt điểm tối đa ở cả 4 yêu cầu trọng tâm Y1(1.5đ), Y3(2.0đ), Y6(2.0đ), Y7(3.0đ); tất cả các yêu cầu còn lại đều đạt từ 50% điểm tối đa trở lên.`,
+      color: "emerald"
+    };
+  }
+
+  // 2. Khá: sum >= 14, Y3>=2.0, Y6>=2.0, Y7>=2.0, others >= 50%
+  if (sum >= 14.0 && yq3 >= 2.0 && yq6 >= 2.0 && yq7 >= 2.0 && failed50.length === 0) {
+    let note = `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 14.0đ); các yêu cầu trọng tâm Y3(≥2.0đ), Y6(≥2.0đ), Y7(≥2.0đ) đạt chuẩn; các yêu cầu khác đều đạt từ 50% trở lên.`;
+    if (sum >= 17.0) {
+      note += ` (Chưa đạt loại Giỏi do: ${yq1 < 1.5 ? "Y1 chưa đạt tối đa 1.5đ; " : ""}${yq3 < 2.0 ? "Y3 chưa đạt tối đa 2.0đ; " : ""}${yq6 < 2.0 ? "Y6 chưa đạt tối đa 2.0đ; " : ""}${yq7 < 3.0 ? "Y7 chưa đạt tối đa 3.0đ" : ""})`;
+    }
+    return {
+      rating: "Khá",
+      reason: note,
+      color: "sky"
+    };
+  }
+
+  // 3. Trung bình: sum >= 12, Y3>=1.0, Y6>=1.0, Y7>=1.0, no zeros
+  if (sum >= 12.0 && yq3 >= 1.0 && yq6 >= 1.0 && yq7 >= 1.0 && zeroScores.length === 0) {
+    let note = `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 12.0đ); các yêu cầu trọng tâm Y3(≥1.0đ), Y6(≥1.0đ), Y7(≥1.0đ) đạt chuẩn và không có yêu cầu nào bị điểm 0.`;
+    if (sum >= 14.0 && failed50.length > 0) {
+      note += ` (Chưa đạt loại Khá do các yêu cầu sau dưới 50% điểm: ${failed50.join(", ")})`;
+    }
+    return {
+      rating: "Trung bình",
+      reason: note,
+      color: "amber"
+    };
+  }
+
+  // 4. Không xếp loại
+  let unratedReason = `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ.`;
+  if (sum < 12.0) {
+    unratedReason += " Điểm tổng kết dưới 12.00 điểm (chưa đạt chuẩn tối thiểu Trung bình).";
+  } else if (zeroScores.length > 0) {
+    unratedReason += ` Có yêu cầu bị điểm 0: ${zeroScores.join(", ")} (theo quy định không được xếp loại khi có tiêu chí 0 điểm).`;
+  } else {
+    unratedReason += " Các yêu cầu trọng tâm Y3, Y6, Y7 chưa đạt mức điểm tối thiểu (≥1.0đ).";
+  }
+
+  return {
+    rating: "Không xếp loại",
+    reason: unratedReason,
+    color: "rose"
+  };
+};
+
+export const getMamNonRankingDetails = (scores: number[]) => {
+  const sum = Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100;
+  if (sum >= 9.0) {
+    return {
+      rating: "Tốt",
+      reason: `Tổng điểm đạt ${sum.toFixed(2)}/10.00đ (Từ 9.0 điểm trở lên - Đạt chuẩn xếp loại TỐT bậc Mầm non).`,
+      color: "emerald"
+    };
+  }
+  if (sum >= 8.0) {
+    return {
+      rating: "Khá",
+      reason: `Tổng điểm đạt ${sum.toFixed(2)}/10.00đ (Từ 8.0 đến dưới 9.0 điểm - Đạt chuẩn xếp loại KHÁ bậc Mầm non).`,
+      color: "sky"
+    };
+  }
+  if (sum >= 7.0) {
+    return {
+      rating: "Đạt",
+      reason: `Tổng điểm đạt ${sum.toFixed(2)}/10.00đ (Từ 7.0 đến dưới 8.0 điểm - Đạt chuẩn xếp loại ĐẠT bậc Mầm non).`,
+      color: "teal"
+    };
+  }
+  return {
+    rating: "Không đạt",
+    reason: `Tổng điểm đạt ${sum.toFixed(2)}/10.00đ (Dưới 7.00 điểm - Chưa đạt chuẩn xếp loại tối thiểu bậc Mầm non).`,
+    color: "rose"
+  };
+};
+
+// Forced Vercel Deployment: 2026-08-27T02:35:01.316Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1177,30 +1276,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const calculateK12Ranking = (scores: number[]) => {
-    const sum = scores.reduce((a, b) => a + b, 0)
-    const yq1 = scores[0];
-    const yq3 = scores[2];
-    const yq6 = scores[5];
-    const yq7 = scores[6];
-
-    const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0]
-    const checkOthersAtLeast50Percent = (coreIndices: number[]) => {
-      return scores.every((s, idx) => {
-        if (coreIndices.includes(idx)) return true
-        return s >= maxScores[idx] * 0.5
-      })
-    }
-
-    if (sum >= 17 && yq1 === 1.5 && yq3 === 2.0 && yq6 === 2.0 && yq7 === 3.0 && checkOthersAtLeast50Percent([0, 2, 5, 6])) {
-      return "Giỏi"
-    }
-    if (sum >= 14 && yq3 >= 2.0 && yq6 >= 2.0 && yq7 >= 2.0 && checkOthersAtLeast50Percent([2, 5, 6])) {
-      return "Khá"
-    }
-    if (sum >= 12 && yq3 >= 1.0 && yq6 >= 1.0 && yq7 >= 1.0 && scores.every(s => s > 0)) {
-      return "Trung bình"
-    }
-    return "Không xếp loại"
+    return getK12RankingDetails(scores).rating;
   }
 
   
@@ -2608,35 +2684,87 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                 </div>
 
-                {/* Overall Rating Selection */}
-                <div className="flex flex-col gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-wide">Xếp loại tiết dạy tổng thể *</label>
-                    <span className="text-xs font-extrabold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-md border border-rose-200">
-                      Gợi ý: {surpriseLevel !== "Mầm non" ? calculateK12Ranking(surpriseScoresK12) : calculateMamNonRanking(surpriseScoresMN)}
-                    </span>
-                  </div>
+                {/* Overall Rating & Automatic Reason */}
+                {(() => {
+                  const isMN = surpriseLevel === "Mầm non" || isMamNonTeacher;
+                  const rankInfo = isMN 
+                    ? getMamNonRankingDetails(surpriseScoresMN)
+                    : getK12RankingDetails(surpriseScoresK12);
+                  const currentRank = surpriseOverall || rankInfo.rating;
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {(surpriseLevel !== "Mầm non"
-                      ? [["Giỏi","bg-emerald-600"],["Khá","bg-sky-600"],["Trung bình","bg-amber-500"],["Không xếp loại","bg-rose-600"]]
-                      : [["Tốt","bg-emerald-600"],["Khá","bg-sky-600"],["Đạt","bg-teal-600"],["Không đạt","bg-rose-600"]]
-                    ).map(([r, color]) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => setSurpriseOverall(r)}
-                        className={`py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                          surpriseOverall === r
-                            ? `${color} text-white shadow-md`
-                            : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                  return (
+                    <div className="flex flex-col gap-4 p-5 bg-gradient-to-b from-slate-50 to-white rounded-2xl border border-slate-200/90 shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-150">
+                        <div>
+                          <label className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <Award className="w-4 h-4 text-amber-500" />
+                            Xếp loại tiết dạy tổng thể (Tự động)
+                          </label>
+                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                            Hệ thống tự động phân tích điểm số các tiêu chuẩn để xếp loại và giải trình lý do
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[11px] font-bold text-slate-500">Kết quả xếp loại:</span>
+                          <span className={`px-3.5 py-1 text-xs font-black uppercase rounded-xl border shadow-2xs ${
+                            currentRank === "Giỏi" || currentRank === "Tốt"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                              : currentRank === "Khá"
+                              ? "bg-sky-50 text-sky-700 border-sky-300"
+                              : currentRank === "Trung bình" || currentRank === "Đạt"
+                              ? "bg-amber-50 text-amber-700 border-amber-300"
+                              : "bg-rose-50 text-rose-700 border-rose-300"
+                          }`}>
+                            {currentRank}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Reason Callout Box */}
+                      <div className={`p-4 rounded-xl border flex items-start gap-3 ${
+                        rankInfo.color === "emerald"
+                          ? "bg-emerald-50/80 border-emerald-200/80 text-emerald-950"
+                          : rankInfo.color === "sky"
+                          ? "bg-sky-50/80 border-sky-200/80 text-sky-950"
+                          : rankInfo.color === "amber"
+                          ? "bg-amber-50/80 border-amber-200/80 text-amber-950"
+                          : "bg-rose-50/80 border-rose-200/80 text-rose-950"
+                      }`}>
+                        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <h6 className="text-[11px] font-black uppercase tracking-wider">
+                            Lý do xếp loại:
+                          </h6>
+                          <p className="text-xs font-medium leading-relaxed">
+                            {rankInfo.reason}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Rating selection buttons */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                        {(isMN
+                          ? [["Tốt","bg-emerald-600"],["Khá","bg-sky-600"],["Đạt","bg-teal-600"],["Không đạt","bg-rose-600"]]
+                          : [["Giỏi","bg-emerald-600"],["Khá","bg-sky-600"],["Trung bình","bg-amber-500"],["Không xếp loại","bg-rose-600"]]
+                        ).map(([r, color]) => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => setSurpriseOverall(r)}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                              currentRank === r
+                                ? `${color} text-white shadow-md ring-2 ring-offset-1 ring-slate-400/40`
+                                : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            {currentRank === r && <Check className="w-3.5 h-3.5" />}
+                            <span>{r}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Action Buttons: Lưu nháp / Hoàn thành */}
@@ -4989,36 +5117,88 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                 </div>
 
-                {/* Overall Rating Selection */}
-                <div className="flex flex-col gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
-                  <div className="flex items-center justify-between gap-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-wide">Xếp loại tiết dạy tổng thể *</label>
-                    <span className="text-xs font-extrabold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200">
-                      Gợi ý: {evalModal.slot.level !== "Mầm non" ? calculateK12Ranking(evalK12Scores) : calculateMamNonRanking(evalCriteria)}
-                    </span>
-                  </div>
+                {/* Overall Rating & Automatic Reason in EvalModal */}
+                {(() => {
+                  const isMN = evalModal.slot.level === "Mầm non";
+                  const rankInfo = isMN 
+                    ? getMamNonRankingDetails(evalCriteria)
+                    : getK12RankingDetails(evalK12Scores);
+                  const currentRank = evalOverall || rankInfo.rating;
 
-                  <div className="grid grid-cols-4 gap-2">
-                    {(evalModal.slot.level !== "Mầm non"
-                      ? [["Giỏi","bg-emerald-600"],["Khá","bg-sky-600"],["Trung bình","bg-amber-500"],["Không xếp loại","bg-rose-600"]]
-                      : [["Tốt","bg-emerald-600"],["Khá","bg-sky-600"],["Đạt","bg-teal-600"],["Không đạt","bg-rose-600"]]
-                    ).map(([r, color]) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => { if (!isReadOnly) setEvalOverall(r); }}
-                        disabled={isReadOnly}
-                        className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                          evalOverall === r
-                            ? `${color} text-white shadow-md`
-                            : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                  return (
+                    <div className="flex flex-col gap-4 p-5 bg-gradient-to-b from-slate-50 to-white rounded-2xl border border-slate-200/90 shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-150">
+                        <div>
+                          <label className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                            <Award className="w-4 h-4 text-amber-500" />
+                            Xếp loại tiết dạy tổng thể
+                          </label>
+                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                            Tự động xác định theo quy chuẩn đánh giá Sky-Line
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[11px] font-bold text-slate-500">Kết quả:</span>
+                          <span className={`px-3.5 py-1 text-xs font-black uppercase rounded-xl border shadow-2xs ${
+                            currentRank === "Giỏi" || currentRank === "Tốt"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                              : currentRank === "Khá"
+                              ? "bg-sky-50 text-sky-700 border-sky-300"
+                              : currentRank === "Trung bình" || currentRank === "Đạt"
+                              ? "bg-amber-50 text-amber-700 border-amber-300"
+                              : "bg-rose-50 text-rose-700 border-rose-300"
+                          }`}>
+                            {currentRank}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Reason Callout Box */}
+                      <div className={`p-4 rounded-xl border flex items-start gap-3 ${
+                        rankInfo.color === "emerald"
+                          ? "bg-emerald-50/80 border-emerald-200/80 text-emerald-950"
+                          : rankInfo.color === "sky"
+                          ? "bg-sky-50/80 border-sky-200/80 text-sky-950"
+                          : rankInfo.color === "amber"
+                          ? "bg-amber-50/80 border-amber-200/80 text-amber-950"
+                          : "bg-rose-50/80 border-rose-200/80 text-rose-950"
+                      }`}>
+                        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                          <h6 className="text-[11px] font-black uppercase tracking-wider">
+                            Lý do xếp loại:
+                          </h6>
+                          <p className="text-xs font-medium leading-relaxed">
+                            {rankInfo.reason}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Rating selection buttons */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                        {(isMN
+                          ? [["Tốt","bg-emerald-600"],["Khá","bg-sky-600"],["Đạt","bg-teal-600"],["Không đạt","bg-rose-600"]]
+                          : [["Giỏi","bg-emerald-600"],["Khá","bg-sky-600"],["Trung bình","bg-amber-500"],["Không xếp loại","bg-rose-600"]]
+                        ).map(([r, color]) => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => { if (!isReadOnly) setEvalOverall(r); }}
+                            disabled={isReadOnly}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                              currentRank === r
+                                ? `${color} text-white shadow-md ring-2 ring-offset-1 ring-slate-400/40`
+                                : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            {currentRank === r && <Check className="w-3.5 h-3.5" />}
+                            <span>{r}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Modal Footer */}
