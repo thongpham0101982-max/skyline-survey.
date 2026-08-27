@@ -61,22 +61,22 @@ export default function ExperientialActivitiesList() {
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
-    if (!confirm("Bạn có chắc chắn muốn xa hoạt động trải nghiệm ny?")) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa hoạt động trải nghiệm ny?")) return;
     try {
       const res = await fetch(`/api/experiential-activities/${id}`, { method: "DELETE" });
       if (res.ok) {
         setActivities(prev => prev.filter(a => a.id !== id));
-        toast.success("? xa hoạt động thnh cng");
+        toast.success("? xóa hoạt động thành công");
       } else {
         const err = await res.json();
-        toast.error(err.error || "L?i khi xa");
+        toast.error(err.error || "Lỗi khi xóa");
       }
     } catch { toast.error("Lỗi kết nối my ch?"); }
   };
 
   const handleDuplicate = async (e, act) => {
     e.stopPropagation();
-    if (!confirm(`B?n c mu?n nhn b?n hoạt động "${act.name}"?`)) return;
+    if (!confirm(`B?n c mu?n nhân bản hoạt động "${act.name}"?`)) return;
     try {
       const res = await fetch(`/api/experiential-activities/${act.id}`, {
         method: "PUT",
@@ -113,32 +113,32 @@ export default function ExperientialActivitiesList() {
     try {
       const dataToExport = activities.map((act, idx) => ({
         "STT": idx + 1,
-        "M? Hoạt động": act.code || "T? ?ng",
-        "Tn Hoạt động": act.name || "",
+        "Mã HĐoạt động": act.code || "T? ?ng",
+        "Tên Hoạt động": act.name || "",
         "M?ch Hoạt động": ACTIVITY_STRANDS.find(s => s.id === act.strand)?.name || act.strand || "",
         "Lo?i Hoạt động": act.activityTypeName || act.catalogName || "",
         "C S?": act.campusName || act.campusCode || "",
         "C?p H?c": act.educationLevel || "",
         "Khối": (act.grades || []).join(", "),
-        "Ngy T? Ch?c": act.date ? new Date(act.date).toLocaleDateString("vi-VN") : "",
-        "S? L?p Tham Gia": act.totalClassesCount || 0,
-        "S? HS Tham Gia": act.participantsCount || 0,
+        "Ngày T? Ch?c": act.date ? new Date(act.date).toLocaleDateString("vi-VN") : "",
+        "Số Lớp Tham Gia": act.totalClassesCount || 0,
+        "Số HS Tham Gia": act.participantsCount || 0,
         "S? Tiu Ch": (act.criteria || []).length,
-        "Ti?n ? nh Gi": `${act.completedClassesCount || 0}/${act.totalClassesCount || 0} l?p`,
-        "Tr?ng Thi": getStatusBadge(act.status).label
+        "Tiến độ nh Gi": `${act.completedClassesCount || 0}/${act.totalClassesCount || 0} lớp`,
+        "Trạng Thái": getStatusBadge(act.status).label
       }));
       const ws = XLSX.utils.json_to_sheet(dataToExport);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_HDTN");
       const dateStr = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(wb, `Danh_Sach_Hoat_Dong_Trai_Nghiem_${dateStr}.xlsx`);
-      toast.success("? xu?t file Excel thnh cng!");
-    } catch (err) { toast.error("L?i khi xu?t file Excel"); }
+      toast.success("? xuất file Excel thành công!");
+    } catch (err) { toast.error("Lỗi khi xuất file Excel"); }
   };
   const getStatusBadge = (status) => {
     switch (status) {
-      case "COMPLETED": return { label: "Hon thnh", containerCls: "bg-emerald-50 text-emerald-700 border-emerald-200/80", dot: "bg-emerald-500 ring-2 ring-emerald-300" };
-      case "IN_PROGRESS": return { label: "Đang đánh giá", containerCls: "bg-sky-50 text-sky-700 border-sky-200/80", dot: "bg-sky-500 ring-2 ring-sky-300" };
+      case "COMPLETED": return { label: "Hoàn thành", containerCls: "bg-emerald-50 text-emerald-700 border-emerald-200/80", dot: "bg-emerald-500 ring-2 ring-emerald-300" };
+      case "IN_PROGRESS": return { label: "ĐĐang đáđánh giáá", containerCls: "bg-sky-50 text-sky-700 border-sky-200/80", dot: "bg-sky-500 ring-2 ring-sky-300" };
       case "ASSIGNED": return { label: "Đã giao", containerCls: "bg-indigo-50 text-indigo-700 border-indigo-200/80", dot: "bg-indigo-500 ring-2 ring-indigo-300" };
       case "LOCKED": return { label: "Đã khóa", containerCls: "bg-slate-100 text-slate-700 border-slate-300", dot: "bg-slate-500 ring-2 ring-slate-300" };
       default: return { label: "Nháp", containerCls: "bg-amber-50 text-amber-700 border-amber-200/80", dot: "bg-amber-500 ring-2 ring-amber-300" };
@@ -188,7 +188,7 @@ export default function ExperientialActivitiesList() {
                   Quản lý Hoạt động Trải nghiệm Học sinh
                 </h1>
                 <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1">
-                  Khởi tạo, cấu hình tiêu chí, phân công GVCN và theo dõi đánh giá năng lực học sinh toàn diện
+                  Khởi tạo, cấu hình tiêu chí, phân công GVCN và theo dõi đáđánh giáá năng lực học sinh toàn diện
                 </p>
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function ExperientialActivitiesList() {
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">Đang triển khai</p>
+                <p className="text-[11px] font-bold text-sky-600 uppercase tracking-wider">Đang triển khóai</p>
                 <p className="text-2xl font-black text-sky-700 mt-1">{activeActivities}</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200">
@@ -394,7 +394,7 @@ export default function ExperientialActivitiesList() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white/80 rounded-3xl border border-white shadow-xl shadow-slate-200/40 space-y-4">
             <div className="w-10 h-10 border-4 border-[#00A99D]/20 border-t-[#00A99D] rounded-full animate-spin" />
-            <p className="text-xs font-bold text-slate-500">ang t?i danh sch hoạt động trải nghiệm Sky-Line...</p>
+            <p className="text-xs font-bold text-slate-500">Đang tải danh sách hoạt động trải nghiệm Sky-Line...</p>
           </div>
         ) : activities.length === 0 ? (
           <div className="bg-white/85 rounded-3xl py-16 px-6 text-center border border-white shadow-xl shadow-slate-200/40">
@@ -403,12 +403,12 @@ export default function ExperientialActivitiesList() {
                 <Sparkles className="w-10 h-10 text-[#00A99D]" />
               </div>
               <h3 className="text-xl font-black text-slate-800">
-                {search ? 'Khng t?m th?y hoạt động ph h?p' : 'Chưa có hoạt động trải nghiệm nào'}
+                {search ? 'Không tìm thấy hoạt động phù hợp' : 'Chưa có hoạt động trải nghiệm nào'}
               </h3>
               <p className="text-slate-500 text-xs leading-relaxed font-medium">
                 {search 
-                  ? `Khng c hoạt động no kh?p v?i Đã khóa "${search}". Vui l?ng th? l?i v?i Đã khóa khc.`
-                  : 'Bắt đầu tạo hoạt động trải nghiệm mới với tiêu chí đánh giá và gán lớp cho GVCN.'
+                  ? `Không có hoạt động no khớp với Đã khóa "${search}". Vui lòng thử lại v?i Đã khóa khc.`
+                  : 'Bắt đầu tạo hoạt động trải nghiệm mới với tiêu chí đáđánh giáá và gán lớp cho GVCN.'
                 }
               </p>
               <button
@@ -416,7 +416,7 @@ export default function ExperientialActivitiesList() {
                 className="px-6 py-3 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 inline-flex items-center gap-2 mt-2"
               >
                 <Plus className="w-4 h-4" />
-                <span>Tạo hoạt động m?i ngay</span>
+                <span>Tạo hoạt động mới ngay</span>
               </button>
             </div>
           </div>
@@ -426,11 +426,11 @@ export default function ExperientialActivitiesList() {
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="w-4 h-4 text-[#00A99D]" />
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  Danh sch Hoạt động ({activities.length} hoạt động)
+                  Danh sách Hoạt động ({activities.length} hoạt động)
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 font-bold hidden sm:inline">
-                Nh?n vo hng ? m? s? đánh giá c?a GVCN ho?c theo dõi ti?n ?
+                Nhấn vào hàng để mở sổ đáđánh giáá của GVCN hoặc theo dõi tiến độ
               </span>
             </div>
 
@@ -439,13 +439,13 @@ export default function ExperientialActivitiesList() {
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
                     <th className="py-4 px-4 text-center w-12">#</th>
-                    <th className="py-4 px-5 min-w-[120px]">M? H</th>
-                    <th className="py-4 px-5 min-w-[280px]">Tn Hoạt động & M?ch</th>
+                    <th className="py-4 px-5 min-w-[120px]">Mã HĐ</th>
+                    <th className="py-4 px-5 min-w-[280px]">Tên Hoạt động & Mạch</th>
                     <th className="py-4 px-5 min-w-[140px]">Cơ sở / Khối</th>
-                    <th className="py-4 px-5 min-w-[120px]">Ngy t? ch?c</th>
-                    <th className="py-4 px-5 text-center min-w-[100px]">L?p / HS</th>
-                    <th className="py-4 px-5 min-w-[100px]">S? tiêu chí</th>
-                    <th className="py-4 px-5 min-w-[160px]">Ti?n ? đánh giá</th>
+                    <th className="py-4 px-5 min-w-[120px]">Ngày tổ chức</th>
+                    <th className="py-4 px-5 text-center min-w-[100px]">Lớp / HS</th>
+                    <th className="py-4 px-5 min-w-[100px]">Số tiêu chí</th>
+                    <th className="py-4 px-5 min-w-[160px]">Tiến độ đáđánh giáá</th>
                     <th className="py-4 px-5 min-w-[130px]">Trạng thái</th>
                     <th className="py-4 px-5 text-right min-w-[180px]">Thao tác</th>
                   </tr>
@@ -498,7 +498,7 @@ export default function ExperientialActivitiesList() {
                           </div>
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap text-center">
-                          <div className="font-black text-slate-800">{totalClasses} l?p</div>
+                          <div className="font-black text-slate-800">{totalClasses} lớp</div>
                           <div className="text-[11px] text-slate-400 font-bold">{act.participantsCount || 0} HS</div>
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap">
@@ -509,7 +509,7 @@ export default function ExperientialActivitiesList() {
                         <td className="py-4 px-5">
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-[11px] font-black">
-                              <span className="text-slate-700">{completedClasses}/{totalClasses} l?p</span>
+                              <span className="text-slate-700">{completedClasses}/{totalClasses} lớp</span>
                               <span className={progressPercent === 100 ? 'text-emerald-600' : 'text-[#00A99D]'}>
                                 {progressPercent}%
                               </span>
@@ -533,7 +533,7 @@ export default function ExperientialActivitiesList() {
                             <button
                               onClick={() => setProgressModalActivity(act)}
                               className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D]/10 text-slate-600 hover:text-[#003B3A] transition-colors"
-                              title="Theo d?i ti?n ? n?p c?a cc l?p"
+                              title="Theo d?i tiến độ n?p của cc lớp"
                             >
                               <BarChart3 className="w-4 h-4 text-[#00A99D]" />
                             </button>
@@ -597,7 +597,7 @@ export default function ExperientialActivitiesList() {
                           <button
                             onClick={() => setProgressModalActivity(act)}
                             className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#00A99D]/10 flex items-center justify-center text-[#00A99D]"
-                            title="Theo d?i ti?n ?"
+                            title="Theo d?i tiến độ"
                           >
                             <BarChart3 className="w-3.5 h-3.5" />
                           </button>
@@ -611,7 +611,7 @@ export default function ExperientialActivitiesList() {
                           <button
                             onClick={e => handleDelete(e, act.id)}
                             className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 flex items-center justify-center text-slate-400 hover:text-rose-600"
-                            title="Xa"
+                            title="Xóa"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -644,7 +644,7 @@ export default function ExperientialActivitiesList() {
 
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
-                          <span>Ti?n ?: {completedClasses}/{totalClasses} l?p</span>
+                          <span>Tiến độ: {completedClasses}/{totalClasses} lớp</span>
                           <span className="font-black text-[#00A99D]">{progressPercent}%</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">

@@ -60,7 +60,7 @@ export default function ActivityResultInput() {
     try {
       setLoading(true);
       const res = await fetch(`/api/experiential-activities/${id}`);
-      if (!res.ok) throw new Error('Khng th? t?i hoạt động');
+      if (!res.ok) throw new Error('Không th? t?i hoạt động');
       const data = await res.json();
       setActivity(data);
 
@@ -91,7 +91,7 @@ export default function ActivityResultInput() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      toast.error('L?i khi t?i thng tin hoạt động');
+      toast.error('Lỗi khi t?i thng tin hoạt động');
       setLoading(false);
     }
   }, [id, selectedClassId]);
@@ -164,17 +164,17 @@ export default function ActivityResultInput() {
       if (res.ok) {
         setLastSavedTime(new Date().toLocaleTimeString('vi-VN'));
         if (isSubmittingFinal) {
-          toast.success('? n?p k?t qu? đánh giá thnh cng!');
+          toast.success('? n?p kết quả đáđánh giáá thành công!');
           router.push('/teacher/experiential-activities');
         } else {
-          toast.success('? lu k?t qu? thnh cng');
+          toast.success('? lu kết quả thành công');
         }
       } else {
         const err = await res.json();
-        toast.error(err.error || 'L?i khi lu k?t qu?');
+        toast.error(err.error || 'Lỗi khi lu kết quả');
       }
     } catch {
-      toast.error('L?i k?t n?i my ch?');
+      toast.error('Lỗi kết nối my ch?');
     } finally {
       setSaving(false);
     }
@@ -269,11 +269,11 @@ export default function ActivityResultInput() {
     const dataToExport = filteredStudents.map((st, idx) => {
       const row = {
         'STT': idx + 1,
-        'M? H?c Sinh': st.studentCode || '',
+        'Mã HĐ?c Sinh': st.studentCode || '',
         'H? v Tn': st.fullName || '',
-        'L?p': st.className || '',
-        'i?m danh': ATTENDANCE_OPTIONS.find(a => a.id === st.attendance)?.name || 'C m?t',
-        'Vai tr?': (st.roles || []).join(', ') || 'Thnh vin'
+        'Lớp': st.className || '',
+        'điểm danh': ATTENDANCE_OPTIONS.find(a => a.id === st.attendance)?.name || 'Có mặt',
+        'Vai trò?': (st.roles || []).join(', ') || 'Thành viên'
       };
 
       (activity?.criteria || []).forEach(c => {
@@ -284,7 +284,7 @@ export default function ActivityResultInput() {
 
       row['i?m %'] = st.calculatedPercent !== null ? `${st.calculatedPercent}%` : '';
       row['X?p Lo?i'] = getRatingLabel(st.finalResult);
-      row['Nh?n xt'] = [...(st.remarksQuick || []), st.remarksCustom].filter(Boolean).join('; ');
+      row['Nhận xét'] = [...(st.remarksQuick || []), st.remarksCustom].filter(Boolean).join('; ');
 
       return row;
     });
@@ -293,7 +293,7 @@ export default function ActivityResultInput() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Ket_Qua_Danh_Gia');
     XLSX.writeFile(wb, `So_Danh_Gia_${activity?.code || 'HDTN'}_${selectedClassId || 'TatCa'}.xlsx`);
-    toast.success('? xu?t file Excel thnh cng!');
+    toast.success('? xuất file Excel thành công!');
   };
 
   // Excel Import
@@ -311,14 +311,14 @@ export default function ActivityResultInput() {
         const rawData = XLSX.utils.sheet_to_json(ws);
 
         if (!Array.isArray(rawData) || rawData.length === 0) {
-          toast.error('File Excel khng c d? li?u');
+          toast.error('File Excel không có dữ liệu');
           return;
         }
 
         let updatedCount = 0;
         setStudents(prev => prev.map(st => {
           const matched = rawData.find(row => 
-            (row['M? H?c Sinh'] && String(row['M? H?c Sinh']).trim() === String(st.studentCode).trim()) ||
+            (row['Mã HĐ?c Sinh'] && String(row['Mã HĐ?c Sinh']).trim() === String(st.studentCode).trim()) ||
             (row['H? v Tn'] && String(row['H? v Tn']).trim().toLowerCase() === String(st.fullName).trim().toLowerCase())
           );
 
@@ -353,10 +353,10 @@ export default function ActivityResultInput() {
           };
         }));
 
-        toast.success(`? import i?m thnh cng cho ${updatedCount} học sinh!`);
+        toast.success(`? import i?m thành công cho ${updatedCount} học sinh!`);
       } catch (err) {
         console.error(err);
-        toast.error('L?i khi ?c file Excel');
+        toast.error('Lỗi khi ?c file Excel');
       }
     };
     reader.readAsBinaryString(file);
@@ -381,7 +381,7 @@ export default function ActivityResultInput() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 space-y-4">
         <div className="w-10 h-10 border-4 border-[#00A99D]/20 border-t-[#00A99D] rounded-full animate-spin" />
-        <p className="text-xs font-black text-slate-600">ang t?i s? theo dõi đánh giá hoạt động...</p>
+        <p className="text-xs font-black text-slate-600">ang t?i s? theo dõi đáđánh giáá hoạt động...</p>
       </div>
     );
   }
@@ -404,7 +404,7 @@ export default function ActivityResultInput() {
             <button
               onClick={() => router.push('/teacher/experiential-activities')}
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors shrink-0"
-              title="Quay l?i danh sch"
+              title="Quay lỗi danh sách"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
@@ -436,7 +436,7 @@ export default function ActivityResultInput() {
               className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-slate-500" />}
-              <span>Lu t?m</span>
+              <span>Lưu tạm</span>
             </button>
 
             <button
@@ -457,7 +457,7 @@ export default function ActivityResultInput() {
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div>
-              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Ch?n L?p đánh giá</label>
+              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Ch?n Lớp đáđánh giáá</label>
               <select
                 value={selectedClassId}
                 onChange={e => setSelectedClassId(e.target.value)}
@@ -477,8 +477,8 @@ export default function ActivityResultInput() {
             </div>
 
             <div className="border-l border-slate-200 pl-4 space-y-0.5 hidden sm:block">
-              <span className="text-[11px] text-slate-400 font-bold block">H?n hon thnh:</span>
-              <strong className="text-xs text-rose-600 font-black">{activity?.deadline || 'Theo k? ho?ch'}</strong>
+              <span className="text-[11px] text-slate-400 font-bold block">H?n hoàn thành:</span>
+              <strong className="text-xs text-rose-600 font-black">{activity?.deadline || 'Theo k? hoặch'}</strong>
             </div>
           </div>
 
@@ -486,7 +486,7 @@ export default function ActivityResultInput() {
           <div className="flex items-center gap-4">
             <div className="w-48 space-y-1">
               <div className="flex items-center justify-between text-[11px] font-black">
-                <span className="text-slate-600">Ti?n ? l?p:</span>
+                <span className="text-slate-600">Tiến độ lớp:</span>
                 <span className="text-[#00A99D]">{completedCurrentClass}/{totalCurrentClass} HS ({percentClass}%)</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
@@ -564,7 +564,7 @@ export default function ActivityResultInput() {
             <button
               onClick={handleExportExcel}
               className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-black rounded-xl border border-emerald-200 flex items-center gap-1.5"
-              title="Xu?t b?ng đánh giá ra file Excel"
+              title="Xu?t b?ng đáđánh giáá ra file Excel"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600" />
               <span>Xuất Excel</span>
@@ -587,30 +587,30 @@ export default function ActivityResultInput() {
                     />
                   </th>
                   <th className="py-3.5 px-2 text-center w-10">#</th>
-                  <th className="py-3.5 px-3 min-w-[90px]">M? HS</th>
+                  <th className="py-3.5 px-3 min-w-[90px]">Mã HĐS</th>
                   
                   {/* STICKY STUDENT NAME COLUMN */}
                   <th className="py-3.5 px-4 min-w-[190px] sticky left-0 z-20 bg-slate-50 border-r border-slate-200">
                     H? v Tn
                   </th>
 
-                  <th className="py-3.5 px-3 min-w-[130px]">i?m danh</th>
-                  <th className="py-3.5 px-3 min-w-[130px]">Vai tr?</th>
+                  <th className="py-3.5 px-3 min-w-[130px]">điểm danh</th>
+                  <th className="py-3.5 px-3 min-w-[130px]">Vai trò?</th>
 
                   {/* CRITERIA HEADERS */}
                   {(activity?.criteria || []).map((crit, idx) => (
                     <th key={crit.id} className="py-3.5 px-3 min-w-[180px] text-center border-l border-slate-100 bg-slate-50/90" title={crit.description || crit.name}>
                       <div className="font-black text-slate-800 line-clamp-1">{crit.name}</div>
                       <div className="text-[10px] text-slate-400 font-bold">
-                        {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : `Tiu ch ${idx + 1}`} {crit.isRequired ? '(B?t bu?c)' : ''}
+                        {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : `Tiêu chí ${idx + 1}`} {crit.isRequired ? '(B?t bu?c)' : ''}
                       </div>
                     </th>
                   ))}
 
                   {/* SUMMARY & REMARK */}
                   <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">i?m %</th>
-                  <th className="py-3.5 px-3 min-w-[130px] text-center">X?p lo?i</th>
-                  <th className="py-3.5 px-4 min-w-[200px]">Nh?n xt GVCN</th>
+                  <th className="py-3.5 px-3 min-w-[130px] text-center">Xếp loại</th>
+                  <th className="py-3.5 px-4 min-w-[200px]">Nhận xét GVCN</th>
                 </tr>
               </thead>
 
@@ -618,7 +618,7 @@ export default function ActivityResultInput() {
                 {filteredStudents.length === 0 ? (
                   <tr>
                     <td colSpan={7 + (activity?.criteria?.length || 0)} className="py-12 text-center text-slate-400 font-bold">
-                      Khng t?m th?y học sinh no ph h?p
+                      Không tìm thấy học sinh no phù hợp
                     </td>
                   </tr>
                 ) : (
@@ -686,7 +686,7 @@ export default function ActivityResultInput() {
                           if (isAbsent) {
                             return (
                               <td key={crit.id} className="py-3 px-3 text-center border-l border-slate-100 bg-slate-50/50">
-                                <span className="text-[11px] text-slate-400 italic">V?ng / Kha</span>
+                                <span className="text-[11px] text-slate-400 italic">V?ng / Khóa</span>
                               </td>
                             );
                           }
@@ -747,14 +747,14 @@ export default function ActivityResultInput() {
                               value={st.remarksCustom || ''}
                               disabled={isLocked}
                               onChange={e => updateStudent(st.id, { remarksCustom: e.target.value })}
-                              placeholder="Nh?p nh?n xt..."
+                              placeholder="Nh?p nhận xét..."
                               className="w-full py-1 px-2 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#00A99D] text-xs font-semibold outline-none"
                             />
                             <button
                               type="button"
                               onClick={() => setRemarkStudentId(st.id)}
                               className="p-1 rounded-md bg-slate-100 hover:bg-[#00A99D]/10 text-slate-500 hover:text-[#003B3A] shrink-0"
-                              title="Ch?n nh?n xt m?u"
+                              title="Ch?n nhận xét m?u"
                             >
                               <Tag className="w-3.5 h-3.5" />
                             </button>
@@ -790,7 +790,7 @@ export default function ActivityResultInput() {
                       const current = st?.remarksCustom ? `${st.remarksCustom}; ${preset}` : preset;
                       updateStudent(remarkStudentId, { remarksCustom: current });
                       setRemarkStudentId(null);
-                      toast.success('? thm nh?n xt m?u');
+                      toast.success('? thm nhận xét m?u');
                     }}
                     className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#00A99D]/10 hover:text-[#003B3A] text-xs font-bold text-slate-700 transition-colors"
                   >
@@ -818,7 +818,7 @@ export default function ActivityResultInput() {
 
               <div className="space-y-4 text-xs">
                 <div>
-                  <label className="block font-black text-slate-700 mb-1">Ch?n Tiu ch p d?ng:</label>
+                  <label className="block font-black text-slate-700 mb-1">Ch?n Tiêu chí p d?ng:</label>
                   <select
                     value={bulkCriterionId}
                     onChange={e => setBulkCriterionId(e.target.value)}
@@ -882,15 +882,15 @@ export default function ActivityResultInput() {
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-900">Xc nh?n n?p k?t qu? đánh giá</h3>
-                  <p className="text-xs text-slate-500 font-medium">L?p: {currentClassObj.className}</p>
+                  <h3 className="text-sm font-black text-slate-900">Xc nh?n n?p kết quả đáđánh giáá</h3>
+                  <p className="text-xs text-slate-500 font-medium">Lớp: {currentClassObj.className}</p>
                 </div>
               </div>
 
               {uncompletedStudents.length > 0 ? (
                 <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 space-y-2 text-xs">
                   <div className="font-black text-amber-800">
-                    C?nh bo: C?n {uncompletedStudents.length} học sinh c m?t nhng cha ch?m ? tiêu chí!
+                    C?nh bo: C?n {uncompletedStudents.length} học sinh có mặt nhng cha ch?m ? tiêu chí!
                   </div>
                   <div className="max-h-32 overflow-y-auto text-[11px] text-amber-900 font-medium space-y-0.5">
                     {uncompletedStudents.map(s => (
@@ -900,7 +900,7 @@ export default function ActivityResultInput() {
                 </div>
               ) : (
                 <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-200 text-xs text-emerald-800 font-bold">
-                  Tuy?t v?i! T?t c? học sinh trong l?p ? ?c đánh giá ?y ?.
+                  Tuy?t v?i! T?t c? học sinh trong lớp ? ?c đáđánh giáá ?y ?.
                 </div>
               )}
 
@@ -910,7 +910,7 @@ export default function ActivityResultInput() {
                   onClick={() => setShowConfirmSubmitModal(false)}
                   className="px-4 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs"
                 >
-                  Ki?m tra l?i
+                  Ki?m tra lỗi
                 </button>
                 <button
                   type="button"

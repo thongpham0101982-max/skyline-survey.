@@ -37,8 +37,8 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
         {/* Overall Progress Bar */}
         <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2">
           <div className="flex items-center justify-between text-xs font-black">
-            <span className="text-slate-700">Ti?n ? hon thnh ton b?:</span>
-            <span className="text-[#00A99D]">{completedClasses}/{totalClasses} l?p ({progressPercent}%)</span>
+            <span className="text-slate-700">Tiến độ hoàn thành ton b?:</span>
+            <span className="text-[#00A99D]">{completedClasses}/{totalClasses} lớp ({progressPercent}%)</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
             <div
@@ -52,7 +52,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
           {assignedClasses.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-400 font-bold">
-              Cha c l?p no ?c gn cho hoạt động ny
+              Cha c lớp no ?c gn cho hoạt động ny
             </div>
           ) : (
             assignedClasses.map((cls: any, idx: number) => {
@@ -97,7 +97,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
                         router.push("/teacher/experiential-activities/" + activity.id + "?classId=" + cls.classId);
                       }}
                       className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D] hover:text-white text-slate-600 transition-all"
-                      title="M? s? đánh giá c?a l?p ny"
+                      title="M? sổ đáđánh giáá của lớp ny"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </button>

@@ -113,7 +113,7 @@ export default function CreateActivityWizard() {
 
   const handleAddCriterionFromLib = (item) => {
     if (criteria.some(c => c.id === item.id || c.name === item.name)) {
-      toast.error('Tiu ch ny ? c trong danh sch');
+      toast.error('Tiêu chí ny ? c trong danh sách');
       return;
     }
     const newCrit = {
@@ -128,7 +128,7 @@ export default function CreateActivityWizard() {
 
   const handleRemoveCriterion = (id) => {
     if (criteria.length <= 1) {
-      toast.error('Hoạt động c?n c t nh?t 1 tiêu chí đánh giá');
+      toast.error('Hoạt động c?n c t nh?t 1 tiêu chí đáđánh giáá');
       return;
     }
     setCriteria(prev => prev.filter(c => c.id !== id));
@@ -200,12 +200,12 @@ export default function CreateActivityWizard() {
   // Submit handler
   const handleSubmit = async (isDraft = false) => {
     if (!formData.name.trim()) {
-      toast.error('Vui l?ng nh?p Tn hoạt động');
+      toast.error('Vui l?ng nh?p Tên hoạt động');
       setCurrentStep(1);
       return;
     }
     if (assignedClasses.length === 0) {
-      toast.error('Vui l?ng gn t nh?t m?t l?p tham gia');
+      toast.error('Vui l?ng gn t nh?t m?t lớp tham gia');
       setCurrentStep(3);
       return;
     }
@@ -240,14 +240,14 @@ export default function CreateActivityWizard() {
 
       if (res.ok) {
         const data = await res.json();
-        toast.success(isDraft ? '? lu nhp hoạt động thnh cng!' : '? giao hoạt động thnh cng cho GVCN!');
+        toast.success(isDraft ? '? lu nhp hoạt động thành công!' : 'Đã giao hoạt động thành công cho GVCN!');
         router.push('/teacher/experiential-activities');
       } else {
         const err = await res.json();
-        toast.error(err.error || 'L?i khi lu hoạt động');
+        toast.error(err.error || 'Lỗi khi lu hoạt động');
       }
     } catch {
-      toast.error('L?i k?t n?i my ch?');
+      toast.error('Lỗi kết nối my ch?');
     } finally {
       setIsSubmitting(false);
     }
@@ -264,7 +264,7 @@ export default function CreateActivityWizard() {
             className="flex items-center gap-2 text-xs font-black text-slate-500 hover:text-[#003B3A] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Quay l?i danh sch</span>
+            <span>Quay lỗi danh sách</span>
           </button>
           <div className="text-xs font-black text-slate-400">
             H? th?ng Quản trị Ch?t l?ng Gio d?c Sky-Line
@@ -276,8 +276,8 @@ export default function CreateActivityWizard() {
           <div className="grid grid-cols-4 gap-2">
             {[
               { num: 1, title: 'B?c 1', desc: 'Thng tin hoạt động' },
-              { num: 2, title: 'B?c 2', desc: 'Thi?t l?p đánh giá' },
-              { num: 3, title: 'B?c 3', desc: 'Gn l?p & GVCN' },
+              { num: 2, title: 'B?c 2', desc: 'Thi?t lớp đáđánh giáá' },
+              { num: 3, title: 'B?c 3', desc: 'Gn lớp & GVCN' },
               { num: 4, title: 'B?c 4', desc: 'Ki?m tra & Pht hnh' }
             ].map(step => {
               const isActive = currentStep === step.num;
@@ -323,7 +323,7 @@ export default function CreateActivityWizard() {
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg font-black text-slate-800">B?c 1  Thng tin & Phn lo?i Hoạt động</h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Nh?p cc thng tin c b?n, ch?n m?ch hoạt động, lo?i hoạt động v quy m t? ch?c
+                Nh?p cc thng tin c b?n, ch?n m?ch hoạt động, lo?i hoạt động v quy m tổ chức
               </p>
             </div>
 
@@ -331,12 +331,12 @@ export default function CreateActivityWizard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <label className="block text-xs font-black text-slate-700 mb-1.5">
-                  Tn hoạt động trải nghiệm <span className="text-rose-500">*</span>
+                  Tên hoạt động trải nghiệm <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="V d?: H?i ch? Xun K?t n?i Yu thng 2026, STEM Khm ph H? Sinh thi..."
+                  placeholder="V d?: H?i ch? Xun Kết nối Yu thng 2026, STEM Khm ph H? Sinh thi..."
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
@@ -357,7 +357,7 @@ export default function CreateActivityWizard() {
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">Cơ sở t? ch?c</label>
+                <label className="block text-xs font-black text-slate-700 mb-1.5">Cơ sở tổ chức</label>
                 <select
                   value={formData.campusId}
                   onChange={e => {
@@ -405,7 +405,7 @@ export default function CreateActivityWizard() {
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">Ngy t? ch?c</label>
+                <label className="block text-xs font-black text-slate-700 mb-1.5">Ngày tổ chức</label>
                 <input
                   type="date"
                   value={formData.date}
@@ -418,7 +418,7 @@ export default function CreateActivityWizard() {
                 <label className="block text-xs font-black text-slate-700 mb-1.5">Thời gian th?c hi?n</label>
                 <input
                   type="text"
-                  placeholder="V d?: 08:00 - 11:30 ho?c C? ngy"
+                  placeholder="V d?: 08:00 - 11:30 hoặc C? ngày"
                   value={formData.timeRange}
                   onChange={e => setFormData({ ...formData, timeRange: e.target.value })}
                   className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
@@ -426,7 +426,7 @@ export default function CreateActivityWizard() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-black text-slate-700 mb-1.5">?địa điểm t? ch?c</label>
+                <label className="block text-xs font-black text-slate-700 mb-1.5">?địa điểm tổ chức</label>
                 <input
                   type="text"
                   placeholder="V d?: Sn tr?ng Sky-Line Beach-D, Trung tm Vn ha TP  N?ng..."
@@ -505,7 +505,7 @@ export default function CreateActivityWizard() {
                 <label className="block text-xs font-black text-slate-700 mb-1">M t? tm t?t</label>
                 <textarea
                   rows={3}
-                  placeholder="Nu khi qut n?i dung chnh c?a hoạt động..."
+                  placeholder="Nu khi qut n?i dung chnh của hoạt động..."
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
@@ -528,12 +528,12 @@ export default function CreateActivityWizard() {
               <button
                 type="button"
                 onClick={() => {
-                  if (!formData.name.trim()) { toast.error('Vui l?ng nh?p Tn hoạt động'); return; }
+                  if (!formData.name.trim()) { toast.error('Vui l?ng nh?p Tên hoạt động'); return; }
                   setCurrentStep(2);
                 }}
                 className="px-6 py-3 bg-[#00A99D] hover:bg-[#008F85] text-white text-xs font-black rounded-2xl shadow-md shadow-[#00A99D]/20 flex items-center gap-2"
               >
-                <span>Sang B?c 2: Thi?t l?p đánh giá</span>
+                <span>Sang B?c 2: Thi?t lớp đáđánh giáá</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -544,15 +544,15 @@ export default function CreateActivityWizard() {
         {currentStep === 2 && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md shadow-slate-200/40 space-y-6">
             <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-lg font-black text-slate-800">B?c 2  Thi?t l?p Tiu ch & Cng th?c đánh giá</h2>
+              <h2 className="text-lg font-black text-slate-800">B?c 2  Thi?t lớp Tiêu chí & Cng th?c đáđánh giáá</h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Ch?n h?nh th?c ghi nh?n, b? tiêu chí đánh giá, thang 4 m?c v quy t?c tnh k?t qu?
+                Ch?n h?nh th?c ghi nh?n, b? tiêu chí đáđánh giáá, thang 4 m?c v quy t?c tnh kết quả
               </p>
             </div>
 
-            {/* H?nh th?c đánh giá */}
+            {/* H?nh th?c đáđánh giáá */}
             <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-800">H?nh th?c đánh giá</label>
+              <label className="block text-xs font-black text-slate-800">H?nh th?c đáđánh giáá</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div
                   onClick={() => setEvalMode('PARTICIPATION_ONLY')}
@@ -567,7 +567,7 @@ export default function CreateActivityWizard() {
                     {evalMode === 'PARTICIPATION_ONLY' && <CheckCircle2 className="w-4 h-4 text-[#00A99D]" />}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Khng ch?m i?m theo tiêu chí. K?t qu? phn lo?i thnh: Tham gia / Không tham gia / Mi?n.
+                    Không cóh?m i?m theo tiêu chí. Kết quả phn lo?i thnh: Tham gia / Không tham gia / Miễn.
                   </p>
                 </div>
 
@@ -580,11 +580,11 @@ export default function CreateActivityWizard() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">H?nh th?c 2: đánh giá theo tiêu chí nng l?c</span>
+                    <span className="text-xs font-black text-slate-800">H?nh th?c 2: đáđánh giáá theo tiêu chí nng l?c</span>
                     {evalMode === 'CRITERIA' && <CheckCircle2 className="w-4 h-4 text-[#00A99D]" />}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Chấm điểm theo 1, 3, 5 tiêu chí ho?c ty ch?nh. K?t qu? x?p lo?i: Nổi bật, T?t, ?t, Cần hỗ trợ.
+                    Chấm điểm theo 1, 3, 5 tiêu chí hoặc ty ch?nh. Kết quả xếp loại: Nổi bật, T?t, ?t, Cần hỗ trợ.
                   </p>
                 </div>
               </div>
@@ -690,7 +690,7 @@ export default function CreateActivityWizard() {
                             type="button"
                             onClick={() => handleRemoveCriterion(crit.id)}
                             className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center transition-colors"
-                            title="Xa tiêu chí"
+                            title="Xóa tiêu chí"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -723,7 +723,7 @@ export default function CreateActivityWizard() {
                 {/* THANG NH GI 4 M?C */}
                 <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">Thang đánh giá 4 m?c th?ng nh?t:</span>
+                    <span className="text-xs font-black text-slate-800">ThĐang đáđánh giáá 4 m?c th?ng nh?t:</span>
                     <span className="text-[11px] text-slate-400 font-bold">Hi?n th? tn m?c tr?c quan cho GVCN</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -734,7 +734,7 @@ export default function CreateActivityWizard() {
                           <span className="text-[10px] font-black uppercase opacity-70">{lvl.points}</span>
                         </div>
                         <p className="text-[10px] opacity-80 leading-tight">
-                          {lvl.level === 4 ? 'V?t tr?i, sng t?o xu?t s?c' : lvl.level === 3 ? 'Hon thnh t?t, ch? ?ng' : lvl.level === 2 ? '?t yu c?u c b?n' : 'C?n h?ng d?n v h? tr?'}
+                          {lvl.level === 4 ? 'V?t tr?i, sng t?o xu?t s?c' : lvl.level === 3 ? 'Hoàn thành t?t, ch? ?ng' : lvl.level === 2 ? '?t yu c?u c b?n' : 'C?n h?ng d?n v h? tr?'}
                         </p>
                       </div>
                     ))}
@@ -744,7 +744,7 @@ export default function CreateActivityWizard() {
                 {/* CNG TH?C V NG?NG TNH */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                    <span className="text-xs font-black text-slate-800 block">Cng th?c tnh k?t qu?:</span>
+                    <span className="text-xs font-black text-slate-800 block">Cng th?c tnh kết quả:</span>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -772,7 +772,7 @@ export default function CreateActivityWizard() {
                   </div>
 
                   <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                    <span className="text-xs font-black text-slate-800 block">Ng?ng x?p lo?i k?t qu?:</span>
+                    <span className="text-xs font-black text-slate-800 block">Ng?ng xếp loại kết quả:</span>
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       <div>
                         <span className="text-[10px] text-slate-500 font-bold block">Nổi bật (? %)</span>
@@ -814,14 +814,14 @@ export default function CreateActivityWizard() {
                 onClick={() => setCurrentStep(1)}
                 className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black rounded-xl transition-all"
               >
-                Quay l?i B?c 1
+                Quay lỗi B?c 1
               </button>
               <button
                 type="button"
                 onClick={() => setCurrentStep(3)}
                 className="px-6 py-3 bg-[#00A99D] hover:bg-[#008F85] text-white text-xs font-black rounded-2xl shadow-md shadow-[#00A99D]/20 flex items-center gap-2"
               >
-                <span>Sang B?c 3: Gn l?p</span>
+                <span>Sang B?c 3: Gn lớp</span>
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -833,20 +833,20 @@ export default function CreateActivityWizard() {
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md shadow-slate-200/40 space-y-6">
             <div className="border-b border-slate-100 pb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-black text-slate-800">B?c 3  Gn L?p Tham Gia & Phn Cng GVCN</h2>
+                <h2 className="text-lg font-black text-slate-800">B?c 3  Gn Lớp Tham Gia & Phn Cng GVCN</h2>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Ch?n cc l?p theo Cơ sở ? Khối ? L?p. H? th?ng t? ?ng l?y danh sch GVCN v học sinh.
+                  Ch?n cc lớp theo Cơ sở ? Khối ? Lớp. H? th?ng t? ?ng l?y danh sách GVCN v học sinh.
                 </p>
               </div>
               <div className="text-xs font-black text-[#003B3A] bg-[#00A99D]/10 px-3 py-1.5 rounded-xl border border-[#00A99D]/20">
-                ? ch?n: {assignedClasses.length} l?p
+                ? ch?n: {assignedClasses.length} lớp
               </div>
             </div>
 
             {/* Deadline Field */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-black text-slate-800 block">Th?i h?n GVCN hon thnh đánh giá (Deadline):</span>
+                <span className="text-xs font-black text-slate-800 block">Th?i h?n GVCN hoàn thành đáđánh giáá (Deadline):</span>
                 <span className="text-[11px] text-slate-500">GVCơ sở nh?n ?c thng bo nh?c nh? khi ?n h?n</span>
               </div>
               <input
@@ -928,13 +928,13 @@ export default function CreateActivityWizard() {
                 onClick={() => setCurrentStep(2)}
                 className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black rounded-xl transition-all"
               >
-                Quay l?i B?c 2
+                Quay lỗi B?c 2
               </button>
               <button
                 type="button"
                 onClick={() => {
                   if (assignedClasses.length === 0) {
-                    toast.error('Vui l?ng ch?n t nh?t 1 l?p');
+                    toast.error('Vui l?ng ch?n t nh?t 1 lớp');
                     return;
                   }
                   setCurrentStep(4);
@@ -954,7 +954,7 @@ export default function CreateActivityWizard() {
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg font-black text-slate-800">B?c 4  Ki?m Tra & Pht Hnh Hoạt động</h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Xem l?i ton b? thng tin cấu hình tr?c khi lu nhp ho?c giao cho cc Gio vin Ch? nhi?m
+                Xem lỗi ton b? thng tin cấu hình tr?c khi lu nhp hoặc giao cho cc Gio vin Chủ nhiệm
               </p>
             </div>
 
@@ -963,24 +963,24 @@ export default function CreateActivityWizard() {
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
                 <span className="text-xs font-black uppercase text-slate-400 tracking-wider block">Thng tin c b?n</span>
                 <div className="space-y-2 text-xs">
-                  <div><span className="text-slate-400 font-bold">Tn hoạt động:</span> <strong className="text-slate-800 text-sm block">{formData.name}</strong></div>
+                  <div><span className="text-slate-400 font-bold">Tên hoạt động:</span> <strong className="text-slate-800 text-sm block">{formData.name}</strong></div>
                   <div><span className="text-slate-400 font-bold">Mạch hoạt động:</span> <strong className="text-slate-800">{ACTIVITY_STRANDS.find(s => s.id === formData.strand)?.name}</strong></div>
                   <div><span className="text-slate-400 font-bold">Lo?i hoạt động:</span> <strong className="text-slate-800">{formData.activityTypeName}</strong></div>
                   <div><span className="text-slate-400 font-bold">Thời gian:</span> <strong className="text-slate-800">{formData.date} ({formData.timeRange})</strong></div>
                   <div><span className="text-slate-400 font-bold">?địa điểm:</span> <strong className="text-slate-800">{formData.location || 'Cha ghi'}</strong></div>
-                  <div><span className="text-slate-400 font-bold">H?n n?p đánh giá:</span> <strong className="text-emerald-700">{formData.deadline || 'Theo k? ho?ch'}</strong></div>
+                  <div><span className="text-slate-400 font-bold">H?n n?p đáđánh giáá:</span> <strong className="text-emerald-700">{formData.deadline || 'Theo k? hoặch'}</strong></div>
                 </div>
               </div>
 
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
-                <span className="text-xs font-black uppercase text-slate-400 tracking-wider block">Thi?t l?p đánh giá & L?p</span>
+                <span className="text-xs font-black uppercase text-slate-400 tracking-wider block">Thi?t lớp đáđánh giáá & Lớp</span>
                 <div className="space-y-2 text-xs">
-                  <div><span className="text-slate-400 font-bold">H?nh th?c:</span> <strong className="text-slate-800">{evalMode === 'PARTICIPATION_ONLY' ? 'Ch? ghi nh?n tham gia' : 'đánh giá theo tiêu chí'}</strong></div>
+                  <div><span className="text-slate-400 font-bold">H?nh th?c:</span> <strong className="text-slate-800">{evalMode === 'PARTICIPATION_ONLY' ? 'Ch? ghi nh?n tham gia' : 'đáđánh giáá theo tiêu chí'}</strong></div>
                   {evalMode === 'CRITERIA' && (
                     <>
-                      <div><span className="text-slate-400 font-bold">S? tiêu chí:</span> <strong className="text-slate-800">{criteria.length} tiêu chí ({formulaType === 'EQUAL_WEIGHT' ? '?ng tr?ng s?' : 'Theo tr?ng s?'})</strong></div>
+                      <div><span className="text-slate-400 font-bold">Số tiêu chí:</span> <strong className="text-slate-800">{criteria.length} tiêu chí ({formulaType === 'EQUAL_WEIGHT' ? '?ng tr?ng s?' : 'Theo tr?ng s?'})</strong></div>
                       <div>
-                        <span className="text-slate-400 font-bold">Danh sch tiêu chí:</span>
+                        <span className="text-slate-400 font-bold">Danh sách tiêu chí:</span>
                         <ul className="list-disc pl-4 mt-1 text-[11px] text-slate-700 space-y-0.5">
                           {criteria.map((c, i) => (
                             <li key={c.id}>{c.name} {formulaType === 'WEIGHTED' ? `(${c.weight}%)` : ''} {c.isRequired ? '(B?t bu?c)' : ''}</li>
@@ -990,8 +990,8 @@ export default function CreateActivityWizard() {
                     </>
                   )}
                   <div className="pt-2 border-t border-slate-200">
-                    <span className="text-slate-400 font-bold">L?p tham gia:</span>
-                    <strong className="text-[#003B3A] ml-1">{assignedClasses.length} l?p</strong>
+                    <span className="text-slate-400 font-bold">Lớp tham gia:</span>
+                    <strong className="text-[#003B3A] ml-1">{assignedClasses.length} lớp</strong>
                     <div className="flex flex-wrap gap-1 mt-1.5">
                       {assignedClasses.map(c => (
                         <span key={c.classId} className="px-2 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-black text-slate-700">
@@ -1011,7 +1011,7 @@ export default function CreateActivityWizard() {
                 onClick={() => setCurrentStep(3)}
                 className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black rounded-xl transition-all"
               >
-                Quay l?i B?c 3
+                Quay lỗi B?c 3
               </button>
 
               <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -1022,7 +1022,7 @@ export default function CreateActivityWizard() {
                   className="w-full sm:w-auto px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black rounded-2xl transition-all flex items-center justify-center gap-2"
                 >
                   <Save className="w-4 h-4 text-slate-500" />
-                  <span>Lu b?n nhp</span>
+                  <span>Lu bản nháp</span>
                 </button>
 
                 <button
