@@ -10,7 +10,7 @@ export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
   const tabs = [
     { id: 'activities', label: 'Quản lý Hoạt động & Đánh giá', href: '/teacher/experiential-activities', icon: Activity },
     { id: 'reports', label: 'Dashboard & Thống kê', href: '/admin/experiential-activities/reports', icon: BarChart3 },
-    { id: 'categories', label: 'Danh mđược', href: '/admin/experiential-activities/categories', icon: Layers },
+    { id: 'categories', label: 'Danh mục', href: '/admin/experiential-activities/categories', icon: Layers },
     { id: 'catalog', label: 'Hoạt động mẫu', href: '/admin/experiential-activities/catalog', icon: Award },
     { id: 'config', label: 'Cấu hình tiêu chí', href: '/admin/experiential-activities/config', icon: Settings }
   ]

@@ -282,7 +282,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-purple-600" />
-              Phân bố Xếp loại Kết quả Học sinh (Thang 4 mđược)
+              Phân bố Xếp loại Kết quả Học sinh (Thang 4 mục)
             </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -330,7 +330,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4 lg:col-span-2">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-600" />
-              Điểm đánh giá Trung bình theo 12 Tiêu chí Nng lđược Sky-Line (Thang 4 mđược)
+              Điểm đánh giá Trung bình theo 12 Tiêu chí Nng lđược Sky-Line (Thang 4 mục)
             </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -352,7 +352,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-black text-slate-800">Giám Sát Tiến độ nh Gi C?a Giáo Viên Ch? Nhđiểm</h3>
-              <p className="text-xs text-slate-500 font-medium">Theo dõi thời gian thđược tiến độ nộp sổổ đánh giá của tổng lớp</p>
+              <p className="text-xs text-slate-500 font-medium">Theo dõi thời gian thực tiến độ nộp sổổ đánh giá của tổng lớp</p>
             </div>
             <span className="text-xs font-bold text-slate-400">
               Tổng c?ng: {(stats?.classProgress || []).length} lượt phân công

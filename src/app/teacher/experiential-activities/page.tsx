@@ -115,7 +115,7 @@ export default function ExperientialActivitiesList() {
         "STT": idx + 1,
         "Mã HĐoạt động": act.code || "T? ?ng",
         "Tên Hoạt động": act.name || "",
-        "Mđượch Hoạt động": ACTIVITY_STRANDS.find(s => s.id === act.strand)?.name || act.strand || "",
+        "Mạch Hoạt động": ACTIVITY_STRANDS.find(s => s.id === act.strand)?.name || act.strand || "",
         "Lo?i Hoạt động": act.activityTypeName || act.catalogName || "",
         "C S?": act.campusName || act.campusCode || "",
         "C?p Hđược": act.educationLevel || "",

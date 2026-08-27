@@ -393,7 +393,7 @@ export default function CreateActivityWizard() {
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">Quy môô hoạt động</label>
+                <label className="block text-xs font-black text-slate-700 mb-1.5">Quy mô hoạt động</label>
                 <select
                   value={formData.scale}
                   onChange={e => setFormData({ ...formData, scale: e.target.value })}
@@ -545,15 +545,15 @@ export default function CreateActivityWizard() {
         {currentStep === 2 && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md shadow-slate-200/40 space-y-6">
             <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-lg font-black text-slate-800">Bước 2  Thiết lập tiêu chí & Cng thđược đánh giá</h2>
+              <h2 className="text-lg font-black text-slate-800">Bước 2  Thiết lập tiêu chí & Cng thực đánh giá</h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Chđến hạnh thđược ghi nhận, bđủ tiêu chí đánh giá, thang 4 mđược v quy tđược tính kết quả
+                Chđến hạnh thực ghi nhận, bđủ tiêu chí đánh giá, thang 4 mục v quy tđược tính kết quả
               </p>
             </div>
 
-            {/* H?nh thđược đánh giá */}
+            {/* H?nh thực đánh giá */}
             <div className="space-y-2">
-              <label className="block text-xs font-black text-slate-800">H?nh thđược đánh giá</label>
+              <label className="block text-xs font-black text-slate-800">H?nh thực đánh giá</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div
                   onClick={() => setEvalMode('PARTICIPATION_ONLY')}
@@ -564,7 +564,7 @@ export default function CreateActivityWizard() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">H?nh thđược 1: Ch? ghi nhận tham gia</span>
+                    <span className="text-xs font-black text-slate-800">H?nh thực 1: Ch? ghi nhận tham gia</span>
                     {evalMode === 'PARTICIPATION_ONLY' && <CheckCircle2 className="w-4 h-4 text-[#00A99D]" />}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
@@ -581,7 +581,7 @@ export default function CreateActivityWizard() {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">H?nh thđược 2: đánh giá theo tiêu chí nng lđược</span>
+                    <span className="text-xs font-black text-slate-800">H?nh thực 2: đánh giá theo tiêu chí nng lđược</span>
                     {evalMode === 'CRITERIA' && <CheckCircle2 className="w-4 h-4 text-[#00A99D]" />}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
@@ -724,8 +724,8 @@ export default function CreateActivityWizard() {
                 {/* THANG NH GI 4 M?C */}
                 <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800">ThĐang đánh giá 4 mđược th?ng nhĐạt:</span>
-                    <span className="text-[11px] text-slate-400 font-bold">Hi?n th? tn mđược trđược quan cho GVCN</span>
+                    <span className="text-xs font-black text-slate-800">ThĐang đánh giá 4 mục th?ng nhất:</span>
+                    <span className="text-[11px] text-slate-400 font-bold">Hi?n th? tn mục trđược quan cho GVCN</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {EVAL_LEVELS.map(lvl => (
@@ -745,7 +745,7 @@ export default function CreateActivityWizard() {
                 {/* CNG TH?C V NG?NG TNH */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
-                    <span className="text-xs font-black text-slate-800 block">Cng thđược tính kết quả:</span>
+                    <span className="text-xs font-black text-slate-800 block">Cng thực tính kết quả:</span>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -756,7 +756,7 @@ export default function CreateActivityWizard() {
                           onChange={() => setFormulaType('EQUAL_WEIGHT')}
                           className="text-[#00A99D]"
                         />
-                        <span className="text-xs font-bold text-slate-700">Cng thđược A: Đồng trọng số (Tổng Điểm / Điểm max * 100%)</span>
+                        <span className="text-xs font-bold text-slate-700">Cng thực A: Đồng trọng số (Tổng Điểm / Điểm max * 100%)</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -767,7 +767,7 @@ export default function CreateActivityWizard() {
                           onChange={() => setFormulaType('WEIGHTED')}
                           className="text-[#00A99D]"
                         />
-                        <span className="text-xs font-bold text-slate-700">Cng thđược B: Theo trọng số ring tổng tiêu chí</span>
+                        <span className="text-xs font-bold text-slate-700">Cng thực B: Theo trọng số ring tổng tiêu chí</span>
                       </label>
                     </div>
                   </div>
@@ -976,7 +976,7 @@ export default function CreateActivityWizard() {
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
                 <span className="text-xs font-black uppercase text-slate-400 tracking-wider block">Thiết lập đánh giá & Lớp</span>
                 <div className="space-y-2 text-xs">
-                  <div><span className="text-slate-400 font-bold">H?nh thđược:</span> <strong className="text-slate-800">{evalMode === 'PARTICIPATION_ONLY' ? 'Ch? ghi nhận tham gia' : 'đánh giá theo tiêu chí'}</strong></div>
+                  <div><span className="text-slate-400 font-bold">H?nh thực:</span> <strong className="text-slate-800">{evalMode === 'PARTICIPATION_ONLY' ? 'Ch? ghi nhận tham gia' : 'đánh giá theo tiêu chí'}</strong></div>
                   {evalMode === 'CRITERIA' && (
                     <>
                       <div><span className="text-slate-400 font-bold">Số tiêu chí:</span> <strong className="text-slate-800">{criteria.length} tiêu chí ({formulaType === 'EQUAL_WEIGHT' ? 'Đồng trọng số' : 'Theo trọng số'})</strong></div>
