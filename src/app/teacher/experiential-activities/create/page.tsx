@@ -371,6 +371,7 @@ export default function CreateActivityWizard() {
                   }}
                   className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
                 >
+                  {campuses.length === 0 && <option value="">Đang tải danh sách cơ sở...</option>}
                   {campuses.map(c => (
                     <option key={c.id} value={c.id}>{c.campusName || c.campusCode}</option>
                   ))}

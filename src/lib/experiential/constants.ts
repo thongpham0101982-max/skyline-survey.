@@ -53,13 +53,13 @@ export const SKYLINE_ACTIVITY_TYPES = [
   { id: 'KHAC', name: 'Hoạt động trải nghiệm khác', code: 'KHAC' }
 ];
 
-// Quy môô hoạt động
+// Quy mô hoạt động
 export const ACTIVITY_SCALES = [
-  { id: 'LOP', name: 'Quy môô Lớp' },
-  { id: 'KHOI', name: 'Quy môô Khối' },
-  { id: 'CO_SO', name: 'Quy môô Cơ sở' },
-  { id: 'LIEN_CO_SO', name: 'Quy môô Liên cơ sở' },
-  { id: 'TOAN_HE_THONG', name: 'Quy môô Toàn hệ thống Sky-Line' }
+  { id: 'LOP', name: 'Quy mô Lớp' },
+  { id: 'KHOI', name: 'Quy mô Khối' },
+  { id: 'CO_SO', name: 'Quy mô Cơ sở' },
+  { id: 'LIEN_CO_SO', name: 'Quy mô Liên cơ sở' },
+  { id: 'TOAN_HE_THONG', name: 'Quy mô Toàn hệ thống Sky-Line' }
 ];
 
 // Vai trò học sinh
