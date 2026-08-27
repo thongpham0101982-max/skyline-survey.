@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-27T01:54:41.662Z
+// Forced Vercel Deployment: 2026-08-27T02:15:42.355Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1735,6 +1735,30 @@ export function ObservationClient(props: ObservationClientProps) {
     return count;
   }, [slots, currentTeacher?.id]);
 
+  const mySurpriseObservedCount = useMemo(() => {
+    let count = 0;
+    slots.forEach(slot => {
+      if (slot.requestOrigin === "SURPRISE") {
+        const reg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved && r.evaluation);
+        if (reg) count += (slot.isDoublePeriod ? 2 : 1);
+      }
+    });
+    return count;
+  }, [slots, currentTeacher?.id]);
+
+  const mySurpriseTaughtCount = useMemo(() => {
+    let count = 0;
+    slots.forEach(slot => {
+      if (slot.teacherId === currentTeacher?.id && slot.requestOrigin === "SURPRISE") {
+        const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
+        if (approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation)) {
+          count += (slot.isDoublePeriod ? 2 : 1);
+        }
+      }
+    });
+    return count;
+  }, [slots, currentTeacher?.id]);
+
   const myTaughtCount = useMemo(() => {
     let count = 0;
     slots.forEach(slot => {
@@ -1857,7 +1881,14 @@ export function ObservationClient(props: ObservationClientProps) {
               />
             </div>
             <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-              <span>Đã nộp phiếu chấm</span>
+              <span className="flex items-center gap-1.5">
+                <span>Đã nộp phiếu chấm</span>
+                {mySurpriseObservedCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black">
+                    ⚡ {mySurpriseObservedCount} đột xuất
+                  </span>
+                )}
+              </span>
               <span className={obsTarget - myObservedCount > 0 ? "text-amber-600 font-extrabold" : "text-emerald-600 font-extrabold"}>
                 {obsTarget - myObservedCount > 0 ? `Còn thiếu ${obsTarget - myObservedCount} tiết` : "🎉 Đã đạt mục tiêu!"}
               </span>
@@ -1899,7 +1930,14 @@ export function ObservationClient(props: ObservationClientProps) {
               />
             </div>
             <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-              <span>Được đánh giá đủ</span>
+              <span className="flex items-center gap-1.5">
+                <span>Được đánh giá đủ</span>
+                {mySurpriseTaughtCount > 0 && (
+                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black">
+                    ⚡ {mySurpriseTaughtCount} đột xuất
+                  </span>
+                )}
+              </span>
               <span className={taughtTarget - myTaughtCount > 0 ? "text-amber-600 font-extrabold" : "text-emerald-600 font-extrabold"}>
                 {taughtTarget - myTaughtCount > 0 ? `Còn thiếu ${taughtTarget - myTaughtCount} tiết` : "🎉 Đã đạt mục tiêu!"}
               </span>
@@ -4408,7 +4446,14 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs font-bold text-slate-700 shadow-2xs">
                       <ClipboardList className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Tổng phiếu: <strong className="text-slate-900">{receivedEvaluations.length}</strong></span>
+                      <div className="flex items-center gap-2">
+                        <span>Tổng phiếu: <strong className="text-slate-900">{receivedEvaluations.length}</strong></span>
+                        {receivedEvaluations.filter(e => e.slot.requestOrigin === "SURPRISE").length > 0 && (
+                          <span className="px-2 py-0.5 text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md">
+                            ⚡ {receivedEvaluations.filter(e => e.slot.requestOrigin === "SURPRISE").length} phiếu đột xuất
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {teacherAvgScore ? (
                       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200/70 text-xs font-bold text-teal-800 shadow-2xs">
