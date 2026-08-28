@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { parseDbJson } from "@/lib/experiential/formula";
+function parseDbJson<T>(value: string | null | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
@@ -12,41 +21,43 @@ export async function GET(
     const activity = await prisma.activityRecord.findUnique({
       where: { id },
       include: {
+        catalog: true,
+        academicYear: true,
         participants: {
           include: {
             student: {
-              select: {
-                id: true,
-                studentCode: true,
-                studentName: true,
-                classId: true,
-                class: { select: { id: true, className: true } }
+              include: {
+                class: {
+                  include: {
+                    campus: true
+                  }
+                }
               }
             }
           }
-        },
-        catalog: true
+        }
       }
     });
 
     if (!activity) {
-      return NextResponse.json({ error: "Khong tim thay hoat dong" }, { status: 404 });
+      return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
     }
 
     const meta = parseDbJson<any>(activity.locationId, {});
 
+    // Parse students from participants
     const students = activity.participants.map((p) => {
       const pNote = parseDbJson<any>(p.note, {});
       return {
-        id: p.id,
+        id: p.studentId,
         participantId: p.id,
-        studentId: p.studentId,
-        studentCode: p.student?.studentCode || "",
-        fullName: p.student?.studentName || "",
-        classId: p.student?.classId || p.student?.class?.id || "",
-        className: p.student?.class?.className || "",
-        attendance: pNote.attendance || "PRESENT",
-        roles: pNote.roles || ["THANH_VIEN"],
+        studentCode: p.student.studentCode,
+        fullName: p.student.studentName,
+        classId: p.student.classId,
+        className: p.student.class?.className || "",
+        campusName: p.student.class?.campus?.campusName || "",
+        attendance: pNote.attendance || (p.evalLevelId === "DAT" ? "PRESENT" : "PRESENT"),
+        roles: pNote.roles || (p.roleId ? [p.roleId] : ["Thành viên"]),
         criteriaScores: pNote.criteriaScores || {},
         calculatedPercent: pNote.calculatedPercent !== undefined ? pNote.calculatedPercent : null,
         finalResult: pNote.finalResult || "CHUA_DANH_GIA",
@@ -61,34 +72,37 @@ export async function GET(
       code: activity.code,
       name: activity.name,
       academicYearId: activity.academicYearId,
-      campusId: activity.campusId,
-      educationLevel: activity.educationLevel,
-      grades: activity.grades ? activity.grades.split(",") : [],
+      campusId: meta.campusId || activity.organizerId || "",
+      campusCode: meta.campusCode || "",
+      campusName: meta.campusName || "",
+      selectedCampusIds: meta.selectedCampusIds || (meta.campusId ? [meta.campusId] : []),
+      educationLevel: meta.educationLevel || activity.levelId || "PHO_THONG",
+      grades: meta.grades || [],
       subjectId: meta.subjectId || null,
       subjectName: meta.subjectName || null,
       date: activity.date ? activity.date.toISOString().split("T")[0] : "",
       timeRange: meta.timeRange || "",
-      location: meta.location || "",
-      description: activity.description,
+      location: meta.location || meta.locationText || "",
+      description: meta.description || "",
       objectives: meta.objectives || "",
       evidenceUrls: meta.evidenceUrls || [],
       strand: meta.strand || "BAN_THAN",
       activityTypeId: meta.activityTypeId || "",
       activityTypeName: meta.activityTypeName || activity.catalog?.name || "",
-      scale: meta.scale || "KHOI",
+      scale: meta.scale || activity.formatId || "KHOI",
       evalMode: meta.evalMode || "CRITERIA",
       formulaType: meta.formulaType || "EQUAL_WEIGHT",
       criteria: meta.criteria || [],
       thresholds: meta.thresholds || { outstanding: 85, good: 70, pass: 50 },
       mandatoryRules: meta.mandatoryRules || [],
-      status: meta.status || "ASSIGNED",
+      status: meta.status || activity.status || "ASSIGNED",
       deadline: meta.deadline || "",
       assignedClasses: meta.assignedClasses || [],
       students
     });
   } catch (error: any) {
     console.error("GET /api/experiential-activities/[id] error:", error);
-    return NextResponse.json({ error: "Loi he thong: " + error.message }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống: " + error.message }, { status: 500 });
   }
 }
 
@@ -107,7 +121,7 @@ export async function PUT(
     });
 
     if (!existing) {
-      return NextResponse.json({ error: "Khong tim thay hoat dong" }, { status: 404 });
+      return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
     }
 
     const currentMeta = parseDbJson<any>(existing.locationId, {});
@@ -117,7 +131,10 @@ export async function PUT(
       const updatedMeta = { ...currentMeta, status: newStatus };
       await prisma.activityRecord.update({
         where: { id },
-        data: { locationId: JSON.stringify(updatedMeta) }
+        data: {
+          status: newStatus,
+          locationId: JSON.stringify(updatedMeta)
+        }
       });
       return NextResponse.json({ success: true, status: newStatus });
     }
@@ -139,58 +156,113 @@ export async function PUT(
       const duplicated = await prisma.activityRecord.create({
         data: {
           code: dupCode,
-          name: existing.name + " (Ban sao)",
-          description: existing.description,
-          date: existing.date,
+          name: existing.name + " (Bản sao)",
+          catalogId: existing.catalogId,
+          date: new Date(),
           academicYearId: targetYearId,
-          campusId: existing.campusId,
-          educationLevel: existing.educationLevel,
-          grades: existing.grades,
+          levelId: existing.levelId,
+          formatId: existing.formatId,
+          organizerId: existing.organizerId,
+          teacherId: existing.teacherId,
           locationId: JSON.stringify(dupMeta),
-          participants: existing.participants
+          status: "DRAFT"
         }
       });
 
       return NextResponse.json(duplicated);
     }
 
+    // Comprehensive Meta update
     const updatedMeta = {
       ...currentMeta,
-      timeRange: body.timeRange ?? currentMeta.timeRange,
-      location: body.location ?? currentMeta.location,
-      objectives: body.objectives ?? currentMeta.objectives,
-      evidenceUrls: body.evidenceUrls ?? currentMeta.evidenceUrls,
-      strand: body.strand ?? currentMeta.strand,
-      activityTypeId: body.activityTypeId ?? currentMeta.activityTypeId,
-      activityTypeName: body.activityTypeName ?? currentMeta.activityTypeName,
-      scale: body.scale ?? currentMeta.scale,
-      evalMode: body.evalMode ?? currentMeta.evalMode,
-      formulaType: body.formulaType ?? currentMeta.formulaType,
-      criteria: body.criteria ?? currentMeta.criteria,
-      thresholds: body.thresholds ?? currentMeta.thresholds,
-      mandatoryRules: body.mandatoryRules ?? currentMeta.mandatoryRules,
-      deadline: body.deadline ?? currentMeta.deadline,
-      assignedClasses: body.assignedClasses ?? currentMeta.assignedClasses,
+      campusId: body.campusId !== undefined ? body.campusId : currentMeta.campusId,
+      campusCode: body.campusCode !== undefined ? body.campusCode : currentMeta.campusCode,
+      campusName: body.campusName !== undefined ? body.campusName : currentMeta.campusName,
+      selectedCampusIds: body.selectedCampusIds !== undefined ? body.selectedCampusIds : currentMeta.selectedCampusIds,
+      educationLevel: body.educationLevel !== undefined ? body.educationLevel : currentMeta.educationLevel,
+      grades: body.grades !== undefined ? body.grades : currentMeta.grades,
+      description: body.description !== undefined ? body.description : currentMeta.description,
+      objectives: body.objectives !== undefined ? body.objectives : currentMeta.objectives,
+      evidenceUrls: body.evidenceUrls !== undefined ? body.evidenceUrls : currentMeta.evidenceUrls,
+      timeRange: body.timeRange !== undefined ? body.timeRange : currentMeta.timeRange,
+      location: body.location !== undefined ? body.location : currentMeta.location,
+      locationText: body.location !== undefined ? body.location : currentMeta.locationText,
+      strand: body.strand !== undefined ? body.strand : currentMeta.strand,
+      activityTypeId: body.activityTypeId !== undefined ? body.activityTypeId : currentMeta.activityTypeId,
+      activityTypeName: body.activityTypeName !== undefined ? body.activityTypeName : currentMeta.activityTypeName,
+      scale: body.scale !== undefined ? body.scale : currentMeta.scale,
+      evalMode: body.evalMode !== undefined ? body.evalMode : currentMeta.evalMode,
+      formulaType: body.formulaType !== undefined ? body.formulaType : currentMeta.formulaType,
+      criteria: body.criteria !== undefined ? body.criteria : currentMeta.criteria,
+      thresholds: body.thresholds !== undefined ? body.thresholds : currentMeta.thresholds,
+      mandatoryRules: body.mandatoryRules !== undefined ? body.mandatoryRules : currentMeta.mandatoryRules,
+      deadline: body.deadline !== undefined ? body.deadline : currentMeta.deadline,
+      status: body.status !== undefined ? body.status : currentMeta.status,
+      assignedClasses: body.assignedClasses !== undefined ? body.assignedClasses : currentMeta.assignedClasses,
       subjectId: body.subjectId !== undefined ? body.subjectId : currentMeta.subjectId,
       subjectName: body.subjectName !== undefined ? body.subjectName : currentMeta.subjectName
     };
 
+    // Update ActivityRecord safely without any invalid columns
     const updated = await prisma.activityRecord.update({
       where: { id },
       data: {
-        name: body.name ?? existing.name,
-        description: body.description ?? existing.description,
+        name: body.name !== undefined ? body.name.trim() : existing.name,
         date: body.date ? new Date(body.date) : existing.date,
-        grades: Array.isArray(body.grades) ? body.grades.join(",") : existing.grades,
-        educationLevel: body.educationLevel ?? existing.educationLevel,
-        locationId: JSON.stringify(updatedMeta)
+        levelId: body.educationLevel || existing.levelId,
+        formatId: body.scale || existing.formatId,
+        organizerId: body.campusId || existing.organizerId,
+        locationId: JSON.stringify(updatedMeta),
+        status: body.status === "DRAFT" ? "DRAFT" : "SUBMITTED"
       }
     });
 
-    return NextResponse.json(updated);
+    // Auto-populate ActivityParticipant records for any newly assigned classes
+    const assignedClasses = updatedMeta.assignedClasses || [];
+    const classIds = assignedClasses.map((c: any) => c.classId).filter(Boolean);
+    if (classIds.length > 0) {
+      const existingStudentIds = new Set(existing.participants.map(p => p.studentId));
+      const students = await prisma.student.findMany({
+        where: {
+          classId: { in: classIds },
+          status: "ACTIVE"
+        },
+        select: { id: true, classId: true }
+      });
+
+      const newStudents = students.filter(s => !existingStudentIds.has(s.id));
+      if (newStudents.length > 0) {
+        const evalMode = updatedMeta.evalMode || "CRITERIA";
+        const participantRows = newStudents.map(s => ({
+          recordId: id,
+          studentId: s.id,
+          roleId: "TV",
+          evalLevelId: evalMode === "PARTICIPATION_ONLY" ? "DAT" : null,
+          note: JSON.stringify({
+            attendance: "PRESENT",
+            roles: ["Thành viên"],
+            criteriaScores: {},
+            calculatedPercent: evalMode === "PARTICIPATION_ONLY" ? 100 : 0,
+            finalResult: evalMode === "PARTICIPATION_ONLY" ? "THAM_GIA" : "CAN_HO_TRO",
+            remarksQuick: [],
+            remarksCustom: ""
+          })
+        }));
+
+        await prisma.activityParticipant.createMany({
+          data: participantRows
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      id: updated.id,
+      name: updated.name
+    });
   } catch (error: any) {
     console.error("PUT /api/experiential-activities/[id] error:", error);
-    return NextResponse.json({ error: "Loi he thong: " + error.message }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống: " + error.message }, { status: 500 });
   }
 }
 
@@ -212,6 +284,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("DELETE /api/experiential-activities/[id] error:", error);
-    return NextResponse.json({ error: "Loi he thong: " + error.message }, { status: 500 });
+    return NextResponse.json({ error: "Lỗi hệ thống: " + error.message }, { status: 500 });
   }
 }
