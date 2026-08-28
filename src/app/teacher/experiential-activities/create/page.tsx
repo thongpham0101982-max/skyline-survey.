@@ -75,25 +75,43 @@ const findMatchedGVBM = (cls, form) => {
   const targetName = (form.departmentName || form.subjectName || '').toLowerCase().trim();
   if (!targetId && !targetName) return null;
 
-  // 1. Direct ID match
-  let match = assignments.find(ta => 
-    ta.subjectId === targetId || 
-    ta.subject?.id === targetId ||
-    ta.teacher?.departmentId === targetId ||
-    ta.teacher?.department?.id === targetId
-  );
-  if (match && match.teacher && match.teacher.teacherName) return match.teacher;
-
-  // 2. Keyword & semantic match
   const normalize = (str = '') => str.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/g, ' ');
 
   const normTarget = normalize(targetName);
 
+  // 1. Direct match on Teacher's Department (ID or Department Name)
+  let match = assignments.find(ta => {
+    const t = ta.teacher;
+    if (!t) return false;
+    if (t.departmentId === targetId) return true;
+    if (t.departmentRel && (t.departmentRel.id === targetId || normalize(t.departmentRel.name).includes(normTarget) || normTarget.includes(normalize(t.departmentRel.name)))) return true;
+    if (Array.isArray(t.departmentAssignments)) {
+      return t.departmentAssignments.some(da => 
+        da.departmentId === targetId ||
+        da.department?.id === targetId ||
+        (da.department?.name && (normalize(da.department.name).includes(normTarget) || normTarget.includes(normalize(da.department.name))))
+      );
+    }
+    return false;
+  });
+  if (match && match.teacher && match.teacher.teacherName) return match.teacher;
+
+  // 2. Direct match on Subject ID or Subject Name
+  match = assignments.find(ta => {
+    if (ta.subjectId === targetId || ta.subject?.id === targetId) return true;
+    const sName = normalize(ta.subject?.subjectName || '');
+    const sCode = normalize(ta.subject?.subjectCode || '');
+    return (sName && (normTarget.includes(sName) || sName.includes(normTarget))) ||
+           (sCode && normTarget.includes(sCode));
+  });
+  if (match && match.teacher && match.teacher.teacherName) return match.teacher;
+
+  // 3. Semantic keyword match (The chat, Tieng Anh, Toan, KHTN, KHXH, Nghe thuat, Tin hoc...)
   match = assignments.find(ta => {
     const sName = normalize(ta.subject?.subjectName || '');
-    const dName = normalize(ta.teacher?.department?.name || '');
+    const dName = normalize(ta.teacher?.departmentRel?.name || ta.teacher?.department?.name || '');
 
     if (normTarget.includes('the chat') || normTarget.includes('the duc') || normTarget.includes('gdtc')) {
       return sName.includes('the duc') || sName.includes('the chat') || sName.includes('gdtc') || sName.includes('bong') || sName.includes('boi') || dName.includes('the chat') || dName.includes('the duc');
@@ -103,6 +121,10 @@ const findMatchedGVBM = (cls, form) => {
     }
     if (normTarget.includes('toan')) {
       return sName.includes('toan') || dName.includes('toan');
+    }
+    if (normTarget.includes('khao thi') || normTarget.includes('dbcl') || normTarget.includes('kt dbcl')) {
+      // If TCM is KT&ĐBCL, any teaching assignment teacher belonging to KT&ĐBCL or assigned teacher
+      return dName.includes('khao thi') || dName.includes('dbcl') || true;
     }
     if (normTarget.includes('khoa hoc') || normTarget.includes('khtn') || normTarget.includes('ly') || normTarget.includes('hoa') || normTarget.includes('sinh')) {
       return sName.includes('khoa hoc') || sName.includes('khtn') || sName.includes('ly') || sName.includes('hoa') || sName.includes('sinh') || dName.includes('khoa hoc') || dName.includes('khtn');
@@ -116,29 +138,17 @@ const findMatchedGVBM = (cls, form) => {
     if (normTarget.includes('tin') || normTarget.includes('stem') || normTarget.includes('cong nghe')) {
       return sName.includes('tin') || sName.includes('stem') || sName.includes('cong nghe') || sName.includes('robot') || dName.includes('tin');
     }
-    return (sName && normTarget.includes(sName)) || (sName && sName.includes(normTarget)) ||
-           (dName && normTarget.includes(dName)) || (dName && dName.includes(normTarget));
+    return false;
   });
-
   if (match && match.teacher && match.teacher.teacherName) return match.teacher;
 
-  // 3. Fallback: first teaching assignment teacher if any
+  // 4. Fallback to first teacher in teaching assignments for this class
   if (assignments.length > 0 && assignments[0].teacher && assignments[0].teacher.teacherName) {
     return assignments[0].teacher;
   }
 
-  // 4. Default fallback: synthesize standard teacher name based on TCM/subject and class
-  if (targetName) {
-    return {
-      id: 'gvbm_' + cls.id,
-      teacherName: 'GV ' + (form.departmentName || form.subjectName || 'Bộ môn') + ' (' + (cls.className || 'Lớp') + ')',
-      email: ''
-    };
-  }
-
   return null;
 };
-
 export default function CreateActivityWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1486,7 +1496,7 @@ export default function CreateActivityWizard() {
                                             {formData.subjectName && (
                                               <div className={`flex items-center gap-1 ${isSelected ? 'text-amber-200 font-bold' : 'text-amber-700 font-bold'}`}>
                                                 <BookOpen className="w-2.5 h-2.5" />
-                                                <span>TCM / GVBM: {matchedTeaching?.teacher?.teacherName || 'Chưa phân công'}</span>
+                                                <span>TCM / GVBM: {(() => { const gv = findMatchedGVBM(cls, formData); return gv ? gv.teacherName : 'Chưa phân công'; })()}</span>
                                               </div>
                                             )}
                                           </div>
@@ -1577,12 +1587,15 @@ export default function CreateActivityWizard() {
                                           <div className={isSelected ? 'text-teal-200' : 'text-slate-500'}>
                                             GVCN: {cls.homeroomTeacher?.teacherName || 'Chưa gán'}
                                           </div>
-                                          {formData.subjectName && (
-                                            <div className={`flex items-center gap-1 ${isSelected ? 'text-amber-200 font-bold' : 'text-amber-700 font-bold'}`}>
-                                              <BookOpen className="w-2.5 h-2.5" />
-                                              <span>TCM / GVBM: {matchedTeaching?.teacher?.teacherName || 'Chưa phân công'}</span>
-                                            </div>
-                                          )}
+                                          {(formData.departmentName || formData.subjectName) && (() => {
+                                            const matchedGV = findMatchedGVBM(cls, formData);
+                                            return (
+                                              <div className={`flex items-center gap-1 ${isSelected ? 'text-amber-200 font-bold' : 'text-amber-700 font-bold'}`}>
+                                                <BookOpen className="w-2.5 h-2.5" />
+                                                <span>TCM / GVBM: {matchedGV ? matchedGV.teacherName : 'Chưa phân công'}</span>
+                                              </div>
+                                            );
+                                          })()}
                                         </div>
                                       </button>
                                     );

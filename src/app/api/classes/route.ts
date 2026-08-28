@@ -138,7 +138,20 @@ export async function GET(req: Request) {
         teachingAssignments: {
           include: {
             subject: { select: { id: true, subjectName: true, subjectCode: true } },
-            teacher: { select: { id: true, teacherName: true, email: true } }
+            teacher: {
+              select: {
+                id: true,
+                teacherName: true,
+                email: true,
+                departmentId: true,
+                departmentRel: { select: { id: true, name: true, code: true } },
+                departmentAssignments: {
+                  include: {
+                    department: { select: { id: true, name: true, code: true } }
+                  }
+                }
+              }
+            }
           }
         }
       },
