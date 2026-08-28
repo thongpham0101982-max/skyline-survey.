@@ -144,31 +144,52 @@ export async function GET(req: Request) {
       // Check if this activity is created by this teacher
       const isMyCreated = !!(teacherRecord && (act.teacherId === teacherRecord.id || act.teacher?.userId === session.user.id));
 
-      // DUAL MATCHING FOR GVBM & GVCN
+      // DUAL MATCHING FOR GVBM & GVCN & TCM
+      const hasTcmOrSubject = !!(extraData.departmentId || extraData.departmentName || extraData.subjectId || extraData.subjectName || act.subjectName || act.subjectId);
+      const tcmOrSubjectLabel = extraData.departmentName || extraData.subjectName || act.subjectName || '';
+
       let isGVBM = false;
       let isGVCN = false;
-      let gvbmSubjectName = '';
+      let gvbmSubjectName = tcmOrSubjectLabel;
       let myAssignedClass: any = null;
 
       if (teacherRecord) {
-        // Check GVCN match: Teacher is homeroom teacher of any assigned class
+        // 1. Check GVCN match: Teacher is homeroom teacher of any assigned class
         const matchedGvcnClass = assignedClasses.find((c: any) => c.classId && homeroomClassIds.has(c.classId));
         if (matchedGvcnClass) {
           isGVCN = true;
           myAssignedClass = matchedGvcnClass;
         }
 
-        // Check GVBM match: ONLY when extraData.subjectId is specifically selected
-        if (extraData.subjectId) {
-          const matchedTeaching = teachingAssignmentsList.find(ta => 
-            ta.subjectId === extraData.subjectId && 
-            assignedClasses.some((c: any) => c.classId === ta.classId)
-          );
+        // 2. Check GVBM match:
+        // a) Explicitly assigned in assignedClasses list
+        const explicitGvbmMatch = assignedClasses.find((c: any) => 
+          (c.subjectTeacherId && c.subjectTeacherId === teacherRecord.id) ||
+          (c.subjectTeacherName && teacherRecord.teacherName && c.subjectTeacherName === teacherRecord.teacherName)
+        );
+        if (explicitGvbmMatch) {
+          isGVBM = true;
+          if (!myAssignedClass) myAssignedClass = explicitGvbmMatch;
+        }
+
+        // b) Teacher belongs to the TCM department
+        if (hasTcmOrSubject && extraData.departmentId && (teacherRecord.departmentId === extraData.departmentId || teacherRecord.departmentRel?.id === extraData.departmentId)) {
+          isGVBM = true;
+        }
+
+        // c) Check teaching assignments matching TCM / Subject
+        if (hasTcmOrSubject) {
+          const matchedTeaching = teachingAssignmentsList.find(ta => {
+            const matchSub = (extraData.subjectId && ta.subjectId === extraData.subjectId) ||
+                             (extraData.departmentId && (ta.teacher?.departmentId === extraData.departmentId || ta.subjectId === extraData.departmentId));
+            const matchClass = assignedClasses.some((c: any) => c.classId === ta.classId);
+            return matchSub && matchClass;
+          });
           if (matchedTeaching) {
             isGVBM = true;
-            gvbmSubjectName = matchedTeaching.subject?.subjectName || extraData.subjectName || '';
+            gvbmSubjectName = matchedTeaching.subject?.subjectName || tcmOrSubjectLabel;
             const matchedClassObj = assignedClasses.find((c: any) => c.classId === matchedTeaching.classId);
-            if (matchedClassObj) {
+            if (matchedClassObj && !myAssignedClass) {
               myAssignedClass = matchedClassObj;
             }
           }
@@ -220,7 +241,7 @@ export async function GET(req: Request) {
       }
 
       const isAssignedToMe = (isGVBM || isGVCN) && !isMyCreated;
-      const isVisibleToTeacher = isManagement || isMyCreated || isAssignedToMe;
+      const isVisibleToTeacher = isManagement || isMyCreated || isAssignedToMe || isGVBM || isGVCN;
       const canManage = isManagement || isMyCreated;
 
         // Accurately extract campus codes & grades from assignedClasses
@@ -281,6 +302,8 @@ export async function GET(req: Request) {
         myAssignedClass: myAssignedClass || null,
         isGVBM,
         isGVCN,
+        hasTcmOrSubject,
+        tcmOrSubjectLabel,
         assignedRole,
         roleBadgeLabel,
         roleBadgeTheme,
@@ -314,9 +337,9 @@ export async function GET(req: Request) {
 
     // Filter by Role Scope: ALL | GVBM | GVCN | MY_CREATED
     if (roleScope === 'GVBM') {
-      result = result.filter(a => a.isGVBM);
+      result = result.filter(a => a.isGVBM || (a.hasTcmOrSubject && (a.isGVCN || a.isMyCreated || isManagement || a.isAssignedToMe)));
     } else if (roleScope === 'GVCN') {
-      result = result.filter(a => a.isGVCN);
+      result = result.filter(a => a.isGVCN || a.isMyCreated || isManagement);
     } else if (roleScope === 'MY_CREATED') {
       result = result.filter(a => a.isMyCreated);
     }
