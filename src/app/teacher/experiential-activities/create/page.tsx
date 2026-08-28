@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   ArrowLeft, Check, CheckCheck, CheckCircle2, ChevronRight, Save, Send, Plus, 
   Trash2, Layers, Calendar, Users, Building2, BookOpen, Clock, 
-  Tag, Award, Sparkles, AlertCircle, Info, Shield, Compass, Leaf, User
+  Tag, Award, Sparkles, AlertCircle, Info, Shield, Compass, Leaf, User, GraduationCap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { 
