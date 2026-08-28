@@ -476,105 +476,7 @@ export default function CreateActivityWizard() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">Năm học</label>
-                <select
-                  value={formData.academicYearId}
-                  onChange={e => setFormData({ ...formData, academicYearId: e.target.value })}
-                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
-                >
-                  {academicYears.map(y => (
-                    <option key={y.id} value={y.id}>{y.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">
-                  Bậc học áp dụng <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={formData.educationLevel}
-                  onChange={e => setFormData({ ...formData, educationLevel: e.target.value })}
-                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
-                >
-                  <option value="PHO_THONG">Phổ thông (Tiểu học, THCS, THPT)</option>
-                  <option value="MAM_NON">Mầm non</option>
-                  <option value="Tieu hoc">Tiểu học (Khối 1 - 5)</option>
-                  <option value="THCS">THCS (Khối 6 - 9)</option>
-                  <option value="THPT">THPT (Khối 10 - 12)</option>
-                  <option value="TOAN_TRUONG">Toàn trường / Liên cấp (Tất cả)</option>
-                </select>
-              </div>
-
-              <div className="sm:col-span-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-black text-slate-700">
-                    Cơ sở tham gia (Chọn 1 hoặc nhiều cơ sở) <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const allIds = campuses.map(c => c.id);
-                        setFormData({ ...formData, selectedCampusIds: allIds });
-                      }}
-                      className="text-[11px] font-black text-[#00A99D] hover:underline"
-                    >
-                      ⚡ Chọn tất cả cơ sở
-                    </button>
-                    <span className="text-slate-300 text-xs">|</span>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, selectedCampusIds: [] })}
-                      className="text-[11px] font-bold text-slate-400 hover:text-slate-600"
-                    >
-                      Bỏ chọn
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {campuses.map(cp => {
-                    const isSelected = (formData.selectedCampusIds || []).includes(cp.id);
-                    return (
-                      <button
-                        key={cp.id}
-                        type="button"
-                        onClick={() => {
-                          const current = formData.selectedCampusIds || [];
-                          let next;
-                          if (current.includes(cp.id)) {
-                            next = current.filter(id => id !== cp.id);
-                          } else {
-                            next = [...current, cp.id];
-                          }
-                          setFormData({
-                            ...formData,
-                            selectedCampusIds: next,
-                            campusId: next[0] || cp.id,
-                            campusCode: cp.campusCode,
-                            campusName: cp.campusName
-                          });
-                        }}
-                        className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-all flex items-center justify-between ${
-                          isSelected
-                            ? 'bg-[#003B3A] text-white border-[#003B3A] shadow-xs'
-                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 truncate">
-                          <Building2 className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#00A99D]' : 'text-slate-400'}`} />
-                          <span className="truncate">{cp.campusName || cp.campusCode}</span>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-1" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-black text-slate-700 mb-1.5">Quy mô hoạt động</label>
                 <select
                   value={formData.scale}
@@ -589,37 +491,52 @@ export default function CreateActivityWizard() {
 
               <div className="sm:col-span-2">
                 <label className="block text-xs font-black text-slate-700 mb-1.5">
-                  Bộ môn liên quan (Môn học tích hợp nếu có)
+                  TCM Phụ trách (nếu có)
                 </label>
                 <select
-                  value={formData.subjectId || ''}
+                  value={formData.departmentId || formData.subjectId || ''}
                   onChange={e => {
-                    const sId = e.target.value;
-                    const sub = subjects.find(s => s.id === sId);
+                    const val = e.target.value;
+                    const dept = departments.find(d => d.id === val);
+                    const sub = subjects.find(s => s.id === val);
                     setFormData({
                       ...formData,
-                      subjectId: sId,
-                      subjectName: sub ? sub.subjectName : ''
+                      departmentId: dept ? dept.id : '',
+                      departmentName: dept ? dept.name : '',
+                      subjectId: sub ? sub.id : (dept ? dept.id : ''),
+                      subjectName: sub ? sub.subjectName : (dept ? dept.name : '')
                     });
                   }}
                   className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
                 >
-                  <option value="">Hoạt động chung / Liên môn (Không gắn riêng môn học)</option>
-                  {subjects.map(sub => (
-                    <option key={sub.id} value={sub.id}>
-                      Môn {sub.subjectName} {sub.subjectCode ? `(${sub.subjectCode})` : ''}
-                    </option>
-                  ))}
+                  <option value="">Hoạt động chung / Liên tổ (Không gắn riêng TCM)</option>
+                  {departments && departments.length > 0 && (
+                    <optgroup label="Tổ Chuyên Môn (TCM)">
+                      {departments.map(d => (
+                        <option key={d.id} value={d.id}>TCM: {d.name} ({d.code || 'TCM'})</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {subjects && subjects.length > 0 && (
+                    <optgroup label="Bộ Môn / Môn Học">
+                      {subjects.map(s => (
+                        <option key={s.id} value={s.id}>Môn: {s.subjectName} ({s.subjectCode || 'Môn'})</option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
-                <span className="text-[10px] text-slate-400 font-medium block mt-1">
-                  Khi chọn môn học, GVBM phụ trách môn đó tại các lớp được gán sẽ tự động thấy hoạt động và có thể đánh giá học sinh.
-                </span>
+                <p className="text-[11px] text-slate-400 font-medium mt-1">
+                  Khi không chọn TCM: Hoạt động sẽ gán và gửi email trực tiếp cho GVCN. Khi chọn TCM: Hoạt động sẽ gán và gửi email đồng thời cho Giáo viên thuộc TCM / GVBM phụ trách và GVCN để phối hợp.
+                </p>
               </div>
 
               <div>
-                <label className="block text-xs font-black text-slate-700 mb-1.5">Ngày tổ chức</label>
+                <label className="block text-xs font-black text-slate-700 mb-1.5">
+                  Ngày tổ chức <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="date"
+                  required
                   value={formData.date}
                   onChange={e => setFormData({ ...formData, date: e.target.value })}
                   className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
