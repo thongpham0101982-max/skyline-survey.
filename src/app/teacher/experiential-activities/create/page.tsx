@@ -1719,12 +1719,19 @@ export default function CreateActivityWizard() {
                             <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-bold">
                               GVCN: {c.homeroomTeacherName || 'Chưa gán'}
                             </span>
-                            {formData.subjectName && (
-                              <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-bold flex items-center gap-1">
-                                <BookOpen className="w-3 h-3 text-amber-600" />
-                                GVBM {formData.subjectName}: {c.subjectTeacherName || 'Chưa phân công'}
-                              </span>
-                            )}
+                            {(formData.departmentName || formData.subjectName) && (() => {
+                              const rawCls = classes.find(cl => cl.id === c.classId || cl.className === c.className);
+                              const matchedGV = (c.subjectTeacherName && c.subjectTeacherName !== 'Chưa phân công')
+                                ? { teacherName: c.subjectTeacherName }
+                                : findMatchedGVBM(rawCls, formData);
+                              const displayName = matchedGV ? matchedGV.teacherName : 'Chưa phân công';
+                              return (
+                                <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-bold flex items-center gap-1">
+                                  <BookOpen className="w-3 h-3 text-amber-600" />
+                                  GVBM {formData.departmentName || formData.subjectName}: {displayName}
+                                </span>
+                              );
+                            })()}
                           </div>
                         </div>
                       ))}
