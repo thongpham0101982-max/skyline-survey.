@@ -223,18 +223,40 @@ export async function GET(req: Request) {
       const isVisibleToTeacher = isManagement || isMyCreated || isAssignedToMe;
       const canManage = isManagement || isMyCreated;
 
-      return {
-        id: act.id,
-        code: act.code || '',
-        name: act.name || act.catalog?.name || 'Hoạt động',
-        catalogName: act.catalog?.name || '',
-        academicYearId: act.academicYearId,
-        academicYearName: act.academicYear?.name || '',
-        campusId: extraData.campusId || act.teacher?.campusId || '',
-        campusCode: extraData.campusCode || act.teacher?.campus?.campusCode || '',
-        campusName: extraData.campusName || act.teacher?.campus?.campusName || '',
-        educationLevel: extraData.educationLevel || act.levelId || '',
-        grades: extraData.grades || [],
+        // Accurately extract campus codes & grades from assignedClasses
+        const assignedCampusCodes = Array.from(new Set(
+          assignedClasses.map((c: any) => {
+            if (c.campusCode) return c.campusCode;
+            if (c.className && c.className.includes('_')) return c.className.split('_').pop();
+            return null;
+          }).filter(Boolean)
+        ));
+        const assignedGrades = Array.from(new Set(
+          assignedClasses.map((c: any) => c.grade).filter(Boolean)
+        ));
+
+        const computedCampusCode = assignedCampusCodes.length > 0 
+          ? assignedCampusCodes.join(', ') 
+          : (extraData.campusCode || act.teacher?.campus?.campusCode || 'Toàn trường');
+
+        const computedCampusName = assignedCampusCodes.length > 0 
+          ? (assignedCampusCodes.length === 1 ? `Sky-Line ${assignedCampusCodes[0]}` : assignedCampusCodes.map(code => `CS ${code}`).join(', '))
+          : (extraData.campusName || act.teacher?.campus?.campusName || 'Toàn trường');
+
+        const computedGrades = assignedGrades.length > 0 ? assignedGrades : (extraData.grades || []);
+
+        return {
+          id: act.id,
+          code: act.code || '',
+          name: act.name || act.catalog?.name || 'Hoạt động',
+          catalogName: act.catalog?.name || '',
+          academicYearId: act.academicYearId,
+          academicYearName: act.academicYear?.name || '',
+          campusId: extraData.campusId || act.teacher?.campusId || '',
+          campusCode: computedCampusCode,
+          campusName: computedCampusName,
+          educationLevel: extraData.educationLevel || act.levelId || '',
+          grades: computedGrades,
         subjectId: extraData.subjectId || null,
         subjectName: extraData.subjectName || null,
         date: act.date ? act.date.toISOString().split('T')[0] : '',
@@ -465,14 +487,30 @@ export async function POST(req: Request) {
       recordCode = `${recordCode}-${Date.now().toString().slice(-4)}`;
     }
 
+    // Accurately resolve actual campuses and grades from assigned classes
+    const actualCampusCodes = Array.from(new Set(
+      assignedClasses.map((c: any) => {
+        if (c.campusCode) return c.campusCode;
+        if (c.className && c.className.includes('_')) return c.className.split('_').pop();
+        return null;
+      }).filter(Boolean)
+    ));
+    const actualGrades = Array.from(new Set(
+      assignedClasses.map((c: any) => c.grade).filter(Boolean)
+    ));
+
+    const resolvedCampusCode = actualCampusCodes.length > 0 ? actualCampusCodes.join(', ') : (campusCode || '');
+    const resolvedCampusName = actualCampusCodes.length > 0 ? actualCampusCodes.map((code: any) => `Sky-Line ${code}`).join(', ') : (campusName || '');
+    const resolvedGrades = actualGrades.length > 0 ? actualGrades : grades;
+
     // Prepare full metadata payload to store in locationId JSON container
     const fullMetadata = {
       campusId: campusId || teacher.campusId || '',
-      campusCode: campusCode || '',
-      campusName: campusName || '',
-      selectedCampusIds,
+      campusCode: resolvedCampusCode,
+      campusName: resolvedCampusName,
+      selectedCampusIds: selectedCampusIds.length > 0 ? selectedCampusIds : (actualCampusCodes.length > 0 ? actualCampusCodes : []),
       educationLevel,
-      grades,
+      grades: resolvedGrades,
       subjectId,
       subjectName,
       timeRange,
