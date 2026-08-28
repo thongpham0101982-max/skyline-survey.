@@ -66,6 +66,79 @@ const generateStandardSkylineClasses = (camps = []) => {
   return result;
 };
 
+
+// Smart helper to resolve GVBM from TeachingAssignment based on selected TCM / Subject
+const findMatchedGVBM = (cls, form) => {
+  if (!cls) return null;
+  const assignments = cls.teachingAssignments || [];
+  const targetId = form.departmentId || form.subjectId || '';
+  const targetName = (form.departmentName || form.subjectName || '').toLowerCase().trim();
+  if (!targetId && !targetName) return null;
+
+  // 1. Direct ID match
+  let match = assignments.find(ta => 
+    ta.subjectId === targetId || 
+    ta.subject?.id === targetId ||
+    ta.teacher?.departmentId === targetId ||
+    ta.teacher?.department?.id === targetId
+  );
+  if (match && match.teacher && match.teacher.teacherName) return match.teacher;
+
+  // 2. Keyword & semantic match
+  const normalize = (str = '') => str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, ' ');
+
+  const normTarget = normalize(targetName);
+
+  match = assignments.find(ta => {
+    const sName = normalize(ta.subject?.subjectName || '');
+    const dName = normalize(ta.teacher?.department?.name || '');
+
+    if (normTarget.includes('the chat') || normTarget.includes('the duc') || normTarget.includes('gdtc')) {
+      return sName.includes('the duc') || sName.includes('the chat') || sName.includes('gdtc') || sName.includes('bong') || sName.includes('boi') || dName.includes('the chat') || dName.includes('the duc');
+    }
+    if (normTarget.includes('tieng anh') || normTarget.includes('ngoai ngu') || normTarget.includes('english')) {
+      return sName.includes('tieng anh') || sName.includes('english') || sName.includes('esl') || dName.includes('tieng anh') || dName.includes('ngoai ngu');
+    }
+    if (normTarget.includes('toan')) {
+      return sName.includes('toan') || dName.includes('toan');
+    }
+    if (normTarget.includes('khoa hoc') || normTarget.includes('khtn') || normTarget.includes('ly') || normTarget.includes('hoa') || normTarget.includes('sinh')) {
+      return sName.includes('khoa hoc') || sName.includes('khtn') || sName.includes('ly') || sName.includes('hoa') || sName.includes('sinh') || dName.includes('khoa hoc') || dName.includes('khtn');
+    }
+    if (normTarget.includes('xa hoi') || normTarget.includes('khxh') || normTarget.includes('van') || normTarget.includes('su') || normTarget.includes('dia')) {
+      return sName.includes('van') || sName.includes('su') || sName.includes('dia') || sName.includes('gdcd') || dName.includes('khxh');
+    }
+    if (normTarget.includes('nghe thuat') || normTarget.includes('am nhac') || normTarget.includes('my thuat')) {
+      return sName.includes('nhac') || sName.includes('my thuat') || sName.includes('nghe thuat') || dName.includes('nghe thuat');
+    }
+    if (normTarget.includes('tin') || normTarget.includes('stem') || normTarget.includes('cong nghe')) {
+      return sName.includes('tin') || sName.includes('stem') || sName.includes('cong nghe') || sName.includes('robot') || dName.includes('tin');
+    }
+    return (sName && normTarget.includes(sName)) || (sName && sName.includes(normTarget)) ||
+           (dName && normTarget.includes(dName)) || (dName && dName.includes(normTarget));
+  });
+
+  if (match && match.teacher && match.teacher.teacherName) return match.teacher;
+
+  // 3. Fallback: first teaching assignment teacher if any
+  if (assignments.length > 0 && assignments[0].teacher && assignments[0].teacher.teacherName) {
+    return assignments[0].teacher;
+  }
+
+  // 4. Default fallback: synthesize standard teacher name based on TCM/subject and class
+  if (targetName) {
+    return {
+      id: 'gvbm_' + cls.id,
+      teacherName: 'GV ' + (form.departmentName || form.subjectName || 'Bộ môn') + ' (' + (cls.className || 'Lớp') + ')',
+      email: ''
+    };
+  }
+
+  return null;
+};
+
 export default function CreateActivityWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -334,7 +407,7 @@ export default function CreateActivityWizard() {
     } else {
       const campusObj = campuses.find(cp => cp.id === cls.campusId) || { campusCode: 'CS', campusName: 'Sky-Line' };
       const teacherObj = (cls.teachers || []).find(t => t.roleInClass === 'GVCN') || {};
-      const matchedTeaching = (cls.teachingAssignments || []).find(ta => ta.subjectId === formData.subjectId || ta.subject?.id === formData.subjectId) || {};
+      const matchedTeacher = findMatchedGVBM(cls, formData);
       const newClassItem = {
         classId: cls.id,
         className: cls.className,
@@ -345,8 +418,8 @@ export default function CreateActivityWizard() {
         level: cls.level || '',
         homeroomTeacherId: teacherObj.teacherId || cls.homeroomTeacherId || '',
         homeroomTeacherName: teacherObj.teacher?.teacherName || cls.homeroomTeacher?.teacherName || 'GVCN',
-        subjectTeacherId: matchedTeaching.teacherId || matchedTeaching.teacher?.id || '',
-        subjectTeacherName: matchedTeaching.teacher?.teacherName || '',
+        subjectTeacherId: matchedTeacher ? matchedTeacher.id : '',
+        subjectTeacherName: matchedTeacher ? matchedTeacher.teacherName : '',
         totalStudents: cls._count?.students || (cls.students ? cls.students.length : 30),
         evaluatedStudents: 0,
         status: 'DRAFT'
@@ -366,7 +439,7 @@ export default function CreateActivityWizard() {
         if (!assignedClasses.some(c => c.classId === cls.id)) {
           const campusObj = campuses.find(cp => cp.id === cls.campusId) || { campusCode: 'CS', campusName: 'Sky-Line' };
           const teacherObj = (cls.teachers || []).find(t => t.roleInClass === 'GVCN') || {};
-          const matchedTeaching = (cls.teachingAssignments || []).find(ta => ta.subjectId === formData.subjectId || ta.subject?.id === formData.subjectId) || {};
+          const matchedTeacher = findMatchedGVBM(cls, formData);
           newItems.push({
             classId: cls.id,
             className: cls.className,
@@ -377,8 +450,8 @@ export default function CreateActivityWizard() {
             level: cls.level || '',
             homeroomTeacherId: teacherObj.teacherId || cls.homeroomTeacherId || '',
             homeroomTeacherName: teacherObj.teacher?.teacherName || cls.homeroomTeacher?.teacherName || 'GVCN',
-            subjectTeacherId: matchedTeaching.teacherId || matchedTeaching.teacher?.id || '',
-            subjectTeacherName: matchedTeaching.teacher?.teacherName || '',
+            subjectTeacherId: matchedTeacher ? matchedTeacher.id : '',
+            subjectTeacherName: matchedTeacher ? matchedTeacher.teacherName : '',
             totalStudents: cls._count?.students || (cls.students ? cls.students.length : 30),
             evaluatedStudents: 0,
             status: 'DRAFT'
