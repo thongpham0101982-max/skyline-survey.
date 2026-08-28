@@ -67,27 +67,45 @@ export default function CreateActivityWizard() {
   const [criteriaPreset, setCriteriaPreset] = useState('3'); // '1' | '3' | '5' | 'custom'
 
 
+  // Helper to extract grade name accurately (e.g. 1, 2, ..., 12, Mầm, Chồi, Lá)
+  const getClassGrade = (cls) => {
+    if (!cls) return '';
+    let g = String(cls.grade || '').trim().replace(/^Khối\s*/i, '').replace(/^K/i, '');
+    if (g && g !== 'null' && g !== 'undefined') return g;
+    const name = String(cls.className || '').trim();
+    const numMatch = name.match(/^(\d{1,2})/);
+    if (numMatch) return numMatch[1];
+    if (/mầm|mam/i.test(name)) return 'Mầm';
+    if (/chồi|choi/i.test(name)) return 'Chồi';
+    if (/lá|la/i.test(name)) return 'Lá';
+    if (/nhà trẻ|nhatre/i.test(name)) return 'Nhà trẻ';
+    return name.split(/[\._\-\s]/)[0] || '1';
+  };
+
   // Helper to check if class matches selected education level
   const isClassMatchLevel = (cls, level) => {
     if (!level || level === 'TOAN_TRUONG') return true;
+    const g = getClassGrade(cls);
+    const numG = parseInt(g);
     const l = (cls.level || '').toLowerCase();
-    const g = String(cls.grade || '').trim().replace('Khối ', '').replace('K', '');
     const cName = (cls.className || '').toLowerCase();
 
     if (level === 'MAM_NON') {
-      return l.includes('mam') || l.includes('mầm') || cName.includes('mầm') || cName.includes('chồi') || cName.includes('lá') || ['mam', 'choi', 'la', 'nhatre', 'mầm', 'chồi', 'lá'].includes(g.toLowerCase());
+      return ['mầm', 'chồi', 'lá', 'nhà trẻ', 'mam', 'choi', 'la', 'nhatre'].includes(g.toLowerCase()) || 
+             l.includes('mam') || l.includes('mầm') || cName.includes('mầm') || cName.includes('chồi') || cName.includes('lá');
     }
     if (level === 'PHO_THONG') {
-      return !l.includes('mam') && !l.includes('mầm') && !cName.includes('mầm') && !cName.includes('chồi') && !cName.includes('lá') && !['mam', 'choi', 'la', 'nhatre'].includes(g.toLowerCase());
+      if (!isNaN(numG) && numG >= 1 && numG <= 12) return true;
+      return !l.includes('mam') && !l.includes('mầm') && !['mầm', 'chồi', 'lá', 'nhà trẻ', 'mam', 'choi', 'la', 'nhatre'].includes(g.toLowerCase());
     }
     if (level === 'Tieu hoc') {
-      return l.includes('tieu') || l.includes('tiểu') || ['1', '2', '3', '4', '5'].includes(g) || /^[1-5][._]/.test(cls.className || '');
+      return (!isNaN(numG) && numG >= 1 && numG <= 5) || l.includes('tieu') || l.includes('tiểu') || /^[1-5][\._]/.test(cls.className || '');
     }
     if (level === 'THCS') {
-      return l.includes('thcs') || ['6', '7', '8', '9'].includes(g) || /^[6-9][._]/.test(cls.className || '');
+      return (!isNaN(numG) && numG >= 6 && numG <= 9) || l.includes('thcs') || /^[6-9][\._]/.test(cls.className || '');
     }
     if (level === 'THPT') {
-      return l.includes('thpt') || ['10', '11', '12'].includes(g) || /^1[0-2][._]/.test(cls.className || '');
+      return (!isNaN(numG) && numG >= 10 && numG <= 12) || l.includes('thpt') || /^1[0-2][\._]/.test(cls.className || '');
     }
     return true;
   };
@@ -181,16 +199,25 @@ export default function CreateActivityWizard() {
 
   // Fetch classes when year or campus changes
   useEffect(() => {
+    let url = '/api/classes';
     if (formData.academicYearId) {
-      let url = `/api/classes?academicYearId=${formData.academicYearId}`;
-      fetch(url)
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data)) setClasses(data);
-          else setClasses([]);
-        })
-        .catch(() => setClasses([]));
+      url += `?academicYearId=${formData.academicYearId}`;
     }
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setClasses(data);
+        } else {
+          fetch('/api/classes')
+            .then(r2 => r2.json())
+            .then(allData => {
+              if (Array.isArray(allData)) setClasses(allData);
+            })
+            .catch(() => setClasses([]));
+        }
+      })
+      .catch(() => setClasses([]));
   }, [formData.academicYearId]);
 
   // Preset switch
@@ -1133,7 +1160,7 @@ export default function CreateActivityWizard() {
                       const allAvailableGrades = Array.from(new Set(
                         classes
                           .filter(c => isClassMatchLevel(c, formData.educationLevel))
-                          .map(c => String(c.grade || '').trim().replace('Khối ', '').replace('K', ''))
+                          .map(c => getClassGrade(c))
                           .filter(Boolean)
                       ));
                       setSelectedFilterGrades(allAvailableGrades);
@@ -1154,42 +1181,58 @@ export default function CreateActivityWizard() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {Array.from(new Set(
-                  classes
-                    .filter(c => isClassMatchLevel(c, formData.educationLevel))
-                    .map(c => String(c.grade || '').trim().replace('Khối ', '').replace('K', ''))
-                    .filter(Boolean)
-                ))
-                  .sort((a, b) => {
-                    const numA = parseInt(a);
-                    const numB = parseInt(b);
-                    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
-                    return a.localeCompare(b);
-                  })
-                  .map(grade => {
-                    const isSelected = selectedFilterGrades.includes(grade);
-                    return (
-                      <button
-                        key={grade}
-                        type="button"
-                        onClick={() => {
-                          if (selectedFilterGrades.includes(grade)) {
-                            setSelectedFilterGrades(prev => prev.filter(g => g !== grade));
-                          } else {
-                            setSelectedFilterGrades(prev => [...prev, grade]);
-                          }
-                        }}
-                        className={`px-3.5 py-1.5 rounded-xl border text-xs font-black transition-all flex items-center gap-1.5 ${
-                          isSelected
-                            ? 'bg-[#003B3A] text-white border-[#003B3A] shadow-xs'
-                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
-                        }`}
-                      >
-                        <span>Khối {grade}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                      </button>
-                    );
-                  })}
+                {(() => {
+                  const availableGrades = Array.from(new Set(
+                    classes
+                      .filter(c => isClassMatchLevel(c, formData.educationLevel))
+                      .map(c => getClassGrade(c))
+                      .filter(Boolean)
+                  ));
+
+                  const displayGrades = availableGrades.length > 0 ? availableGrades : (
+                    formData.educationLevel === 'MAM_NON' 
+                      ? ['Mầm', 'Chồi', 'Lá', 'Nhà trẻ']
+                      : formData.educationLevel === 'Tieu hoc'
+                      ? ['1', '2', '3', '4', '5']
+                      : formData.educationLevel === 'THCS'
+                      ? ['6', '7', '8', '9']
+                      : formData.educationLevel === 'THPT'
+                      ? ['10', '11', '12']
+                      : ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+                  );
+
+                  return displayGrades
+                    .sort((a, b) => {
+                      const numA = parseInt(a);
+                      const numB = parseInt(b);
+                      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                      return a.localeCompare(b);
+                    })
+                    .map(grade => {
+                      const isSelected = selectedFilterGrades.includes(grade);
+                      return (
+                        <button
+                          key={grade}
+                          type="button"
+                          onClick={() => {
+                            if (selectedFilterGrades.includes(grade)) {
+                              setSelectedFilterGrades(prev => prev.filter(g => g !== grade));
+                            } else {
+                              setSelectedFilterGrades(prev => [...prev, grade]);
+                            }
+                          }}
+                          className={`px-3.5 py-1.5 rounded-xl border text-xs font-black transition-all flex items-center gap-1.5 ${
+                            isSelected
+                              ? 'bg-[#003B3A] text-white border-[#003B3A] shadow-xs'
+                              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span>Khối {grade}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                        </button>
+                      );
+                    });
+                })()}
               </div>
             </div>
 
@@ -1214,7 +1257,7 @@ export default function CreateActivityWizard() {
                       const matchClasses = classes.filter(c => {
                         const matchCampus = activeCampuses.some(cp => cp.id === c.campusId || cp.campusCode === c.campusCode || cp.campusCode === c.campus?.campusCode);
                         const matchLevel = isClassMatchLevel(c, formData.educationLevel);
-                        const cleanG = String(c.grade || '').trim().replace('Khối ', '').replace('K', '');
+                        const cleanG = getClassGrade(c);
                         const matchGrade = selectedFilterGrades.length === 0 || selectedFilterGrades.includes(cleanG);
                         return matchCampus && matchLevel && matchGrade;
                       });
@@ -1271,14 +1314,14 @@ export default function CreateActivityWizard() {
                     const campusClasses = classes.filter(c => {
                       const matchCampus = c.campusId === campus.id || c.campusCode === campus.campusCode || c.campus?.campusCode === campus.campusCode || c.campus?.id === campus.id || (c.className && c.className.toLowerCase().includes(campus.campusCode.toLowerCase()));
                       const matchLevel = isClassMatchLevel(c, formData.educationLevel);
-                      const cleanG = String(c.grade || '').trim().replace('Khối ', '').replace('K', '');
+                      const cleanG = getClassGrade(c);
                       const matchGrade = selectedFilterGrades.length === 0 || selectedFilterGrades.includes(cleanG);
                       return matchCampus && matchLevel && matchGrade;
                     });
                     if (campusClasses.length === 0) return null;
 
                     const isCampusAllSelected = campusClasses.length > 0 && campusClasses.every(cls => assignedClasses.some(c => c.classId === cls.id));
-                    const uniqueGrades = Array.from(new Set(campusClasses.map(c => String(c.grade || '').trim().replace('Khối ', '').replace('K', '')).filter(Boolean))).sort((a, b) => {
+                    const uniqueGrades = Array.from(new Set(campusClasses.map(c => getClassGrade(c)).filter(Boolean))).sort((a, b) => {
                       const numA = parseInt(a);
                       const numB = parseInt(b);
                       if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
@@ -1344,7 +1387,7 @@ export default function CreateActivityWizard() {
 
                         <div className="space-y-3 pl-2">
                           {uniqueGrades.map(grade => {
-                            const gradeClasses = campusClasses.filter(c => String(c.grade || '').trim().replace('Khối ', '').replace('K', '') === grade);
+                            const gradeClasses = campusClasses.filter(c => getClassGrade(c) === grade);
                             const isGradeAllSelected = gradeClasses.every(cls => assignedClasses.some(c => c.classId === cls.id));
 
                             return (

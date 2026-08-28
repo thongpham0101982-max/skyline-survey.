@@ -95,7 +95,7 @@ export async function GET(req: Request) {
     }
 
     // Default general query (for Admin or system dropdowns)
-    const classes = await prisma.class.findMany({
+    let classes = await prisma.class.findMany({
       where: whereCondition,
       include: {
         campus: true,
@@ -114,6 +114,28 @@ export async function GET(req: Request) {
         { className: 'asc' }
       ]
     });
+
+    // Fallback: If filtered classes is empty and activeYearId was passed, return all classes
+    if (classes.length === 0 && activeYearId) {
+      classes = await prisma.class.findMany({
+        include: {
+          campus: true,
+          homeroomTeacher: { select: { id: true, teacherName: true, email: true } },
+          teachers: { include: { teacher: { select: { id: true, teacherName: true, email: true } } } },
+          teachingAssignments: {
+            include: {
+              subject: { select: { id: true, subjectName: true, subjectCode: true } },
+              teacher: { select: { id: true, teacherName: true, email: true } }
+            }
+          }
+        },
+        orderBy: [
+          { level: 'asc' },
+          { grade: 'asc' },
+          { className: 'asc' }
+        ]
+      });
+    }
 
     return NextResponse.json(classes);
   } catch (error: any) {
