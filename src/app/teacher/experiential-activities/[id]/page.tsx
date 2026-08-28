@@ -167,7 +167,7 @@ export default function ActivityResultInput() {
           toast.success('đã nộp kết quả đánh giá thành công!');
           router.push('/teacher/experiential-activities');
         } else {
-          toast.success('? lu kết quả thành công');
+          toast.success('Đã lưu kết quả thành công');
         }
       } else {
         const err = await res.json();
@@ -198,7 +198,7 @@ export default function ActivityResultInput() {
   // Bulk Evaluation Handler
   const handleApplyBulk = () => {
     if (selectedIds.size === 0) {
-      toast.error('Vui l?ng ch?n ít nhất một học sinh');
+      toast.error('Vui lòng chọn ít nhất một học sinh');
       return;
     }
 
@@ -241,7 +241,7 @@ export default function ActivityResultInput() {
     }));
 
     setShowBulkModal(false);
-    toast.success(`? ch?m hng loĐạt cho ${selectedIds.size} học sinh`);
+    toast.success(`Đã chấm hàng loạt cho ${selectedIds.size} học sinh`);
   };
 
   // Toggle selection
@@ -270,10 +270,10 @@ export default function ActivityResultInput() {
       const row = {
         'STT': idx + 1,
         'Mã HĐđược Sinh': st.studentCode || '',
-        'H? v Tn': st.fullName || '',
+        'Họ và Tên': st.fullName || '',
         'Lớp': st.className || '',
-        'điểm danh': ATTENDANCE_OPTIONS.find(a => a.id === st.attendance)?.name || 'Có mặt',
-        'Vai trò?': (st.roles || []).join(', ') || 'Thành viên'
+        'Điểm danh': ATTENDANCE_OPTIONS.find(a => a.id === st.attendance)?.name || 'Có mặt',
+        'Vai trò': (st.roles || []).join(', ') || 'Thành viên'
       };
 
       (activity?.criteria || []).forEach(c => {
@@ -319,7 +319,7 @@ export default function ActivityResultInput() {
         setStudents(prev => prev.map(st => {
           const matched = rawData.find(row => 
             (row['Mã HĐđược Sinh'] && String(row['Mã HĐđược Sinh']).trim() === String(st.studentCode).trim()) ||
-            (row['H? v Tn'] && String(row['H? v Tn']).trim().toLowerCase() === String(st.fullName).trim().toLowerCase())
+            (row['Họ và Tên'] && String(row['Họ và Tên']).trim().toLowerCase() === String(st.fullName).trim().toLowerCase())
           );
 
           if (!matched) return st;
@@ -426,7 +426,7 @@ export default function ActivityResultInput() {
           <div className="flex items-center gap-2.5 shrink-0">
             {lastSavedTime && (
               <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                <Check className="w-3 h-3" /> ? lu lc {lastSavedTime}
+                <Check className="w-3 h-3" /> Đã lưu lúc {lastSavedTime}
               </span>
             )}
 
@@ -466,7 +466,7 @@ export default function ActivityResultInput() {
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div>
-              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Ch?n Lớp đánh giá</label>
+              <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Chọn Lớp đánh giá</label>
               <select
                 value={selectedClassId}
                 onChange={e => setSelectedClassId(e.target.value)}
@@ -481,13 +481,13 @@ export default function ActivityResultInput() {
             </div>
 
             <div className="border-l border-slate-200 pl-4 space-y-0.5 hidden sm:block">
-              <span className="text-[11px] text-slate-400 font-bold block">GVCN ph? trch:</span>
-              <strong className="text-xs text-slate-800 font-black">{currentClassObj.homeroomTeacherName || 'Cha gn'}</strong>
+              <span className="text-[11px] text-slate-400 font-bold block">GV phụ trách:</span>
+              <strong className="text-xs text-slate-800 font-black">{currentClassObj.homeroomTeacherName || 'Chưa gán'}</strong>
             </div>
 
             <div className="border-l border-slate-200 pl-4 space-y-0.5 hidden sm:block">
-              <span className="text-[11px] text-slate-400 font-bold block">H?n hoàn thành:</span>
-              <strong className="text-xs text-rose-600 font-black">{activity?.deadline || 'Theo k? hoặch'}</strong>
+              <span className="text-[11px] text-slate-400 font-bold block">Hạn hoàn thành:</span>
+              <strong className="text-xs text-rose-600 font-black">{activity?.deadline || 'Theo kế hoạch'}</strong>
             </div>
           </div>
 
@@ -528,7 +528,7 @@ export default function ActivityResultInput() {
               onChange={e => setFilterAttendance(e.target.value)}
               className="py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
             >
-              <option value="ALL">Tất cả điểm danh</option>
+              <option value="ALL">Tất cả Điểm danh</option>
               {ATTENDANCE_OPTIONS.map(a => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
@@ -596,22 +596,22 @@ export default function ActivityResultInput() {
                     />
                   </th>
                   <th className="py-3.5 px-2 text-center w-10">#</th>
-                  <th className="py-3.5 px-3 min-w-[90px]">Mã HĐS</th>
+                  <th className="py-3.5 px-3 min-w-[90px]">Mã HS</th>
                   
                   {/* STICKY STUDENT NAME COLUMN */}
-                  <th className="py-3.5 px-4 min-w-[190px] sticky left-0 z-20 bg-slate-50 border-r border-slate-200">
-                    H? v Tn
+                  <th className="py-3.5 px-4 min-w-[190px] sticky left-0 z-20 bg-slate-50 border-r border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.04)]">
+                    Họ và Tên
                   </th>
 
-                  <th className="py-3.5 px-3 min-w-[130px]">điểm danh</th>
-                  <th className="py-3.5 px-3 min-w-[130px]">Vai trò?</th>
+                  <th className="py-3.5 px-3 min-w-[130px]">Điểm danh</th>
+                  <th className="py-3.5 px-3 min-w-[130px]">Vai trò</th>
 
                   {/* CRITERIA HEADERS */}
                   {(activity?.criteria || []).map((crit, idx) => (
                     <th key={crit.id} className="py-3.5 px-3 min-w-[180px] text-center border-l border-slate-100 bg-slate-50/90" title={crit.description || crit.name}>
                       <div className="font-black text-slate-800 line-clamp-1">{crit.name}</div>
                       <div className="text-[10px] text-slate-400 font-bold">
-                        {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : `Tiêu chí ${idx + 1}`} {crit.isRequired ? '(BĐạt buđược)' : ''}
+                        {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : `Tiêu chí ${idx + 1}`} {crit.isRequired ? '(Bắt buộc)' : ''}
                       </div>
                     </th>
                   ))}
@@ -627,7 +627,7 @@ export default function ActivityResultInput() {
                 {filteredStudents.length === 0 ? (
                   <tr>
                     <td colSpan={7 + (activity?.criteria?.length || 0)} className="py-12 text-center text-slate-400 font-bold">
-                      Không tìm thấy học sinh no phù hợp
+                      Không tìm thấy học sinh nào phù hợp
                     </td>
                   </tr>
                 ) : (
@@ -652,7 +652,7 @@ export default function ActivityResultInput() {
                         </td>
 
                         {/* STICKY STUDENT NAME */}
-                        <td className="py-3 px-4 whitespace-nowrap sticky left-0 z-10 bg-white group-hover:bg-teal-50/20 border-r border-slate-200">
+                        <td className="py-3 px-4 whitespace-nowrap sticky left-0 z-10 bg-white group-hover:bg-teal-50/20 border-r border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.04)]">
                           <span className="font-black text-slate-900">{st.fullName}</span>
                         </td>
 
@@ -695,7 +695,7 @@ export default function ActivityResultInput() {
                           if (isAbsent) {
                             return (
                               <td key={crit.id} className="py-3 px-3 text-center border-l border-slate-100 bg-slate-50/50">
-                                <span className="text-[11px] text-slate-400 italic">V?ng / Khóa</span>
+                                <span className="text-[11px] text-slate-400 italic">Vắng / Miễn</span>
                               </td>
                             );
                           }
@@ -756,14 +756,14 @@ export default function ActivityResultInput() {
                               value={st.remarksCustom || ''}
                               disabled={isLocked}
                               onChange={e => updateStudent(st.id, { remarksCustom: e.target.value })}
-                              placeholder="Nh?p nhận xét..."
+                              placeholder="Nhận xét học sinh..."
                               className="w-full py-1 px-2 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#00A99D] text-xs font-semibold outline-none"
                             />
                             <button
                               type="button"
                               onClick={() => setRemarkStudentId(st.id)}
                               className="p-1 rounded-md bg-slate-100 hover:bg-[#00A99D]/10 text-slate-500 hover:text-[#003B3A] shrink-0"
-                              title="Ch?n nhận xét m?u"
+                              title="Chọn nhận xét nhanh"
                             >
                               <Tag className="w-3.5 h-3.5" />
                             </button>
@@ -783,7 +783,7 @@ export default function ActivityResultInput() {
           <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-sm font-black text-slate-900">Ch?n Nh?n Xt M?u Nhanh</h3>
+                <h3 className="text-sm font-black text-slate-900">Chọn Nhận Xét Nhanh</h3>
                 <button onClick={() => setRemarkStudentId(null)} className="text-slate-400 hover:text-slate-600">
                   <X className="w-4 h-4" />
                 </button>
