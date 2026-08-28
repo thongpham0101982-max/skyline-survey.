@@ -10,6 +10,7 @@ import { ExperientialTabs } from "@/components/ExperientialTabs";
 
 export default function ExperientialActivitiesList() {
   const router = useRouter();
+  const [rawActivities, setRawActivities] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [academicYears, setAcademicYears] = useState([]);
@@ -42,24 +43,54 @@ export default function ExperientialActivitiesList() {
   const loadActivities = useCallback(() => {
     if (!selectedYearId) return;
     setLoading(true);
-    let url = `/api/experiential-activities?academicYearId=${selectedYearId}`;
-    if (selectedCampusId !== "ALL") url += `&campusId=${selectedCampusId}`;
-    if (selectedLevel !== "ALL") url += `&level=${encodeURIComponent(selectedLevel)}`;
-    if (selectedGrade !== "ALL") url += `&grade=${encodeURIComponent(selectedGrade)}`;
-    if (selectedStrand !== "ALL") url += `&strand=${selectedStrand}`;
-    if (statusFilter !== "ALL") url += `&status=${statusFilter}`;
-    if (scopeFilter !== "ALL") url += `&scopeType=${scopeFilter}`;
-    if (roleScope !== "ALL") url += `&roleScope=${roleScope}`;
-    if (search.trim()) url += `&q=${encodeURIComponent(search.trim())}`;
-
-    fetch(url)
+    
+    // Fetch all for current year to calculate exact tab counts
+    fetch(`/api/experiential-activities?academicYearId=${selectedYearId}`)
       .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) setActivities(data);
-        else setActivities([]);
+      .then(allData => {
+        const fullList = Array.isArray(allData) ? allData : [];
+        setRawActivities(fullList);
+
+        // Apply filters
+        let filtered = fullList;
+        if (roleScope === 'GVBM') {
+          filtered = filtered.filter(a => a.isGVBM || (a.hasTcmOrSubject && (a.isGVCN || a.isMyCreated || a.canManage || a.isAssignedToMe)));
+        } else if (roleScope === 'GVCN') {
+          filtered = filtered.filter(a => a.isGVCN || a.isMyCreated || a.canManage);
+        } else if (roleScope === 'MY_CREATED') {
+          filtered = filtered.filter(a => a.isMyCreated);
+        }
+
+        if (selectedCampusId !== "ALL") {
+          filtered = filtered.filter(a => a.campusId === selectedCampusId || a.campusCode === selectedCampusId || (a.assignedClasses && a.assignedClasses.some(c => c.campusId === selectedCampusId || c.campusCode === selectedCampusId)));
+        }
+        if (selectedLevel !== "ALL") {
+          filtered = filtered.filter(a => a.educationLevel === selectedLevel || (a.assignedClasses && a.assignedClasses.some(c => c.level === selectedLevel)));
+        }
+        if (selectedGrade !== "ALL") {
+          filtered = filtered.filter(a => (a.grades && a.grades.includes(selectedGrade)) || (a.assignedClasses && a.assignedClasses.some(c => c.grade === selectedGrade)));
+        }
+        if (selectedStrand !== "ALL") {
+          filtered = filtered.filter(a => a.strand === selectedStrand);
+        }
+        if (statusFilter !== "ALL") {
+          filtered = filtered.filter(a => a.status === statusFilter);
+        }
+        if (search.trim()) {
+          const q = search.toLowerCase().trim();
+          filtered = filtered.filter(a => 
+            (a.name && a.name.toLowerCase().includes(q)) ||
+            (a.code && a.code.toLowerCase().includes(q)) ||
+            (a.activityTypeName && a.activityTypeName.toLowerCase().includes(q)) ||
+            (a.subjectName && a.subjectName.toLowerCase().includes(q)) ||
+            (a.location && a.location.toLowerCase().includes(q))
+          );
+        }
+
+        setActivities(filtered);
         setLoading(false);
       })
-      .catch(() => { setActivities([]); setLoading(false); });
+      .catch(() => { setRawActivities([]); setActivities([]); setLoading(false); });
   }, [selectedYearId, selectedCampusId, selectedLevel, selectedGrade, selectedStrand, statusFilter, scopeFilter, roleScope, search]);
 
   useEffect(() => { loadActivities(); }, [loadActivities]);
@@ -265,33 +296,79 @@ export default function ExperientialActivitiesList() {
           </div>
         </div>
 
-        {/* SCOPE TABS */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {[
-            { id: 'ALL', label: 'Tất cả hoạt động', icon: Layers },
-            { id: 'GVBM', label: '🎯 Dành cho TCM / GVBM (Môn được gán)', icon: BookOpen },
-            { id: 'GVCN', label: '👥 Dành cho GVCN (Chủ nhiệm)', icon: Users },
-            { id: 'MY_CREATED', label: '✨ Hoạt động do tôi tạo', icon: Sparkles }
-          ].map(tab => {
-            const isActive = roleScope === tab.id;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setRoleScope(tab.id)}
-                className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 border ${
-                  isActive
-                    ? 'bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-md shadow-[#00A99D]/20'
-                    : 'bg-white/80 text-slate-600 border-slate-200/80 hover:bg-white hover:text-slate-900 shadow-2xs'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* SCOPE TABS WITH VIBRANT COLORED COUNT BADGES */}
+        {(() => {
+          const tabCounts = {
+            ALL: rawActivities.length,
+            GVBM: rawActivities.filter(a => a.isGVBM || (a.hasTcmOrSubject && (a.isGVCN || a.isMyCreated || a.canManage || a.isAssignedToMe))).length,
+            GVCN: rawActivities.filter(a => a.isGVCN || a.isMyCreated || a.canManage).length,
+            MY_CREATED: rawActivities.filter(a => a.isMyCreated).length
+          };
+
+          const tabList = [
+            { 
+              id: 'ALL', 
+              label: 'Tất cả hoạt động', 
+              icon: Layers, 
+              count: tabCounts.ALL,
+              pillActive: 'bg-white/30 text-white border border-white/40 shadow-xs',
+              pillInactive: 'bg-slate-100 text-slate-700 border border-slate-200 group-hover:bg-slate-200'
+            },
+            { 
+              id: 'GVBM', 
+              label: '🎯 Dành cho TCM / GVBM (Môn được gán)', 
+              icon: BookOpen, 
+              count: tabCounts.GVBM,
+              pillActive: 'bg-amber-300 text-amber-950 border border-amber-200 shadow-xs font-black',
+              pillInactive: 'bg-amber-100/90 text-amber-900 border border-amber-300 group-hover:bg-amber-200'
+            },
+            { 
+              id: 'GVCN', 
+              label: '👥 Dành cho GVCN (Chủ nhiệm)', 
+              icon: Users, 
+              count: tabCounts.GVCN,
+              pillActive: 'bg-indigo-300 text-indigo-950 border border-indigo-200 shadow-xs font-black',
+              pillInactive: 'bg-indigo-100/90 text-indigo-900 border border-indigo-300 group-hover:bg-indigo-200'
+            },
+            { 
+              id: 'MY_CREATED', 
+              label: '✨ Hoạt động do tôi tạo', 
+              icon: Sparkles, 
+              count: tabCounts.MY_CREATED,
+              pillActive: 'bg-teal-300 text-teal-950 border border-teal-200 shadow-xs font-black',
+              pillInactive: 'bg-teal-100/90 text-teal-900 border border-teal-300 group-hover:bg-teal-200'
+            }
+          ];
+
+          return (
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {tabList.map(tab => {
+                const isActive = roleScope === tab.id;
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setRoleScope(tab.id)}
+                    className={`group px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 border cursor-pointer ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-md shadow-[#00A99D]/20 scale-[1.02]'
+                        : 'bg-white/90 text-slate-700 border-slate-200/80 hover:bg-white hover:text-slate-900 hover:border-slate-300 shadow-2xs'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-[#00A99D]'}`} />
+                    <span>{tab.label}</span>
+                    <span className={`ml-1 px-2.5 py-0.5 rounded-full text-[11px] font-black transition-all ${
+                      isActive ? tab.pillActive : tab.pillInactive
+                    }`}>
+                      {tab.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* MULTI-LEVEL FILTER & CONTROL TOOLBAR */}
         <div className="backdrop-blur-xl bg-white/90 p-4 rounded-3xl border border-white shadow-md shadow-slate-200/40 space-y-3">
