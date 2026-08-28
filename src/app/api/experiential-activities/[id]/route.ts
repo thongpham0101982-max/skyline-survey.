@@ -1,3 +1,4 @@
+import { sendExperientialActivityNotification } from "@/lib/experiential/email-notification";
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
@@ -284,6 +285,24 @@ export async function PUT(
           data: participantRows
         });
       }
+    }
+
+    // Send email notification to GVCN & GVBM if updated and assigned
+    if (body.status !== 'DRAFT' && assignedClasses.length > 0) {
+      sendExperientialActivityNotification({
+        activityId: updated.id,
+        activityCode: existing.code || 'HDTN',
+        activityName: updated.name,
+        strand: updatedMeta.strand,
+        activityTypeName: updatedMeta.activityTypeName,
+        subjectId: updatedMeta.subjectId,
+        subjectName: updatedMeta.subjectName,
+        date: body.date || (existing.date ? existing.date.toISOString().split('T')[0] : null),
+        timeRange: updatedMeta.timeRange,
+        location: updatedMeta.location,
+        deadline: updatedMeta.deadline,
+        assignedClasses: updatedMeta.assignedClasses
+      }).catch(e => console.error('[HĐTN Email Trigger Error]:', e));
     }
 
     return NextResponse.json({
