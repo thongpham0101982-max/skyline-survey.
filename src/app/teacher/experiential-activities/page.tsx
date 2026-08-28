@@ -153,9 +153,8 @@ export default function ExperientialActivitiesList() {
         "Tên Hoạt động": act.name || "",
         "Mạch Hoạt động": ACTIVITY_STRANDS.find(s => s.id === act.strand)?.name || act.strand || "",
         "Loại Hoạt động": act.activityTypeName || act.catalogName || "",
-        "Cơ Sở": act.campusName || act.campusCode || "",
-        "Cấp Học": act.educationLevel || "",
-        "Khối": (act.grades || []).join(", "),
+        "Cơ Sở": getCleanCampusCode(act),
+        "Khối": getCleanGrades(act),
         "Ngày Tổ Chức": act.date ? new Date(act.date).toLocaleDateString("vi-VN") : "",
         "Số Lớp Tham Gia": act.totalClassesCount || 0,
         "Số HS Tham Gia": act.participantsCount || 0,
@@ -190,6 +189,33 @@ export default function ExperientialActivitiesList() {
         <span>{s.name}</span>
       </span>
     );
+  };
+
+
+  const getCleanCampusCode = (act) => {
+    const code = act.campusCode || '';
+    if (code) {
+      const clean = code.replace(/Sky-Line\s*/gi, '').trim();
+      if (clean) return clean;
+    }
+    if (act.assignedClasses && act.assignedClasses.length > 0) {
+      const extracted = Array.from(new Set(
+        act.assignedClasses.map((c) => c.campusCode || (c.className?.includes('_') ? c.className.split('_').pop() : '')).filter(Boolean)
+      ));
+      if (extracted.length > 0) return extracted.join(', ');
+    }
+    return 'CS';
+  };
+
+  const getCleanGrades = (act) => {
+    let gList = act.grades || [];
+    if ((!gList || gList.length === 0) && act.assignedClasses && act.assignedClasses.length > 0) {
+      gList = Array.from(new Set(act.assignedClasses.map((c) => c.grade).filter(Boolean)));
+    }
+    if (gList && gList.length > 0) {
+      return gList.map((g) => String(g).startsWith('Khối') ? g : `Khối ${g}`).join(', ');
+    }
+    return 'Toàn trường';
   };
 
   const totalActivities = activities.length;
@@ -553,7 +579,8 @@ export default function ExperientialActivitiesList() {
                     <th className="py-4 px-4 text-center w-12">#</th>
                     <th className="py-4 px-5 min-w-[120px]">Mã HĐ</th>
                     <th className="py-4 px-5 min-w-[280px]">Tên Hoạt động & Mạch</th>
-                    <th className="py-4 px-5 min-w-[140px]">Cơ sở / Khối</th>
+                    <th className="py-4 px-4 text-center min-w-[90px]">Cơ sở</th>
+                    <th className="py-4 px-4 text-center min-w-[110px]">Khối</th>
                     <th className="py-4 px-5 min-w-[120px]">Ngày tổ chức</th>
                     <th className="py-4 px-5 text-center min-w-[100px]">Lớp / HS</th>
                     <th className="py-4 px-5 min-w-[100px]">Số tiêu chí</th>
@@ -623,13 +650,15 @@ export default function ExperientialActivitiesList() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-5 whitespace-nowrap">
-                          <div className="space-y-0.5">
-                            <div className="font-bold text-slate-800">{act.campusName || act.campusCode || 'Toàn trường'}</div>
-                            <div className="text-[11px] text-slate-400 font-medium">
-                              {act.educationLevel} {act.grades && act.grades.length > 0 ? `(Khối ${act.grades.join(', ')})` : ''}
-                            </div>
-                          </div>
+                        <td className="py-4 px-4 whitespace-nowrap text-center">
+                          <span className="inline-block px-2.5 py-1 rounded-xl text-xs font-black bg-teal-50 text-[#003B3A] border border-[#00A99D]/30 shadow-2xs">
+                            {getCleanCampusCode(act)}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 whitespace-nowrap text-center">
+                          <span className="inline-block px-2.5 py-1 rounded-xl text-xs font-bold bg-slate-100 text-slate-800 border border-slate-200">
+                            {getCleanGrades(act)}
+                          </span>
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap">
                           <div className="flex items-center gap-1.5 text-slate-700 font-bold">
