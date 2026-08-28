@@ -60,7 +60,7 @@ export default function ActivityResultInput() {
     try {
       setLoading(true);
       const res = await fetch(`/api/experiential-activities/${id}`);
-      if (!res.ok) throw new Error('Không th? t?i hoạt động');
+      if (!res.ok) throw new Error('Không thể tải hoạt động');
       const data = await res.json();
       setActivity(data);
 
@@ -91,7 +91,7 @@ export default function ActivityResultInput() {
       setLoading(false);
     } catch (err) {
       console.error(err);
-      toast.error('Lỗi khi t?i thông tin hoạt động');
+      toast.error('Lỗi khi tải thông tin hoạt động');
       setLoading(false);
     }
   }, [id, selectedClassId]);
@@ -171,7 +171,7 @@ export default function ActivityResultInput() {
         }
       } else {
         const err = await res.json();
-        toast.error(err.error || 'Lỗi khi lu kết quả');
+        toast.error(err.error || 'Lỗi khi lưu kết quả');
       }
     } catch {
       toast.error('Lỗi kết nối máy chủ');

@@ -78,7 +78,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
                         {cls.campusName || cls.campusCode}  Khối {cls.grade}
                       </div>
                       <div className="text-[11px] text-slate-400 font-bold">
-                        GVCN: <span className="text-slate-700">{cls.homeroomTeacherName || 'Cha gn'}</span>
+                        GVCN: <span className="text-slate-700">{cls.homeroomTeacherName || 'Chưa gán'}</span>
                       </div>
                     </div>
                   </div>

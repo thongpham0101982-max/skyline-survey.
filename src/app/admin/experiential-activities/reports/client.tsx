@@ -397,7 +397,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                           </span>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="font-bold text-slate-800">{cp.homeroomTeacherName || 'Cha gn'}</span>
+                          <span className="font-bold text-slate-800">{cp.homeroomTeacherName || 'Chưa gán'}</span>
                         </td>
                         <td className="py-3.5 px-4">
                           <div className="font-black text-slate-800 line-clamp-1">{cp.activityName}</div>
