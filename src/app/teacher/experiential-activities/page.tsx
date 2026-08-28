@@ -153,6 +153,7 @@ export default function ExperientialActivitiesList() {
         "Tên Hoạt động": act.name || "",
         "Mạch Hoạt động": ACTIVITY_STRANDS.find(s => s.id === act.strand)?.name || act.strand || "",
         "Loại Hoạt động": act.activityTypeName || act.catalogName || "",
+        "Tổ CM Phụ Trách": act.tcmOrSubjectLabel || act.departmentName || act.subjectName || "Chung",
         "Cơ Sở": getCleanCampusCode(act),
         "Khối": getCleanGrades(act),
         "Ngày Tổ Chức": act.date ? new Date(act.date).toLocaleDateString("vi-VN") : "",
@@ -578,7 +579,8 @@ export default function ExperientialActivitiesList() {
                   <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
                     <th className="py-4 px-4 text-center w-12">#</th>
                     <th className="py-4 px-5 min-w-[120px]">Mã HĐ</th>
-                    <th className="py-4 px-5 min-w-[280px]">Tên Hoạt động & Mạch</th>
+                    <th className="py-4 px-5 min-w-[260px]">Tên Hoạt động & Mạch</th>
+                    <th className="py-4 px-4 text-center min-w-[140px]">Tổ CM phụ trách</th>
                     <th className="py-4 px-4 text-center min-w-[90px]">Cơ sở</th>
                     <th className="py-4 px-4 text-center min-w-[110px]">Khối</th>
                     <th className="py-4 px-5 min-w-[120px]">Ngày tổ chức</th>
@@ -650,6 +652,20 @@ export default function ExperientialActivitiesList() {
                             </div>
                           </div>
                         </td>
+                        {/* CỘT TỔ CM PHỤ TRÁCH */}
+                        <td className="py-4 px-4 whitespace-nowrap text-center">
+                          {act.tcmOrSubjectLabel || act.departmentName || act.subjectName ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-black text-amber-900 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-300 shadow-2xs">
+                              <BookOpen className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                              <span>{act.tcmOrSubjectLabel || act.departmentName || act.subjectName}</span>
+                            </span>
+                          ) : (
+                            <span className="inline-block text-[11px] font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
+                              Chung
+                            </span>
+                          )}
+                        </td>
+
                         <td className="py-4 px-4 whitespace-nowrap text-center">
                           <span className="inline-block px-2.5 py-1 rounded-xl text-xs font-black bg-teal-50 text-[#003B3A] border border-[#00A99D]/30 shadow-2xs">
                             {getCleanCampusCode(act)}
