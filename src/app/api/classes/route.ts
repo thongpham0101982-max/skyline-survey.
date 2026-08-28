@@ -96,7 +96,7 @@ export async function GET(req: Request) {
 
     // Default general query (for Admin or system dropdowns)
     let classes = await prisma.class.findMany({
-      where: whereCondition,
+      where: Object.keys(whereCondition).length > 0 ? whereCondition : undefined,
       include: {
         campus: true,
         homeroomTeacher: { select: { id: true, teacherName: true, email: true } },
