@@ -368,13 +368,21 @@ export async function POST(req: Request) {
     }
 
     if (!teacher) {
-      // Auto-create teacher profile for user so they are never blocked
+      // Auto-create teacher profile for user with required relations (user, campus)
+      let defaultCampus = await prisma.campus.findFirst();
+      if (!defaultCampus) {
+        defaultCampus = await prisma.campus.create({
+          data: { id: 'cs1', campusCode: 'CS1', campusName: 'Sky-Line Riverside (CS1)' }
+        });
+      }
+
       teacher = await prisma.teacher.create({
         data: {
           teacherCode: `GV_${session.user.id.slice(-6)}`,
           teacherName: session.user.name || session.user.email || 'Giáo viên',
           email: session.user.email || '',
-          userId: session.user.id
+          user: { connect: { id: session.user.id } },
+          campus: { connect: { id: defaultCampus.id } }
         }
       });
     }
