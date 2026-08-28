@@ -320,12 +320,13 @@ export default function CreateActivityWizard() {
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.push('/teacher/experiential-activities')}
-            className="flex items-center gap-2 text-xs font-black text-slate-500 hover:text-[#003B3A] transition-colors"
+            className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-black text-slate-700 hover:text-[#003B3A] transition-all flex items-center gap-2 shadow-2xs"
+            title="Quay về trang Quản lý Hoạt động trải nghiệm"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Quay lại danh sách</span>
+            <ArrowLeft className="w-4 h-4 text-[#00A99D]" />
+            <span>← Quay về Quản lý Hoạt động</span>
           </button>
-          <div className="text-xs font-black text-slate-400">
+          <div className="text-xs font-black text-slate-500 bg-white/80 px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs">
             {isEditMode ? 'Hiệu chỉnh Kế hoạch Hoạt động' : 'Hệ thống Quản trị Chất lượng Giáo dục Sky-Line'}
           </div>
         </div>

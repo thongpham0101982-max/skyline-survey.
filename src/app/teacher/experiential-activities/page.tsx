@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { ACTIVITY_STRANDS, SKYLINE_ACTIVITY_TYPES } from "@/lib/experiential/constants";
 import { ActivityProgressModal } from "./components/ActivityProgressModal";
+import { ExperientialTabs } from "@/components/ExperientialTabs";
 
 export default function ExperientialActivitiesList() {
   const router = useRouter();
@@ -166,6 +167,7 @@ export default function ExperientialActivitiesList() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/15 to-sky-50/20 py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
+        <ExperientialTabs activeTab="activities" />
 
         {/* HERO BANNER - SKYLINE TEAL BRANDING */}
         <div className="relative backdrop-blur-xl bg-white/90 rounded-3xl p-6 sm:p-8 border border-white shadow-xl shadow-slate-200/50 overflow-hidden">
