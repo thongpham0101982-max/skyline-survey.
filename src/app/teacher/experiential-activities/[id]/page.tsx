@@ -430,14 +430,16 @@ export default function ActivityResultInput() {
               </span>
             )}
 
-            <button
-              onClick={() => router.push(`/teacher/experiential-activities/create?editId=${id}`)}
-              className="px-3.5 py-2.5 bg-slate-100 hover:bg-teal-50 hover:text-[#003B3A] border border-slate-200 text-slate-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
-              title="Hiệu chỉnh thông tin, tiêu chí hoặc lớp gán"
-            >
-              <Settings className="w-3.5 h-3.5 text-[#00A99D]" />
-              <span>Hiệu chỉnh kế hoạch</span>
-            </button>
+            {activity?.canManage && (
+              <button
+                onClick={() => router.push(`/teacher/experiential-activities/create?editId=${id}`)}
+                className="px-3.5 py-2.5 bg-slate-100 hover:bg-teal-50 hover:text-[#003B3A] border border-slate-200 text-slate-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
+                title="Hiệu chỉnh thông tin, tiêu chí hoặc lớp gán"
+              >
+                <Settings className="w-3.5 h-3.5 text-[#00A99D]" />
+                <span>Hiệu chỉnh kế hoạch</span>
+              </button>
+            )}
 
             <button
               onClick={() => handleSave(false)}

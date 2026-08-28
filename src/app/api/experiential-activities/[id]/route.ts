@@ -1,3 +1,4 @@
+import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 function parseDbJson<T>(value: string | null | undefined, fallback: T): T {
@@ -42,6 +43,18 @@ export async function GET(
     if (!activity) {
       return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
     }
+
+    const session = await auth();
+    const userRole = (session?.user as any)?.role || '';
+    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN'].includes(userRole);
+
+    let teacherRecord: any = null;
+    if (session?.user?.id) {
+      teacherRecord = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
+    }
+
+    const isMyCreated = !!(teacherRecord && (activity.teacherId === teacherRecord.id || activity.teacher?.userId === session?.user?.id));
+    const canManage = isManagement || isMyCreated;
 
     const meta = parseDbJson<any>(activity.locationId, {});
 
@@ -98,6 +111,8 @@ export async function GET(
       status: meta.status || activity.status || "ASSIGNED",
       deadline: meta.deadline || "",
       assignedClasses: meta.assignedClasses || [],
+      canManage,
+      isMyCreated,
       students
     });
   } catch (error: any) {
@@ -122,6 +137,22 @@ export async function PUT(
 
     if (!existing) {
       return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
+    }
+
+    const session = await auth();
+    const userRole = (session?.user as any)?.role || '';
+    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN'].includes(userRole);
+
+    let teacherRecord: any = null;
+    if (session?.user?.id) {
+      teacherRecord = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
+    }
+
+    const isMyCreated = !!(teacherRecord && (existing.teacherId === teacherRecord.id || existing.teacher?.userId === session?.user?.id));
+    const canManage = isManagement || isMyCreated;
+
+    if (!canManage) {
+      return NextResponse.json({ error: "Bạn không có quyền hiệu chỉnh kế hoạch hoạt động được giao từ cấp trên" }, { status: 403 });
     }
 
     const currentMeta = parseDbJson<any>(existing.locationId, {});

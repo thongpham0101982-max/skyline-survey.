@@ -96,6 +96,11 @@ export default function CreateActivityWizard() {
       fetch(`/api/experiential-activities/${editId}`)
         .then(r => r.json())
         .then(data => {
+          if (data && data.canManage === false) {
+            toast.error('Bạn không có quyền chỉnh sửa kế hoạch hoạt động được giao từ cấp trên');
+            router.push(`/teacher/experiential-activities/${editId}`);
+            return;
+          }
           if (data && !data.error) {
             setFormData({
               code: data.code || '',
