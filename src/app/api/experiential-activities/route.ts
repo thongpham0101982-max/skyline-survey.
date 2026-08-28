@@ -345,12 +345,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const teacher = await prisma.teacher.findUnique({
+    let teacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
     });
 
+    if (!teacher && session.user.email) {
+      teacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { email: session.user.email },
+            { teacherCode: session.user.email },
+            { teacherName: session.user.name || undefined }
+          ]
+        }
+      });
+      if (teacher && !teacher.userId) {
+        await prisma.teacher.update({
+          where: { id: teacher.id },
+          data: { userId: session.user.id }
+        });
+      }
+    }
+
     if (!teacher) {
-      return NextResponse.json({ error: 'Không tìm thấy hồ sơ giáo viên của bạn' }, { status: 403 });
+      // Auto-create teacher profile for user so they are never blocked
+      teacher = await prisma.teacher.create({
+        data: {
+          teacherCode: `GV_${session.user.id.slice(-6)}`,
+          teacherName: session.user.name || session.user.email || 'Giáo viên',
+          email: session.user.email || '',
+          userId: session.user.id
+        }
+      });
     }
 
     const body = await req.json();
