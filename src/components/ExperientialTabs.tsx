@@ -1,18 +1,15 @@
-"use client"
+﻿"use client"
 import Link from 'next/link'
-import { Layers, ClipboardList, Settings, Award, Activity, BarChart3 } from 'lucide-react'
+import { Activity, BarChart3 } from 'lucide-react'
 
 interface ExperientialTabsProps {
-  activeTab: 'activities' | 'catalog' | 'categories' | 'config' | 'reports'
+  activeTab: 'activities' | 'reports'
 }
 
 export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
   const tabs = [
     { id: 'activities', label: 'Quản lý Hoạt động & Đánh giá', href: '/teacher/experiential-activities', icon: Activity },
-    { id: 'reports', label: 'Dashboard & Thống kê', href: '/admin/experiential-activities/reports', icon: BarChart3 },
-    { id: 'categories', label: 'Danh mục', href: '/admin/experiential-activities/categories', icon: Layers },
-    { id: 'catalog', label: 'Hoạt động mẫu', href: '/admin/experiential-activities/catalog', icon: Award },
-    { id: 'config', label: 'Cấu hình tiêu chí', href: '/admin/experiential-activities/config', icon: Settings }
+    { id: 'reports', label: 'Dashboard & Thống kê Báo cáo', href: '/admin/experiential-activities/reports', icon: BarChart3 }
   ]
 
   return (
@@ -26,7 +23,7 @@ export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
               <Link
                 key={tab.id}
                 href={tab.href}
-                className={"flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all duration-200 border " + (
+                className={"flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 border " + (
                   isActive
                     ? 'bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] text-white border-transparent shadow-md shadow-[#00A99D]/20'
                     : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-900'

@@ -93,12 +93,10 @@ export const APP_CATEGORIES = [
         code: "EXPERIENTIAL_ACTIVITIES",
         name: "Hoạt động trải nghiệm",
         icon: Award,
-        href: "/admin/experiential-activities/categories",
+        href: "/admin/experiential-activities/reports",
         subModules: [
-          { code: "EXP_ACT_CONFIG", name: "Cấu hình", href: "/admin/experiential-activities/config" },
-          { code: "EXP_ACT_CATEGORIES", name: "Danh mục", href: "/admin/experiential-activities/categories" },
-          { code: "EXP_ACT_CATALOG", name: "Hoạt động mẫu", href: "/admin/experiential-activities/catalog" },
-          { code: "EXP_ACT_REPORTS", name: "Thống kê", href: "/admin/experiential-activities/reports" }
+          { code: "EXP_ACT_REPORTS", name: "Dashboard & Thống kê", href: "/admin/experiential-activities/reports" },
+          { code: "EXP_ACT_MANAGE", name: "Quản lý Hoạt động & Đánh giá", href: "/teacher/experiential-activities" }
         ]
       }
     ]
