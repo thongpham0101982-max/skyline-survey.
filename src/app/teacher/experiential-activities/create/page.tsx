@@ -1236,30 +1236,30 @@ export default function CreateActivityWizard() {
         {currentStep === 4 && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md shadow-slate-200/40 space-y-6">
             <div className="border-b border-slate-100 pb-4">
-              <h2 className="text-lg font-black text-slate-800">Bước 4  KĐiểm Tra & Phát Hành Hoạt động</h2>
+              <h2 className="text-lg font-black text-slate-800">Bước 4: Kiểm Tra & Phát Hành Hoạt Động</h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Xem lỗi toàn bộ thông tin cấu hình trđược khi lưu nháp hoặc giao cho các Giáo viên Chủ nhiệm
+                Xem lại toàn bộ thông tin cấu hình trước khi lưu nháp hoặc giao cho các Giáo viên Chủ nhiệm
               </p>
             </div>
 
             {/* Summary Grid Card */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
-                <span className="text-xs font-black uppercase text-slate-400 tracking-wider block">Thông tin c b?n</span>
+                <span className="text-xs font-black uppercase text-slate-400 tracking-wider block">Thông tin cơ bản</span>
                 <div className="space-y-2 text-xs">
                   <div><span className="text-slate-400 font-bold">Tên hoạt động:</span> <strong className="text-slate-800 text-sm block">{formData.name}</strong></div>
                   <div><span className="text-slate-400 font-bold">Mạch hoạt động:</span> <strong className="text-slate-800">{ACTIVITY_STRANDS.find(s => s.id === formData.strand)?.name}</strong></div>
                   <div><span className="text-slate-400 font-bold">Loại hoạt động:</span> <strong className="text-slate-800">{formData.activityTypeName}</strong></div>
                   <div><span className="text-slate-400 font-bold">Thời gian:</span> <strong className="text-slate-800">{formData.date} ({formData.timeRange})</strong></div>
                   <div><span className="text-slate-400 font-bold">Địa điểm:</span> <strong className="text-slate-800">{formData.location || 'Chưa ghi'}</strong></div>
-                  <div><span className="text-slate-400 font-bold">H?n nộp đánh giá:</span> <strong className="text-emerald-700">{formData.deadline || 'Theo kế hoạch'}</strong></div>
+                  <div><span className="text-slate-400 font-bold">Hạn nộp đánh giá:</span> <strong className="text-emerald-700">{formData.deadline || 'Theo kế hoạch'}</strong></div>
                 </div>
               </div>
 
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
                 <span className="text-xs font-black uppercase text-slate-400 tracking-wider block">Thiết lập đánh giá & Lớp</span>
                 <div className="space-y-2 text-xs">
-                  <div><span className="text-slate-400 font-bold">H?nh thực:</span> <strong className="text-slate-800">{evalMode === 'PARTICIPATION_ONLY' ? 'Ch? ghi nhận tham gia' : 'đánh giá theo tiêu chí'}</strong></div>
+                  <div><span className="text-slate-400 font-bold">Hình thức:</span> <strong className="text-slate-800">{evalMode === 'PARTICIPATION_ONLY' ? 'Chỉ ghi nhận tham gia' : 'Đánh giá theo tiêu chí năng lực'}</strong></div>
                   {evalMode === 'CRITERIA' && (
                     <>
                       <div><span className="text-slate-400 font-bold">Số tiêu chí:</span> <strong className="text-slate-800">{criteria.length} tiêu chí ({formulaType === 'EQUAL_WEIGHT' ? 'Đồng trọng số' : 'Theo trọng số'})</strong></div>
