@@ -17,6 +17,7 @@ export async function GET(req: Request) {
     const strand = searchParams.get('strand');
     const status = searchParams.get('status');
     const subjectId = searchParams.get('subjectId');
+    const roleScope = searchParams.get('roleScope'); // 'ALL' | 'GVBM' | 'GVCN' | 'MY_CREATED'
     const scopeType = searchParams.get('scopeType'); // 'ALL' | 'ASSIGNED' | 'MY_CREATED'
     const q = searchParams.get('q');
 
@@ -142,54 +143,54 @@ export async function GET(req: Request) {
       // Check if this activity is created by this teacher
       const isMyCreated = !!(teacherRecord && (act.teacherId === teacherRecord.id || act.teacher?.userId === session.user.id));
 
-      // Check GVCN assignment match
+      // DUAL MATCHING FOR GVBM & GVCN
+      let isGVBM = false;
+      let isGVCN = false;
+      let gvbmSubjectName = '';
       let myAssignedClass: any = null;
-      let matchedRoleLabel = '';
 
       if (teacherRecord) {
-        // 1. Direct GVCN match
-        const gvcnClass = assignedClasses.find((c: any) => c.classId && homeroomClassIds.has(c.classId));
-        if (gvcnClass) {
-          myAssignedClass = gvcnClass;
-          matchedRoleLabel = 'GVCN (Chủ nhiệm)';
+        // Check GVCN match: Teacher is homeroom teacher of any assigned class
+        const matchedGvcnClass = assignedClasses.find((c: any) => c.classId && homeroomClassIds.has(c.classId));
+        if (matchedGvcnClass) {
+          isGVCN = true;
+          myAssignedClass = matchedGvcnClass;
         }
 
-        // 2. GVBM match (if activity is linked to a subject or assigned to classes teacher teaches)
-        if (!myAssignedClass && extraData.subjectId) {
+        // Check GVBM match:
+        // Case A: Activity has a specific subjectId
+        if (extraData.subjectId) {
           const matchedTeaching = teachingAssignmentsList.find(ta => 
             ta.subjectId === extraData.subjectId && 
             assignedClasses.some((c: any) => c.classId === ta.classId)
           );
-
           if (matchedTeaching) {
-            const cls = assignedClasses.find((c: any) => c.classId === matchedTeaching.classId) || {
-              classId: matchedTeaching.classId,
-              className: matchedTeaching.class?.className,
-              status: 'DRAFT'
-            };
-            myAssignedClass = cls;
-            matchedRoleLabel = `GVBM ${matchedTeaching.subject?.subjectName || ''}`;
+            isGVBM = true;
+            gvbmSubjectName = matchedTeaching.subject?.subjectName || extraData.subjectName || '';
+            const matchedClassObj = assignedClasses.find((c: any) => c.classId === matchedTeaching.classId);
+            if (matchedClassObj) {
+              myAssignedClass = matchedClassObj;
+            }
           }
-        }
-
-        // 3. Fallback check: if no subject linked, but teacher teaches one of the assigned classes
-        if (!myAssignedClass && !extraData.subjectId) {
+        } else {
+          // Case B: General activity without specific subject -> check if teacher teaches in any assigned class
           const generalTeaching = teachingAssignmentsList.find(ta => 
             assignedClasses.some((c: any) => c.classId === ta.classId)
           );
           if (generalTeaching) {
-            const cls = assignedClasses.find((c: any) => c.classId === generalTeaching.classId);
-            if (cls) {
-              myAssignedClass = cls;
-              matchedRoleLabel = `GVBM ${generalTeaching.subject?.subjectName || ''}`;
+            isGVBM = true;
+            gvbmSubjectName = generalTeaching.subject?.subjectName || '';
+            if (!myAssignedClass) {
+              myAssignedClass = assignedClasses.find((c: any) => c.classId === generalTeaching.classId);
             }
           }
         }
 
-        // 4. Participant fallback
+        // Fallback for participant-based match
         if (!myAssignedClass && homeroomClassIds.size > 0) {
           const matchParticipant = act.participants.find(p => p.student?.classId && homeroomClassIds.has(p.student.classId));
           if (matchParticipant?.student?.class) {
+            isGVCN = true;
             myAssignedClass = {
               classId: matchParticipant.student.class.id,
               className: matchParticipant.student.class.className,
@@ -197,13 +198,41 @@ export async function GET(req: Request) {
               totalStudents: act.participants.filter(p => p.student?.classId === matchParticipant.student.classId).length,
               evaluatedStudents: 0
             };
-            matchedRoleLabel = 'GVCN';
           }
         }
       }
 
-      const isAssignedToMe = !!myAssignedClass && !isMyCreated;
-      const isVisibleToTeacher = isManagement || isMyCreated || !!myAssignedClass;
+      // Determine Assigned Role & Badges
+      let assignedRole = 'VIEWER';
+      let roleBadgeLabel = '';
+      let roleBadgeTheme = 'slate';
+
+      if (isMyCreated) {
+        assignedRole = 'CREATOR';
+        roleBadgeLabel = '✨ Tôi tự tạo';
+        roleBadgeTheme = 'teal';
+      } else if (isGVBM && isGVCN) {
+        assignedRole = 'GVCN_GVBM';
+        roleBadgeLabel = `🌟 GVCN & GVBM Môn ${gvbmSubjectName || extraData.subjectName || ''}`;
+        roleBadgeTheme = 'purple';
+      } else if (isGVBM) {
+        assignedRole = 'GVBM';
+        roleBadgeLabel = `🎯 Dành cho GVBM Môn ${gvbmSubjectName || extraData.subjectName || ''}`;
+        roleBadgeTheme = 'amber';
+      } else if (isGVCN) {
+        assignedRole = 'GVCN';
+        roleBadgeLabel = extraData.subjectId 
+          ? `👥 Dành cho GVCN (Phối hợp theo dõi)`
+          : `👥 Dành cho GVCN (Chủ nhiệm)`;
+        roleBadgeTheme = 'indigo';
+      } else if (isManagement) {
+        assignedRole = 'ADMIN';
+        roleBadgeLabel = 'Quản trị viên';
+        roleBadgeTheme = 'blue';
+      }
+
+      const isAssignedToMe = (isGVBM || isGVCN) && !isMyCreated;
+      const isVisibleToTeacher = isManagement || isMyCreated || isAssignedToMe;
       const canManage = isManagement || isMyCreated;
 
       return {
@@ -240,7 +269,12 @@ export async function GET(req: Request) {
         status: extraData.status || act.status || 'DRAFT',
         assignedClasses: assignedClasses,
         myAssignedClass: myAssignedClass || null,
-        matchedRoleLabel: matchedRoleLabel || (isMyCreated ? 'Người tạo' : ''),
+        isGVBM,
+        isGVCN,
+        assignedRole,
+        roleBadgeLabel,
+        roleBadgeTheme,
+        matchedRoleLabel: roleBadgeLabel,
         isMyCreated,
         isAssignedToMe,
         canManage,
@@ -255,7 +289,7 @@ export async function GET(req: Request) {
       };
     });
 
-    // For regular teachers, strictly filter to ONLY visible activities (created by them OR assigned to their classes)
+    // For regular teachers, strictly filter to ONLY visible activities
     let result = formatted;
     if (!isManagement) {
       result = result.filter(a => a.isVisibleToTeacher);
@@ -265,6 +299,15 @@ export async function GET(req: Request) {
     if (scopeType === 'ASSIGNED') {
       result = result.filter(a => a.isAssignedToMe);
     } else if (scopeType === 'MY_CREATED') {
+      result = result.filter(a => a.isMyCreated);
+    }
+
+    // Filter by Role Scope: ALL | GVBM | GVCN | MY_CREATED
+    if (roleScope === 'GVBM') {
+      result = result.filter(a => a.isGVBM);
+    } else if (roleScope === 'GVCN') {
+      result = result.filter(a => a.isGVCN);
+    } else if (roleScope === 'MY_CREATED') {
       result = result.filter(a => a.isMyCreated);
     }
 
@@ -330,7 +373,8 @@ export async function POST(req: Request) {
       campusId,
       campusCode,
       campusName,
-      educationLevel,
+      selectedCampusIds = [],
+      educationLevel = 'PHO_THONG',
       grades = [],
       subjectId = null,
       subjectName = null,
@@ -404,6 +448,7 @@ export async function POST(req: Request) {
       campusId: campusId || teacher.campusId || '',
       campusCode: campusCode || '',
       campusName: campusName || '',
+      selectedCampusIds,
       educationLevel,
       grades,
       subjectId,
@@ -463,7 +508,7 @@ export async function POST(req: Request) {
         const participantRows = students.map(s => ({
           recordId: activityRecord.id,
           studentId: s.id,
-          roleId: 'TV', // Default Thành viên
+          roleId: 'TV',
           evalLevelId: evalMode === 'PARTICIPATION_ONLY' ? 'DAT' : null,
           note: JSON.stringify({
             attendance: 'PRESENT',
