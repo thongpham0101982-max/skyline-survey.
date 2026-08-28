@@ -68,21 +68,23 @@ export default function CreateActivityWizard() {
   const isClassMatchLevel = (cls, level) => {
     if (!level || level === 'TOAN_TRUONG') return true;
     const l = (cls.level || '').toLowerCase();
-    const g = String(cls.grade || '').trim();
+    const g = String(cls.grade || '').trim().replace('Khối ', '').replace('K', '');
+    const cName = (cls.className || '').toLowerCase();
+
     if (level === 'MAM_NON') {
-      return l.includes('mam') || l.includes('mầm') || ['mam', 'choi', 'la', 'nhatre', 'mầm', 'chồi', 'lá'].includes(g.toLowerCase());
+      return l.includes('mam') || l.includes('mầm') || cName.includes('mầm') || cName.includes('chồi') || cName.includes('lá') || ['mam', 'choi', 'la', 'nhatre', 'mầm', 'chồi', 'lá'].includes(g.toLowerCase());
     }
     if (level === 'PHO_THONG') {
-      return !l.includes('mam') && !l.includes('mầm') && !['mam', 'choi', 'la', 'nhatre'].includes(g.toLowerCase());
+      return !l.includes('mam') && !l.includes('mầm') && !cName.includes('mầm') && !cName.includes('chồi') && !cName.includes('lá') && !['mam', 'choi', 'la', 'nhatre'].includes(g.toLowerCase());
     }
     if (level === 'Tieu hoc') {
-      return l.includes('tieu') || l.includes('tiểu') || ['1', '2', '3', '4', '5'].includes(g);
+      return l.includes('tieu') || l.includes('tiểu') || ['1', '2', '3', '4', '5'].includes(g) || /^[1-5][._]/.test(cls.className || '');
     }
     if (level === 'THCS') {
-      return l.includes('thcs') || ['6', '7', '8', '9'].includes(g);
+      return l.includes('thcs') || ['6', '7', '8', '9'].includes(g) || /^[6-9][._]/.test(cls.className || '');
     }
     if (level === 'THPT') {
-      return l.includes('thpt') || ['10', '11', '12'].includes(g);
+      return l.includes('thpt') || ['10', '11', '12'].includes(g) || /^1[0-2][._]/.test(cls.className || '');
     }
     return true;
   };
@@ -1113,9 +1115,13 @@ export default function CreateActivityWizard() {
             {/* Class Tree List Grouped by Campus & Grade */}
             <div className="space-y-4">
               {campuses
-                .filter(cp => !formData.selectedCampusIds || formData.selectedCampusIds.length === 0 || formData.selectedCampusIds.includes(cp.id))
+                .filter(cp => !formData.selectedCampusIds || formData.selectedCampusIds.length === 0 || formData.selectedCampusIds.includes(cp.id) || formData.selectedCampusIds.includes(cp.campusCode))
                 .map(campus => {
-                  const campusClasses = classes.filter(c => c.campusId === campus.id && isClassMatchLevel(c, formData.educationLevel));
+                  const campusClasses = classes.filter(c => {
+                    const matchCampus = c.campusId === campus.id || c.campusCode === campus.campusCode || c.campus?.campusCode === campus.campusCode || c.campus?.id === campus.id || (c.className && c.className.toLowerCase().includes(campus.campusCode.toLowerCase()));
+                    const matchLevel = isClassMatchLevel(c, formData.educationLevel);
+                    return matchCampus && matchLevel;
+                  });
                   if (campusClasses.length === 0) return null;
 
                   const isCampusAllSelected = campusClasses.length > 0 && campusClasses.every(cls => assignedClasses.some(c => c.classId === cls.id));

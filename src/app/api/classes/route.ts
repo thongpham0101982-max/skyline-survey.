@@ -18,8 +18,8 @@ export async function GET(req: Request) {
       activeYearId = activeYear?.id;
     }
 
-    const whereCondition: any = { status: 'ACTIVE' };
-    if (activeYearId) {
+    const whereCondition: any = {};
+    if (activeYearId && activeYearId !== 'all') {
       whereCondition.academicYearId = activeYearId;
     }
 
