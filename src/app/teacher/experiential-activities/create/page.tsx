@@ -28,6 +28,7 @@ export default function CreateActivityWizard() {
   const [campuses, setCampuses] = useState([]);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   // Step 1: Info & Classification
   const [formData, setFormData] = useState({
@@ -40,6 +41,8 @@ export default function CreateActivityWizard() {
     selectedCampusIds: [],
     educationLevel: 'PHO_THONG',
     grades: ['1'],
+    departmentId: '',
+    departmentName: '',
     subjectId: '',
     subjectName: '',
     date: new Date().toISOString().split('T')[0],
@@ -153,9 +156,11 @@ export default function CreateActivityWizard() {
     Promise.all([
       fetch('/api/academic-years').then(r => r.json()).catch(() => []),
       fetch('/api/campuses').then(r => r.json()).catch(() => []),
-      fetch('/api/subjects').then(r => r.json()).catch(() => [])
-    ]).then(([years, camps, subs]) => {
+      fetch('/api/subjects').then(r => r.json()).catch(() => []),
+      fetch('/api/departments').then(r => r.json()).catch(() => [])
+    ]).then(([years, camps, subs, depts]) => {
       if (Array.isArray(subs)) setSubjects(subs);
+      if (Array.isArray(depts)) setDepartments(depts);
       if (Array.isArray(years) && years.length > 0) {
         setAcademicYears(years);
         const active = years.find(y => y.status === 'ACTIVE' && !y.isOff) || years[0];
@@ -1385,7 +1390,7 @@ export default function CreateActivityWizard() {
                                           {formData.subjectName && (
                                             <div className={`flex items-center gap-1 ${isSelected ? 'text-amber-200 font-bold' : 'text-amber-700 font-bold'}`}>
                                               <BookOpen className="w-2.5 h-2.5" />
-                                              <span>GVBM: {matchedTeaching?.teacher?.teacherName || 'Chưa phân công'}</span>
+                                              <span>TCM / GVBM: {matchedTeaching?.teacher?.teacherName || 'Chưa phân công'}</span>
                                             </div>
                                           )}
                                         </div>

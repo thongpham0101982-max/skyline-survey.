@@ -269,7 +269,7 @@ export default function ExperientialActivitiesList() {
         <div className="flex items-center gap-2 flex-wrap">
           {[
             { id: 'ALL', label: 'Tất cả hoạt động', icon: Layers },
-            { id: 'GVBM', label: '🎯 Dành cho GVBM (Môn được gán)', icon: BookOpen },
+            { id: 'GVBM', label: '🎯 Dành cho TCM / GVBM (Môn được gán)', icon: BookOpen },
             { id: 'GVCN', label: '👥 Dành cho GVCN (Chủ nhiệm)', icon: Users },
             { id: 'MY_CREATED', label: '✨ Hoạt động do tôi tạo', icon: Sparkles }
           ].map(tab => {
