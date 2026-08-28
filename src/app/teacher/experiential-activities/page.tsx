@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Search, Calendar, Users, ChevronRight, Activity, Trash2, Edit3, Tag, CheckCircle2, Clock, List, LayoutGrid, Sparkles, Filter, FileCheck, Layers, ArrowUpRight, CheckCircle, BarChart3, RefreshCw, X, Eye, FileSpreadsheet, Download, Lock, Unlock, Copy, AlertCircle, Building2, GraduationCap, Shield, Compass, Leaf, User } from "lucide-react";
+import { Plus, Search, Calendar, Users, ChevronRight, Activity, Trash2, Edit3, Tag, CheckCircle2, Clock, List, LayoutGrid, Sparkles, Filter, FileCheck, Layers, ArrowUpRight, CheckCircle, BarChart3, RefreshCw, X, Eye, FileSpreadsheet, Download, Lock, Unlock, Copy, AlertCircle, Building2, GraduationCap, Shield, Compass, Leaf, User, BookOpen } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { ACTIVITY_STRANDS, SKYLINE_ACTIVITY_TYPES } from "@/lib/experiential/constants";
