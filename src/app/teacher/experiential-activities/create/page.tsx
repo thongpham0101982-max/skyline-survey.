@@ -91,6 +91,7 @@ export default function CreateActivityWizard() {
 
   // Step 3: Class Assignment
   const [assignedClasses, setAssignedClasses] = useState([]);
+  const [selectedFilterGrades, setSelectedFilterGrades] = useState([]);
 
   // Load existing activity if in Edit mode
   useEffect(() => {
@@ -423,7 +424,7 @@ export default function CreateActivityWizard() {
             <div className="border-b border-slate-100 pb-4">
               <h2 className="text-lg font-black text-slate-800">Bước 1: Thông tin & Phân loại Hoạt động</h2>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Nh?p các thông tin c b?n, ch?n mạch hoạt động, loại hoạt động v quy mô tổ chức
+                Nhập các thông tin cơ bản, chọn mạch hoạt động, loại hoạt động và quy mô tổ chức
               </p>
             </div>
 
@@ -436,7 +437,7 @@ export default function CreateActivityWizard() {
                 <input
                   type="text"
                   required
-                  placeholder="V d?: Hội chợ Xuân Kết nối Yêu thương 2026, STEM Khám phá Hệ Sinh thái..."
+                  placeholder="Ví dụ: Hội chợ Xuân Kết nối Yêu thương 2026, STEM Khám phá Hệ Sinh thái..."
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
@@ -1007,50 +1008,406 @@ export default function CreateActivityWizard() {
           </div>
         )}
 
-        {/* STEP 3: GÁN LỚP & GVCN */}
+        {/* STEP 3: GÁN LỚP & PHÂN CÔNG GVCN / GVBM */}
         {currentStep === 3 && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-md shadow-slate-200/40 space-y-6">
-            <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
               <div>
-                <h2 className="text-lg font-black text-slate-800">Bước 3: Gán Lớp Tham Gia & Phân Công GVCN</h2>
+                <h2 className="text-lg font-black text-slate-800">Bước 3: Gán Lớp Tham Gia & Phân Công GVCN / GVBM</h2>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Chọn các lớp theo Cơ sở &rarr; Khối &rarr; Lớp. GVCN và GVBM có thể chọn nhanh các lớp mình phụ trách.
+                  Chọn Bậc học, Cơ sở, Khối và Lớp tham gia. Hệ thống tự động liên kết GVCN và GVBM tương ứng.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                {classes.some(cls => cls.teacherRole) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const myClasses = classes.filter(cls => cls.teacherRole);
-                      const myAssignments = myClasses.map(cls => ({
-                        classId: cls.id,
-                        className: cls.className,
-                        campusId: cls.campusId,
-                        grade: cls.grade,
-                        level: cls.level,
-                        homeroomTeacherId: cls.homeroomTeacherId,
-                        homeroomTeacherName: cls.teacherRole === 'GVCN' ? 'Tôi (Chủ nhiệm)' : (cls.roleLabel || 'GVBM')
-                      }));
-                      setAssignedClasses(myAssignments);
-                    }}
-                    className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+              <div className="bg-[#003B3A]/5 px-3 py-1.5 rounded-xl border border-[#00A99D]/20 self-start sm:self-auto">
+                <span className="text-xs font-black text-[#003B3A]">
+                  Đã chọn: <strong className="text-[#00A99D]">{assignedClasses.length}</strong> lớp
+                </span>
+              </div>
+            </div>
+
+            {/* SECTION 1: BẬC HỌC & CƠ SỞ */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-700 mb-1.5">
+                    1. Bậc học áp dụng <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={formData.educationLevel}
+                    onChange={e => setFormData({ ...formData, educationLevel: e.target.value })}
+                    className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
                   >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>⚡ Chọn tất cả lớp tôi phụ trách</span>
-                  </button>
-                )}
-                <div className="text-xs font-black text-[#003B3A] bg-[#00A99D]/10 px-3 py-1.5 rounded-xl border border-[#00A99D]/20">
-                  Đã chọn: {assignedClasses.length} lớp
+                    <option value="PHO_THONG">Phổ thông (Tiểu học, THCS, THPT)</option>
+                    <option value="Tieu hoc">Tiểu học (Khối 1 - 5)</option>
+                    <option value="THCS">THCS (Khối 6 - 9)</option>
+                    <option value="THPT">THPT (Khối 10 - 12)</option>
+                    <option value="MAM_NON">Mầm non</option>
+                    <option value="TOAN_TRUONG">Toàn trường / Liên cấp (Tất cả)</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-black text-slate-700">
+                      2. Chọn Cơ sở (Chọn 1 hoặc nhiều cơ sở) <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const allIds = campuses.map(c => c.id);
+                          setFormData({ ...formData, selectedCampusIds: allIds });
+                        }}
+                        className="text-[11px] font-black text-[#00A99D] hover:underline"
+                      >
+                        ⚡ Chọn tất cả cơ sở
+                      </button>
+                      <span className="text-slate-300 text-xs">|</span>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, selectedCampusIds: [] })}
+                        className="text-[11px] font-bold text-slate-400 hover:text-slate-600"
+                      >
+                        Bỏ chọn
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {campuses.map(cp => {
+                      const isSelected = (formData.selectedCampusIds || []).includes(cp.id);
+                      return (
+                        <button
+                          key={cp.id}
+                          type="button"
+                          onClick={() => {
+                            const current = formData.selectedCampusIds || [];
+                            let next;
+                            if (current.includes(cp.id)) {
+                              next = current.filter(id => id !== cp.id);
+                            } else {
+                              next = [...current, cp.id];
+                            }
+                            setFormData({
+                              ...formData,
+                              selectedCampusIds: next,
+                              campusId: next[0] || cp.id,
+                              campusCode: cp.campusCode,
+                              campusName: cp.campusName
+                            });
+                          }}
+                          className={`p-2 rounded-xl border text-xs font-bold text-left transition-all flex items-center justify-between ${
+                            isSelected
+                              ? 'bg-[#003B3A] text-white border-[#003B3A] shadow-xs'
+                              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <Building2 className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#00A99D]' : 'text-slate-400'}`} />
+                            <span className="truncate">{cp.campusName || cp.campusCode}</span>
+                          </div>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-1" />}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Deadline Field */}
+            {/* SECTION 2: CHỌN KHỐI (1 HAY NHIỀU KHỐI) */}
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black text-slate-700">
+                  3. Chọn Khối tham gia (Chọn 1 hoặc nhiều khối)
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allAvailableGrades = Array.from(new Set(
+                        classes
+                          .filter(c => isClassMatchLevel(c, formData.educationLevel))
+                          .map(c => String(c.grade || '').trim().replace('Khối ', '').replace('K', ''))
+                          .filter(Boolean)
+                      ));
+                      setSelectedFilterGrades(allAvailableGrades);
+                    }}
+                    className="text-[11px] font-black text-[#00A99D] hover:underline"
+                  >
+                    ⚡ Chọn tất cả khối
+                  </button>
+                  <span className="text-slate-300 text-xs">|</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFilterGrades([])}
+                    className="text-[11px] font-bold text-slate-400 hover:text-slate-600"
+                  >
+                    Bỏ chọn
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {Array.from(new Set(
+                  classes
+                    .filter(c => isClassMatchLevel(c, formData.educationLevel))
+                    .map(c => String(c.grade || '').trim().replace('Khối ', '').replace('K', ''))
+                    .filter(Boolean)
+                ))
+                  .sort((a, b) => {
+                    const numA = parseInt(a);
+                    const numB = parseInt(b);
+                    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                    return a.localeCompare(b);
+                  })
+                  .map(grade => {
+                    const isSelected = selectedFilterGrades.includes(grade);
+                    return (
+                      <button
+                        key={grade}
+                        type="button"
+                        onClick={() => {
+                          if (selectedFilterGrades.includes(grade)) {
+                            setSelectedFilterGrades(prev => prev.filter(g => g !== grade));
+                          } else {
+                            setSelectedFilterGrades(prev => [...prev, grade]);
+                          }
+                        }}
+                        className={`px-3.5 py-1.5 rounded-xl border text-xs font-black transition-all flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-[#003B3A] text-white border-[#003B3A] shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span>Khối {grade}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* SECTION 3: DANH SÁCH & CHỌN LỚP */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-[#00A99D]" />
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    4. Danh sách Lớp (Chọn 1 hoặc nhiều lớp)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const activeCampuses = (formData.selectedCampusIds && formData.selectedCampusIds.length > 0)
+                        ? campuses.filter(cp => formData.selectedCampusIds.includes(cp.id) || formData.selectedCampusIds.includes(cp.campusCode))
+                        : campuses;
+
+                      const matchClasses = classes.filter(c => {
+                        const matchCampus = activeCampuses.some(cp => cp.id === c.campusId || cp.campusCode === c.campusCode || cp.campusCode === c.campus?.campusCode);
+                        const matchLevel = isClassMatchLevel(c, formData.educationLevel);
+                        const cleanG = String(c.grade || '').trim().replace('Khối ', '').replace('K', '');
+                        const matchGrade = selectedFilterGrades.length === 0 || selectedFilterGrades.includes(cleanG);
+                        return matchCampus && matchLevel && matchGrade;
+                      });
+
+                      const newItems = matchClasses.map(cls => {
+                        const campusObj = campuses.find(cp => cp.id === cls.campusId) || { campusCode: 'CS', campusName: 'Sky-Line' };
+                        const teacherObj = (cls.teachers || []).find(t => t.roleInClass === 'GVCN') || {};
+                        const matchedTeaching = (cls.teachingAssignments || []).find(ta => ta.subjectId === formData.subjectId || ta.subject?.id === formData.subjectId) || {};
+                        return {
+                          classId: cls.id,
+                          className: cls.className,
+                          campusId: cls.campusId,
+                          campusCode: campusObj.campusCode || '',
+                          campusName: campusObj.campusName || '',
+                          grade: cls.grade || '',
+                          level: cls.level || '',
+                          homeroomTeacherId: teacherObj.teacherId || cls.homeroomTeacherId || '',
+                          homeroomTeacherName: teacherObj.teacher?.teacherName || cls.homeroomTeacher?.teacherName || 'GVCN',
+                          subjectTeacherId: matchedTeaching.teacherId || matchedTeaching.teacher?.id || '',
+                          subjectTeacherName: matchedTeaching.teacher?.teacherName || '',
+                          totalStudents: cls._count?.students || (cls.students ? cls.students.length : 30),
+                          evaluatedStudents: 0,
+                          status: 'DRAFT'
+                        };
+                      });
+
+                      setAssignedClasses(newItems);
+                      toast.success(`Đã gán toàn bộ ${newItems.length} lớp theo Cơ sở & Khối đã chọn!`);
+                    }}
+                    className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+                  >
+                    <CheckCheck className="w-3.5 h-3.5" />
+                    <span>⚡ Gán TOÀN BỘ lớp theo Cơ sở & Khối</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAssignedClasses([]);
+                      toast.success('Đã bỏ chọn tất cả các lớp');
+                    }}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-xl border border-slate-200 transition-all"
+                  >
+                    Bỏ chọn tất cả
+                  </button>
+                </div>
+              </div>
+
+              {/* Class Tree */}
+              <div className="space-y-4">
+                {campuses
+                  .filter(cp => !formData.selectedCampusIds || formData.selectedCampusIds.length === 0 || formData.selectedCampusIds.includes(cp.id) || formData.selectedCampusIds.includes(cp.campusCode))
+                  .map(campus => {
+                    const campusClasses = classes.filter(c => {
+                      const matchCampus = c.campusId === campus.id || c.campusCode === campus.campusCode || c.campus?.campusCode === campus.campusCode || c.campus?.id === campus.id || (c.className && c.className.toLowerCase().includes(campus.campusCode.toLowerCase()));
+                      const matchLevel = isClassMatchLevel(c, formData.educationLevel);
+                      const cleanG = String(c.grade || '').trim().replace('Khối ', '').replace('K', '');
+                      const matchGrade = selectedFilterGrades.length === 0 || selectedFilterGrades.includes(cleanG);
+                      return matchCampus && matchLevel && matchGrade;
+                    });
+                    if (campusClasses.length === 0) return null;
+
+                    const isCampusAllSelected = campusClasses.length > 0 && campusClasses.every(cls => assignedClasses.some(c => c.classId === cls.id));
+                    const uniqueGrades = Array.from(new Set(campusClasses.map(c => String(c.grade || '').trim().replace('Khối ', '').replace('K', '')).filter(Boolean))).sort((a, b) => {
+                      const numA = parseInt(a);
+                      const numB = parseInt(b);
+                      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+                      return a.localeCompare(b);
+                    });
+
+                    return (
+                      <div key={campus.id} className="border border-slate-200 rounded-2xl p-4 bg-slate-50/40 space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4 text-[#00A99D]" />
+                            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                              {campus.campusName || campus.campusCode}
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-bold">({campusClasses.length} lớp)</span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isCampusAllSelected) {
+                                  setAssignedClasses(prev => prev.filter(c => !campusClasses.some(cls => cls.id === c.classId)));
+                                } else {
+                                  const newItems = [];
+                                  campusClasses.forEach(cls => {
+                                    if (!assignedClasses.some(c => c.classId === cls.id)) {
+                                      const campusObj = campuses.find(cp => cp.id === cls.campusId) || { campusCode: 'CS', campusName: 'Sky-Line' };
+                                      const teacherObj = (cls.teachers || []).find(t => t.roleInClass === 'GVCN') || {};
+                                      const matchedTeaching = (cls.teachingAssignments || []).find(ta => ta.subjectId === formData.subjectId || ta.subject?.id === formData.subjectId) || {};
+                                      newItems.push({
+                                        classId: cls.id,
+                                        className: cls.className,
+                                        campusId: cls.campusId,
+                                        campusCode: campusObj.campusCode || '',
+                                        campusName: campusObj.campusName || '',
+                                        grade: cls.grade,
+                                        level: cls.level,
+                                        homeroomTeacherId: teacherObj.teacherId || cls.homeroomTeacherId || '',
+                                        homeroomTeacherName: teacherObj.teacher?.teacherName || cls.homeroomTeacher?.teacherName || 'GVCN',
+                                        subjectTeacherId: matchedTeaching.teacherId || matchedTeaching.teacher?.id || '',
+                                        subjectTeacherName: matchedTeaching.teacher?.teacherName || '',
+                                        totalStudents: cls._count?.students || (cls.students ? cls.students.length : 30),
+                                        evaluatedStudents: 0,
+                                        status: 'DRAFT'
+                                      });
+                                    }
+                                  });
+                                  setAssignedClasses(prev => [...prev, ...newItems]);
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${
+                                isCampusAllSelected
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : 'bg-teal-50 text-[#003B3A] border border-[#00A99D]/30 hover:bg-teal-100'
+                              }`}
+                            >
+                              <Sparkles className="w-3 h-3 text-[#00A99D]" />
+                              <span>{isCampusAllSelected ? 'Bỏ chọn toàn bộ cơ sở này' : '⚡ Gán TOÀN BỘ lớp cơ sở này'}</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 pl-2">
+                          {uniqueGrades.map(grade => {
+                            const gradeClasses = campusClasses.filter(c => String(c.grade || '').trim().replace('Khối ', '').replace('K', '') === grade);
+                            const isGradeAllSelected = gradeClasses.every(cls => assignedClasses.some(c => c.classId === cls.id));
+
+                            return (
+                              <div key={grade} className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-black text-slate-800">Khối {grade} ({gradeClasses.length} lớp)</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSelectAllClassesInGrade(gradeClasses)}
+                                    className="text-[11px] font-black text-[#00A99D] hover:underline"
+                                  >
+                                    {isGradeAllSelected ? 'Bỏ chọn toàn khối' : 'Chọn toàn khối'}
+                                  </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                                  {gradeClasses.map(cls => {
+                                    const isSelected = assignedClasses.some(c => c.classId === cls.id);
+                                    const matchedTeaching = (cls.teachingAssignments || []).find(ta => ta.subjectId === formData.subjectId || ta.subject?.id === formData.subjectId);
+                                    return (
+                                      <button
+                                        key={cls.id}
+                                        type="button"
+                                        onClick={() => handleToggleClass(cls)}
+                                        className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                                          isSelected
+                                            ? 'bg-[#003B3A] text-white border-[#003B3A] shadow-md shadow-[#003B3A]/20'
+                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
+                                        }`}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-xs font-black">{cls.className}</span>
+                                          {isSelected ? (
+                                            <Check className="w-3.5 h-3.5 text-white" />
+                                          ) : (
+                                            <span className="w-3.5 h-3.5 rounded-full border border-slate-300" />
+                                          )}
+                                        </div>
+                                        <div className="text-[10px] space-y-0.5 opacity-90">
+                                          <div className={isSelected ? 'text-teal-200' : 'text-slate-500'}>
+                                            GVCN: {cls.homeroomTeacher?.teacherName || 'Chưa gán'}
+                                          </div>
+                                          {formData.subjectName && (
+                                            <div className={`flex items-center gap-1 ${isSelected ? 'text-amber-200 font-bold' : 'text-amber-700 font-bold'}`}>
+                                              <BookOpen className="w-2.5 h-2.5" />
+                                              <span>GVBM: {matchedTeaching?.teacher?.teacherName || 'Chưa phân công'}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* SECTION 4: DEADLINE CONFIG */}
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <span className="text-xs font-black text-slate-800 block">Thời hạn GVCN hoàn thành đánh giá (Deadline):</span>
-                <span className="text-[11px] text-slate-500">GVCN sẽ nhận được thông báo nhắc nhở khi đến hạn</span>
+                <span className="text-xs font-black text-slate-800 block">5. Thời hạn GV hoàn thành đánh giá (Deadline):</span>
+                <span className="text-[11px] text-slate-500">Giáo viên sẽ nhận được thông báo nhắc nhở khi đến hạn</span>
               </div>
               <input
                 type="date"
@@ -1058,168 +1415,6 @@ export default function CreateActivityWizard() {
                 onChange={e => setFormData({ ...formData, deadline: e.target.value })}
                 className="py-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
               />
-            </div>
-
-            {/* GLOBAL BULK ACTIONS */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const activeCampuses = (formData.selectedCampusIds && formData.selectedCampusIds.length > 0)
-                      ? campuses.filter(cp => formData.selectedCampusIds.includes(cp.id))
-                      : campuses;
-
-                    const matchClasses = classes.filter(c => 
-                      activeCampuses.some(cp => cp.id === c.campusId) && 
-                      isClassMatchLevel(c, formData.educationLevel)
-                    );
-
-                    const newItems = matchClasses.map(cls => ({
-                      classId: cls.id,
-                      className: cls.className,
-                      campusId: cls.campusId,
-                      campusCode: cls.campus?.campusCode || '',
-                      grade: cls.grade,
-                      level: cls.level,
-                      homeroomTeacherId: cls.homeroomTeacherId,
-                      homeroomTeacherName: cls.homeroomTeacherName || 'GVCN'
-                    }));
-
-                    setAssignedClasses(newItems);
-                    toast.success(`Đã gán toàn bộ ${newItems.length} lớp của các cơ sở đã chọn!`);
-                  }}
-                  className="px-4 py-2 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5"
-                >
-                  <CheckCheck className="w-3.5 h-3.5" />
-                  <span>⚡ Gán TOÀN BỘ lớp của các Cơ sở đã chọn</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAssignedClasses([]);
-                    toast.success('Đã bỏ chọn tất cả các lớp');
-                  }}
-                  className="px-3 py-2 bg-white hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-xl border border-slate-200 transition-all"
-                >
-                  Bỏ chọn tất cả
-                </button>
-              </div>
-
-              <div className="text-xs font-black text-slate-600">
-                Bậc học: <span className="text-[#00A99D] font-black">{formData.educationLevel}</span>
-              </div>
-            </div>
-
-            {/* Class Tree List Grouped by Campus & Grade */}
-            <div className="space-y-4">
-              {campuses
-                .filter(cp => !formData.selectedCampusIds || formData.selectedCampusIds.length === 0 || formData.selectedCampusIds.includes(cp.id) || formData.selectedCampusIds.includes(cp.campusCode))
-                .map(campus => {
-                  const campusClasses = classes.filter(c => {
-                    const matchCampus = c.campusId === campus.id || c.campusCode === campus.campusCode || c.campus?.campusCode === campus.campusCode || c.campus?.id === campus.id || (c.className && c.className.toLowerCase().includes(campus.campusCode.toLowerCase()));
-                    const matchLevel = isClassMatchLevel(c, formData.educationLevel);
-                    return matchCampus && matchLevel;
-                  });
-                  if (campusClasses.length === 0) return null;
-
-                  const isCampusAllSelected = campusClasses.length > 0 && campusClasses.every(cls => assignedClasses.some(c => c.classId === cls.id));
-                  const uniqueGrades = Array.from(new Set(campusClasses.map(c => c.grade).filter(Boolean))).sort((a, b) => parseInt(a) - parseInt(b));
-
-                  return (
-                    <div key={campus.id} className="border border-slate-200 rounded-2xl p-4 bg-slate-50/40 space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-[#00A99D]" />
-                          <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                            {campus.campusName || campus.campusCode}
-                          </span>
-                          <span className="text-[11px] text-slate-400 font-bold">({campusClasses.length} lớp)</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isCampusAllSelected) {
-                                setAssignedClasses(prev => prev.filter(c => !campusClasses.some(cls => cls.id === c.classId)));
-                              } else {
-                                const newItems = [];
-                                campusClasses.forEach(cls => {
-                                  if (!assignedClasses.some(c => c.classId === cls.id)) {
-                                    newItems.push({
-                                      classId: cls.id,
-                                      className: cls.className,
-                                      campusId: cls.campusId,
-                                      campusCode: cls.campus?.campusCode || '',
-                                      grade: cls.grade,
-                                      level: cls.level,
-                                      homeroomTeacherId: cls.homeroomTeacherId,
-                                      homeroomTeacherName: cls.homeroomTeacherName || 'GVCN'
-                                    });
-                                  }
-                                });
-                                setAssignedClasses(prev => [...prev, ...newItems]);
-                              }
-                            }}
-                            className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${
-                              isCampusAllSelected
-                                ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                                : 'bg-teal-50 text-[#003B3A] border border-[#00A99D]/30 hover:bg-teal-100'
-                            }`}
-                          >
-                            <Sparkles className="w-3 h-3 text-[#00A99D]" />
-                            <span>{isCampusAllSelected ? 'Bỏ chọn toàn bộ cơ sở này' : '⚡ Gán TOÀN BỘ lớp cơ sở này'}</span>
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3 pl-2">
-                        {uniqueGrades.map(grade => {
-                          const gradeClasses = campusClasses.filter(c => c.grade === grade);
-                          const isGradeAllSelected = gradeClasses.every(cls => assignedClasses.some(c => c.classId === cls.id));
-
-                          return (
-                            <div key={grade} className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs space-y-2.5">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-black text-slate-800">Khối {grade} ({gradeClasses.length} lớp)</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleSelectAllClassesInGrade(gradeClasses)}
-                                  className="text-[11px] font-black text-[#00A99D] hover:underline"
-                                >
-                                  {isGradeAllSelected ? 'Bỏ chọn toàn khối' : 'Chọn toàn khối'}
-                                </button>
-                              </div>
-
-                              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2">
-                                {gradeClasses.map(cls => {
-                                  const isSelected = assignedClasses.some(c => c.classId === cls.id);
-                                  return (
-                                    <button
-                                      key={cls.id}
-                                      type="button"
-                                      onClick={() => handleToggleClass(cls)}
-                                      className={`p-2.5 rounded-xl border text-xs font-black text-center transition-all flex items-center justify-between ${
-                                        isSelected
-                                          ? 'bg-[#003B3A] text-white border-[#003B3A] shadow-xs'
-                                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                      }`}
-                                    >
-                                      <span>{cls.className}</span>
-                                      {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
             </div>
 
             {/* Navigation Buttons */}
