@@ -97,7 +97,17 @@ export async function GET(req: Request) {
     // Default general query (for Admin or system dropdowns)
     const classes = await prisma.class.findMany({
       where: whereCondition,
-      include: { campus: true },
+      include: {
+        campus: true,
+        homeroomTeacher: { select: { id: true, teacherName: true, email: true } },
+        teachers: { include: { teacher: { select: { id: true, teacherName: true, email: true } } } },
+        teachingAssignments: {
+          include: {
+            subject: { select: { id: true, subjectName: true, subjectCode: true } },
+            teacher: { select: { id: true, teacherName: true, email: true } }
+          }
+        }
+      },
       orderBy: [
         { level: 'asc' },
         { grade: 'asc' },

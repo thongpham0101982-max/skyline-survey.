@@ -237,6 +237,7 @@ export default function CreateActivityWizard() {
     } else {
       const campusObj = campuses.find(cp => cp.id === cls.campusId) || { campusCode: 'CS', campusName: 'Sky-Line' };
       const teacherObj = (cls.teachers || []).find(t => t.roleInClass === 'GVCN') || {};
+      const matchedTeaching = (cls.teachingAssignments || []).find(ta => ta.subjectId === formData.subjectId || ta.subject?.id === formData.subjectId) || {};
       const newClassItem = {
         classId: cls.id,
         className: cls.className,
@@ -247,6 +248,8 @@ export default function CreateActivityWizard() {
         level: cls.level || '',
         homeroomTeacherId: teacherObj.teacherId || cls.homeroomTeacherId || '',
         homeroomTeacherName: teacherObj.teacher?.teacherName || cls.homeroomTeacher?.teacherName || 'GVCN',
+        subjectTeacherId: matchedTeaching.teacherId || matchedTeaching.teacher?.id || '',
+        subjectTeacherName: matchedTeaching.teacher?.teacherName || '',
         totalStudents: cls._count?.students || (cls.students ? cls.students.length : 30),
         evaluatedStudents: 0,
         status: 'DRAFT'
@@ -266,6 +269,7 @@ export default function CreateActivityWizard() {
         if (!assignedClasses.some(c => c.classId === cls.id)) {
           const campusObj = campuses.find(cp => cp.id === cls.campusId) || { campusCode: 'CS', campusName: 'Sky-Line' };
           const teacherObj = (cls.teachers || []).find(t => t.roleInClass === 'GVCN') || {};
+          const matchedTeaching = (cls.teachingAssignments || []).find(ta => ta.subjectId === formData.subjectId || ta.subject?.id === formData.subjectId) || {};
           newItems.push({
             classId: cls.id,
             className: cls.className,
@@ -276,6 +280,8 @@ export default function CreateActivityWizard() {
             level: cls.level || '',
             homeroomTeacherId: teacherObj.teacherId || cls.homeroomTeacherId || '',
             homeroomTeacherName: teacherObj.teacher?.teacherName || cls.homeroomTeacher?.teacherName || 'GVCN',
+            subjectTeacherId: matchedTeaching.teacherId || matchedTeaching.teacher?.id || '',
+            subjectTeacherName: matchedTeaching.teacher?.teacherName || '',
             totalStudents: cls._count?.students || (cls.students ? cls.students.length : 30),
             evaluatedStudents: 0,
             status: 'DRAFT'
@@ -1279,13 +1285,26 @@ export default function CreateActivityWizard() {
                     </>
                   )}
                   <div className="pt-2 border-t border-slate-200">
-                    <span className="text-slate-400 font-bold">Lớp tham gia:</span>
-                    <strong className="text-[#003B3A] ml-1">{assignedClasses.length} lớp</strong>
-                    <div className="flex flex-wrap gap-1 mt-1.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-slate-400 font-bold">Lớp tham gia:</span>
+                      <strong className="text-[#003B3A]">{assignedClasses.length} lớp</strong>
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                       {assignedClasses.map(c => (
-                        <span key={c.classId} className="px-2 py-0.5 rounded bg-white border border-slate-200 text-[10px] font-black text-slate-700">
-                          {c.className}
-                        </span>
+                        <div key={c.classId} className="p-2 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-[11px] gap-2">
+                          <span className="font-black text-[#003B3A]">{c.className}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap justify-end text-[10px]">
+                            <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded font-bold">
+                              GVCN: {c.homeroomTeacherName || 'Chưa gán'}
+                            </span>
+                            {formData.subjectName && (
+                              <span className="text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-bold flex items-center gap-1">
+                                <BookOpen className="w-3 h-3 text-amber-600" />
+                                GVBM {formData.subjectName}: {c.subjectTeacherName || 'Chưa phân công'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
