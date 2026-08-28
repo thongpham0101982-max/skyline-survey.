@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 
@@ -40,67 +40,101 @@ export async function GET(req: Request) {
                 { teachers: { some: { teacherId: teacher.id, roleInClass: "GVCN" } } }
               ]
             },
-            include: { campus: true },
-            orderBy: [
-              { level: 'asc' },
-              { grade: 'asc' },
-              { className: 'asc' }
-            ]
+            include: {
+              campus: true,
+              academicYear: true,
+              teachers: {
+                where: { roleInClass: "GVCN" },
+                include: { teacher: { select: { id: true, teacherName: true, email: true } } }
+              },
+              _count: { select: { students: true } }
+            },
+            orderBy: [{ level: 'asc' }, { grade: 'asc' }, { className: 'asc' }]
           });
-          return NextResponse.json(homeroomClasses.map(c => ({ ...c, teacherRole: "GVCN", roleLabel: "Chủ nhiệm" })));
+
+          return NextResponse.json(homeroomClasses.map(c => ({
+            ...c,
+            isHomeroom: true,
+            homeroomTeacher: { id: teacher.id, teacherName: teacher.teacherName, email: teacher.email }
+          })));
         }
 
-        // Scope: my_teaching_classes (Both Homeroom + Subject teaching classes)
-        const myClasses = await prisma.class.findMany({
-          where: {
-            ...whereCondition,
-            OR: [
-              { homeroomTeacherId: teacher.id },
-              { homeroomTeacherId: { contains: teacher.id } },
-              { teachers: { some: { teacherId: teacher.id } } },
-              { teachingAssignments: { some: { teacherId: teacher.id } } }
-            ]
-          },
-          include: {
-            campus: true,
-            teachingAssignments: {
-              where: { teacherId: teacher.id },
-              include: { subject: true }
+        // Scope: my_teaching_classes (both homeroom + subject classes)
+        const [homeroomClasses, subjectClasses] = await Promise.all([
+          prisma.class.findMany({
+            where: {
+              ...whereCondition,
+              OR: [
+                { homeroomTeacherId: teacher.id },
+                { homeroomTeacherId: { contains: teacher.id } },
+                { teachers: { some: { teacherId: teacher.id, roleInClass: "GVCN" } } }
+              ]
+            },
+            include: {
+              campus: true,
+              academicYear: true,
+              _count: { select: { students: true } }
             }
-          },
-          orderBy: [
-            { level: 'asc' },
-            { grade: 'asc' },
-            { className: 'asc' }
-          ]
-        });
+          }),
+          prisma.teachingAssignment.findMany({
+            where: {
+              teacherId: teacher.id,
+              ...(activeYearId && activeYearId !== 'all' ? { academicYearId: activeYearId } : {})
+            },
+            include: {
+              class: {
+                include: {
+                  campus: true,
+                  academicYear: true,
+                  _count: { select: { students: true } }
+                }
+              },
+              subject: true
+            }
+          })
+        ]);
 
-        const formatted = myClasses.map(c => {
-          const isHomeroom = c.homeroomTeacherId === teacher.id || (c.homeroomTeacherId && c.homeroomTeacherId.includes(teacher.id));
-          const subjects = c.teachingAssignments.map(ta => ta.subject?.subjectName).filter(Boolean);
-          const roleLabel = isHomeroom 
-            ? "Chủ nhiệm" 
-            : (subjects.length > 0 ? `GVBM ${subjects.join(', ')}` : "Giảng dạy");
-
-          return {
+        const classMap = new Map();
+        homeroomClasses.forEach(c => {
+          classMap.set(c.id, {
             ...c,
-            isHomeroom,
-            teacherRole: isHomeroom ? "GVCN" : "GVBM",
-            roleLabel
-          };
+            isHomeroom: true,
+            homeroomTeacher: { id: teacher.id, teacherName: teacher.teacherName, email: teacher.email },
+            subjects: []
+          });
         });
 
-        return NextResponse.json(formatted);
+        subjectClasses.forEach(ta => {
+          if (ta.class) {
+            const existing = classMap.get(ta.class.id) || {
+              ...ta.class,
+              isHomeroom: false,
+              subjects: []
+            };
+            if (ta.subject) {
+              existing.subjects.push({
+                id: ta.subject.id,
+                subjectCode: ta.subject.subjectCode,
+                subjectName: ta.subject.subjectName
+              });
+            }
+            classMap.set(ta.class.id, existing);
+          }
+        });
+
+        return NextResponse.json(Array.from(classMap.values()));
       }
     }
 
-    // Default general query (for Admin or system dropdowns)
+    // Default general query (for Admin, Teacher Wizard or system dropdowns)
     let classes = await prisma.class.findMany({
       where: Object.keys(whereCondition).length > 0 ? whereCondition : undefined,
       include: {
         campus: true,
-        homeroomTeacher: { select: { id: true, teacherName: true, email: true } },
-        teachers: { include: { teacher: { select: { id: true, teacherName: true, email: true } } } },
+        academicYear: true,
+        teachers: {
+          include: { teacher: { select: { id: true, teacherName: true, email: true } } }
+        },
         teachingAssignments: {
           include: {
             subject: { select: { id: true, subjectName: true, subjectCode: true } },
@@ -115,13 +149,15 @@ export async function GET(req: Request) {
       ]
     });
 
-    // Fallback: If filtered classes is empty and activeYearId was passed, return all classes
-    if (classes.length === 0 && activeYearId) {
+    // Fallback: If filtered classes is empty, query all classes across all years
+    if (classes.length === 0) {
       classes = await prisma.class.findMany({
         include: {
           campus: true,
-          homeroomTeacher: { select: { id: true, teacherName: true, email: true } },
-          teachers: { include: { teacher: { select: { id: true, teacherName: true, email: true } } } },
+          academicYear: true,
+          teachers: {
+            include: { teacher: { select: { id: true, teacherName: true, email: true } } }
+          },
           teachingAssignments: {
             include: {
               subject: { select: { id: true, subjectName: true, subjectCode: true } },
@@ -137,9 +173,26 @@ export async function GET(req: Request) {
       });
     }
 
-    return NextResponse.json(classes);
+    // Load teacher names for homeroomTeacherId lookup
+    const allTeachers = await prisma.teacher.findMany({
+      select: { id: true, teacherName: true, email: true }
+    });
+    const teacherMap = new Map(allTeachers.map(t => [t.id, t]));
+
+    const formattedClasses = classes.map(c => {
+      const gvcnFromAssignment = (c.teachers || []).find(t => t.roleInClass === 'GVCN')?.teacher;
+      const gvcnFromId = c.homeroomTeacherId ? teacherMap.get(c.homeroomTeacherId) : null;
+      const homeroomTeacher = gvcnFromAssignment || gvcnFromId || (c.homeroomTeacherId ? { id: c.homeroomTeacherId, teacherName: 'GVCN', email: '' } : null);
+
+      return {
+        ...c,
+        homeroomTeacher
+      };
+    });
+
+    return NextResponse.json(formattedClasses);
   } catch (error: any) {
     console.error("Error fetching classes:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
