@@ -22,6 +22,7 @@ export default function ExperientialActivitiesList() {
   const [selectedStrand, setSelectedStrand] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [scopeFilter, setScopeFilter] = useState("ALL"); // ALL | ASSIGNED | MY_CREATED
+  const [roleScope, setRoleScope] = useState("ALL"); // ALL | GVBM | GVCN | MY_CREATED
   const [viewMode, setViewMode] = useState("list");
   const [progressModalActivity, setProgressModalActivity] = useState(null);
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function ExperientialActivitiesList() {
     if (selectedStrand !== "ALL") url += `&strand=${selectedStrand}`;
     if (statusFilter !== "ALL") url += `&status=${statusFilter}`;
     if (scopeFilter !== "ALL") url += `&scopeType=${scopeFilter}`;
+    if (roleScope !== "ALL") url += `&roleScope=${roleScope}`;
     if (search.trim()) url += `&q=${encodeURIComponent(search.trim())}`;
 
     fetch(url)
@@ -58,7 +60,7 @@ export default function ExperientialActivitiesList() {
         setLoading(false);
       })
       .catch(() => { setActivities([]); setLoading(false); });
-  }, [selectedYearId, selectedCampusId, selectedLevel, selectedGrade, selectedStrand, statusFilter, scopeFilter, search]);
+  }, [selectedYearId, selectedCampusId, selectedLevel, selectedGrade, selectedStrand, statusFilter, scopeFilter, roleScope, search]);
 
   useEffect(() => { loadActivities(); }, [loadActivities]);
 
