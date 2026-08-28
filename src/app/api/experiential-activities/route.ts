@@ -158,8 +158,7 @@ export async function GET(req: Request) {
           myAssignedClass = matchedGvcnClass;
         }
 
-        // Check GVBM match:
-        // Case A: Activity has a specific subjectId
+        // Check GVBM match: ONLY when extraData.subjectId is specifically selected
         if (extraData.subjectId) {
           const matchedTeaching = teachingAssignmentsList.find(ta => 
             ta.subjectId === extraData.subjectId && 
@@ -171,18 +170,6 @@ export async function GET(req: Request) {
             const matchedClassObj = assignedClasses.find((c: any) => c.classId === matchedTeaching.classId);
             if (matchedClassObj) {
               myAssignedClass = matchedClassObj;
-            }
-          }
-        } else {
-          // Case B: General activity without specific subject -> check if teacher teaches in any assigned class
-          const generalTeaching = teachingAssignmentsList.find(ta => 
-            assignedClasses.some((c: any) => c.classId === ta.classId)
-          );
-          if (generalTeaching) {
-            isGVBM = true;
-            gvbmSubjectName = generalTeaching.subject?.subjectName || '';
-            if (!myAssignedClass) {
-              myAssignedClass = assignedClasses.find((c: any) => c.classId === generalTeaching.classId);
             }
           }
         }

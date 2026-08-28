@@ -162,6 +162,20 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
     // 4. Send email to each recipient
     const sendPromises = recipients.map(async (recipient) => {
       const roleDescription = recipient.roles.join("; ");
+      const isGVBMRecipient = recipient.roles.some(r => r.includes("GVBM"));
+      const isGVCNRecipient = recipient.roles.some(r => r.includes("GVCN"));
+
+      let roleSpecificMessage = "";
+      if (subjectId && isGVBMRecipient && isGVCNRecipient) {
+        roleSpecificMessage = "Thầy/Cô vừa nhận được kế hoạch <strong>Hoạt động trải nghiệm tích hợp môn " + (subjectName || "Bộ môn") + "</strong> từ <strong>Tổ CTHS - Ban HĐNGLL</strong> với vai trò kiêm nhiệm: <strong>" + roleDescription + "</strong>.";
+      } else if (subjectId && isGVBMRecipient) {
+        roleSpecificMessage = "Thầy/Cô vừa nhận được phân công phụ trách <strong>Hoạt động trải nghiệm môn " + (subjectName || "Bộ môn") + "</strong> từ <strong>Tổ CTHS - Ban HĐNGLL</strong> với vai trò: <strong style='color: #b45309;'>" + roleDescription + "</strong> (Chấm điểm đánh giá chuyên môn môn học).";
+      } else if (subjectId && isGVCNRecipient) {
+        roleSpecificMessage = "Lớp chủ nhiệm của Thầy/Cô vừa được phân công tham gia <strong>Hoạt động trải nghiệm tích hợp môn " + (subjectName || "Bộ môn") + "</strong> từ <strong>Tổ CTHS - Ban HĐNGLL</strong> với vai trò: <strong style='color: #00A99D;'>" + roleDescription + "</strong> (Phối hợp theo dõi tiến độ của lớp).";
+      } else {
+        roleSpecificMessage = "Thầy/Cô vừa nhận được kế hoạch <strong>Hoạt động trải nghiệm</strong> từ <strong>Tổ CTHS - Ban HĐNGLL</strong> với vai trò: <strong style='color: #00A99D;'>" + roleDescription + "</strong> (Trực tiếp đánh giá học sinh lớp chủ nhiệm).";
+      }
+
       const emailSubject = `[Sky-Line HĐTN] Kế hoạch Hoạt động Trải nghiệm: ${activityName}`;
 
       const emailHtml = `
@@ -201,7 +215,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       <div class="greeting">Kính gửi Thầy/Cô ${recipient.teacherName},</div>
       
       <p style="font-size: 13.5px; line-height: 1.6; color: #334155; margin: 0 0 12px 0;">
-        Thầy/Cô vừa nhận được kế hoạch <strong>Hoạt động trải nghiệm</strong> từ <strong>Tổ CTHS - Ban HĐNGLL</strong> với vai trò: <strong style="color: #00A99D;">${roleDescription}</strong>.
+        ${roleSpecificMessage}
       </p>
 
       <div class="highlight-box">
