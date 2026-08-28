@@ -1,5 +1,5 @@
 // @ts-nocheck
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { unstable_cache } from "next/cache"
 
 async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: string[] = []) {
@@ -18,15 +18,24 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   })
   const academicYearName = academicYear?.name || ""
 
-  const studentWhere: any = { status: "ACTIVE", ...(targetYearId ? { OR: [{ academicYearId: targetYearId }, { class: { academicYearId: targetYearId } }] } : {}) }
-  const classWhere: any = { status: "ACTIVE" }
+  // Strictly filter active students enrolled in classes of the target academic year
+  const studentWhere: any = { 
+    status: "ACTIVE",
+    class: {
+      status: "ACTIVE",
+      ...(targetYearId ? { academicYearId: targetYearId } : {})
+    }
+  }
+  const classWhere: any = { 
+    status: "ACTIVE",
+    ...(targetYearId ? { academicYearId: targetYearId } : {})
+  }
   const transferWhere: any = {}
   const assessmentWhere: any = {}
   const summaryWhere: any = {}
 
   if (targetYearId) {
-        classWhere.academicYearId = targetYearId
-    transferWhere.student = { academicYearId: targetYearId }
+    transferWhere.student = { class: { academicYearId: targetYearId } }
     assessmentWhere.period = { academicYearId: targetYearId }
     summaryWhere.class = { academicYearId: targetYearId }
   }
@@ -46,6 +55,8 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   }
 
   const [
+    allAcademicYears,
+    allCampuses,
     totalStudents,
     totalClasses,
     generalClasses,
@@ -56,6 +67,13 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     admissionGroup,
     classSummaries
   ] = await Promise.all([
+    prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" },
+      select: { id: true, name: true, status: true, isOff: true }
+    }),
+    prisma.campus.findMany({
+      select: { id: true, campusCode: true, campusName: true }
+    }),
     prisma.student.count({ where: studentWhere }),
     prisma.class.count({ where: classWhere }),
     prisma.class.count({
@@ -190,6 +208,19 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     }
   }
 
+  // Helper for Preschool Grade Normalization
+  const normalizePreschoolGradeName = (gradeValue: string) => {
+    if (!gradeValue) return "Khác"
+    const val = gradeValue.trim()
+    if (val === "Nhà trẻ 12-18 tháng" || val.includes("12-18") || val.includes("12 đến 18")) return "Nhà trẻ 12-18 tháng"
+    if (val === "Nhà trẻ 18-24 tháng" || val.includes("18-24") || val.includes("18 đến 24")) return "Nhà trẻ 18-24 tháng"
+    if (val === "Nhà trẻ 24-36 tháng" || val.includes("24-36") || val.includes("24 đến 36") || val.toLowerCase().includes("nhà trẻ") || val.includes("18-36") || val.includes("12-36")) return "Nhà trẻ 24-36 tháng"
+    if (val === "Mẫu giáo bé" || val === "3 đến 4 tuổi" || val === "3-4 tuổi") return "Mẫu giáo bé"
+    if (val === "Mẫu giáo nhỡ" || val === "4 đến 5 tuổi" || val === "4-5 tuổi") return "Mẫu giáo nhỡ"
+    if (val === "Mẫu giáo lớn" || val === "5 đến 6 tuổi" || val === "5-6 tuổi") return "Mẫu giáo lớn"
+    return val
+  }
+
   // Reconstruct monthly headcount trend split by General vs Preschool
   let monthlyHeadcount: { month: string; count: number; generalCount: number; preschoolCount: number }[] = []
   if (academicYear) {
@@ -212,7 +243,10 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
     const allYearStudents = await prisma.student.findMany({
       where: {
-        academicYearId: targetYearId,
+        class: {
+          academicYearId: targetYearId,
+          status: "ACTIVE"
+        },
         campusId: isFullAccess ? undefined : { in: allowedCampusIds }
       },
       include: {
@@ -312,9 +346,20 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   // Group by Level
   const levelCountMap: Record<string, number> = { "Mầm non": 0, "Tiểu học": 0, "THCS": 0, "THPT": 0 }
 
+  let totalGeneralStudents = 0
+  let totalPreschoolStudents = 0
+
   activeStudentsForStats.forEach(s => {
-    // Grade
-    const g = String(s.class?.grade || "").replace("Khối ", "").trim() || "Khác"
+    const isPreschool = s.class?.level === "Mầm non" || ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn"].includes((s.class?.level || "").toLowerCase())
+    
+    let g = ""
+    if (isPreschool) {
+      g = normalizePreschoolGradeName(s.class?.grade || "")
+      totalPreschoolStudents++
+    } else {
+      g = String(s.class?.grade || "").replace("Khối ", "").trim() || "Khác"
+      totalGeneralStudents++
+    }
     gradeCountMap[g] = (gradeCountMap[g] || 0) + 1
 
     // Campus
@@ -327,7 +372,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     campusCountMap[cName].count++
 
     // Level
-    const lvl = s.class?.level || "Khác"
+    const lvl = isPreschool ? "Mầm non" : (s.class?.level || "Khác")
     if (levelCountMap[lvl] !== undefined) {
       levelCountMap[lvl]++
     } else {
@@ -335,26 +380,31 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     }
   })
 
-  // Formatted Grade Distribution (Order: Khối 1 -> Khối 12)
+  // Formatted K12 Grade Distribution (Order: Khối 1 -> Khối 12)
   const orderedGrades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
-  const gradeDistribution = orderedGrades.map(gNum => ({
+  const k12GradeDistribution = orderedGrades.map(gNum => ({
     grade: gNum,
-    label: `Khối ${gNum}`,
+    label: "Khối " + gNum,
     count: gradeCountMap[gNum] || 0,
     level: Number(gNum) <= 5 ? "Tiểu học" : Number(gNum) <= 9 ? "THCS" : "THPT"
   }))
 
-  // Add Preschool & Other grades if present
-  Object.keys(gradeCountMap).forEach(gKey => {
-    if (!orderedGrades.includes(gKey)) {
-      gradeDistribution.push({
-        grade: gKey,
-        label: gKey.includes("Mẫu") || gKey.includes("Nhà trẻ") ? gKey : `Khối ${gKey}`,
-        count: gradeCountMap[gKey],
-        level: gKey.includes("Mẫu") || gKey.includes("Nhà trẻ") ? "Mầm non" : "Khác"
+  // Formatted Preschool Grade Distribution
+  const orderedPreschoolGrades = ["Nhà trẻ 12-18 tháng", "Nhà trẻ 18-24 tháng", "Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]
+  const preschoolGradeDistribution: any[] = []
+  orderedPreschoolGrades.forEach(pKey => {
+    if (gradeCountMap[pKey] !== undefined) {
+      preschoolGradeDistribution.push({
+        grade: pKey,
+        label: pKey,
+        count: gradeCountMap[pKey] || 0,
+        level: "Mầm non"
       })
     }
   })
+
+  // Combined Grade Distribution
+  const gradeDistribution = [...k12GradeDistribution, ...preschoolGradeDistribution]
 
   // Formatted Campus Distribution
   const campusDistribution = Object.values(campusCountMap)
@@ -366,7 +416,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     percentage: totalStudents > 0 ? Number(((count / totalStudents) * 100).toFixed(1)) : 0
   }))
 
-  // Entry Level Students (Khối 1, Khối 9, Khối 10)
+  // Entry Level Students (Khối 1, Khối 6, Khối 10)
   const inputAssessmentWhere: any = targetYearId ? { batch: { period: { academicYearId: targetYearId } } } : {}
   if (!isFullAccess) {
     inputAssessmentWhere.batch = {
@@ -397,7 +447,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   preschoolInputs.forEach(p => {
     if (p.studentCode) preCodeSet.add(p.studentCode)
     if (p.enrollmentCode) preCodeSet.add(p.enrollmentCode)
-    if (p.fullName && p.grade === "5 đến 6 tuổi") preNameSet.add(p.fullName.trim().toLowerCase())
+    if (p.fullName && (p.grade === "5 đến 6 tuổi" || p.grade === "Mẫu giáo lớn")) preNameSet.add(p.fullName.trim().toLowerCase())
   })
 
   const entryStudentsList: any[] = []
@@ -462,7 +512,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
         id: s.id,
         studentCode: s.studentCode,
         studentName: s.studentName,
-        grade: `Khối ${rawGrade}`,
+        grade: "Khối " + rawGrade,
         rawGrade,
         className: s.class?.className || "---",
         campusName: s.campus?.campusName || "---",
@@ -474,8 +524,13 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   })
 
   return {
+    academicYearId: targetYearId,
     academicYearName,
+    allAcademicYears,
+    allCampuses,
     totalStudents,
+    totalGeneralStudents,
+    totalPreschoolStudents,
     totalClasses,
     generalClasses,
     preschoolClasses,
@@ -493,6 +548,8 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     newEnrollmentStats,
     transferOutStats,
     gradeDistribution,
+    k12GradeDistribution,
+    preschoolGradeDistribution,
     campusDistribution,
     levelDistribution,
     entryLevelStats
@@ -580,7 +637,7 @@ export const getAdminMetrics = async (academicYearId?: string, allowedCampusIds:
       return await _getAdminMetrics(academicYearId, allowedCampusIds);
     },
     ['admin-metrics', yearKey, campusKey],
-    { revalidate: 300 } // 5 minutes cache
+    { revalidate: 15 } // 15s cache
   );
   
   return getCached();

@@ -29,7 +29,10 @@ import {
   ChevronRight,
   RefreshCw,
   Clock,
-  Radio
+  Radio,
+  Calendar,
+  BarChart3,
+  School
 } from "lucide-react"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
 import { 
@@ -80,6 +83,11 @@ export default function AdminDashboard() {
   const [lastUpdated, setLastUpdated] = useState<string>("")
   const [isAutoRefresh, setIsAutoRefresh] = useState(true)
 
+  // Interactive Filters
+  const [selectedYearId, setSelectedYearId] = useState<string>("")
+  const [selectedCampusId, setSelectedCampusId] = useState<string>("ALL")
+  const [gradeChartTab, setGradeChartTab] = useState<"ALL" | "K12" | "MAM_NON">("ALL")
+
   // Filters for Entry Level Students
   const [entryGradeFilter, setEntryGradeFilter] = useState<string>("ALL")
   const [entrySourceFilter, setEntrySourceFilter] = useState<string>("ALL")
@@ -89,13 +97,19 @@ export default function AdminDashboard() {
   const [entryPage, setEntryPage] = useState<number>(1)
   const ITEMS_PER_PAGE = 10
 
-  
   useEffect(() => {
     setEntryPage(1)
   }, [entryGradeFilter, entrySourceFilter, entryCampusFilter, entrySearchQuery])
+
   const userName = session?.user?.name || "Thành viên"
   const roleCode = (session?.user as any)?.role || ""
   const isSuperAdmin = roleCode === "ADMIN" || roleCode === "Admin"
+
+  // Initial read of stored academic year
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("selectedAcademicYear") : ""
+    if (stored) setSelectedYearId(stored)
+  }, [])
 
   useEffect(() => {
     if (status === "authenticated" && !isSuperAdmin) {
@@ -115,14 +129,23 @@ export default function AdminDashboard() {
     }
   }, [status, isSuperAdmin, roleCode])
 
-  const fetchMetrics = useCallback(async (isSilent = false) => {
+  const fetchMetrics = useCallback(async (isSilent = false, customYearId?: string, customCampusId?: string) => {
     if (!isSilent) setRefreshing(true)
     try {
-      const yearId = localStorage.getItem("selectedAcademicYear") || "";
-      const r = await fetch("/api/check-he-thong?action=getMetrics&academicYearId=" + yearId + "&_t=" + Date.now())
+      const yearToUse = customYearId !== undefined ? customYearId : (selectedYearId || (typeof window !== "undefined" ? localStorage.getItem("selectedAcademicYear") : "") || "")
+      const campusToUse = customCampusId !== undefined ? customCampusId : selectedCampusId
+
+      let url = "/api/check-he-thong?action=getMetrics&_t=" + Date.now()
+      if (yearToUse) url += "&academicYearId=" + encodeURIComponent(yearToUse)
+      if (campusToUse && campusToUse !== "ALL") url += "&campusId=" + encodeURIComponent(campusToUse)
+
+      const r = await fetch(url)
       if (r.ok) {
         const data = await r.json()
         setMetrics(data)
+        if (data.academicYearId && !selectedYearId) {
+          setSelectedYearId(data.academicYearId)
+        }
         const now = new Date()
         setLastUpdated(now.toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit', second: '2-digit' }))
       }
@@ -132,13 +155,19 @@ export default function AdminDashboard() {
       setLoading(false)
       setRefreshing(false)
     }
-  }, [])
+  }, [selectedYearId, selectedCampusId])
 
   useEffect(() => {
     fetchMetrics()
 
-    window.addEventListener("academicYearChanged", () => fetchMetrics())
-    return () => window.removeEventListener("academicYearChanged", () => fetchMetrics())
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear") || ""
+      setSelectedYearId(stored)
+      fetchMetrics(false, stored)
+    }
+
+    window.addEventListener("academicYearChanged", handleYearChange)
+    return () => window.removeEventListener("academicYearChanged", handleYearChange)
   }, [fetchMetrics])
 
   // Realtime Auto-refresh Interval (mỗi 30s)
@@ -150,17 +179,34 @@ export default function AdminDashboard() {
     return () => clearInterval(timer)
   }, [isAutoRefresh, fetchMetrics])
 
+  const handleYearSelect = (yearId: string) => {
+    setSelectedYearId(yearId)
+    if (typeof window !== "undefined") {
+      localStorage.setItem("selectedAcademicYear", yearId)
+      document.cookie = "selectedAcademicYear=" + yearId + "; path=/; max-age=31536000; SameSite=Lax"
+      window.dispatchEvent(new Event("academicYearChanged"))
+    }
+    fetchMetrics(false, yearId, selectedCampusId)
+  }
+
+  const handleCampusSelect = (campusId: string) => {
+    setSelectedCampusId(campusId)
+    fetchMetrics(false, selectedYearId, campusId)
+  }
+
   if (status === "loading" || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
         <Loader2 className="w-12 h-12 text-[#48BFE3] animate-spin opacity-80" />
-        <p className="text-slate-500 font-bold tracking-wider uppercase text-xs">Đang tải dữ liệu Realtime...</p>
+        <p className="text-slate-500 font-bold tracking-wider uppercase text-xs">Đang tải dữ liệu Realtime năm học 2026-2027...</p>
       </div>
     )
   }
 
   const finalMetrics = metrics || {
     totalStudents: 0,
+    totalGeneralStudents: 0,
+    totalPreschoolStudents: 0,
     totalClasses: 0,
     generalClasses: 0,
     preschoolClasses: 0,
@@ -168,18 +214,18 @@ export default function AdminDashboard() {
     newEnrollmentsCount: 0,
     changeClassCount: 0,
     completionRate: 0,
-    assessmentGroup: [],
-    admissionGroup: [],
+    allAcademicYears: [],
+    allCampuses: [],
     monthlyHeadcount: [],
     newEnrollmentStats: { total: 0, inProvince: 0, outProvince: 0, abroad: 0, inProvincePrivate: 0 },
     transferOutStats: { total: 0, inProvince: 0, outProvince: 0, abroad: 0, inProvincePrivate: 0 },
     gradeDistribution: [],
+    k12GradeDistribution: [],
+    preschoolGradeDistribution: [],
     campusDistribution: [],
     levelDistribution: [],
-    entryLevelStats: { total: 0, grade1: { total: 0, surveyCount: 0, preschoolCount: 0 }, grade6: { total: 0, surveyCount: 0 }, grade10: { total: 0, surveyCount: 0 }, students: [] }
+    entryLevelStats: { total: 0, grade1: { total: 0, surveyCount: 0, preschoolCount: 0, otherCount: 0 }, grade6: { total: 0, surveyCount: 0, otherCount: 0 }, grade10: { total: 0, surveyCount: 0, otherCount: 0 }, students: [] }
   }
-
-  const campusIds = (session?.user as any)?.campusIds || []
 
   // Entry Level Students Filtering
   const rawEntryStudents = finalMetrics.entryLevelStats?.students || []
@@ -201,7 +247,7 @@ export default function AdminDashboard() {
     return true
   })
 
-    // Pagination for Entry Level Students
+  // Pagination for Entry Level Students
   const totalEntryPages = Math.ceil(filteredEntryStudents.length / ITEMS_PER_PAGE) || 1
   const paginatedEntryStudents = filteredEntryStudents.slice((entryPage - 1) * ITEMS_PER_PAGE, entryPage * ITEMS_PER_PAGE)
 
@@ -214,59 +260,96 @@ export default function AdminDashboard() {
     "Khác": "#94a3b8"
   }
 
+  // Active Grade Data for Chart based on selected tab
+  const activeGradeData = gradeChartTab === "K12" 
+    ? (finalMetrics.k12GradeDistribution || [])
+    : gradeChartTab === "MAM_NON"
+    ? (finalMetrics.preschoolGradeDistribution || [])
+    : (finalMetrics.gradeDistribution || [])
+
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       <WelcomeAlert name={userName} />
       
-      {/* REALTIME DASHBOARD TOP BAR */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
+      {/* REALTIME DASHBOARD TOP BAR WITH INTERACTIVE FILTERS */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border-2 border-teal-100/80 shadow-xs">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Tổng quan Hệ thống Realtime</h1>
             <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              Live Realtime
+              Live Sync
             </span>
           </div>
-          <p className="text-slate-500 text-sm font-medium mt-0.5">
-            Năm học: <span className="font-bold text-[#48BFE3]">{finalMetrics.academicYearName || "---"}</span> | Cập nhật gần nhất: <span className="font-bold text-slate-700">{lastUpdated || "Ngay bây giờ"}</span>
+          <p className="text-slate-500 text-xs font-semibold mt-1 flex items-center gap-2">
+            <span>Năm học: <strong className="text-[#48BFE3]">{finalMetrics.academicYearName || "2026-2027"}</strong></span>
+            <span>•</span>
+            <span>Cập nhật: <strong className="text-slate-700">{lastUpdated || "Ngay bây giờ"}</strong></span>
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
+        {/* INTERACTIVE CONTROLS (YEAR SWITCHER, CAMPUS FILTER, REFRESH) */}
+        <div className="flex flex-wrap items-center gap-3">
+          
+          {/* NĂM HỌC SELECTOR */}
+          <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+            <Calendar className="w-4 h-4 text-[#48BFE3]" />
+            <select
+              value={selectedYearId || finalMetrics.academicYearId || ""}
+              onChange={(e) => handleYearSelect(e.target.value)}
+              className="bg-transparent text-xs font-black text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              {finalMetrics.allAcademicYears?.map((y: any) => (
+                <option key={y.id} value={y.id}>Năm học {y.name} {y.status === "ACTIVE" ? "(Hiện tại)" : ""}</option>
+              ))}
+              {!finalMetrics.allAcademicYears?.length && (
+                <option value={finalMetrics.academicYearId || ""}>{finalMetrics.academicYearName || "Năm học 2026-2027"}</option>
+              )}
+            </select>
+          </div>
+
+          {/* CƠ SỞ FILTER */}
+          <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+            <Building2 className="w-4 h-4 text-[#6C5CE7]" />
+            <select
+              value={selectedCampusId}
+              onChange={(e) => handleCampusSelect(e.target.value)}
+              className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer pr-1"
+            >
+              <option value="ALL">Tất cả Cơ sở</option>
+              {finalMetrics.allCampuses?.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.campusName}</option>
+              ))}
+            </select>
+          </div>
+
           {/* TOGGLE AUTO REFRESH */}
           <button
             onClick={() => setIsAutoRefresh(!isAutoRefresh)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-2 ${
+            className={"px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
               isAutoRefresh 
                 ? "bg-teal-50 text-[#48BFE3] border-teal-200 shadow-2xs" 
                 : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
-            }`}
+            )}
           >
-            <Radio className={`w-3.5 h-3.5 ${isAutoRefresh ? 'animate-pulse text-[#48BFE3]' : ''}`} />
-            Auto-refresh (30s): <strong>{isAutoRefresh ? "BẬT" : "TẮT"}</strong>
+            <Radio className={"w-3.5 h-3.5 " + (isAutoRefresh ? "animate-pulse text-[#48BFE3]" : "")} />
+            <span>30s: <strong>{isAutoRefresh ? "BẬT" : "TẮT"}</strong></span>
           </button>
 
           {/* MANUAL REFRESH BUTTON */}
           <button
-            onClick={() => fetchMetrics()}
+            onClick={() => fetchMetrics(false, selectedYearId, selectedCampusId)}
             disabled={refreshing}
-            className="px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#002b2a] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 disabled:opacity-50"
+            className="px-3.5 py-1.5 bg-[#003B3A] hover:bg-[#002b2a] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            Làm mới ngay
+            <RefreshCw className={"w-3.5 h-3.5 " + (refreshing ? "animate-spin" : "")} />
+            <span>Làm mới</span>
           </button>
-
-          {campusIds.length > 0 && (
-            <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs">
-              Đang lọc: {campusIds.length} Cơ sở
-            </span>
-          )}
         </div>
       </div>
 
       {/* KPI METRIC CARDS */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
         
         {/* CARD 1: TỔNG HỌC SINH */}
         <div className="relative bg-white rounded-2xl border-2 border-teal-100 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
@@ -275,8 +358,13 @@ export default function AdminDashboard() {
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tổng Học sinh toàn trường</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.totalStudents.toLocaleString()}</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tổng Học sinh Toàn trường</p>
+              <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.totalStudents.toLocaleString()} <span className="text-xs font-bold text-slate-400">HS</span></h3>
+              <div className="text-[11px] text-slate-500 font-semibold mt-1 space-x-2">
+                <span>Phổ thông: <strong className="text-[#48BFE3]">{(finalMetrics.totalGeneralStudents || 0).toLocaleString()}</strong></span>
+                <span>•</span>
+                <span>Mầm non: <strong className="text-rose-500">{(finalMetrics.totalPreschoolStudents || 0).toLocaleString()}</strong></span>
+              </div>
             </div>
           </div>
         </div>
@@ -288,8 +376,8 @@ export default function AdminDashboard() {
               <Layers className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Lớp học Cơ sở</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.totalClasses}</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Lớp học Phân bổ</p>
+              <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.totalClasses} <span className="text-xs font-bold text-slate-400">Lớp</span></h3>
               <div className="text-[11px] text-slate-500 font-semibold mt-1 space-x-2">
                 <span>Phổ thông: <strong className="text-[#6C5CE7]">{finalMetrics.generalClasses || 0}</strong></span>
                 <span>•</span>
@@ -299,7 +387,29 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* CARD 3: HỌC SINH LƯU CHUYỂN */}
+        {/* CARD 3: HỌC SINH ĐẦU CẤP */}
+        <div className="relative bg-white rounded-2xl border-2 border-purple-100 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 flex items-center justify-center text-[#2E1065] bg-purple-50 rounded-xl shadow-2xs">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">HS Đầu cấp (K1, K6, K10)</p>
+              <h3 className="text-2xl font-black text-slate-800 mt-1">
+                {(finalMetrics.entryLevelStats?.total || 0).toLocaleString()} <span className="text-xs font-bold text-slate-400">HS</span>
+              </h3>
+              <div className="text-[10px] text-slate-500 font-semibold mt-1 space-x-1.5 flex flex-wrap">
+                <span>K1: <strong className="text-[#48BFE3]">{finalMetrics.entryLevelStats?.grade1?.total || 0}</strong></span>
+                <span>•</span>
+                <span>K6: <strong className="text-[#6C5CE7]">{finalMetrics.entryLevelStats?.grade6?.total || 0}</strong></span>
+                <span>•</span>
+                <span>K10: <strong className="text-[#2E1065]">{finalMetrics.entryLevelStats?.grade10?.total || 0}</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CARD 4: HỌC SINH LƯU CHUYỂN */}
         <div className="relative bg-white rounded-2xl border-2 border-amber-100 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 flex items-center justify-center text-[#D97706] bg-amber-50 rounded-xl shadow-2xs">
@@ -308,7 +418,7 @@ export default function AdminDashboard() {
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">HS Lưu chuyển</p>
               <h3 className="text-2xl font-black text-slate-800 mt-1">
-                {((finalMetrics.newEnrollmentsCount || 0) + (finalMetrics.transferCount || 0) + (finalMetrics.changeClassCount || 0)).toLocaleString()}
+                {((finalMetrics.newEnrollmentsCount || 0) + (finalMetrics.transferCount || 0) + (finalMetrics.changeClassCount || 0)).toLocaleString()} <span className="text-xs font-bold text-slate-400">HS</span>
               </h3>
               <div className="text-[10px] text-slate-500 font-semibold mt-1 space-x-1.5 flex flex-wrap">
                 <span>Mới: <strong className="text-emerald-600">{finalMetrics.newEnrollmentsCount || 0}</strong></span>
@@ -317,19 +427,6 @@ export default function AdminDashboard() {
                 <span>•</span>
                 <span>Lớp: <strong className="text-[#48BFE3]">{finalMetrics.changeClassCount || 0}</strong></span>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CARD 4: TỶ LỆ HOÀN THÀNH */}
-        <div className="relative bg-white rounded-2xl border-2 border-slate-200 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 flex items-center justify-center text-[#475569] bg-slate-100 rounded-xl shadow-2xs">
-              <ClipboardCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tỷ lệ Hoàn thành</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.completionRate.toFixed(1)}%</h3>
             </div>
           </div>
         </div>
@@ -347,7 +444,7 @@ export default function AdminDashboard() {
               <div>
                 <h3 className="font-black text-slate-800 text-base">Theo dõi Diễn biến Sỹ số Học sinh theo Thống kê Tháng</h3>
                 <p className="text-xs text-slate-400 font-semibold mt-0.5 uppercase tracking-wider">
-                  Biểu diễn diễn biến biến động tổng số học sinh đang học theo từng tháng
+                  Diễn biến biến động tổng sỹ số học sinh đang học theo từng tháng trong năm học {finalMetrics.academicYearName}
                 </p>
               </div>
             </div>
@@ -373,28 +470,60 @@ export default function AdminDashboard() {
       )}
 
       {/* ======================================================== */}
-      {/* SECTION 1: BIỂU ĐỒ PHÂN BỔ SỸ SỐ (KHỐI 1-12, BẬC HỌC, CƠ SỞ CHUẨN MÀU) */}
+      {/* SECTION 1: BIỂU ĐỒ PHÂN BỔ SỸ SỐ THEO KHỐI (TABS CHỌN TOÀN TRƯỜNG / K-12 / MẦM NON) */}
       {/* ======================================================== */}
-      
-      {/* 1.1 BIỂU ĐỒ SỸ SỐ HỌC SINH THEO KHỐI (KHỐI 1 ĐẾN KHỐI 12) */}
       <div className="bg-white rounded-2xl border-2 border-teal-100 p-6 shadow-xs space-y-6">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 text-[#48BFE3] bg-teal-50 rounded-xl flex items-center justify-center font-bold">
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-black text-slate-800 text-base">Biểu đồ Sỹ số Học sinh theo Khối (Khối 1 - Khối 12)</h3>
+              <h3 className="font-black text-slate-800 text-base">Biểu đồ Sỹ số Học sinh theo từng Khối học</h3>
               <p className="text-xs text-slate-400 font-semibold mt-0.5 uppercase tracking-wider">
-                Thống kê tổng sỹ số học sinh từ Khối 1 đến Khối 12 phân lớp thực tế trong Quản lý Lớp học
+                Thống kê tổng sỹ số phân lớp thực tế trong Quản lý Lớp học ({finalMetrics.totalStudents} HS • {finalMetrics.totalClasses} Lớp)
               </p>
             </div>
+          </div>
+
+          {/* TAB CHUYỂN ĐỔI CHẾ ĐỘ XEM: TOÀN TRƯỜNG / K-12 / MẦM NON */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 text-xs font-bold">
+            <button
+              onClick={() => setGradeChartTab("ALL")}
+              className={"px-3.5 py-1.5 rounded-lg transition-all cursor-pointer " + (
+                gradeChartTab === "ALL" 
+                  ? "bg-white text-[#003B3A] shadow-xs font-black" 
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              Toàn trường ({finalMetrics.totalStudents})
+            </button>
+            <button
+              onClick={() => setGradeChartTab("K12")}
+              className={"px-3.5 py-1.5 rounded-lg transition-all cursor-pointer " + (
+                gradeChartTab === "K12" 
+                  ? "bg-[#48BFE3] text-white shadow-xs font-black" 
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              Phổ thông K-12 ({finalMetrics.totalGeneralStudents || 0})
+            </button>
+            <button
+              onClick={() => setGradeChartTab("MAM_NON")}
+              className={"px-3.5 py-1.5 rounded-lg transition-all cursor-pointer " + (
+                gradeChartTab === "MAM_NON" 
+                  ? "bg-[#f43f5e] text-white shadow-xs font-black" 
+                  : "text-slate-500 hover:text-slate-900"
+              )}
+            >
+              Mầm non ({finalMetrics.totalPreschoolStudents || 0})
+            </button>
           </div>
         </div>
 
         <div className="h-80 w-full pr-2">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={finalMetrics.gradeDistribution} margin={{ top: 15, right: 15, left: -15, bottom: 25 }}>
+            <BarChart data={activeGradeData} margin={{ top: 15, right: 15, left: -15, bottom: 25 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
               <XAxis 
                 dataKey="label" 
@@ -411,12 +540,12 @@ export default function AdminDashboard() {
               <Tooltip
                 contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold' }}
                 cursor={{ fill: 'rgba(0, 169, 157, 0.05)' }}
-                formatter={(value: any) => [`${value} Học sinh`, 'Sỹ số']}
+                formatter={(value: any) => [value + " Học sinh", 'Sỹ số']}
               />
               <Bar dataKey="count" name="Sỹ số" radius={[8, 8, 0, 0]}>
-                {finalMetrics.gradeDistribution?.map((entry: any, index: number) => {
+                {activeGradeData.map((entry: any, index: number) => {
                   const color = entry.level === "Mầm non" ? "#f43f5e" : entry.level === "Tiểu học" ? "#48BFE3" : entry.level === "THCS" ? "#6C5CE7" : "#2E1065";
-                  return <Cell key={`cell-${index}`} fill={color} />
+                  return <Cell key={"cell-" + index} fill={color} />
                 })}
               </Bar>
             </BarChart>
@@ -473,15 +602,15 @@ export default function AdminDashboard() {
                   paddingAngle={4}
                   dataKey="count"
                   nameKey="level"
-                  label={({ name, percent }: any) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                  label={({ name, percent }: any) => name + ": " + (percent * 100).toFixed(1) + "%"}
                   labelLine={false}
                 >
                   {finalMetrics.levelDistribution?.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={LEVEL_COLORS[entry.level] || "#94a3b8"} />
+                    <Cell key={"cell-" + index} fill={LEVEL_COLORS[entry.level] || "#94a3b8"} />
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: any) => [`${value} Học sinh`, 'Sỹ số']}
+                  formatter={(value: any) => [value + " Học sinh", 'Sỹ số']}
                   contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px', fontWeight: 'bold' }}
                 />
                 <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
@@ -512,12 +641,12 @@ export default function AdminDashboard() {
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} dx={-5} />
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '12px', fontWeight: 'bold' }}
-                  formatter={(value: any) => [`${value} Học sinh`, 'Sỹ số']}
+                  formatter={(value: any) => [value + " Học sinh", 'Sỹ số']}
                 />
                 <Bar dataKey="count" name="Sỹ số Cơ sở" radius={[8, 8, 0, 0]}>
                   {finalMetrics.campusDistribution?.map((entry: any, index: number) => {
                     const info = getCampusInfo(entry.campusName || entry.campusCode);
-                    return <Cell key={`cell-campus-${index}`} fill={info.color} />
+                    return <Cell key={"cell-campus-" + index} fill={info.color} />
                   })}
                 </Bar>
               </BarChart>
@@ -552,7 +681,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* ======================================================== */}
-      {/* SECTION 2: CHỨC NĂNG QUẢN LÝ HỌC SINH ĐẦU CẤP (KHỐI 1, KHỐI 9, KHỐI 10) */}
+      {/* SECTION 2: CHỨC NĂNG QUẢN LÝ HỌC SINH ĐẦU CẤP (KHỐI 1, KHỐI 6, KHỐI 10) */}
       {/* ======================================================== */}
       <div className="bg-white rounded-2xl border-2 border-teal-100 p-6 shadow-xs space-y-6">
         
@@ -586,7 +715,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* SUMMARY STAT CARDS CHO KHỐI 1, 9, 10 */}
+        {/* SUMMARY STAT CARDS CHO KHỐI 1, 6, 10 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* KHỐI 1 CARD */}
@@ -617,7 +746,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* KHỐI 9 CARD */}
+          {/* KHỐI 6 CARD */}
           <div className="bg-gradient-to-br from-indigo-50/60 to-blue-50/40 rounded-2xl border-2 border-indigo-100 p-5 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
               <span className="px-2.5 py-1 bg-[#6C5CE7] text-white rounded-lg text-xs font-black uppercase tracking-wider">Khối 6</span>
@@ -666,184 +795,184 @@ export default function AdminDashboard() {
         {/* CHẾ ĐỘ XEM DANH SÁCH HỌC SINH ĐẦU CẤP KHI CẦN (10 DÒNG/TRANG) */}
         {showStudentList && (
           <div className="space-y-6 pt-4 border-t border-slate-100 animate-fade-in">
-        {/* BỘ LỌC VÀ TÌM KIẾM HỌC SINH ĐẦU CẤP DẠNG MULTI-FILTER */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2 border-t border-slate-100">
-          
-          {/* SEARCH BOX */}
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Tìm theo tên, mã HS, lớp..."
-              value={entrySearchQuery}
-              onChange={(e) => setEntrySearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3] transition-all"
-            />
-          </div>
+            {/* BỘ LỌC VÀ TÌM KIẾM HỌC SINH ĐẦU CẤP DẠNG MULTI-FILTER */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2 border-t border-slate-100">
+              
+              {/* SEARCH BOX */}
+              <div className="relative w-full md:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Tìm theo tên, mã HS, lớp..."
+                  value={entrySearchQuery}
+                  onChange={(e) => setEntrySearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3] transition-all"
+                />
+              </div>
 
-          {/* FILTER BUTTONS & DROPDOWNS */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            
-            {/* LỌC KHỐI */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 text-xs font-bold">
-              <button
-                onClick={() => setEntryGradeFilter("ALL")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "ALL" ? "bg-white text-[#48BFE3] shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                Tất cả khối
-              </button>
-              <button
-                onClick={() => setEntryGradeFilter("1")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "1" ? "bg-[#48BFE3] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                Khối 1
-              </button>
-              <button
-                onClick={() => setEntryGradeFilter("6")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "6" ? "bg-[#6C5CE7] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                Khối 6
-              </button>
-              <button
-                onClick={() => setEntryGradeFilter("10")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "10" ? "bg-[#2E1065] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
-              >
-                Khối 10
-              </button>
+              {/* FILTER BUTTONS & DROPDOWNS */}
+              <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                
+                {/* LỌC KHỐI */}
+                <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 text-xs font-bold">
+                  <button
+                    onClick={() => setEntryGradeFilter("ALL")}
+                    className={"px-3 py-1.5 rounded-lg transition-all " + (entryGradeFilter === "ALL" ? "bg-white text-[#48BFE3] shadow-2xs" : "text-slate-600 hover:text-slate-900")}
+                  >
+                    Tất cả khối
+                  </button>
+                  <button
+                    onClick={() => setEntryGradeFilter("1")}
+                    className={"px-3 py-1.5 rounded-lg transition-all " + (entryGradeFilter === "1" ? "bg-[#48BFE3] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900")}
+                  >
+                    Khối 1
+                  </button>
+                  <button
+                    onClick={() => setEntryGradeFilter("6")}
+                    className={"px-3 py-1.5 rounded-lg transition-all " + (entryGradeFilter === "6" ? "bg-[#6C5CE7] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900")}
+                  >
+                    Khối 6
+                  </button>
+                  <button
+                    onClick={() => setEntryGradeFilter("10")}
+                    className={"px-3 py-1.5 rounded-lg transition-all " + (entryGradeFilter === "10" ? "bg-[#2E1065] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900")}
+                  >
+                    Khối 10
+                  </button>
+                </div>
+
+                {/* LỌC CƠ SỞ CHUẨN MÀU */}
+                <select
+                  value={entryCampusFilter}
+                  onChange={(e) => setEntryCampusFilter(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3]"
+                >
+                  <option value="ALL">-- Tất cả cơ sở --</option>
+                  <option value="CS1">CS1 (Sky-Line Central - Xanh Sky-Line)</option>
+                  <option value="CS2">CS2 (Sky-Line Riverside - Xanh tím)</option>
+                  <option value="CS3">CS3 (Sky-Line Hill - Tím than)</option>
+                  <option value="CS4">CS4 (Sky-Line International - Vàng đất)</option>
+                  <option value="CS5">CS5 (Sky-Line Global - Xám xanh)</option>
+                </select>
+
+                {/* LỌC NGUỒN NHẬP HỌC */}
+                <select
+                  value={entrySourceFilter}
+                  onChange={(e) => setEntrySourceFilter(e.target.value)}
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3]"
+                >
+                  <option value="ALL">-- Tất cả nguồn nhập học --</option>
+                  <option value="KHAO_SAT">Nhập học qua Khảo sát</option>
+                  <option value="MAU_GIAO_LON">Chuyển từ Mẫu giáo lớn</option>
+                  <option value="KHAC">Trực tiếp / Khác</option>
+                </select>
+              </div>
+
             </div>
 
-            {/* LỌC CƠ SỞ CHUẨN MÀU */}
-            <select
-              value={entryCampusFilter}
-              onChange={(e) => setEntryCampusFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3]"
-            >
-              <option value="ALL">-- Tất cả cơ sở --</option>
-              <option value="CS1">CS1 (Sky-Line Central - Xanh Sky-Line)</option>
-              <option value="CS2">CS2 (Sky-Line Riverside - Xanh tím)</option>
-              <option value="CS3">CS3 (Sky-Line Hill - Tím than)</option>
-              <option value="CS4">CS4 (Sky-Line International - Vàng đất)</option>
-              <option value="CS5">CS5 (Sky-Line Global - Xám xanh)</option>
-            </select>
-
-            {/* LỌC NGUỒN NHẬP HỌC */}
-            <select
-              value={entrySourceFilter}
-              onChange={(e) => setEntrySourceFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3]"
-            >
-              <option value="ALL">-- Tất cả nguồn nhập học --</option>
-              <option value="KHAO_SAT">Nhập học qua Khảo sát</option>
-              <option value="MAU_GIAO_LON">Chuyển từ Mẫu giáo lớn</option>
-              <option value="KHAC">Trực tiếp / Khác</option>
-            </select>
-          </div>
-
-        </div>
-
-        {/* BẢNG TRA CỨU DANH SÁCH HỌC SINH ĐẦU CẤP (HIỂN THỊ CƠ SỞ CHUẨN MÀU) */}
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
-          <table className="w-full text-left text-xs font-semibold text-slate-700">
-            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
-              <tr>
-                <th className="py-3 px-4">STT</th>
-                <th className="py-3 px-4">Mã HS</th>
-                <th className="py-3 px-4">Họ và Tên</th>
-                <th className="py-3 px-4">Khối</th>
-                <th className="py-3 px-4">Lớp học</th>
-                <th className="py-3 px-4">Cơ sở</th>
-                <th className="py-3 px-4">Nguồn nhập học đầu cấp</th>
-                <th className="py-3 px-4 text-center">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {filteredEntryStudents.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400 font-bold">
-                    Không tìm thấy dữ liệu học sinh đầu cấp phù hợp với bộ lọc
-                  </td>
-                </tr>
-              ) : (
-                paginatedEntryStudents.map((st: any, idx: number) => {
-                  const campusInfo = getCampusInfo(st.campusName);
-                  return (
-                    <tr key={st.id || idx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-400">{(entryPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
-                      <td className="py-3 px-4 font-black text-slate-800">{st.studentCode}</td>
-                      <td className="py-3 px-4 font-bold text-slate-900">{st.studentName}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${
-                          st.rawGrade === '1' ? 'bg-teal-100 text-[#48BFE3]' :
-                          st.rawGrade === '6' ? 'bg-indigo-100 text-[#6C5CE7]' :
-                          'bg-purple-100 text-[#2E1065]'
-                        }`}>
-                          {st.grade}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 font-bold text-slate-700">{st.className}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold inline-flex items-center gap-1.5 ${campusInfo.bg} ${campusInfo.border} ${campusInfo.text}`}>
-                          <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: campusInfo.color }}></span>
-                          {st.campusName}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {st.source === "KHAO_SAT" && (
-                          <span className="px-2.5 py-1 bg-teal-50 text-[#48BFE3] border border-teal-200 rounded-lg text-[11px] font-bold inline-flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-[#48BFE3]" />
-                            Qua Khảo sát
-                          </span>
-                        )}
-                        {st.source === "MAU_GIAO_LON" && (
-                          <span className="px-2.5 py-1 bg-amber-50 text-[#D97706] border border-amber-200 rounded-lg text-[11px] font-bold inline-flex items-center gap-1">
-                            <BookOpen className="w-3 h-3 text-[#D97706]" />
-                            Từ Mẫu giáo lớn
-                          </span>
-                        )}
-                        {st.source === "KHAC" && (
-                          <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[11px] font-semibold">
-                            Trực tiếp / Khác
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-[10px] font-black uppercase">
-                          Đang học
-                        </span>
+            {/* BẢNG TRA CỨU DANH SÁCH HỌC SINH ĐẦU CẤP (HIỂN THỊ CƠ SỞ CHUẨN MÀU) */}
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full text-left text-xs font-semibold text-slate-700">
+                <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-4">STT</th>
+                    <th className="py-3 px-4">Mã HS</th>
+                    <th className="py-3 px-4">Họ và Tên</th>
+                    <th className="py-3 px-4">Khối</th>
+                    <th className="py-3 px-4">Lớp học</th>
+                    <th className="py-3 px-4">Cơ sở</th>
+                    <th className="py-3 px-4">Nguồn nhập học đầu cấp</th>
+                    <th className="py-3 px-4 text-center">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {filteredEntryStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="py-8 text-center text-slate-400 font-bold">
+                        Không tìm thấy dữ liệu học sinh đầu cấp phù hợp với bộ lọc
                       </td>
                     </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-          {/* THANH PHÂN TRANG 10 DÒNG / TRANG */}
-          <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold text-slate-600">
-            <div>
-              Hiển thị <strong className="text-slate-800">{filteredEntryStudents.length === 0 ? 0 : (entryPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(entryPage * ITEMS_PER_PAGE, filteredEntryStudents.length)}</strong> trên tổng số <strong className="text-[#48BFE3]">{filteredEntryStudents.length}</strong> học sinh
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setEntryPage(p => Math.max(1, p - 1))}
-                disabled={entryPage === 1}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-all text-xs font-bold shadow-2xs cursor-pointer"
-              >
-                Trang trước
-              </button>
-              <span className="px-3 py-1.5 bg-teal-50 text-[#48BFE3] border border-teal-200 rounded-xl text-xs font-black">
-                Trang {entryPage} / {totalEntryPages}
-              </span>
-              <button
-                onClick={() => setEntryPage(p => Math.min(totalEntryPages, p + 1))}
-                disabled={entryPage >= totalEntryPages}
-                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-all text-xs font-bold shadow-2xs cursor-pointer"
-              >
-                Trang sau
-              </button>
+                  ) : (
+                    paginatedEntryStudents.map((st: any, idx: number) => {
+                      const campusInfo = getCampusInfo(st.campusName);
+                      return (
+                        <tr key={st.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="py-3 px-4 font-bold text-slate-400">{(entryPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
+                          <td className="py-3 px-4 font-black text-slate-800">{st.studentCode}</td>
+                          <td className="py-3 px-4 font-bold text-slate-900">{st.studentName}</td>
+                          <td className="py-3 px-4">
+                            <span className={"px-2.5 py-0.5 rounded-full text-[11px] font-black " + (
+                              st.rawGrade === '1' ? 'bg-teal-100 text-[#48BFE3]' :
+                              st.rawGrade === '6' ? 'bg-indigo-100 text-[#6C5CE7]' :
+                              'bg-purple-100 text-[#2E1065]'
+                            )}>
+                              {st.grade}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 font-bold text-slate-700">{st.className}</td>
+                          <td className="py-3 px-4">
+                            <span className={"px-2.5 py-1 rounded-lg border text-[11px] font-bold inline-flex items-center gap-1.5 " + campusInfo.bg + " " + campusInfo.border + " " + campusInfo.text}>
+                              <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: campusInfo.color }}></span>
+                              {st.campusName}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            {st.source === "KHAO_SAT" && (
+                              <span className="px-2.5 py-1 bg-teal-50 text-[#48BFE3] border border-teal-200 rounded-lg text-[11px] font-bold inline-flex items-center gap-1">
+                                <Sparkles className="w-3 h-3 text-[#48BFE3]" />
+                                Qua Khảo sát
+                              </span>
+                            )}
+                            {st.source === "MAU_GIAO_LON" && (
+                              <span className="px-2.5 py-1 bg-amber-50 text-[#D97706] border border-amber-200 rounded-lg text-[11px] font-bold inline-flex items-center gap-1">
+                                <BookOpen className="w-3 h-3 text-[#D97706]" />
+                                Từ Mẫu giáo lớn
+                              </span>
+                            )}
+                            {st.source === "KHAC" && (
+                              <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-[11px] font-semibold">
+                                Trực tiếp / Khác
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md text-[10px] font-black uppercase">
+                              Đang học
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+              {/* THANH PHÂN TRANG 10 DÒNG / TRANG */}
+              <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold text-slate-600">
+                <div>
+                  Hiển thị <strong className="text-slate-800">{filteredEntryStudents.length === 0 ? 0 : (entryPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(entryPage * ITEMS_PER_PAGE, filteredEntryStudents.length)}</strong> trên tổng số <strong className="text-[#48BFE3]">{filteredEntryStudents.length}</strong> học sinh
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEntryPage(p => Math.max(1, p - 1))}
+                    disabled={entryPage === 1}
+                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-all text-xs font-bold shadow-2xs cursor-pointer"
+                  >
+                    Trang trước
+                  </button>
+                  <span className="px-3 py-1.5 bg-teal-50 text-[#48BFE3] border border-teal-200 rounded-xl text-xs font-black">
+                    Trang {entryPage} / {totalEntryPages}
+                  </span>
+                  <button
+                    onClick={() => setEntryPage(p => Math.min(totalEntryPages, p + 1))}
+                    disabled={entryPage >= totalEntryPages}
+                    className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-all text-xs font-bold shadow-2xs cursor-pointer"
+                  >
+                    Trang sau
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-        </div>
         )}
 
       </div>

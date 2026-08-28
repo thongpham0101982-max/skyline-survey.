@@ -15,9 +15,17 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const action = searchParams.get("action")
     const academicYearId = searchParams.get("academicYearId") || undefined
+    const campusId = searchParams.get("campusId") || undefined
+
+    let effectiveCampusIds = allowedCampusIds
+    if (campusId && campusId !== "ALL") {
+      if (allowedCampusIds.length === 0 || allowedCampusIds.includes(campusId)) {
+        effectiveCampusIds = [campusId]
+      }
+    }
 
     if (action === "getMetrics") {
-      const metrics = await getAdminMetrics(academicYearId, allowedCampusIds)
+      const metrics = await getAdminMetrics(academicYearId, effectiveCampusIds)
       return NextResponse.json(metrics)
     }
 

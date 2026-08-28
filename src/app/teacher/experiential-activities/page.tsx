@@ -185,9 +185,8 @@ export default function ExperientialActivitiesList() {
     const s = ACTIVITY_STRANDS.find(item => item.id === strandId);
     if (!s) return null;
     return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-black border ${s.badgeColor}`}>
-        <span className={`w-1.5 h-1.5 rounded-full ${s.dotColor}`} />
-        <span>{s.name}</span>
+      <span className={`inline-block px-2.5 py-0.5 rounded-md text-[11px] font-black border ${s.badgeColor}`}>
+        {s.name}
       </span>
     );
   };
@@ -618,26 +617,23 @@ export default function ExperientialActivitiesList() {
                             </h4>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {act.assignedRole === 'GVBM' && (
-                                <span className="text-[10px] font-black text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-300 flex items-center gap-1 shadow-2xs">
-                                  <BookOpen className="w-3 h-3 text-amber-600" />
-                                  {act.roleBadgeLabel || `Dành cho GVBM Môn ${act.subjectName || ''}`}
+                                <span className="text-[10px] font-black text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-300 shadow-2xs">
+                                  {act.roleBadgeLabel?.replace(/[🎯👥🌟✨]/g, '').trim() || `Dành cho GVBM Môn ${act.subjectName || ''}`}
                                 </span>
                               )}
                               {act.assignedRole === 'GVCN' && (
-                                <span className="text-[10px] font-black text-indigo-800 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-300 flex items-center gap-1 shadow-2xs">
-                                  <Users className="w-3 h-3 text-indigo-600" />
-                                  {act.roleBadgeLabel || 'Dành cho GVCN'}
+                                <span className="text-[10px] font-black text-indigo-800 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-300 shadow-2xs">
+                                  {act.roleBadgeLabel?.replace(/[🎯👥🌟✨]/g, '').trim() || 'Dành cho GVCN'}
                                 </span>
                               )}
                               {act.assignedRole === 'GVCN_GVBM' && (
-                                <span className="text-[10px] font-black text-purple-800 bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-300 flex items-center gap-1 shadow-2xs">
-                                  <Sparkles className="w-3 h-3 text-purple-600" />
-                                  {act.roleBadgeLabel}
+                                <span className="text-[10px] font-black text-purple-800 bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-300 shadow-2xs">
+                                  {act.roleBadgeLabel?.replace(/[🎯👥🌟✨]/g, '').trim()}
                                 </span>
                               )}
                               {act.assignedRole === 'CREATOR' && (
-                                <span className="text-[10px] font-black text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-300 flex items-center gap-1 shadow-2xs">
-                                  <Sparkles className="w-3 h-3 text-teal-600" /> Tôi tự tạo
+                                <span className="text-[10px] font-black text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-300 shadow-2xs">
+                                  Tôi tự tạo
                                 </span>
                               )}
                               {getStrandBadge(act.strand)}
@@ -655,9 +651,8 @@ export default function ExperientialActivitiesList() {
                         {/* CỘT TỔ CM PHỤ TRÁCH */}
                         <td className="py-4 px-4 whitespace-nowrap text-center">
                           {act.tcmOrSubjectLabel || act.departmentName || act.subjectName ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-black text-amber-900 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-300 shadow-2xs">
-                              <BookOpen className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                              <span>{act.tcmOrSubjectLabel || act.departmentName || act.subjectName}</span>
+                            <span className="inline-block text-xs font-black text-amber-900 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-300 shadow-2xs">
+                              {act.tcmOrSubjectLabel || act.departmentName || act.subjectName}
                             </span>
                           ) : (
                             <span className="inline-block text-[11px] font-semibold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">
@@ -677,10 +672,7 @@ export default function ExperientialActivitiesList() {
                           </span>
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap">
-                          <div className="flex items-center gap-1.5 text-slate-700 font-bold">
-                            <Calendar className="w-3.5 h-3.5 text-[#00A99D]" />
-                            <span>{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : '-'}</span>
-                          </div>
+                          <span className="text-slate-700 font-bold">{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : '-'}</span>
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap text-center">
                           <div className="font-black text-slate-800">{totalClasses} lớp</div>
@@ -708,9 +700,8 @@ export default function ExperientialActivitiesList() {
                           </div>
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-full border ${badge.containerCls}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                            <span>{badge.label}</span>
+                          <span className={`inline-block text-[11px] font-black px-2.5 py-1 rounded-full border ${badge.containerCls}`}>
+                            {badge.label}
                           </span>
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap text-right" onClick={e => e.stopPropagation()}>
