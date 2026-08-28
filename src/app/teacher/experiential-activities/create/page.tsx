@@ -67,84 +67,87 @@ const generateStandardSkylineClasses = (camps = []) => {
 };
 
 
-// Smart helper to resolve GVBM from TeachingAssignment based on selected TCM / Subject
+// Strict helper: ONLY return GVBM who strictly belongs to the selected TCM or teaches the selected Subject
 const findMatchedGVBM = (cls, form) => {
   if (!cls) return null;
   const assignments = cls.teachingAssignments || [];
-  const targetId = form.departmentId || form.subjectId || '';
-  const targetName = (form.departmentName || form.subjectName || '').toLowerCase().trim();
-  if (!targetId && !targetName) return null;
+  const targetDeptId = form.departmentId || '';
+  const targetDeptName = (form.departmentName || '').toLowerCase().trim();
+  const targetSubId = form.subjectId || '';
+  const targetSubName = (form.subjectName || '').toLowerCase().trim();
+
+  // If no TCM or Subject is selected, this is a general homeroom activity
+  if (!targetDeptId && !targetDeptName && !targetSubId && !targetSubName) {
+    return null;
+  }
 
   const normalize = (str = '') => str.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/g, ' ');
+    .replace(/[^a-z0-9]/g, ' ')
+    .trim();
 
-  const normTarget = normalize(targetName);
+  // CASE 1: TCM (Tổ Chuyên Môn / Department) is selected
+  if (targetDeptId || (targetDeptName && !targetSubId)) {
+    const normDept = normalize(targetDeptName);
 
-  // 1. Direct match on Teacher's Department (ID or Department Name)
-  let match = assignments.find(ta => {
-    const t = ta.teacher;
-    if (!t) return false;
-    if (t.departmentId === targetId) return true;
-    if (t.departmentRel && (t.departmentRel.id === targetId || normalize(t.departmentRel.name).includes(normTarget) || normTarget.includes(normalize(t.departmentRel.name)))) return true;
-    if (Array.isArray(t.departmentAssignments)) {
-      return t.departmentAssignments.some(da => 
-        da.departmentId === targetId ||
-        da.department?.id === targetId ||
-        (da.department?.name && (normalize(da.department.name).includes(normTarget) || normTarget.includes(normalize(da.department.name))))
-      );
-    }
-    return false;
-  });
-  if (match && match.teacher && match.teacher.teacherName) return match.teacher;
+    const matchByTCM = assignments.find(ta => {
+      const t = ta.teacher;
+      if (!t) return false;
 
-  // 2. Direct match on Subject ID or Subject Name
-  match = assignments.find(ta => {
-    if (ta.subjectId === targetId || ta.subject?.id === targetId) return true;
-    const sName = normalize(ta.subject?.subjectName || '');
-    const sCode = normalize(ta.subject?.subjectCode || '');
-    return (sName && (normTarget.includes(sName) || sName.includes(normTarget))) ||
-           (sCode && normTarget.includes(sCode));
-  });
-  if (match && match.teacher && match.teacher.teacherName) return match.teacher;
+      // Check teacher's direct department
+      if (targetDeptId && t.departmentId === targetDeptId) return true;
+      if (targetDeptId && t.departmentRel && t.departmentRel.id === targetDeptId) return true;
 
-  // 3. Semantic keyword match (The chat, Tieng Anh, Toan, KHTN, KHXH, Nghe thuat, Tin hoc...)
-  match = assignments.find(ta => {
-    const sName = normalize(ta.subject?.subjectName || '');
-    const dName = normalize(ta.teacher?.departmentRel?.name || ta.teacher?.department?.name || '');
+      // Check teacher's department name
+      if (normDept && t.departmentRel && t.departmentRel.name) {
+        const tDept = normalize(t.departmentRel.name);
+        if (tDept === normDept || tDept.includes(normDept) || normDept.includes(tDept)) return true;
+      }
 
-    if (normTarget.includes('the chat') || normTarget.includes('the duc') || normTarget.includes('gdtc')) {
-      return sName.includes('the duc') || sName.includes('the chat') || sName.includes('gdtc') || sName.includes('bong') || sName.includes('boi') || dName.includes('the chat') || dName.includes('the duc');
-    }
-    if (normTarget.includes('tieng anh') || normTarget.includes('ngoai ngu') || normTarget.includes('english')) {
-      return sName.includes('tieng anh') || sName.includes('english') || sName.includes('esl') || dName.includes('tieng anh') || dName.includes('ngoai ngu');
-    }
-    if (normTarget.includes('toan')) {
-      return sName.includes('toan') || dName.includes('toan');
-    }
-    if (normTarget.includes('khao thi') || normTarget.includes('dbcl') || normTarget.includes('kt dbcl')) {
-      // If TCM is KT&ĐBCL, any teaching assignment teacher belonging to KT&ĐBCL or assigned teacher
-      return dName.includes('khao thi') || dName.includes('dbcl') || true;
-    }
-    if (normTarget.includes('khoa hoc') || normTarget.includes('khtn') || normTarget.includes('ly') || normTarget.includes('hoa') || normTarget.includes('sinh')) {
-      return sName.includes('khoa hoc') || sName.includes('khtn') || sName.includes('ly') || sName.includes('hoa') || sName.includes('sinh') || dName.includes('khoa hoc') || dName.includes('khtn');
-    }
-    if (normTarget.includes('xa hoi') || normTarget.includes('khxh') || normTarget.includes('van') || normTarget.includes('su') || normTarget.includes('dia')) {
-      return sName.includes('van') || sName.includes('su') || sName.includes('dia') || sName.includes('gdcd') || dName.includes('khxh');
-    }
-    if (normTarget.includes('nghe thuat') || normTarget.includes('am nhac') || normTarget.includes('my thuat')) {
-      return sName.includes('nhac') || sName.includes('my thuat') || sName.includes('nghe thuat') || dName.includes('nghe thuat');
-    }
-    if (normTarget.includes('tin') || normTarget.includes('stem') || normTarget.includes('cong nghe')) {
-      return sName.includes('tin') || sName.includes('stem') || sName.includes('cong nghe') || sName.includes('robot') || dName.includes('tin');
-    }
-    return false;
-  });
-  if (match && match.teacher && match.teacher.teacherName) return match.teacher;
+      // Check teacher's department assignments (kiêm nhiệm)
+      if (Array.isArray(t.departmentAssignments)) {
+        return t.departmentAssignments.some(da => {
+          if (targetDeptId && (da.departmentId === targetDeptId || da.department?.id === targetDeptId)) return true;
+          if (normDept && da.department?.name) {
+            const daDept = normalize(da.department.name);
+            return daDept === normDept || daDept.includes(normDept) || normDept.includes(daDept);
+          }
+          return false;
+        });
+      }
 
-  // 4. Fallback to first teacher in teaching assignments for this class
-  if (assignments.length > 0 && assignments[0].teacher && assignments[0].teacher.teacherName) {
-    return assignments[0].teacher;
+      return false;
+    });
+
+    if (matchByTCM && matchByTCM.teacher && matchByTCM.teacher.teacherName) {
+      return matchByTCM.teacher;
+    }
+
+    // STRICT: If no teacher teaching this class belongs to the selected TCM, return null
+    return null;
+  }
+
+  // CASE 2: Subject (Bộ Môn / Môn Học) is selected
+  if (targetSubId || targetSubName) {
+    const normSub = normalize(targetSubName);
+
+    const matchBySubject = assignments.find(ta => {
+      if (targetSubId && (ta.subjectId === targetSubId || ta.subject?.id === targetSubId)) return true;
+      if (normSub && ta.subject) {
+        const sName = normalize(ta.subject.subjectName || '');
+        const sCode = normalize(ta.subject.subjectCode || '');
+        if (sName === normSub || (sName && (sName.includes(normSub) || normSub.includes(sName)))) return true;
+        if (sCode && sCode === normSub) return true;
+      }
+      return false;
+    });
+
+    if (matchBySubject && matchBySubject.teacher && matchBySubject.teacher.teacherName) {
+      return matchBySubject.teacher;
+    }
+
+    // STRICT: If no teacher teaches this subject for this class, return null
+    return null;
   }
 
   return null;
