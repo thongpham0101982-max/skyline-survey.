@@ -86,7 +86,7 @@ export const APP_CATEGORIES = [
       },
       {
         code: "COMPETENCY_ASSESSMENT",
-        name: "ĐGNL Môn học (Radar)",
+        name: "Import ĐGNL (Radar)",
         icon: Sparkles,
         href: "/admin/competency-assessment/import",
         subModules: [
@@ -94,6 +94,18 @@ export const APP_CATEGORIES = [
           { code: "COMPETENCY_ALIASES", name: "Từ điển Alias Môn & NL", href: "/admin/competency-assessment/aliases" },
           { code: "COMPETENCY_HISTORY", name: "Lịch sử & Rollback", href: "/admin/competency-assessment/history" },
         ]
+      },
+      {
+        code: "COMPETENCY_ALIASES",
+        name: "Từ điển Alias Môn & NL",
+        icon: Layers,
+        href: "/admin/competency-assessment/aliases"
+      },
+      {
+        code: "COMPETENCY_HISTORY",
+        name: "Lịch sử Import ĐGNL",
+        icon: RefreshCcw,
+        href: "/admin/competency-assessment/history"
       },
       {
         code: "KTDBCL_IMPORT_KQHT",
