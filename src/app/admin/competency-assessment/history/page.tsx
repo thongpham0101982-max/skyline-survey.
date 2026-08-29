@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getCurrentUser } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { HistoryClient } from "./client";
 
@@ -8,7 +8,8 @@ export const metadata: Metadata = {
 };
 
 export default async function HistoryPage() {
-  const user = await getCurrentUser();
+  const session = await auth();
+  const user = session?.user;
   if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
     redirect("/login");
   }

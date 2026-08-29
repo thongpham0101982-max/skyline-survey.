@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import crypto from "crypto";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const session = await auth();
+  const user = session?.user;
     if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && user.role !== "TEACHER")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { normalizeKey } from "@/lib/competency-service";
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const session = await auth();
+  const user = session?.user;
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const [subjects, competencies, subjectAliases, compAliases] = await Promise.all([
@@ -47,7 +48,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
+    const session = await auth();
+  const user = session?.user;
     if (!user || (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
