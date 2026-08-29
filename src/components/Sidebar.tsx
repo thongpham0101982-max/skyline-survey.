@@ -55,7 +55,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [hasPreschool, setHasPreschool] = useState(false)
   const [hasGeneral, setHasGeneral] = useState(false)
   const [loadingAssignments, setLoadingAssignments] = useState(true)
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ KTDBCL: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
   const [observesExpanded, setObservesExpanded] = useState(pathname.startsWith("/admin/du-gio"))
 
   const isPreschoolRole = isPreschoolTeacher || ['GV_MN', 'BGH_MN', 'MN', 'MAM_NON', 'BGH MAM NON', 'BGH_MAM_NON'].includes(normalizedRole);
