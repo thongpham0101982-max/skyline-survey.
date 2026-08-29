@@ -217,6 +217,11 @@ export function RolesClient({ initialRoles }: any) {
         TASKS: { r: true, c: true, u: true, d: true },
         WEEKLY_REPORTS: { r: true, u: true }
       },
+      CTHS: {
+        EXPERIENTIAL_ACTIVITIES: { r: true, c: true, u: true, d: true },
+        EXP_ACT_REPORTS: { r: true, c: true, u: true, d: true },
+        EXP_ACT_MANAGE: { r: true, c: true, u: true, d: true }
+      },
       GV_MN: {
         TASKS: { r: true, c: true, u: true, d: true },
         WEEKLY_REPORTS: { r: true, u: true }
@@ -348,6 +353,7 @@ export function RolesClient({ initialRoles }: any) {
               <button onClick={() => applyPreset('ALL_READ')} className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors">Chỉ Xem</button>
               <button onClick={() => applyPreset('ALL_CLEAR')} className="px-2.5 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-[10.5px] font-bold transition-colors">Dọn dẹp</button>
               <span className="w-px bg-slate-200 my-1 mx-1"></span>
+              <button onClick={() => applyPreset('CTHS')} className="px-2.5 py-1.5 border border-emerald-200 text-emerald-700 bg-emerald-50/60 hover:bg-emerald-100 rounded-lg text-[10.5px] font-bold transition-colors">Preset CTHS</button>
               <button onClick={() => applyPreset('GDCS')} className="px-2.5 py-1.5 border border-teal-100 text-[#48BFE3] hover:bg-teal-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GĐCS</button>
               <button onClick={() => applyPreset('GIAO_VU')} className="px-2.5 py-1.5 border border-blue-100 text-blue-600 hover:bg-blue-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset Giáo vụ</button>
               <button onClick={() => applyPreset('TVAN')} className="px-2.5 py-1.5 border border-amber-100 text-amber-600 hover:bg-amber-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset Tư vấn</button>

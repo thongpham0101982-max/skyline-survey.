@@ -29,7 +29,7 @@ export default auth((req) => {
     const role = (req.auth?.user as any)?.role || 'PARENT'
     
     if (pathname.startsWith('/teacher')) {
-      const isTeacherOrStaff = ['TEACHER', 'GV_MN', 'ADMIN', 'SUPER_ADMIN', 'GDCS', 'BGH'].some(r => role.includes(r));
+      const isTeacherOrStaff = ['TEACHER', 'GV_MN', 'ADMIN', 'ADMINISTRATOR', 'SUPER_ADMIN', 'GDCS', 'GD_CS', 'BGH', 'KT_DBCL', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU'].some(r => role.toUpperCase().includes(r));
       if (!isTeacherOrStaff) {
         if (role === 'PARENT') return NextResponse.redirect(new URL('/parent', req.nextUrl))
         return NextResponse.redirect(new URL('/admin', req.nextUrl))

@@ -88,7 +88,15 @@ export const APP_CATEGORIES = [
         name: "Import KQHT",
         icon: FileSpreadsheet,
         href: "/admin/ktdbcl/import-kqht?v=2.1"
-      },
+      }
+    ]
+  },
+  {
+    id: "EXPERIENTIAL",
+    name: "Hoạt động trải nghiệm",
+    color: "emerald",
+    icon: Award,
+    modules: [
       {
         code: "EXPERIENTIAL_ACTIVITIES",
         name: "Hoạt động trải nghiệm",

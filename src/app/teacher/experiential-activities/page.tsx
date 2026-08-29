@@ -541,11 +541,11 @@ export default function ExperientialActivitiesList() {
                 <Sparkles className="w-10 h-10 text-[#00A99D]" />
               </div>
               <h3 className="text-xl font-black text-slate-800">
-                {search ? 'Không tìm thấy hoạt động phù hợp' : 'Chưa cóó hoạt động trải nghiệm nào'}
+                {search ? 'Không tìm thấy hoạt động phù hợp' : 'Chưa có hoạt động trải nghiệm nào'}
               </h3>
               <p className="text-slate-500 text-xs leading-relaxed font-medium">
                 {search 
-                  ? `Không có hoạt động no khớp với Đã khóa "${search}". Vui lòng thử lại v?i Đã khóa khc.`
+                  ? `Không có hoạt động nào khớp với từ khóa "${search}". Vui lòng thử lại với từ khóa khác.`
                   : 'Bắt đầu tạo hoạt động trải nghiệm mới với tiêu chí đánh giá và gán lớp cho GVCN.'
                 }
               </p>
@@ -680,7 +680,7 @@ export default function ExperientialActivitiesList() {
                         </td>
                         <td className="py-4 px-5 whitespace-nowrap">
                           <span className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-700 font-bold text-xs border border-slate-200">
-                            {act.evalMode === 'PARTICIPATION_ONLY' ? 'Ch? tham gia' : `${(act.criteria || []).length} tiêu chí`}
+                            {act.evalMode === 'PARTICIPATION_ONLY' ? 'Chỉ tham gia' : `${(act.criteria || []).length} tiêu chí`}
                           </span>
                         </td>
                         <td className="py-4 px-5">

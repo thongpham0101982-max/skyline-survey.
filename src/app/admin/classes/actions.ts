@@ -1,8 +1,11 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { getAdminSession } from "@/lib/session"
 
 export async function importClassesAction(data: any[]) {
+  const session = await getAdminSession();
+  if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   let count = 0
   for (const item of data) {
     try {
@@ -37,6 +40,8 @@ export async function importClassesAction(data: any[]) {
 }
 
 export async function deleteClasses(ids: string[]) {
+  const session = await getAdminSession();
+  if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   try {
     await prisma.class.deleteMany({
       where: { id: { in: ids } }
@@ -49,6 +54,8 @@ export async function deleteClasses(ids: string[]) {
 }
 
 export async function updateClass(id: string, data: any) {
+  const session = await getAdminSession();
+  if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   try {
     await prisma.class.update({
       where: { id },
@@ -69,6 +76,8 @@ export async function updateClass(id: string, data: any) {
 }
 
 export async function createClassAction(data: any) {
+  const session = await getAdminSession();
+  if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   try {
     // Auto-generate classCode
     const academicYear = await prisma.academicYear.findUnique({
@@ -173,6 +182,8 @@ export async function transferClassesAction(data: {
   classIds: string[];
   mode: "class_only" | "with_subjects" | "with_assignments";
 }) {
+  const session = await getAdminSession();
+  if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   try {
     const targetYear = await prisma.academicYear.findUnique({ where: { id: data.targetYearId } });
     let yearSuffix = String(new Date().getFullYear()).slice(-2);
@@ -341,6 +352,8 @@ export async function previewStudentCopyAction(sourceYearId: string, targetYearI
 // SAO CHÉP HỌC SINH — Execute (bỏ qua trùng)
 // ─────────────────────────────────────────────────────────────
 export async function copyStudentsAction(sourceYearId: string, targetYearId: string) {
+  const session = await getAdminSession();
+  if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   try {
     const [sourceStudents, targetStudents, sourceClasses, targetClasses] = await Promise.all([
       prisma.student.findMany({
@@ -473,6 +486,8 @@ export async function previewTeachingAssignmentCopyAction(sourceYearId: string, 
 // SAO CHÉP PHÂN CÔNG GIẢNG DẠY — Execute
 // ─────────────────────────────────────────────────────────────
 export async function copyTeachingAssignmentsAction(sourceYearId: string, targetYearId: string) {
+  const session = await getAdminSession();
+  if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   try {
     const [sourceAssignments, sourceClasses, targetClasses] = await Promise.all([
       prisma.teachingAssignment.findMany({
@@ -560,6 +575,8 @@ export async function copyStudentsToTargetClassAction(
   targetClassId: string,
   targetYearId: string
 ) {
+  const session = await getAdminSession();
+  if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   try {
     const targetClass = await prisma.class.findUnique({
       where: { id: targetClassId }

@@ -1,6 +1,0 @@
-﻿old:
-  department         String?
-  mainSubject        String?
-new:
-  departmentId       String?
-  mainSubjectId      String?

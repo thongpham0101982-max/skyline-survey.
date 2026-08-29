@@ -1,12 +1,13 @@
-// Forced Vercel Deployment: 2026-08-27T03:47:32.592Z
+// Forced Vercel Deployment: 2026-08-28T15:53:02.733Z
 "use client"
 
+import { ReceivedEvaluationsTab } from './components/ReceivedEvaluationsTab';
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
-  Eye, TrendingUp, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
+  Eye, TrendingUp, TrendingDown, Target, Star, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
   CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
   BarChart3, PieChart
 } from "lucide-react"
@@ -433,6 +434,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
+  const [selectedEvalMonth, setSelectedEvalMonth] = useState('ALL');
   const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
@@ -4541,290 +4543,14 @@ export function ObservationClient(props: ObservationClientProps) {
       )}
 
       {/* TAB 4: 4. KẾT QUẢ ĐÁNH GIÁ TIẾT DẠY NHẬN ĐƯỢC */}
-      {activeMainTab === "evaluations" && (
-        <div className="w-full space-y-6 animate-in fade-in duration-300">
-          {/* Card: Năng lực cá nhân & Biểu đồ Ra đa */}
-          {(() => {
-            const { competencyData, sortedWeaknesses, sortedStrengths, hasEvals } = teacherCompetencyResult;
-            const size = 260;
-            const center = size / 2;
-            const radius = 90;
-            const totalPoints = isPreschoolEvaluations ? 5 : 11;
-            const angleStep = (2 * Math.PI) / totalPoints;
-
-            const gridLayers = [25, 50, 75, 100];
-            const gridPaths = gridLayers.map(level => {
-              const points = [];
-              for (let i = 0; i < totalPoints; i++) {
-                const angle = i * angleStep;
-                const r = radius * (level / 100);
-                points.push((center + r * Math.sin(angle)) + "," + (center - r * Math.cos(angle)));
-              }
-              return points.join(" ");
-            });
-
-            const axisLines = [];
-            for (let i = 0; i < totalPoints; i++) {
-              const angle = i * angleStep;
-              axisLines.push({
-                x1: center,
-                y1: center,
-                x2: center + radius * Math.sin(angle),
-                y2: center - radius * Math.cos(angle),
-                label: isPreschoolEvaluations ? "T" + (i + 1) : "Y" + (i + 1),
-                lx: center + (radius + 18) * Math.sin(angle),
-                ly: center - (radius + 18) * Math.cos(angle)
-              });
-            }
-
-            const valuePoints = competencyData.map((d, i) => {
-              const angle = i * angleStep;
-              const r = radius * (d.pct / 100);
-              return (center + r * Math.sin(angle)) + "," + (center - r * Math.cos(angle));
-            });
-            const valuePath = valuePoints.join(" ");
-
-            return (
-              <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-indigo-600">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-xs">
-                      <BarChart3 className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
-                        Năng lực cá nhân & Biểu đồ Ra-đa
-                      </h3>
-                      <p className="text-xs text-slate-400 font-medium">
-                        Phân tích năng lực chuyên môn dựa trên các phiếu đánh giá dự giờ nhận được
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Quick Summary Pill / KPIs */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/70 text-xs font-bold text-slate-700 shadow-2xs">
-                      <ClipboardList className="w-3.5 h-3.5 text-indigo-500" />
-                      <div className="flex items-center gap-2">
-                        <span>Tổng phiếu: <strong className="text-slate-900">{receivedEvaluations.length}</strong></span>
-                        {receivedEvaluations.filter(e => e.slot.requestOrigin === "SURPRISE").length > 0 && (
-                          <span className="px-2 py-0.5 text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md">
-                            ⚡ {receivedEvaluations.filter(e => e.slot.requestOrigin === "SURPRISE").length} phiếu đột xuất
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {teacherAvgScore ? (
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200/70 text-xs font-bold text-teal-800 shadow-2xs">
-                        <Award className="w-3.5 h-3.5 text-[#008B82]" />
-                        <span>Điểm TB: <strong className="text-teal-950 font-black">{teacherAvgScore}/20.0đ</strong></span>
-                      </div>
-                    ) : (
-                      <span className="text-[11px] text-amber-700 bg-amber-50 px-2.5 py-1 rounded-xl border border-amber-200 font-bold">
-                        Chưa có điểm đánh giá
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                    {/* Radar Chart SVG */}
-                    <div className="md:col-span-5 flex flex-col items-center justify-center p-3 bg-slate-50/60 rounded-2xl border border-slate-100">
-                      <span className="text-[11px] font-black text-indigo-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                        Biểu đồ Năng lực ({isPreschoolEvaluations ? "5 tiêu chí Mầm non" : "11 yêu cầu Chuẩn nghề nghiệp"})
-                      </span>
-                      <svg width="250" height="250" viewBox="0 0 260 260" className="overflow-visible">
-                        {gridLayers.map((level, idx) => (
-                          <polygon key={level} points={gridPaths[idx]} fill="none" stroke="#e2e8f0" strokeWidth="1" strokeDasharray={level === 100 ? "none" : "3,3"} />
-                        ))}
-                        {gridLayers.map(level => (
-                          <text key={level} x={center} y={center - radius * (level / 100) + 4} textAnchor="middle" className="text-[8px] fill-slate-400 font-bold">
-                            {level}%
-                          </text>
-                        ))}
-                        {axisLines.map((axis, idx) => (
-                          <g key={idx}>
-                            <line x1={axis.x1} y1={axis.y1} x2={axis.x2} y2={axis.y2} stroke="#e2e8f0" strokeWidth="1" />
-                            <text x={axis.lx} y={axis.ly + 3} textAnchor="middle" className="text-[10px] font-black fill-[#003B3A]">
-                              {axis.label}
-                            </text>
-                          </g>
-                        ))}
-                        {hasEvals && valuePoints.length > 0 && (
-                          <polygon points={valuePath} fill="rgba(72, 191, 227, 0.35)" stroke="#003B3A" strokeWidth="2.5" />
-                        )}
-                      </svg>
-                      <div className="mt-2 text-[10px] text-slate-500 text-center font-medium">
-                        {hasEvals 
-                          ? "Biểu đồ diện tích thể hiện tỷ lệ đạt chuẩn (%) theo từng yêu cầu chuyên môn" 
-                          : "Khung biểu đồ ra-đa chuẩn. Khi có phiếu đánh giá, diện tích điểm số sẽ hiển thị trực quan."}
-                      </div>
-                    </div>
-
-                    {/* Criteria Detail Bars */}
-                    <div className="md:col-span-7 space-y-2.5 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
-                      <h4 className="text-xs font-black text-slate-600 uppercase tracking-wider pb-1.5 border-b border-slate-100 flex items-center justify-between">
-                        <span>Chi tiết các tiêu chí năng lực</span>
-                        <span className="text-[10px] font-semibold text-slate-400">
-                          {hasEvals ? "Điểm TB / Chuẩn (%)" : "Thang chuẩn"}
-                        </span>
-                      </h4>
-                      {competencyData.map(item => (
-                        <div key={item.id} className="space-y-1 bg-slate-50/70 hover:bg-slate-50 p-2 rounded-xl transition-colors border border-slate-100/60">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-slate-800 text-[11px] truncate max-w-[240px] sm:max-w-[320px]">
-                              {item.id}. {item.label.split(":")[1] || item.label}
-                            </span>
-                            <span className="font-black text-slate-700 text-[10px] shrink-0 ml-2">
-                              {hasEvals ? (
-                                <>
-                                  {item.avg.toFixed(2)}/{item.max}đ <span className="text-indigo-600">({item.pct}%)</span>
-                                </>
-                              ) : (
-                                <span className="text-slate-400">Tối đa {item.max}đ</span>
-                              )}
-                            </span>
-                          </div>
-                          <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-teal-500 via-[#008B82] to-[#48BFE3] transition-all duration-500"
-                              style={{ width: hasEvals ? `${item.pct}%` : "0%" }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Strength & Improvement Highlights */}
-                  {hasEvals && sortedStrengths.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                      <div className="p-3 bg-emerald-50/70 border border-emerald-200/70 rounded-2xl flex items-start gap-2.5">
-                        <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg shrink-0">
-                          <Award className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <h5 className="text-xs font-black text-emerald-900 uppercase">Thế mạnh nổi bật</h5>
-                          <p className="text-xs font-bold text-emerald-800 mt-0.5 truncate">
-                            {sortedStrengths[0]?.id}: {sortedStrengths[0]?.label.split(":")[1] || sortedStrengths[0]?.label}
-                          </p>
-                          <span className="text-[10px] font-black text-emerald-700">
-                            Đạt {sortedStrengths[0]?.avgPct}% mức chuẩn
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="p-3 bg-amber-50/70 border border-amber-200/70 rounded-2xl flex items-start gap-2.5">
-                        <div className="p-1.5 bg-amber-100 text-amber-800 rounded-lg shrink-0">
-                          <TrendingUp className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <h5 className="text-xs font-black text-amber-900 uppercase">Cần phát huy / Cải thiện</h5>
-                          <p className="text-xs font-bold text-amber-800 mt-0.5 truncate">
-                            {sortedWeaknesses[0]?.id}: {sortedWeaknesses[0]?.label.split(":")[1] || sortedWeaknesses[0]?.label}
-                          </p>
-                          <span className="text-[10px] font-black text-amber-700">
-                            Mức đạt {sortedWeaknesses[0]?.avgPct}% ({sortedWeaknesses[0]?.lowPct}% đánh giá dưới 70%)
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* ROW 4: Kết quả đánh giá gần đây */}
-      <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#008B82]">
-        <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
-          <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center">
-            <ClipboardList className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">5. Kết quả đánh giá tiết dạy nhận được</h3>
-            <p className="text-xs text-slate-400 font-medium">Danh sách các phiếu đánh giá từ đồng nghiệp và Tổ chuyên môn</p>
-          </div>
-        </div>
-
-        {receivedEvaluations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-            <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
-            <p className="text-xs font-bold text-center">Chưa nhận được phiếu đánh giá nào.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
-                  <th className="p-4">Người đánh giá</th>
-                  <th className="p-4">Môn học & Chủ đề</th>
-                  <th className="p-4">Thời gian / Phòng</th>
-                  <th className="p-4 text-center">Xếp loại</th>
-                  <th className="p-4 text-right">Chi tiết</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
-                {receivedEvaluations.map(evalItem => {
-                  const rating = evalItem.evaluation?.overallRating || "Đạt";
-                  const slotDate = new Date(evalItem.slot.date);
-                  const evaluatorName = evalItem.registration?.teacher?.teacherName || "Giáo viên";
-
-                  return (
-                    <tr key={evalItem.evaluation?.id || evalItem.registration?.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-4 font-bold text-slate-800">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(evaluatorName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
-                            {evaluatorName.charAt(0)}
-                          </div>
-                          <span className="font-extrabold text-slate-900 text-xs">{evaluatorName}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-black text-[#003B3A]">{evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
-                          {evalItem.slot.requestOrigin === "SURPRISE" && (
-                            <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md">
-                              ⚡ Dự giờ đột xuất
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"}
-                        </p>
-                      </td>
-                      <td className="p-4">
-                        <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
-                        <p className="text-xs font-bold text-teal-700 mt-0.5">
-                          {evalItem.slot.startTime} • Phòng: {evalItem.slot.room || "Phòng học"}
-                        </p>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className={`px-3 py-1 text-xs font-black uppercase rounded-lg border ${RATING_COLORS[rating] || "bg-teal-50 text-teal-700 border-teal-200"}`}>
-                          {rating}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right">
-                        <button 
-                          onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
-                          className="px-3.5 py-1.5 text-xs font-black rounded-xl transition-all shadow-xs bg-[#008B82] hover:bg-[#007068] text-white cursor-pointer"
-                        >
-                          Xem phiếu
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      
-        </div>
+      {activeMainTab === 'evaluations' && (
+        <ReceivedEvaluationsTab
+          receivedEvaluations={receivedEvaluations}
+          isPreschoolEvaluations={isPreschoolEvaluations}
+          openEvalModal={openEvalModal}
+          getAvatarGradient={getAvatarGradient}
+          RATING_COLORS={RATING_COLORS}
+        />
       )}
 
       {/* Register Details Modal */}

@@ -1,9 +1,119 @@
-// @ts-nocheck
-﻿"use server"
+﻿// @ts-nocheck
+"use server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+
+async function recalculateSurveySummaries(tx: any, surveyPeriodId: string, classId: string, campusId: string) {
+  try {
+    // 1. Recalculate for Class
+    const totalClassStudents = await tx.student.count({ where: { classId, status: "ACTIVE" } });
+    const classForms = await tx.surveyForm.findMany({
+      where: { surveyPeriodId, classId, status: "SUBMITTED" },
+      select: { npsCategory: true, overallAverageScore: true }
+    });
+    const surveyedClass = classForms.length;
+    const notSurveyedClass = Math.max(0, totalClassStudents - surveyedClass);
+    const completionRateClass = totalClassStudents > 0 ? Number(((surveyedClass / totalClassStudents) * 100).toFixed(1)) : 0;
+
+    let promoterClass = 0, passiveClass = 0, detractorClass = 0, totalScoreClass = 0, countScoreClass = 0;
+    classForms.forEach((f: any) => {
+      if (f.npsCategory === "PROMOTER") promoterClass++;
+      else if (f.npsCategory === "PASSIVE") passiveClass++;
+      else if (f.npsCategory === "DETRACTOR") detractorClass++;
+      if (f.overallAverageScore !== null && f.overallAverageScore !== undefined && f.overallAverageScore > 0) {
+        totalScoreClass += f.overallAverageScore;
+        countScoreClass++;
+      }
+    });
+    const avgSatisfactionClass = countScoreClass > 0 ? Number((totalScoreClass / countScoreClass).toFixed(2)) : 0;
+    const totalResponsesClass = promoterClass + passiveClass + detractorClass;
+    const npsClass = totalResponsesClass > 0 ? Number((((promoterClass / totalResponsesClass) * 100) - ((detractorClass / totalResponsesClass) * 100)).toFixed(1)) : 0;
+
+    await tx.summaryByClass.upsert({
+      where: { surveyPeriodId_classId: { surveyPeriodId, classId } },
+      update: {
+        totalStudents: totalClassStudents,
+        surveyedStudents: surveyedClass,
+        notSurveyedStudents: notSurveyedClass,
+        completionRate: completionRateClass,
+        averageSatisfactionScore: avgSatisfactionClass,
+        promoterCount: promoterClass,
+        passiveCount: passiveClass,
+        detractorCount: detractorClass,
+        npsValue: npsClass
+      },
+      create: {
+        surveyPeriodId,
+        classId,
+        totalStudents: totalClassStudents,
+        surveyedStudents: surveyedClass,
+        notSurveyedStudents: notSurveyedClass,
+        completionRate: completionRateClass,
+        averageSatisfactionScore: avgSatisfactionClass,
+        promoterCount: promoterClass,
+        passiveCount: passiveClass,
+        detractorCount: detractorClass,
+        npsValue: npsClass
+      }
+    });
+
+    // 2. Recalculate for Campus
+    const totalCampusStudents = await tx.student.count({ where: { campusId, status: "ACTIVE" } });
+    const campusForms = await tx.surveyForm.findMany({
+      where: { surveyPeriodId, campusId, status: "SUBMITTED" },
+      select: { npsCategory: true, overallAverageScore: true }
+    });
+    const surveyedCampus = campusForms.length;
+    const notSurveyedCampus = Math.max(0, totalCampusStudents - surveyedCampus);
+    const completionRateCampus = totalCampusStudents > 0 ? Number(((surveyedCampus / totalCampusStudents) * 100).toFixed(1)) : 0;
+
+    let promoterCampus = 0, passiveCampus = 0, detractorCampus = 0, totalScoreCampus = 0, countScoreCampus = 0;
+    campusForms.forEach((f: any) => {
+      if (f.npsCategory === "PROMOTER") promoterCampus++;
+      else if (f.npsCategory === "PASSIVE") passiveCampus++;
+      else if (f.npsCategory === "DETRACTOR") detractorCampus++;
+      if (f.overallAverageScore !== null && f.overallAverageScore !== undefined && f.overallAverageScore > 0) {
+        totalScoreCampus += f.overallAverageScore;
+        countScoreCampus++;
+      }
+    });
+    const avgSatisfactionCampus = countScoreCampus > 0 ? Number((totalScoreCampus / countScoreCampus).toFixed(2)) : 0;
+    const totalResponsesCampus = promoterCampus + passiveCampus + detractorCampus;
+    const npsCampus = totalResponsesCampus > 0 ? Number((((promoterCampus / totalResponsesCampus) * 100) - ((detractorCampus / totalResponsesCampus) * 100)).toFixed(1)) : 0;
+
+    await tx.summaryByCampus.upsert({
+      where: { surveyPeriodId_campusId: { surveyPeriodId, campusId } },
+      update: {
+        totalStudents: totalCampusStudents,
+        surveyedStudents: surveyedCampus,
+        notSurveyedStudents: notSurveyedCampus,
+        completionRate: completionRateCampus,
+        averageSatisfactionScore: avgSatisfactionCampus,
+        promoterCount: promoterCampus,
+        passiveCount: passiveCampus,
+        detractorCount: detractorCampus,
+        npsValue: npsCampus
+      },
+      create: {
+        surveyPeriodId,
+        campusId,
+        totalStudents: totalCampusStudents,
+        surveyedStudents: surveyedCampus,
+        notSurveyedStudents: notSurveyedCampus,
+        completionRate: completionRateCampus,
+        averageSatisfactionScore: avgSatisfactionCampus,
+        promoterCount: promoterCampus,
+        passiveCount: passiveCampus,
+        detractorCount: detractorCampus,
+        npsValue: npsCampus
+      }
+    });
+  } catch (err) {
+    console.error("Error recalculating summaries:", err);
+  }
+}
 
 export async function submitSurveyAction(data: any) {
   const session = await auth()
@@ -109,7 +219,10 @@ export async function submitSurveyAction(data: any) {
         npsCategory,
         overallAverageScore: ratingCount > 0 ? totalRating / ratingCount : null
       }
-    })
+    });
+
+    // Cập nhật bảng tổng hợp tức thì
+    await recalculateSurveySummaries(tx, surveyPeriodId, student.classId, student.campusId);
   })
 
   revalidatePath("/parent/surveys")

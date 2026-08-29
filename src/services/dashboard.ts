@@ -308,8 +308,8 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   let totalPromoter = 0
   let totalDetractor = 0
   let totalPassive = 0
-  let totalSatisfactionSum = 0
-  let classesWithSatisfaction = 0
+  let totalWeightedSatisfaction = 0
+  let totalSurveyedWithScore = 0
 
   classSummaries.forEach(s => {
     surveyed += s.surveyedStudents
@@ -317,16 +317,16 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     totalPromoter += s.promoterCount
     totalDetractor += s.detractorCount
     totalPassive += s.passiveCount
-    if (s.averageSatisfactionScore > 0) {
-      totalSatisfactionSum += s.averageSatisfactionScore
-      classesWithSatisfaction++
+    if (s.averageSatisfactionScore && s.averageSatisfactionScore > 0 && s.surveyedStudents > 0) {
+      totalWeightedSatisfaction += s.averageSatisfactionScore * s.surveyedStudents
+      totalSurveyedWithScore += s.surveyedStudents
     }
   })
 
-  const completionRate = totalStudents > 0 ? (surveyed / totalStudents) * 100 : 0
-  const avgSatisfaction = classesWithSatisfaction > 0 ? totalSatisfactionSum / classesWithSatisfaction : 0
+  const completionRate = totalStudents > 0 ? Number(((surveyed / totalStudents) * 100).toFixed(1)) : 0
+  const avgSatisfaction = totalSurveyedWithScore > 0 ? Number((totalWeightedSatisfaction / totalSurveyedWithScore).toFixed(2)) : 0
   const totalResponses = totalPromoter + totalDetractor + totalPassive
-  const systemNps = totalResponses > 0 ? ((totalPromoter / totalResponses) * 100) - ((totalDetractor / totalResponses) * 100) : 0
+  const systemNps = totalResponses > 0 ? Number((((totalPromoter / totalResponses) * 100) - ((totalDetractor / totalResponses) * 100)).toFixed(1)) : 0
 
   // Aggregations for grade, campus, level distributions and entry level statistics
   const activeStudentsForStats = await prisma.student.findMany({
@@ -567,7 +567,7 @@ export async function getTeacherMetrics(userId: string) {
     where: {
       OR: [
         { homeroomTeacherId: teacher.id },
-        { homeroomTeacherId: { contains: teacher.id } },
+        
         { teachers: { some: { teacherId: teacher.id } } }
       ]
     }
@@ -594,16 +594,7 @@ export async function getTeacherMetrics(userId: string) {
     }
   })
 
-  if (summaries.length === 0) {
-     totalStudents = classes.length * 25
-     surveyed = Math.floor(totalStudents * 0.75)
-     notSurveyed = totalStudents - surveyed
-     promoter = Math.floor(surveyed * 0.6)
-     passive = Math.floor(surveyed * 0.3)
-     detractor = surveyed - promoter - passive
-     totalSatisfaction = 4.3 * surveyed
-     hasSatisfaction = surveyed
-  }
+  // Real data: accurate 0/empty state when no survey summaries exist
   
   const completionRate = totalStudents > 0 ? (surveyed / totalStudents) * 100 : 0
   const avgSatisfaction = hasSatisfaction > 0 ? totalSatisfaction / hasSatisfaction : 0

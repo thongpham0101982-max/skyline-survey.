@@ -21,7 +21,7 @@ export default async function ExperientialReportsPage() {
 
   const user = session.user as any
   const userRole = (user?.role || "").toUpperCase();
-  const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU", "BGH", "QLCM", "TTCM", "TEACHER"];
+  const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU", "BGH", "QLCM", "TTCM", "TEACHER", "CTHS", "CONG_TAC_HOC_SINH", "BAN_CTHS"];
   if (!ALLOWED_ROLES.some(r => userRole.includes(r))) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl max-w-xl mx-auto mt-20 text-center">

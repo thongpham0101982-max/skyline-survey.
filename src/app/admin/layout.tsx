@@ -18,7 +18,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     console.error("Auth fail in AdminLayout:", e)
   }
 
-  const roleCode = (session?.user as any)?.role || "ADMIN"
+  if (!session?.user) {
+    redirect("/login")
+  }
+
+  const roleCode = (session?.user as any)?.role || "PARENT"
   let readableModules: string[] = []
   let taskCount = 0
   let isTTCM = false

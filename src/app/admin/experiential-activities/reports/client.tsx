@@ -68,7 +68,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
   const handleExportExcel = () => {
     if (!stats || !stats.classProgress || stats.classProgress.length === 0) {
-      toast.error('Không có dữ liệu ? xuất Excel');
+      toast.error('Không có dữ liệu để xuất Excel');
       return;
     }
     try {

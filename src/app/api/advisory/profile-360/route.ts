@@ -83,6 +83,50 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Student not found" }, { status: 404 })
     }
 
+    // Kiểm tra phân quyền truy cập hồ sơ học sinh (Chống IDOR)
+    const userRole = (session?.user as any)?.role || "";
+    const currentUserId = (session?.user as any)?.id || "";
+    const allowedCampusIds = (session?.user as any)?.campusIds || [];
+    const isFullAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "KTDBCL"].includes(userRole);
+
+    let canAccess = isFullAdmin;
+
+    if (!canAccess && ["GDCS", "GD_CS", "GIAO_VU_CS", "GIAO_VU"].includes(userRole)) {
+      if (allowedCampusIds.length === 0 || allowedCampusIds.includes(student.campusId)) {
+        canAccess = true;
+      }
+    }
+
+    if (!canAccess && userRole === "PARENT") {
+      const isMyChild = await prisma.parentStudentLink.findFirst({
+        where: { studentId: student.id, parent: { userId: currentUserId } }
+      });
+      if (isMyChild) canAccess = true;
+    }
+
+    if (!canAccess && (userRole === "TEACHER" || userRole === "GV_MN")) {
+      const teacher = await prisma.teacher.findUnique({ where: { userId: currentUserId } });
+      if (teacher) {
+        const isHomeroom = student.class?.homeroomTeacherId === teacher.id;
+        const isClassTeacher = await prisma.teacherClassAssignment.findFirst({
+          where: { teacherId: teacher.id, classId: student.classId }
+        });
+        const isSubjectTeacher = await prisma.teachingAssignment.findFirst({
+          where: { teacherId: teacher.id, classId: student.classId }
+        });
+        const isSupport = await prisma.learningSupportAssignment.findFirst({
+          where: { teacherId: teacher.id, target: { studentId: student.id } }
+        });
+        if (isHomeroom || isClassTeacher || isSubjectTeacher || isSupport) {
+          canAccess = true;
+        }
+      }
+    }
+
+    if (!canAccess) {
+      return NextResponse.json({ error: "Bạn không có quyền xem hồ sơ của học sinh này." }, { status: 403 });
+    }
+
     let goals = student.goals || []
     if (goals.length === 0) {
       // Fallback 1: fetch all goals for this studentId

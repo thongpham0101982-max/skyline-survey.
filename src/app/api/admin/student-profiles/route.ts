@@ -322,7 +322,7 @@ export async function GET(req: NextRequest) {
           })
 
           mathScore = math !== null && math !== undefined ? math : ""
-          literatureScore = lit !== null && literatureScore !== undefined ? lit : ""
+          literatureScore = lit !== null && lit !== undefined ? String(lit) : ""
           writtenEnglishScore = wEng !== null && wEng !== undefined ? wEng : ""
           oralEnglishScore = oEng !== null && oEng !== undefined ? oEng : ""
         } else if (surveyType === "PRESCHOOL") {
