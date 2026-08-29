@@ -37,6 +37,7 @@ model User {
   studentTransfers                 StudentTransfer[]
   managedCampuses                  Campus[]                                    @relation("CampusManager")
   featureBadges                   UserFeatureBadge[]
+  competencyImportBatches         ImportBatch[]
 }
 
 model Parent {
@@ -153,6 +154,9 @@ model AcademicYear {
   advisoryStatuses               StudentAdvisoryStatus[]
   goalTrackings                  StudentGoalTrackingLog[]
   termEvaluations                StudentTermEvaluation[]
+  competencyImportBatches        ImportBatch[]
+  competencyAssessments          StudentCompetencyAssessment[]
+  competencySummaries            StudentSubjectCompetencySummary[]
 }
 
 model Class {
@@ -231,6 +235,8 @@ model Student {
   advisoryStatuses       StudentAdvisoryStatus[]
   goalTrackings          StudentGoalTrackingLog[]
   termEvaluations        StudentTermEvaluation[]
+  competencyAssessments  StudentCompetencyAssessment[]
+  competencySummaries    StudentSubjectCompetencySummary[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -451,6 +457,10 @@ model Subject {
   StudentTermScore           StudentTermScore[]
   subjectGradeConfigs        SubjectGradeConfig[]
   subjectGradeEntries        SubjectGradeEntry[]
+  competencies               SubjectCompetency[]
+  aliases                    SubjectAlias[]
+  competencyAssessments      StudentCompetencyAssessment[]
+  competencySummaries        StudentSubjectCompetencySummary[]
 }
 
 model TeachingAssignment {
@@ -1996,4 +2006,200 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 
   @@index([email])
+}
+
+
+// ==========================================
+// DANH MỤC NĂNG LỰC & CHUẨN HÓA ALIAS
+// ==========================================
+
+model SubjectCompetency {
+  id             String                     @id @default(cuid())
+  subjectId      String
+  code           String
+  name           String
+  description    String?
+  displayOrder   Int                        @default(1)
+  weight         Float                      @default(1.0)
+  status         String                     @default("ACTIVE")
+  createdAt      DateTime                   @default(now())
+  updatedAt      DateTime                   @updatedAt
+
+  subject        Subject                    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  aliases        SubjectCompetencyAlias[]
+  assessments    StudentCompetencyAssessment[]
+  stagingItems   StagingCompetencyAssessment[]
+
+  @@unique([subjectId, code])
+  @@index([subjectId])
+}
+
+model SubjectAlias {
+  id             String   @id @default(cuid())
+  subjectId      String
+  aliasPattern   String
+  normalizedKey  String
+  createdAt      DateTime @default(now())
+
+  subject        Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([aliasPattern])
+  @@index([normalizedKey])
+}
+
+model SubjectCompetencyAlias {
+  id             String            @id @default(cuid())
+  competencyId   String
+  aliasPattern   String
+  normalizedKey  String
+  createdAt      DateTime          @default(now())
+
+  competency     SubjectCompetency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+
+  @@unique([aliasPattern])
+  @@index([normalizedKey])
+}
+
+// ==========================================
+// LỊCH SỬ BATCH IMPORT & CẤU HÌNH MAPPING
+// ==========================================
+
+model ImportBatch {
+  id               String                        @id @default(cuid())
+  batchCode        String                        @unique
+  fileName         String
+  fileSize         Int
+  fileHash         String
+  academicYearId   String
+  semester         Int                           @default(1)
+  assessmentPeriod String                        @default("GIUA_KY_1")
+  importedById     String
+  status           String                        @default("STAGED")
+  totalRows        Int                           @default(0)
+  validRows        Int                           @default(0)
+  warningRows      Int                           @default(0)
+  errorRows        Int                           @default(0)
+  duplicateRows    Int                           @default(0)
+  errorSummary     String?
+  createdAt        DateTime                      @default(now())
+  updatedAt        DateTime                      @updatedAt
+
+  academicYear     AcademicYear                  @relation(fields: [academicYearId], references: [id])
+  importedBy       User                          @relation(fields: [importedById], references: [id])
+  stagingRecords   StagingCompetencyAssessment[]
+  finalRecords     StudentCompetencyAssessment[]
+
+  @@index([academicYearId])
+  @@index([importedById])
+  @@index([fileHash])
+}
+
+model ImportMappingConfig {
+  id             String   @id @default(cuid())
+  name           String
+  headerMapping  String
+  isDefault      Boolean  @default(false)
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// ==========================================
+// STAGING TABLE (BẢNG TRUNG GIAN)
+// ==========================================
+
+model StagingCompetencyAssessment {
+  id                 String             @id @default(cuid())
+  batchId            String
+  rowNumber          Int
+  
+  rawYear            String?
+  rawStudentCode     String?
+  rawStudentName     String?
+  rawClass           String?
+  rawSubject         String?
+  rawCompetency      String?
+  rawAchievedScore   String?
+  rawMaxScore        String?
+  rawRadarPercent    String?
+
+  studentId          String?
+  subjectId          String?
+  competencyId       String?
+  
+  achievedScore      Float?
+  maxScore           Float?
+  competencyPercent  Float?
+  calculationSource  String?
+
+  validationStatus   String             @default("PENDING")
+  errorMessages      String?
+
+  batch              ImportBatch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  competency         SubjectCompetency? @relation(fields: [competencyId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@index([validationStatus])
+  @@index([studentId])
+}
+
+// ==========================================
+// BẢNG DỮ LIỆU ĐÁNH GIÁ CHÍNH THỨC
+// ==========================================
+
+model StudentCompetencyAssessment {
+  id                 String            @id @default(cuid())
+  batchId            String
+  studentId          String
+  subjectId          String
+  competencyId       String
+  academicYearId     String
+  semester           Int               @default(1)
+  assessmentPeriod   String
+
+  achievedScore      Float?
+  maxScore           Float?
+  competencyPercent  Float
+  weight             Float             @default(1.0)
+  calculationSource  String            @default("SYSTEM_CALCULATED")
+  notes              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  batch              ImportBatch       @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  student            Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject            Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  competency         SubjectCompetency @relation(fields: [competencyId], references: [id], onDelete: Cascade)
+  academicYear       AcademicYear      @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([academicYearId, studentId, subjectId, competencyId, assessmentPeriod], name: "unique_competency_assessment_entry")
+  @@index([studentId, academicYearId, assessmentPeriod])
+  @@index([subjectId, academicYearId])
+  @@index([batchId])
+}
+
+// ==========================================
+// BẢNG TỔNG HỢP MÔN HỌC (CACHE/SUMMARY)
+// ==========================================
+
+model StudentSubjectCompetencySummary {
+  id                 String       @id @default(cuid())
+  studentId          String
+  subjectId          String
+  academicYearId     String
+  semester           Int          @default(1)
+  assessmentPeriod   String
+  
+  subjectScore       Float?
+  evaluatedCount     Int          @default(0)
+  totalCompetencies  Int          @default(0)
+  radarData          String
+  updatedAt          DateTime     @updatedAt
+
+  student            Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject            Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  academicYear       AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([academicYearId, studentId, subjectId, assessmentPeriod])
+  @@index([studentId, academicYearId])
 }

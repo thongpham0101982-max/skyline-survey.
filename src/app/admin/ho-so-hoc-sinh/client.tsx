@@ -3,6 +3,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { StudentCompetencyPortfolio } from "@/components/competency/StudentCompetencyPortfolio"
 import { 
   Users, Loader2, User, UserCheck, Award, Trophy, Medal, Sparkles, Compass, 
   FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,
@@ -268,6 +269,7 @@ export function StudentProfilesAdminClient({
 
     const tabs = [
     { id: "cv", label: "Xem chi tiết HSHS", icon: User },
+    { id: "competencies", label: "Đánh giá Năng lực (Radar)", icon: Sparkles },
     { id: "academic", label: "Kết quả Học tập (MOET)", icon: FileText },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
     { id: "achievements", label: "Thành tích", icon: Award },
@@ -877,6 +879,18 @@ export function StudentProfilesAdminClient({
                             </div>
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    
+                    {activeTab === "competencies" && (
+                      <div className="space-y-6 animate-in fade-in duration-300">
+                        <StudentCompetencyPortfolio
+                          studentId={selectedStudent?.id || selectedStudentId}
+                          studentCode={selectedStudent?.studentCode}
+                          studentName={selectedStudent?.studentName}
+                          initialAcademicYearId={selectedYearId}
+                        />
                       </div>
                     )}
 

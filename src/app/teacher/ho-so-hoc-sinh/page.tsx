@@ -427,6 +427,7 @@ export default function TeacherStudentProfilePage() {
     const tabs = [
     { id: "advisory_360", label: "Cố vấn & Mục tiêu 360°", icon: Compass },
     { id: "cv", label: "Xem chi tiết HSHS", icon: User },
+    { id: "competencies", label: "Đánh giá Năng lực (Radar)", icon: Sparkles },
     { id: "academic", label: "Kết quả Học tập (MOET)", icon: FileText },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
     { id: "achievements", label: "Thành tích", icon: Award },
@@ -1016,6 +1017,18 @@ export default function TeacherStudentProfilePage() {
                           </div>
 
                         </div>
+                      </div>
+                    )}
+
+                    
+                    {activeTab === "competencies" && (
+                      <div className="space-y-6 animate-in fade-in duration-300">
+                        <StudentCompetencyPortfolio
+                          studentId={selectedStudent?.id || selectedStudentId}
+                          studentCode={selectedStudent?.studentCode}
+                          studentName={selectedStudent?.studentName}
+                          initialAcademicYearId={selectedYearId}
+                        />
                       </div>
                     )}
 

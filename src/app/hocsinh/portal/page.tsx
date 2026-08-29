@@ -124,6 +124,41 @@ export default function StudentPortalHomePage() {
         </div>
 
         {/* 6 Responsive Main Feature Cards Grid */}
+          {/* CHỨC NĂNG 0: ĐÁNH GIÁ NĂNG LỰC MÔN HỌC (RADAR) */}
+          <Link
+            href="/hocsinh/portal/danh-gia-nang-luc"
+            className="group relative overflow-hidden bg-white rounded-3xl p-6 border-2 border-teal-300 hover:border-teal-600 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between md:col-span-2 bg-gradient-to-r from-teal-50/40 via-white to-white"
+          >
+            <div className="absolute right-0 top-0 w-36 h-36 bg-teal-500/10 rounded-bl-full transition-transform group-hover:scale-110 pointer-events-none" />
+
+            <div className="space-y-3.5 relative z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#003B3A] to-[#007A72] text-white flex items-center justify-center shadow-md shadow-teal-700/30 group-hover:rotate-6 transition-transform">
+                  <Sparkles className="w-6 h-6 text-amber-300" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-teal-800 uppercase tracking-widest bg-teal-100/80 px-2.5 py-0.5 rounded-full border border-teal-300">
+                    MỚI CẬP NHẬT
+                  </span>
+                  <h3 className="text-lg font-black text-slate-900 mt-1 group-hover:text-teal-700 transition-colors">
+                    Hồ Sơ Đánh Giá Năng Lực Môn Học (Biểu Đồ Radar)
+                  </h3>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-600 font-medium leading-relaxed max-w-2xl">
+                Xem toàn diện kết quả đánh giá các trục năng lực môn học, biểu đồ mạng nhện đa chiều và điểm tích lũy chuẩn đầu ra của từng học kỳ.
+              </p>
+            </div>
+
+            <div className="pt-4 relative z-10 flex items-center justify-between border-t border-teal-100 mt-4">
+              <span className="text-xs font-extrabold text-[#007A72]">Khám phá Radar Năng lực của em</span>
+              <div className="w-8 h-8 rounded-full bg-teal-50 text-[#007A72] flex items-center justify-center group-hover:bg-[#007A72] group-hover:text-white transition-all">
+                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
+              </div>
+            </div>
+          </Link>
+  
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {/* CHỨC NĂNG 1: KHẢO SÁT HỌC SINH */}

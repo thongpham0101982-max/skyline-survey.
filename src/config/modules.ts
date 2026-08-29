@@ -26,7 +26,8 @@ import {
   Award,
   Globe,
   FileText,
-  Compass
+  Compass,
+  Sparkles
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -82,6 +83,17 @@ export const APP_CATEGORIES = [
         name: "QL Điểm/Nhận xét",
         icon: ClipboardList,
         href: "/admin/ktdbcl/diem-nhan-xet"
+      },
+      {
+        code: "COMPETENCY_ASSESSMENT",
+        name: "ĐGNL Môn học (Radar)",
+        icon: Sparkles,
+        href: "/admin/competency-assessment/import",
+        subModules: [
+          { code: "COMPETENCY_IMPORT", name: "Import Wizard (Excel)", href: "/admin/competency-assessment/import" },
+          { code: "COMPETENCY_ALIASES", name: "Từ điển Alias Môn & NL", href: "/admin/competency-assessment/aliases" },
+          { code: "COMPETENCY_HISTORY", name: "Lịch sử & Rollback", href: "/admin/competency-assessment/history" },
+        ]
       },
       {
         code: "KTDBCL_IMPORT_KQHT",
