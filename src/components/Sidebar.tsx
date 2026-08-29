@@ -57,6 +57,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [loadingAssignments, setLoadingAssignments] = useState(true)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ KTDBCL: true, ASSESSMENT: true, TRAINING: true, SYSTEM: true })
   const [observesExpanded, setObservesExpanded] = useState(pathname.startsWith("/admin/du-gio"))
+  const [expandedSubModules, setExpandedSubModules] = useState<Record<string, boolean>>({ QL_DGNL: true, KTDBCL_EXAMS: false, COMPETENCY_ASSESSMENT: true })
 
   const isPreschoolRole = isPreschoolTeacher || ['GV_MN', 'BGH_MN', 'MN', 'MAM_NON', 'BGH MAM NON', 'BGH_MAM_NON'].includes(normalizedRole);
   const showPreschoolObservation = isPreschoolRole || hasPreschool || isSuperAdmin;
@@ -382,35 +383,79 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     ];
                     const v = colorVariants[index % colorVariants.length];
 
+                    const hasSubModules = !isCollapsed && m.subModules && m.subModules.length > 0;
+                    const isSubExpanded = expandedSubModules[m.code] ?? (isActive || m.code === "QL_DGNL" || m.code === "COMPETENCY_ASSESSMENT");
+
                     return (
-                      <Link 
-                        key={m.code} 
-                        href={m.href}
-                        onClick={() => setIsOpen(false)}
-                        className={`group relative flex items-center justify-between ${isCollapsed ? 'px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                          isActive 
-                            ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
-                            : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                        }`}
-                      >
+                      <div key={m.code} className="space-y-1 mb-1.5">
                         <div className="flex items-center">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                            isActive
-                              ? `${v.activeBg} border ${v.activeBorder} ${v.activeShadow}`
-                              : `bg-white/5 border border-white/10 ${v.hoverBorder}`
-                          }`}>
-                            <m.icon className={`w-4 h-4 transition-all ${
-                              isActive ? v.activeText : `text-slate-400 ${v.hoverText} group-hover:scale-110`
-                            }`} />
-                          </div>
-                          {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{index + 1}. {m.name}</span>}
+                          <Link 
+                            href={m.href}
+                            onClick={() => {
+                              if (!hasSubModules) setIsOpen(false);
+                            }}
+                            className={`flex-1 group relative flex items-center justify-between ${isCollapsed ? 'px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                              isActive 
+                                ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                                : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                            }`}
+                          >
+                            <div className="flex items-center">
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                                isActive
+                                  ? `${v.activeBg} border ${v.activeBorder} ${v.activeShadow}`
+                                  : `bg-white/5 border border-white/10 ${v.hoverBorder}`
+                              }`}>
+                                <m.icon className={`w-4 h-4 transition-all ${
+                                  isActive ? v.activeText : `text-slate-400 ${v.hoverText} group-hover:scale-110`
+                                }`} />
+                              </div>
+                              {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{index + 1}. {m.name}</span>}
+                            </div>
+                            {m.code === "TASKS" && taskCount > 0 && !isCollapsed && (
+                              <span className="text-[9px] font-black text-white min-w-[18px] text-center shadow-lg shadow-red-500/40 bg-red-500 rounded-full px-1.5 py-0.5">
+                                {taskCount}
+                              </span>
+                            )}
+                          </Link>
+                          {hasSubModules && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedSubModules(prev => ({ ...prev, [m.code]: !isSubExpanded }));
+                              }}
+                              className="p-1.5 text-white/50 hover:text-white hover:bg-white/10 rounded-lg ml-1 transition-all"
+                            >
+                              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isSubExpanded ? 'rotate-180 text-teal-400' : ''}`} />
+                            </button>
+                          )}
                         </div>
-                        {m.code === "TASKS" && taskCount > 0 && !isCollapsed && (
-                          <span className="text-[9px] font-black text-white min-w-[18px] text-center shadow-lg shadow-red-500/40 bg-red-500 rounded-full px-1.5 py-0.5">
-                            {taskCount}
-                          </span>
+
+                        {/* Render SubModules dropdown */}
+                        {hasSubModules && isSubExpanded && (
+                          <div className="pl-9 pr-1 space-y-1 py-1 border-l-2 border-teal-500/30 ml-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                            {m.subModules.map((sub: any) => {
+                              const isSubActive = pathname === sub.href;
+                              return (
+                                <Link
+                                  key={sub.code}
+                                  href={sub.href || m.href}
+                                  onClick={() => setIsOpen(false)}
+                                  className={`block px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                                    isSubActive
+                                      ? "bg-teal-500/25 text-teal-300 font-bold border border-teal-500/30 shadow-xs"
+                                      : "text-white/65 hover:text-white hover:bg-white/10"
+                                  }`}
+                                >
+                                  • {sub.name}
+                                </Link>
+                              );
+                            })}
+                          </div>
                         )}
-                      </Link>
+                      </div>
                     )
                   })}
                 </div>

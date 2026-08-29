@@ -84,28 +84,16 @@ export const APP_CATEGORIES = [
         icon: ClipboardList,
         href: "/admin/ktdbcl/diem-nhan-xet"
       },
-      {
-        code: "COMPETENCY_ASSESSMENT",
-        name: "Import ĐGNL (Radar)",
+            {
+        code: "QL_DGNL",
+        name: "QL ĐGNL",
         icon: Sparkles,
         href: "/admin/competency-assessment/import",
         subModules: [
-          { code: "COMPETENCY_IMPORT", name: "Import Wizard (Excel)", href: "/admin/competency-assessment/import" },
+          { code: "COMPETENCY_IMPORT", name: "Import ĐGNL (Radar)", href: "/admin/competency-assessment/import" },
           { code: "COMPETENCY_ALIASES", name: "Từ điển Alias Môn & NL", href: "/admin/competency-assessment/aliases" },
-          { code: "COMPETENCY_HISTORY", name: "Lịch sử & Rollback", href: "/admin/competency-assessment/history" },
+          { code: "COMPETENCY_HISTORY", name: "Lịch sử Import ĐGNL", href: "/admin/competency-assessment/history" },
         ]
-      },
-      {
-        code: "COMPETENCY_ALIASES",
-        name: "Từ điển Alias Môn & NL",
-        icon: Layers,
-        href: "/admin/competency-assessment/aliases"
-      },
-      {
-        code: "COMPETENCY_HISTORY",
-        name: "Lịch sử Import ĐGNL",
-        icon: RefreshCcw,
-        href: "/admin/competency-assessment/history"
       },
       {
         code: "KTDBCL_IMPORT_KQHT",
