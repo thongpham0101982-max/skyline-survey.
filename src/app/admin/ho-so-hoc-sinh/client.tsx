@@ -105,6 +105,7 @@ export function StudentProfilesAdminClient({
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
+  const [isExpandedView, setIsExpandedView] = useState<boolean>(false)
   
   // Tab states
   const [activeTab, setActiveTab] = useState("cv")
