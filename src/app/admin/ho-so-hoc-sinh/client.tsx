@@ -559,15 +559,25 @@ export function StudentProfilesAdminClient({
           {selectedStudentId ? (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
               
-              {/* Profile Details Header */}
-              <div className="p-6 bg-gradient-to-r from-slate-50 to-slate-100/70 border-b border-slate-155 flex items-center justify-between gap-5 relative overflow-hidden">
+              {/* Profile Details Header with Student Switcher & Fullscreen Mode */}
+              <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-50 via-teal-50/20 to-slate-100/70 border-b border-slate-200/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-[#00A99D]/5 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-teal-50 border border-[#00A99D]/30 flex items-center justify-center text-[#00A99D] shadow-sm">
-                    <User className="w-7 h-7" />
+                
+                <div className="flex items-center gap-3.5 z-10">
+                  <div className="w-13 h-13 rounded-2xl overflow-hidden bg-gradient-to-br from-[#003B3A] to-[#007A72] border border-teal-600/30 flex items-center justify-center text-white font-black text-base shadow-md">
+                    {selectedStudent?.studentName ? selectedStudent.studentName.split(" ").pop()?.charAt(0) : <User className="w-6 h-6" />}
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-black text-base text-slate-805 tracking-tight leading-tight">{selectedStudent?.studentName}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-black text-base sm:text-lg text-slate-800 tracking-tight leading-tight">
+                        {selectedStudent?.studentName}
+                      </h3>
+                      {selectedStudent?.className && (
+                        <span className="bg-teal-50 text-[#007A72] border border-teal-200/80 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                          Lớp {selectedStudent.className}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400 text-xs font-bold">
                       <span>Mã HS: <span className="text-slate-700 font-extrabold">{selectedStudent?.studentCode}</span></span>
                       <span>Ngày sinh: <span className="text-slate-700 font-extrabold">{selectedStudent?.dob || "N/A"}</span></span>
@@ -575,19 +585,73 @@ export function StudentProfilesAdminClient({
                     </div>
                   </div>
                 </div>
-                
-                {/* Print individual PDF */}
-                <button
-                  onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}`, "_blank")}
-                  className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>In CV</span>
-                </button>
+
+                {/* Quick Navigation & Action Tools */}
+                <div className="flex items-center gap-2 z-10 self-end md:self-auto flex-wrap">
+                  {/* Prev / Next Student Switcher */}
+                  {filteredStudentsList.length > 1 && (() => {
+                    const cIdx = filteredStudentsList.findIndex((s: any) => s.id === selectedStudentId);
+                    return (
+                      <div className="flex items-center bg-white border border-slate-200/90 rounded-xl shadow-2xs p-0.5">
+                        <button
+                          disabled={cIdx <= 0}
+                          onClick={() => cIdx > 0 && setSelectedStudentId(filteredStudentsList[cIdx - 1].id)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-30 cursor-pointer transition-all"
+                          title="Học sinh trước"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="px-2 text-[10px] font-bold text-slate-500">
+                          {cIdx + 1} / {filteredStudentsList.length}
+                        </span>
+                        <button
+                          disabled={cIdx >= filteredStudentsList.length - 1}
+                          onClick={() => cIdx < filteredStudentsList.length - 1 && setSelectedStudentId(filteredStudentsList[cIdx + 1].id)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-30 cursor-pointer transition-all"
+                          title="Học sinh tiếp theo"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Toggle Fullscreen / Expansive View */}
+                  <button
+                    onClick={() => setIsExpandedView(!isExpandedView)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs border transition-all cursor-pointer ${
+                      isExpandedView
+                        ? "bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100"
+                        : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-teal-800"
+                    }`}
+                    title={isExpandedView ? "Thu gọn danh sách" : "Xem toàn màn hình (Mở rộng tối đa không gian)"}
+                  >
+                    {isExpandedView ? (
+                      <>
+                        <Minimize2 className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Thu gọn</span>
+                      </>
+                    ) : (
+                      <>
+                        <Maximize2 className="w-3.5 h-3.5 text-teal-600" />
+                        <span className="hidden sm:inline">Toàn màn hình</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Print individual PDF */}
+                  <button
+                    onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}`, "_blank")}
+                    className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>In CV</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Tab Navigation */}
-              <div className="flex flex-wrap border-b border-slate-200 bg-slate-50/50 px-2 pt-2 gap-1 overflow-x-auto">
+              {/* Smart Segmented Pill Tab Bar (Horizontal Scrollable) */}
+              <div className="border-b border-slate-200/80 bg-slate-50/70 px-3 py-2 overflow-x-auto custom-scrollbar flex items-center gap-1.5">
                 {tabs.map(tab => {
                   const Icon = tab.icon
                   const isActive = activeTab === tab.id
@@ -595,13 +659,13 @@ export function StudentProfilesAdminClient({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-t-2 border-x rounded-t-xl transition-all cursor-pointer ${
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                         isActive
-                          ? "bg-white text-[#00A99D] border-[#00A99D] border-x-slate-200 shadow-xs"
-                          : "text-slate-500 border-transparent hover:text-slate-800"
+                          ? "bg-gradient-to-r from-[#003B3A] to-[#007A72] text-white shadow-sm shadow-teal-900/20 font-black scale-[1.02]"
+                          : "bg-white/80 hover:bg-white text-slate-600 hover:text-teal-900 border border-slate-200/60 shadow-2xs"
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5" />
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? "text-teal-300" : "text-slate-400"}`} />
                       <span>{tab.label}</span>
                     </button>
                   )

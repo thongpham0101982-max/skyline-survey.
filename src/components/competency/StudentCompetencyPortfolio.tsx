@@ -2,19 +2,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { SubjectCompetencyCard } from "./SubjectCompetencyCard";
 import {
   Sparkles,
-  BookOpen,
-  Award,
-  Calendar,
-  Layers,
-  Filter,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
   TrendingUp,
+  Award,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Filter,
+  BarChart3,
+  Layers,
 } from "lucide-react";
-import { SubjectCompetencyCard } from "./SubjectCompetencyCard";
 
 interface StudentCompetencyPortfolioProps {
   studentId?: string;
@@ -122,27 +121,33 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Filters & Header Bar */}
-      <div className="bg-gradient-to-r from-teal-900 via-[#003B3A] to-[#007A72] p-6 rounded-3xl text-white shadow-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="space-y-1">
+      {/* Sleek, Modern Executive Header Card */}
+      <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-teal-900 p-5 sm:p-6 rounded-3xl text-white shadow-lg border border-teal-800/40 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="space-y-1.5 relative z-10">
           <div className="flex items-center gap-2 text-[11px] font-black text-teal-300 uppercase tracking-widest">
-            <Sparkles className="w-4 h-4" />
+            <span className="flex h-2 w-2 rounded-full bg-teal-400 animate-pulse" />
+            <Sparkles className="w-3.5 h-3.5" />
             <span>Hồ Sơ Năng Lực Học Sinh (Competency Portfolio)</span>
           </div>
-          <h3 className="text-xl font-black tracking-tight">
+          <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
             Kết Quả Đánh Giá Năng Lực Môn Học
           </h3>
-          <p className="text-xs text-teal-100/80 font-medium">
-            Phân tích đa chiều trên biểu đồ Radar theo từng môn học và chuẩn đầu ra.
+          <p className="text-xs text-teal-200/80 font-medium max-w-xl">
+            Phân tích đa chiều trên biểu đồ Radar theo từng phân môn và năng lực chuẩn đầu ra.
           </p>
         </div>
 
         {/* Filter Controls */}
-        <div className="flex flex-wrap items-center gap-2.5 bg-white/10 p-2 rounded-2xl backdrop-blur-xs border border-white/20">
+        <div className="flex flex-wrap items-center gap-2.5 bg-white/10 p-2 rounded-2xl backdrop-blur-md border border-white/20 relative z-10">
+          <div className="flex items-center gap-1.5 pl-2 text-teal-200 text-xs font-bold">
+            <Calendar className="w-3.5 h-3.5" />
+          </div>
           <select
             value={selectedYearId}
             onChange={(e) => setSelectedYearId(e.target.value)}
-            className="bg-teal-950/80 border border-teal-600/50 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:outline-hidden focus:ring-2 focus:ring-teal-400"
+            className="bg-teal-950 border border-teal-600/60 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:outline-hidden focus:ring-2 focus:ring-teal-400"
           >
             {academicYears.map((y) => (
               <option key={y.id} value={y.id} className="text-slate-900">
@@ -154,7 +159,7 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="bg-teal-950/80 border border-teal-600/50 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:outline-hidden focus:ring-2 focus:ring-teal-400"
+            className="bg-teal-950 border border-teal-600/60 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:outline-hidden focus:ring-2 focus:ring-teal-400"
           >
             <option value="GIUA_KY_1" className="text-slate-900">Giữa Học kỳ I</option>
             <option value="CUOI_KY_1" className="text-slate-900">Cuối Học kỳ I</option>
@@ -167,26 +172,26 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-teal-300 transition-all">
           <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#007A72] flex items-center justify-center font-black">
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
               Điểm Bình Quân Tất Cả Môn
             </span>
-            <span className="text-2xl font-black text-slate-850">
-              {overallAvg !== null ? overallAvg + "%" : "Chưa có"}
+            <span className="text-2xl font-black text-slate-800">
+              {overallAvg !== null ? (overallAvg + "%") : "Chưa có"}
             </span>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-emerald-300 transition-all">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black">
             <CheckCircle2 className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
               Tiến Độ Đánh Giá Năng Lực
             </span>
             <span className="text-2xl font-black text-emerald-700">
@@ -195,12 +200,12 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs flex items-center gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex items-center gap-4 hover:border-indigo-300 transition-all">
           <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-black">
             <BookOpen className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
               Số Môn Đã Đánh Giá
             </span>
             <span className="text-2xl font-black text-indigo-900">
@@ -210,13 +215,14 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
         </div>
       </div>
 
-      {/* Grid of Subject Competency Cards */}
+      {/* Grid of Subject Competency Cards (Expansive adaptive grid) */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-slate-400 bg-white rounded-3xl border border-slate-200/80">
-          Đang tải dữ liệu đánh giá năng lực môn học...
+        <div className="p-12 text-center text-xs text-slate-400 bg-white rounded-3xl border border-slate-200/80 flex flex-col items-center justify-center gap-2">
+          <div className="w-6 h-6 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+          <span>Đang tải dữ liệu đánh giá năng lực môn học...</span>
         </div>
       ) : summaries.length === 0 ? (
-        <div className="p-12 text-center space-y-2 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
+        <div className="p-12 text-center space-y-2 bg-white rounded-3xl border border-slate-200/80 shadow-xs">
           <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
           <h4 className="text-sm font-bold text-slate-700">Chưa Có Dữ Liệu Đánh Giá Năng Lực</h4>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
@@ -224,7 +230,7 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
           {summaries.map((summary) => (
             <SubjectCompetencyCard
               key={summary.id || summary.subjectId}

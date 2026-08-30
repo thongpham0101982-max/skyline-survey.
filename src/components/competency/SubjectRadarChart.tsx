@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { CheckCircle2, TrendingUp, Sparkles } from "lucide-react";
 
 export interface RadarItem {
   competencyId: string;
@@ -58,10 +59,46 @@ export const SubjectRadarChart: React.FC<SubjectRadarChartProps> = ({
       ? validPoints.map((p, i) => (i === 0 ? "M " : "L ") + p.x.toFixed(1) + " " + p.y.toFixed(1)).join(" ") + " Z"
       : "";
 
+  // For subjects with 1 or 2 competencies (e.g. Tiếng Việt, Âm nhạc, Tin học):
+  // Render a clean, modern Competency Gauge Bar Chart instead of a blank box
   if (numAxes < 3) {
     return (
-      <div className="flex flex-col items-center justify-center p-4 text-center text-xs text-slate-400 bg-slate-50/50 rounded-2xl border border-slate-100" style={{ height: size }}>
-        <p className="font-semibold">Cần tối thiểu 3 năng lực để vẽ biểu đồ Radar ({numAxes}/3)</p>
+      <div
+        className="w-full flex flex-col justify-center gap-3.5 p-4 bg-gradient-to-b from-slate-50/70 to-teal-50/30 rounded-2xl border border-slate-100"
+        style={{ minHeight: size }}
+      >
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-teal-800 uppercase tracking-wider pb-1 border-b border-teal-100/60">
+          <Sparkles className="w-3 h-3 text-teal-600" />
+          <span>Chỉ số Đánh giá Năng lực ({numAxes} trục)</span>
+        </div>
+
+        {sortedData.map((item, idx) => {
+          const val = item.percent !== null && item.percent !== undefined ? Math.min(100, Math.max(0, item.percent)) : null;
+          const getBarColor = (p: number | null) => {
+            if (p === null) return "from-slate-300 to-slate-400";
+            if (p >= 85) return "from-emerald-500 to-teal-500";
+            if (p >= 70) return "from-teal-500 to-cyan-500";
+            if (p >= 50) return "from-amber-400 to-amber-500";
+            return "from-rose-400 to-rose-500";
+          };
+
+          return (
+            <div key={idx} className="space-y-1.5 bg-white/90 p-3 rounded-xl border border-slate-200/70 shadow-2xs">
+              <div className="flex justify-between items-start text-xs font-extrabold text-slate-800 gap-2">
+                <span className="leading-snug text-[11px] text-slate-700">{item.name}</span>
+                <span className="font-black text-xs text-[#007A72] flex-shrink-0">
+                  {val !== null ? (val + "%") : "Chưa có"}
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className={"bg-gradient-to-r " + getBarColor(val) + " h-full rounded-full transition-all duration-500"}
+                  style={{ width: (val !== null ? val : 0) + "%" }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -115,65 +152,59 @@ export const SubjectRadarChart: React.FC<SubjectRadarChartProps> = ({
         {polygonPath && (
           <path
             d={polygonPath}
-            fill="rgba(0, 169, 157, 0.25)"
-            stroke="#00A99D"
+            fill="rgba(13, 148, 136, 0.22)"
+            stroke="#0D9488"
             strokeWidth="2.5"
             strokeLinejoin="round"
           />
         )}
 
         {validPoints.map((p, idx) => (
-          <g key={idx} className="group cursor-pointer">
+          <g key={idx}>
             <circle
               cx={p.x}
               cy={p.y}
-              r={p.item.calculationSource === "LEGACY_IMPORTED" ? 4.5 : 4}
-              fill={p.item.calculationSource === "LEGACY_IMPORTED" ? "#F59E0B" : "#007A72"}
+              r="4.5"
+              fill="#0D9488"
               stroke="#FFFFFF"
               strokeWidth="2"
-              className="transition-transform group-hover:scale-125"
             />
+            <text
+              x={p.x}
+              y={p.y - 8}
+              fontSize="9"
+              fontWeight="900"
+              fill="#0F766E"
+              textAnchor="middle"
+            >
+              {Math.round(p.item.percent)}%
+            </text>
           </g>
         ))}
 
-        {sortedData.map((item, aIdx) => {
-          const { x, y } = getCoordinates(aIdx, 1.22);
-          const hasValue = item.percent !== null && item.percent !== undefined;
-          
-          let textAnchor: "middle" | "start" | "end" = "middle";
-          if (x < center - 15) textAnchor = "end";
-          else if (x > center + 15) textAnchor = "start";
+        {sortedData.map((item, idx) => {
+          const { x, y } = getCoordinates(idx, 1.18);
+          let textAnchor = "middle";
+          if (x < center - 10) textAnchor = "end";
+          else if (x > center + 10) textAnchor = "start";
+
+          const shortName =
+            item.name.length > 18 ? item.name.slice(0, 16) + "..." : item.name;
 
           return (
-            <g key={aIdx} className="text-[10px]">
-              <text
-                x={x}
-                y={y}
-                textAnchor={textAnchor}
-                fontSize="9.5"
-                fontWeight="700"
-                fill={hasValue ? "#1E293B" : "#94A3B8"}
-                className="transition-colors hover:fill-[#007A72]"
-              >
-                {item.name.length > 20 ? item.name.slice(0, 18) + "..." : item.name}
-              </text>
-              <text
-                x={x}
-                y={y + 11}
-                textAnchor={textAnchor}
-                fontSize="8.5"
-                fontWeight="800"
-                fill={
-                  !hasValue
-                    ? "#94A3B8"
-                    : item.calculationSource === "LEGACY_IMPORTED"
-                    ? "#D97706"
-                    : "#007A72"
-                }
-              >
-                {hasValue ? item.percent + "%" : "Chưa ĐG"}
-              </text>
-            </g>
+            <text
+              key={idx}
+              x={x}
+              y={y}
+              fontSize="9"
+              fontWeight="700"
+              fill="#334155"
+              textAnchor={textAnchor}
+              dominantBaseline="middle"
+              className="cursor-pointer hover:fill-teal-700"
+            >
+              {shortName}
+            </text>
           );
         })}
       </svg>
