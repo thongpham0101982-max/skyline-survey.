@@ -25,6 +25,7 @@ export function HistoryClient({ currentUser }: HistoryClientProps) {
   const [batches, setBatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [rollingBackId, setRollingBackId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchHistory = async () => {
     setLoading(true);
@@ -44,7 +45,7 @@ export function HistoryClient({ currentUser }: HistoryClientProps) {
   }, []);
 
   const handleRollback = async (batchId: string, batchCode: string) => {
-    const confirmMsg = "CẢNH BÁO: Bạn có chắc chắn muốn Rollback (xóa sạch dữ liệu đã nạp) của đợt " + batchCode + "? Thao tác này không thể hoàn tác.";
+    const confirmMsg = "CẢNH BÁO: Bạn có chắc chắn muốn Rollback (xóa dữ liệu điểm & đánh giá đã nạp) của đợt " + batchCode + "? Trạng thái đợt sẽ chuyển thành ĐÃ ROLLBACK.";
     if (!window.confirm(confirmMsg)) return;
 
     setRollingBackId(batchId);
@@ -57,12 +58,33 @@ export function HistoryClient({ currentUser }: HistoryClientProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Lỗi rollback");
 
-      alert("Đã Rollback thành công toàn bộ dữ liệu của đợt import!");
+      alert("Đã Rollback thành công toàn bộ dữ liệu của đợt import " + batchCode + "!");
       fetchHistory();
     } catch (err: any) {
       alert("Lỗi: " + err.message);
     } finally {
       setRollingBackId(null);
+    }
+  };
+
+  const handleDeleteBatch = async (batchId: string, batchCode: string) => {
+    const confirmMsg = "XÁC NHẬN XÓA: Bạn có chắc chắn muốn XÓA HOÀN TOÀN đợt import " + batchCode + " khỏi hệ thống?";
+    if (!window.confirm(confirmMsg)) return;
+
+    setDeletingId(batchId);
+    try {
+      const res = await fetch(`/api/admin/competency-assessment/rollback?batchId=${batchId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Lỗi xóa đợt import");
+
+      alert("Đã xóa hoàn toàn đợt import " + batchCode + "!");
+      fetchHistory();
+    } catch (err: any) {
+      alert("Lỗi: " + err.message);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -173,16 +195,28 @@ export function HistoryClient({ currentUser }: HistoryClientProps) {
                     </td>
 
                     <td className="py-3 px-4 text-right">
-                      {b.status === "COMMITTED" && (
+                      <div className="flex items-center justify-end gap-1.5">
+                        {b.status === "COMMITTED" && (
+                          <button
+                            disabled={rollingBackId === b.id || deletingId === b.id}
+                            onClick={() => handleRollback(b.id, b.batchCode)}
+                            title="Xóa dữ liệu đã nạp và chuyển sang trạng thái Rolled Back"
+                            className="px-2.5 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            {rollingBackId === b.id ? "Đang hủy..." : "Rollback"}
+                          </button>
+                        )}
                         <button
-                          disabled={rollingBackId === b.id}
-                          onClick={() => handleRollback(b.id, b.batchCode)}
-                          className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+                          disabled={rollingBackId === b.id || deletingId === b.id}
+                          onClick={() => handleDeleteBatch(b.id, b.batchCode)}
+                          title="Xóa vĩnh viễn đợt import này"
+                          className="px-2.5 py-1.5 text-xs font-bold text-slate-500 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-slate-200 rounded-xl transition-all cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          {rollingBackId === b.id ? "Đang hủy..." : "Rollback"}
+                          <Trash2 className="w-3.5 h-3.5" />
+                          {deletingId === b.id ? "..." : "Xóa"}
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))

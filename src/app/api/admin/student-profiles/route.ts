@@ -126,28 +126,65 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: [] })
     }
 
-    // Fetch K12 and Preschool entrance surveys to match
-    const k12Surveys = await prisma.inputAssessmentStudent.findMany({
-      include: {
-        scores: {
-          include: { subject: true }
-        }
+    // Scoped extraction for student IDs and student codes
+    const studentIds = students.map((s: any) => s.id)
+    const studentCodesArr = students.map((s: any) => s.studentCode).filter(Boolean)
+    const studentNamesArr = students.map((s: any) => s.studentName).filter(Boolean)
+
+    // Fetch K12 and Preschool entrance surveys scoped to current students
+    let k12Surveys: any[] = []
+    try {
+      if (studentCodesArr.length > 0 || studentNamesArr.length > 0) {
+        k12Surveys = await prisma.inputAssessmentStudent.findMany({
+          where: {
+            OR: [
+              ...(studentCodesArr.length > 0 ? [{ studentCode: { in: studentCodesArr } }] : []),
+              ...(studentNamesArr.length > 0 ? [{ studentName: { in: studentNamesArr } }] : [])
+            ]
+          },
+          include: {
+            scores: {
+              include: { subject: true }
+            }
+          }
+        })
       }
-    })
+    } catch (err) {
+      console.error("Error fetching scoped k12Surveys:", err)
+    }
 
     const pAny = prisma as any
-    const preschoolSurveys = pAny.preschoolInputAssessmentStudent 
-      ? await pAny.preschoolInputAssessmentStudent.findMany() 
-      : []
-    const preschoolScores = pAny.preschoolDevScore 
-      ? await pAny.preschoolDevScore.findMany({
+    let preschoolSurveys: any[] = []
+    let preschoolScores: any[] = []
+
+    try {
+      if (pAny.preschoolInputAssessmentStudent && (studentCodesArr.length > 0 || studentNamesArr.length > 0)) {
+        preschoolSurveys = await pAny.preschoolInputAssessmentStudent.findMany({
+          where: {
+            OR: [
+              ...(studentCodesArr.length > 0 ? [{ studentCode: { in: studentCodesArr } }] : []),
+              ...(studentNamesArr.length > 0 ? [{ studentName: { in: studentNamesArr } }] : [])
+            ]
+          }
+        })
+      }
+
+      if (pAny.preschoolDevScore && preschoolSurveys.length > 0) {
+        const psStudentIds = preschoolSurveys.map((ps: any) => ps.id)
+        preschoolScores = await pAny.preschoolDevScore.findMany({
+          where: {
+            studentId: { in: psStudentIds }
+          },
           include: {
             criteria: {
               include: { area: true }
             }
           }
-        }) 
-      : []
+        })
+      }
+    } catch (err) {
+      console.error("Error fetching scoped preschoolSurveys:", err)
+    }
 
     // Group preschool scores by studentId
     const preschoolScoresMap = new Map<string, any[]>()
@@ -158,36 +195,17 @@ export async function GET(req: NextRequest) {
       preschoolScoresMap.get(score.studentId)!.push(score)
     })
 
-    // Fetch all activity participants for these students
-    const studentIds = students.map((s: any) => s.id)
-    const studentCodesArr = students.map((s: any) => s.studentCode).filter(Boolean)
-
+    // Fetch scoped activity participants for these students
     let allParticipants: any[] = []
     try {
-      allParticipants = (studentIds.length > 0 || studentCodesArr.length > 0)
-        ? await prisma.activityParticipant.findMany({
-            where: {
-              OR: [
-                ...(studentIds.length > 0 ? [{ studentId: { in: studentIds } }] : []),
-                ...(studentCodesArr.length > 0 ? [{ student: { studentCode: { in: studentCodesArr } } }] : [])
-              ]
-            },
-            include: {
-              record: {
-                include: {
-                  catalog: {
-                    include: { group: true }
-                  }
-                }
-              },
-              student: true
-            },
-            orderBy: { createdAt: "desc" }
-          })
-        : []
-
-      if (allParticipants.length === 0) {
+      if (studentIds.length > 0 || studentCodesArr.length > 0) {
         allParticipants = await prisma.activityParticipant.findMany({
+          where: {
+            OR: [
+              ...(studentIds.length > 0 ? [{ studentId: { in: studentIds } }] : []),
+              ...(studentCodesArr.length > 0 ? [{ student: { studentCode: { in: studentCodesArr } } }] : [])
+            ]
+          },
           include: {
             record: {
               include: {
@@ -202,7 +220,7 @@ export async function GET(req: NextRequest) {
         })
       }
     } catch (err) {
-      console.error("Error fetching allParticipants in admin student-profiles:", err)
+      console.error("Error fetching scoped allParticipants:", err)
     }
 
     const categories = await prisma.activityCategory.findMany()
