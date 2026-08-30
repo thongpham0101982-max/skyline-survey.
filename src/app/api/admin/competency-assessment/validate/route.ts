@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import {
@@ -172,6 +173,7 @@ export async function POST(req: NextRequest) {
           : null;
 
       stagingData.push({
+        id: crypto.randomUUID(),
         batchId: batch.id,
         rowNumber: rowNum,
         rawYear: rawYear || null,
@@ -192,7 +194,6 @@ export async function POST(req: NextRequest) {
         calculationSource: scoreResult.calculationSource,
         validationStatus,
         errorMessages,
-        isDuplicate,
       });
     }
 

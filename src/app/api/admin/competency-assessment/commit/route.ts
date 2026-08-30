@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { synthesizeSubjectSummary } from "@/lib/competency-service";
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest) {
       if (!record.studentId || !record.subjectId || !record.competencyId) continue;
 
       assessmentRecordsToInsert.push({
+        id: crypto.randomUUID(),
         batchId: batch.id,
         studentId: record.studentId,
         subjectId: record.subjectId,
@@ -84,6 +86,7 @@ export async function POST(req: NextRequest) {
       const summary = synthesizeSubjectSummary(subjectComps, assessments);
 
       summariesToInsert.push({
+        id: crypto.randomUUID(),
         studentId,
         subjectId,
         academicYearId: batch.academicYearId,
