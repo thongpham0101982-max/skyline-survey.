@@ -69,6 +69,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
 
   // Validation Stats
   const [isValidating, setIsValidating] = useState(false);
+  const [validationProgress, setValidationProgress] = useState({ currentChunk: 0, totalChunks: 0, processedRows: 0, totalRows: 0, percent: 0 });
   const [validationStats, setValidationStats] = useState<{
     totalRows: number;
     validRows: number;
@@ -169,7 +170,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
     }
   };
 
-  // Run Staging & Validation
+  // Run Staging & Validation (Chunked for files >= 100,000 rows)
   const handleRunValidation = async () => {
     if (!batchId || rawRows.length === 0) {
       alert("Vui lòng tải lên file Excel trước");
@@ -182,24 +183,74 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
     }
 
     setIsValidating(true);
-    try {
-      const res = await fetch("/api/admin/competency-assessment/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          batchId,
-          rows: rawRows,
-          mapping,
-          academicYearId: selectedYearId,
-          assessmentPeriod: selectedPeriod,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Lỗi kiểm tra dữ liệu");
+    setValidationProgress({
+      currentChunk: 0,
+      totalChunks: 1,
+      processedRows: 0,
+      totalRows: rawRows.length,
+      percent: 0,
+    });
 
-      setValidationStats(data.stats);
-      setSampleIssues(data.sampleIssues || []);
-      setCurrentStep(2);
+    try {
+      const CHUNK_SIZE = 2500;
+      const totalChunks = Math.ceil(rawRows.length / CHUNK_SIZE);
+      let finalData: any = null;
+
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, rawRows.length);
+        const chunkRows = rawRows.slice(start, end);
+        const isFirstChunk = i === 0;
+        const isLastChunk = i === totalChunks - 1;
+
+        setValidationProgress({
+          currentChunk: i + 1,
+          totalChunks,
+          processedRows: end,
+          totalRows: rawRows.length,
+          percent: Math.round((end / rawRows.length) * 100),
+        });
+
+        const res = await fetch("/api/admin/competency-assessment/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            batchId,
+            rows: chunkRows,
+            mapping,
+            academicYearId: selectedYearId,
+            assessmentPeriod: selectedPeriod,
+            isFirstChunk,
+            isLastChunk,
+            chunkIndex: i,
+            totalChunks,
+            startIndex: start,
+          }),
+        });
+
+        const text = await res.text();
+        let data: any;
+        try {
+          data = JSON.parse(text);
+        } catch (_) {
+          throw new Error(
+            res.status === 413
+              ? "Dữ liệu quá lớn (413 Payload Too Large)"
+              : ("Lỗi phản hồi (" + res.status + "): " + text.slice(0, 150))
+          );
+        }
+
+        if (!res.ok) throw new Error(data.error || "Lỗi kiểm tra dữ liệu");
+        if (isLastChunk) {
+          finalData = data;
+        }
+      }
+
+      if (finalData) {
+        setValidationStats(finalData.stats);
+        setSampleIssues(finalData.sampleIssues || []);
+        setCurrentStep(2);
+      }
     } catch (err: any) {
       alert("Lỗi: " + err.message);
     } finally {
