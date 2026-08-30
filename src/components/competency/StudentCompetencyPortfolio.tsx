@@ -38,21 +38,28 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
   const [summaries, setSummaries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Sync initialAcademicYearId when parent passes it
+  useEffect(() => {
+    if (initialAcademicYearId) {
+      setSelectedYearId(initialAcademicYearId);
+    }
+  }, [initialAcademicYearId]);
+
   // Fetch academic years
   useEffect(() => {
     fetch("/api/admin/academic-years")
       .then((res) => res.json())
       .then((data) => {
-        if (data.academicYears) {
+        if (data.academicYears && data.academicYears.length > 0) {
           setAcademicYears(data.academicYears);
-          if (!selectedYearId) {
+          if (!selectedYearId && !initialAcademicYearId) {
             const active = data.academicYears.find((y: any) => y.status === "ACTIVE") || data.academicYears[0];
             if (active) setSelectedYearId(active.id);
           }
         }
       })
       .catch(() => {});
-  }, [selectedYearId]);
+  }, []);
 
   // Fetch competency summaries for this student
   useEffect(() => {
