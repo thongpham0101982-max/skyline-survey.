@@ -184,7 +184,6 @@ export async function POST(req: NextRequest) {
         where: { id: batch.id },
         data: {
           status: "COMMITTED",
-          committedAt: new Date(),
           totalRows: stagingRecords.length,
           validRows: assessmentRecordsToInsert.length,
         },
