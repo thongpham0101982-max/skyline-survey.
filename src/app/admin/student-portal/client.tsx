@@ -8,6 +8,7 @@ import {
 
 interface FileItem {
   id: string;
+  studentId?: string;
   file: File;
   fileName: string;
   studentCode: string;
@@ -85,7 +86,10 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
     if (!files) return
 
     const newItems: FileItem[] = Array.from(files)
-      .filter(file => file.type.startsWith("image/"))
+      .filter(file => {
+        const name = (file.name || "").toLowerCase();
+        return (file.type && file.type.startsWith("image/")) || /\.(jpe?g|png|webp|gif|bmp|svg|avif|heic)$/i.test(name);
+      })
       .map((file, index) => {
         const rawName = file.name
         const dotIndex = rawName.lastIndexOf('.')
@@ -139,6 +143,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
           if (matched) {
             return {
               ...item,
+              studentId: matched.id,
               studentName: matched.studentName,
               className: matched.className,
               campusName: matched.campusName,
@@ -166,49 +171,57 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
   }
 
   const handleStartUpload = async () => {
-    const validItems = fileList.filter(item => item.status === "valid" || item.status === "error")
-    if (validItems.length === 0 || uploadingAll) return
+    const itemsToUpload = fileList.filter(item => item.status === "valid" || item.status === "error")
+    if (itemsToUpload.length === 0 || uploadingAll) return
 
     setUploadingAll(true)
+    let processedCount = 0
     let successCount = 0
-    const totalToUpload = validItems.length
+    const totalToUpload = itemsToUpload.length
 
-    setFileList(prev => prev.map(item => {
-      if (item.status === "valid" || item.status === "error") {
-        return { ...item, status: "uploading" }
-      }
-      return item
-    }))
+    const idsToUpload = new Set(itemsToUpload.map(i => i.id))
+    setFileList(prev => prev.map(item => idsToUpload.has(item.id) ? { ...item, status: "uploading" } : item))
 
-    for (let i = 0; i < fileList.length; i++) {
-      const item = fileList[i]
-      if (item.status !== "valid" && item.status !== "error" && item.status !== "uploading") {
-        continue
-      }
+    const CONCURRENCY = 6
+    let currentIndex = 0
 
-      const formData = new FormData()
-      formData.append("file", item.file)
-      formData.append("studentCode", item.studentCode)
+    const uploadWorker = async () => {
+      while (currentIndex < itemsToUpload.length) {
+        const index = currentIndex++
+        const item = itemsToUpload[index]
+        if (!item) break
 
-      try {
-        const res = await fetch("/api/admin/student-portal-config/bulk-upload", {
-          method: "POST",
-          body: formData
-        })
-
-        if (res.ok) {
-          successCount++
-          setFileList(prev => prev.map(f => f.id === item.id ? { ...f, status: "success" } : f))
-        } else {
-          const data = await res.json().catch(() => ({}))
-          setFileList(prev => prev.map(f => f.id === item.id ? { ...f, status: "error", errorMsg: data.error || "Tải lên lỗi" } : f))
+        const formData = new FormData()
+        formData.append("file", item.file)
+        formData.append("studentCode", item.studentCode)
+        if (item.studentId) {
+          formData.append("studentId", item.studentId)
         }
-      } catch (err) {
-        setFileList(prev => prev.map(f => f.id === item.id ? { ...f, status: "error", errorMsg: "Lỗi kết nối" } : f))
-      }
 
-      setOverallProgress(Math.round((successCount / totalToUpload) * 100))
+        try {
+          const res = await fetch("/api/admin/student-portal-config/bulk-upload", {
+            method: "POST",
+            body: formData
+          })
+
+          if (res.ok) {
+            successCount++
+            setFileList(prev => prev.map(f => f.id === item.id ? { ...f, status: "success" } : f))
+          } else {
+            const data = await res.json().catch(() => ({}))
+            setFileList(prev => prev.map(f => f.id === item.id ? { ...f, status: "error", errorMsg: data.error || "Tải lên lỗi" } : f))
+          }
+        } catch (err: any) {
+          setFileList(prev => prev.map(f => f.id === item.id ? { ...f, status: "error", errorMsg: err.message || "Lỗi kết nối" } : f))
+        }
+
+        processedCount++
+        setOverallProgress(Math.round((processedCount / totalToUpload) * 100))
+      }
     }
+
+    const workers = Array.from({ length: Math.min(CONCURRENCY, itemsToUpload.length) }, () => uploadWorker())
+    await Promise.all(workers)
 
     setUploadingAll(false)
     alert(`Hoàn thành tải lên! Đã upload thành công ${successCount}/${totalToUpload} tệp ảnh học sinh.`)
@@ -561,7 +574,14 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                                 <span className="inline-block px-2.5 py-1 bg-emerald-500 text-white rounded-full text-[9px] font-black uppercase tracking-wider font-bold">Thành công</span>
                               )}
                               {item.status === "error" && (
-                                <span className="inline-block px-2.5 py-1 bg-rose-600 text-white rounded-full text-[9px] font-black uppercase tracking-wider font-bold" title={item.errorMsg}>Lỗi</span>
+                                <div className="inline-flex flex-col items-center">
+                                  <span className="inline-block px-2.5 py-1 bg-rose-600 text-white rounded-full text-[9px] font-black uppercase tracking-wider font-bold" title={item.errorMsg || "Lỗi tải lên"}>Lỗi</span>
+                                  {item.errorMsg && (
+                                    <span className="text-[9px] text-rose-600 font-semibold max-w-[120px] truncate mt-0.5" title={item.errorMsg}>
+                                      {item.errorMsg}
+                                    </span>
+                                  )}
+                                </div>
                               )}
                             </td>
                             <td className="p-3 text-center">

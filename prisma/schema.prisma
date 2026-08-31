@@ -237,11 +237,22 @@ model Student {
   termEvaluations        StudentTermEvaluation[]
   competencyAssessments  StudentCompetencyAssessment[]
   competencySummaries    StudentSubjectCompetencySummary[]
+  photo                  StudentPhoto?
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
   @@index([campusId])
   @@index([academicYearId])
+}
+
+model StudentPhoto {
+  id          String   @id @default(cuid())
+  studentId   String   @unique
+  photoData   String
+  contentType String   @default("image/jpeg")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
 
 model ParentStudentLink {

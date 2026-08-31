@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic"
 export async function GET(req: Request) {
   try {
     const session = await auth()
-    if (!session || (session.user as any)?.role !== "ADMIN") {
+    const role = (session?.user as any)?.role
+    if (!session || (role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "Admin")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
@@ -43,7 +44,8 @@ export async function GET(req: Request) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
-    if (!session || (session.user as any)?.role !== "ADMIN") {
+    const role = (session?.user as any)?.role
+    if (!session || (role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "Admin")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 

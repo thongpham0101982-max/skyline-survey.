@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const dateOfBirth = formData.get("dateOfBirth") as string
 
     if (!file || !studentId || !studentCode) {
-      return NextResponse.json({ error: "Thiếu dữ liệu tải lên." }, { status: 400 })
+      return NextResponse.json({ error: "Thiếu dữ liệu tải lên." }, { studentId: null, status: 400 })
     }
 
     // 2. Re-verify student info
@@ -55,24 +55,42 @@ export async function POST(req: NextRequest) {
 
     // 3. Verify file type is image
     if (!file.type.startsWith("image/")) {
-      return NextResponse.json({ error: "Chỉ chấp nhận file định dạng hình ảnh (PNG, JPG, JPEG)." }, { status: 400 })
+      return NextResponse.json({ error: "Chỉ chấp nhận file định dạng hình ảnh (PNG, JPG, JPEG)." }, { studentId, status: 400 })
     }
 
-    // 4. Save file to public/uploads/students/[studentId].jpg
+    // 4. Save to StudentPhoto in Turso DB
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
+    const base64Data = buffer.toString("base64")
+    const mimeType = file.type || "image/jpeg"
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "students")
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true })
-    }
+    await prisma.studentPhoto.upsert({
+      where: { studentId },
+      create: {
+        studentId,
+        photoData: base64Data,
+        contentType: mimeType
+      },
+      update: {
+        photoData: base64Data,
+        contentType: mimeType,
+        updatedAt: new Date()
+      }
+    })
 
-    const filePath = path.join(uploadDir, `${studentId}.jpg`)
-    fs.writeFileSync(filePath, buffer)
+    // 5. Try local save as fallback in dev
+    try {
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "students")
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true })
+      }
+      const filePath = path.join(uploadDir, `${studentId}.jpg`)
+      fs.writeFileSync(filePath, buffer)
+    } catch (fsErr) {}
 
     return NextResponse.json({
       success: true,
-      url: `/uploads/students/${studentId}.jpg?t=${Date.now()}`
+      url: `/api/student-photos/${studentId}?t=${Date.now()}`
     })
   } catch (error: any) {
     console.error("Student Upload API Error:", error)

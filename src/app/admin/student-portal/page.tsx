@@ -6,7 +6,8 @@ import { Globe } from "lucide-react"
 
 export default async function StudentPortalPage() {
   const session = await auth()
-  if (!session || (session.user as any)?.role !== "ADMIN") {
+  const role = (session?.user as any)?.role
+  if (!session || (role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "Admin")) {
     redirect("/login")
   }
 
@@ -37,22 +38,13 @@ export default async function StudentPortalPage() {
       where: { academicYearId: selectedYearId }
     })
 
-    const fs = require("fs")
-    const path = require("path")
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "students")
-    if (fs.existsSync(uploadDir)) {
-      const files = fs.readdirSync(uploadDir)
-      const studentIdsWithPhotos = files
-        .filter((f: string) => f.endsWith(".jpg"))
-        .map((f: string) => f.replace(".jpg", ""))
-      
-      uploadedCount = await prisma.student.count({
-        where: {
-          academicYearId: selectedYearId,
-          id: { in: studentIdsWithPhotos }
+    uploadedCount = await prisma.studentPhoto.count({
+      where: {
+        student: {
+          academicYearId: selectedYearId
         }
-      })
-    }
+      }
+    }).catch(() => 0)
   }
 
   const initialConfig = {
@@ -63,14 +55,14 @@ export default async function StudentPortalPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 pt-inherit">
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 bg-[#48BFE3] rounded-2xl flex items-center justify-center shadow-lg shadow-teal-100">
           <Globe className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Cấu hình Cổng Ảnh Học Sinh</h1>
-          <p className="text-slate-500 font-medium">Bật/tắt cổng thu thập ảnh hồ sơ học sinh trực tuyến và quản lý tiến trình</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Cấu hình Cổng ảnh Học Sinh</h1>
+          <p className="text-slate-500 font-medium">Bật/tắt cổng thu thập ảnh hồ sġ học sinh trực tuyến và quản lý tiến m�nh</p>
         </div>
       </div>
 
