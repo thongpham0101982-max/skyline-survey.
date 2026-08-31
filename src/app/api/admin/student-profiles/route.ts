@@ -223,6 +223,28 @@ export async function GET(req: NextRequest) {
       console.error("Error fetching scoped allParticipants:", err)
     }
 
+    // Fetch scoped competency summaries for these students
+    let allCompetencySummaries: any[] = []
+    try {
+      if (studentIds.length > 0 || studentCodesArr.length > 0) {
+        allCompetencySummaries = await prisma.studentSubjectCompetencySummary.findMany({
+          where: {
+            OR: [
+              ...(studentIds.length > 0 ? [{ studentId: { in: studentIds } }] : []),
+              ...(studentCodesArr.length > 0 ? [{ student: { studentCode: { in: studentCodesArr } } }] : [])
+            ]
+          },
+          include: {
+            subject: { select: { id: true, subjectCode: true, subjectName: true } },
+            student: { select: { id: true, studentCode: true } }
+          },
+          orderBy: { subjectId: "asc" }
+        })
+      }
+    } catch (err) {
+      console.error("Error fetching competency summaries in student-profiles:", err)
+    }
+
     const categories = await prisma.activityCategory.findMany()
 
     const roleDict: Record<string, string> = {
