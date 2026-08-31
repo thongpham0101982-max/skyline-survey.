@@ -287,8 +287,21 @@ export default function AdminStudentProfilesPrintPage() {
                 {/* 2. ADMINISTRATIVE IDENTITY CARD */}
                 <div className="mt-4 bg-gradient-to-br from-slate-50/90 via-teal-50/20 to-slate-50 border border-teal-100 rounded-2xl p-4 grid grid-cols-4 gap-4 items-center">
                   <div className="col-span-1 flex flex-col items-center justify-center space-y-1.5 text-center">
-                    <div className="w-18 h-18 rounded-2xl overflow-hidden border-2 border-white shadow-xs bg-gradient-to-br from-[#003B3A] to-[#007A72] flex items-center justify-center text-white font-black text-xl">
-                      {student.studentName ? student.studentName.split(" ").pop()?.charAt(0) : <User className="w-8 h-8" />}
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white shadow-xs bg-gradient-to-br from-[#003B3A] to-[#007A72] flex items-center justify-center text-white font-black text-xl">
+                      <img
+                        src={`/api/student-photos/${student.id}`}
+                        alt={student.studentName || "Avatar"}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
+                          }
+                        }}
+                      />
+                      <span style={{ display: 'none' }} className="items-center justify-center w-full h-full">
+                        {student.studentName ? student.studentName.split(" ").pop()?.charAt(0) : <User className="w-8 h-8" />}
+                      </span>
                     </div>
                     <span className="inline-block px-3 py-0.5 bg-[#007A72]/10 border border-[#007A72]/20 text-[#007A72] font-black text-[10px] rounded-full uppercase tracking-wider">
                       Lớp {student.className || "N/A"}
