@@ -1,5 +1,5 @@
-// Build portfolio version: 14.0-1788322519203
-// Build version: 14.0-1788322519203
+// Build portfolio version: 16.0-1788323011840
+// Build version: 16.0-1788323011840
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -567,8 +567,38 @@ export function StudentProfilesAdminClient({
                 <div className="absolute top-0 right-0 w-48 h-48 bg-[#00A99D]/5 rounded-full blur-3xl pointer-events-none"></div>
                 
                 <div className="flex items-center gap-3.5 z-10">
-                  <div className="w-13 h-13 rounded-2xl overflow-hidden bg-gradient-to-br from-[#003B3A] to-[#007A72] border border-teal-600/30 flex items-center justify-center text-white font-black text-base shadow-md">
-                    {selectedStudent?.studentName ? selectedStudent.studentName.split(" ").pop()?.charAt(0) : <User className="w-6 h-6" />}
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="relative group w-13 h-13 rounded-2xl overflow-hidden bg-gradient-to-br from-[#003B3A] to-[#007A72] border-2 border-white shadow-md flex items-center justify-center text-white font-black text-base cursor-pointer flex-shrink-0"
+                    title="Bấm để tải lên / thay đổi ảnh đại diện"
+                  >
+                    <img
+                      key={`hdr-photo-${selectedStudentId}-${avatarTimestamp}`}
+                      src={`/api/student-photos/${selectedStudentId}?t=${avatarTimestamp}`}
+                      alt={selectedStudent?.studentName || "Avatar"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                      onLoad={(e) => {
+                        e.currentTarget.style.display = 'block';
+                        const fallback = e.currentTarget.nextElementSibling;
+                        if (fallback) fallback.style.display = 'none';
+                      }}
+                    />
+                    <span style={{ display: 'none' }} className="items-center justify-center w-full h-full">
+                      {selectedStudent?.studentName ? String(selectedStudent.studentName).trim().split(" ").pop()?.charAt(0) : <User className="w-6 h-6" />}
+                    </span>
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    {isUploadingAvatar && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -717,8 +747,61 @@ export function StudentProfilesAdminClient({
                                   I. THÔNG TIN HỌC SINH
                                 </h3>
                                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                                  <div className="relative w-28 h-28 rounded-2xl overflow-hidden border-2 border-slate-200 shadow-xs flex items-center justify-center bg-white flex-shrink-0">
-                                    <User className="w-14 h-14 text-slate-300" />
+                                  <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                                    <div
+                                      onClick={() => fileInputRef.current?.click()}
+                                      className="relative group w-28 h-28 rounded-2xl overflow-hidden border-2 border-teal-300 shadow-sm flex items-center justify-center bg-gradient-to-br from-slate-100 to-teal-50/50 cursor-pointer"
+                                      title="Bấm để tải lên hoặc thay đổi ảnh đại diện học sinh"
+                                    >
+                                      <img
+                                        key={`cv-photo-${selectedStudentId}-${avatarTimestamp}`}
+                                        src={`/api/student-photos/${selectedStudentId}?t=${avatarTimestamp}`}
+                                        alt={selectedStudent?.studentName || "Avatar"}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                          const fallback = e.currentTarget.nextElementSibling;
+                                          if (fallback) fallback.style.display = 'flex';
+                                        }}
+                                        onLoad={(e) => {
+                                          e.currentTarget.style.display = 'block';
+                                          const fallback = e.currentTarget.nextElementSibling;
+                                          if (fallback) fallback.style.display = 'none';
+                                        }}
+                                      />
+                                      <div style={{ display: 'none' }} className="flex flex-col items-center justify-center text-slate-400 space-y-1 w-full h-full">
+                                        <User className="w-12 h-12 text-teal-700/60" />
+                                        <span className="text-[10px] font-bold text-teal-800">Chưa có ảnh</span>
+                                      </div>
+                                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-black space-y-1">
+                                        <Camera className="w-6 h-6" />
+                                        <span>Đổi ảnh</span>
+                                      </div>
+                                      {isUploadingAvatar && (
+                                        <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white text-[10px] font-bold gap-1">
+                                          <Loader2 className="w-6 h-6 animate-spin text-teal-400" />
+                                          <span>Đang lưu...</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="flex items-center gap-1 text-[10px] font-bold text-[#007A72] hover:text-[#005B55] bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 cursor-pointer transition-all shadow-2xs"
+                                      >
+                                        <Upload className="w-3 h-3" />
+                                        <span>Tải ảnh lên</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={handleDeleteAvatar}
+                                        className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-rose-50 cursor-pointer transition-all"
+                                        title="Xóa ảnh đại diện"
+                                      >
+                                        <Trash2 className="w-3 h-3" />
+                                      </button>
+                                    </div>
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-semibold text-slate-700 w-full pt-1">
                                     <div className="space-y-0.5">
