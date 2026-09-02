@@ -1,5 +1,5 @@
-// Build portfolio version: 12.0-1788321267710
-// Build version: 12.0-1788321267710
+// Build portfolio version: 13.0-1788321989139
+// Build version: 13.0-1788321989139
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -11,7 +11,7 @@ import {
   Search, Calendar, MapPin, CheckCircle, AlertTriangle, GraduationCap,
   Layers, School, Building2, RotateCcw, RefreshCw, Trash2,
   ChevronLeft, ChevronRight, Maximize2, Minimize2,
-  X, Camera, Upload
+  Camera, Upload
 } from "lucide-react"
 
 interface StudentProfilesAdminClientProps {
@@ -507,7 +507,7 @@ export function StudentProfilesAdminClient({
                     onClick={() => setSearchQuery("")}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                   </button>
                 )}
               </div>
@@ -668,7 +668,7 @@ export function StudentProfilesAdminClient({
                           : "bg-white/80 hover:bg-white text-slate-600 hover:text-teal-900 border border-slate-200/60 shadow-2xs"
                       }`}
                     >
-                      <Icon className={`w-3.5 h-3.5 ${isActive ? "text-teal-300" : "text-slate-400"}`} />
+                      {Icon && <Icon className={`w-3.5 h-3.5 ${isActive ? "text-teal-300" : "text-slate-400"}`} />}
                       <span>{tab.label}</span>
                     </button>
                   )
