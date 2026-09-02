@@ -1,5 +1,5 @@
-// Build portfolio version: 22.0-1788334805488
-// Build version: 22.0-1788334805488
+// Build portfolio version: 24.0-1788335555088
+// Build version: 24.0-1788335555088
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -13,6 +13,17 @@ import {
   ChevronLeft, ChevronRight, Maximize2, Minimize2,
   Camera, Upload
 } from "lucide-react"
+
+function normalizeClassKey(name: string): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[\.\/]/g, "/")
+    .replace(/[\s_]+/g, " ")
+    .replace(/^lớp\s+/i, "");
+}
+
 
 interface StudentProfilesAdminClientProps {
   academicYears: any[]
@@ -893,7 +904,13 @@ export function StudentProfilesAdminClient({
                                           if (selectedStudent?.homeroomTeacherName && selectedStudent.homeroomTeacherName !== "Chưa phân công") {
                                             return selectedStudent.homeroomTeacherName;
                                           }
-                                          const matchedCls = classes.find((c: any) => c.id === selectedStudent?.classId || c.className === selectedStudent?.className || c.classCode === selectedStudent?.classCode);
+                                          const sNorm = normalizeClassKey(selectedStudent?.className || "");
+                                          const matchedCls = classes.find((c: any) => 
+                                            c.id === selectedStudent?.classId || 
+                                            c.className === selectedStudent?.className || 
+                                            c.classCode === selectedStudent?.classCode ||
+                                            (sNorm && normalizeClassKey(c.className) === sNorm)
+                                          );
                                           if (matchedCls?.homeroomTeacherName && matchedCls.homeroomTeacherName !== "Chưa phân công") {
                                             return matchedCls.homeroomTeacherName;
                                           }

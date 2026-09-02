@@ -1,3 +1,12 @@
+function normalizeClassKey(name: string): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[\.\/]/g, "/")
+    .replace(/[\s_]+/g, " ")
+    .replace(/^lớp\s+/i, "");
+}
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -126,21 +135,72 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: [] })
     }
 
-    // Fetch all teachers to resolve homeroom teachers (GVCN) from Class.homeroomTeacherId
-    const allTeachers = await prisma.teacher.findMany({
-      select: {
-        id: true,
-        teacherCode: true,
-        teacherName: true,
-        homeroomClass: true,
-        campusId: true,
-      }
-    });
+    // Fetch all classes and teachers to build a normalized GVCN lookup map
+    const [allClassesData, allTeachersData] = await Promise.all([
+      prisma.class.findMany({
+        select: {
+          id: true,
+          classCode: true,
+          className: true,
+          campusId: true,
+          homeroomTeacherId: true,
+          teachers: {
+            include: {
+              teacher: { select: { id: true, teacherName: true } }
+            }
+          }
+        }
+      }),
+      prisma.teacher.findMany({
+        select: {
+          id: true,
+          teacherCode: true,
+          teacherName: true,
+          homeroomClass: true,
+          campusId: true,
+        }
+      })
+    ]);
 
     const teacherMap = new Map<string, string>();
-    for (const t of allTeachers) {
-      if (t.id && t.teacherName) {
-        teacherMap.set(t.id, t.teacherName);
+    for (const t of allTeachersData) {
+      if (t.id && t.teacherName) teacherMap.set(t.id, t.teacherName);
+    }
+
+    const classGvcnMap = new Map<string, string>();
+    for (const c of allClassesData) {
+      let gvcn = "";
+      if (c.homeroomTeacherId) {
+        const ids = c.homeroomTeacherId.split(",").map((id: string) => id.trim()).filter(Boolean);
+        const names = ids.map((id: string) => teacherMap.get(id)).filter(Boolean);
+        if (names.length > 0) gvcn = names.join(", ");
+      }
+      if (!gvcn && c.teachers && c.teachers.length > 0) {
+        const tObj = c.teachers.find((t: any) => 
+          t.roleInClass?.toUpperCase() === "HOMEROOM" || 
+          t.roleInClass?.toUpperCase() === "GVCN" ||
+          t.roleInClass?.toLowerCase().includes("chủ nhiệm")
+        ) || c.teachers[0];
+        if (tObj?.teacher?.teacherName) gvcn = tObj.teacher.teacherName;
+      }
+
+      if (gvcn) {
+        classGvcnMap.set(c.id, gvcn);
+        if (c.classCode) classGvcnMap.set(c.classCode.toLowerCase().trim(), gvcn);
+        if (c.className) {
+          classGvcnMap.set(c.className.toLowerCase().trim(), gvcn);
+          classGvcnMap.set(normalizeClassKey(c.className), gvcn);
+        }
+      }
+    }
+
+    // Also index Teacher.homeroomClass
+    for (const t of allTeachersData) {
+      if (t.homeroomClass && t.teacherName) {
+        const norm = normalizeClassKey(t.homeroomClass);
+        if (norm && !classGvcnMap.has(norm)) {
+          classGvcnMap.set(norm, t.teacherName);
+        }
       }
     }
 
