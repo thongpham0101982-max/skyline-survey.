@@ -1,5 +1,5 @@
-// Build portfolio version: 24.0-1788335555088
-// Build version: 24.0-1788335555088
+// Build portfolio version: 25.0-1788336080905
+// Build version: 25.0-1788336080905
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -956,12 +956,40 @@ export function StudentProfilesAdminClient({
                                 </div>
                               </div>
 
-                              {/* SECTION III: KẾT QUẢ HỌC TẬP VĂN HÓA (MOET) */}
+                              {/* SECTION III: ĐÁNH GIÁ NĂNG LỰC CHUYÊN SÂU (COMPETENCY PORTFOLIO) */}
+                              <div className="space-y-4">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
+                                  <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+                                    <Sparkles className="w-4 h-4 text-teal-600" />
+                                    <span>III. ĐÁNH GIÁ NĂNG LỰC HỌC SINH (RADAR &amp; MA TRẬN NĂNG LỰC)</span>
+                                  </h3>
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveTab("competencies")}
+                                    className="self-start sm:self-auto text-[11px] font-bold text-[#007A72] hover:text-[#005B55] flex items-center gap-1 hover:underline cursor-pointer bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs transition-all"
+                                  >
+                                    <span>Mở rộng Radar chi tiết</span>
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+
+                                <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-3 sm:p-5 shadow-2xs">
+                                  <StudentCompetencyPortfolio
+                                    studentId={selectedStudent?.id || selectedStudentId}
+                                    studentCode={selectedStudent?.studentCode}
+                                    studentName={selectedStudent?.studentName}
+                                    initialAcademicYearId={selectedYearId}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* SECTION IV: KẾT QUẢ HỌC TẬP VĂN HÓA (MOET) */}
                               <div className="space-y-3">
                                 <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                   <div className="w-2.5 h-2.5 rounded-full bg-[#007A72]" />
                                   <ClipboardCheck className="w-4 h-4 text-[#007A72]" />
-                                  III. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET)
+                                  IV. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET)
                                 </h3>
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                   <div className="bg-white border border-slate-200/80 p-3 rounded-xl text-center shadow-2xs">
@@ -987,12 +1015,12 @@ export function StudentProfilesAdminClient({
                                 </div>
                               </div>
 
-                              {/* SECTION IV: THÀNH TÍCH */}
+                              {/* SECTION V: THÀNH TÍCH */}
                               <div className="space-y-3">
                                 <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                   <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                                   <Award className="w-4 h-4 text-amber-500" />
-                                  IV. THÀNH TÍCH
+                                  V. THÀNH TÍCH
                                 </h3>
                                 {(!selectedStudent?.achievements || selectedStudent.achievements.length === 0) ? (
                                   <div className="bg-slate-50 border border-slate-150 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
@@ -1034,12 +1062,12 @@ export function StudentProfilesAdminClient({
                                 )}
                               </div>
 
-                              {/* SECTION V: HOẠT ĐỘNG TRẢI NGHIỆM */}
+                              {/* SECTION VI: HOẠT ĐỘNG TRẢI NGHIỆM */}
                               <div className="space-y-3">
                                 <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                   <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
                                   <BookOpen className="w-4 h-4 text-sky-500" />
-                                  V. HOẠT ĐỘNG TRẢI NGHIỆM
+                                  VI. HOẠT ĐỘNG TRẢI NGHIỆM
                                 </h3>
                                 {(!selectedStudent?.experientialActivities || selectedStudent.experientialActivities.length === 0) ? (
                                   <div className="bg-slate-50 border border-slate-150 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
@@ -1085,12 +1113,12 @@ export function StudentProfilesAdminClient({
                                 )}
                               </div>
 
-                              {/* SECTION VI: HƯỚNG NGHIỆP / TÀI CHÍNH CÁ NHÂN */}
+                              {/* SECTION VII: HƯỚNG NGHIỆP / TÀI CHÍNH CÁ NHÂN */}
                               <div className="space-y-3">
                                 <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                   <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
                                   <Compass className="w-4 h-4 text-sky-600" />
-                                  VI. HƯỚNG NGHIỆP / TÀI CHÍNH CÁ NHÂN
+                                  VII. HƯỚNG NGHIỆP / TÀI CHÍNH CÁ NHÂN
                                 </h3>
                                 <div className="bg-sky-50/40 border border-sky-100 p-4 rounded-2xl space-y-1.5 text-xs">
                                   <div className="text-[10px] text-sky-700 font-black uppercase">Nhóm ngành quan tâm &amp; Kế hoạch phát triển tài chính cá nhân</div>
@@ -1098,12 +1126,12 @@ export function StudentProfilesAdminClient({
                                 </div>
                               </div>
 
-                              {/* SECTION VII: NHẬN XẾT NỔI BẬT */}
+                              {/* SECTION VIII: NHẬN XẾT NỔI BẬT */}
                               <div className="space-y-3">
                                 <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                                   <MessageSquare className="w-4 h-4 text-emerald-600" />
-                                  VII. NHẬN XẾT NỔI BẬT
+                                  VIII. NHẬN XẾT NỔI BẬT
                                 </h3>
                                 <div className="bg-emerald-50/30 border border-emerald-100 p-4 rounded-2xl space-y-2 text-xs font-medium text-slate-700">
                                   <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900 border-b border-emerald-100 pb-1.5">
