@@ -1,5 +1,5 @@
-// Build portfolio version: 17.0-1788323460327
-// Build version: 17.0-1788323460327
+// Build portfolio version: 19.0-1788323864401
+// Build version: 19.0-1788323864401
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -639,15 +639,15 @@ export function StudentProfilesAdminClient({
                       src={`/api/student-photos/${selectedStudentId}?t=${avatarTimestamp}`}
                       alt={selectedStudent?.studentName || "Avatar"}
                       className="w-full h-full object-cover"
-                      onError={(e) => {
+                      onError={(e: any) => {
                         e.currentTarget.style.display = 'none';
                         const fallback = e.currentTarget.nextElementSibling;
-                        if (fallback) fallback.style.display = 'flex';
+                        if (fallback && fallback.style) fallback.style.display = 'flex';
                       }}
-                      onLoad={(e) => {
+                      onLoad={(e: any) => {
                         e.currentTarget.style.display = 'block';
                         const fallback = e.currentTarget.nextElementSibling;
-                        if (fallback) fallback.style.display = 'none';
+                        if (fallback && fallback.style) fallback.style.display = 'none';
                       }}
                     />
                     <span style={{ display: 'none' }} className="items-center justify-center w-full h-full">
@@ -820,16 +820,16 @@ export function StudentProfilesAdminClient({
                                         src={`/api/student-photos/${selectedStudentId}?t=${avatarTimestamp}`}
                                         alt={selectedStudent?.studentName || "Avatar"}
                                         className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          e.currentTarget.style.display = 'none';
-                                          const fallback = e.currentTarget.nextElementSibling;
-                                          if (fallback) fallback.style.display = 'flex';
-                                        }}
-                                        onLoad={(e) => {
-                                          e.currentTarget.style.display = 'block';
-                                          const fallback = e.currentTarget.nextElementSibling;
-                                          if (fallback) fallback.style.display = 'none';
-                                        }}
+                                        onError={(e: any) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling;
+                        if (fallback && fallback.style) fallback.style.display = 'flex';
+                      }}
+                                        onLoad={(e: any) => {
+                        e.currentTarget.style.display = 'block';
+                        const fallback = e.currentTarget.nextElementSibling;
+                        if (fallback && fallback.style) fallback.style.display = 'none';
+                      }}
                                       />
                                       <div style={{ display: 'none' }} className="flex flex-col items-center justify-center text-slate-400 space-y-1 w-full h-full">
                                         <User className="w-12 h-12 text-teal-700/60" />
