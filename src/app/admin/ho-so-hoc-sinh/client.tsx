@@ -1,5 +1,5 @@
-// Build portfolio version: 16.0-1788323011840
-// Build version: 16.0-1788323011840
+// Build portfolio version: 17.0-1788323460327
+// Build version: 17.0-1788323460327
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -107,6 +107,68 @@ export function StudentProfilesAdminClient({
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [isExpandedView, setIsExpandedView] = useState<boolean>(false)
+  const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now())
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [avatarErrorMap, setAvatarErrorMap] = useState<Record<string, boolean>>({})
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !selectedStudentId) return
+
+    if (!file.type.startsWith("image/")) {
+      alert("Vui lòng chọn tệp hình ảnh (JPG, PNG, WebP)!")
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Kích thước ảnh không được vượt quá 5MB!")
+      return
+    }
+
+    try {
+      setIsUploadingAvatar(true)
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const res = await fetch(`/api/student-photos/${selectedStudentId}`, {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setAvatarErrorMap((prev) => ({ ...prev, [selectedStudentId]: false }))
+        setAvatarTimestamp(Date.now())
+      } else {
+        alert(data.error || "Không thể tải lên ảnh đại diện.")
+      }
+    } catch (err: any) {
+      console.error("Upload avatar error:", err)
+      alert("Lỗi kết nối khi tải lên ảnh đại diện.")
+    } finally {
+      setIsUploadingAvatar(false)
+      if (e.target) e.target.value = ""
+    }
+  }
+
+  const handleDeleteAvatar = async () => {
+    if (!selectedStudentId || !confirm("Bạn có chắc chắn muốn xóa ảnh đại diện của học sinh này?")) return
+    try {
+      setIsUploadingAvatar(true)
+      const res = await fetch(`/api/student-photos/${selectedStudentId}`, {
+        method: "DELETE",
+      })
+      if (res.ok) {
+        setAvatarErrorMap((prev) => ({ ...prev, [selectedStudentId]: true }))
+        setAvatarTimestamp(Date.now())
+      }
+    } catch (err) {
+      console.error("Delete avatar error:", err)
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
   
   // Tab states
   const [activeTab, setActiveTab] = useState("cv")
