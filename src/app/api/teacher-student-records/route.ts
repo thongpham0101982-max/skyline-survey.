@@ -1082,6 +1082,19 @@ export async function GET(req: Request) {
         preschoolScoresMap.get(score.studentId).push(score)
       })
 
+      // Fetch all teachers to resolve homeroom teachers (GVCN)
+      const allTeachersList = await prisma.teacher.findMany({
+        select: {
+          id: true,
+          teacherName: true,
+          homeroomClass: true,
+        }
+      });
+      const tMap = new Map<string, string>();
+      for (const t of allTeachersList) {
+        if (t.id && t.teacherName) tMap.set(t.id, t.teacherName);
+      }
+
       // Fetch all activity participants for these students
       const studentIds = students.map(s => s.id)
       const studentCodes = students.map(s => s.studentCode).filter(Boolean)
@@ -1237,8 +1250,17 @@ export async function GET(req: Request) {
           }
         }
 
+        let homeroomTeacherName = "";
+        if (s.class?.homeroomTeacherId) {
+          const ids = s.class.homeroomTeacherId.split(",").map((id: string) => id.trim()).filter(Boolean);
+          const names = ids.map((id: string) => tMap.get(id)).filter(Boolean);
+          if (names.length > 0) homeroomTeacherName = names.join(", ");
+        }
+        if (!homeroomTeacherName) homeroomTeacherName = "Chưa phân công";
+
         return {
           id: s.id,
+          homeroomTeacherName,
           yearName,
           campusName,
           classCode,

@@ -126,6 +126,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, data: [] })
     }
 
+    // Fetch all teachers to resolve homeroom teachers (GVCN) from Class.homeroomTeacherId
+    const allTeachers = await prisma.teacher.findMany({
+      select: {
+        id: true,
+        teacherCode: true,
+        teacherName: true,
+        homeroomClass: true,
+        campusId: true,
+      }
+    });
+
+    const teacherMap = new Map<string, string>();
+    for (const t of allTeachers) {
+      if (t.id && t.teacherName) {
+        teacherMap.set(t.id, t.teacherName);
+      }
+    }
+
     // Scoped extraction for student IDs and student codes
     const studentIds = students.map((s: any) => s.id)
     const studentCodesArr = students.map((s: any) => s.studentCode).filter(Boolean)
