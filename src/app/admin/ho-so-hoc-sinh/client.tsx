@@ -1,5 +1,5 @@
-// Build portfolio version: 26.0-1788336441826
-// Build version: 26.0-1788336441826
+// Build portfolio version: 27.0-1788336834939
+// Build version: 27.0-1788336834939
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -785,10 +785,11 @@ export function StudentProfilesAdminClient({
                     {/* TAB: CV INTEGRATED */}
 {/* TAB: CV INTEGRATED - 6 CORE SECTIONS */}
                     {(activeTab === "cv" || activeTab === "advisory_360") && (
-                      <div className="space-y-6">
-                        <div className="bg-white border border-slate-200/90 shadow-xl rounded-3xl p-6 sm:p-8 max-w-4xl mx-auto font-sans relative overflow-hidden space-y-7">
+                      <div className="bg-slate-200/60 p-3 sm:p-6 rounded-3xl border border-slate-300/60 shadow-inner flex flex-col items-center">
+                        {/* Standard A4 Page Container (210mm x 297mm proportions) */}
+                        <div className="w-full max-w-[210mm] min-h-[297mm] bg-white border border-slate-300 shadow-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-10 font-sans relative overflow-hidden space-y-6 text-slate-800">
                           {/* TOP DECORATIVE BANNER */}
-                          <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3]" />
+                          <div className="absolute top-0 left-0 right-0 h-3.5 bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3]" />
 
                           {/* SECTION 1: HEADER & ADMINISTRATIVE INFO */}
                           <div className="border-b-2 border-slate-100 pb-5 pt-2">
@@ -1141,6 +1142,39 @@ export function StudentProfilesAdminClient({
                                   <p className="italic leading-relaxed text-slate-700 pt-1">
                                     "{selectedStudent?.highlightComments?.[0]?.content || 'Học sinh có ý thức kỷ luật tốt, hăng hái phát biểu xây dựng bài, có tinh thần giúp đỡ bạn bè và tham gia tích cực các hoạt động trải nghiệm của trường.'}"
                                   </p>
+                                </div>
+                              </div>
+
+                              {/* SECTION IX: CHỮ KÝ XÁC NHẬN CHUẨN A4 */}
+                              <div className="pt-6 border-t-2 border-slate-100 mt-8">
+                                <div className="text-right text-[11px] font-medium text-slate-500 italic mb-4">
+                                  Đà Nẵng, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
+                                </div>
+                                <div className="grid grid-cols-2 gap-8 text-center">
+                                  <div className="space-y-16">
+                                    <div>
+                                      <div className="font-bold text-xs uppercase text-slate-700 tracking-wider">GIÁO VIÊN CHỦ NHIỆM</div>
+                                      <div className="text-[10px] text-slate-400 italic">(Ký &amp; ghi rõ họ tên)</div>
+                                    </div>
+                                    <div className="font-black text-xs text-teal-800">
+                                      {selectedStudent?.homeroomTeacherName || "Thầy/Cô Chủ nhiệm"}
+                                    </div>
+                                  </div>
+                                  <div className="space-y-16">
+                                    <div>
+                                      <div className="font-bold text-xs uppercase text-slate-700 tracking-wider">HIỆU TRƯỞNG / BGH ĐẠI DIỆN</div>
+                                      <div className="text-[10px] text-slate-400 italic">(Ký, đóng dấu &amp; ghi rõ họ tên)</div>
+                                    </div>
+                                    <div className="font-black text-xs text-slate-700 uppercase">
+                                      BAN GIÁM HIỆU SKY-LINE
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Official Document Footer */}
+                                <div className="mt-8 pt-4 border-t border-slate-200/80 flex flex-col sm:flex-row justify-between items-center text-[10px] font-semibold text-slate-400 gap-1">
+                                  <span>HỆ THỐNG GIÁO DỤC SKY-LINE • HỒ SƠ NĂNG LỰC HỌC SINH 360°</span>
+                                  <span>Trang A4 Chuẩn • Bản chính thức</span>
                                 </div>
                               </div>
 
