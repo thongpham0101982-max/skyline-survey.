@@ -109,6 +109,7 @@ export async function GET(req: NextRequest) {
           }
         },
         termSummaries: true,
+        competencySummaries: { include: { subject: true } },
         learningSupportTargets: {
           include: {
             assignments: {

@@ -1,5 +1,5 @@
-// Build portfolio version: 28.0-1788357430625
-// Build version: 28.0-1788357430625
+// Build portfolio version: 29.0-1788358005629
+// Build version: 29.0-1788358005629
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -107,7 +107,7 @@ export function StudentProfilesAdminClient({
   // Filter States
   const [selectedYearId, setSelectedYearId] = useState(activeYearId)
   const [schoolBlock, setSchoolBlock] = useState<"k12" | "preschool">("k12")
-  const [selectedCampusId, setSelectedCampusId] = useState("all")
+  const [selectedCampusId, setSelectedCampusId] = useState(campuses?.[0]?.id || "all")
   const [selectedGrade, setSelectedGrade] = useState("all")
   const [selectedClassId, setSelectedClassId] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -239,12 +239,7 @@ export function StudentProfilesAdminClient({
   useEffect(() => {
     // To prevent loading thousands of records, we require at least Campus or Grade or Class to be selected
     // unless searchQuery is populated
-    if (selectedCampusId === "all" && selectedGrade === "all" && selectedClassId === "all" && !searchQuery.trim()) {
-      setStudents([])
-      setSelectedStudentId("")
-      setSelectedStudent(null)
-      return
-    }
+    // If no filter selected, we automatically query the active year students
 
     async function fetchStudentsList() {
       try {

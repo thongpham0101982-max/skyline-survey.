@@ -79,11 +79,31 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
 
     fetch("/api/admin/competency-assessment/summary?" + query.toString())
       .then((res) => res.json())
-      .then((data) => {
-        if (data.summaries) {
+      .then(async (data) => {
+        if (data.summaries && data.summaries.length > 0) {
           setSummaries(data.summaries);
         } else {
-          setSummaries([]);
+          // If current period has no data, check all periods for this student
+          const allQuery = new URLSearchParams();
+          if (studentId) allQuery.set("studentId", studentId);
+          if (studentCode) allQuery.set("studentCode", studentCode);
+          if (selectedYearId) allQuery.set("academicYearId", selectedYearId);
+          allQuery.set("assessmentPeriod", "ALL");
+
+          const allRes = await fetch("/api/admin/competency-assessment/summary?" + allQuery.toString());
+          const allData = await allRes.json();
+          if (allData.summaries && allData.summaries.length > 0) {
+            const firstPeriod = allData.summaries[0].assessmentPeriod;
+            if (firstPeriod && firstPeriod !== selectedPeriod) {
+              setSelectedPeriod(firstPeriod);
+              const filtered = allData.summaries.filter((s: any) => s.assessmentPeriod === firstPeriod);
+              setSummaries(filtered.length > 0 ? filtered : allData.summaries);
+              return;
+            }
+            setSummaries(allData.summaries);
+          } else {
+            setSummaries([]);
+          }
         }
       })
       .catch((err) => {
