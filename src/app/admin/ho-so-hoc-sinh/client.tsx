@@ -1,5 +1,5 @@
-// Build portfolio version: 29.0-1788358005629
-// Build version: 29.0-1788358005629
+// Build portfolio version: 30.0-1788358433056
+// Build version: 30.0-1788358433056
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -120,8 +120,36 @@ export function StudentProfilesAdminClient({
   const [isExpandedView, setIsExpandedView] = useState<boolean>(false)
   const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now())
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState(false)
   const [avatarErrorMap, setAvatarErrorMap] = useState<Record<string, boolean>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+    const handleDownloadPDF = async () => {
+    const element = document.getElementById("a4-student-portfolio");
+    if (!element) {
+      window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
+      return;
+    }
+    setIsDownloadingPDF(true);
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const sName = selectedStudent?.studentName ? String(selectedStudent.studentName).trim().replace(/\s+/g, "_") : "HocSinh";
+      const sCode = selectedStudent?.studentCode || "0000";
+      const opt: any = {
+        margin: [8, 10, 8, 10],
+        filename: `HSHS_${sCode}_${sName}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error("Download PDF error, fallback to print window:", err);
+      window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -740,15 +768,35 @@ export function StudentProfilesAdminClient({
                     )}
                   </button>
 
-                  {/* Print / Export PDF Buttons */}
+                  {/* PDF Download & Print Actions */}
+                  <button
+                    type="button"
+                    onClick={handleDownloadPDF}
+                    disabled={isDownloadingPDF}
+                    className="flex items-center gap-1.5 bg-[#007A72] hover:bg-[#005B55] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm hover:shadow-md transition-all cursor-pointer transform active:scale-95 disabled:opacity-75"
+                    title="Tải trực tiếp file PDF về máy tính"
+                  >
+                    {isDownloadingPDF ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang lưu PDF...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Lưu file PDF</span>
+                      </>
+                    )}
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank")}
-                    className="flex items-center gap-1.5 bg-gradient-to-r from-[#007A72] to-[#00A99D] hover:from-[#00655E] hover:to-[#009085] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm hover:shadow-md transition-all cursor-pointer transform active:scale-95"
-                    title="Xuất file PDF chuẩn A4 sắc nét, mở hộp thoại in ngay lập tức"
+                    className="hidden sm:flex items-center gap-1.5 bg-white border border-teal-400 text-[#007A72] hover:bg-teal-50 px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-2xs transition-all cursor-pointer"
+                    title="Mở hộp thoại in / Lưu dưới dạng PDF chuẩn vector"
                   >
-                    <FileText className="w-3.5 h-3.5" />
-                    <span>Xuất PDF (A4 Chuẩn)</span>
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>In / Lưu PDF Trình duyệt</span>
                   </button>
 
                   <button
@@ -760,10 +808,10 @@ export function StudentProfilesAdminClient({
                         window.open(`/admin/ho-so-hoc-sinh/print?type=class&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
                       }
                     }}
-                    className="hidden sm:flex items-center gap-1.5 bg-white border border-teal-300 text-[#007A72] hover:bg-teal-50 px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-2xs transition-all cursor-pointer"
+                    className="hidden md:flex items-center gap-1.5 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer"
                     title="In toàn bộ hồ sơ học sinh trong lớp thành tập file PDF"
                   >
-                    <Printer className="w-3.5 h-3.5" />
+                    <FileText className="w-3.5 h-3.5 text-slate-500" />
                     <span>In Cả Lớp</span>
                   </button>
                 </div>
@@ -800,7 +848,7 @@ export function StudentProfilesAdminClient({
                     {(activeTab === "cv" || activeTab === "advisory_360") && (
                       <div className="bg-slate-200/60 p-3 sm:p-6 rounded-3xl border border-slate-300/60 shadow-inner flex flex-col items-center">
                         {/* Standard A4 Page Container (210mm x 297mm proportions) */}
-                        <div className="w-full max-w-[210mm] min-h-[297mm] bg-white border border-slate-300 shadow-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-10 font-sans relative overflow-hidden space-y-6 text-slate-800">
+                        <div id="a4-student-portfolio" className="w-full max-w-[210mm] min-h-[297mm] bg-white border border-slate-300 shadow-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-10 font-sans relative overflow-hidden space-y-6 text-slate-800">
                           {/* TOP DECORATIVE BANNER */}
                           <div className="absolute top-0 left-0 right-0 h-3.5 bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3]" />
 

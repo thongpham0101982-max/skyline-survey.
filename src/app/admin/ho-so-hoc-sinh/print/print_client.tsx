@@ -242,9 +242,10 @@ export default function AdminStudentProfilesPrintPage() {
           <button
             onClick={() => window.print()}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#007A72] hover:bg-[#005B55] text-white rounded-xl shadow-xs transition-all cursor-pointer font-extrabold"
+            title="Nhấn để lưu file PDF (Chọn Máy in: Save as PDF / Lưu dưới dạng PDF)"
           >
             <Printer className="w-4 h-4" />
-            <span>Mở hộp thoại In / Xuất PDF</span>
+            <span>Lưu file PDF / In Ngay</span>
           </button>
           <button
             onClick={() => window.close()}
