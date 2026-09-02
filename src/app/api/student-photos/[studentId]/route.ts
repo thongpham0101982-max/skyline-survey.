@@ -13,33 +13,49 @@ export async function GET(
 ) {
   try {
     const { studentId } = await params;
-    if (!studentId) {
-      return new NextResponse("Missing studentId", { status: 400 });
+    const codeParam = req.nextUrl.searchParams.get("code")?.trim() || "";
+
+    if (!studentId && !codeParam) {
+      return new NextResponse("Missing studentId or code", { status: 400 });
     }
 
-    // 1. Try fetching from Database (StudentPhoto)
-    let photo = await prisma.studentPhoto.findUnique({
-      where: { studentId },
-    });
-
-    // If not found by ID directly, check if student has a linked record with studentCode
-    if (!photo) {
-      const student = await prisma.student.findUnique({
-        where: { id: studentId },
-        select: { studentCode: true },
+    // 1. Try direct find by studentId
+    let photo = null;
+    if (studentId) {
+      photo = await prisma.studentPhoto.findUnique({
+        where: { studentId },
       });
+    }
+
+    // 2. If not found, find matching student records by id or studentCode
+    if (!photo) {
+      const searchTerms = [studentId, codeParam].filter(Boolean);
+      const student = await prisma.student.findFirst({
+        where: {
+          OR: [
+            { id: { in: searchTerms } },
+            { studentCode: { in: searchTerms } },
+          ],
+        },
+        select: { id: true, studentCode: true },
+      });
+
       if (student?.studentCode) {
-        const matchingStudents = await prisma.student.findMany({
+        // Find ALL student records that share this studentCode across all years/campuses
+        const allStudentsWithCode = await prisma.student.findMany({
           where: { studentCode: student.studentCode },
           select: { id: true },
         });
-        const mIds = matchingStudents.map((m) => m.id);
+        const allIds = Array.from(new Set([student.id, ...allStudentsWithCode.map((s) => s.id)]));
+
         photo = await prisma.studentPhoto.findFirst({
-          where: { studentId: { in: mIds } },
+          where: { studentId: { in: allIds } },
+          orderBy: { updatedAt: "desc" },
         });
       }
     }
 
+    // 3. Return photo if found in DB
     if (photo && photo.photoData) {
       let cleanBase64 = photo.photoData;
       let contentType = photo.contentType || "image/jpeg";
@@ -62,17 +78,27 @@ export async function GET(
       });
     }
 
-    // 2. Fallback to local filesystem if exists
+    // 4. Fallback: check filesystem uploads
     try {
-      const localPath = path.join(process.cwd(), "public", "uploads", "students", `${studentId}.jpg`);
-      if (fs.existsSync(localPath)) {
-        const fileBuffer = fs.readFileSync(localPath);
-        return new NextResponse(fileBuffer, {
-          headers: {
-            "Content-Type": "image/jpeg",
-            "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
-          },
-        });
+      const candidates = [
+        studentId,
+        codeParam,
+      ].filter(Boolean);
+
+      for (const idOrCode of candidates) {
+        for (const ext of ["jpg", "jpeg", "png", "webp"]) {
+          const localPath = path.join(process.cwd(), "public", "uploads", "students", `${idOrCode}.${ext}`);
+          if (fs.existsSync(localPath)) {
+            const fileBuffer = fs.readFileSync(localPath);
+            const ct = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+            return new NextResponse(fileBuffer, {
+              headers: {
+                "Content-Type": ct,
+                "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+              },
+            });
+          }
+        }
       }
     } catch (e) {}
 
@@ -131,9 +157,14 @@ export async function POST(
       contentType = body.contentType || "image/jpeg";
     }
 
-    // Upsert into StudentPhoto in DB
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
+    // Find student to get studentCode
+    const student = await prisma.student.findFirst({
+      where: {
+        OR: [
+          { id: studentId },
+          { studentCode: studentId }
+        ]
+      },
       select: { id: true, studentCode: true },
     });
 
@@ -141,14 +172,13 @@ export async function POST(
       return NextResponse.json({ error: "Học sinh không tồn tại trong hệ thống" }, { status: 404 });
     }
 
-    // Find all student IDs with same studentCode to sync avatar
+    // Find all student IDs with same studentCode to sync avatar across all school years
     const matchingStudents = await prisma.student.findMany({
       where: { studentCode: student.studentCode },
       select: { id: true },
     });
 
-    const targetIds = matchingStudents.map((s) => s.id);
-    if (!targetIds.includes(studentId)) targetIds.push(studentId);
+    const targetIds = Array.from(new Set([student.id, studentId, ...matchingStudents.map((s) => s.id)]));
 
     for (const sId of targetIds) {
       await prisma.studentPhoto.upsert({
@@ -161,18 +191,15 @@ export async function POST(
         update: {
           photoData: base64Data,
           contentType,
+          updatedAt: new Date(),
         },
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Cập nhật ảnh đại diện học sinh thành công",
-      url: `/api/student-photos/${studentId}?t=${Date.now()}`,
-    });
+    return NextResponse.json({ success: true, count: targetIds.length });
   } catch (error: any) {
-    console.error("Upload Student Photo Error:", error);
-    return NextResponse.json({ error: error.message || "Lỗi cập nhật ảnh đại diện" }, { status: 500 });
+    console.error("Save Student Photo Error:", error);
+    return NextResponse.json({ error: "Internal Server Error: " + error.message }, { status: 500 });
   }
 }
 
@@ -191,21 +218,24 @@ export async function DELETE(
       return NextResponse.json({ error: "Missing studentId" }, { status: 400 });
     }
 
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
+    const student = await prisma.student.findFirst({
+      where: {
+        OR: [
+          { id: studentId },
+          { studentCode: studentId }
+        ]
+      },
       select: { id: true, studentCode: true },
     });
 
-    if (student) {
+    if (student?.studentCode) {
       const matchingStudents = await prisma.student.findMany({
         where: { studentCode: student.studentCode },
         select: { id: true },
       });
-      const targetIds = matchingStudents.map((s) => s.id);
-      if (!targetIds.includes(studentId)) targetIds.push(studentId);
-
+      const allIds = Array.from(new Set([student.id, studentId, ...matchingStudents.map((s) => s.id)]));
       await prisma.studentPhoto.deleteMany({
-        where: { studentId: { in: targetIds } },
+        where: { studentId: { in: allIds } },
       });
     } else {
       await prisma.studentPhoto.deleteMany({
@@ -213,12 +243,9 @@ export async function DELETE(
       });
     }
 
-    return NextResponse.json({
-      success: true,
-      message: "Đã xóa ảnh đại diện học sinh",
-    });
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Delete Student Photo Error:", error);
-    return NextResponse.json({ error: error.message || "Lỗi xóa ảnh đại diện" }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

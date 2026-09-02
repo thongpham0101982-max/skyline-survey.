@@ -1,5 +1,5 @@
-// Build portfolio version: 19.0-1788323864401
-// Build version: 19.0-1788323864401
+// Build portfolio version: 20.0-1788324470497
+// Build version: 20.0-1788324470497
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -636,7 +636,7 @@ export function StudentProfilesAdminClient({
                   >
                     <img
                       key={`hdr-photo-${selectedStudentId}-${avatarTimestamp}`}
-                      src={`/api/student-photos/${selectedStudentId}?t=${avatarTimestamp}`}
+                      src={`/api/student-photos/${selectedStudentId}?code=${encodeURIComponent(selectedStudent?.studentCode || "")}&t=${avatarTimestamp}`}
                       alt={selectedStudent?.studentName || "Avatar"}
                       className="w-full h-full object-cover"
                       onError={(e: any) => {
@@ -817,7 +817,7 @@ export function StudentProfilesAdminClient({
                                     >
                                       <img
                                         key={`cv-photo-${selectedStudentId}-${avatarTimestamp}`}
-                                        src={`/api/student-photos/${selectedStudentId}?t=${avatarTimestamp}`}
+                                        src={`/api/student-photos/${selectedStudentId}?code=${encodeURIComponent(selectedStudent?.studentCode || "")}&t=${avatarTimestamp}`}
                                         alt={selectedStudent?.studentName || "Avatar"}
                                         className="w-full h-full object-cover"
                                         onError={(e: any) => {

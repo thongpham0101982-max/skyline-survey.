@@ -289,7 +289,7 @@ export default function AdminStudentProfilesPrintPage() {
                   <div className="col-span-1 flex flex-col items-center justify-center space-y-1.5 text-center">
                     <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white shadow-xs bg-gradient-to-br from-[#003B3A] to-[#007A72] flex items-center justify-center text-white font-black text-xl">
                       <img
-                        src={`/api/student-photos/${student.id}`}
+                        src={`/api/student-photos/${student.id}?code=${encodeURIComponent(student.studentCode || "")}`}
                         alt={student.studentName || "Avatar"}
                         className="w-full h-full object-cover"
                         onError={(e) => {
