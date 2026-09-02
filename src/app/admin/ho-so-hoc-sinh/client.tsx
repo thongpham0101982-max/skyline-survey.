@@ -1,9 +1,8 @@
-// Build portfolio version: 10.5-1788320785562
-// Build version: 10.5-1788320785562
+// Build portfolio version: 12.0-1788321267710
+// Build version: 12.0-1788321267710
 "use client"
 
-import {
-  X, useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { StudentCompetencyPortfolio } from "@/components/competency/StudentCompetencyPortfolio"
 import { 
   Users, Loader2, User, UserCheck, Award, Trophy, Medal, Sparkles, Compass, 
@@ -11,7 +10,8 @@ import {
   Bell, Heart, MessageCircle, Send, Globe, Printer, Download,
   Search, Calendar, MapPin, CheckCircle, AlertTriangle, GraduationCap,
   Layers, School, Building2, RotateCcw, RefreshCw, Trash2,
-  ChevronLeft, ChevronRight, Maximize2, Minimize2
+  ChevronLeft, ChevronRight, Maximize2, Minimize2,
+  X, Camera, Upload
 } from "lucide-react"
 
 interface StudentProfilesAdminClientProps {
