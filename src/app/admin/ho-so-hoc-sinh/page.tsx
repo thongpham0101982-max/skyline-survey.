@@ -42,15 +42,36 @@ export default async function AdminStudentProfilesPage() {
     activeYear = await getDefaultAcademicYear(pAny)
     const activeYearId = activeYear ? activeYear.id : null
 
-    const [yearsRes, campusesRes, classesRes] = await Promise.all([
+    const [yearsRes, campusesRes, classesRes, teachersRes] = await Promise.all([
       pAny.academicYear.findMany({ orderBy: { startDate: "desc" } }).catch(() => []),
       pAny.campus.findMany({ where: { status: "ACTIVE" }, orderBy: { campusName: "asc" } }).catch(() => []),
-      pAny.class.findMany({ where: { status: "ACTIVE" }, include: { campus: true, academicYear: true } }).catch(() => [])
+      pAny.class.findMany({ where: { status: "ACTIVE" }, include: { campus: true, academicYear: true, teachers: { include: { teacher: true } } } }).catch(() => []),
+      pAny.teacher.findMany({ select: { id: true, teacherName: true, homeroomClass: true } }).catch(() => [])
     ])
+
+    const tMap: Record<string, string> = {}
+    teachersRes.forEach((t: any) => { if (t.id && t.teacherName) tMap[t.id] = t.teacherName })
+
+    const mappedClasses = classesRes.map((c: any) => {
+      let gvcn = ""
+      if (c.homeroomTeacherId) {
+        const ids = c.homeroomTeacherId.split(",").map((id: string) => id.trim()).filter(Boolean)
+        const names = ids.map((id: string) => tMap[id]).filter(Boolean)
+        if (names.length > 0) gvcn = names.join(", ")
+      }
+      if (!gvcn && c.teachers && c.teachers.length > 0) {
+        const tObj = c.teachers.find((t: any) => t.roleInClass === "GVCN" || t.roleInClass === "HOMEROOM") || c.teachers[0]
+        if (tObj?.teacher?.teacherName) gvcn = tObj.teacher.teacherName
+      }
+      return {
+        ...c,
+        homeroomTeacherName: gvcn || "Chưa phân công"
+      }
+    })
 
     academicYears = yearsRes
     campuses = campusesRes
-    classes = classesRes
+    classes = mappedClasses
   } catch (err) {
     console.error("Error fetching db in AdminStudentProfilesPage:", err)
   }

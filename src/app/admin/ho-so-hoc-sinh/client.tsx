@@ -1,5 +1,5 @@
-// Build portfolio version: 21.0-1788334198044
-// Build version: 21.0-1788334198044
+// Build portfolio version: 22.0-1788334805488
+// Build version: 22.0-1788334805488
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -888,7 +888,18 @@ export function StudentProfilesAdminClient({
                                     </div>
                                     <div className="space-y-0.5">
                                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Giáo viên chủ nhiệm (GVCN)</span>
-                                      <span className="font-bold text-teal-700 block">{selectedStudent?.homeroomTeacherName || "Chưa phân công"}</span>
+                                      <span className="font-bold text-teal-700 block">
+                                        {(() => {
+                                          if (selectedStudent?.homeroomTeacherName && selectedStudent.homeroomTeacherName !== "Chưa phân công") {
+                                            return selectedStudent.homeroomTeacherName;
+                                          }
+                                          const matchedCls = classes.find((c: any) => c.id === selectedStudent?.classId || c.className === selectedStudent?.className || c.classCode === selectedStudent?.classCode);
+                                          if (matchedCls?.homeroomTeacherName && matchedCls.homeroomTeacherName !== "Chưa phân công") {
+                                            return matchedCls.homeroomTeacherName;
+                                          }
+                                          return "Chưa phân công";
+                                        })()}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
