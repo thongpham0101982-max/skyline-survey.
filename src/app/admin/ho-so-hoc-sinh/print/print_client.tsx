@@ -63,6 +63,15 @@ export default function AdminStudentProfilesPrintPage() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  // Autoprint when autoprint query param is present
+  useEffect(() => {
+    if (!loading && students.length > 0 && searchParams.get("autoprint") === "1") {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, students, searchParams]);
 
   useEffect(() => {
     async function loadPrintData() {
@@ -159,17 +168,22 @@ export default function AdminStudentProfilesPrintPage() {
           __html: `
           @page {
             size: A4 portrait;
-            margin: 10mm 12mm 10mm 12mm;
+            margin: 8mm 10mm 8mm 10mm;
           }
           @media print {
-            html, body {
-              background: #ffffff !important;
-              color: #1e293b !important;
-              margin: 0 !important;
-              padding: 0 !important;
+            *, *:before, *:after {
               -webkit-print-color-adjust: exact !important;
               print-color-adjust: exact !important;
-              font-size: 11pt !important;
+            }
+            html, body {
+              background: #ffffff !important;
+              color: #0f172a !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              font-size: 10pt !important;
+              line-height: 1.35 !important;
+              text-rendering: optimizeLegibility !important;
+              -webkit-font-smoothing: antialiased !important;
             }
             .no-print-layout {
               display: none !important;
@@ -177,27 +191,36 @@ export default function AdminStudentProfilesPrintPage() {
             .student-document-container {
               page-break-after: always !important;
               break-after: page !important;
-              padding: 0 !important;
-              margin: 0 !important;
-              width: 100% !important;
-              box-shadow: none !important;
-              border: none !important;
-            }
-            .print-section-avoid {
               page-break-inside: avoid !important;
               break-inside: avoid !important;
-              margin-bottom: 14px !important;
+              padding: 12px 16px !important;
+              margin: 0 auto 20px auto !important;
+              width: 100% !important;
+              max-width: 210mm !important;
+              box-shadow: none !important;
+              border: 1px solid #e2e8f0 !important;
+              border-radius: 12px !important;
             }
-            .print-card-avoid {
+            .student-document-container:last-child {
+              page-break-after: auto !important;
+              break-after: auto !important;
+            }
+            .print-section-avoid, .print-card-avoid {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              margin-bottom: 10px !important;
+            }
+            table, thead, tbody, tr, td, th {
               page-break-inside: avoid !important;
               break-inside: avoid !important;
             }
             thead {
               display: table-header-group !important;
             }
-            tr {
+            img {
               page-break-inside: avoid !important;
               break-inside: avoid !important;
+              max-width: 100% !important;
             }
             svg {
               shape-rendering: geometricPrecision !important;

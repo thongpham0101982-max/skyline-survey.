@@ -1,5 +1,5 @@
-// Build portfolio version: 27.0-1788336834939
-// Build version: 27.0-1788336834939
+// Build portfolio version: 28.0-1788357430625
+// Build version: 28.0-1788357430625
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -745,13 +745,31 @@ export function StudentProfilesAdminClient({
                     )}
                   </button>
 
-                  {/* Print individual PDF */}
+                  {/* Print / Export PDF Buttons */}
                   <button
-                    onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}`, "_blank")}
-                    className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer"
+                    type="button"
+                    onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank")}
+                    className="flex items-center gap-1.5 bg-gradient-to-r from-[#007A72] to-[#00A99D] hover:from-[#00655E] hover:to-[#009085] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm hover:shadow-md transition-all cursor-pointer transform active:scale-95"
+                    title="Xuất file PDF chuẩn A4 sắc nét, mở hộp thoại in ngay lập tức"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Xuất PDF (A4 Chuẩn)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedClassId && selectedClassId !== "all") {
+                        window.open(`/admin/ho-so-hoc-sinh/print?type=class&classId=${selectedClassId}&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
+                      } else {
+                        window.open(`/admin/ho-so-hoc-sinh/print?type=class&academicYearId=${selectedYearId}&autoprint=1`, "_blank");
+                      }
+                    }}
+                    className="hidden sm:flex items-center gap-1.5 bg-white border border-teal-300 text-[#007A72] hover:bg-teal-50 px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-2xs transition-all cursor-pointer"
+                    title="In toàn bộ hồ sơ học sinh trong lớp thành tập file PDF"
                   >
                     <Printer className="w-3.5 h-3.5" />
-                    <span>In CV</span>
+                    <span>In Cả Lớp</span>
                   </button>
                 </div>
               </div>
