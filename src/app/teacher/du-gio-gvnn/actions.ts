@@ -16,7 +16,10 @@ function isEnglishDepartment(deptNameOrCode?: string | null): boolean {
     lower.includes("eng_sec") ||
     lower.includes("eng_int") ||
     lower.includes("ngoại ngữ") ||
-    lower.includes("ngoai ngu")
+    lower.includes("ngoai ngu") ||
+    lower.includes("quốc tế") ||
+    lower.includes("quoc te") ||
+    lower.includes("cambridge")
   );
 }
 
@@ -162,9 +165,12 @@ export async function getForeignObservationData(academicYearId?: string) {
       orderBy: { name: "asc" }
     });
 
-    const englishDepartments = allDepartments.filter(
+    let englishDepartments = allDepartments.filter(
       d => isEnglishDepartment(d.name) || isEnglishDepartment(d.code)
     );
+    if (englishDepartments.length === 0) {
+      englishDepartments = allDepartments;
+    }
 
     const rawTeachers = await prisma.teacher.findMany({
       where: { status: "ACTIVE" },
@@ -177,7 +183,10 @@ export async function getForeignObservationData(academicYearId?: string) {
         position: true,
         campusId: true,
         departmentRel: {
-          select: { id: true, code: true, name: true }
+          select: { id: true, code: true, name: true, blockCM: true }
+        },
+        mainSubjectRel: {
+          select: { id: true, subjectName: true }
         },
         departmentAssignments: {
           select: {
@@ -207,7 +216,10 @@ export async function getForeignObservationData(academicYearId?: string) {
       orderBy: { teacherName: "asc" }
     });
 
-    const englishTeachers = rawTeachers.filter(t => isForeignOrEnglishTeacher(t));
+    let englishTeachers = rawTeachers.filter(t => isForeignOrEnglishTeacher(t));
+    if (englishTeachers.length === 0) {
+      englishTeachers = rawTeachers;
+    }
 
     const allTargets = activeYearId
       ? await prisma.teacherAcademicYearTarget.findMany({

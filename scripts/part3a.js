@@ -99,7 +99,7 @@ const p3a = `
                   </div>
                   <div className="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-200/60 flex items-center justify-between">
                     <span>Mã GV: <strong className="text-slate-700">{props.currentTeacher?.teacherCode || "N/A"}</strong></span>
-                    <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-100/70 text-indigo-800 font-semibold">
+                    <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-100/70 text-indigo-800 font-semibold truncate max-w-[150px]">
                       {props.currentTeacher?.departmentRel?.name || props.currentTeacher?.position || "English Dept"}
                     </span>
                   </div>
@@ -112,13 +112,26 @@ const p3a = `
                     Tổ CM Giáo Viên Dạy
                   </label>
                   <select
-                    value={observedDeptFilter}
-                    onChange={e => setObservedDeptFilter(e.target.value)}
+                    value={observedDeptId}
+                    onChange={e => {
+                      setObservedDeptId(e.target.value);
+                      setTeacherId("");
+                    }}
                     className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none transition"
                   >
-                    {ENGLISH_DEPARTMENTS_CONFIG.map(d => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
+                    <option value="ALL">-- Tất cả Tổ Tiếng Anh ({englishTeachers.length} GV) --</option>
+                    {props.departments?.map((d: any) => {
+                      const count = englishTeachers.filter((t: any) =>
+                        t.departmentId === d.id ||
+                        t.departmentRel?.id === d.id ||
+                        t.departmentAssignments?.some((da: any) => da.departmentId === d.id || da.department?.id === d.id)
+                      ).length;
+                      return (
+                        <option key={d.id} value={d.id}>
+                          {d.name} ({count} GV)
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -133,12 +146,16 @@ const p3a = `
                     onChange={handleTeacherChange}
                     className="w-full bg-white border-2 border-indigo-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 outline-none transition"
                   >
-                    <option value="">-- Chọn Giáo Viên Được Dự --</option>
-                    {filteredObservedTeachers.map((t: any) => (
-                      <option key={t.id} value={t.id}>
-                        {t.teacherName} ({t.teacherCode}) - {t.departmentRel?.name || t.position || "English"}
-                      </option>
-                    ))}
+                    <option value="">-- Chọn Giáo Viên Được Dự ({filteredObservedTeachers.length} GV) --</option>
+                    {filteredObservedTeachers.map((t: any) => {
+                      const deptLabel = t.departmentRel?.name || t.departmentAssignments?.[0]?.department?.name || t.position || "Tiếng Anh";
+                      const campusLabel = t.campus?.campusName ? (" • " + t.campus.campusName) : "";
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {t.teacherName} ({t.teacherCode}) - {deptLabel}{campusLabel}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 

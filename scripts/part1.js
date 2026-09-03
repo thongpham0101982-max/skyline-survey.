@@ -270,33 +270,7 @@ const PERIOD_LIST = [
   { name: "Tiết 7", time: "15:10 - 15:55" },
   { name: "Tiết 8", time: "15:55 - 16:40" }
 ];
-
-const ENGLISH_DEPARTMENTS_CONFIG = [
-  { id: "ALL", name: "Tất cả 3 Tổ Tiếng Anh & GVNN (All 3 English Departments)" },
-  { id: "TIENG_ANH_TIEU_HOC", name: "Tổ Tiếng Anh Tiểu học (Primary English)" },
-  { id: "TIENG_ANH_TRUNG_HOC", name: "Tổ Tiếng Anh Trung học (Secondary English)" },
-  { id: "TIENG_ANH_QUOC_TE", name: "Tổ Tiếng Anh Quốc tế & GVNN (International / ESL)" }
-];
-
-function matchTeacherDept(teacher: any, deptKey: string): boolean {
-  if (deptKey === "ALL") return true;
-  const deptName = (teacher.departmentRel?.name || "").toLowerCase();
-  const assigned = (teacher.departmentAssignments || []).map((a: any) => (a.department?.name || "").toLowerCase()).join(" ");
-  const pos = (teacher.position || "").toLowerCase();
-  const allText = (deptName + " " + assigned + " " + pos).toLowerCase();
-
-  if (deptKey === "TIENG_ANH_TIEU_HOC") {
-    return allText.includes("tiểu học") || allText.includes("tieu hoc") || allText.includes("pri");
-  }
-  if (deptKey === "TIENG_ANH_TRUNG_HOC") {
-    return allText.includes("trung học") || allText.includes("trung hoc") || allText.includes("thcs") || allText.includes("thpt") || allText.includes("sec");
-  }
-  if (deptKey === "TIENG_ANH_QUOC_TE") {
-    return allText.includes("quốc tế") || allText.includes("quoc te") || allText.includes("gvnn") || allText.includes("expat") || allText.includes("international") || allText.includes("esl");
-  }
-  return true;
-}
 `;
 
 fs.writeFileSync(target, p1, 'utf8');
-console.log('Part 1 appended');
+console.log('Part 1 written');

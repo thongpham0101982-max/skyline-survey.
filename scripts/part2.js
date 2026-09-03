@@ -19,7 +19,7 @@ export function ForeignObservationClient(props: {
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
 
   // Observed Teacher State
-  const [observedDeptFilter, setObservedDeptFilter] = useState("ALL");
+  const [observedDeptId, setObservedDeptId] = useState<string>("ALL");
   const [teacherId, setTeacherId] = useState("");
 
   const [campusId, setCampusId] = useState("");
@@ -70,9 +70,17 @@ export function ForeignObservationClient(props: {
     return props.teachers || [];
   }, [props.teachers]);
 
+  // Dynamic filter matching Department ID, Department Rel ID, or Department Assignments
   const filteredObservedTeachers = useMemo(() => {
-    return englishTeachers.filter(t => matchTeacherDept(t, observedDeptFilter));
-  }, [englishTeachers, observedDeptFilter]);
+    if (observedDeptId === "ALL") return englishTeachers;
+    return englishTeachers.filter((t: any) => {
+      const matchPrimary = t.departmentId === observedDeptId || t.departmentRel?.id === observedDeptId;
+      const matchAssignment = t.departmentAssignments?.some(
+        (da: any) => da.departmentId === observedDeptId || da.department?.id === observedDeptId
+      );
+      return matchPrimary || Boolean(matchAssignment);
+    });
+  }, [englishTeachers, observedDeptId]);
 
   const selectedTeacher = useMemo(() => {
     return englishTeachers.find((t: any) => t.id === teacherId);
