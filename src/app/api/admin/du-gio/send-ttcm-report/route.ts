@@ -267,19 +267,19 @@ export async function POST(req: Request) {
         const isObservedMet = reqObserved === 0 || st.observedCount >= reqObserved;
 
         const taughtBadge = isTaughtMet 
-          ? `<span style="display:inline-block; background-color:#ECFDF5; color:#047857; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #A7F3D0;">🟢 ${st.taughtCount} ${reqTaught > 0 ? '/ ' + reqTaught + ' (' + taughtUnit + ')' : 'tiết'} ✓</span>`
-          : `<span style="display:inline-block; background-color:#FEF2F2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #FECACA;">🔴 ${st.taughtCount} / ${reqTaught} (${taughtUnit}) ✗</span>`;
+          ? `<span style="display:inline-block; background-color:#ECFDF5; color:#047857; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #A7F3D0;">${st.taughtCount} ${reqTaught > 0 ? '/ ' + reqTaught + ' (' + taughtUnit + ')' : 'tiết'}</span>`
+          : `<span style="display:inline-block; background-color:#FEF2F2; color:#B91C1C; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #FECACA;">${st.taughtCount} / ${reqTaught} (${taughtUnit})</span>`;
 
         const observedBadge = isObservedMet
-          ? `<span style="display:inline-block; background-color:#ECFDF5; color:#047857; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #A7F3D0;">🟢 ${st.observedCount} ${reqObserved > 0 ? '/ ' + reqObserved + ' (' + observedUnit + ')' : 'lượt'} ✓</span>`
-          : `<span style="display:inline-block; background-color:#FFFBEB; color:#B45309; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #FDE68A;">🟡 ${st.observedCount} / ${reqObserved} (${observedUnit}) ⚠️</span>`;
+          ? `<span style="display:inline-block; background-color:#ECFDF5; color:#047857; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #A7F3D0;">${st.observedCount} ${reqObserved > 0 ? '/ ' + reqObserved + ' (' + observedUnit + ')' : 'lượt'}</span>`
+          : `<span style="display:inline-block; background-color:#FFFBEB; color:#B45309; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #FDE68A;">${st.observedCount} / ${reqObserved} (${observedUnit})</span>`;
 
         return `
           <tr bgcolor="${idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'}" style="border-bottom:1px solid #E2E8F0;">
             <td align="center" style="padding:10px 8px; font-size:12px; font-weight:700; color:#64748B;">${idx + 1}</td>
             <td style="padding:10px 12px; font-size:12px; font-weight:700; color:#0F172A;">
-              <div style="font-size:13px; color:#003B3A; font-weight:800;">👨‍🏫 ${t.teacherName}</div>
-              <div style="font-size:10px; color:#64748B; font-weight:600; margin-top:2px; padding-left:18px;">
+              <div style="font-size:13px; color:#003B3A; font-weight:800;">${t.teacherName}</div>
+              <div style="font-size:10px; color:#64748B; font-weight:600; margin-top:2px;">
                 Mã GV: <strong>${t.teacherCode}</strong> ${t.position ? '• <span style="color:#B45309; font-weight:800; background-color:#FEF3C7; padding:1px 6px; border-radius:4px;">' + t.position + '</span>' : ''}
               </div>
             </td>
@@ -399,15 +399,15 @@ export async function POST(req: Request) {
               <!-- Section 1: Teacher Quota Progress Table (DANH SÁCH GIÁO VIÊN & ĐỐI CHIẾU CHỈ TIÊU) -->
               <div style="margin-bottom:24px;">
                 <h3 style="margin:0 0 10px 0; font-size:13px; font-weight:900; text-transform:uppercase; color:#003B3A; letter-spacing:0.5px;">
-                  📋 1. DANH SÁCH GIÁO VIÊN & ĐỐI CHIẾU CHỈ TIÊU (${deptTeachers.length} GV)
+                  1. DANH SÁCH GIÁO VIÊN & ĐỐI CHIẾU CHỈ TIÊU (${deptTeachers.length} GV)
                 </h3>
                 <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:1px solid #CBD5E1; border-radius:8px; overflow:hidden;">
                   <thead>
                     <tr bgcolor="#003B3A" style="background-color:#003B3A; color:#FFFFFF; font-size:11px; font-weight:800; text-transform:uppercase;">
-                      <th style="padding:10px 8px; text-align:center; width:35px; border-right:1px solid #065F46; color:#FFFFFF;">🔢 STT</th>
-                      <th style="padding:10px 12px; text-align:left; border-right:1px solid #065F46; color:#FFFFFF;">👤 Giáo viên Bộ môn</th>
-                      <th style="padding:10px 8px; text-align:center; width:150px; border-right:1px solid #065F46; color:#FFFFFF;">🎓 Tiết Dạy</th>
-                      <th style="padding:10px 8px; text-align:center; width:150px; color:#FFFFFF;">👁️ Tiết Dự</th>
+                      <th style="padding:10px 8px; text-align:center; width:35px; border-right:1px solid #065F46; color:#FFFFFF;">STT</th>
+                      <th style="padding:10px 12px; text-align:left; border-right:1px solid #065F46; color:#FFFFFF;">Giáo viên Bộ môn</th>
+                      <th style="padding:10px 8px; text-align:center; width:150px; border-right:1px solid #065F46; color:#FFFFFF;">Tiết Dạy</th>
+                      <th style="padding:10px 8px; text-align:center; width:150px; color:#FFFFFF;">Tiết Dự</th>
                     </tr>
                   </thead>
                   <tbody>

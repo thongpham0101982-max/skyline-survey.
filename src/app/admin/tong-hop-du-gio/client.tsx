@@ -2026,14 +2026,14 @@ export function AdminTongHopClient({
                             <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
                               t.isTaughtMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
                             }`}>
-                              {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught} (${t.taughtUnit})` : "tiết"} {t.isTaughtMet ? "✓" : "✗"}
+                              {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught} (${t.taughtUnit})` : "tiết"}
                             </span>
                           </td>
                           <td className="py-2 px-2 text-center">
                             <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
                               t.isObservedMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"
                             }`}>
-                              {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"} {t.isObservedMet ? "✓" : "⚠️"}
+                              {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"}
                             </span>
                           </td>
                         </tr>
