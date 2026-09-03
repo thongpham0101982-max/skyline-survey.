@@ -1595,44 +1595,161 @@ export function AdminTongHopClient({
 
           {/* TAB 3: Báo cáo & Tiến độ Tổ Chuyên Môn */}
           {activeDetailTab === "tien-do-to" && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               
-              {/* Department Action Bar */}
-              <div className="bg-gradient-to-r from-teal-900 to-[#003B3A] border border-teal-700/50 rounded-2xl p-4 sm:p-5 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md shadow-[#003B3A]/10">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.2 rounded-full bg-teal-500/20 text-teal-200 border border-teal-400/30 text-[9px] font-extrabold uppercase">
-                      Bảng tổng hợp tiến độ chỉ tiêu
-                    </span>
-                    {deptTTCM && (
-                      <span className="text-[11px] text-amber-300 font-bold">
-                        TTCM: {deptTTCM.teacherName}
+              {/* BẢNG 1: BẢNG THỐNG KÊ TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN THEO THÁNG */}
+              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-md overflow-hidden space-y-0">
+                <div className="p-4 sm:p-5 bg-gradient-to-r from-[#003B3A] via-[#064E3B] to-[#0369A1] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-200 border border-teal-400/30 text-[9.5px] font-extrabold uppercase tracking-wide">
+                        Tổng hợp toàn diện
                       </span>
-                    )}
+                      <span className="text-[11px] text-amber-300 font-bold">
+                        {allDepartmentsSummary.length} Tổ chuyên môn
+                      </span>
+                    </div>
+                    <h3 className="text-base sm:text-lg font-black tracking-tight mt-1 text-white">
+                      BẢNG THỐNG KÊ TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN THEO THÁNG
+                    </h3>
+                    <p className="text-[11px] text-teal-100/80 mt-0.5">
+                      Kỳ báo cáo: <strong className="text-amber-200">{selectedMonth === "all" ? "Toàn bộ năm học" : `Tháng ${selectedMonth.split("-")[1]}/${selectedMonth.split("-")[0]}`}</strong> &bull; Nhấp vào hàng để xem chi tiết giáo viên của Tổ
+                    </p>
                   </div>
-                  <h3 className="text-base sm:text-lg font-black tracking-tight mt-0.5">{selectedDeptName}</h3>
-                  <p className="text-[11px] text-teal-100/70">
-                    Theo dõi số tiết dạy & dự của {deptTeachers.length} GV • Kỳ: {selectedMonth === "all" ? "Tất cả các tháng" : `Tháng ${selectedMonth.split("-")[1]}/${selectedMonth.split("-")[0]}`}
-                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={openEmailModal}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 text-slate-950 font-black text-xs shadow-sm flex items-center gap-1.5 transition-all shrink-0"
+                    >
+                      <Mail className="w-4 h-4 text-slate-950" />
+                      <span>Gửi Email Báo Cáo TTCM ({selectedDeptName})</span>
+                    </button>
+                  </div>
                 </div>
 
-                <button
-                  onClick={openEmailModal}
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 text-slate-950 font-black text-xs shadow-xs flex items-center gap-1.5 transition-all shrink-0"
-                >
-                  <Mail className="w-3.5 h-3.5 text-slate-950" />
-                  <span>Gửi Email TTCM</span>
-                </button>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-100/80 text-[11px] font-black uppercase text-slate-700 tracking-wider">
+                        <th className="py-3 px-3 text-center w-12">STT</th>
+                        <th className="py-3 px-4 min-w-[200px]">Tổ Chuyên Môn</th>
+                        <th className="py-3 px-3 text-center min-w-[110px]">Giáo Viên Tổ</th>
+                        <th className="py-3 px-3 text-center min-w-[130px]">Tổng Tiết Dạy</th>
+                        <th className="py-3 px-3 text-center min-w-[130px]">Tổng Tiết Dự</th>
+                        <th className="py-3 px-3 text-center min-w-[140px]">Tỷ Lệ Đạt Chuẩn</th>
+                        <th className="py-3 px-3 text-center min-w-[130px]">Gửi Mail</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs">
+                      {allDepartmentsSummary.map((dept: any, idx: number) => {
+                        const isCurrentSelected = selectedDeptId === dept.id;
+                        return (
+                          <tr 
+                            key={dept.id}
+                            onClick={() => setSelectedDeptId(dept.id)}
+                            className={`hover:bg-teal-50/50 cursor-pointer transition-colors ${isCurrentSelected ? "bg-teal-50/70 border-l-4 border-l-[#003B3A]" : ""}`}
+                          >
+                            <td className="py-3 px-3 text-center font-bold text-slate-400 text-xs">
+                              {idx + 1}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 shadow-2xs ${
+                                  isCurrentSelected ? "bg-[#003B3A] text-white" : "bg-slate-100 text-slate-700"
+                                }`}>
+                                  {dept.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-black text-slate-900 text-xs flex items-center gap-1.5">
+                                    <span>{dept.name}</span>
+                                    {isCurrentSelected && (
+                                      <span className="px-1.5 py-0.2 rounded bg-teal-100 text-[#003B3A] font-extrabold text-[8.5px]">
+                                        Đang xem
+                                      </span>
+                                    )}
+                                  </p>
+                                  <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                                    {dept.ttcm ? (
+                                      <span className="text-teal-700 font-bold">TTCM: {dept.ttcm.teacherName}</span>
+                                    ) : (
+                                      <span className="text-slate-400 italic">Chưa gán TTCM</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-800 font-black text-[11px] border border-slate-200 inline-block">
+                                {dept.teacherCount} GV
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 font-black text-[11px] border border-emerald-200 inline-block">
+                                {dept.totalTaught} tiết
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-800 font-black text-[11px] border border-sky-200 inline-block">
+                                {dept.totalObserved} lượt
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <div className="inline-flex flex-col items-center">
+                                <span className={`px-2.5 py-0.5 rounded-lg font-black text-[11px] border ${
+                                  dept.passRate >= 80 
+                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                                    : dept.passRate > 0 
+                                      ? "bg-amber-50 text-amber-700 border-amber-200" 
+                                      : "bg-slate-50 text-slate-500 border-slate-200"
+                                }`}>
+                                  {dept.totalEvals > 0 ? `${dept.passRate}%` : "--"}
+                                </span>
+                                {dept.totalEvals > 0 && (
+                                  <span className="text-[9px] text-slate-400 font-bold mt-0.5">
+                                    ({dept.passingEvals}/{dept.totalEvals} phiếu)
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => openEmailModalForDept(dept.id)}
+                                className="px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-bold text-[11px] shadow-2xs flex items-center gap-1 mx-auto transition-all"
+                                title={`Gửi Email báo cáo cho TTCM ${dept.name}`}
+                              >
+                                <Mail className="w-3 h-3 text-[#48BFE3]" />
+                                <span>Gửi Mail</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              {/* Matrix Table */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-                <div className="p-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <UserCheck className="w-4 h-4 text-[#003B3A]" />
-                    <span>Danh sách Giáo viên & Đối chiếu Chỉ tiêu</span>
-                  </h4>
+              {/* BẢNG 2: DANH SÁCH GIÁO VIÊN & ĐỐI CHIẾU CHỈ TIÊU CỦA TỔ ĐANG CHỌN */}
+              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50/70">
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-[#003B3A]" />
+                      <span>Chi tiết: Danh sách Giáo viên & Đối chiếu Chỉ tiêu - {selectedDeptName} ({deptTeachers.length} GV)</span>
+                    </h4>
+                    <p className="text-[10.5px] text-slate-500 font-semibold mt-0.5">
+                      Kỳ: {selectedMonth === "all" ? "Toàn bộ năm học" : `Tháng ${selectedMonth.split("-")[1]}/${selectedMonth.split("-")[0]}`} {deptTTCM ? `• TTCM: ${deptTTCM.teacherName}` : ""}
+                    </p>
+                  </div>
 
+                  <button
+                    onClick={openEmailModal}
+                    className="px-3.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs shadow-2xs flex items-center gap-1.5 transition-all shrink-0 self-start sm:self-auto"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Gửi Email Tổ {selectedDeptName}</span>
+                  </button>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1681,7 +1798,7 @@ export function AdminTongHopClient({
                                   ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
                                   : "bg-rose-50 text-rose-700 border-rose-200"
                               }`}>
-                                {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught}` : "tiết"}
+                                {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught} (${t.taughtUnit})` : "tiết"}
                               </span>
                             </td>
                             <td className="py-2.5 px-3 text-center">
@@ -1690,7 +1807,7 @@ export function AdminTongHopClient({
                                   ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
                                   : "bg-amber-50 text-amber-800 border-amber-200"
                               }`}>
-                                {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved}` : "lượt"}
+                                {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"}
                               </span>
                             </td>
                             <td className="py-2.5 px-3 text-center">
