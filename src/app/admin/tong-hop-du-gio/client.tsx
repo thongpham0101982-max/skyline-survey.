@@ -625,6 +625,90 @@ export function AdminTongHopClient({
     return { totalTaught, totalObserved };
   }, [emailPreviewTeacherMatrix]);
 
+  // Compute summary for ALL active departments by month
+  const allDepartmentsSummary = useMemo(() => {
+    return (activeDepartments || []).map((dept: any) => {
+      const deptTeachersList = (initialTeachers || []).filter((t: any) => 
+        t.departmentId === dept.id || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id)
+      );
+      const teacherIds = new Set(deptTeachersList.map((t: any) => t.id));
+
+      const ttcm = deptTeachersList.find((t: any) => 
+        t.position === "TTCM" || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id && da.position === "TTCM")
+      );
+
+      let totalTaught = 0;
+      let totalObserved = 0;
+      let totalEvals = 0;
+      let passingEvals = 0;
+
+      (initialSlots || []).forEach((slot: any) => {
+        if (selectedMonth !== "all") {
+          if (!slot.date) return;
+          const d = new Date(slot.date);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          if (`${yyyy}-${mm}` !== selectedMonth) return;
+        }
+
+        const isHost = teacherIds.has(slot.teacherId);
+        const increment = slot.isDoublePeriod ? 2 : 1;
+        const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+
+        if (isHost) {
+          if (hasEvaluations) {
+            totalTaught += increment;
+          }
+          slot.registrations?.forEach((r: any) => {
+            if (r.evaluation) {
+              totalEvals++;
+              const isK12 = slot.level !== "Mầm non";
+              const passed = isK12
+                ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
+                : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá" || r.evaluation.overallRating === "Đạt");
+              if (passed) passingEvals++;
+            }
+          });
+        }
+
+        slot.registrations?.forEach((reg: any) => {
+          if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
+            totalObserved += increment;
+          }
+        });
+      });
+
+      const passRate = totalEvals > 0 ? Math.round((passingEvals / totalEvals) * 100) : 0;
+
+      return {
+        id: dept.id,
+        name: dept.name,
+        teacherCount: deptTeachersList.length,
+        ttcm,
+        totalTaught,
+        totalObserved,
+        totalEvals,
+        passingEvals,
+        passRate
+      };
+    });
+  }, [activeDepartments, initialTeachers, initialSlots, selectedMonth]);
+
+  const openEmailModalForDept = (deptId: string) => {
+    setSelectedDeptId(deptId);
+    const deptTeachersList = (initialTeachers || []).filter((t: any) => 
+      t.departmentId === deptId || t.departmentAssignments?.some((da: any) => da.departmentId === deptId)
+    );
+    const ttcm = deptTeachersList.find((t: any) => 
+      t.position === "TTCM" || t.departmentAssignments?.some((da: any) => da.departmentId === deptId && da.position === "TTCM")
+    );
+    setEmailTo(ttcm?.email || "");
+    setEmailCc("");
+    setEmailMonth(selectedMonth !== "all" ? selectedMonth : (availableMonths[0] || "all"));
+    setEmailNotes("");
+    setIsEmailModalOpen(true);
+  };
+
   const openEmailModal = () => {
     setEmailTo(deptTTCM?.email || "");
     setEmailCc("");
