@@ -573,12 +573,7 @@ export function AdminTongHopClient({
     const dhcmEmails = dhcmTeachers.map((t: any) => t.email).filter((em: any) => em && em.includes("@"));
     
     setAllDeptsTo(dhcmEmails.length > 0 ? dhcmEmails.join(", ") : "bankhaothi@skylineschool.edu.vn");
-    
-    // Pre-populate CC with all TTCM emails
-    const ttcmEmails = allDepartmentsSummary
-      .map(d => d.ttcm?.email)
-      .filter((em): em is string => Boolean(em && em.includes("@")));
-    setAllDeptsCc(Array.from(new Set(ttcmEmails)).join(", "));
+    setAllDeptsCc(""); // CC is strictly empty by default, not sent to 19 TTCMs
     setAllDeptsMonth(selectedMonth !== "all" ? selectedMonth : (availableMonths[0] || "all"));
     setAllDeptsNotes("");
     setIsAllDeptsModalOpen(true);
@@ -1767,7 +1762,7 @@ export function AdminTongHopClient({
                       className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition-all shrink-0 border border-amber-300"
                     >
                       <Mail className="w-4 h-4 text-slate-950" />
-                      <span>Gửi Email Báo Cáo Ban ĐHCM (Kèm CC)</span>
+                      <span>Gửi Email Báo Cáo Ban ĐHCM</span>
                     </button>
                   </div>
                 </div>
@@ -2391,28 +2386,14 @@ export function AdminTongHopClient({
                 </div>
 
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                      2. Đồng kính gửi (CC)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const ttcmEmails = allDepartmentsSummary
-                          .map(d => d.ttcm?.email)
-                          .filter((em): em is string => Boolean(em && em.includes("@")));
-                        setAllDeptsCc(Array.from(new Set(ttcmEmails)).join(", "));
-                      }}
-                      className="text-[9.5px] font-bold text-teal-700 hover:underline"
-                    >
-                      + CC tất cả TTCM
-                    </button>
-                  </div>
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    2. Đồng kính gửi (CC) (Tùy chọn)
+                  </label>
                   <input
                     type="text"
                     value={allDeptsCc}
                     onChange={e => setAllDeptsCc(e.target.value)}
-                    placeholder="VD: ttcm1@..., ttcm2@... (ngăn cách bởi dấu phẩy)"
+                    placeholder="VD: bgh@skylineschool.edu.vn, gdcs@... (Tùy chọn)"
                     className="w-full text-xs font-medium p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
                   />
                 </div>
@@ -2520,7 +2501,7 @@ export function AdminTongHopClient({
                 <ul className="list-disc pl-4 space-y-0.5 text-[10.5px] text-emerald-800">
                   <li><strong>Tiết dạy:</strong> Chỉ được tính khi tiết dạy đã diễn ra, có giáo viên tham gia dự giờ <strong>VÀ người dự ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 tiết).</li>
                   <li><strong>Tiết dự:</strong> Chỉ được tính khi Giáo viên đã được duyệt tham gia dự giờ <strong>VÀ ĐÃ HOÀN TẤT GỬI PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 lượt).</li>
-                  <li>Email sẽ gửi toàn bộ Bảng thống kê tiến độ của <strong>{allDepartmentsSummary.length} Tổ chuyên môn</strong> đến người nhận và CC.</li>
+                  <li>Báo cáo tổng hợp này được gửi riêng cho <strong>Ban Điều hành Chuyên môn (Ban ĐHCM)</strong>, không tự động gửi đến 19 Tổ chuyên môn.</li>
                 </ul>
               </div>
             </div>
