@@ -1,13 +1,13 @@
 ﻿const fs = require('fs');
+const path = require('path');
 
-// 1. Fix actions.ts - make getWeeksOfMonth async
-let actions = fs.readFileSync('src/app/admin/weekly-reports/actions.ts', 'utf8');
-actions = actions.replace(
-  'export function getWeeksOfMonth(month: number, year: number) {',
-  'export async function getWeeksOfMonth(month: number, year: number) {'
-);
-fs.writeFileSync('src/app/admin/weekly-reports/actions.ts', actions);
-console.log('OK: actions.ts fixed - getWeeksOfMonth now async');
+const rootDir = path.join(__dirname, '..');
+const actionsPath = path.join(rootDir, 'src', 'app', 'teacher', 'du-gio-gvnn', 'actions.ts');
+let content = fs.readFileSync(actionsPath, 'utf8');
 
-// 2. Push schema
-console.log('Now push schema...');
+// Remove export from synchronous helpers in "use server" file
+content = content.replace('export function isEnglishDepartment', 'function isEnglishDepartment');
+content = content.replace('export function isForeignOrEnglishTeacher', 'function isForeignOrEnglishTeacher');
+
+fs.writeFileSync(actionsPath, content, 'utf8');
+console.log('Fixed actions.ts synchronous exports in "use server" file');

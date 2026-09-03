@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
-export function isEnglishDepartment(deptNameOrCode?: string | null): boolean {
+function isEnglishDepartment(deptNameOrCode?: string | null): boolean {
   if (!deptNameOrCode) return false;
   const lower = deptNameOrCode.toLowerCase();
   return (
@@ -20,7 +20,7 @@ export function isEnglishDepartment(deptNameOrCode?: string | null): boolean {
   );
 }
 
-export function isForeignOrEnglishTeacher(teacher: any): boolean {
+function isForeignOrEnglishTeacher(teacher: any): boolean {
   if (!teacher) return false;
   const pos = (teacher.position || "").toUpperCase();
   const role = (teacher.user?.role || "").toUpperCase();
