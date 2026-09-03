@@ -25,148 +25,143 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { blockTab, academicYearId, month, toEmail, ccEmails, notes } = await req.json();
+    const { blockTab, academicYearId, month, toEmail, ccEmails, notes, departmentSummaries } = await req.json();
 
     if (!toEmail || !toEmail.includes("@")) {
       return NextResponse.json({ error: "Địa chỉ email người nhận không hợp lệ" }, { status: 400 });
     }
 
-    // 1. Fetch active Academic Year
-    let activeYear = null;
-    if (academicYearId) {
-      activeYear = await prisma.academicYear.findUnique({ where: { id: academicYearId } });
-    }
+    let deptSummaries = [];
 
-    // 2. Fetch all departments
-    const allDepartments = await prisma.department.findMany({
-      orderBy: { name: "asc" }
-    });
+    if (departmentSummaries && Array.isArray(departmentSummaries) && departmentSummaries.length > 0) {
+      deptSummaries = departmentSummaries.map((d: any) => ({
+        id: d.id,
+        name: d.name,
+        teacherCount: d.teacherCount || 0,
+        ttcmName: d.ttcm?.teacherName || d.ttcmName || "Chưa gán TTCM",
+        totalTaught: d.totalTaught || 0,
+        totalObserved: d.totalObserved || 0
+      }));
+    } else {
+      // 1. Fetch active Academic Year
+      let activeYear = null;
+      if (academicYearId) {
+        activeYear = await prisma.academicYear.findUnique({ where: { id: academicYearId } });
+      }
 
-    const activeDepartments = allDepartments.filter(dept => {
-      if (blockTab === "mamnon") return dept.blockCM === "MAM_NON";
-      if (blockTab === "dieuhanh") return dept.blockCM === "DIEU_HANH";
-      return dept.blockCM === "K12" || (!dept.blockCM && dept.blockType !== "MAM_NON");
-    });
-
-    // 3. Fetch all active teachers
-    const allTeachers = await prisma.teacher.findMany({
-      where: { status: "ACTIVE" },
-      include: {
-        departmentAssignments: true,
-        departmentRel: true
-      },
-      orderBy: { teacherName: "asc" }
-    });
-
-    // 4. Fetch observation slots
-    const whereSlotClause: any = {
-      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED"] }
-    };
-
-    if (activeYear) {
-      whereSlotClause.OR = [
-        { academicYearId: activeYear.id },
-        {
-          AND: [
-            { academicYearId: null },
-            {
-              date: {
-                gte: activeYear.startDate,
-                lte: activeYear.endDate
-              }
-            }
-          ]
-        }
-      ];
-    }
-
-    const allSlots = await prisma.observationSlot.findMany({
-      where: whereSlotClause,
-      include: {
-        teacher: {
-          select: { id: true, teacherName: true, teacherCode: true, departmentId: true }
-        },
-        registrations: {
-          include: {
-            teacher: {
-              select: { id: true, teacherName: true, teacherCode: true, departmentId: true }
-            },
-            evaluation: true
-          }
-        }
-      },
-      orderBy: { date: "desc" }
-    });
-
-    // Filter slots by month
-    const slots = month && month !== "all"
-      ? allSlots.filter(s => {
-          if (!s.date) return false;
-          const d = new Date(s.date);
-          const yyyy = d.getFullYear();
-          const mm = String(d.getMonth() + 1).padStart(2, '0');
-          return `${yyyy}-${mm}` === month;
-        })
-      : allSlots;
-
-    // 5. Compute summary for each department
-    const deptSummaries = activeDepartments.map(dept => {
-      const deptTeachersList = allTeachers.filter(t => 
-        t.departmentId === dept.id || t.departmentAssignments?.some(da => da.departmentId === dept.id)
-      );
-      const teacherIds = new Set(deptTeachersList.map(t => t.id));
-
-      const ttcm = deptTeachersList.find(t => 
-        t.position === "TTCM" || t.departmentAssignments?.some(da => da.departmentId === dept.id && da.position === "TTCM")
-      );
-
-      let totalTaught = 0;
-      let totalObserved = 0;
-      let totalEvals = 0;
-      let passingEvals = 0;
-
-      slots.forEach(slot => {
-        const isHost = teacherIds.has(slot.teacherId);
-        const increment = slot.isDoublePeriod ? 2 : 1;
-        const hasEvaluations = slot.registrations?.some(r => r.evaluation !== null && r.evaluation !== undefined);
-
-        if (isHost) {
-          if (hasEvaluations) {
-            totalTaught += increment;
-          }
-          slot.registrations?.forEach(r => {
-            if (r.evaluation) {
-              totalEvals++;
-              const isK12 = slot.level !== "Mầm non";
-              const passed = isK12
-                ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
-                : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá" || r.evaluation.overallRating === "Đạt");
-              if (passed) passingEvals++;
-            }
-          });
-        }
-
-        slot.registrations?.forEach(reg => {
-          if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
-            totalObserved += increment;
-          }
-        });
+      // 2. Fetch all departments with accurate blockCM match
+      const allDepartments = await prisma.department.findMany({
+        orderBy: { name: "asc" }
       });
 
-      const passRate = totalEvals > 0 ? Math.round((passingEvals / totalEvals) * 100) : 0;
+      const activeDepartments = allDepartments.filter(dept => {
+        if (!dept.blockCM || dept.blockCM === "" || dept.blockCM === "Hỗ trợ người học") return false;
+        if (blockTab === "Mầm non" || blockTab === "mamnon") return dept.blockCM === "Mầm Non" || dept.blockCM === "MAM_NON";
+        if (blockTab === "Điều hành" || blockTab === "dieuhanh") return dept.blockCM === "Điều hành" || dept.blockCM === "DIEU_HANH";
+        return dept.blockCM === "Phổ thông" || dept.blockCM === "K12" || dept.blockType !== "MAM_NON";
+      });
 
-      return {
-        id: dept.id,
-        name: dept.name,
-        teacherCount: deptTeachersList.length,
-        ttcmName: ttcm?.teacherName || "Chưa gán TTCM",
-        totalTaught,
-        totalObserved,
-        totalEvals,
-        passingEvals,
-        passRate
+      // 3. Fetch all active teachers
+      const allTeachers = await prisma.teacher.findMany({
+        where: { status: "ACTIVE" },
+        include: {
+          departmentAssignments: true,
+          departmentRel: true
+        },
+        orderBy: { teacherName: "asc" }
+      });
+
+      // 4. Fetch observation slots
+      const whereSlotClause: any = {
+        status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED"] }
       };
-    });
+
+      if (activeYear) {
+        whereSlotClause.OR = [
+          { academicYearId: activeYear.id },
+          {
+            AND: [
+              { academicYearId: null },
+              {
+                date: {
+                  gte: activeYear.startDate,
+                  lte: activeYear.endDate
+                }
+              }
+            ]
+          }
+        ];
+      }
+
+      const allSlots = await prisma.observationSlot.findMany({
+        where: whereSlotClause,
+        include: {
+          teacher: {
+            select: { id: true, teacherName: true, teacherCode: true, departmentId: true }
+          },
+          registrations: {
+            include: {
+              teacher: {
+                select: { id: true, teacherName: true, teacherCode: true, departmentId: true }
+              },
+              evaluation: true
+            }
+          }
+        },
+        orderBy: { date: "desc" }
+      });
+
+      // Filter slots by month
+      const slots = month && month !== "all"
+        ? allSlots.filter(s => {
+            if (!s.date) return false;
+            const d = new Date(s.date);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            return `${yyyy}-${mm}` === month;
+          })
+        : allSlots;
+
+      // 5. Compute summary for each department
+      deptSummaries = activeDepartments.map(dept => {
+        const deptTeachersList = allTeachers.filter(t => 
+          t.departmentId === dept.id || t.departmentAssignments?.some(da => da.departmentId === dept.id)
+        );
+        const teacherIds = new Set(deptTeachersList.map(t => t.id));
+
+        const ttcm = deptTeachersList.find(t => 
+          t.position === "TTCM" || t.departmentAssignments?.some(da => da.departmentId === dept.id && da.position === "TTCM")
+        );
+
+        let totalTaught = 0;
+        let totalObserved = 0;
+
+        slots.forEach(slot => {
+          const isHost = teacherIds.has(slot.teacherId);
+          const increment = slot.isDoublePeriod ? 2 : 1;
+          const hasEvaluations = slot.registrations?.some(r => r.evaluation !== null && r.evaluation !== undefined);
+
+          if (isHost && hasEvaluations) {
+            totalTaught += increment;
+          }
+
+          slot.registrations?.forEach(reg => {
+            if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
+              totalObserved += increment;
+            }
+          });
+        });
+
+        return {
+          id: dept.id,
+          name: dept.name,
+          teacherCount: deptTeachersList.length,
+          ttcmName: ttcm?.teacherName || "Chưa gán TTCM",
+          totalTaught,
+          totalObserved
+        };
+      });
+    }
 
     // Grand totals
     let grandTeachers = 0;

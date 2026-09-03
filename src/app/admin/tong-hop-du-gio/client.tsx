@@ -565,6 +565,56 @@ export function AdminTongHopClient({
   const [allDeptsNotes, setAllDeptsNotes] = useState("");
   const [sendingAllDeptsEmail, setSendingAllDeptsEmail] = useState(false);
 
+  // Compute live summary for all departments based on allDeptsMonth (used for email preview and sending)
+  const allDeptsEmailSummary = useMemo(() => {
+    return (activeDepartments || []).map((dept: any) => {
+      const deptTeachersList = (initialTeachers || []).filter((t: any) => 
+        t.departmentId === dept.id || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id)
+      );
+      const teacherIds = new Set(deptTeachersList.map((t: any) => t.id));
+
+      const ttcm = deptTeachersList.find((t: any) => 
+        t.position === "TTCM" || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id && da.position === "TTCM")
+      );
+
+      let totalTaught = 0;
+      let totalObserved = 0;
+
+      (initialSlots || []).forEach((slot: any) => {
+        if (allDeptsMonth !== "all") {
+          if (!slot.date) return;
+          const d = new Date(slot.date);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          if (`${yyyy}-${mm}` !== allDeptsMonth) return;
+        }
+
+        const isHost = teacherIds.has(slot.teacherId);
+        const increment = slot.isDoublePeriod ? 2 : 1;
+        const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+
+        if (isHost && hasEvaluations) {
+          totalTaught += increment;
+        }
+
+        slot.registrations?.forEach((reg: any) => {
+          if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
+            totalObserved += increment;
+          }
+        });
+      });
+
+      return {
+        id: dept.id,
+        name: dept.name,
+        teacherCount: deptTeachersList.length,
+        ttcm,
+        totalTaught,
+        totalObserved
+      };
+    });
+  }, [activeDepartments, initialTeachers, initialSlots, allDeptsMonth]);
+
   const openAllDeptsEmailModal = () => {
     // Find Ban ĐHCM teachers/staff if any
     const dhcmTeachers = (initialTeachers || []).filter(
@@ -595,7 +645,8 @@ export function AdminTongHopClient({
           month: allDeptsMonth,
           toEmail: allDeptsTo,
           ccEmails: allDeptsCc || undefined,
-          notes: allDeptsNotes || undefined
+          notes: allDeptsNotes || undefined,
+          departmentSummaries: allDeptsEmailSummary
         })
       });
       const data = await res.json();
@@ -2421,7 +2472,7 @@ export function AdminTongHopClient({
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                     <Award className="w-3.5 h-3.5 text-[#003B3A]" />
-                    <span>Nội dung bảng Thống kê Các Tổ CM sẽ gửi ({allDepartmentsSummary.length} Tổ)</span>
+                    <span>Nội dung bảng Thống kê Các Tổ CM sẽ gửi ({allDeptsEmailSummary.length} Tổ)</span>
                   </label>
                   <span className="text-[9.5px] text-[#003B3A] font-extrabold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
                     Kỳ: {allDeptsMonth === "all" ? "Toàn bộ năm học" : `Tháng ${allDeptsMonth.split("-")[1]}/${allDeptsMonth.split("-")[0]}`}
@@ -2440,7 +2491,7 @@ export function AdminTongHopClient({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white text-[11px]">
-                      {allDepartmentsSummary.map((d, idx) => (
+                      {allDeptsEmailSummary.map((d, idx) => (
                         <tr key={d.id} className="hover:bg-slate-50/80">
                           <td className="py-2 px-2 text-center font-bold text-slate-400 text-[10px]">{idx + 1}</td>
                           <td className="py-2 px-3">
