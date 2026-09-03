@@ -1912,6 +1912,19 @@ export function AdminTongHopClient({
                   <strong className="text-xs font-black text-sky-700">{departmentSummary.totalObserved} lượt</strong>
                 </div>
               </div>
+
+              {/* Chú thích cách tính Tiết dạy & Tiết dự */}
+              <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-[11px] text-amber-900 space-y-1">
+                <div className="font-extrabold flex items-center gap-1 text-amber-950">
+                  <span>📌</span>
+                  <span>Chú thích quy định tính Tiết dạy & Tiết dự:</span>
+                </div>
+                <ul className="list-disc pl-4 space-y-0.5 text-[10.5px] text-amber-800">
+                  <li><strong>Tiết dạy:</strong> Chỉ tính khi tiết dạy đã có người dự và người dự <strong>ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 tiết).</li>
+                  <li><strong>Tiết dự:</strong> Chỉ tính khi GV đã được duyệt dự giờ và <strong>ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 lượt).</li>
+                  <li>Email sẽ gửi kèm <strong>Toàn bộ Bảng Danh sách Giáo viên & Đối chiếu Chỉ tiêu</strong> của tổ cho TTCM.</li>
+                </ul>
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">

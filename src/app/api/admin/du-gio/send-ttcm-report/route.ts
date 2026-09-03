@@ -55,6 +55,7 @@ export async function POST(req: Request) {
       },
       include: {
         departmentAssignments: true,
+        departmentRel: true,
         academicYearTargets: academicYearId ? {
           where: { academicYearId: academicYearId }
         } : true
@@ -69,23 +70,40 @@ export async function POST(req: Request) {
       OR: [
         { teacherId: { in: teacherIds } },
         { registrations: { some: { teacherId: { in: teacherIds }, isApproved: true } } }
-      ]
+      ],
+      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED"] }
     };
 
     if (academicYearId) {
-      whereSlotClause.academicYearId = academicYearId;
+      const activeYear = await prisma.academicYear.findUnique({ where: { id: academicYearId } });
+      if (activeYear) {
+        whereSlotClause.OR = [
+          { academicYearId: activeYear.id },
+          {
+            AND: [
+              { academicYearId: null },
+              {
+                date: {
+                  gte: activeYear.startDate,
+                  lte: activeYear.endDate
+                }
+              }
+            ]
+          }
+        ];
+      }
     }
 
     const allSlots = await prisma.observationSlot.findMany({
       where: whereSlotClause,
       include: {
         teacher: {
-          select: { id: true, teacherName: true, teacherCode: true, departmentId: true }
+          select: { id: true, teacherName: true, teacherCode: true, departmentId: true, departmentRel: true }
         },
         registrations: {
           include: {
             teacher: {
-              select: { id: true, teacherName: true, teacherCode: true, departmentId: true }
+              select: { id: true, teacherName: true, teacherCode: true, departmentId: true, departmentRel: true }
             },
             evaluation: true
           }
@@ -107,7 +125,7 @@ export async function POST(req: Request) {
         })
       : allSlots;
 
-    // 4. Compute statistics
+    // 4. Compute statistics (EXACT same business logic as UI)
     const teacherStatsMap: Record<string, {
       taughtCount: number;
       observedCount: number;
@@ -135,10 +153,15 @@ export async function POST(req: Request) {
       const isDeptHost = teacherIds.includes(slot.teacherId);
       const increment = slot.isDoublePeriod ? 2 : 1;
 
+      // Tiết dạy chỉ tính khi CÓ PHIẾU ĐÁNH GIÁ từ người dự
+      const hasEvaluations = slot.registrations?.some(r => r.evaluation !== null && r.evaluation !== undefined);
+
       if (isDeptHost) {
-        if (teacherStatsMap[slot.teacherId]) {
-          teacherStatsMap[slot.teacherId].taughtCount += increment;
-          teacherStatsMap[slot.teacherId].teachingSlots.push(slot);
+        if (hasEvaluations) {
+          if (teacherStatsMap[slot.teacherId]) {
+            teacherStatsMap[slot.teacherId].taughtCount += increment;
+            teacherStatsMap[slot.teacherId].teachingSlots.push(slot);
+          }
         }
         deptTeachingSlots.push(slot);
 
@@ -149,17 +172,16 @@ export async function POST(req: Request) {
         });
       }
 
+      // Tiết dự chỉ tính khi ĐƯỢC DUYỆT và ĐÃ HOÀN TẤT ĐÁNH GIÁ
       slot.registrations?.forEach(reg => {
-        if (reg.isApproved && teacherIds.includes(reg.teacherId)) {
+        if (reg.isApproved && reg.evaluation && teacherIds.includes(reg.teacherId)) {
           if (teacherStatsMap[reg.teacherId]) {
             teacherStatsMap[reg.teacherId].observedCount += increment;
             teacherStatsMap[reg.teacherId].observationSlots.push({
               slot,
               reg
             });
-            if (reg.evaluation) {
-              teacherStatsMap[reg.teacherId].evaluationsGiven.push(reg.evaluation);
-            }
+            teacherStatsMap[reg.teacherId].evaluationsGiven.push(reg.evaluation);
           }
           deptObservationSlots.push({ slot, reg });
         }
@@ -222,32 +244,34 @@ export async function POST(req: Request) {
         const isAllMet = isTaughtMet && isObservedMet;
 
         const taughtBadge = isTaughtMet 
-          ? `<span style="background-color:#ecfdf5; color:#047857; padding:2px 8px; border-radius:12px; font-weight:700; font-size:11px; border:1px solid #a7f3d0;">${st.taughtCount} / ${reqTaught > 0 ? reqTaught + ' (' + taughtUnit + ')' : '--'} ✓</span>`
-          : `<span style="background-color:#fef2f2; color:#b91c1c; padding:2px 8px; border-radius:12px; font-weight:700; font-size:11px; border:1px solid #fecaca;">${st.taughtCount} / ${reqTaught} (${taughtUnit}) ✗</span>`;
+          ? `<span style="display:inline-block; background-color:#ecfdf5; color:#047857; padding:3px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #a7f3d0;">${st.taughtCount} ${reqTaught > 0 ? '/ ' + reqTaught + ' (' + taughtUnit + ')' : 'tiết'} ✓</span>`
+          : `<span style="display:inline-block; background-color:#fef2f2; color:#b91c1c; padding:3px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #fecaca;">${st.taughtCount} / ${reqTaught} (${taughtUnit}) ✗</span>`;
 
         const observedBadge = isObservedMet
-          ? `<span style="background-color:#ecfdf5; color:#047857; padding:2px 8px; border-radius:12px; font-weight:700; font-size:11px; border:1px solid #a7f3d0;">${st.observedCount} / ${reqObserved > 0 ? reqObserved + ' (' + observedUnit + ')' : '--'} ✓</span>`
-          : `<span style="background-color:#fffbeb; color:#b45309; padding:2px 8px; border-radius:12px; font-weight:700; font-size:11px; border:1px solid #fde68a;">${st.observedCount} / ${reqObserved} (${observedUnit})</span>`;
+          ? `<span style="display:inline-block; background-color:#ecfdf5; color:#047857; padding:3px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #a7f3d0;">${st.observedCount} ${reqObserved > 0 ? '/ ' + reqObserved + ' (' + observedUnit + ')' : 'lượt'} ✓</span>`
+          : `<span style="display:inline-block; background-color:#fffbeb; color:#b45309; padding:3px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #fde68a;">${st.observedCount} / ${reqObserved} (${observedUnit}) ⚠️</span>`;
 
         const statusBadge = isAllMet
-          ? `<span style="background-color:#047857; color:#ffffff; padding:3px 10px; border-radius:6px; font-weight:800; font-size:10px;">ĐẠT CHỈ TIÊU</span>`
-          : `<span style="background-color:#e11d48; color:#ffffff; padding:3px 10px; border-radius:6px; font-weight:800; font-size:10px;">CHƯA ĐẠT</span>`;
+          ? `<span style="display:inline-block; background-color:#059669; color:#ffffff; padding:4px 10px; border-radius:6px; font-weight:800; font-size:10px; letter-spacing:0.5px;">ĐẠT CHỈ TIÊU</span>`
+          : `<span style="display:inline-block; background-color:#e11d48; color:#ffffff; padding:4px 10px; border-radius:6px; font-weight:800; font-size:10px; letter-spacing:0.5px;">CHƯA ĐẠT</span>`;
 
         return `
-          <tr style="border-bottom:1px solid #e5e7eb; background-color:${idx % 2 === 0 ? '#ffffff' : '#f9fafb'};">
-            <td style="padding:10px 12px; text-align:center; font-size:12px; font-weight:700; color:#6b7280;">${idx + 1}</td>
-            <td style="padding:10px 12px; font-size:12px; font-weight:700; color:#111827;">
-              <div>${t.teacherName}</div>
-              <div style="font-size:10px; color:#9ca3af; font-weight:600;">Mã GV: ${t.teacherCode} ${t.position ? '• ' + t.position : ''}</div>
+          <tr style="border-bottom:1px solid #e5e7eb; background-color:${idx % 2 === 0 ? '#ffffff' : '#f8fafc'};">
+            <td style="padding:10px 8px; text-align:center; font-size:12px; font-weight:700; color:#64748b;">${idx + 1}</td>
+            <td style="padding:10px 12px; font-size:12px; font-weight:700; color:#0f172a;">
+              <div style="font-size:13px; color:#003B3A; font-weight:800;">${t.teacherName}</div>
+              <div style="font-size:10px; color:#64748b; font-weight:600; margin-top:2px;">
+                Mã GV: ${t.teacherCode} ${t.position ? '• <span style="color:#b45309; font-weight:800;">' + t.position + '</span>' : ''}
+              </div>
             </td>
-            <td style="padding:10px 12px; text-align:center;">${taughtBadge}</td>
-            <td style="padding:10px 12px; text-align:center;">${observedBadge}</td>
-            <td style="padding:10px 12px; text-align:center;">${statusBadge}</td>
+            <td style="padding:10px 8px; text-align:center;">${taughtBadge}</td>
+            <td style="padding:10px 8px; text-align:center;">${observedBadge}</td>
+            <td style="padding:10px 8px; text-align:center;">${statusBadge}</td>
           </tr>
         `;
       }).join("");
 
-      const teachingSlotRowsHtml = deptTeachingSlots.slice(0, 15).map((slot) => {
+      const teachingSlotRowsHtml = deptTeachingSlots.filter(s => s.registrations?.some(r => r.evaluation)).slice(0, 15).map((slot) => {
         const d = slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "--";
         const evals = slot.registrations?.filter(r => r.evaluation) || [];
         let avgScoreDisplay = "--";
@@ -263,13 +287,13 @@ export async function POST(req: Request) {
         return `
           <tr style="border-bottom:1px solid #e5e7eb; font-size:11px;">
             <td style="padding:8px 10px; color:#4b5563; font-weight:600;">${d}</td>
-            <td style="padding:8px 10px; font-weight:700; color:#111827;">${slot.teacher?.teacherName || '--'}</td>
+            <td style="padding:8px 10px; font-weight:700; color:#003B3A;">${slot.teacher?.teacherName || '--'}</td>
             <td style="padding:8px 10px; color:#374151;">
-              <strong style="color:#003B3A;">${slot.topic || slot.subjectName || '--'}</strong>
+              <strong>${slot.topic || slot.subjectName || '--'}</strong>
               <div style="font-size:10px; color:#6b7280;">Lớp: ${slot.className || '--'} • Cấp: ${slot.level}</div>
             </td>
-            <td style="padding:8px 10px; text-align:center; font-weight:700; color:#047857;">${avgScoreDisplay}</td>
-            <td style="padding:8px 10px; text-align:center; color:#6b7280;">${evals.length} phiếu</td>
+            <td style="padding:8px 10px; text-align:center; font-weight:800; color:#047857;">${avgScoreDisplay}</td>
+            <td style="padding:8px 10px; text-align:center; color:#6b7280; font-weight:700;">${evals.length} phiếu</td>
           </tr>
         `;
       }).join("");
@@ -286,10 +310,10 @@ export async function POST(req: Request) {
   <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9; padding:24px 0;">
     <tr>
       <td align="center">
-        <table width="680" border="0" cellpadding="0" cellspacing="0" style="max-width:680px; width:100%; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.08);">
+        <table width="720" border="0" cellpadding="0" cellspacing="0" style="max-width:720px; width:100%; background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.08); border:1px solid #e2e8f0;">
           <!-- Header Banner -->
           <tr>
-            <td style="background: linear-gradient(135deg, #003B3A 0%, #055e5c 60%, #48BFE3 100%); padding:32px 36px; color:#ffffff;">
+            <td style="background: linear-gradient(135deg, #003B3A 0%, #065F46 60%, #0284C7 100%); padding:32px 36px; color:#ffffff;">
               <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
@@ -299,7 +323,7 @@ export async function POST(req: Request) {
                     <h1 style="margin:0; font-size:22px; font-weight:900; line-height:1.3; color:#ffffff;">
                       BÁO CÁO TIẾT DẠY & DỰ GIỜ TỔ CHUYÊN MÔN
                     </h1>
-                    <div style="font-size:13px; color:#e0f2fe; margin-top:6px; font-weight:500;">
+                    <div style="font-size:13px; color:#e0f2fe; margin-top:6px; font-weight:600;">
                       Tổ: <strong>${department.name}</strong> • Kỳ: <strong>${monthLabel}</strong>
                     </div>
                   </td>
@@ -310,17 +334,17 @@ export async function POST(req: Request) {
 
           <!-- Main Content Body -->
           <tr>
-            <td style="padding:32px 36px;">
+            <td style="padding:28px 32px;">
               <!-- Greeting -->
-              <p style="margin:0 0 16px 0; font-size:14px; line-height:1.6; color:#1e293b;">
+              <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6; color:#1e293b;">
                 Kính gửi Thầy/Cô <strong>${ttcmName || 'Tổ trưởng chuyên môn'}</strong>,
               </p>
-              <p style="margin:0 0 24px 0; font-size:13px; line-height:1.6; color:#475569;">
-                Ban Khảo thí & ĐBCL Giáo dục kính gửi Thầy/Cô bảng tổng hợp kết quả thực hiện chỉ tiêu <strong>Tiết dạy</strong> và <strong>Tiết dự giờ</strong> của các Giáo viên bộ môn thuộc <strong>Tổ ${department.name}</strong> trong kỳ <strong>${monthLabel}</strong> như sau:
+              <p style="margin:0 0 20px 0; font-size:13px; line-height:1.6; color:#475569;">
+                Ban Khảo thí & Đảm bảo Chất lượng Giáo dục kính gửi Thầy/Cô bảng tổng hợp kết quả thực hiện chỉ tiêu <strong>Tiết dạy</strong> và <strong>Tiết dự giờ</strong> của các Giáo viên bộ môn thuộc <strong>Tổ ${department.name}</strong> trong kỳ <strong>${monthLabel}</strong>:
               </p>
 
               <!-- Stats Summary Cards -->
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
                   <td width="23%" style="padding:12px; background-color:#f8fafc; border-radius:12px; border:1px solid #e2e8f0; text-align:center;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#64748b;">Giáo viên Tổ</div>
@@ -348,19 +372,19 @@ export async function POST(req: Request) {
                 </tr>
               </table>
 
-              <!-- Section 1: Teacher Quota Progress Table -->
-              <div style="margin-bottom:28px;">
-                <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; text-transform:uppercase; color:#003B3A; letter-spacing:0.5px;">
-                  📋 1. Bảng Tiến Độ Thực Hiện Chỉ Tiêu GVBM Trong Tổ
+              <!-- Section 1: Teacher Quota Progress Table (DANH SÁCH GIÁO VIÊN & ĐỐI CHIẾU CHỈ TIÊU) -->
+              <div style="margin-bottom:24px;">
+                <h3 style="margin:0 0 10px 0; font-size:13px; font-weight:900; text-transform:uppercase; color:#003B3A; letter-spacing:0.5px;">
+                  📋 1. DANH SÁCH GIÁO VIÊN & ĐỐI CHIẾU CHỈ TIÊU (${deptTeachers.length} GV)
                 </h3>
-                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:1px solid #cbd5e1; border-radius:8px; overflow:hidden;">
                   <thead>
                     <tr style="background-color:#003B3A; color:#ffffff; font-size:11px; font-weight:800; text-transform:uppercase;">
-                      <th style="padding:10px 12px; text-align:center; width:40px;">STT</th>
-                      <th style="padding:10px 12px; text-align:left;">Họ và tên Giáo viên</th>
-                      <th style="padding:10px 12px; text-align:center; width:130px;">Tiết Dạy</th>
-                      <th style="padding:10px 12px; text-align:center; width:130px;">Tiết Dự</th>
-                      <th style="padding:10px 12px; text-align:center; width:110px;">Trạng Thái</th>
+                      <th style="padding:10px 8px; text-align:center; width:35px; border-right:1px solid #065F46;">STT</th>
+                      <th style="padding:10px 12px; text-align:left; border-right:1px solid #065F46;">Giáo viên Bộ môn</th>
+                      <th style="padding:10px 8px; text-align:center; width:130px; border-right:1px solid #065F46;">Tiết Dạy</th>
+                      <th style="padding:10px 8px; text-align:center; width:130px; border-right:1px solid #065F46;">Tiết Dự</th>
+                      <th style="padding:10px 8px; text-align:center; width:110px;">Trạng Thái</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -369,11 +393,29 @@ export async function POST(req: Request) {
                 </table>
               </div>
 
-              <!-- Section 2: Recent Teaching Slots List -->
-              ${deptTeachingSlots.length > 0 ? `
-              <div style="margin-bottom:28px;">
-                <h3 style="margin:0 0 12px 0; font-size:14px; font-weight:800; text-transform:uppercase; color:#003B3A; letter-spacing:0.5px;">
-                  📝 2. Danh Sách Các Tiết Dạy & Kết Quả Đánh Giá (${deptTeachingSlots.length} tiết)
+              <!-- Important Explanation: Quy định tính Tiết dạy & Tiết dự -->
+              <div style="margin-bottom:24px; padding:16px 20px; background-color:#f0fdf4; border:1px solid #bbf7d0; border-left:5px solid #16a34a; border-radius:10px;">
+                <div style="font-size:12px; font-weight:900; color:#166534; text-transform:uppercase; margin-bottom:8px; display:flex; align-items:center;">
+                  📌 QUY ĐỊNH TÍNH TIẾT DẠY VÀ TIẾT DỰ GIỜ:
+                </div>
+                <ul style="margin:0; padding-left:18px; font-size:12px; color:#14532d; line-height:1.6;">
+                  <li style="margin-bottom:4px;">
+                    <strong>Tiết dạy:</strong> Chỉ được tính hoàn thành khi tiết dạy đã diễn ra, có giáo viên tham gia dự giờ <strong>VÀ người dự ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong> trên hệ thống. <em>(Tiết dạy đơn tính 1 tiết, tiết dạy đôi tính 2 tiết)</em>.
+                  </li>
+                  <li style="margin-bottom:4px;">
+                    <strong>Tiết dự (Lượt dự):</strong> Chỉ được tính hoàn thành khi Giáo viên đã được duyệt tham gia dự giờ <strong>VÀ ĐÃ HOÀN TẤT GỬI PHIẾU ĐÁNH GIÁ DỰ GIỜ</strong> cho tiết học đó. <em>(Tiết dự đơn tính 1 lượt, tiết dự đôi tính 2 lượt)</em>.
+                  </li>
+                  <li>
+                    <strong>Chỉ tiêu định mức:</strong> Được đối chiếu theo định mức (tháng hoặc năm học) đã được thiết lập cho từng Giáo viên bộ môn.
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Section 2: Recent Completed Teaching Slots List (if any) -->
+              ${teachingSlotRowsHtml ? `
+              <div style="margin-bottom:24px;">
+                <h3 style="margin:0 0 10px 0; font-size:13px; font-weight:900; text-transform:uppercase; color:#003B3A; letter-spacing:0.5px;">
+                  📝 2. Danh Sách Tiết Dạy Đã Hoàn Thành Đánh Giá
                 </h3>
                 <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border-collapse:collapse; border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
                   <thead>
@@ -381,7 +423,7 @@ export async function POST(req: Request) {
                       <th style="padding:8px 10px; text-align:left; width:80px;">Ngày</th>
                       <th style="padding:8px 10px; text-align:left; width:140px;">GV Dạy</th>
                       <th style="padding:8px 10px; text-align:left;">Chủ đề / Đề tài bài dạy</th>
-                      <th style="padding:8px 10px; text-align:center; width:100px;">ĐTB Chung</th>
+                      <th style="padding:8px 10px; text-align:center; width:100px;">ĐTB Đánh Giá</th>
                       <th style="padding:8px 10px; text-align:center; width:80px;">Số Phiếu</th>
                     </tr>
                   </thead>
@@ -394,18 +436,18 @@ export async function POST(req: Request) {
 
               <!-- Note from sender if any -->
               ${notes ? `
-              <div style="margin-bottom:28px; padding:14px 18px; background-color:#eff6ff; border-left:4px solid #3b82f6; border-radius:6px;">
-                <strong style="font-size:12px; color:#1e40af; text-transform:uppercase; display:block; margin-bottom:4px;">Ghi chú từ Ban Khảo thí:</strong>
-                <p style="margin:0; font-size:12px; color:#1e3a8a; line-height:1.5;">${notes}</p>
+              <div style="margin-bottom:24px; padding:14px 18px; background-color:#eff6ff; border-left:4px solid #3b82f6; border-radius:8px;">
+                <strong style="font-size:12px; color:#1e40af; text-transform:uppercase; display:block; margin-bottom:4px;">💬 Ghi chú từ Ban Khảo thí & ĐBCL:</strong>
+                <p style="margin:0; font-size:12px; color:#1e3a8a; line-height:1.5; white-space:pre-wrap;">${notes}</p>
               </div>
               ` : ''}
 
               <!-- Call to Action Button -->
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:16px;">
                 <tr>
                   <td align="center">
-                    <a href="${reportLink}" style="display:inline-block; background-color:#003B3A; color:#ffffff; text-decoration:none; padding:14px 32px; border-radius:30px; font-weight:800; font-size:13px; letter-spacing:0.5px; box-shadow:0 4px 8px rgba(0,59,58,0.25);">
-                      👉 XEM CHI TIẾT TRÊN CỔNG QUẢN TRỊ DỰ GIỜ
+                    <a href="${reportLink}" style="display:inline-block; background-color:#003B3A; color:#ffffff; text-decoration:none; padding:13px 28px; border-radius:30px; font-weight:800; font-size:13px; letter-spacing:0.5px; box-shadow:0 4px 10px rgba(0,59,58,0.25);">
+                      👉 TRUY CẬP CỔNG QUẢN TRỊ DỰ GIỜ ĐỂ XEM CHI TIẾT
                     </a>
                   </td>
                 </tr>
@@ -415,9 +457,9 @@ export async function POST(req: Request) {
 
           <!-- Footer -->
           <tr>
-            <td style="background-color:#f8fafc; border-top:1px solid #e2e8f0; padding:24px 36px; text-align:center; font-size:11px; color:#64748b; line-height:1.6;">
+            <td style="background-color:#f8fafc; border-top:1px solid #e2e8f0; padding:20px 32px; text-align:center; font-size:11px; color:#64748b; line-height:1.6;">
               <strong style="color:#003B3A;">HỆ THỐNG SKYLINE SURVEY - BAN KHẢO THÍ & ĐBCL GIÁO DỤC</strong><br>
-              Email này được tạo và gửi tự động từ Hệ thống Quản trị Dự giờ Skyline School.<br>
+              Email này được tạo và gửi tự động từ Hệ thống Quản trị & Báo cáo Dự giờ Skyline School.<br>
               © ${new Date().getFullYear()} Skyline Education Group. All rights reserved.
             </td>
           </tr>
