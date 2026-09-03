@@ -2003,9 +2003,8 @@ export function AdminTongHopClient({
                       <tr>
                         <th className="py-2 px-2 text-center w-8">STT</th>
                         <th className="py-2 px-3 min-w-[160px]">Giáo viên Bộ môn</th>
-                        <th className="py-2 px-2 text-center min-w-[110px]">Tiết Dạy</th>
-                        <th className="py-2 px-2 text-center min-w-[110px]">Tiết Dự</th>
-                        <th className="py-2 px-2 text-center w-28">Trạng thái</th>
+                        <th className="py-2 px-2 text-center min-w-[130px]">Tiết Dạy</th>
+                        <th className="py-2 px-2 text-center min-w-[130px]">Tiết Dự</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white text-[11px]">
@@ -2035,13 +2034,6 @@ export function AdminTongHopClient({
                               t.isObservedMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"
                             }`}>
                               {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"} {t.isObservedMet ? "✓" : "⚠️"}
-                            </span>
-                          </td>
-                          <td className="py-2 px-2 text-center">
-                            <span className={`px-2 py-0.5 rounded text-[9px] font-black text-white ${
-                              t.isAllMet ? "bg-emerald-600" : "bg-rose-600"
-                            }`}>
-                              {t.isAllMet ? "ĐẠT CHỈ TIÊU" : "CHƯA ĐẠT"}
                             </span>
                           </td>
                         </tr>

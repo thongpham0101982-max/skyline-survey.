@@ -290,7 +290,6 @@ export async function POST(req: Request) {
             </td>
             <td style="padding:10px 8px; text-align:center;">${taughtBadge}</td>
             <td style="padding:10px 8px; text-align:center;">${observedBadge}</td>
-            <td style="padding:10px 8px; text-align:center;">${statusBadge}</td>
           </tr>
         `;
       }).join("");
@@ -406,9 +405,8 @@ export async function POST(req: Request) {
                     <tr style="background-color:#003B3A; color:#ffffff; font-size:11px; font-weight:800; text-transform:uppercase;">
                       <th style="padding:10px 8px; text-align:center; width:35px; border-right:1px solid #065F46;">STT</th>
                       <th style="padding:10px 12px; text-align:left; border-right:1px solid #065F46;">Giáo viên Bộ môn</th>
-                      <th style="padding:10px 8px; text-align:center; width:130px; border-right:1px solid #065F46;">Tiết Dạy</th>
-                      <th style="padding:10px 8px; text-align:center; width:130px; border-right:1px solid #065F46;">Tiết Dự</th>
-                      <th style="padding:10px 8px; text-align:center; width:110px;">Trạng Thái</th>
+                      <th style="padding:10px 8px; text-align:center; width:150px; border-right:1px solid #065F46;">Tiết Dạy</th>
+                      <th style="padding:10px 8px; text-align:center; width:150px;">Tiết Dự</th>
                     </tr>
                   </thead>
                   <tbody>
