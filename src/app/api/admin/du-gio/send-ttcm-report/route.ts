@@ -131,9 +131,7 @@ export async function POST(req: Request) {
             },
             evaluation: true
           }
-        },
-        subject: true,
-        class: true
+        }
       },
       orderBy: { date: "desc" }
     });
