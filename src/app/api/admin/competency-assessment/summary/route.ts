@@ -68,19 +68,7 @@ export async function GET(req: NextRequest) {
       orderBy: [{ studentId: "asc" }, { subjectId: "asc" }],
     });
 
-    // If no summaries found with specific year filter, fallback to any year for this student
-    if (summaries.length === 0 && candidateStudentIds.length > 0 && academicYearId) {
-      const fallbackWhere: any = { studentId: { in: candidateStudentIds } };
-      if (assessmentPeriod) fallbackWhere.assessmentPeriod = assessmentPeriod;
-      summaries = await prisma.studentSubjectCompetencySummary.findMany({
-        where: fallbackWhere,
-        include: {
-          subject: { select: { id: true, subjectCode: true, subjectName: true } },
-          student: { select: { id: true, studentCode: true, studentName: true } },
-        },
-        orderBy: [{ studentId: "asc" }, { subjectId: "asc" }],
-      });
-    }
+
 
     const parsedSummaries = summaries.map((s) => ({
       ...s,

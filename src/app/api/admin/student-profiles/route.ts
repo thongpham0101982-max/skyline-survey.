@@ -306,13 +306,18 @@ export async function GET(req: NextRequest) {
     let allCompetencySummaries: any[] = []
     try {
       if (studentIds.length > 0 || studentCodesArr.length > 0) {
+        const compWhere: any = {
+          OR: [
+            ...(studentIds.length > 0 ? [{ studentId: { in: studentIds } }] : []),
+            ...(studentCodesArr.length > 0 ? [{ student: { studentCode: { in: studentCodesArr } } }] : [])
+          ]
+        };
+        if (academicYearId && academicYearId !== "all" && academicYearId !== "ALL") {
+          compWhere.academicYearId = academicYearId;
+        }
+
         allCompetencySummaries = await prisma.studentSubjectCompetencySummary.findMany({
-          where: {
-            OR: [
-              ...(studentIds.length > 0 ? [{ studentId: { in: studentIds } }] : []),
-              ...(studentCodesArr.length > 0 ? [{ student: { studentCode: { in: studentCodesArr } } }] : [])
-            ]
-          },
+          where: compWhere,
           include: {
             subject: { select: { id: true, subjectCode: true, subjectName: true } },
             student: { select: { id: true, studentCode: true } }
@@ -527,7 +532,13 @@ export async function GET(req: NextRequest) {
             note: s.note
           }))
         } : null,
-        transfers: s.studentTransfers || []
+        transfers: s.studentTransfers || [],
+        competencySummaries: allCompetencySummaries
+          .filter((cs: any) => cs.studentId === s.id || (cs.student && cs.student.studentCode === s.studentCode))
+          .map((cs: any) => ({
+            ...cs,
+            radarData: cs.radarData ? (typeof cs.radarData === "string" ? JSON.parse(cs.radarData) : cs.radarData) : []
+          }))
       }
     })
 

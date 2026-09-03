@@ -1,10 +1,4 @@
-﻿const fs = require('fs');
-const path = require('path');
-
-const rootDir = path.join(__dirname, '..');
-
-// 1. Write actions.ts
-const actionsCode = `"use server";
+"use server";
 
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -549,7 +543,3 @@ export async function getForeignObservationSlots(filters: {
     return { success: false, error: e.message || "Failed to fetch observation slots." };
   }
 }
-`;
-
-fs.writeFileSync(path.join(rootDir, 'src', 'app', 'teacher', 'du-gio-gvnn', 'actions.ts'), actionsCode, 'utf8');
-console.log('actions.ts created successfully in src/app/teacher/du-gio-gvnn/actions.ts');

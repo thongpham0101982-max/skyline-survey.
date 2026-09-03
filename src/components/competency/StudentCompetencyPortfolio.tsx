@@ -168,6 +168,7 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
   const totalRequired = summaries.reduce((acc, s) => acc + (s.totalCompetencies || 0), 0);
   const overallLevel = getCompetencyLevel(overallAvg);
 
+  const selectedYearName = academicYears.find((y) => y.id === selectedYearId)?.name || "";
   const getPeriodLabel = (period: string) => {
     switch (period) {
       case "GIUA_KY_1":
@@ -338,7 +339,7 @@ export const StudentCompetencyPortfolio: React.FC<StudentCompetencyPortfolioProp
             <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
             <h4 className="text-sm font-bold text-slate-700">Chưa Có Dữ Liệu Đánh Giá Năng Lực</h4>
             <p className="text-xs text-slate-400 max-w-md mx-auto">
-              Học sinh chưa có kết quả đánh giá năng lực cho đợt {getPeriodLabel(selectedPeriod)}.
+              Học sinh chưa có kết quả đánh giá năng lực cho đợt {getPeriodLabel(selectedPeriod)}{selectedYearName ? ` (Năm học ${selectedYearName})` : ""}.
             </p>
           </div>
         ) : (
