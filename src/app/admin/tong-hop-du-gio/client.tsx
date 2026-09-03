@@ -557,6 +557,59 @@ export function AdminTongHopClient({
   const [emailNotes, setEmailNotes] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
 
+  // Modal State for All Departments Report
+  const [isAllDeptsModalOpen, setIsAllDeptsModalOpen] = useState(false);
+  const [allDeptsTo, setAllDeptsTo] = useState("");
+  const [allDeptsCc, setAllDeptsCc] = useState("");
+  const [allDeptsMonth, setAllDeptsMonth] = useState<string>("all");
+  const [allDeptsNotes, setAllDeptsNotes] = useState("");
+  const [sendingAllDeptsEmail, setSendingAllDeptsEmail] = useState(false);
+
+  const openAllDeptsEmailModal = () => {
+    setAllDeptsTo("bankhaothi@skylineschool.edu.vn");
+    // Pre-populate CC with all TTCM emails
+    const ttcmEmails = allDepartmentsSummary
+      .map(d => d.ttcm?.email)
+      .filter((em): em is string => Boolean(em && em.includes("@")));
+    setAllDeptsCc(Array.from(new Set(ttcmEmails)).join(", "));
+    setAllDeptsMonth(selectedMonth !== "all" ? selectedMonth : (availableMonths[0] || "all"));
+    setAllDeptsNotes("");
+    setIsAllDeptsModalOpen(true);
+  };
+
+  const handleSendAllDeptsEmailReport = async () => {
+    if (!allDeptsTo || !allDeptsTo.includes("@")) {
+      toast.error("Vui lòng nhập địa chỉ email người nhận chính hợp lệ");
+      return;
+    }
+    setSendingAllDeptsEmail(true);
+    try {
+      const res = await fetch("/api/admin/du-gio/send-all-depts-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blockTab: activeBlockTab,
+          academicYearId: filterAcademicYearId,
+          month: allDeptsMonth,
+          toEmail: allDeptsTo,
+          ccEmails: allDeptsCc || undefined,
+          notes: allDeptsNotes || undefined
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || "Đã gửi email báo cáo tổng hợp các Tổ CM thành công!");
+        setIsAllDeptsModalOpen(false);
+      } else {
+        toast.error(data.error || "Gửi email báo cáo thất bại");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi kết nối khi gửi email");
+    } finally {
+      setSendingAllDeptsEmail(false);
+    }
+  };
+
   // Compute live matrix preview for email based on selected emailMonth
   const emailPreviewTeacherMatrix = useMemo(() => {
     const statsMap: Record<string, { taughtCount: number; observedCount: number }> = {};
@@ -1701,13 +1754,13 @@ export function AdminTongHopClient({
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button
-                      onClick={openEmailModal}
-                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 text-slate-950 font-black text-xs shadow-sm flex items-center gap-1.5 transition-all shrink-0"
+                      onClick={openAllDeptsEmailModal}
+                      className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition-all shrink-0 border border-amber-300"
                     >
                       <Mail className="w-4 h-4 text-slate-950" />
-                      <span>Gửi Email Báo Cáo TTCM ({selectedDeptName})</span>
+                      <span>Gửi Báo Cáo Tổng Hợp Các Tổ CM (Kèm CC)</span>
                     </button>
                   </div>
                 </div>
@@ -2283,6 +2336,213 @@ export function AdminTongHopClient({
                   <>
                     <Send className="w-3.5 h-3.5 text-[#48BFE3]" />
                     <span>Xác nhận Gửi Email cho TTCM</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Gửi Email Báo Cáo Tổng Hợp Tất Cả Các Tổ Chuyên Môn */}
+      {isAllDeptsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full p-5 sm:p-6 space-y-4 my-auto animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-gradient-to-br from-[#003B3A] to-[#48BFE3] text-white rounded-xl shadow-xs">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-800">Gửi Email Báo Cáo Thống Kê Các Tổ Chuyên Môn</h3>
+                  <p className="text-[11px] text-slate-500">Khối: <strong className="text-[#003B3A]">{activeBlockTab === "mamnon" ? "Bậc Mầm non" : (activeBlockTab === "dieuhanh" ? "Khối Điều hành" : "Khối Phổ thông K-12")}</strong> &bull; <strong className="text-teal-700">{allDepartmentsSummary.length} Tổ chuyên môn</strong></p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsAllDeptsModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <div className="space-y-3.5 overflow-y-auto pr-1 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    1. Email Người Nhận Chính (To) *
+                  </label>
+                  <input
+                    type="email"
+                    value={allDeptsTo}
+                    onChange={e => setAllDeptsTo(e.target.value)}
+                    placeholder="VD: bgh@skylineschool.edu.vn hoặc bankhaothi@..."
+                    className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                      2. Đồng kính gửi (CC)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ttcmEmails = allDepartmentsSummary
+                          .map(d => d.ttcm?.email)
+                          .filter((em): em is string => Boolean(em && em.includes("@")));
+                        setAllDeptsCc(Array.from(new Set(ttcmEmails)).join(", "));
+                      }}
+                      className="text-[9.5px] font-bold text-teal-700 hover:underline"
+                    >
+                      + CC tất cả TTCM
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={allDeptsCc}
+                    onChange={e => setAllDeptsCc(e.target.value)}
+                    placeholder="VD: ttcm1@..., ttcm2@... (ngăn cách bởi dấu phẩy)"
+                    className="w-full text-xs font-medium p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    3. Kỳ báo cáo
+                  </label>
+                  <select
+                    value={allDeptsMonth}
+                    onChange={e => setAllDeptsMonth(e.target.value)}
+                    className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  >
+                    <option value="all">📅 Toàn bộ năm học</option>
+                    {availableMonths.map(m => {
+                      const [yyyy, mm] = m.split("-");
+                      return (
+                        <option key={m} value={m}>
+                          Tháng {mm}/{yyyy}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    4. Ghi chú & Lời nhắn bổ sung (Tùy chọn)
+                  </label>
+                  <input
+                    type="text"
+                    value={allDeptsNotes}
+                    onChange={e => setAllDeptsNotes(e.target.value)}
+                    placeholder="VD: Kính gửi Ban Giám hiệu và Quý Thầy/Cô TTCM báo cáo..."
+                    className="w-full text-xs font-medium p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Table Preview: Bảng Thống kê Tiến độ các Tổ Chuyên môn */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Award className="w-3.5 h-3.5 text-[#003B3A]" />
+                    <span>Nội dung bảng Thống kê Các Tổ CM sẽ gửi ({allDepartmentsSummary.length} Tổ)</span>
+                  </label>
+                  <span className="text-[9.5px] text-[#003B3A] font-extrabold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                    Kỳ: {allDeptsMonth === "all" ? "Toàn bộ năm học" : `Tháng ${allDeptsMonth.split("-")[1]}/${allDeptsMonth.split("-")[0]}`}
+                  </span>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 shadow-2xs">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="bg-slate-100 text-slate-700 text-[10px] font-black uppercase sticky top-0 z-10 border-b border-slate-200">
+                      <tr>
+                        <th className="py-2 px-2 text-center w-8">STT</th>
+                        <th className="py-2 px-3 min-w-[160px]">Tổ Chuyên Môn</th>
+                        <th className="py-2 px-2 text-center w-24">Giáo Viên Tổ</th>
+                        <th className="py-2 px-2 text-center w-28">Tổng Tiết Dạy</th>
+                        <th className="py-2 px-2 text-center w-28">Tổng Tiết Dự</th>
+                        <th className="py-2 px-2 text-center w-28">Tỷ Lệ Đạt Chuẩn</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white text-[11px]">
+                      {allDepartmentsSummary.map((d, idx) => (
+                        <tr key={d.id} className="hover:bg-slate-50/80">
+                          <td className="py-2 px-2 text-center font-bold text-slate-400 text-[10px]">{idx + 1}</td>
+                          <td className="py-2 px-3">
+                            <div className="font-extrabold text-slate-800">{d.name}</div>
+                            <div className="text-[9px] text-slate-400 font-semibold">
+                              TTCM: {d.ttcm ? d.ttcm.teacherName : "Chưa gán"}
+                            </div>
+                          </td>
+                          <td className="py-2 px-2 text-center font-bold text-slate-700">
+                            {d.teacherCount} GV
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-50 text-emerald-800 border border-emerald-200 inline-block">
+                              {d.totalTaught} tiết
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-sky-50 text-sky-800 border border-sky-200 inline-block">
+                              {d.totalObserved} lượt
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-center font-black text-emerald-700">
+                            {d.totalEvals > 0 ? `${d.passRate}%` : "--"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Chú thích cách tính Tiết dạy & Tiết dự */}
+              <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200 text-[11px] text-emerald-950 space-y-1">
+                <div className="font-black flex items-center gap-1.5 text-emerald-900 uppercase text-[10.5px]">
+                  <span>📌</span>
+                  <span>Quy định tính Tiết dạy và Tiết dự giờ trong Báo cáo:</span>
+                </div>
+                <ul className="list-disc pl-4 space-y-0.5 text-[10.5px] text-emerald-800">
+                  <li><strong>Tiết dạy:</strong> Chỉ được tính khi tiết dạy đã diễn ra, có giáo viên tham gia dự giờ <strong>VÀ người dự ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 tiết).</li>
+                  <li><strong>Tiết dự:</strong> Chỉ được tính khi Giáo viên đã được duyệt tham gia dự giờ <strong>VÀ ĐÃ HOÀN TẤT GỬI PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 lượt).</li>
+                  <li>Email sẽ gửi toàn bộ Bảng thống kê tiến độ của <strong>{allDepartmentsSummary.length} Tổ chuyên môn</strong> đến người nhận và CC.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsAllDeptsModalOpen(false)}
+                disabled={sendingAllDeptsEmail}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSendAllDeptsEmailReport}
+                disabled={sendingAllDeptsEmail}
+                className="px-5 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-black text-xs shadow-md flex items-center gap-1.5 disabled:opacity-50 transition-all"
+              >
+                {sendingAllDeptsEmail ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang gửi báo cáo tổng hợp...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5 text-[#48BFE3]" />
+                    <span>Xác nhận Gửi Báo Cáo Tổng Hợp</span>
                   </>
                 )}
               </button>
