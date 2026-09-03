@@ -441,8 +441,16 @@ export function ForeignObservationClient(props: {
       setCampusId(t.campusId);
       const matchedClasses = (props.classes || []).filter((c: any) => c.campusId === t.campusId);
       if (matchedClasses.length > 0) {
-        setClassId(matchedClasses[0].id);
-        setClassName(matchedClasses[0].className);
+        const assignedClass = t.classes && t.classes.length > 0
+          ? t.classes.find((c: any) => c.class?.campusId === t.campusId)?.class
+          : null;
+        if (assignedClass) {
+          setClassId(assignedClass.id);
+          setClassName(assignedClass.className);
+        } else {
+          setClassId(matchedClasses[0].id);
+          setClassName(matchedClasses[0].className);
+        }
       } else {
         setClassId("");
         setClassName("");
