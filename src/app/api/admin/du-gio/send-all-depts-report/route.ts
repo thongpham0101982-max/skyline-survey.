@@ -198,7 +198,7 @@ export async function POST(req: Request) {
     const baseUrl = `${protocol}://${host}`;
     const reportLink = `${baseUrl}/admin/tong-hop-du-gio`;
 
-    const emailSubject = `[Skyline School] Báo cáo Thống kê Tiến độ Các Tổ Chuyên Môn - ${blockName} (${monthLabel})`;
+    const emailSubject = `[Skyline School] Báo cáo Thống kê Tiến độ Các Tổ Chuyên Môn - Ban ĐHCM (${monthLabel})`;
 
     // 6. Generate HTML
     const deptRowsHtml = deptSummaries.map((dept, idx) => {
@@ -265,7 +265,7 @@ export async function POST(req: Request) {
                       </tr>
                     </table>
                     <h1 style="margin:0; font-size:21px; font-weight:900; line-height:1.3; color:#FFFFFF; text-transform:uppercase;">
-                      📊 BÁO CÁO THỐNG KÊ TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN
+                      📊 BÁO CÁO TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN - BAN ĐIỀU HÀNH CHUYÊN MÔN
                     </h1>
                     <div style="font-size:13px; color:#E0F2FE; margin-top:6px; font-weight:600;">
                       Phạm vi: <strong style="color:#FDE047;">${blockName}</strong> &bull; Kỳ báo cáo: <strong style="color:#FDE047;">${monthLabel}</strong>
@@ -281,10 +281,10 @@ export async function POST(req: Request) {
             <td style="padding:28px 32px; background-color:#FFFFFF;">
               <!-- Greeting -->
               <p style="margin:0 0 10px 0; font-size:14px; line-height:1.6; color:#0F172A;">
-                👋 Kính gửi <strong>Ban Giám hiệu, Ban Khảo thí & ĐBCL và Quý Thầy/Cô Tổ trưởng Chuyên môn</strong>,
+                👋 Kính gửi Quý Thầy/Cô <strong>Ban Điều hành Chuyên môn (Ban ĐHCM)</strong>, Ban Giám hiệu,
               </p>
               <p style="margin:0 0 20px 0; font-size:13px; line-height:1.6; color:#334155;">
-                Ban Khảo thí & ĐBCL kính gửi bảng tổng hợp tiến độ thực hiện chỉ tiêu <strong>Tiết dạy</strong> và <strong>Tiết dự giờ</strong> của <strong>Tất cả các Tổ Chuyên môn</strong> thuộc <strong>${blockName}</strong> trong kỳ <strong>${monthLabel}</strong>:
+                Ban Khảo thí & ĐBCL kính gửi Ban Điều hành Chuyên môn bảng tổng hợp tiến độ thực hiện chỉ tiêu <strong>Tiết dạy</strong> và <strong>Tiết dự giờ</strong> của <strong>Tất cả các Tổ Chuyên môn</strong> thuộc <strong>${blockName}</strong> trong kỳ <strong>${monthLabel}</strong>:
               </p>
 
               <!-- Stats Summary Cards -->

@@ -566,7 +566,14 @@ export function AdminTongHopClient({
   const [sendingAllDeptsEmail, setSendingAllDeptsEmail] = useState(false);
 
   const openAllDeptsEmailModal = () => {
-    setAllDeptsTo("bankhaothi@skylineschool.edu.vn");
+    // Find Ban ĐHCM teachers/staff if any
+    const dhcmTeachers = (initialTeachers || []).filter(
+      (t: any) => t.position === "Ban ĐHCM" || t.departmentRel?.blockCM === "DIEU_HANH"
+    );
+    const dhcmEmails = dhcmTeachers.map((t: any) => t.email).filter((em: any) => em && em.includes("@"));
+    
+    setAllDeptsTo(dhcmEmails.length > 0 ? dhcmEmails.join(", ") : "bankhaothi@skylineschool.edu.vn");
+    
     // Pre-populate CC with all TTCM emails
     const ttcmEmails = allDepartmentsSummary
       .map(d => d.ttcm?.email)
@@ -1760,7 +1767,7 @@ export function AdminTongHopClient({
                       className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition-all shrink-0 border border-amber-300"
                     >
                       <Mail className="w-4 h-4 text-slate-950" />
-                      <span>Gửi Báo Cáo Tổng Hợp Các Tổ CM (Kèm CC)</span>
+                      <span>Gửi Email Báo Cáo Ban ĐHCM (Kèm CC)</span>
                     </button>
                   </div>
                 </div>
@@ -2355,7 +2362,7 @@ export function AdminTongHopClient({
                   <Mail className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-800">Gửi Email Báo Cáo Thống Kê Các Tổ Chuyên Môn</h3>
+                  <h3 className="text-sm font-black text-slate-800">Gửi Email Báo Cáo Ban Điều Hành Chuyên Môn (Ban ĐHCM)</h3>
                   <p className="text-[11px] text-slate-500">Khối: <strong className="text-[#003B3A]">{activeBlockTab === "mamnon" ? "Bậc Mầm non" : (activeBlockTab === "dieuhanh" ? "Khối Điều hành" : "Khối Phổ thông K-12")}</strong> &bull; <strong className="text-teal-700">{allDepartmentsSummary.length} Tổ chuyên môn</strong></p>
                 </div>
               </div>
@@ -2372,7 +2379,7 @@ export function AdminTongHopClient({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                    1. Email Người Nhận Chính (To) *
+                    1. Email Ban ĐHCM / Người Nhận Chính (To) *
                   </label>
                   <input
                     type="email"
@@ -2537,12 +2544,12 @@ export function AdminTongHopClient({
                 {sendingAllDeptsEmail ? (
                   <>
                     <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Đang gửi báo cáo tổng hợp...</span>
+                    <span>Đang gửi báo cáo cho Ban ĐHCM...</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-3.5 h-3.5 text-[#48BFE3]" />
-                    <span>Xác nhận Gửi Báo Cáo Tổng Hợp</span>
+                    <span>Xác nhận Gửi Báo Cáo cho Ban ĐHCM</span>
                   </>
                 )}
               </button>
