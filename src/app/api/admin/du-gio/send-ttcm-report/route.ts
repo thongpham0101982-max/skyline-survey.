@@ -340,7 +340,7 @@ export async function POST(req: Request) {
                     <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
                       <tr>
                         <td bgcolor="#0B4A47" style="background-color:#0B4A47; border:1px solid #48BFE3; border-radius:20px; padding:3px 12px; font-size:10.5px; font-weight:800; color:#48BFE3; letter-spacing:1px; text-transform:uppercase;">
-                          🏫 SKY-LINE EDUCATION GROUP
+                          🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
                         </td>
                       </tr>
                     </table>
@@ -364,7 +364,7 @@ export async function POST(req: Request) {
                 👋 Kính gửi Thầy/Cô <strong>${ttcmName || 'Tổ trưởng chuyên môn'}</strong>,
               </p>
               <p style="margin:0 0 20px 0; font-size:13px; line-height:1.6; color:#334155;">
-                Ban Khảo thí & Đảm bảo Chất lượng Giáo dục kính gửi Thầy/Cô bảng tổng hợp kết quả thực hiện chỉ tiêu <strong>Tiết dạy</strong> và <strong>Tiết dự giờ</strong> của các Giáo viên bộ môn thuộc <strong>${deptDisplayName}</strong> trong kỳ <strong>${monthLabel}</strong>:
+                Ban Khảo thí & ĐBCL kính gửi Thầy/Cô bảng tổng hợp kết quả thực hiện chỉ tiêu <strong>Tiết dạy</strong> và <strong>Tiết dự giờ</strong> của các Giáo viên bộ môn thuộc <strong>${deptDisplayName}</strong> trong kỳ <strong>${monthLabel}</strong>:
               </p>
 
               <!-- Stats Summary Cards (Sky-Line Brand Colors & Icons) -->
@@ -481,9 +481,9 @@ export async function POST(req: Request) {
           <!-- Footer -->
           <tr>
             <td bgcolor="#F8FAFC" style="background-color:#F8FAFC; border-top:1px solid #E2E8F0; padding:20px 32px; text-align:center; font-size:11px; color:#64748B; line-height:1.6;">
-              <strong style="color:#003B3A;">🏫 HỆ THỐNG SKYLINE SURVEY - BAN KHẢO THÍ & ĐBCL GIÁO DỤC</strong><br>
+              <strong style="color:#003B3A;">🏫 HỆ THỐNG SKYLINE SURVEY - BAN KHẢO THÍ & ĐBCL</strong><br>
               Email báo cáo chuyên môn tự động từ Hệ thống Quản trị Dự giờ Skyline School.<br>
-              © ${new Date().getFullYear()} Skyline Education Group. All rights reserved.
+              © ${new Date().getFullYear()} Hệ thống Giáo dục Sky-Line. All rights reserved.
             </td>
           </tr>
         </table>
