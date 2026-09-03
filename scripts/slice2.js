@@ -144,39 +144,60 @@ export function ForeignObservationClient(props: {
     return allTeachers.find((t: any) => t.id === teacherId);
   }, [allTeachers, teacherId]);
 
-  const teacherClasses = useMemo(() => {
-    if (!selectedTeacher) return props.classes || [];
-    if (selectedTeacher.classes && selectedTeacher.classes.length > 0) {
-      const cls = selectedTeacher.classes.map((c: any) => c.class).filter(Boolean);
-      if (cls.length > 0) return cls;
+  // Classes filtered strictly by selected Campus (and optionally by Teacher's assigned classes in that Campus)
+  const availableClasses = useMemo(() => {
+    let list = props.classes || [];
+    if (campusId) {
+      list = list.filter((c: any) => c.campusId === campusId);
     }
-    if (selectedTeacher.campusId) {
-      return props.classes.filter((c: any) => c.campusId === selectedTeacher.campusId);
+    if (selectedTeacher) {
+      if (selectedTeacher.classes && selectedTeacher.classes.length > 0) {
+        const teacherAssigned = selectedTeacher.classes
+          .map((c: any) => c.class)
+          .filter((c: any) => Boolean(c) && (!campusId || c.campusId === campusId));
+        if (teacherAssigned.length > 0) return teacherAssigned;
+      }
     }
-    return props.classes || [];
-  }, [selectedTeacher, props.classes]);
+    return list;
+  }, [props.classes, campusId, selectedTeacher]);
 
   const handleTeacherChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const tid = e.target.value;
     setTeacherId(tid);
     const t = allTeachers.find((x: any) => x.id === tid);
-    if (t) {
-      if (t.campusId) setCampusId(t.campusId);
-      const avail = props.classes.filter((c: any) => c.campusId === t.campusId);
-      if (avail.length > 0) {
-        setClassId(avail[0].id);
-        setClassName(avail[0].className);
+    if (t && t.campusId) {
+      setCampusId(t.campusId);
+      const matchedClasses = (props.classes || []).filter((c: any) => c.campusId === t.campusId);
+      if (matchedClasses.length > 0) {
+        setClassId(matchedClasses[0].id);
+        setClassName(matchedClasses[0].className);
+      } else {
+        setClassId("");
+        setClassName("");
       }
+    }
+  };
+
+  const handleCampusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const cid = e.target.value;
+    setCampusId(cid);
+    const matchedClasses = (props.classes || []).filter((c: any) => !cid || c.campusId === cid);
+    if (matchedClasses.length > 0) {
+      setClassId(matchedClasses[0].id);
+      setClassName(matchedClasses[0].className);
+    } else {
+      setClassId("");
+      setClassName("");
     }
   };
 
   const handleClassChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const cid = e.target.value;
     setClassId(cid);
-    const c = props.classes.find((x: any) => x.id === cid);
+    const c = (props.classes || []).find((x: any) => x.id === cid);
     if (c) {
       setClassName(c.className);
-      if (c.campusId) setCampusId(c.campusId);
+      if (c.campusId && !campusId) setCampusId(c.campusId);
     }
   };
 

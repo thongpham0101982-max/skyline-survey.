@@ -180,41 +180,45 @@ const slice3a = `
                   </select>
                 </div>
 
-                {/* Class & Grade */}
+                {/* Campus (Cơ sở) - Selected FIRST */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-indigo-600" />
+                    Campus (Cơ Sở) <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={campusId}
+                    onChange={handleCampusChange}
+                    className="w-full bg-white border-2 border-indigo-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 outline-none transition"
+                  >
+                    <option value="">-- Chọn Cơ Sở (Campus) --</option>
+                    {props.campuses?.map((cmp: any) => (
+                      <option key={cmp.id} value={cmp.id}>
+                        {cmp.campusName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Class & Grade - Filtered by Campus */}
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-                    Class / Grade
+                    Class / Grade (Lớp / Khối)
                   </label>
                   <select
                     value={classId}
                     onChange={handleClassChange}
                     className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-800 outline-none transition"
                   >
-                    <option value="">-- Select Class --</option>
-                    {teacherClasses.map((c: any) => (
+                    <option value="">
+                      {campusId
+                        ? ("-- Chọn Lớp (" + availableClasses.length + " lớp) --")
+                        : "-- Vui lòng chọn Cơ sở trước --"}
+                    </option>
+                    {availableClasses.map((c: any) => (
                       <option key={c.id} value={c.id}>
-                        {c.className} ({c.grade || c.level})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Campus */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-indigo-600" />
-                    Campus
-                  </label>
-                  <select
-                    value={campusId}
-                    onChange={e => setCampusId(e.target.value)}
-                    className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-800 outline-none transition"
-                  >
-                    <option value="">-- Select Campus --</option>
-                    {props.campuses?.map((cmp: any) => (
-                      <option key={cmp.id} value={cmp.id}>
-                        {cmp.campusName}
+                        {c.className} {c.grade ? ("(Khối " + c.grade + ")") : (c.level ? ("(" + c.level + ")") : "")}
                       </option>
                     ))}
                   </select>
