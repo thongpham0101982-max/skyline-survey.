@@ -33,7 +33,7 @@ const p3a = `
                 Class Observation & Teaching Support
               </h1>
               <p className="text-slate-300 text-sm mt-1 max-w-2xl">
-                Evidence-based lesson observation framework for ESL and English Departments (Primary, Secondary, International & GVNN).
+                Evidence-based lesson observation framework for ESL and English Departments (Mầm non, Tiểu học, Trung học, Quốc tế & GVNN).
               </p>
             </div>
 
@@ -112,20 +112,15 @@ const p3a = `
                     Tổ CM Giáo Viên Dạy
                   </label>
                   <select
-                    value={observedDeptId}
+                    value={observedDeptKey}
                     onChange={e => {
-                      setObservedDeptId(e.target.value);
+                      setObservedDeptKey(e.target.value);
                       setTeacherId("");
                     }}
                     className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none transition"
                   >
-                    <option value="ALL">-- Tất cả Tổ Tiếng Anh ({englishTeachers.length} GV) --</option>
-                    {props.departments?.map((d: any) => {
-                      const count = englishTeachers.filter((t: any) =>
-                        t.departmentId === d.id ||
-                        t.departmentRel?.id === d.id ||
-                        t.departmentAssignments?.some((da: any) => da.departmentId === d.id || da.department?.id === d.id)
-                      ).length;
+                    {STANDARD_ENGLISH_DEPARTMENTS.map(d => {
+                      const count = englishTeachers.filter((t: any) => matchTeacherDepartmentGroup(t, d.id)).length;
                       return (
                         <option key={d.id} value={d.id}>
                           {d.name} ({count} GV)

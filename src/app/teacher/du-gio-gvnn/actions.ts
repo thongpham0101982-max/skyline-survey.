@@ -19,7 +19,7 @@ function isEnglishDepartment(deptNameOrCode?: string | null): boolean {
     lower.includes("ngoai ngu") ||
     lower.includes("quốc tế") ||
     lower.includes("quoc te") ||
-    lower.includes("cambridge")
+    lower.includes("cambridge") || lower.includes("mầm non") || lower.includes("mam non") || lower.includes("preschool") || lower.includes("kindergarten") || lower.includes("eng_pre")
   );
 }
 

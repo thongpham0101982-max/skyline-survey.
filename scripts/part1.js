@@ -270,6 +270,47 @@ const PERIOD_LIST = [
   { name: "Tiết 7", time: "15:10 - 15:55" },
   { name: "Tiết 8", time: "15:55 - 16:40" }
 ];
+
+const STANDARD_ENGLISH_DEPARTMENTS = [
+  { id: "ALL", name: "Tất cả các Tổ Tiếng Anh & GVNN (All English Depts)" },
+  { id: "TO_TA_MAM_NON", name: "Tổ Tiếng Anh Mầm non (Preschool English)" },
+  { id: "TO_TA_TIEU_HOC", name: "Tổ Tiếng Anh Tiểu học (Primary English)" },
+  { id: "TO_TA_TRUNG_HOC", name: "Tổ Tiếng Anh Trung học (Secondary & High School English)" },
+  { id: "TO_TA_QUOC_TE", name: "Tổ Tiếng Anh Quốc tế & GVNN (International / ESL / Expat)" }
+];
+
+function matchTeacherDepartmentGroup(teacher: any, deptKey: string): boolean {
+  if (deptKey === "ALL") return true;
+
+  const deptName = (teacher.departmentRel?.name || "").toLowerCase();
+  const deptCode = (teacher.departmentRel?.code || "").toLowerCase();
+  const assignedDepts = (teacher.departmentAssignments || []).map((da: any) => 
+    (da.department?.name || "") + " " + (da.department?.code || "") + " " + (da.departmentId || "")
+  ).join(" ").toLowerCase();
+  const pos = (teacher.position || "").toLowerCase();
+  const role = (teacher.user?.role || "").toLowerCase();
+  const mainSub = (teacher.mainSubjectRel?.subjectName || "").toLowerCase();
+  const combined = (deptName + " " + deptCode + " " + assignedDepts + " " + pos + " " + role + " " + mainSub).toLowerCase();
+
+  // If deptKey matches an exact DB department ID
+  if (teacher.departmentId === deptKey || teacher.departmentRel?.id === deptKey) return true;
+  if (teacher.departmentAssignments?.some((da: any) => da.departmentId === deptKey || da.department?.id === deptKey)) return true;
+
+  if (deptKey === "TO_TA_MAM_NON") {
+    return combined.includes("mầm non") || combined.includes("mam non") || combined.includes("mn") || combined.includes("preschool") || combined.includes("kindergarten") || role.includes("gv_mn");
+  }
+  if (deptKey === "TO_TA_TIEU_HOC") {
+    return (combined.includes("tiểu học") || combined.includes("tieu hoc") || combined.includes("pri") || combined.includes("to_4") || combined.includes("to_5")) && !combined.includes("mầm non");
+  }
+  if (deptKey === "TO_TA_TRUNG_HOC") {
+    return combined.includes("trung học") || combined.includes("trung hoc") || combined.includes("thcs") || combined.includes("thpt") || combined.includes("sec") || combined.includes("cấp 2") || combined.includes("cấp 3");
+  }
+  if (deptKey === "TO_TA_QUOC_TE") {
+    return combined.includes("quốc tế") || combined.includes("quoc te") || combined.includes("gvnn") || combined.includes("expat") || combined.includes("foreign") || combined.includes("international") || combined.includes("cambridge") || combined.includes("esl");
+  }
+
+  return true;
+}
 `;
 
 fs.writeFileSync(target, p1, 'utf8');

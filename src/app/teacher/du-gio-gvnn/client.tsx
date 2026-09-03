@@ -267,6 +267,47 @@ const PERIOD_LIST = [
   { name: "Tiết 8", time: "15:55 - 16:40" }
 ];
 
+const STANDARD_ENGLISH_DEPARTMENTS = [
+  { id: "ALL", name: "Tất cả các Tổ Tiếng Anh & GVNN (All English Depts)" },
+  { id: "TO_TA_MAM_NON", name: "Tổ Tiếng Anh Mầm non (Preschool English)" },
+  { id: "TO_TA_TIEU_HOC", name: "Tổ Tiếng Anh Tiểu học (Primary English)" },
+  { id: "TO_TA_TRUNG_HOC", name: "Tổ Tiếng Anh Trung học (Secondary & High School English)" },
+  { id: "TO_TA_QUOC_TE", name: "Tổ Tiếng Anh Quốc tế & GVNN (International / ESL / Expat)" }
+];
+
+function matchTeacherDepartmentGroup(teacher: any, deptKey: string): boolean {
+  if (deptKey === "ALL") return true;
+
+  const deptName = (teacher.departmentRel?.name || "").toLowerCase();
+  const deptCode = (teacher.departmentRel?.code || "").toLowerCase();
+  const assignedDepts = (teacher.departmentAssignments || []).map((da: any) => 
+    (da.department?.name || "") + " " + (da.department?.code || "") + " " + (da.departmentId || "")
+  ).join(" ").toLowerCase();
+  const pos = (teacher.position || "").toLowerCase();
+  const role = (teacher.user?.role || "").toLowerCase();
+  const mainSub = (teacher.mainSubjectRel?.subjectName || "").toLowerCase();
+  const combined = (deptName + " " + deptCode + " " + assignedDepts + " " + pos + " " + role + " " + mainSub).toLowerCase();
+
+  // If deptKey matches an exact DB department ID
+  if (teacher.departmentId === deptKey || teacher.departmentRel?.id === deptKey) return true;
+  if (teacher.departmentAssignments?.some((da: any) => da.departmentId === deptKey || da.department?.id === deptKey)) return true;
+
+  if (deptKey === "TO_TA_MAM_NON") {
+    return combined.includes("mầm non") || combined.includes("mam non") || combined.includes("mn") || combined.includes("preschool") || combined.includes("kindergarten") || role.includes("gv_mn");
+  }
+  if (deptKey === "TO_TA_TIEU_HOC") {
+    return (combined.includes("tiểu học") || combined.includes("tieu hoc") || combined.includes("pri") || combined.includes("to_4") || combined.includes("to_5")) && !combined.includes("mầm non");
+  }
+  if (deptKey === "TO_TA_TRUNG_HOC") {
+    return combined.includes("trung học") || combined.includes("trung hoc") || combined.includes("thcs") || combined.includes("thpt") || combined.includes("sec") || combined.includes("cấp 2") || combined.includes("cấp 3");
+  }
+  if (deptKey === "TO_TA_QUOC_TE") {
+    return combined.includes("quốc tế") || combined.includes("quoc te") || combined.includes("gvnn") || combined.includes("expat") || combined.includes("foreign") || combined.includes("international") || combined.includes("cambridge") || combined.includes("esl");
+  }
+
+  return true;
+}
+
 export function ForeignObservationClient(props: {
   currentTeacher: any;
   departments: any[];
@@ -283,7 +324,7 @@ export function ForeignObservationClient(props: {
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
 
   // Observed Teacher State
-  const [observedDeptId, setObservedDeptId] = useState<string>("ALL");
+  const [observedDeptKey, setObservedDeptKey] = useState<string>("ALL");
   const [teacherId, setTeacherId] = useState("");
 
   const [campusId, setCampusId] = useState("");
@@ -334,17 +375,10 @@ export function ForeignObservationClient(props: {
     return props.teachers || [];
   }, [props.teachers]);
 
-  // Dynamic filter matching Department ID, Department Rel ID, or Department Assignments
+  // Dynamic filter matching 4 standard English departments (Mầm non, Tiểu học, Trung học, Quốc tế & GVNN) or exact DB department
   const filteredObservedTeachers = useMemo(() => {
-    if (observedDeptId === "ALL") return englishTeachers;
-    return englishTeachers.filter((t: any) => {
-      const matchPrimary = t.departmentId === observedDeptId || t.departmentRel?.id === observedDeptId;
-      const matchAssignment = t.departmentAssignments?.some(
-        (da: any) => da.departmentId === observedDeptId || da.department?.id === observedDeptId
-      );
-      return matchPrimary || Boolean(matchAssignment);
-    });
-  }, [englishTeachers, observedDeptId]);
+    return englishTeachers.filter((t: any) => matchTeacherDepartmentGroup(t, observedDeptKey));
+  }, [englishTeachers, observedDeptKey]);
 
   const selectedTeacher = useMemo(() => {
     return englishTeachers.find((t: any) => t.id === teacherId);
@@ -601,7 +635,7 @@ export function ForeignObservationClient(props: {
                 Class Observation & Teaching Support
               </h1>
               <p className="text-slate-300 text-sm mt-1 max-w-2xl">
-                Evidence-based lesson observation framework for ESL and English Departments (Primary, Secondary, International & GVNN).
+                Evidence-based lesson observation framework for ESL and English Departments (Mầm non, Tiểu học, Trung học, Quốc tế & GVNN).
               </p>
             </div>
 
@@ -680,20 +714,15 @@ export function ForeignObservationClient(props: {
                     Tổ CM Giáo Viên Dạy
                   </label>
                   <select
-                    value={observedDeptId}
+                    value={observedDeptKey}
                     onChange={e => {
-                      setObservedDeptId(e.target.value);
+                      setObservedDeptKey(e.target.value);
                       setTeacherId("");
                     }}
                     className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none transition"
                   >
-                    <option value="ALL">-- Tất cả Tổ Tiếng Anh ({englishTeachers.length} GV) --</option>
-                    {props.departments?.map((d: any) => {
-                      const count = englishTeachers.filter((t: any) =>
-                        t.departmentId === d.id ||
-                        t.departmentRel?.id === d.id ||
-                        t.departmentAssignments?.some((da: any) => da.departmentId === d.id || da.department?.id === d.id)
-                      ).length;
+                    {STANDARD_ENGLISH_DEPARTMENTS.map(d => {
+                      const count = englishTeachers.filter((t: any) => matchTeacherDepartmentGroup(t, d.id)).length;
                       return (
                         <option key={d.id} value={d.id}>
                           {d.name} ({count} GV)
