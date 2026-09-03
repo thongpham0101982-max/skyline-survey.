@@ -267,47 +267,6 @@ const PERIOD_LIST = [
   { name: "Tiết 8", time: "15:55 - 16:40" }
 ];
 
-const STANDARD_ENGLISH_DEPARTMENTS = [
-  { id: "ALL", name: "Tất cả các Tổ Tiếng Anh & GVNN (All English Depts)" },
-  { id: "TO_TA_MAM_NON", name: "Tổ Tiếng Anh Mầm non (Preschool English)" },
-  { id: "TO_TA_TIEU_HOC", name: "Tổ Tiếng Anh Tiểu học (Primary English)" },
-  { id: "TO_TA_TRUNG_HOC", name: "Tổ Tiếng Anh Trung học (Secondary & High School English)" },
-  { id: "TO_TA_QUOC_TE", name: "Tổ Tiếng Anh Quốc tế & GVNN (International / ESL / Expat)" }
-];
-
-function matchTeacherDepartmentGroup(teacher: any, deptKey: string): boolean {
-  if (deptKey === "ALL") return true;
-
-  const deptName = (teacher.departmentRel?.name || "").toLowerCase();
-  const deptCode = (teacher.departmentRel?.code || "").toLowerCase();
-  const assignedDepts = (teacher.departmentAssignments || []).map((da: any) => 
-    (da.department?.name || "") + " " + (da.department?.code || "") + " " + (da.departmentId || "")
-  ).join(" ").toLowerCase();
-  const pos = (teacher.position || "").toLowerCase();
-  const role = (teacher.user?.role || "").toLowerCase();
-  const mainSub = (teacher.mainSubjectRel?.subjectName || "").toLowerCase();
-  const combined = (deptName + " " + deptCode + " " + assignedDepts + " " + pos + " " + role + " " + mainSub).toLowerCase();
-
-  // If deptKey matches an exact DB department ID
-  if (teacher.departmentId === deptKey || teacher.departmentRel?.id === deptKey) return true;
-  if (teacher.departmentAssignments?.some((da: any) => da.departmentId === deptKey || da.department?.id === deptKey)) return true;
-
-  if (deptKey === "TO_TA_MAM_NON") {
-    return combined.includes("mầm non") || combined.includes("mam non") || combined.includes("mn") || combined.includes("preschool") || combined.includes("kindergarten") || role.includes("gv_mn");
-  }
-  if (deptKey === "TO_TA_TIEU_HOC") {
-    return (combined.includes("tiểu học") || combined.includes("tieu hoc") || combined.includes("pri") || combined.includes("to_4") || combined.includes("to_5")) && !combined.includes("mầm non");
-  }
-  if (deptKey === "TO_TA_TRUNG_HOC") {
-    return combined.includes("trung học") || combined.includes("trung hoc") || combined.includes("thcs") || combined.includes("thpt") || combined.includes("sec") || combined.includes("cấp 2") || combined.includes("cấp 3");
-  }
-  if (deptKey === "TO_TA_QUOC_TE") {
-    return combined.includes("quốc tế") || combined.includes("quoc te") || combined.includes("gvnn") || combined.includes("expat") || combined.includes("foreign") || combined.includes("international") || combined.includes("cambridge") || combined.includes("esl");
-  }
-
-  return true;
-}
-
 export function ForeignObservationClient(props: {
   currentTeacher: any;
   departments: any[];
@@ -324,7 +283,7 @@ export function ForeignObservationClient(props: {
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
 
   // Observed Teacher State
-  const [observedDeptKey, setObservedDeptKey] = useState<string>("ALL");
+  const [observedDeptId, setObservedDeptId] = useState<string>("ALL");
   const [teacherId, setTeacherId] = useState("");
 
   const [campusId, setCampusId] = useState("");
@@ -371,18 +330,46 @@ export function ForeignObservationClient(props: {
     setTimeout(() => setToast(null), 4500);
   };
 
-  const englishTeachers = useMemo(() => {
+  const allTeachers = useMemo(() => {
     return props.teachers || [];
   }, [props.teachers]);
 
-  // Dynamic filter matching 4 standard English departments (Mầm non, Tiểu học, Trung học, Quốc tế & GVNN) or exact DB department
+  // Comprehensive filter matching exact Department ID, Department Rel ID, or Department Assignments
   const filteredObservedTeachers = useMemo(() => {
-    return englishTeachers.filter((t: any) => matchTeacherDepartmentGroup(t, observedDeptKey));
-  }, [englishTeachers, observedDeptKey]);
+    if (!observedDeptId || observedDeptId === "ALL") return allTeachers;
+
+    return allTeachers.filter((t: any) => {
+      // 1. Exact Department ID match
+      if (t.departmentId === observedDeptId || t.departmentRel?.id === observedDeptId) return true;
+      if (t.departmentAssignments?.some((da: any) => da.departmentId === observedDeptId || da.department?.id === observedDeptId)) return true;
+
+      // 2. Keyword matching for 4 standard groups
+      const deptName = (t.departmentRel?.name || "").toLowerCase();
+      const assigned = (t.departmentAssignments || []).map((da: any) => (da.department?.name || "")).join(" ").toLowerCase();
+      const pos = (t.position || "").toLowerCase();
+      const role = (t.user?.role || "").toLowerCase();
+      const allText = (deptName + " " + assigned + " " + pos + " " + role).toLowerCase();
+
+      if (observedDeptId === "GRP_MAM_NON") {
+        return allText.includes("mầm non") || allText.includes("mam non") || allText.includes("mn");
+      }
+      if (observedDeptId === "GRP_TIEU_HOC") {
+        return (allText.includes("tiểu học") || allText.includes("tieu hoc") || allText.includes("pri")) && !allText.includes("mầm non");
+      }
+      if (observedDeptId === "GRP_TRUNG_HOC") {
+        return allText.includes("trung học") || allText.includes("trung hoc") || allText.includes("thcs") || allText.includes("thpt") || allText.includes("sec");
+      }
+      if (observedDeptId === "GRP_QUOC_TE") {
+        return allText.includes("quốc tế") || allText.includes("quoc te") || allText.includes("gvnn") || allText.includes("expat") || allText.includes("international") || allText.includes("esl");
+      }
+
+      return false;
+    });
+  }, [allTeachers, observedDeptId]);
 
   const selectedTeacher = useMemo(() => {
-    return englishTeachers.find((t: any) => t.id === teacherId);
-  }, [englishTeachers, teacherId]);
+    return allTeachers.find((t: any) => t.id === teacherId);
+  }, [allTeachers, teacherId]);
 
   const teacherClasses = useMemo(() => {
     if (!selectedTeacher) return props.classes || [];
@@ -399,7 +386,7 @@ export function ForeignObservationClient(props: {
   const handleTeacherChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const tid = e.target.value;
     setTeacherId(tid);
-    const t = englishTeachers.find((x: any) => x.id === tid);
+    const t = allTeachers.find((x: any) => x.id === tid);
     if (t) {
       if (t.campusId) setCampusId(t.campusId);
       const avail = props.classes.filter((c: any) => c.campusId === t.campusId);
@@ -714,21 +701,38 @@ export function ForeignObservationClient(props: {
                     Tổ CM Giáo Viên Dạy
                   </label>
                   <select
-                    value={observedDeptKey}
+                    value={observedDeptId}
                     onChange={e => {
-                      setObservedDeptKey(e.target.value);
+                      setObservedDeptId(e.target.value);
                       setTeacherId("");
                     }}
                     className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none transition"
                   >
-                    {STANDARD_ENGLISH_DEPARTMENTS.map(d => {
-                      const count = englishTeachers.filter((t: any) => matchTeacherDepartmentGroup(t, d.id)).length;
-                      return (
-                        <option key={d.id} value={d.id}>
-                          {d.name} ({count} GV)
-                        </option>
-                      );
-                    })}
+                    <option value="ALL">-- Tất cả Tổ Chuyên Môn ({allTeachers.length} GV) --</option>
+                    
+                    <optgroup label="── 4 Khối Tổ Tiếng Anh Chuẩn ──">
+                      <option value="GRP_MAM_NON">Tổ Tiếng Anh Mầm non</option>
+                      <option value="GRP_TIEU_HOC">Tổ Tiếng Anh Tiểu học</option>
+                      <option value="GRP_TRUNG_HOC">Tổ Tiếng Anh Trung học</option>
+                      <option value="GRP_QUOC_TE">Tổ Tiếng Anh Quốc tế & GVNN</option>
+                    </optgroup>
+
+                    {props.departments && props.departments.length > 0 && (
+                      <optgroup label="── Danh Sách Tổ Bộ Môn Hệ Thống ──">
+                        {props.departments.map((d: any) => {
+                          const count = allTeachers.filter((t: any) =>
+                            t.departmentId === d.id ||
+                            t.departmentRel?.id === d.id ||
+                            t.departmentAssignments?.some((da: any) => da.departmentId === d.id || da.department?.id === d.id)
+                          ).length;
+                          return (
+                            <option key={d.id} value={d.id}>
+                              {d.name} ({count} GV)
+                            </option>
+                          );
+                        })}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
 
@@ -745,7 +749,7 @@ export function ForeignObservationClient(props: {
                   >
                     <option value="">-- Chọn Giáo Viên Được Dự ({filteredObservedTeachers.length} GV) --</option>
                     {filteredObservedTeachers.map((t: any) => {
-                      const deptLabel = t.departmentRel?.name || t.departmentAssignments?.[0]?.department?.name || t.position || "Tiếng Anh";
+                      const deptLabel = t.departmentRel?.name || t.departmentAssignments?.[0]?.department?.name || t.position || "Tổ Tiếng Anh";
                       const campusLabel = t.campus?.campusName ? (" • " + t.campus.campusName) : "";
                       return (
                         <option key={t.id} value={t.id}>

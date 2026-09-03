@@ -19,7 +19,7 @@ export function ForeignObservationClient(props: {
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
 
   // Observed Teacher State
-  const [observedDeptKey, setObservedDeptKey] = useState<string>("ALL");
+  const [observedDeptId, setObservedDeptId] = useState<string>("ALL");
   const [teacherId, setTeacherId] = useState("");
 
   const [campusId, setCampusId] = useState("");
@@ -66,18 +66,46 @@ export function ForeignObservationClient(props: {
     setTimeout(() => setToast(null), 4500);
   };
 
-  const englishTeachers = useMemo(() => {
+  const allTeachers = useMemo(() => {
     return props.teachers || [];
   }, [props.teachers]);
 
-  // Dynamic filter matching 4 standard English departments (Mầm non, Tiểu học, Trung học, Quốc tế & GVNN) or exact DB department
+  // Comprehensive filter matching exact Department ID, Department Rel ID, or Department Assignments
   const filteredObservedTeachers = useMemo(() => {
-    return englishTeachers.filter((t: any) => matchTeacherDepartmentGroup(t, observedDeptKey));
-  }, [englishTeachers, observedDeptKey]);
+    if (!observedDeptId || observedDeptId === "ALL") return allTeachers;
+
+    return allTeachers.filter((t: any) => {
+      // 1. Exact Department ID match
+      if (t.departmentId === observedDeptId || t.departmentRel?.id === observedDeptId) return true;
+      if (t.departmentAssignments?.some((da: any) => da.departmentId === observedDeptId || da.department?.id === observedDeptId)) return true;
+
+      // 2. Keyword matching for 4 standard groups
+      const deptName = (t.departmentRel?.name || "").toLowerCase();
+      const assigned = (t.departmentAssignments || []).map((da: any) => (da.department?.name || "")).join(" ").toLowerCase();
+      const pos = (t.position || "").toLowerCase();
+      const role = (t.user?.role || "").toLowerCase();
+      const allText = (deptName + " " + assigned + " " + pos + " " + role).toLowerCase();
+
+      if (observedDeptId === "GRP_MAM_NON") {
+        return allText.includes("mầm non") || allText.includes("mam non") || allText.includes("mn");
+      }
+      if (observedDeptId === "GRP_TIEU_HOC") {
+        return (allText.includes("tiểu học") || allText.includes("tieu hoc") || allText.includes("pri")) && !allText.includes("mầm non");
+      }
+      if (observedDeptId === "GRP_TRUNG_HOC") {
+        return allText.includes("trung học") || allText.includes("trung hoc") || allText.includes("thcs") || allText.includes("thpt") || allText.includes("sec");
+      }
+      if (observedDeptId === "GRP_QUOC_TE") {
+        return allText.includes("quốc tế") || allText.includes("quoc te") || allText.includes("gvnn") || allText.includes("expat") || allText.includes("international") || allText.includes("esl");
+      }
+
+      return false;
+    });
+  }, [allTeachers, observedDeptId]);
 
   const selectedTeacher = useMemo(() => {
-    return englishTeachers.find((t: any) => t.id === teacherId);
-  }, [englishTeachers, teacherId]);
+    return allTeachers.find((t: any) => t.id === teacherId);
+  }, [allTeachers, teacherId]);
 
   const teacherClasses = useMemo(() => {
     if (!selectedTeacher) return props.classes || [];
@@ -94,7 +122,7 @@ export function ForeignObservationClient(props: {
   const handleTeacherChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const tid = e.target.value;
     setTeacherId(tid);
-    const t = englishTeachers.find((x: any) => x.id === tid);
+    const t = allTeachers.find((x: any) => x.id === tid);
     if (t) {
       if (t.campusId) setCampusId(t.campusId);
       const avail = props.classes.filter((c: any) => c.campusId === t.campusId);
