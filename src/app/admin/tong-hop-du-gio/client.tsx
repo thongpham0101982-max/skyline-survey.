@@ -251,16 +251,22 @@ export function AdminTongHopClient({
   // Extract all unique months from initialSlots
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
+    const activeYearObj = academicYears.find((y: any) => y.id === selectedYearId) || academicYears.find((y: any) => y.status === "ACTIVE");
     initialSlots.forEach(s => {
       if (s.date) {
         const d = new Date(s.date);
+        if (activeYearObj?.startDate && activeYearObj?.endDate) {
+          const start = new Date(activeYearObj.startDate);
+          const end = new Date(activeYearObj.endDate);
+          if (d < start || d > end) return;
+        }
         const yyyy = d.getFullYear();
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         months.add(`${yyyy}-${mm}`);
       }
     });
     return Array.from(months).sort().reverse();
-  }, [initialSlots]);
+  }, [initialSlots, academicYears, selectedYearId]);
 
   // Compute taught and observed slot counts for all teachers
   const allTeacherStats = useMemo(() => {

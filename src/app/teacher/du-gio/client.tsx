@@ -477,21 +477,37 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
+    const activeYearObj = academicYears.find((y: any) => y.id === filterAcademicYearId) || academicYears.find((y: any) => y.status === "ACTIVE");
     const now = new Date();
     const currentMonthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}`;
-    monthsSet.add(currentMonthKey);
+    
+    // Check if current month belongs to the active year date range
+    if (activeYearObj?.startDate && activeYearObj?.endDate) {
+      const start = new Date(activeYearObj.startDate);
+      const end = new Date(activeYearObj.endDate);
+      if (now >= start && now <= end) {
+        monthsSet.add(currentMonthKey);
+      }
+    } else {
+      monthsSet.add(currentMonthKey);
+    }
 
     slots.forEach((slot: any) => {
       if (slot.date) {
         const d = new Date(slot.date);
         if (!isNaN(d.getTime())) {
+          if (activeYearObj?.startDate && activeYearObj?.endDate) {
+            const start = new Date(activeYearObj.startDate);
+            const end = new Date(activeYearObj.endDate);
+            if (d < start || d > end) return;
+          }
           monthsSet.add(`${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`);
         }
       }
     });
 
     return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
-  }, [slots]);
+  }, [slots, academicYears, filterAcademicYearId]);
 
   const [filterLevel, setFilterLevel] = useState(initialFilters.level || "all")
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade || "all")
@@ -3667,7 +3683,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 const isCurrent = m === `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, "0")}`;
                 return (
                   <option key={m} value={m}>
-                    Tháng ${mon}/${y} ${isCurrent ? "(Hiện tại)" : ""}
+                    Tháng {mon}/{y} {isCurrent ? " (Hiện tại)" : ""}
                   </option>
                 );
               })}

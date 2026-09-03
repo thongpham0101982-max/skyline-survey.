@@ -63,7 +63,7 @@ export async function getObservationData(academicYearId?: string) {
 
     const rawAcademicYears = await prisma.academicYear.findMany({
       orderBy: { startDate: "desc" },
-      select: { id: true, name: true, status: true }
+      select: { id: true, name: true, status: true, startDate: true, endDate: true }
     })
 
     const selectedYear = academicYearId
@@ -257,7 +257,17 @@ export async function getObservationSlots(filters: {
       andConditions.push({
         OR: [
           { academicYearId: activeYear.id },
-          { academicYearId: null }
+          {
+            AND: [
+              { academicYearId: null },
+              {
+                date: {
+                  gte: activeYear.startDate,
+                  lte: activeYear.endDate
+                }
+              }
+            ]
+          }
         ]
       })
     }
