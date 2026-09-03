@@ -557,6 +557,74 @@ export function AdminTongHopClient({
   const [emailNotes, setEmailNotes] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
 
+  // Compute live matrix preview for email based on selected emailMonth
+  const emailPreviewTeacherMatrix = useMemo(() => {
+    const statsMap: Record<string, { taughtCount: number; observedCount: number }> = {};
+    deptTeachers.forEach((t: any) => {
+      statsMap[t.id] = { taughtCount: 0, observedCount: 0 };
+    });
+
+    initialSlots.forEach((slot: any) => {
+      if (emailMonth !== "all") {
+        if (!slot.date) return;
+        const d = new Date(slot.date);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        if (`${yyyy}-${mm}` !== emailMonth) return;
+      }
+
+      if (statsMap[slot.teacherId]) {
+        const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null);
+        if (hasEvaluations) {
+          const increment = slot.isDoublePeriod ? 2 : 1;
+          statsMap[slot.teacherId].taughtCount += increment;
+        }
+      }
+
+      slot.registrations?.forEach((reg: any) => {
+        if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
+          const increment = slot.isDoublePeriod ? 2 : 1;
+          statsMap[reg.teacherId].observedCount += increment;
+        }
+      });
+    });
+
+    return deptTeachers.map((t: any) => {
+      const stats = statsMap[t.id] || { taughtCount: 0, observedCount: 0 };
+      const reqTaught = t.requiredTaught || 0;
+      const reqObserved = t.requiredObserved || 0;
+      const taughtUnit = t.taughtUnit || "tháng";
+      const observedUnit = t.observedUnit || "tháng";
+
+      const isTaughtMet = reqTaught === 0 || stats.taughtCount >= reqTaught;
+      const isObservedMet = reqObserved === 0 || stats.observedCount >= reqObserved;
+      const isAllMet = isTaughtMet && isObservedMet;
+
+      return {
+        ...t,
+        taughtCount: stats.taughtCount,
+        observedCount: stats.observedCount,
+        reqTaught,
+        reqObserved,
+        taughtUnit,
+        observedUnit,
+        isTaughtMet,
+        isObservedMet,
+        isAllMet
+      };
+    });
+  }, [deptTeachers, initialSlots, emailMonth]);
+
+  const emailPreviewSummary = useMemo(() => {
+    let totalTaught = 0;
+    let totalObserved = 0;
+    emailPreviewTeacherMatrix.forEach(t => {
+      totalTaught += t.taughtCount;
+      totalObserved += t.observedCount;
+    });
+    return { totalTaught, totalObserved };
+  }, [emailPreviewTeacherMatrix]);
+
   const openEmailModal = () => {
     setEmailTo(deptTTCM?.email || "");
     setEmailCc("");
@@ -1809,16 +1877,17 @@ export function AdminTongHopClient({
 
       {/* Email Report to TTCM Modal */}
       {isEmailModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full p-5 sm:p-6 space-y-4 my-auto animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 bg-gradient-to-br from-[#003B3A] to-[#48BFE3] text-white rounded-xl shadow-xs">
                   <Mail className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-slate-800">Gửi Email Báo cáo TTCM</h3>
-                  <p className="text-[11px] text-slate-500">Tổ: <strong className="text-slate-800">{selectedDeptName}</strong></p>
+                  <h3 className="text-sm font-black text-slate-800">Gửi Email Báo cáo & Đối chiếu Chỉ tiêu TTCM</h3>
+                  <p className="text-[11px] text-slate-500">Tổ: <strong className="text-[#003B3A]">{selectedDeptName}</strong></p>
                 </div>
               </div>
               <button 
@@ -1829,105 +1898,175 @@ export function AdminTongHopClient({
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center justify-between">
-                  <span>1. Email TTCM *</span>
-                  {deptTTCM && (
-                    <span className="text-[9px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
-                      TTCM: {deptTTCM.teacherName}
-                    </span>
-                  )}
-                </label>
-                <input
-                  type="email"
-                  value={emailTo}
-                  onChange={e => setEmailTo(e.target.value)}
-                  placeholder="Nhập email TTCM (VD: ttcm@skylineschool.edu.vn)..."
-                  className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                  2. Đồng kính gửi (CC) (Tùy chọn)
-                </label>
-                <input
-                  type="text"
-                  value={emailCc}
-                  onChange={e => setEmailCc(e.target.value)}
-                  placeholder="VD: bgh@skylineschool.edu.vn..."
-                  className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                  3. Kỳ báo cáo
-                </label>
-                <select
-                  value={emailMonth}
-                  onChange={e => setEmailMonth(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
-                >
-                  <option value="all">📅 Toàn bộ năm học</option>
-                  {availableMonths.map(m => {
-                    const [yyyy, mm] = m.split("-");
-                    return (
-                      <option key={m} value={m}>
-                        Tháng {mm}/{yyyy}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
-                  4. Ghi chú thêm (Tùy chọn)
-                </label>
-                <textarea
-                  value={emailNotes}
-                  onChange={e => setEmailNotes(e.target.value)}
-                  rows={2}
-                  placeholder="Nhập ghi chú thêm cho TTCM..."
-                  className="w-full text-xs font-medium p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none resize-none"
-                />
-              </div>
-
-              {/* Live Preview Summary */}
-              <div className="p-3 bg-gradient-to-r from-teal-50 to-emerald-50/50 rounded-xl border border-teal-200 flex items-center justify-around text-center">
-                <div>
-                  <span className="text-[9px] text-slate-400 font-bold block">Tổng GV</span>
-                  <strong className="text-xs font-black text-[#003B3A]">{deptTeachers.length} GV</strong>
+            {/* Scrollable Form Body */}
+            <div className="space-y-3.5 overflow-y-auto pr-1 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center justify-between">
+                    <span>1. Email TTCM *</span>
+                    {deptTTCM && (
+                      <span className="text-[9px] text-teal-700 font-bold bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
+                        {deptTTCM.teacherName}
+                      </span>
+                    )}
+                  </label>
+                  <input
+                    type="email"
+                    value={emailTo}
+                    onChange={e => setEmailTo(e.target.value)}
+                    placeholder="Nhập email TTCM (VD: ttcm@skylineschool.edu.vn)..."
+                    className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  />
                 </div>
-                <div className="w-px h-6 bg-teal-200" />
-                <div>
-                  <span className="text-[9px] text-slate-400 font-bold block">Tiết Dạy</span>
-                  <strong className="text-xs font-black text-emerald-700">{departmentSummary.totalTaught} tiết</strong>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    2. Đồng kính gửi (CC) (Tùy chọn)
+                  </label>
+                  <input
+                    type="text"
+                    value={emailCc}
+                    onChange={e => setEmailCc(e.target.value)}
+                    placeholder="VD: bgh@skylineschool.edu.vn..."
+                    className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  />
                 </div>
-                <div className="w-px h-6 bg-teal-200" />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    3. Kỳ báo cáo
+                  </label>
+                  <select
+                    value={emailMonth}
+                    onChange={e => setEmailMonth(e.target.value)}
+                    className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  >
+                    <option value="all">📅 Toàn bộ năm học</option>
+                    {availableMonths.map(m => {
+                      const [yyyy, mm] = m.split("-");
+                      return (
+                        <option key={m} value={m}>
+                          Tháng {mm}/{yyyy}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    4. Ghi chú thêm (Tùy chọn)
+                  </label>
+                  <input
+                    type="text"
+                    value={emailNotes}
+                    onChange={e => setEmailNotes(e.target.value)}
+                    placeholder="VD: Kính đề nghị Quý Thầy/Cô rà soát..."
+                    className="w-full text-xs font-medium p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Live Preview Summary Cards */}
+              <div className="p-3 bg-gradient-to-r from-teal-50 to-emerald-50/50 rounded-xl border border-teal-200 grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <span className="text-[9px] text-slate-400 font-bold block">Tiết Dự</span>
-                  <strong className="text-xs font-black text-sky-700">{departmentSummary.totalObserved} lượt</strong>
+                  <span className="text-[9px] text-slate-500 font-bold block uppercase">Tổng Giáo Viên</span>
+                  <strong className="text-sm font-black text-[#003B3A]">{deptTeachers.length} GV</strong>
+                </div>
+                <div className="border-x border-teal-200/80 px-2">
+                  <span className="text-[9px] text-slate-500 font-bold block uppercase">Tiết Dạy Hoàn Thành</span>
+                  <strong className="text-sm font-black text-emerald-700">{emailPreviewSummary.totalTaught} tiết</strong>
+                </div>
+                <div>
+                  <span className="text-[9px] text-slate-500 font-bold block uppercase">Tiết Dự Hoàn Thành</span>
+                  <strong className="text-sm font-black text-sky-700">{emailPreviewSummary.totalObserved} lượt</strong>
+                </div>
+              </div>
+
+              {/* Table Preview: Danh sách Giáo viên & Đối chiếu Chỉ tiêu */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-[#003B3A]" />
+                    <span>Nội dung bảng sẽ gửi trong Email ({emailPreviewTeacherMatrix.length} GV)</span>
+                  </label>
+                  <span className="text-[9.5px] text-[#003B3A] font-extrabold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                    Kỳ: {emailMonth === "all" ? "Toàn bộ năm học" : `Tháng ${emailMonth.split("-")[1]}/${emailMonth.split("-")[0]}`}
+                  </span>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 shadow-2xs">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="bg-slate-100 text-slate-700 text-[10px] font-black uppercase sticky top-0 z-10 border-b border-slate-200">
+                      <tr>
+                        <th className="py-2 px-2 text-center w-8">STT</th>
+                        <th className="py-2 px-3 min-w-[160px]">Giáo viên Bộ môn</th>
+                        <th className="py-2 px-2 text-center min-w-[110px]">Tiết Dạy</th>
+                        <th className="py-2 px-2 text-center min-w-[110px]">Tiết Dự</th>
+                        <th className="py-2 px-2 text-center w-28">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white text-[11px]">
+                      {emailPreviewTeacherMatrix.map((t, idx) => (
+                        <tr key={t.id} className="hover:bg-slate-50/80">
+                          <td className="py-2 px-2 text-center font-bold text-slate-400 text-[10px]">{idx + 1}</td>
+                          <td className="py-2 px-3">
+                            <div className="font-extrabold text-slate-800">{t.teacherName}</div>
+                            <div className="text-[9px] text-slate-400 font-semibold flex items-center gap-1">
+                              <span>{t.teacherCode}</span>
+                              {t.position && (
+                                <span className="px-1 rounded bg-amber-100 text-amber-800 font-black text-[8px]">
+                                  {t.position}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
+                              t.isTaughtMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
+                            }`}>
+                              {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught} (${t.taughtUnit})` : "tiết"} {t.isTaughtMet ? "✓" : "✗"}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
+                              t.isObservedMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"
+                            }`}>
+                              {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"} {t.isObservedMet ? "✓" : "⚠️"}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black text-white ${
+                              t.isAllMet ? "bg-emerald-600" : "bg-rose-600"
+                            }`}>
+                              {t.isAllMet ? "ĐẠT CHỈ TIÊU" : "CHƯA ĐẠT"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
               {/* Chú thích cách tính Tiết dạy & Tiết dự */}
-              <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200 text-[11px] text-amber-900 space-y-1">
-                <div className="font-extrabold flex items-center gap-1 text-amber-950">
+              <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200 text-[11px] text-emerald-950 space-y-1">
+                <div className="font-black flex items-center gap-1.5 text-emerald-900 uppercase text-[10.5px]">
                   <span>📌</span>
-                  <span>Chú thích quy định tính Tiết dạy & Tiết dự:</span>
+                  <span>Quy định tính Tiết dạy và Tiết dự giờ trong Báo cáo:</span>
                 </div>
-                <ul className="list-disc pl-4 space-y-0.5 text-[10.5px] text-amber-800">
-                  <li><strong>Tiết dạy:</strong> Chỉ tính khi tiết dạy đã có người dự và người dự <strong>ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 tiết).</li>
-                  <li><strong>Tiết dự:</strong> Chỉ tính khi GV đã được duyệt dự giờ và <strong>ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 lượt).</li>
-                  <li>Email sẽ gửi kèm <strong>Toàn bộ Bảng Danh sách Giáo viên & Đối chiếu Chỉ tiêu</strong> của tổ cho TTCM.</li>
+                <ul className="list-disc pl-4 space-y-0.5 text-[10.5px] text-emerald-800">
+                  <li><strong>Tiết dạy:</strong> Chỉ được tính khi tiết dạy đã diễn ra, có giáo viên tham gia dự giờ <strong>VÀ người dự ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 tiết).</li>
+                  <li><strong>Tiết dự:</strong> Chỉ được tính khi Giáo viên đã được duyệt tham gia dự giờ <strong>VÀ ĐÃ HOÀN TẤT GỬI PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 lượt).</li>
+                  <li>Email sẽ gửi toàn bộ Bảng đối chiếu chỉ tiêu chi tiết của <strong>{deptTeachers.length} Giáo viên</strong> này đến TTCM.</li>
                 </ul>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            {/* Footer Buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsEmailModalOpen(false)}
@@ -1940,17 +2079,17 @@ export function AdminTongHopClient({
                 type="button"
                 onClick={handleSendEmailReport}
                 disabled={sendingEmail}
-                className="px-5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-black text-xs shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-black text-xs shadow-md flex items-center gap-1.5 disabled:opacity-50 transition-all"
               >
                 {sendingEmail ? (
                   <>
                     <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Đang gửi...</span>
+                    <span>Đang gửi email...</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-3.5 h-3.5 text-[#48BFE3]" />
-                    <span>Gửi Email</span>
+                    <span>Xác nhận Gửi Email cho TTCM</span>
                   </>
                 )}
               </button>
