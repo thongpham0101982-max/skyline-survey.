@@ -18,10 +18,6 @@ export function ForeignObservationClient(props: {
 
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
 
-  // Observer State
-  const [observerDeptFilter, setObserverDeptFilter] = useState("ALL");
-  const [observerId, setObserverId] = useState(() => props.currentTeacher?.id || "");
-
   // Observed Teacher State
   const [observedDeptFilter, setObservedDeptFilter] = useState("ALL");
   const [teacherId, setTeacherId] = useState("");
@@ -73,11 +69,6 @@ export function ForeignObservationClient(props: {
   const englishTeachers = useMemo(() => {
     return props.teachers || [];
   }, [props.teachers]);
-
-  // Filtered lists for Observer and Observed Teacher
-  const filteredObservers = useMemo(() => {
-    return englishTeachers.filter(t => matchTeacherDept(t, observerDeptFilter));
-  }, [englishTeachers, observerDeptFilter]);
 
   const filteredObservedTeachers = useMemo(() => {
     return englishTeachers.filter(t => matchTeacherDept(t, observedDeptFilter));
@@ -281,7 +272,6 @@ export function ForeignObservationClient(props: {
     });
 
     const payload = {
-      observerId: observerId || undefined,
       teacherId,
       campusId,
       classId,

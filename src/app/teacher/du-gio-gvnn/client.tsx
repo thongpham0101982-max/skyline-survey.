@@ -308,10 +308,6 @@ export function ForeignObservationClient(props: {
 
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
 
-  // Observer State
-  const [observerDeptFilter, setObserverDeptFilter] = useState("ALL");
-  const [observerId, setObserverId] = useState(() => props.currentTeacher?.id || "");
-
   // Observed Teacher State
   const [observedDeptFilter, setObservedDeptFilter] = useState("ALL");
   const [teacherId, setTeacherId] = useState("");
@@ -363,11 +359,6 @@ export function ForeignObservationClient(props: {
   const englishTeachers = useMemo(() => {
     return props.teachers || [];
   }, [props.teachers]);
-
-  // Filtered lists for Observer and Observed Teacher
-  const filteredObservers = useMemo(() => {
-    return englishTeachers.filter(t => matchTeacherDept(t, observerDeptFilter));
-  }, [englishTeachers, observerDeptFilter]);
 
   const filteredObservedTeachers = useMemo(() => {
     return englishTeachers.filter(t => matchTeacherDept(t, observedDeptFilter));
@@ -571,7 +562,6 @@ export function ForeignObservationClient(props: {
     });
 
     const payload = {
-      observerId: observerId || undefined,
       teacherId,
       campusId,
       classId,
@@ -673,7 +663,7 @@ export function ForeignObservationClient(props: {
                   </div>
                   <div>
                     <h2 className="font-bold text-slate-800 text-base">General Information & Context</h2>
-                    <p className="text-xs text-slate-500">Filtered for 3 English Departments: Primary, Secondary, International & GVNN</p>
+                    <p className="text-xs text-slate-500">Observer is auto-assigned from logged-in account</p>
                   </div>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-200 self-start sm:self-auto">
@@ -682,92 +672,63 @@ export function ForeignObservationClient(props: {
               </div>
 
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                {/* Observer Section */}
-                <div className="space-y-1.5 md:col-span-2 bg-indigo-50/40 p-4 rounded-xl border border-indigo-100">
-                  <span className="text-[11px] font-extrabold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-indigo-600" />
-                    Observer / Evaluator (Người Dự Giờ)
-                  </span>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                        Tổ Chuyên Môn Người Dự
-                      </label>
-                      <select
-                        value={observerDeptFilter}
-                        onChange={e => setObserverDeptFilter(e.target.value)}
-                        className="w-full bg-white border border-indigo-200 focus:border-indigo-600 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
-                      >
-                        {ENGLISH_DEPARTMENTS_CONFIG.map(d => (
-                          <option key={d.id} value={d.id}>{d.name}</option>
-                        ))}
-                      </select>
+                {/* Auto-filled Observer Badge */}
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                      <User className="w-3.5 h-3.5 text-indigo-600" />
+                      Observer (Người Dự Giờ)
+                    </span>
+                    <div className="font-bold text-slate-800 text-sm">
+                      {props.currentTeacher?.teacherName || "Current User"}
                     </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                        Giáo Viên Dự (Observer)
-                      </label>
-                      <select
-                        value={observerId}
-                        onChange={e => setObserverId(e.target.value)}
-                        className="w-full bg-white border-2 border-indigo-300 focus:border-indigo-600 rounded-lg px-3 py-2 text-xs font-bold text-indigo-950 outline-none"
-                      >
-                        {filteredObservers.map((t: any) => (
-                          <option key={t.id} value={t.id}>
-                            {t.teacherName} ({t.teacherCode}) - {t.departmentRel?.name || t.position || "English"}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                    <span>Mã GV: <strong className="text-slate-700">{props.currentTeacher?.teacherCode || "N/A"}</strong></span>
+                    <span className="text-[11px] px-2 py-0.5 rounded bg-indigo-100/70 text-indigo-800 font-semibold">
+                      {props.currentTeacher?.departmentRel?.name || props.currentTeacher?.position || "English Dept"}
+                    </span>
                   </div>
                 </div>
 
-                {/* Observed Teacher Section */}
-                <div className="space-y-1.5 md:col-span-2 bg-amber-50/40 p-4 rounded-xl border border-amber-100">
-                  <span className="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-amber-600" />
+                {/* Observed Teacher: Department Filter */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-indigo-600" />
+                    Tổ CM Giáo Viên Dạy
+                  </label>
+                  <select
+                    value={observedDeptFilter}
+                    onChange={e => setObservedDeptFilter(e.target.value)}
+                    className="w-full bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none transition"
+                  >
+                    {ENGLISH_DEPARTMENTS_CONFIG.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Observed Teacher: Teacher Selection */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-indigo-600" />
                     Observed Teacher (Giáo Viên Được Dự) <span className="text-rose-500">*</span>
-                  </span>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                        Tổ Chuyên Môn GV Dạy
-                      </label>
-                      <select
-                        value={observedDeptFilter}
-                        onChange={e => setObservedDeptFilter(e.target.value)}
-                        className="w-full bg-white border border-amber-200 focus:border-amber-600 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
-                      >
-                        {ENGLISH_DEPARTMENTS_CONFIG.map(d => (
-                          <option key={d.id} value={d.id}>{d.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-bold text-amber-900 mb-1">
-                        Giáo Viên Được Dự (Observed)
-                      </label>
-                      <select
-                        value={teacherId}
-                        onChange={handleTeacherChange}
-                        className="w-full bg-white border-2 border-amber-400 focus:border-amber-600 rounded-lg px-3 py-2 text-xs font-bold text-amber-950 outline-none"
-                      >
-                        <option value="">-- Chọn Giáo Viên --</option>
-                        {filteredObservedTeachers.map((t: any) => (
-                          <option key={t.id} value={t.id}>
-                            {t.teacherName} ({t.teacherCode}) - {t.departmentRel?.name || t.position || "English"}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                  </label>
+                  <select
+                    value={teacherId}
+                    onChange={handleTeacherChange}
+                    className="w-full bg-white border-2 border-indigo-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 outline-none transition"
+                  >
+                    <option value="">-- Chọn Giáo Viên Được Dự --</option>
+                    {filteredObservedTeachers.map((t: any) => (
+                      <option key={t.id} value={t.id}>
+                        {t.teacherName} ({t.teacherCode}) - {t.departmentRel?.name || t.position || "English"}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* Class & Campus */}
+                {/* Class & Grade */}
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
@@ -787,6 +748,7 @@ export function ForeignObservationClient(props: {
                   </select>
                 </div>
 
+                {/* Campus */}
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-indigo-600" />
@@ -806,6 +768,7 @@ export function ForeignObservationClient(props: {
                   </select>
                 </div>
 
+                {/* Date */}
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-indigo-600" />
@@ -819,6 +782,7 @@ export function ForeignObservationClient(props: {
                   />
                 </div>
 
+                {/* Period */}
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-indigo-600" />
@@ -837,6 +801,7 @@ export function ForeignObservationClient(props: {
                   </select>
                 </div>
 
+                {/* Room */}
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-indigo-600" />
@@ -851,7 +816,8 @@ export function ForeignObservationClient(props: {
                   />
                 </div>
 
-                <div>
+                {/* Topic */}
+                <div className="md:col-span-2 lg:col-span-3">
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <Target className="w-3.5 h-3.5 text-indigo-600" />
                     Lesson Topic / Unit
@@ -865,6 +831,7 @@ export function ForeignObservationClient(props: {
                   />
                 </div>
 
+                {/* Target Skills */}
                 <div className="md:col-span-2 lg:col-span-4 pt-2 border-t border-slate-100">
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
                     Target Skills & Language Focus
