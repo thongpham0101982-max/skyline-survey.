@@ -226,12 +226,6 @@ export async function POST(req: Request) {
               ${dept.totalObserved} lượt
             </span>
           </td>
-          <td align="center" style="padding:10px 8px;">
-            <span style="display:inline-block; background-color:${dept.passRate >= 80 ? '#ECFDF5' : (dept.passRate > 0 ? '#FFFBEB' : '#F8FAFC')}; color:${dept.passRate >= 80 ? '#047857' : (dept.passRate > 0 ? '#B45309' : '#64748B')}; padding:3px 8px; border-radius:8px; font-weight:800; font-size:11px; border:1px solid ${dept.passRate >= 80 ? '#A7F3D0' : '#E2E8F0'};">
-              ${dept.totalEvals > 0 ? dept.passRate + '%' : '--'}
-            </span>
-            ${dept.totalEvals > 0 ? '<div style="font-size:9px; color:#94A3B8; font-weight:600; margin-top:2px;">(' + dept.passingEvals + '/' + dept.totalEvals + ' phiếu)</div>' : ''}
-          </td>
         </tr>
       `;
     }).join("");
@@ -290,24 +284,19 @@ export async function POST(req: Request) {
               <!-- Stats Summary Cards -->
               <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
-                  <td width="23%" bgcolor="#F8FAFC" style="padding:12px 8px; background-color:#F8FAFC; border-radius:12px; border:1px solid #E2E8F0; text-align:center;">
+                  <td width="32%" bgcolor="#F8FAFC" style="padding:14px 10px; background-color:#F8FAFC; border-radius:12px; border:1px solid #E2E8F0; text-align:center;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#64748B;">Tổng Tổ & GV</div>
-                    <div style="font-size:18px; font-weight:900; color:#003B3A; margin-top:4px;">${deptSummaries.length} Tổ / ${grandTeachers} GV</div>
+                    <div style="font-size:20px; font-weight:900; color:#003B3A; margin-top:4px;">${deptSummaries.length} Tổ / ${grandTeachers} GV</div>
                   </td>
                   <td width="2%"></td>
-                  <td width="23%" bgcolor="#ECFDF5" style="padding:12px 8px; background-color:#ECFDF5; border-radius:12px; border:1px solid #A7F3D0; text-align:center;">
+                  <td width="32%" bgcolor="#ECFDF5" style="padding:14px 10px; background-color:#ECFDF5; border-radius:12px; border:1px solid #A7F3D0; text-align:center;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#065F46;">Tổng Tiết Dạy</div>
-                    <div style="font-size:18px; font-weight:900; color:#047857; margin-top:4px;">${grandTaught} tiết</div>
+                    <div style="font-size:20px; font-weight:900; color:#047857; margin-top:4px;">${grandTaught} tiết</div>
                   </td>
                   <td width="2%"></td>
-                  <td width="23%" bgcolor="#F0F9FF" style="padding:12px 8px; background-color:#F0F9FF; border-radius:12px; border:1px solid #BAE6FD; text-align:center;">
+                  <td width="32%" bgcolor="#F0F9FF" style="padding:14px 10px; background-color:#F0F9FF; border-radius:12px; border:1px solid #BAE6FD; text-align:center;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#0369A1;">Tổng Tiết Dự</div>
-                    <div style="font-size:18px; font-weight:900; color:#0284C7; margin-top:4px;">${grandObserved} lượt</div>
-                  </td>
-                  <td width="2%"></td>
-                  <td width="23%" bgcolor="#FEF3C7" style="padding:12px 8px; background-color:#FEF3C7; border-radius:12px; border:1px solid #FDE68A; text-align:center;">
-                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#92400E;">Đạt Chuẩn Chung</div>
-                    <div style="font-size:18px; font-weight:900; color:#B45309; margin-top:4px;">${grandPassRate}%</div>
+                    <div style="font-size:20px; font-weight:900; color:#0284C7; margin-top:4px;">${grandObserved} lượt</div>
                   </td>
                 </tr>
               </table>
@@ -324,8 +313,7 @@ export async function POST(req: Request) {
                       <th style="padding:10px 12px; text-align:left; border-right:1px solid #065F46; color:#FFFFFF;">Tổ Chuyên Môn</th>
                       <th style="padding:10px 8px; text-align:center; width:100px; border-right:1px solid #065F46; color:#FFFFFF;">Giáo Viên Tổ</th>
                       <th style="padding:10px 8px; text-align:center; width:120px; border-right:1px solid #065F46; color:#FFFFFF;">Tổng Tiết Dạy</th>
-                      <th style="padding:10px 8px; text-align:center; width:120px; border-right:1px solid #065F46; color:#FFFFFF;">Tổng Tiết Dự</th>
-                      <th style="padding:10px 8px; text-align:center; width:120px; color:#FFFFFF;">Tỷ Lệ Đạt Chuẩn</th>
+                      <th style="padding:10px 8px; text-align:center; width:120px; color:#FFFFFF;">Tổng Tiết Dự</th>
                     </tr>
                   </thead>
                   <tbody>

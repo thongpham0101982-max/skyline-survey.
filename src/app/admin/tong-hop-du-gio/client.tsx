@@ -1776,7 +1776,6 @@ export function AdminTongHopClient({
                         <th className="py-3 px-3 text-center min-w-[110px]">Giáo Viên Tổ</th>
                         <th className="py-3 px-3 text-center min-w-[130px]">Tổng Tiết Dạy</th>
                         <th className="py-3 px-3 text-center min-w-[130px]">Tổng Tiết Dự</th>
-                        <th className="py-3 px-3 text-center min-w-[140px]">Tỷ Lệ Đạt Chuẩn</th>
                         <th className="py-3 px-3 text-center min-w-[130px]">Gửi Mail</th>
                       </tr>
                     </thead>
@@ -1832,24 +1831,6 @@ export function AdminTongHopClient({
                               <span className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-800 font-black text-[11px] border border-sky-200 inline-block">
                                 {dept.totalObserved} lượt
                               </span>
-                            </td>
-                            <td className="py-3 px-3 text-center">
-                              <div className="inline-flex flex-col items-center">
-                                <span className={`px-2.5 py-0.5 rounded-lg font-black text-[11px] border ${
-                                  dept.passRate >= 80 
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                                    : dept.passRate > 0 
-                                      ? "bg-amber-50 text-amber-700 border-amber-200" 
-                                      : "bg-slate-50 text-slate-500 border-slate-200"
-                                }`}>
-                                  {dept.totalEvals > 0 ? `${dept.passRate}%` : "--"}
-                                </span>
-                                {dept.totalEvals > 0 && (
-                                  <span className="text-[9px] text-slate-400 font-bold mt-0.5">
-                                    ({dept.passingEvals}/{dept.totalEvals} phiếu)
-                                  </span>
-                                )}
-                              </div>
                             </td>
                             <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                               <button
@@ -2456,7 +2437,6 @@ export function AdminTongHopClient({
                         <th className="py-2 px-2 text-center w-24">Giáo Viên Tổ</th>
                         <th className="py-2 px-2 text-center w-28">Tổng Tiết Dạy</th>
                         <th className="py-2 px-2 text-center w-28">Tổng Tiết Dự</th>
-                        <th className="py-2 px-2 text-center w-28">Tỷ Lệ Đạt Chuẩn</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white text-[11px]">
@@ -2481,9 +2461,6 @@ export function AdminTongHopClient({
                             <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-sky-50 text-sky-800 border border-sky-200 inline-block">
                               {d.totalObserved} lượt
                             </span>
-                          </td>
-                          <td className="py-2 px-2 text-center font-black text-emerald-700">
-                            {d.totalEvals > 0 ? `${d.passRate}%` : "--"}
                           </td>
                         </tr>
                       ))}
