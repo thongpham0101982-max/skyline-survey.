@@ -46,6 +46,14 @@ export interface IndicatorConfig {
   quickImpact: string[];
 }
 
+const cleanStr = (s: string | null | undefined) => 
+  (s || "")
+   .toLowerCase()
+   .normalize("NFD")
+   .replace(/[̀-ͯ]/g, "")
+   .replace(/đ/g, "d")
+   .replace(/Đ/g, "d");
+
 const ESL_INDICATORS: IndicatorConfig[] = [
   // SECTION D: CURRICULUM IMPLEMENTATION (From Excel)
   {
@@ -334,38 +342,52 @@ export function ForeignObservationClient(props: {
     return props.teachers || [];
   }, [props.teachers]);
 
-  // Comprehensive filter matching exact Department ID, Department Rel ID, or Department Assignments
+  // Comprehensive matching for Departments (exact ID, exact Name, Assignments, and Normalized Strings)
   const filteredObservedTeachers = useMemo(() => {
     if (!observedDeptId || observedDeptId === "ALL") return allTeachers;
 
     return allTeachers.filter((t: any) => {
-      // 1. Exact Department ID match
+      // 1. Direct ID match
       if (t.departmentId === observedDeptId || t.departmentRel?.id === observedDeptId) return true;
-      if (t.departmentAssignments?.some((da: any) => da.departmentId === observedDeptId || da.department?.id === observedDeptId)) return true;
+      if (t.departmentAssignments?.some((da: any) => da.departmentId === observedDeptId)) return true;
 
-      // 2. Keyword matching for 4 standard groups
-      const deptName = (t.departmentRel?.name || "").toLowerCase();
-      const assigned = (t.departmentAssignments || []).map((da: any) => (da.department?.name || "")).join(" ").toLowerCase();
-      const pos = (t.position || "").toLowerCase();
-      const role = (t.user?.role || "").toLowerCase();
-      const allText = (deptName + " " + assigned + " " + pos + " " + role).toLowerCase();
+      // 2. Direct Name match
+      if (t.department === observedDeptId || t.departmentRel?.name === observedDeptId) return true;
+      if (t.departmentAssignments?.some((da: any) => da.departmentName === observedDeptId)) return true;
 
-      if (observedDeptId === "GRP_MAM_NON") {
-        return allText.includes("mầm non") || allText.includes("mam non") || allText.includes("mn");
+      // 3. String content matching
+      const deptName = cleanStr(t.department || t.departmentRel?.name || "");
+      const assignedNames = cleanStr((t.departmentAssignments || []).map((da: any) => da.departmentName || "").join(" "));
+      const pos = cleanStr(t.position || "");
+      const mainSub = cleanStr(t.mainSubject || "");
+      const allText = (deptName + " " + assignedNames + " " + pos + " " + mainSub).toLowerCase();
+
+      const selectedDeptObj = (props.departments || []).find((d: any) => d.id === observedDeptId);
+      const targetName = cleanStr(selectedDeptObj?.name || observedDeptId);
+
+      // Primary English (Tiểu học)
+      if (targetName.includes("tieu hoc") || targetName.includes("pri") || targetName.includes("th_")) {
+        return (allText.includes("tieu hoc") || allText.includes("pri") || allText.includes("c1")) && !allText.includes("mam non");
       }
-      if (observedDeptId === "GRP_TIEU_HOC") {
-        return (allText.includes("tiểu học") || allText.includes("tieu hoc") || allText.includes("pri")) && !allText.includes("mầm non");
+
+      // Secondary English (Trung học / THCS / THPT)
+      if (targetName.includes("trung hoc") || targetName.includes("thcs") || targetName.includes("thpt") || targetName.includes("sec")) {
+        return allText.includes("trung hoc") || allText.includes("thcs") || allText.includes("thpt") || allText.includes("sec") || allText.includes("c2") || allText.includes("c3");
       }
-      if (observedDeptId === "GRP_TRUNG_HOC") {
-        return allText.includes("trung học") || allText.includes("trung hoc") || allText.includes("thcs") || allText.includes("thpt") || allText.includes("sec");
+
+      // Preschool English (Mầm non)
+      if (targetName.includes("mam non") || targetName.includes("mn") || targetName.includes("pre") || targetName.includes("kindergarten")) {
+        return allText.includes("mam non") || allText.includes("mn") || allText.includes("pre") || allText.includes("kindergarten");
       }
-      if (observedDeptId === "GRP_QUOC_TE") {
-        return allText.includes("quốc tế") || allText.includes("quoc te") || allText.includes("gvnn") || allText.includes("expat") || allText.includes("international") || allText.includes("esl");
+
+      // International & Foreign English Teachers (Quốc tế & GVNN)
+      if (targetName.includes("quoc te") || targetName.includes("gvnn") || targetName.includes("expat") || targetName.includes("international")) {
+        return allText.includes("quoc te") || allText.includes("gvnn") || allText.includes("expat") || allText.includes("foreign") || allText.includes("international") || allText.includes("esl") || allText.includes("cambridge");
       }
 
       return false;
     });
-  }, [allTeachers, observedDeptId]);
+  }, [allTeachers, observedDeptId, props.departments]);
 
   const selectedTeacher = useMemo(() => {
     return allTeachers.find((t: any) => t.id === teacherId);
@@ -710,21 +732,22 @@ export function ForeignObservationClient(props: {
                   >
                     <option value="ALL">-- Tất cả Tổ Chuyên Môn ({allTeachers.length} GV) --</option>
                     
-                    <optgroup label="── 4 Khối Tổ Tiếng Anh Chuẩn ──">
-                      <option value="GRP_MAM_NON">Tổ Tiếng Anh Mầm non</option>
-                      <option value="GRP_TIEU_HOC">Tổ Tiếng Anh Tiểu học</option>
-                      <option value="GRP_TRUNG_HOC">Tổ Tiếng Anh Trung học</option>
-                      <option value="GRP_QUOC_TE">Tổ Tiếng Anh Quốc tế & GVNN</option>
+                    <optgroup label="── 4 Tổ Tiếng Anh Trọng Tâm ──">
+                      <option value="Tổ Tiếng Anh Tiểu học">Tổ Tiếng Anh Tiểu học</option>
+                      <option value="Tổ Tiếng Anh Trung học">Tổ Tiếng Anh Trung học</option>
+                      <option value="Tổ Tiếng Anh Quốc tế & GVNN">Tổ Tiếng Anh Quốc tế & GVNN</option>
+                      <option value="Tổ Tiếng Anh Mầm non">Tổ Tiếng Anh Mầm non</option>
                     </optgroup>
 
                     {props.departments && props.departments.length > 0 && (
-                      <optgroup label="── Danh Sách Tổ Bộ Môn Hệ Thống ──">
+                      <optgroup label="── Danh Sách Tổ Chuyên Môn Trong Hệ Thống ──">
                         {props.departments.map((d: any) => {
-                          const count = allTeachers.filter((t: any) =>
-                            t.departmentId === d.id ||
-                            t.departmentRel?.id === d.id ||
-                            t.departmentAssignments?.some((da: any) => da.departmentId === d.id || da.department?.id === d.id)
-                          ).length;
+                          const count = allTeachers.filter((t: any) => {
+                            if (t.departmentId === d.id || t.departmentRel?.id === d.id) return true;
+                            if (t.departmentAssignments?.some((da: any) => da.departmentId === d.id || da.departmentName === d.name)) return true;
+                            if (t.department === d.name || t.departmentRel?.name === d.name) return true;
+                            return false;
+                          }).length;
                           return (
                             <option key={d.id} value={d.id}>
                               {d.name} ({count} GV)
@@ -749,8 +772,8 @@ export function ForeignObservationClient(props: {
                   >
                     <option value="">-- Chọn Giáo Viên Được Dự ({filteredObservedTeachers.length} GV) --</option>
                     {filteredObservedTeachers.map((t: any) => {
-                      const deptLabel = t.departmentRel?.name || t.departmentAssignments?.[0]?.department?.name || t.position || "Tổ Tiếng Anh";
-                      const campusLabel = t.campus?.campusName ? (" • " + t.campus.campusName) : "";
+                      const deptLabel = t.departmentRel?.name || t.departmentAssignments?.[0]?.departmentName || t.department || t.position || "Tổ Tiếng Anh";
+                      const campusLabel = t.campus ? (" • " + t.campus) : "";
                       return (
                         <option key={t.id} value={t.id}>
                           {t.teacherName} ({t.teacherCode}) - {deptLabel}{campusLabel}

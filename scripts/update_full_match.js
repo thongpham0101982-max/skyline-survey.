@@ -1,4 +1,10 @@
-"use server";
+﻿const fs = require('fs');
+const path = require('path');
+
+const rootDir = path.join(__dirname, '..');
+const actionsPath = path.join(rootDir, 'src', 'app', 'teacher', 'du-gio-gvnn', 'actions.ts');
+
+const fullActions = `"use server";
 
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -473,3 +479,7 @@ export async function getForeignObservationSlots(academicYearId?: string) {
     return { success: false, error: error.message };
   }
 }
+`;
+
+fs.writeFileSync(actionsPath, fullActions, 'utf8');
+console.log('actions.ts rewritten with clean async functions and full relation queries');

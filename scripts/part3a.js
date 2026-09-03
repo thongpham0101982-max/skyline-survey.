@@ -121,21 +121,22 @@ const p3a = `
                   >
                     <option value="ALL">-- Tất cả Tổ Chuyên Môn ({allTeachers.length} GV) --</option>
                     
-                    <optgroup label="── 4 Khối Tổ Tiếng Anh Chuẩn ──">
-                      <option value="GRP_MAM_NON">Tổ Tiếng Anh Mầm non</option>
-                      <option value="GRP_TIEU_HOC">Tổ Tiếng Anh Tiểu học</option>
-                      <option value="GRP_TRUNG_HOC">Tổ Tiếng Anh Trung học</option>
-                      <option value="GRP_QUOC_TE">Tổ Tiếng Anh Quốc tế & GVNN</option>
+                    <optgroup label="── 4 Tổ Tiếng Anh Trọng Tâm ──">
+                      <option value="Tổ Tiếng Anh Tiểu học">Tổ Tiếng Anh Tiểu học</option>
+                      <option value="Tổ Tiếng Anh Trung học">Tổ Tiếng Anh Trung học</option>
+                      <option value="Tổ Tiếng Anh Quốc tế & GVNN">Tổ Tiếng Anh Quốc tế & GVNN</option>
+                      <option value="Tổ Tiếng Anh Mầm non">Tổ Tiếng Anh Mầm non</option>
                     </optgroup>
 
                     {props.departments && props.departments.length > 0 && (
-                      <optgroup label="── Danh Sách Tổ Bộ Môn Hệ Thống ──">
+                      <optgroup label="── Danh Sách Tổ Chuyên Môn Trong Hệ Thống ──">
                         {props.departments.map((d: any) => {
-                          const count = allTeachers.filter((t: any) =>
-                            t.departmentId === d.id ||
-                            t.departmentRel?.id === d.id ||
-                            t.departmentAssignments?.some((da: any) => da.departmentId === d.id || da.department?.id === d.id)
-                          ).length;
+                          const count = allTeachers.filter((t: any) => {
+                            if (t.departmentId === d.id || t.departmentRel?.id === d.id) return true;
+                            if (t.departmentAssignments?.some((da: any) => da.departmentId === d.id || da.departmentName === d.name)) return true;
+                            if (t.department === d.name || t.departmentRel?.name === d.name) return true;
+                            return false;
+                          }).length;
                           return (
                             <option key={d.id} value={d.id}>
                               {d.name} ({count} GV)
@@ -160,8 +161,8 @@ const p3a = `
                   >
                     <option value="">-- Chọn Giáo Viên Được Dự ({filteredObservedTeachers.length} GV) --</option>
                     {filteredObservedTeachers.map((t: any) => {
-                      const deptLabel = t.departmentRel?.name || t.departmentAssignments?.[0]?.department?.name || t.position || "Tổ Tiếng Anh";
-                      const campusLabel = t.campus?.campusName ? (" • " + t.campus.campusName) : "";
+                      const deptLabel = t.departmentRel?.name || t.departmentAssignments?.[0]?.departmentName || t.department || t.position || "Tổ Tiếng Anh";
+                      const campusLabel = t.campus ? (" • " + t.campus) : "";
                       return (
                         <option key={t.id} value={t.id}>
                           {t.teacherName} ({t.teacherCode}) - {deptLabel}{campusLabel}

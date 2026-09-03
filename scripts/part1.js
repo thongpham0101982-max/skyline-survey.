@@ -50,6 +50,14 @@ export interface IndicatorConfig {
   quickImpact: string[];
 }
 
+const cleanStr = (s: string | null | undefined) => 
+  (s || "")
+   .toLowerCase()
+   .normalize("NFD")
+   .replace(/[\u0300-\u036f]/g, "")
+   .replace(/đ/g, "d")
+   .replace(/Đ/g, "d");
+
 const ESL_INDICATORS: IndicatorConfig[] = [
   // SECTION D: CURRICULUM IMPLEMENTATION (From Excel)
   {
