@@ -269,6 +269,7 @@ export async function getForeignObservationData(academicYearId?: string) {
 }
 
 export async function createForeignObservationWithEvaluation(data: {
+  observerId?: string;
   teacherId: string;
   campusId?: string;
   classId?: string;
@@ -327,7 +328,7 @@ export async function createForeignObservationWithEvaluation(data: {
       return { success: false, error: "Teacher profile not found." };
     }
 
-    const evaluatorId = currentTeacher?.id || session.user.id;
+    const evaluatorId = data.observerId || currentTeacher?.id || session.user.id;
 
     const hostTeacher = await prisma.teacher.findUnique({
       where: { id: data.teacherId },

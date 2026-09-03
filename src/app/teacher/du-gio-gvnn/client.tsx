@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -47,6 +47,7 @@ export interface IndicatorConfig {
 }
 
 const ESL_INDICATORS: IndicatorConfig[] = [
+  // SECTION D: CURRICULUM IMPLEMENTATION (From Excel)
   {
     id: 14,
     section: "D",
@@ -123,6 +124,8 @@ const ESL_INDICATORS: IndicatorConfig[] = [
       "Standardized English proficiency development"
     ]
   },
+
+  // SECTION E: ASSESSMENT & STUDENT PROGRESS (From Excel)
   {
     id: 18,
     section: "E",
@@ -180,6 +183,8 @@ const ESL_INDICATORS: IndicatorConfig[] = [
       "Clear documentation of students needing extra clinic"
     ]
   },
+
+  // SECTIONS A-C: CLASSROOM INSTRUCTION & IMMERSION CLIMATE
   {
     id: 1,
     section: "ABC",
@@ -261,6 +266,33 @@ const PERIOD_LIST = [
   { name: "Tiết 7", time: "15:10 - 15:55" },
   { name: "Tiết 8", time: "15:55 - 16:40" }
 ];
+
+const ENGLISH_DEPARTMENTS_CONFIG = [
+  { id: "ALL", name: "Tất cả 3 Tổ Tiếng Anh & GVNN (All 3 English Departments)" },
+  { id: "TIENG_ANH_TIEU_HOC", name: "Tổ Tiếng Anh Tiểu học (Primary English)" },
+  { id: "TIENG_ANH_TRUNG_HOC", name: "Tổ Tiếng Anh Trung học (Secondary English)" },
+  { id: "TIENG_ANH_QUOC_TE", name: "Tổ Tiếng Anh Quốc tế & GVNN (International / ESL)" }
+];
+
+function matchTeacherDept(teacher: any, deptKey: string): boolean {
+  if (deptKey === "ALL") return true;
+  const deptName = (teacher.departmentRel?.name || "").toLowerCase();
+  const assigned = (teacher.departmentAssignments || []).map((a: any) => (a.department?.name || "").toLowerCase()).join(" ");
+  const pos = (teacher.position || "").toLowerCase();
+  const allText = (deptName + " " + assigned + " " + pos).toLowerCase();
+
+  if (deptKey === "TIENG_ANH_TIEU_HOC") {
+    return allText.includes("tiểu học") || allText.includes("tieu hoc") || allText.includes("pri");
+  }
+  if (deptKey === "TIENG_ANH_TRUNG_HOC") {
+    return allText.includes("trung học") || allText.includes("trung hoc") || allText.includes("thcs") || allText.includes("thpt") || allText.includes("sec");
+  }
+  if (deptKey === "TIENG_ANH_QUOC_TE") {
+    return allText.includes("quốc tế") || allText.includes("quoc te") || allText.includes("gvnn") || allText.includes("expat") || allText.includes("international") || allText.includes("esl");
+  }
+  return true;
+}
+
 export function ForeignObservationClient(props: {
   currentTeacher: any;
   departments: any[];
@@ -276,7 +308,14 @@ export function ForeignObservationClient(props: {
 
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
 
+  // Observer State
+  const [observerDeptFilter, setObserverDeptFilter] = useState("ALL");
+  const [observerId, setObserverId] = useState(() => props.currentTeacher?.id || "");
+
+  // Observed Teacher State
+  const [observedDeptFilter, setObservedDeptFilter] = useState("ALL");
   const [teacherId, setTeacherId] = useState("");
+
   const [campusId, setCampusId] = useState("");
   const [classId, setClassId] = useState("");
   const [className, setClassName] = useState("");
@@ -324,6 +363,15 @@ export function ForeignObservationClient(props: {
   const englishTeachers = useMemo(() => {
     return props.teachers || [];
   }, [props.teachers]);
+
+  // Filtered lists for Observer and Observed Teacher
+  const filteredObservers = useMemo(() => {
+    return englishTeachers.filter(t => matchTeacherDept(t, observerDeptFilter));
+  }, [englishTeachers, observerDeptFilter]);
+
+  const filteredObservedTeachers = useMemo(() => {
+    return englishTeachers.filter(t => matchTeacherDept(t, observedDeptFilter));
+  }, [englishTeachers, observedDeptFilter]);
 
   const selectedTeacher = useMemo(() => {
     return englishTeachers.find((t: any) => t.id === teacherId);
@@ -395,7 +443,7 @@ export function ForeignObservationClient(props: {
   const appendQuickTag = (id: number, field: "evidence" | "studentImpact", tag: string) => {
     setIndicatorData(prev => {
       const current = prev[id]?.[field] || "";
-      const updated = current ? `${current}; ${tag}` : tag;
+      const updated = current ? (current + "; " + tag) : tag;
       return {
         ...prev,
         [id]: { ...prev[id], [field]: updated }
@@ -473,14 +521,14 @@ export function ForeignObservationClient(props: {
       if (data.rating === "4") {
         strengths.push(
           data.evidence
-            ? `${ind.text} (${data.evidence})`
-            : `${ind.text} was demonstrated with high proficiency.`
+            ? (ind.text + " (" + data.evidence + ")")
+            : (ind.text + " was demonstrated with high proficiency.")
         );
       } else if (data.rating === "1" || data.rating === "2") {
         challenges.push(
           data.evidence
-            ? `${ind.text} - Note: ${data.evidence}`
-            : `${ind.text} requires further scaffolding and refinement.`
+            ? (ind.text + " - Note: " + data.evidence)
+            : (ind.text + " requires further scaffolding and refinement.")
         );
       }
 
@@ -493,15 +541,15 @@ export function ForeignObservationClient(props: {
       ...prev,
       keyStrengths:
         strengths.length > 0
-          ? strengths.map(s => `• ${s}`).join("\n")
+          ? strengths.map(s => "• " + s).join("\n")
           : "• Demonstrated strong classroom control and clear communicative staging.",
       keyChallenges:
         challenges.length > 0
-          ? challenges.map(c => `• ${c}`).join("\n")
+          ? challenges.map(c => "• " + c).join("\n")
           : "• Maintain tighter pacing during the final production/wrap-up stage.",
       studentProgressEvidence:
         impacts.length > 0
-          ? impacts.map(imp => `• ${imp}`).join("\n")
+          ? impacts.map(imp => "• " + imp).join("\n")
           : "• Over 80% of students actively produced target language during communicative activities.",
       agreedActions:
         prev.agreedActions ||
@@ -523,6 +571,7 @@ export function ForeignObservationClient(props: {
     });
 
     const payload = {
+      observerId: observerId || undefined,
       teacherId,
       campusId,
       classId,
@@ -549,13 +598,14 @@ export function ForeignObservationClient(props: {
       }
     });
   };
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-24 text-slate-800">
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-white font-medium text-sm transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
-            toast.type === "success" ? "bg-emerald-600" : "bg-rose-600"
-          }`}
+          className={"fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-2xl text-white font-medium text-sm transition-all duration-300 animate-in fade-in slide-in-from-top-4 " +
+            (toast.type === "success" ? "bg-emerald-600" : "bg-rose-600")
+          }
         >
           {toast.type === "success" ? (
             <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
@@ -579,30 +629,29 @@ export function ForeignObservationClient(props: {
                 Class Observation & Teaching Support
               </h1>
               <p className="text-slate-300 text-sm mt-1 max-w-2xl">
-                Evidence-based lesson observation framework for ESL and English Departments.
-                Focused on instructional coaching, student growth, and curriculum implementation.
+                Evidence-based lesson observation framework for ESL and English Departments (Primary, Secondary, International & GVNN).
               </p>
             </div>
 
             <div className="flex items-center gap-1.5 bg-slate-800/80 p-1.5 rounded-2xl border border-slate-700/60 self-start md:self-auto shadow-inner">
               <button
                 onClick={() => setActiveTab("walkthrough")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                  activeTab === "walkthrough"
+                className={"flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all " +
+                  (activeTab === "walkthrough"
                     ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700/50"
-                }`}
+                    : "text-slate-300 hover:text-white hover:bg-slate-700/50")
+                }
               >
                 <Sparkles className="w-4 h-4" />
                 ⚡ Walkthrough Form
               </button>
               <button
                 onClick={() => setActiveTab("kpi")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                  activeTab === "kpi"
+                className={"flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all " +
+                  (activeTab === "kpi"
                     ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-slate-300 hover:text-white hover:bg-slate-700/50"
-                }`}
+                    : "text-slate-300 hover:text-white hover:bg-slate-700/50")
+                }
               >
                 <BarChart3 className="w-4 h-4" />
                 📊 Quota & KPI
@@ -617,54 +666,108 @@ export function ForeignObservationClient(props: {
           <>
             {/* Section 1: Administrative Information */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
+              <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
                     1
                   </div>
                   <div>
                     <h2 className="font-bold text-slate-800 text-base">General Information & Context</h2>
-                    <p className="text-xs text-slate-500">Auto-filled based on logged-in observer and selected teacher</p>
+                    <p className="text-xs text-slate-500">Filtered for 3 English Departments: Primary, Secondary, International & GVNN</p>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-200">
-                  Subject: ESL (Locked)
+                <span className="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-bold uppercase tracking-wider border border-indigo-200 self-start sm:self-auto">
+                  Subject: ESL (English as a Second Language)
                 </span>
               </div>
 
               <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                {/* Observer Section */}
+                <div className="space-y-1.5 md:col-span-2 bg-indigo-50/40 p-4 rounded-xl border border-indigo-100">
+                  <span className="text-[11px] font-extrabold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
                     <User className="w-3.5 h-3.5 text-indigo-600" />
-                    Observer (Evaluator)
-                  </label>
-                  <input
-                    type="text"
-                    disabled
-                    value={props.currentTeacher?.teacherName || "Current User"}
-                    className="w-full bg-slate-100 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-700 cursor-not-allowed"
-                  />
+                    Observer / Evaluator (Người Dự Giờ)
+                  </span>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                        Tổ Chuyên Môn Người Dự
+                      </label>
+                      <select
+                        value={observerDeptFilter}
+                        onChange={e => setObserverDeptFilter(e.target.value)}
+                        className="w-full bg-white border border-indigo-200 focus:border-indigo-600 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
+                      >
+                        {ENGLISH_DEPARTMENTS_CONFIG.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                        Giáo Viên Dự (Observer)
+                      </label>
+                      <select
+                        value={observerId}
+                        onChange={e => setObserverId(e.target.value)}
+                        className="w-full bg-white border-2 border-indigo-300 focus:border-indigo-600 rounded-lg px-3 py-2 text-xs font-bold text-indigo-950 outline-none"
+                      >
+                        {filteredObservers.map((t: any) => (
+                          <option key={t.id} value={t.id}>
+                            {t.teacherName} ({t.teacherCode}) - {t.departmentRel?.name || t.position || "English"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-indigo-900 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-indigo-600" />
-                    Observed Teacher <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={teacherId}
-                    onChange={handleTeacherChange}
-                    className="w-full bg-white border-2 border-indigo-300 focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 rounded-xl px-3.5 py-2.5 text-sm font-bold text-slate-800 outline-none transition"
-                  >
-                    <option value="">-- Select English Teacher --</option>
-                    {englishTeachers.map((t: any) => (
-                      <option key={t.id} value={t.id}>
-                        {t.teacherName} ({t.teacherCode}) - {t.departmentRel?.name || t.position || "English"}
-                      </option>
-                    ))}
-                  </select>
+                {/* Observed Teacher Section */}
+                <div className="space-y-1.5 md:col-span-2 bg-amber-50/40 p-4 rounded-xl border border-amber-100">
+                  <span className="text-[11px] font-extrabold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-amber-600" />
+                    Observed Teacher (Giáo Viên Được Dự) <span className="text-rose-500">*</span>
+                  </span>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                        Tổ Chuyên Môn GV Dạy
+                      </label>
+                      <select
+                        value={observedDeptFilter}
+                        onChange={e => setObservedDeptFilter(e.target.value)}
+                        className="w-full bg-white border border-amber-200 focus:border-amber-600 rounded-lg px-3 py-2 text-xs font-semibold text-slate-700 outline-none"
+                      >
+                        {ENGLISH_DEPARTMENTS_CONFIG.map(d => (
+                          <option key={d.id} value={d.id}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-amber-900 mb-1">
+                        Giáo Viên Được Dự (Observed)
+                      </label>
+                      <select
+                        value={teacherId}
+                        onChange={handleTeacherChange}
+                        className="w-full bg-white border-2 border-amber-400 focus:border-amber-600 rounded-lg px-3 py-2 text-xs font-bold text-amber-950 outline-none"
+                      >
+                        <option value="">-- Chọn Giáo Viên --</option>
+                        {filteredObservedTeachers.map((t: any) => (
+                          <option key={t.id} value={t.id}>
+                            {t.teacherName} ({t.teacherCode}) - {t.departmentRel?.name || t.position || "English"}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
 
+                {/* Class & Campus */}
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                     <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
@@ -774,11 +877,11 @@ export function ForeignObservationClient(props: {
                           key={skill}
                           type="button"
                           onClick={() => toggleSkill(skill)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                            isSelected
+                          className={"px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 " +
+                            (isSelected
                               ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
-                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                          }`}
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200")
+                          }
                         >
                           {isSelected && <Check className="w-3.5 h-3.5" />}
                           {skill}
@@ -816,6 +919,7 @@ export function ForeignObservationClient(props: {
                 </div>
               </div>
             </div>
+
             {/* Section 2: Indicators */}
             <div className="space-y-6">
               {["D", "E", "ABC"].map(sectionKey => {
@@ -864,11 +968,11 @@ export function ForeignObservationClient(props: {
                                       key={opt.value}
                                       type="button"
                                       onClick={() => handleRatingChange(ind.id, opt.value)}
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                        isSelected
-                                          ? opt.badge + " shadow-sm scale-105"
-                                          : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
-                                      }`}
+                                      className={"px-3 py-1.5 rounded-lg text-xs font-bold transition-all " +
+                                        (isSelected
+                                          ? (opt.badge + " shadow-sm scale-105")
+                                          : "text-slate-600 hover:text-slate-900 hover:bg-white/80")
+                                      }
                                     >
                                       {opt.short}
                                     </button>
@@ -950,6 +1054,7 @@ export function ForeignObservationClient(props: {
                 );
               })}
             </div>
+
             {/* Section 3: Teacher Voice & Reflective Feedback (Section F) */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
               <div className="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
@@ -1136,7 +1241,7 @@ export function ForeignObservationClient(props: {
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Suggested Rating:</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${stats.badgeColor}`}>
+                  <span className={"px-3 py-1 rounded-full text-xs font-extrabold " + stats.badgeColor}>
                     {stats.suggestedRating}
                   </span>
                 </div>
