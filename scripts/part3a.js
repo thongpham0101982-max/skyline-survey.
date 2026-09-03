@@ -122,10 +122,39 @@ const p3a = `
                     <option value="ALL">-- Tất cả Tổ Chuyên Môn ({allTeachers.length} GV) --</option>
                     
                     <optgroup label="── 4 Tổ Tiếng Anh Trọng Tâm ──">
-                      <option value="Tổ Tiếng Anh Tiểu học">Tổ Tiếng Anh Tiểu học</option>
-                      <option value="Tổ Tiếng Anh Trung học">Tổ Tiếng Anh Trung học</option>
-                      <option value="Tổ Tiếng Anh Quốc tế & GVNN">Tổ Tiếng Anh Quốc tế & GVNN</option>
-                      <option value="Tổ Tiếng Anh Mầm non">Tổ Tiếng Anh Mầm non</option>
+                      <option value="Tổ Tiếng Anh Tiểu học">
+                        Tổ Tiếng Anh Tiểu học ({allTeachers.filter((t: any) => {
+                          const allT = cleanStr((t.department || "") + " " + (t.position || ""));
+                          const hasPri = t.classes && t.classes.some((c: any) => {
+                            const g = parseInt(c.class?.grade || "0");
+                            return (g >= 1 && g <= 5) || cleanStr(c.class?.level || "").includes("tieu hoc");
+                          });
+                          return allT.includes("tieu hoc") || allT.includes("pri") || hasPri;
+                        }).length} GV)
+                      </option>
+                      <option value="Tổ Tiếng Anh Trung học">
+                        Tổ Tiếng Anh Trung học ({allTeachers.filter((t: any) => {
+                          const allT = cleanStr((t.department || "") + " " + (t.position || ""));
+                          const hasSec = t.classes && t.classes.some((c: any) => {
+                            const g = parseInt(c.class?.grade || "0");
+                            return (g >= 6 && g <= 12) || cleanStr(c.class?.level || "").includes("thcs") || cleanStr(c.class?.level || "").includes("thpt");
+                          });
+                          return allT.includes("trung hoc") || allT.includes("thcs") || allT.includes("thpt") || hasSec;
+                        }).length} GV)
+                      </option>
+                      <option value="Tổ Tiếng Anh Quốc tế & GVNN">
+                        Tổ Tiếng Anh Quốc tế & GVNN ({allTeachers.filter((t: any) => {
+                          const allT = cleanStr((t.department || "") + " " + (t.position || ""));
+                          return allT.includes("quoc te") || allT.includes("gvnn") || allT.includes("expat") || allT.includes("international") || allT.includes("esl");
+                        }).length} GV)
+                      </option>
+                      <option value="Tổ Tiếng Anh Mầm non">
+                        Tổ Tiếng Anh Mầm non ({allTeachers.filter((t: any) => {
+                          const allT = cleanStr((t.department || "") + " " + (t.position || ""));
+                          const hasPre = t.classes && t.classes.some((c: any) => cleanStr(c.class?.level || "").includes("mam non"));
+                          return allT.includes("mam non") || allT.includes("mn") || hasPre;
+                        }).length} GV)
+                      </option>
                     </optgroup>
 
                     {props.departments && props.departments.length > 0 && (

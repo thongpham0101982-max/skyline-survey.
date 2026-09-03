@@ -435,7 +435,7 @@ export async function createForeignObservationWithEvaluation(data: {
   }
 }
 
-export async function getForeignObservationSlots(academicYearId?: string) {
+export async function getForeignObservationSlots(params?: string | { academicYearId?: string; campusId?: string; deptId?: string; grade?: string; date?: string; month?: string }) {
   try {
     const session = await auth();
     if (!session || !session.user) {
@@ -443,7 +443,8 @@ export async function getForeignObservationSlots(academicYearId?: string) {
     }
 
     const where: any = {};
-    if (academicYearId) {
+    const academicYearId = typeof params === "string" ? params : params?.academicYearId;
+    if (academicYearId && academicYearId !== "all") {
       where.academicYearId = academicYearId;
     }
 

@@ -70,47 +70,75 @@ export function ForeignObservationClient(props: {
     return props.teachers || [];
   }, [props.teachers]);
 
-  // Comprehensive matching for Departments (exact ID, exact Name, Assignments, and Normalized Strings)
+  // Comprehensive matching for Departments (Direct ID, Department Rel, Assignments, Teaching Grades, and Keywords)
   const filteredObservedTeachers = useMemo(() => {
     if (!observedDeptId || observedDeptId === "ALL") return allTeachers;
+
+    const selectedDeptObj = (props.departments || []).find((d: any) => d.id === observedDeptId);
+    const targetName = cleanStr(selectedDeptObj?.name || observedDeptId);
 
     return allTeachers.filter((t: any) => {
       // 1. Direct ID match
       if (t.departmentId === observedDeptId || t.departmentRel?.id === observedDeptId) return true;
-      if (t.departmentAssignments?.some((da: any) => da.departmentId === observedDeptId)) return true;
+      if (t.departmentAssignments && t.departmentAssignments.some((da: any) => da.departmentId === observedDeptId)) return true;
 
       // 2. Direct Name match
-      if (t.department === observedDeptId || t.departmentRel?.name === observedDeptId) return true;
-      if (t.departmentAssignments?.some((da: any) => da.departmentName === observedDeptId)) return true;
+      if (selectedDeptObj) {
+        if (t.department === selectedDeptObj.name || t.departmentRel?.name === selectedDeptObj.name) return true;
+        if (t.departmentAssignments && t.departmentAssignments.some((da: any) => da.departmentName === selectedDeptObj.name)) return true;
+      }
 
-      // 3. String content matching
+      // 3. Normalized text matching
       const deptName = cleanStr(t.department || t.departmentRel?.name || "");
       const assignedNames = cleanStr((t.departmentAssignments || []).map((da: any) => da.departmentName || "").join(" "));
       const pos = cleanStr(t.position || "");
       const mainSub = cleanStr(t.mainSubject || "");
-      const allText = (deptName + " " + assignedNames + " " + pos + " " + mainSub).toLowerCase();
+      const allCombined = (deptName + " " + assignedNames + " " + pos + " " + mainSub).toLowerCase();
 
-      const selectedDeptObj = (props.departments || []).find((d: any) => d.id === observedDeptId);
-      const targetName = cleanStr(selectedDeptObj?.name || observedDeptId);
+      // Check classes taught by this teacher
+      const hasPrimaryClass = t.classes && t.classes.some((c: any) => {
+        const g = parseInt(c.class?.grade || c.class?.className || "0");
+        const lvl = cleanStr(c.class?.level || "");
+        return (g >= 1 && g <= 5) || lvl.includes("tieu hoc") || lvl.includes("pri");
+      });
 
-      // Primary English (Tiểu học)
-      if (targetName.includes("tieu hoc") || targetName.includes("pri") || targetName.includes("th_")) {
-        return (allText.includes("tieu hoc") || allText.includes("pri") || allText.includes("c1")) && !allText.includes("mam non");
+      const hasSecondaryClass = t.classes && t.classes.some((c: any) => {
+        const g = parseInt(c.class?.grade || c.class?.className || "0");
+        const lvl = cleanStr(c.class?.level || "");
+        return (g >= 6 && g <= 12) || lvl.includes("thcs") || lvl.includes("thpt") || lvl.includes("sec") || lvl.includes("trung hoc");
+      });
+
+      const hasPreschoolClass = t.classes && t.classes.some((c: any) => {
+        const lvl = cleanStr(c.class?.level || "");
+        return lvl.includes("mam non") || lvl.includes("mn") || lvl.includes("pre");
+      });
+
+      const isEnglishTeacher = allCombined.includes("tieng anh") || allCombined.includes("ta") || allCombined.includes("english") || allCombined.includes("esl") || allCombined.includes("ngoai ngu") || allCombined.includes("gvnn") || allCombined.includes("expat");
+
+      // Matching "Tổ Tiếng Anh Tiểu học"
+      if (targetName.includes("tieu hoc") || targetName.includes("pri")) {
+        if (allCombined.includes("tieu hoc") || allCombined.includes("pri") || hasPrimaryClass) {
+          return isEnglishTeacher || allCombined.includes("tieu hoc");
+        }
       }
 
-      // Secondary English (Trung học / THCS / THPT)
+      // Matching "Tổ Tiếng Anh Trung học"
       if (targetName.includes("trung hoc") || targetName.includes("thcs") || targetName.includes("thpt") || targetName.includes("sec")) {
-        return allText.includes("trung hoc") || allText.includes("thcs") || allText.includes("thpt") || allText.includes("sec") || allText.includes("c2") || allText.includes("c3");
+        if (allCombined.includes("trung hoc") || allCombined.includes("thcs") || allCombined.includes("thpt") || allCombined.includes("sec") || hasSecondaryClass) {
+          return isEnglishTeacher || allCombined.includes("trung hoc");
+        }
       }
 
-      // Preschool English (Mầm non)
+      // Matching "Tổ Tiếng Anh Mầm non"
       if (targetName.includes("mam non") || targetName.includes("mn") || targetName.includes("pre") || targetName.includes("kindergarten")) {
-        return allText.includes("mam non") || allText.includes("mn") || allText.includes("pre") || allText.includes("kindergarten");
+        if (allCombined.includes("mam non") || allCombined.includes("mn") || allCombined.includes("pre") || hasPreschoolClass) {
+          return isEnglishTeacher || allCombined.includes("mam non");
+        }
       }
 
-      // International & Foreign English Teachers (Quốc tế & GVNN)
+      // Matching "Tổ Tiếng Anh Quốc tế & GVNN"
       if (targetName.includes("quoc te") || targetName.includes("gvnn") || targetName.includes("expat") || targetName.includes("international")) {
-        return allText.includes("quoc te") || allText.includes("gvnn") || allText.includes("expat") || allText.includes("foreign") || allText.includes("international") || allText.includes("esl") || allText.includes("cambridge");
+        return allCombined.includes("quoc te") || allCombined.includes("gvnn") || allCombined.includes("expat") || allCombined.includes("foreign") || allCombined.includes("international") || allCombined.includes("cambridge") || allCombined.includes("esl");
       }
 
       return false;
