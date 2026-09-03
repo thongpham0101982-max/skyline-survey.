@@ -453,6 +453,22 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }, [myDeptTeachers]);
 
+  const [filterLevel, setFilterLevel] = useState(initialFilters.level || "all")
+  const [filterGrade, setFilterGrade] = useState(initialFilters.grade || "all")
+  const [filterPeriod, setFilterPeriod] = useState(initialFilters.period || "all")
+  const [filterDate, setFilterDate] = useState(initialFilters.date || "")
+  const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId || "all")
+  const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId || "all")
+  const [filterClassId, setFilterClassId] = useState(initialFilters.classId || "all")
+  const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
+
+  const handleAcademicYearChange = (yearId: string) => {
+    setFilterAcademicYearId(yearId)
+    const params = new URLSearchParams(window.location.search)
+    params.set("academicYearId", yearId)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   const [filterMonth, setFilterMonth] = useState<string>(() => {
     if (typeof window !== "undefined") {
       const sp = new URLSearchParams(window.location.search);
@@ -508,22 +524,6 @@ export function ObservationClient(props: ObservationClientProps) {
 
     return Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
   }, [slots, academicYears, filterAcademicYearId]);
-
-  const [filterLevel, setFilterLevel] = useState(initialFilters.level || "all")
-  const [filterGrade, setFilterGrade] = useState(initialFilters.grade || "all")
-  const [filterPeriod, setFilterPeriod] = useState(initialFilters.period || "all")
-  const [filterDate, setFilterDate] = useState(initialFilters.date || "")
-  const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId || "all")
-  const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId || "all")
-  const [filterClassId, setFilterClassId] = useState(initialFilters.classId || "all")
-  const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
-
-  const handleAcademicYearChange = (yearId: string) => {
-    setFilterAcademicYearId(yearId)
-    const params = new URLSearchParams(window.location.search)
-    params.set("academicYearId", yearId)
-    router.push(`${pathname}?${params.toString()}`)
-  }
 
   const checkIsMyDept = useCallback((slot: any) => {
     if (!currentTeacher || !slot?.teacher) return false;
