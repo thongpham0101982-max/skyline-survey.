@@ -65,45 +65,69 @@ export async function POST(req: Request) {
 
     const teacherIds = deptTeachers.map(t => t.id);
 
-    // 3. Fetch observation slots & registrations
-    const whereSlotClause: any = {
-      OR: [
-        { teacherId: { in: teacherIds } },
-        { registrations: { some: { teacherId: { in: teacherIds }, isApproved: true } } }
-      ],
-      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED"] }
-    };
+    // 3. Fetch observation slots & registrations with robust AND conditions
+    const andConditions: any[] = [
+      {
+        OR: [
+          { teacherId: { in: teacherIds } },
+          { registrations: { some: { teacherId: { in: teacherIds }, isApproved: true } } }
+        ]
+      },
+      {
+        status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED"] }
+      }
+    ];
 
     if (academicYearId) {
       const activeYear = await prisma.academicYear.findUnique({ where: { id: academicYearId } });
       if (activeYear) {
-        whereSlotClause.OR = [
-          { academicYearId: activeYear.id },
-          {
-            AND: [
-              { academicYearId: null },
-              {
-                date: {
-                  gte: activeYear.startDate,
-                  lte: activeYear.endDate
+        andConditions.push({
+          OR: [
+            { academicYearId: activeYear.id },
+            {
+              AND: [
+                { academicYearId: null },
+                {
+                  date: {
+                    gte: activeYear.startDate,
+                    lte: activeYear.endDate
+                  }
                 }
-              }
-            ]
-          }
-        ];
+              ]
+            }
+          ]
+        });
       }
     }
 
     const allSlots = await prisma.observationSlot.findMany({
-      where: whereSlotClause,
+      where: {
+        AND: andConditions
+      },
       include: {
         teacher: {
-          select: { id: true, teacherName: true, teacherCode: true, departmentId: true, departmentRel: true }
+          select: { 
+            id: true, 
+            teacherName: true, 
+            teacherCode: true, 
+            departmentId: true,
+            departmentRel: {
+              select: { id: true, name: true, blockCM: true }
+            }
+          }
         },
         registrations: {
           include: {
             teacher: {
-              select: { id: true, teacherName: true, teacherCode: true, departmentId: true, departmentRel: true }
+              select: { 
+                id: true, 
+                teacherName: true, 
+                teacherCode: true, 
+                departmentId: true,
+                departmentRel: {
+                  select: { id: true, name: true, blockCM: true }
+                }
+              }
             },
             evaluation: true
           }
