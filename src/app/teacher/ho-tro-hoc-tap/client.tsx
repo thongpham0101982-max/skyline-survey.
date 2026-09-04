@@ -2548,6 +2548,20 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
               <button
                 type="button"
+                onClick={() => {
+                  const ids = matrixTargets.map((t: any) => t.id);
+                  setSelectedEvalTargetIds(ids.length > 0 ? ids : filteredTargets.map((t: any) => t.id));
+                  setIsUrgentEmailModalOpen(true);
+                }}
+                className="bg-gradient-to-r from-rose-800 to-red-700 hover:from-rose-900 hover:to-red-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-xs transition-all cursor-pointer flex items-center gap-1.5 no-print"
+                title="Gửi SOS Mail thông tin kết quả đánh giá cho GVCN"
+              >
+                <Mail className="h-3.5 w-3.5 text-rose-200" />
+                <span>🚨 SOS Mail cho GVCN</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => window.print()}
                 className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 p-2 rounded-xl shadow-xs transition-all cursor-pointer no-print"
                 title="In kết quả tổng hợp"
