@@ -2003,30 +2003,9 @@ export function TeacherSupportClient({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
+                type="button"
                 disabled={selectedEvalTargetIds.length === 0}
-                onClick={() => {
-                  if (selectedEvalTargetIds.length === 0) return;
-                  setEvalTargetId("")
-                  setEvalTargetName("Nhiều học sinh")
-                  const firstSelected = targets.find((t:any) => t.id === selectedEvalTargetIds[0])
-                  setEvalTargetType(firstSelected?.supportType || "ACADEMIC")
-                  const curMonth = "Tháng " + (new Date().getMonth() + 1)
-                  const validMonth = ACADEMIC_MONTHS.includes(curMonth) ? curMonth : "Tháng 9"
-                  setEvalSelectedMonth(validMonth)
-                  setEvalSelectedWeek("Tuần 1")
-                  setEvalIsMonthlySummary(false)
-                  setEvalPeriodType("WEEK")
-                  setEvalPeriodName(`Tuần 1 - ${validMonth}`)
-                  setEvalComment("")
-                  setEvalGvcnFeedback("")
-                  setEvalPhhsFeedback("")
-                  setRecentConsultationLogs([])
-                  setEvalStudent(null)
-                  setEvalTargetObj(null)
-                  const options = configs.filter((c:any) => c.supportType === (firstSelected?.supportType || "ACADEMIC"))
-                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                  setIsEvaluationModalOpen(true)
-                }}
+                onClick={handleOpenBatchEvaluation}
                 className="bg-indigo-600 disabled:bg-slate-300 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all cursor-pointer"
               >
                 Đánh giá nhiều Học sinh
@@ -4288,38 +4267,51 @@ export function TeacherSupportClient({
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-12 gap-3 items-center">
-                      <div className="col-span-2 bg-indigo-50 border border-indigo-200 rounded-lg p-2 text-center">
-                        <span className="text-[10px] font-bold text-indigo-600 uppercase block">STT</span>
-                        <span className="text-base font-black text-indigo-900">
-                          #{(() => {
-                            const idx = filteredTargets.findIndex((t: any) => t.id === selectedEvalTargetIds[0] || t.id === evalTargetId);
-                            return idx >= 0 ? idx + 1 : 1;
-                          })()}
-                        </span>
-                      </div>
-                      <div className="col-span-3 bg-white border border-slate-200 rounded-lg p-2">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Mã HS</span>
-                        <span className="text-xs font-bold text-slate-800">{evalStudent?.studentCode || evalStudent?.code || "N/A"}</span>
-                      </div>
-                      <div className="col-span-7 bg-white border border-slate-200 rounded-lg p-2">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Họ và tên</span>
-                        <span className="text-sm font-black text-slate-900">{evalStudent?.studentName || evalStudent?.fullName || evalTargetName}</span>
-                      </div>
+                    (() => {
+                      const curTarget = evalTargetObj || filteredTargets.find((t: any) => t.id === selectedEvalTargetIds[0] || t.id === evalTargetId);
+                      const curStudent = evalStudent || curTarget?.student;
+                      const isComm = activeSubTab === "commitments" || curTarget?.notes?.includes("Cam kết Khảo sát đầu vào") || curTarget?.sourceType === "ADMISSION";
+                      const tLabel = isComm ? "Cam kết đầu vào" : "Đề xuất hỗ trợ";
+                      const tColor = isComm ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800";
+                      const sDateLabel = isComm ? "Ngày nhập học:" : "Ngày duyệt đề xuất:";
+                      const sDateVal = isComm
+                        ? formatDateSafe(curStudent?.enrollmentDate, "Chưa có dữ liệu")
+                        : formatDateSafe(curTarget?.approvedAt || curTarget?.createdAt, "Chưa có dữ liệu");
 
-                      <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Lớp</span>
-                        <span className="text-xs font-bold text-slate-800">{evalStudent?.className || evalStudent?.class?.className || "N/A"}</span>
-                      </div>
-                      <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Đối tượng</span>
-                        <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${targetColor}`}>{targetLabel}</span>
-                      </div>
-                      <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase block">{startDateLabel}</span>
-                        <span className="text-xs font-bold text-slate-800">{startDateValue}</span>
-                      </div>
-                    </div>
+                      const sttIndex = filteredTargets.findIndex((t: any) => t.id === (curTarget?.id || selectedEvalTargetIds[0] || evalTargetId));
+
+                      return (
+                        <div className="grid grid-cols-12 gap-3 items-center">
+                          <div className="col-span-2 bg-indigo-50 border border-indigo-200 rounded-lg p-2 text-center">
+                            <span className="text-[10px] font-bold text-indigo-600 uppercase block">STT</span>
+                            <span className="text-base font-black text-indigo-900">
+                              #{sttIndex >= 0 ? sttIndex + 1 : 1}
+                            </span>
+                          </div>
+                          <div className="col-span-3 bg-white border border-slate-200 rounded-lg p-2">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Mã HS</span>
+                            <span className="text-xs font-bold text-slate-800">{curStudent?.studentCode || curStudent?.code || "N/A"}</span>
+                          </div>
+                          <div className="col-span-7 bg-white border border-slate-200 rounded-lg p-2">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Họ và tên</span>
+                            <span className="text-sm font-black text-slate-900">{curStudent?.studentName || curStudent?.fullName || evalTargetName}</span>
+                          </div>
+
+                          <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">Lớp</span>
+                            <span className="text-xs font-bold text-slate-800">{curStudent?.className || curStudent?.class?.className || "N/A"}</span>
+                          </div>
+                          <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Đối tượng</span>
+                            <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${tColor}`}>{tLabel}</span>
+                          </div>
+                          <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase block">{sDateLabel}</span>
+                            <span className="text-xs font-bold text-slate-800">{sDateVal}</span>
+                          </div>
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
 
