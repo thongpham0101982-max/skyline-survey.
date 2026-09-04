@@ -665,9 +665,48 @@ export async function GET(req: Request) {
       return NextResponse.json(ttcmList)
     }
 
+    return NextResponse.json({ error: "Invalid action" }, { status: 400 })
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
 
+export async function POST(req: Request) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-﻿    // Action: deleteEvaluation (Xóa bản ghi đánh giá định kỳ)
+  try {
+    const body = await req.json()
+    const { action, academicYearId } = body
+
+    // academicYearId validation handled per action
+
+    const userRole = (session.user as any)?.role || ""
+    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)
+    const isKTDBCL = ["ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole)
+
+    // 1. Action: saveConfig
+    if (action === "saveConfig") {
+      const { id, supportType, code, outcomeLabel, description } = body
+      if (!supportType || !code || !outcomeLabel) {
+        return NextResponse.json({ error: "Missing required config fields" }, { status: 400 })
+      }
+
+      if (id) {
+        const updated = await prisma.learningSupportOutcomeConfig.update({
+          where: { id },
+          data: { supportType, code, outcomeLabel, description }
+        })
+        return NextResponse.json(updated)
+      } else {
+        const created = await prisma.learningSupportOutcomeConfig.create({
+          data: { supportType, code, outcomeLabel, description, academicYearId }
+        })
+        return NextResponse.json(created)
+      }
+    }
+
+// Action: deleteEvaluation (Xóa bản ghi đánh giá định kỳ)
     if (action === "deleteEvaluation") {
       const { id } = body
       if (!id) return NextResponse.json({ error: "Thiếu ID bản ghi đánh giá cần xóa" }, { status: 400 })
@@ -950,49 +989,8 @@ export async function GET(req: Request) {
       return NextResponse.json(logs)
     }
 
-return NextResponse.json({ error: "Invalid action" }, { status: 400 })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
-  }
-}
 
-export async function POST(req: Request) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-  try {
-    const body = await req.json()
-    const { action, academicYearId } = body
-
-    if (!academicYearId) {
-      return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 })
-    }
-
-    const userRole = (session.user as any)?.role || ""
-    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)
-    const isKTDBCL = ["ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole)
-
-    // 1. Action: saveConfig
-    if (action === "saveConfig") {
-      const { id, supportType, code, outcomeLabel, description } = body
-      if (!supportType || !code || !outcomeLabel) {
-        return NextResponse.json({ error: "Missing required config fields" }, { status: 400 })
-      }
-
-      if (id) {
-        const updated = await prisma.learningSupportOutcomeConfig.update({
-          where: { id },
-          data: { supportType, code, outcomeLabel, description }
-        })
-        return NextResponse.json(updated)
-      } else {
-        const created = await prisma.learningSupportOutcomeConfig.create({
-          data: { supportType, code, outcomeLabel, description, academicYearId }
-        })
-        return NextResponse.json(created)
-    }
-
-        // 13.5. Action: sendCommitmentEmailToQLCM
+    // 13.5. Action: sendCommitmentEmailToQLCM
     if (action === "sendCommitmentEmailToQLCM") {
       const {
         campusName,
@@ -1243,8 +1241,6 @@ export async function POST(req: Request) {
         totalRecipients: recipients.length,
         results
       })
-    }
-
     }
 
     // 2. Action: deleteConfig
