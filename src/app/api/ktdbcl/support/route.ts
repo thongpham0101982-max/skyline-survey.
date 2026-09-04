@@ -667,6 +667,316 @@ export async function GET(req: Request) {
 
 
 
+﻿    // 14. Action: terminateShortTermTarget (Kết thúc đề xuất hành động / hoàn thành theo dõi ngắn hạn)
+    if (action === "terminateShortTermTarget") {
+      const { id, outcome, notes } = body
+      if (!id) return NextResponse.json({ error: "Thiếu ID học sinh cần kết thúc" }, { status: 400 })
+
+      const updated = await prisma.learningSupportTarget.update({
+        where: { id },
+        data: {
+          terminationStatus: "TERMINATED",
+          status: "ĐÃ HOÀN THÀNH",
+          endDate: new Date(),
+          outcome: outcome || "Hoàn thành theo dõi ngắn hạn",
+          notes: notes ? notes : undefined,
+          terminationApprovedById: session.user.id,
+          terminationApprovedAt: new Date()
+        }
+      })
+      return NextResponse.json(updated)
+    }
+
+    // 15. Action: sendUrgentEmailToGVCN (Gửi email khẩn kết quả tuần/tháng đến GVCN kèm nội dung trao đổi GVCN & PHHS)
+    if (action === "sendUrgentEmailToGVCN") {
+      const { academicYearId, targetIds, periodName, periodType, urgencyNotes, phhsTopics, customMessage } = body
+      if (!academicYearId) return NextResponse.json({ error: "Thiếu năm học" }, { status: 400 })
+
+      const targets = await prisma.learningSupportTarget.findMany({
+        where: {
+          id: targetIds && targetIds.length > 0 ? { in: targetIds } : undefined,
+          academicYearId
+        },
+        include: {
+          student: {
+            include: {
+              class: {
+                include: {
+                  teachers: {
+                    include: { teacher: { include: { user: true } } }
+                  }
+                }
+              }
+            }
+          },
+          evaluations: true,
+          assignments: {
+            include: {
+              teacher: true,
+              subject: true
+            }
+          }
+        }
+      })
+
+      if (targets.length === 0) {
+        return NextResponse.json({ error: "Không tìm thấy học sinh phù hợp để gửi thông báo" }, { status: 400 })
+      }
+
+      // Group targets by Class / GVCN
+      const classMap = new Map()
+
+      for (const t of targets) {
+        const cId = t.student?.classId || "UNKNOWN"
+        const cName = t.student?.class?.className || "Lớp"
+        
+        let gvcnName = "Giáo viên Chủ nhiệm"
+        let gvcnEmail = ""
+
+        if (t.student?.class) {
+          const homeroomTeacherId = t.student.class.homeroomTeacherId
+          if (homeroomTeacherId) {
+            const hTeacher = await prisma.teacher.findUnique({
+              where: { id: homeroomTeacherId },
+              include: { user: true }
+            })
+            if (hTeacher) {
+              gvcnName = hTeacher.teacherName
+              gvcnEmail = hTeacher.email || hTeacher.user?.email || ""
+            }
+          }
+
+          if (!gvcnEmail && t.student.class.teachers?.length > 0) {
+            const gvAssigned = t.student.class.teachers.find(ta => ta.roleInClass === "GVCN" || (ta.roleInClass && ta.roleInClass.includes("Chủ nhiệm"))) || t.student.class.teachers[0]
+            if (gvAssigned?.teacher) {
+              gvcnName = gvAssigned.teacher.teacherName
+              gvcnEmail = gvAssigned.teacher.email || gvAssigned.teacher.user?.email || ""
+            }
+          }
+        }
+
+        if (!classMap.has(cId)) {
+          classMap.set(cId, {
+            classId: cId,
+            className: cName,
+            gvcnName,
+            gvcnEmail,
+            students: []
+          })
+        }
+
+        const relevantEval = t.evaluations?.find(e => e.periodName === periodName) || t.evaluations?.[t.evaluations.length - 1]
+
+        classMap.get(cId).students.push({
+          targetId: t.id,
+          studentName: t.student?.studentName,
+          studentCode: t.student?.studentCode,
+          supportType: t.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý",
+          reason: t.reason || "Cần bồi dưỡng",
+          trackingLevel: relevantEval?.trackingLevel || "Đang theo dõi",
+          comment: relevantEval?.comment || "Chưa có nhận xét chi tiết",
+          updatedStatus: relevantEval?.updatedStatus || t.status
+        })
+      }
+
+      let sentCount = 0
+      const results = []
+
+      for (const [cId, group] of Array.from(classMap.entries())) {
+        if (!group.gvcnEmail) {
+          results.push({ class: group.className, gvcn: group.gvcnName, status: "SKIPPED_NO_EMAIL", message: "Không tìm thấy email GVCN" })
+          continue
+        }
+
+        const studentRowsHtml = group.students.map((s, idx) => `
+          <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+            <td style="padding: 10px 8px; text-align: center; color: #64748b; font-weight: bold;">${idx + 1}</td>
+            <td style="padding: 10px 10px; font-weight: bold; color: #1e293b;">${s.studentName} <span style="font-size: 11px; color: #64748b; font-weight: normal;">(#${s.studentCode})</span></td>
+            <td style="padding: 10px 10px; color: #003B3A; font-weight: 700;">${s.supportType} (${s.reason})</td>
+            <td style="padding: 10px 10px; text-align: center;">
+              <span style="display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 800; background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;">
+                ${s.trackingLevel}
+              </span>
+            </td>
+            <td style="padding: 10px 10px; font-size: 12px; color: #334155; line-height: 1.4;">${s.comment}</td>
+          </tr>
+        `).join("")
+
+        const emailHtml = `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 720px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+            <div style="background: linear-gradient(135deg, #881337 0%, #be123c 50%, #e11d48 100%); padding: 24px 30px; color: #ffffff;">
+              <div style="font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #ffe4e6; margin-bottom: 4px;">
+                ⚡ THÔNG BÁO KHẨN / PHỐI HỢP GVCN & PHHS • SKY-LINE EDUCATION
+              </div>
+              <h2 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.3;">
+                KẾT QUẢ ĐÁNH GIÁ & NỘI DUNG PHỐI HỢP (${periodName || "ĐỊNH KỲ"}) - LỚP ${group.className.toUpperCase()}
+              </h2>
+              <div style="font-size: 13px; color: #ffe4e6; margin-top: 5px;">
+                Kính gửi Giáo viên Chủ nhiệm: <strong>${group.gvcnName}</strong>
+              </div>
+            </div>
+
+            <div style="padding: 24px 30px; color: #334155; line-height: 1.6;">
+              <p style="font-size: 14px; margin-top: 0;">
+                Kính gửi Thầy/Cô <strong>${group.gvcnName}</strong> (GVCN Lớp ${group.className}),
+              </p>
+              <p style="font-size: 14px; color: #475569;">
+                Dưới đây là kết quả đánh giá tiến trình học tập / rèn luyện tâm lý định kỳ <strong>${periodName || "trong kỳ"}</strong> đối với các học sinh thuộc diện theo dõi, bồi dưỡng và phụ đạo trong lớp do Thầy/Cô chủ nhiệm:
+              </p>
+
+              <div style="margin: 18px 0; border: 1px solid #cbd5e1; border-radius: 10px; overflow: hidden;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; text-align: left;">
+                  <thead style="background-color: #f1f5f9; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #475569;">
+                    <tr>
+                      <th style="padding: 10px 8px; text-align: center; width: 36px;">STT</th>
+                      <th style="padding: 10px 10px;">Học sinh</th>
+                      <th style="padding: 10px 10px;">Môn / Diện theo dõi</th>
+                      <th style="padding: 10px 10px; text-align: center;">Mức độ</th>
+                      <th style="padding: 10px 10px;">Nhận xét chi tiết</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${studentRowsHtml}
+                  </tbody>
+                </table>
+              </div>
+
+              ${(urgencyNotes || phhsTopics || customMessage) ? `
+                <div style="background-color: #fff1f2; border: 1px solid #fecdd3; border-left: 5px solid #e11d48; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                  <div style="font-size: 13px; font-weight: 800; color: #9f1239; text-transform: uppercase; margin-bottom: 6px;">
+                    📌 Nội dung cần GVCN phối hợp trao đổi với Phụ huynh học sinh (PHHS):
+                  </div>
+                  <div style="font-size: 13px; color: #881337; line-height: 1.6;">
+                    ${urgencyNotes ? `<div><strong>Lưu ý khẩn:</strong> ${urgencyNotes.replace(/\n/g, '<br/>')}</div>` : ''}
+                    ${phhsTopics ? `<div style="margin-top: 6px;"><strong>Nội dung trao đổi PHHS:</strong> ${phhsTopics.replace(/\n/g, '<br/>')}</div>` : ''}
+                    ${customMessage ? `<div style="margin-top: 6px;"><strong>Ý kiến GVBM / Ban Chuyên môn:</strong> ${customMessage.replace(/\n/g, '<br/>')}</div>` : ''}
+                  </div>
+                </div>
+              ` : ''}
+
+              <div style="text-align: center; margin: 25px 0 10px 0;">
+                <a href="https://skyline-survey.vercel.app/teacher/ho-tro-hoc-tap" style="display: inline-block; background-color: #003B3A; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">
+                  Mở Sổ theo dõi & Ghi nhận Ý kiến phản hồi ➜
+                </a>
+              </div>
+            </div>
+
+            <div style="background-color: #f8fafc; padding: 16px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8;">
+              Hệ thống Giáo dục Sky-Line • Sổ Theo dõi & Bồi dưỡng Phát triển Học sinh
+            </div>
+          </div>
+        `;
+
+        try {
+          await sendEmail({
+            to: group.gvcnEmail,
+            subject: `[Sky-Line Bồi Dưỡng] Thông Báo Khẩn & Phối Hợp GVCN Lớp ${group.className} (${periodName || "Định kỳ"})`,
+            html: emailHtml
+          })
+          sentCount++
+          results.push({ class: group.className, gvcn: group.gvcnName, email: group.gvcnEmail, status: "SUCCESS" })
+        } catch (mailErr) {
+          results.push({ class: group.className, gvcn: group.gvcnName, email: group.gvcnEmail, status: "FAILED", error: mailErr.message })
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        sentCount,
+        results
+      })
+    }
+
+    // 16. Action: saveFeedbackGVCN_PHHS (Ghi nhận ý kiến GVCN, PHHS trong Sổ theo dõi Phát triển Học sinh)
+    if (action === "saveFeedbackGVCN_PHHS") {
+      const { studentId, targetId, academicYearId, feedbackGvcn, feedbackPhhs, followUpPlan, meetingDate } = body
+      if (!studentId || !academicYearId) {
+        return NextResponse.json({ error: "Thiếu thông tin học sinh hoặc năm học" }, { status: 400 })
+      }
+
+      const teacherObj = await prisma.teacher.findUnique({
+        where: { userId: session.user.id }
+      })
+      const teacherId = teacherObj?.id || (await prisma.teacher.findFirst())?.id
+
+      if (!teacherId) {
+        return NextResponse.json({ error: "Không tìm thấy thông tin giáo viên thực hiện" }, { status: 400 })
+      }
+
+      const log = await prisma.academicConsultationLog.create({
+        data: {
+          studentId,
+          teacherId,
+          academicYearId,
+          meetingDate: meetingDate ? new Date(meetingDate) : new Date(),
+          content: feedbackGvcn ? `Ý KIẾN GVCN: ${feedbackGvcn}` : "Trao đổi định kỳ",
+          difficulties: feedbackPhhs ? `Ý KIẾN PHHS: ${feedbackPhhs}` : null,
+          nextActions: followUpPlan || "Tiếp tục phối hợp theo dõi",
+          notes: targetId ? `[TargetId: ${targetId}]` : null,
+          status: "COMPLETED"
+        }
+      })
+
+      return NextResponse.json({ success: true, log })
+    }
+
+    // 17. Action: getFeedbackLogs
+    if (action === "getFeedbackLogs") {
+      const { studentId, academicYearId } = body
+      if (!studentId) return NextResponse.json({ error: "Thiếu studentId" }, { status: 400 })
+
+      const logs = await prisma.academicConsultationLog.findMany({
+        where: {
+          studentId,
+          academicYearId: academicYearId || undefined
+        },
+        include: {
+          teacher: { select: { teacherName: true } }
+        },
+        orderBy: { meetingDate: "desc" }
+      })
+
+      return NextResponse.json(logs)
+    }
+
+    // 18. Action: saveTutoringPlan (Lập kế hoạch chi tiết bồi dưỡng, phụ đạo học sinh)
+    if (action === "saveTutoringPlan") {
+      const { targetId, studentId, academicYearId, subject, weakKnowledgePoints, targetGoals, scheduleTime, sessionsPerWeek, methodsAndMaterials, teacherName } = body
+      if (!targetId && !studentId) {
+        return NextResponse.json({ error: "Thiếu thông tin đối tượng bồi dưỡng" }, { status: 400 })
+      }
+
+      const planSummary = JSON.stringify({
+        subject,
+        weakKnowledgePoints,
+        targetGoals,
+        scheduleTime,
+        sessionsPerWeek,
+        methodsAndMaterials,
+        teacherName,
+        updatedAt: new Date().toISOString()
+      })
+
+      if (targetId) {
+        const target = await prisma.learningSupportTarget.findUnique({ where: { id: targetId } })
+        let currentNotes = target?.notes || ""
+        if (currentNotes.includes("[PLAN:")) {
+          currentNotes = currentNotes.replace(/\[PLAN:.*?\]/s, `[PLAN:${planSummary}]`)
+        } else {
+          currentNotes = `${currentNotes} [PLAN:${planSummary}]`.trim()
+        }
+
+        const updated = await prisma.learningSupportTarget.update({
+          where: { id: targetId },
+          data: { notes: currentNotes }
+        })
+        return NextResponse.json({ success: true, target: updated, plan: JSON.parse(planSummary) })
+      }
+
+      return NextResponse.json({ success: true, plan: JSON.parse(planSummary) })
+    }
+
+
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

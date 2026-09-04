@@ -72,6 +72,12 @@ export const getTrackingLevelBadge = (level: string) => {
   };
 };
 import toast from "react-hot-toast"
+import { UrgentEmailModal } from "./components/UrgentEmailModal"
+import { FeedbackGvcnPhhsModal } from "./components/FeedbackGvcnPhhsModal"
+import { TutoringPlanModal } from "./components/TutoringPlanModal"
+import { PsychologicalCumulativeModal } from "./components/PsychologicalCumulativeModal"
+import { MONTH_WEEKS_CONFIG } from "./academic-calendar"
+
 
 interface Props {
   teacher: any
@@ -350,6 +356,18 @@ export function TeacherSupportClient({
   const [reminderDeadline, setReminderDeadline] = useState<string>("")
   const [reminderNote, setReminderNote] = useState<string>("")
   const [sendingReminder, setSendingReminder] = useState(false)
+
+  // New Feature Modals States
+  const [isUrgentEmailModalOpen, setIsUrgentEmailModalOpen] = useState(false)
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
+  const [selectedFeedbackTarget, setSelectedFeedbackTarget] = useState<any>(null)
+  const [isTutoringPlanModalOpen, setIsTutoringPlanModalOpen] = useState(false)
+  const [selectedPlanTarget, setSelectedPlanTarget] = useState<any>(null)
+  const [isPsychExportModalOpen, setIsPsychExportModalOpen] = useState(false)
+  const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
+  const [evalSelectedWeek, setEvalSelectedWeek] = useState<string>("Tuần 1")
+  const [evalIsMonthlySummary, setEvalIsMonthlySummary] = useState(false)
+
 
   // Request Termination Form States
   const [termTargetId, setTermTargetId] = useState("")
@@ -1648,6 +1666,26 @@ export function TeacherSupportClient({
               <Mail className="h-4 w-4 text-[#009085]" />
               <span>Nhắc lịch đánh giá qua Email</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setIsUrgentEmailModalOpen(true)}
+              className="bg-gradient-to-r from-rose-50 to-red-50 hover:from-rose-100 hover:to-red-100 text-rose-900 border border-rose-200 py-2.5 px-3.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-2xs hover:shadow-xs transition-all cursor-pointer transform active:scale-95"
+              title="Gửi email khẩn kết quả đánh giá Tuần/Tháng & nội dung cần phối hợp tới GVCN"
+            >
+              <Send className="h-4 w-4 text-rose-600" />
+              <span>⚡ Email Khẩn GVCN</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsPsychExportModalOpen(true)}
+              className="bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 text-purple-900 border border-purple-200 py-2.5 px-3.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-2xs hover:shadow-xs transition-all cursor-pointer transform active:scale-95"
+              title="Xem và Xuất Sổ theo dõi đánh giá Tâm lý Học sinh Lũy tiến (10 tháng)"
+            >
+              <Activity className="h-4 w-4 text-purple-600" />
+              <span>🧠 Sổ Tâm lý Lũy tiến</span>
+            </button>
           </div>
 
           {/* Search and Filters */}
@@ -1979,6 +2017,45 @@ export function TeacherSupportClient({
                               >
                                 Nhận xét & Đánh giá
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedFeedbackTarget(t);
+                                  setIsFeedbackModalOpen(true);
+                                }}
+                                className="bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-200 font-bold py-1.5 px-2.5 rounded-lg text-xs transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                title="Ghi nhận Ý kiến phản hồi của GVCN và PHHS"
+                              >
+                                <MessageSquare className="h-3 w-3 text-[#009085]" />
+                                Ý kiến GV/PH
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedPlanTarget(t);
+                                  setIsTutoringPlanModalOpen(true);
+                                }}
+                                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-bold py-1.5 px-2.5 rounded-lg text-xs transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                title="Lập & In Kế hoạch Phụ đạo, Bồi dưỡng Chi tiết"
+                              >
+                                <Target className="h-3 w-3 text-indigo-600" />
+                                Kế hoạch
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedEvalTargetIds([t.id]);
+                                  setIsUrgentEmailModalOpen(true);
+                                }}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-900 border border-rose-200 font-bold py-1.5 px-2.5 rounded-lg text-xs transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1"
+                                title="Gửi email khẩn kết quả đánh giá học sinh này đến GVCN"
+                              >
+                                <Send className="h-3 w-3 text-rose-600" />
+                                Email Khẩn
+                              </button>
+
                               <button
                                 onClick={() => handleReturnTarget(t.id, t.student?.studentName || t.student?.fullName || "")}
                                 className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm cursor-pointer inline-flex items-center gap-1"
@@ -2411,7 +2488,8 @@ export function TeacherSupportClient({
 
                             {/* 10 Monthly Cells */}
                             {ACADEMIC_MONTHS.map((m) => {
-                              const ev = targetEvals.find((e: any) => e.periodName === m);
+                              const monthEvals = targetEvals.filter((e: any) => e.periodName === m || (e.periodName && e.periodName.includes(m)));
+                              const ev = monthEvals.length > 0 ? monthEvals[monthEvals.length - 1] : null;
                               const isFilteredMonth = summaryMonthFilter === m;
 
                               if (!ev) {
@@ -4068,19 +4146,26 @@ export function TeacherSupportClient({
                       </span>
                     </div>
 
+                    {/* 1. Chọn Tháng */}
                     <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 pt-1">
                       {months.map(m => {
-                        const isSelected = evalPeriodName === m;
+                        const isMonthActive = evalSelectedMonth === m;
                         return (
                           <button
                             key={m}
                             type="button"
                             onClick={() => {
-                              setEvalPeriodName(m);
-                              setEvalPeriodType("MONTH");
+                              setEvalSelectedMonth(m);
+                              if (evalIsMonthlySummary) {
+                                setEvalPeriodName(m);
+                                setEvalPeriodType("MONTH");
+                              } else {
+                                setEvalPeriodName(`${evalSelectedWeek} - ${m}`);
+                                setEvalPeriodType("WEEK");
+                              }
                             }}
                             className={`py-2 px-1 text-xs font-extrabold rounded-xl border transition-all cursor-pointer text-center ${
-                              isSelected
+                              isMonthActive
                                 ? "bg-gradient-to-r from-[#003B3A] to-[#009085] text-white border-transparent shadow-md shadow-[#003B3A]/30 scale-[1.04]"
                                 : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/70 hover:border-emerald-300"
                             }`}
@@ -4091,11 +4176,55 @@ export function TeacherSupportClient({
                       })}
                     </div>
 
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-500 pt-1">
-                      <span>Chọn tháng cần ghi nhận kết quả đánh giá</span>
-                      <span className="text-slate-600">
-                        Đang chọn: <strong className="text-emerald-700 font-black">{evalPeriodName || "Chưa chọn tháng"}</strong>
-                      </span>
+                    {/* 2. Tự động chia các Tuần trong Tháng & Tùy chọn Tổng kết Tháng */}
+                    <div className="bg-white p-3 rounded-xl border border-emerald-200/80 space-y-2 mt-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-emerald-900 uppercase">
+                          Chọn Tuần trong ${evalSelectedMonth} hoặc Đánh giá Tổng kết Tháng:
+                        </span>
+                        <span className="text-[11px] font-bold text-slate-500">
+                          Đang chọn: <strong className="text-emerald-700 font-black">${evalPeriodName || "Chưa chọn"}</strong>
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {(MONTH_WEEKS_CONFIG[evalSelectedMonth] || ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"]).map(w => {
+                          const isWeekActive = !evalIsMonthlySummary && (evalSelectedWeek === w || evalPeriodName.startsWith(w));
+                          return (
+                            <button
+                              key={w}
+                              type="button"
+                              onClick={() => {
+                                setEvalSelectedWeek(w);
+                                setEvalIsMonthlySummary(false);
+                                setEvalPeriodType("WEEK");
+                                setEvalPeriodName(`${w} - ${evalSelectedMonth}`);
+                              }}
+                              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                                isWeekActive
+                                  ? "bg-emerald-700 text-white border-emerald-800 shadow-xs scale-105"
+                                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50"
+                              }`}
+                            >
+                              {w} (${evalSelectedMonth.replace("Tháng ", "T")})
+                            </button>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEvalIsMonthlySummary(true);
+                            setEvalPeriodType("MONTH");
+                            setEvalPeriodName(evalSelectedMonth);
+                          }}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer border ${
+                            evalIsMonthlySummary || evalPeriodName === evalSelectedMonth
+                              ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-800 shadow-xs scale-105"
+                              : "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                          }`}
+                        >
+                          ⭐ Đánh giá Tổng kết ${evalSelectedMonth}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -4358,6 +4487,47 @@ export function TeacherSupportClient({
           </div>
         </div>
       )}
+
+
+      {/* 5. Modal Gửi Email Khẩn đến GVCN */}
+      <UrgentEmailModal
+        isOpen={isUrgentEmailModalOpen}
+        onClose={() => setIsUrgentEmailModalOpen(false)}
+        academicYearId={selectedYearId}
+        targets={filteredTargets}
+        selectedTargetIds={selectedEvalTargetIds}
+      />
+
+      {/* 6. Modal Ghi nhận Ý kiến GVCN & PHHS */}
+      <FeedbackGvcnPhhsModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => {
+          setIsFeedbackModalOpen(false);
+          setSelectedFeedbackTarget(null);
+        }}
+        target={selectedFeedbackTarget}
+        academicYearId={selectedYearId}
+      />
+
+      {/* 7. Modal Lập Kế hoạch Phụ đạo & Bồi dưỡng Chi tiết */}
+      <TutoringPlanModal
+        isOpen={isTutoringPlanModalOpen}
+        onClose={() => {
+          setIsTutoringPlanModalOpen(false);
+          setSelectedPlanTarget(null);
+        }}
+        target={selectedPlanTarget}
+        academicYearId={selectedYearId}
+        onPlanSaved={() => fetchTeacherData()}
+      />
+
+      {/* 8. Modal Xuất Sổ theo dõi đánh giá Tâm lý Học sinh Lũy tiến */}
+      <PsychologicalCumulativeModal
+        isOpen={isPsychExportModalOpen}
+        onClose={() => setIsPsychExportModalOpen(false)}
+        targets={targets}
+        academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
+      />
 
       {/* 4. Sổ theo dõi kết quả từng Học sinh Modal (Học bạ điện tử bồi dưỡng) */}
       {isProfileModalOpen && (
