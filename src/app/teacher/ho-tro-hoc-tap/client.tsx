@@ -9,6 +9,31 @@ import {
 } from "lucide-react"
 
 export const ACADEMIC_MONTHS = ["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"];
+export const parseEvaluationComment = (fullComment: string) => {
+  if (!fullComment) return { mainComment: "", gvcnFeedback: "", phhsFeedback: "" };
+  let mainComment = fullComment;
+  let gvcnFeedback = "";
+  let phhsFeedback = "";
+
+  const gvcnMatch = mainComment.match(/(?:📌\s*Ý KIẾN GV(?:CN)?(?:\s*\/\s*GVBM)?:\s*)([\s\S]*?)(?=(?:👨‍👩‍👧\s*Ý KIẾN PH(?:HS|Ụ HUYNH)?)|$)/i);
+  if (gvcnMatch) {
+    gvcnFeedback = gvcnMatch[1].trim();
+    mainComment = mainComment.replace(gvcnMatch[0], "");
+  }
+
+  const phhsMatch = mainComment.match(/(?:👨‍👩‍👧\s*Ý KIẾN PH(?:HS|Ụ HUYNH)?(?:\s*\(PHHS\))?:\s*)([\s\S]*?)$/i);
+  if (phhsMatch) {
+    phhsFeedback = phhsMatch[1].trim();
+    mainComment = mainComment.replace(phhsMatch[0], "");
+  }
+
+  return {
+    mainComment: mainComment.trim(),
+    gvcnFeedback: gvcnFeedback.trim(),
+    phhsFeedback: phhsFeedback.trim()
+  };
+};
+
 
 export const getTrackingLevelBadge = (level: string) => {
   const l = (level || "").trim().toLowerCase();
@@ -365,6 +390,10 @@ export function TeacherSupportClient({
   const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
   const [evalSelectedWeek, setEvalSelectedWeek] = useState<string>("Tuần 1")
   const [evalIsMonthlySummary, setEvalIsMonthlySummary] = useState(false)
+  const [evalGvcnFeedback, setEvalGvcnFeedback] = useState("")
+  const [evalPhhsFeedback, setEvalPhhsFeedback] = useState("")
+  const [recentConsultationLogs, setRecentConsultationLogs] = useState<any[]>([])
+  const [loadingRecentLogs, setLoadingRecentLogs] = useState(false)
 
 
   // Request Termination Form States
@@ -876,8 +905,14 @@ export function TeacherSupportClient({
     }
 
     setEvalTrackingLevel(evalItem.trackingLevel);
-    setEvalComment(evalItem.comment);
+    const parsed = parseEvaluationComment(evalItem.comment);
+    setEvalComment(parsed.mainComment);
+    setEvalGvcnFeedback(parsed.gvcnFeedback);
+    setEvalPhhsFeedback(parsed.phhsFeedback);
     setEvalUpdatedStatus(evalItem.updatedStatus || "Tiếp tục theo dõi");
+    if (evalItem.studentId || evalItem.target?.student?.id) {
+      fetchRecentStudentFeedback(evalItem.studentId || evalItem.target?.student?.id);
+    }
     setSelectedDetailEval(null);
     setIsEvaluationModalOpen(true);
   };
@@ -922,6 +957,14 @@ export function TeacherSupportClient({
       const targetIds = selectedEvalTargetIds.length > 0 ? selectedEvalTargetIds : (evalTargetId ? [evalTargetId] : []);
       if (targetIds.length === 0) return;
 
+      let fullComment = evalComment.trim();
+      if (evalGvcnFeedback?.trim()) {
+        fullComment += "\n\n📌 Ý KIẾN GVCN / GVBM: " + evalGvcnFeedback.trim();
+      }
+      if (evalPhhsFeedback?.trim()) {
+        fullComment += "\n\n👨‍👩‍👧 Ý KIẾN PHỤ HUYNH (PHHS): " + evalPhhsFeedback.trim();
+      }
+
       const promises = targetIds.map(id => 
         fetch("/api/ktdbcl/support", {
           method: "POST",
@@ -934,13 +977,37 @@ export function TeacherSupportClient({
             periodType: evalPeriodType,
             periodName: evalPeriodName,
             trackingLevel: evalTrackingLevel,
-            comment: evalComment,
+            comment: fullComment,
             updatedStatus: evalUpdatedStatus
           })
         }).then(r => r.json())
       );
       
       await Promise.all(promises);
+
+      // Nếu có nhập ý kiến GV hoặc PH, đồng bộ trực tiếp vào Sổ theo dõi & Nhật ký cố vấn (AcademicConsultationLog)
+      if (evalGvcnFeedback?.trim() || evalPhhsFeedback?.trim()) {
+        const feedbackPromises = targetIds.map(tid => {
+          const tObj = filteredTargets.find((t: any) => t.id === tid);
+          const sid = tObj?.student?.id || tObj?.studentId;
+          if (!sid) return Promise.resolve();
+          return fetch("/api/ktdbcl/support", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "saveFeedbackGVCN_PHHS",
+              academicYearId: selectedYearId,
+              studentId: sid,
+              targetId: tid,
+              feedbackGvcn: evalGvcnFeedback.trim(),
+              feedbackPhhs: evalPhhsFeedback.trim(),
+              followUpPlan: evalUpdatedStatus || "Tiếp tục theo dõi",
+              meetingDate: new Date().toISOString()
+            })
+          }).catch(err => console.error("Feedback save error", err));
+        });
+        await Promise.all(feedbackPromises);
+      }
 
       if (shouldTerminate) {
         const termPromises = targetIds.map(id =>
@@ -1933,6 +2000,9 @@ export function TeacherSupportClient({
                   setEvalPeriodType("WEEK")
                   setEvalPeriodName(`Tuần 1 - ${validMonth}`)
                   setEvalComment("")
+                  setEvalGvcnFeedback("")
+                  setEvalPhhsFeedback("")
+                  setRecentConsultationLogs([])
                   setEvalStudent(null)
                   setEvalTargetObj(null)
                   const options = configs.filter((c:any) => c.supportType === (firstSelected?.supportType || "ACADEMIC"))
@@ -2070,8 +2140,14 @@ export function TeacherSupportClient({
                                   setEvalTargetName(t.student?.studentName)
                                   setEvalTargetType(t.supportType)
                                   setEvalComment("")
+                                  setEvalGvcnFeedback("")
+                                  setEvalPhhsFeedback("")
+                                  setRecentConsultationLogs([])
                                   setEvalStudent(t.student)
                                   setEvalTargetObj(t)
+                                  if (t.student?.id) {
+                                    fetchRecentStudentFeedback(t.student.id);
+                                  }
                                   const curMonth = "Tháng " + (new Date().getMonth() + 1)
                                   const validMonth = ACADEMIC_MONTHS.includes(curMonth) ? curMonth : "Tháng 9"
                                   setEvalSelectedMonth(validMonth)
@@ -2991,16 +3067,52 @@ export function TeacherSupportClient({
                     </div>
                   </div>
 
-                  {/* Comment Quote Block */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
-                      <Quote className="h-4 w-4 text-[#009085]" />
-                      Nhật ký nhận xét chi tiết (Học lực / Tâm lý)
-                    </label>
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 text-sm leading-relaxed font-medium">
-                      {selectedDetailEval.comment || "Không có nhận xét"}
-                    </div>
-                  </div>
+                  {/* Comment & Feedback Blocks */}
+                  {(() => {
+                    const parsed = parseEvaluationComment(selectedDetailEval.comment);
+                    return (
+                      <div className="space-y-3">
+                        {/* Main Comment */}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-black text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
+                            <Quote className="h-4 w-4 text-[#009085]" />
+                            Nhật ký nhận xét chi tiết (Học lực / Tâm lý)
+                          </label>
+                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 text-xs sm:text-sm leading-relaxed font-medium">
+                            {parsed.mainComment || selectedDetailEval.comment || "Không có nhận xét"}
+                          </div>
+                        </div>
+
+                        {/* Integrated GV & PH Feedback Display */}
+                        {(parsed.gvcnFeedback || parsed.phhsFeedback) && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            {parsed.gvcnFeedback && (
+                              <div className="bg-indigo-50/80 border border-indigo-200 rounded-2xl p-3.5 space-y-1">
+                                <span className="text-[11px] font-black text-indigo-900 uppercase flex items-center gap-1.5">
+                                  <GraduationCap className="h-4 w-4 text-indigo-600" />
+                                  Ý kiến Giáo viên (GVCN / GVBM):
+                                </span>
+                                <p className="text-xs text-indigo-950 leading-relaxed font-medium pt-1">
+                                  {parsed.gvcnFeedback}
+                                </p>
+                              </div>
+                            )}
+                            {parsed.phhsFeedback && (
+                              <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-3.5 space-y-1">
+                                <span className="text-[11px] font-black text-amber-900 uppercase flex items-center gap-1.5">
+                                  <Heart className="h-4 w-4 text-amber-600" />
+                                  Ý kiến Phụ huynh (PHHS):
+                                </span>
+                                <p className="text-xs text-amber-950 leading-relaxed font-medium pt-1">
+                                  {parsed.phhsFeedback}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* 10-Month Progression Track for this student */}
                   {selectedDetailEval.target?.evaluations && (
@@ -4373,14 +4485,126 @@ export function TeacherSupportClient({
                     </select>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-slate-700">Nhật ký nhận xét chi tiết (Học lực/Tâm lý):</label>
+                  {/* Phần 1: Nhật ký nhận xét chuyên môn */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-800 uppercase flex items-center gap-1.5">
+                        <FileText className="h-4 w-4 text-emerald-600" />
+                        1. Nhật ký nhận xét chuyên môn (Học lực / Tâm lý):
+                      </label>
+                      <span className="text-[11px] font-bold text-slate-400">Bắt buộc</span>
+                    </div>
                     <textarea
-                      placeholder="Ghi cụ thể các nội dung đã kèm cặp, biểu hiện của học sinh và kế hoạch sắp tới..."
+                      placeholder="Ghi cụ thể các nội dung đã kèm cặp, mức độ tiến bộ, biểu hiện của học sinh và kế hoạch sắp tới..."
                       value={evalComment}
                       onChange={e => setEvalComment(e.target.value)}
-                      className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-28 resize-none bg-slate-50"
+                      className="w-full rounded-xl border-slate-300 border py-2.5 px-3.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 h-24 resize-none bg-slate-50 font-medium text-slate-800 leading-relaxed"
                     />
+                  </div>
+
+                  {/* Phần 2: Tích hợp Ý kiến GV & PH */}
+                  <div className="bg-gradient-to-br from-indigo-50/70 via-white to-amber-50/70 border border-indigo-200/80 rounded-2xl p-4 space-y-3.5 shadow-2xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-100 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-indigo-100 text-indigo-800 rounded-lg">
+                          <MessageSquare className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-indigo-950 uppercase tracking-tight">
+                            2. Tích hợp Ý kiến Giáo viên & Phụ huynh (GV / PH)
+                          </h4>
+                          <p className="text-[10px] text-slate-500 font-medium">
+                            Tự động tích hợp vào phiếu nhận xét và đồng bộ trực tiếp vào Sổ theo dõi học sinh
+                          </p>
+                        </div>
+                      </div>
+
+                      {recentConsultationLogs.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const latest = recentConsultationLogs[0];
+                            if (latest.content && !evalGvcnFeedback) {
+                              setEvalGvcnFeedback(latest.content.replace(/^Ý KIẾN GVCN:\s*/i, ""));
+                            }
+                            if (latest.difficulties && !evalPhhsFeedback) {
+                              setEvalPhhsFeedback(latest.difficulties.replace(/^Ý KIẾN PHHS:\s*/i, ""));
+                            }
+                            toast.success("Đã nạp ý kiến GV & PH từ lần trao đổi gần nhất!");
+                          }}
+                          className="text-[11px] font-black bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                          Nạp ý kiến GV/PH gần nhất
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      {/* Ý kiến GVCN / GVBM */}
+                      <div className="space-y-1.5 bg-white p-3 rounded-xl border border-indigo-100 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-extrabold text-indigo-900 flex items-center gap-1.5 uppercase">
+                            <GraduationCap className="h-3.5 w-3.5 text-indigo-600" />
+                            Ý kiến Giáo viên (GVCN / GVBM):
+                          </label>
+                        </div>
+                        <textarea
+                          placeholder="Nhập ý kiến trao đổi từ GVCN/GVBM về tinh thần, ý thức, bài vở..."
+                          value={evalGvcnFeedback}
+                          onChange={e => setEvalGvcnFeedback(e.target.value)}
+                          className="w-full rounded-lg border-indigo-200 border py-2 px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 h-20 resize-none bg-indigo-50/30 text-slate-800"
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setEvalGvcnFeedback(prev => (prev ? prev + " " : "") + "GVCN ghi nhận HS có tiến bộ rõ rệt trong giờ học.")}
+                            className="text-[10px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200 cursor-pointer"
+                          >
+                            + HS tiến bộ
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEvalGvcnFeedback(prev => (prev ? prev + " " : "") + "GVCN cần phối hợp nhắc nhở chuyên cần và làm bài tập.")}
+                            className="text-[10px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-0.5 rounded border border-indigo-200 cursor-pointer"
+                          >
+                            + Cần nhắc nhở
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Ý kiến PHHS */}
+                      <div className="space-y-1.5 bg-white p-3 rounded-xl border border-amber-200 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-extrabold text-amber-900 flex items-center gap-1.5 uppercase">
+                            <Heart className="h-3.5 w-3.5 text-amber-600" />
+                            Ý kiến Phụ huynh Học sinh (PHHS):
+                          </label>
+                        </div>
+                        <textarea
+                          placeholder="Nhập phản hồi, nguyện vọng hoặc cam kết phối hợp từ gia đình..."
+                          value={evalPhhsFeedback}
+                          onChange={e => setEvalPhhsFeedback(e.target.value)}
+                          className="w-full rounded-lg border-amber-200 border py-2 px-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500 h-20 resize-none bg-amber-50/30 text-slate-800"
+                        />
+                        <div className="flex flex-wrap gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setEvalPhhsFeedback(prev => (prev ? prev + " " : "") + "Gia đình cảm ơn thầy cô và cam kết nhắc nhở con học ở nhà.")}
+                            className="text-[10px] font-bold bg-amber-50 text-amber-800 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-200 cursor-pointer"
+                          >
+                            + PH cam kết
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEvalPhhsFeedback(prev => (prev ? prev + " " : "") + "PH đề nghị tiếp tục kèm cặp thêm trong giai đoạn tới.")}
+                            className="text-[10px] font-bold bg-amber-50 text-amber-800 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-200 cursor-pointer"
+                          >
+                            + Đề nghị kèm cặp
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="space-y-1">
