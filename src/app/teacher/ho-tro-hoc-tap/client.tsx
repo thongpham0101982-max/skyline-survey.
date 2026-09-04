@@ -2848,7 +2848,8 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           </span>
                           <div className="grid grid-cols-10 gap-1">
                             {ACADEMIC_MONTHS.map((m) => {
-                              const ev = targetEvals.find((e: any) => e.periodName === m);
+                              const monthEvals = targetEvals.filter((e: any) => e.periodName === m || (e.periodName && e.periodName.includes(m)));
+                              const ev = monthEvals.length > 0 ? monthEvals[monthEvals.length - 1] : null;
                               if (!ev) {
                                 return (
                                   <div
@@ -3043,8 +3044,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       </div>
                       <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
                         {ACADEMIC_MONTHS.map((m) => {
-                          const ev = selectedDetailEval.target.evaluations.find((e: any) => e.periodName === m);
-                          const isCurrentModal = selectedDetailEval.periodName === m;
+                          const monthEvals = (selectedDetailEval.target?.evaluations || []).filter((e: any) => e.periodName === m || (e.periodName && e.periodName.includes(m)));
+                          const ev = monthEvals.length > 0 ? monthEvals[monthEvals.length - 1] : null;
+                          const isCurrentModal = selectedDetailEval.periodName === m || selectedDetailEval.periodName?.includes(m);
 
                           if (!ev) {
                             return (
@@ -3169,54 +3171,104 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                 <div className="p-6 space-y-5 overflow-y-auto">
                   <div className="relative pl-6 border-l-2 border-teal-200 space-y-6">
                     {ACADEMIC_MONTHS.map((m) => {
-                      const ev = (selectedStudentJourneyTarget.evaluations || []).find((e: any) => e.periodName === m);
+                      const allEvals = selectedStudentJourneyTarget.evaluations || [];
+                      const monthEvals = allEvals.filter((e: any) => 
+                        e.periodName === m || (e.periodName && e.periodName.includes(m))
+                      );
 
-                      if (!ev) {
+                      if (monthEvals.length === 0) {
                         return (
                           <div key={m} className="relative group">
-                            <div className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-slate-200 border-2 border-white shadow-xs"></div>
+                            <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-slate-200 border-2 border-white shadow-xs"></div>
                             <div className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-3 text-slate-400 text-xs flex items-center justify-between">
-                              <span className="font-bold">{m}</span>
+                              <span className="font-bold text-slate-500">{m}</span>
                               <span className="text-[11px] italic">Chưa có đánh giá ghi nhận</span>
                             </div>
                           </div>
                         );
                       }
 
-                      const badgeInfo = getTrackingLevelBadge(ev.trackingLevel);
-                      const IconComp = badgeInfo.icon;
-
                       return (
                         <div key={m} className="relative group">
-                          <div className={`absolute -left-[33px] top-0.5 w-5 h-5 rounded-full ${badgeInfo.dot} border-2 border-white shadow-xs flex items-center justify-center text-white`}>
-                            <IconComp className="w-3 h-3" />
+                          <div className="absolute -left-[35px] top-1 w-6 h-6 rounded-full bg-gradient-to-tr from-[#003B3A] to-[#009085] border-2 border-white shadow-xs flex items-center justify-center text-white text-[10px] font-black">
+                            {m.replace("Tháng ", "T")}
                           </div>
-                          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2 hover:border-teal-300 transition-all">
-                            <div className="flex items-center justify-between">
+                          <div className="bg-white border border-teal-200/90 rounded-2xl p-4 shadow-xs space-y-3 hover:border-teal-400 transition-all">
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-100/80 pb-2.5">
                               <div className="flex items-center gap-2">
                                 <span className="font-black text-sm text-[#003B3A]">{m}</span>
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-black border ${badgeInfo.badge}`}>
-                                  <IconComp className="w-3.5 h-3.5" />
-                                  <span>{ev.trackingLevel}</span>
+                                <span className="bg-teal-50 border border-teal-200 text-[#003B3A] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
+                                  {monthEvals.length} lượt đánh giá (Tuần / Tổng kết)
                                 </span>
                               </div>
                               <span className="text-[11px] font-semibold text-slate-400">
-                                {ev.createdAt ? new Date(ev.createdAt).toLocaleDateString("vi-VN") : ""}
+                                Năm học {academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
                               </span>
                             </div>
 
-                            <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-100 text-slate-700 text-xs leading-relaxed italic">
-                              "{ev.comment}"
-                            </div>
+                            {/* Danh sách các kỳ đánh giá trong tháng (Tuần 1, Tuần 2, ... và Tổng kết Tháng) */}
+                            <div className="space-y-2.5">
+                              {monthEvals.map((ev: any, evIdx: number) => {
+                                const badgeInfo = getTrackingLevelBadge(ev.trackingLevel);
+                                const IconComp = badgeInfo.icon;
+                                const isMonthlySummary = ev.periodType === "MONTH" || ev.periodName === m;
 
-                            {ev.updatedStatus && (
-                              <div className="text-[11px] font-bold text-indigo-700 flex items-center gap-1.5">
-                                <span>Đề xuất:</span>
-                                <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                                  {ev.updatedStatus}
-                                </span>
-                              </div>
-                            )}
+                                return (
+                                  <div
+                                    key={ev.id || evIdx}
+                                    className={`p-3.5 rounded-xl border space-y-2 transition-all ${
+                                      isMonthlySummary
+                                        ? "bg-amber-50/60 border-amber-200 shadow-2xs"
+                                        : "bg-slate-50/80 border-slate-200/80"
+                                    }`}
+                                  >
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black border flex items-center gap-1 ${
+                                          isMonthlySummary
+                                            ? "bg-amber-100 text-amber-900 border-amber-300"
+                                            : "bg-teal-100/80 text-[#003B3A] border-teal-300"
+                                        }`}>
+                                          {isMonthlySummary ? "⭐ Tổng kết " + m : ev.periodName}
+                                        </span>
+
+                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${badgeInfo.badge}`}>
+                                          <IconComp className="w-3 h-3" />
+                                          <span>{ev.trackingLevel}</span>
+                                        </span>
+                                      </div>
+
+                                      <span className="text-[11px] font-semibold text-slate-500">
+                                        Ngày: {formatDateSafe(ev.createdAt, "N/A")}
+                                      </span>
+                                    </div>
+
+                                    {ev.comment && (
+                                      <div className="bg-white p-2.5 rounded-lg border border-slate-100 text-slate-800 text-xs leading-relaxed font-medium whitespace-pre-line">
+                                        "{ev.comment}"
+                                      </div>
+                                    )}
+
+                                    <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
+                                      {ev.updatedStatus ? (
+                                        <div className="font-bold text-indigo-700 flex items-center gap-1.5">
+                                          <span className="text-slate-500 font-medium">Đề xuất:</span>
+                                          <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                            {ev.updatedStatus}
+                                          </span>
+                                        </div>
+                                      ) : <div />}
+
+                                      {ev.evaluator?.name && (
+                                        <div className="text-slate-500 font-medium">
+                                          Người đánh giá: <strong className="text-slate-700 font-bold">{ev.evaluator.name}</strong>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       );
