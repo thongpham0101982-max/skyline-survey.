@@ -3168,106 +3168,232 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                 </div>
 
                 {/* Timeline Body */}
-                <div className="p-6 space-y-5 overflow-y-auto">
-                  <div className="relative pl-6 border-l-2 border-teal-200 space-y-6">
+                <div className="p-6 space-y-6 overflow-y-auto max-h-[72vh]">
+                  <div className="relative pl-6 border-l-2 border-teal-300 space-y-6">
                     {ACADEMIC_MONTHS.map((m) => {
                       const allEvals = selectedStudentJourneyTarget.evaluations || [];
                       const monthEvals = allEvals.filter((e: any) => 
                         e.periodName === m || (e.periodName && e.periodName.includes(m))
                       );
+                      const weeksInMonth = MONTH_WEEKS_CONFIG[m] || ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"];
+                      const monthlySummaryEval = monthEvals.find((e: any) => e.periodType === "MONTH" || e.periodName === m || e.periodName === `Tổng kết ${m}` || (!e.periodName?.includes("Tuần") && e.periodName?.includes(m)));
 
-                      if (monthEvals.length === 0) {
-                        return (
-                          <div key={m} className="relative group">
-                            <div className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-slate-200 border-2 border-white shadow-xs"></div>
-                            <div className="bg-slate-50/70 border border-slate-200/60 rounded-2xl p-3 text-slate-400 text-xs flex items-center justify-between">
-                              <span className="font-bold text-slate-500">{m}</span>
-                              <span className="text-[11px] italic">Chưa có đánh giá ghi nhận</span>
-                            </div>
-                          </div>
-                        );
-                      }
+                      const monthHasEvals = monthEvals.length > 0;
 
                       return (
                         <div key={m} className="relative group">
-                          <div className="absolute -left-[35px] top-1 w-6 h-6 rounded-full bg-gradient-to-tr from-[#003B3A] to-[#009085] border-2 border-white shadow-xs flex items-center justify-center text-white text-[10px] font-black">
+                          {/* Month Node Bullet */}
+                          <div className={`absolute -left-[35px] top-1 w-6 h-6 rounded-full border-2 border-white shadow-xs flex items-center justify-center text-white text-[10px] font-black ${
+                            monthHasEvals 
+                              ? "bg-gradient-to-tr from-[#003B3A] to-[#009085]" 
+                              : "bg-slate-300 text-slate-600"
+                          }`}>
                             {m.replace("Tháng ", "T")}
                           </div>
-                          <div className="bg-white border border-teal-200/90 rounded-2xl p-4 shadow-xs space-y-3 hover:border-teal-400 transition-all">
-                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-100/80 pb-2.5">
+
+                          <div className={`border rounded-2xl p-4 shadow-xs space-y-3.5 transition-all ${
+                            monthHasEvals 
+                              ? "bg-white border-teal-200/90 hover:border-teal-400" 
+                              : "bg-slate-50/60 border-slate-200"
+                          }`}>
+                            {/* Month Header */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
                               <div className="flex items-center gap-2">
                                 <span className="font-black text-sm text-[#003B3A]">{m}</span>
-                                <span className="bg-teal-50 border border-teal-200 text-[#003B3A] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full">
-                                  {monthEvals.length} lượt đánh giá (Tuần / Tổng kết)
+                                <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                                  monthHasEvals 
+                                    ? "bg-teal-50 border-teal-200 text-[#003B3A]" 
+                                    : "bg-slate-100 border-slate-200 text-slate-500"
+                                }`}>
+                                  {monthEvals.length} / {weeksInMonth.length + 1} mốc đánh giá
                                 </span>
                               </div>
-                              <span className="text-[11px] font-semibold text-slate-400">
-                                Năm học {academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-semibold text-slate-400">
+                                  {weeksInMonth.length} tuần học
+                                </span>
+                              </div>
                             </div>
 
-                            {/* Danh sách các kỳ đánh giá trong tháng (Tuần 1, Tuần 2, ... và Tổng kết Tháng) */}
-                            <div className="space-y-2.5">
-                              {monthEvals.map((ev: any, evIdx: number) => {
-                                const badgeInfo = getTrackingLevelBadge(ev.trackingLevel);
-                                const IconComp = badgeInfo.icon;
-                                const isMonthlySummary = ev.periodType === "MONTH" || ev.periodName === m;
+                            {/* Danh sách các Tuần trong Tháng */}
+                            <div className="space-y-2">
+                              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-teal-600" />
+                                <span>Tiến trình từng tuần:</span>
+                              </div>
 
-                                return (
-                                  <div
-                                    key={ev.id || evIdx}
-                                    className={`p-3.5 rounded-xl border space-y-2 transition-all ${
-                                      isMonthlySummary
-                                        ? "bg-amber-50/60 border-amber-200 shadow-2xs"
-                                        : "bg-slate-50/80 border-slate-200/80"
-                                    }`}
-                                  >
-                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div className="grid grid-cols-1 gap-2">
+                                {weeksInMonth.map((w: string) => {
+                                  const wEval = monthEvals.find((e: any) => 
+                                    (e.periodName && e.periodName.includes(w)) || 
+                                    e.periodName === w || 
+                                    e.periodName === `${w} - ${m}`
+                                  );
+
+                                  if (wEval) {
+                                    const badgeInfo = getTrackingLevelBadge(wEval.trackingLevel);
+                                    const IconComp = badgeInfo.icon;
+                                    return (
+                                      <div
+                                        key={w}
+                                        className="p-3 rounded-xl border border-teal-200 bg-teal-50/40 space-y-2 transition-all hover:bg-teal-50/70"
+                                      >
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2">
+                                            <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-[#003B3A] border border-teal-300 flex items-center gap-1">
+                                              {w}
+                                            </span>
+                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${badgeInfo.badge}`}>
+                                              <IconComp className="w-3 h-3" />
+                                              <span>{wEval.trackingLevel}</span>
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[11px] font-semibold text-slate-500">
+                                              {formatDateSafe(wEval.createdAt, "N/A")}
+                                            </span>
+                                            <button
+                                              onClick={() => {
+                                                setSelectedStudentJourneyTarget(null);
+                                                handleEditEvaluation(wEval);
+                                              }}
+                                              className="text-[11px] font-bold text-teal-700 hover:text-teal-900 underline cursor-pointer"
+                                            >
+                                              Sửa
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                        {wEval.comment && (
+                                          <div className="bg-white p-2.5 rounded-lg border border-teal-100 text-slate-800 text-xs leading-relaxed font-medium whitespace-pre-line">
+                                            "{wEval.comment}"
+                                          </div>
+                                        )}
+
+                                        <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
+                                          {wEval.updatedStatus ? (
+                                            <div className="font-bold text-indigo-700 flex items-center gap-1.5">
+                                              <span className="text-slate-500 font-medium">Đề xuất:</span>
+                                              <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                                {wEval.updatedStatus}
+                                              </span>
+                                            </div>
+                                          ) : <div />}
+
+                                          {wEval.evaluator?.name && (
+                                            <div className="text-slate-500 font-medium">
+                                              GV đánh giá: <strong className="text-slate-700 font-bold">{wEval.evaluator.name}</strong>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  // Chưa có đánh giá cho tuần này
+                                  return (
+                                    <div
+                                      key={w}
+                                      className="p-2.5 rounded-xl border border-dashed border-slate-200 bg-white flex items-center justify-between text-xs hover:border-teal-300 transition-all group/item"
+                                    >
                                       <div className="flex items-center gap-2">
-                                        <span className={`px-2.5 py-1 rounded-lg text-xs font-black border flex items-center gap-1 ${
-                                          isMonthlySummary
-                                            ? "bg-amber-100 text-amber-900 border-amber-300"
-                                            : "bg-teal-100/80 text-[#003B3A] border-teal-300"
-                                        }`}>
-                                          {isMonthlySummary ? "⭐ Tổng kết " + m : ev.periodName}
+                                        <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                          {w}
                                         </span>
-
-                                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${badgeInfo.badge}`}>
-                                          <IconComp className="w-3 h-3" />
-                                          <span>{ev.trackingLevel}</span>
-                                        </span>
+                                        <span className="text-slate-400 italic text-[11px]">Chưa đánh giá</span>
                                       </div>
-
-                                      <span className="text-[11px] font-semibold text-slate-500">
-                                        Ngày: {formatDateSafe(ev.createdAt, "N/A")}
-                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          setSelectedStudentJourneyTarget(null);
+                                          handleOpenEvaluationForSpecificPeriod(selectedStudentJourneyTarget, m, w);
+                                        }}
+                                        className="text-[11px] font-bold text-teal-600 hover:text-teal-800 opacity-80 group-hover/item:opacity-100 inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-teal-50 border border-transparent hover:border-teal-200 transition-all cursor-pointer"
+                                      >
+                                        <Plus className="w-3 h-3" />
+                                        <span>Đánh giá {w}</span>
+                                      </button>
                                     </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
 
-                                    {ev.comment && (
-                                      <div className="bg-white p-2.5 rounded-lg border border-slate-100 text-slate-800 text-xs leading-relaxed font-medium whitespace-pre-line">
-                                        "{ev.comment}"
-                                      </div>
-                                    )}
-
-                                    <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
-                                      {ev.updatedStatus ? (
-                                        <div className="font-bold text-indigo-700 flex items-center gap-1.5">
-                                          <span className="text-slate-500 font-medium">Đề xuất:</span>
-                                          <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
-                                            {ev.updatedStatus}
+                            {/* ⭐ Tổng kết Tháng */}
+                            <div className="pt-2 border-t border-slate-100">
+                              {monthlySummaryEval ? (
+                                <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/60 space-y-2 shadow-2xs">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                                        ⭐ Tổng kết {m}
+                                      </span>
+                                      {(() => {
+                                        const bInfo = getTrackingLevelBadge(monthlySummaryEval.trackingLevel);
+                                        const IconComp = bInfo.icon;
+                                        return (
+                                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${bInfo.badge}`}>
+                                            <IconComp className="w-3 h-3" />
+                                            <span>{monthlySummaryEval.trackingLevel}</span>
                                           </span>
-                                        </div>
-                                      ) : <div />}
-
-                                      {ev.evaluator?.name && (
-                                        <div className="text-slate-500 font-medium">
-                                          Người đánh giá: <strong className="text-slate-700 font-bold">{ev.evaluator.name}</strong>
-                                        </div>
-                                      )}
+                                        );
+                                      })()}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-[11px] font-semibold text-slate-500">
+                                        {formatDateSafe(monthlySummaryEval.createdAt, "N/A")}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          setSelectedStudentJourneyTarget(null);
+                                          handleEditEvaluation(monthlySummaryEval);
+                                        }}
+                                        className="text-[11px] font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                                      >
+                                        Sửa
+                                      </button>
                                     </div>
                                   </div>
-                                );
-                              })}
+                                  {monthlySummaryEval.comment && (
+                                    <div className="bg-white p-2.5 rounded-lg border border-amber-100 text-slate-800 text-xs leading-relaxed font-medium whitespace-pre-line">
+                                      "{monthlySummaryEval.comment}"
+                                    </div>
+                                  )}
+                                  <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5 text-[11px]">
+                                    {monthlySummaryEval.updatedStatus ? (
+                                      <div className="font-bold text-indigo-700 flex items-center gap-1.5">
+                                        <span className="text-slate-500 font-medium">Đề xuất tổng kết:</span>
+                                        <span className="bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                          {monthlySummaryEval.updatedStatus}
+                                        </span>
+                                      </div>
+                                    ) : <div />}
+                                    {monthlySummaryEval.evaluator?.name && (
+                                      <div className="text-slate-500 font-medium">
+                                        GV đánh giá: <strong className="text-slate-700 font-bold">{monthlySummaryEval.evaluator.name}</strong>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="p-2.5 rounded-xl border border-dashed border-amber-200 bg-amber-50/30 flex items-center justify-between text-xs hover:bg-amber-50/60 transition-all group/sum">
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                                      ⭐ Tổng kết {m}
+                                    </span>
+                                    <span className="text-slate-400 italic text-[11px]">Chưa có đánh giá tổng kết tháng</span>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedStudentJourneyTarget(null);
+                                      handleOpenEvaluationForSpecificPeriod(selectedStudentJourneyTarget, m);
+                                    }}
+                                    className="text-[11px] font-bold text-amber-700 hover:text-amber-900 opacity-80 group-hover/sum:opacity-100 inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-100 border border-transparent hover:border-amber-300 transition-all cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    <span>Tổng kết {m}</span>
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
