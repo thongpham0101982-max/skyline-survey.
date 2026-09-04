@@ -347,6 +347,7 @@ export function TeacherSupportClient({
   const [summaryCategoryFilter, setSummaryCategoryFilter] = useState<string>("ALL")
   const [summaryViewMode, setSummaryViewMode] = useState<"MATRIX" | "TABLE" | "CARDS">("MATRIX")
   const [selectedDetailEval, setSelectedDetailEval] = useState<any>(null)
+  const [editingEvalId, setEditingEvalId] = useState<string | null>(null)
   const [selectedStudentJourneyTarget, setSelectedStudentJourneyTarget] = useState<any>(null)
 
   // Email Reminder Modal States
@@ -851,6 +852,68 @@ export function TeacherSupportClient({
     }
   }
 
+  
+  // Edit evaluation handler
+  const handleEditEvaluation = (evalItem: any) => {
+    const target = evalItem.target || targets.find((t: any) => t.id === evalItem.targetId);
+    if (target) {
+      setSelectedEvalTargetIds([target.id]);
+      setEvalTargetId(target.id);
+      setEvalTargetName(target.student?.studentName || evalItem.studentName);
+      setEvalTargetType(target.supportType);
+      setEvalStudent(target.student);
+      setEvalTargetObj(target);
+    }
+    setEditingEvalId(evalItem.id);
+    setEvalPeriodType(evalItem.periodType || "MONTH");
+    setEvalPeriodName(evalItem.periodName);
+
+    const matchedMonth = ACADEMIC_MONTHS.find(m => evalItem.periodName.includes(m)) || "Tháng 9";
+    setEvalSelectedMonth(matchedMonth);
+    if (evalItem.periodName.includes("Tuần")) {
+      const matchW = evalItem.periodName.match(/Tuần \d+/);
+      if (matchW) setEvalSelectedWeek(matchW[0]);
+      setEvalIsMonthlySummary(false);
+    } else {
+      setEvalIsMonthlySummary(true);
+    }
+
+    setEvalTrackingLevel(evalItem.trackingLevel);
+    setEvalComment(evalItem.comment);
+    setEvalUpdatedStatus(evalItem.updatedStatus || "Tiếp tục theo dõi");
+    setSelectedDetailEval(null);
+    setIsEvaluationModalOpen(true);
+  };
+
+  // Delete evaluation handler
+  const handleDeleteEvaluation = async (evalId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa bản ghi đánh giá này? Dữ liệu đã xóa sẽ không thể phục hồi.")) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deleteEvaluation",
+          academicYearId: selectedYearId,
+          id: evalId
+        })
+      });
+      const data = await res.json();
+      if (data.error) {
+        toast.error("Xóa đánh giá thất bại: " + data.error);
+      } else {
+        toast.success("Đã xóa bản ghi đánh giá thành công!");
+        setSelectedDetailEval(null);
+        await fetchTeacherData();
+      }
+    } catch (e: any) {
+      toast.error("Lỗi khi xóa đánh giá: " + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Submit weekly/monthly evaluation
   const handleSaveEvaluation = async () => {
     if (!evalTrackingLevel || !evalComment) {
@@ -868,6 +931,7 @@ export function TeacherSupportClient({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "saveEvaluation",
+            id: editingEvalId || undefined,
             academicYearId: selectedYearId,
             targetId: id,
             periodType: evalPeriodType,
@@ -900,6 +964,7 @@ export function TeacherSupportClient({
 
       toast.success("Lưu đánh giá thành công! Dữ liệu đã được chuyển vào 3. Tổng hợp kết quả");
       setIsEvaluationModalOpen(false);
+      setEditingEvalId(null);
       setSelectedEvalTargetIds([]);
       setActiveSubTab("summary");
       fetchTeacherData();
@@ -2664,14 +2729,37 @@ export function TeacherSupportClient({
                               {item.createdAt ? new Date(item.createdAt).toLocaleDateString("vi-VN") : "N/A"}
                             </td>
                             <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedDetailEval(item)}
-                                className="text-xs font-bold text-teal-700 hover:text-white hover:bg-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1"
-                              >
-                                <Eye className="h-3.5 w-3.5" />
-                                <span>Chi tiết</span>
-                              </button>
+                              <div className="flex items-center justify-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedDetailEval(item)}
+                                  className="text-xs font-bold text-teal-700 hover:text-white hover:bg-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1"
+                                  title="Xem chi tiết nhận xét & đánh giá"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                  <span>Chi tiết</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditEvaluation(item)}
+                                  className="text-xs font-bold text-indigo-700 hover:text-white hover:bg-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1"
+                                  title="Hiệu chỉnh nhận xét / kết quả đánh giá"
+                                >
+                                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                                  <span>Hiệu chỉnh</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteEvaluation(item.id)}
+                                  className="text-xs font-bold text-rose-700 hover:text-white hover:bg-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1"
+                                  title="Xóa bản ghi đánh giá này"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                  <span>Xóa</span>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -2992,7 +3080,7 @@ export function TeacherSupportClient({
                 </div>
 
                 {/* Modal Footer */}
-                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={() => {
@@ -3005,13 +3093,33 @@ export function TeacherSupportClient({
                     <span>Xem toàn bộ học bạ học sinh</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDetailEval(null)}
-                    className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 transition-all cursor-pointer"
-                  >
-                    Đóng
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleEditEvaluation(selectedDetailEval)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                    >
+                      <SlidersHorizontal className="h-3.5 w-3.5" />
+                      <span>Hiệu chỉnh</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteEvaluation(selectedDetailEval.id)}
+                      className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold py-2 px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      <span>Xóa</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedDetailEval(null)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-700 transition-all cursor-pointer"
+                    >
+                      Đóng
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

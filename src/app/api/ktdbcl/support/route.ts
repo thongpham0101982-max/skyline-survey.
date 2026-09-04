@@ -667,7 +667,18 @@ export async function GET(req: Request) {
 
 
 
-﻿    // 14. Action: terminateShortTermTarget (Kết thúc đề xuất hành động / hoàn thành theo dõi ngắn hạn)
+﻿    // Action: deleteEvaluation (Xóa bản ghi đánh giá định kỳ)
+    if (action === "deleteEvaluation") {
+      const { id } = body
+      if (!id) return NextResponse.json({ error: "Thiếu ID bản ghi đánh giá cần xóa" }, { status: 400 })
+
+      const deleted = await prisma.learningSupportEvaluation.delete({
+        where: { id }
+      })
+      return NextResponse.json({ success: true, deleted })
+    }
+
+    // 14. Action: terminateShortTermTarget (Kết thúc đề xuất hành động / hoàn thành theo dõi ngắn hạn)
     if (action === "terminateShortTermTarget") {
       const { id, outcome, notes } = body
       if (!id) return NextResponse.json({ error: "Thiếu ID học sinh cần kết thúc" }, { status: 400 })
