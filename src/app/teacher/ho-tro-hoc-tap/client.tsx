@@ -4774,19 +4774,19 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       /* ====== 1. GIAO DIỆN THEO THÁNG (TỔNG KẾT THÁNG) ====== */
                       <div className="space-y-2.5">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                          {/* Tháng - Mức 1: Đạt mục tiêu / Đã ổn định */}
+                          {/* Tháng - Mức 1: Ổn định */}
                           {(() => {
                             const isSelected =
-                              evalTrackingLevel === "Đạt mục tiêu / Đã ổn định" ||
-                              evalTrackingLevel === "Đạt mục tiêu" ||
+                              evalTrackingLevel === "Ổn định" ||
                               evalTrackingLevel === "Đã ổn định" ||
+                              evalTrackingLevel === "Đạt mục tiêu" ||
+                              evalTrackingLevel === "Đạt mục tiêu / Đã ổn định" ||
                               (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "POSITIVE");
-                            const val = evalTargetType === "PSYCHOLOGICAL" ? "Đã ổn định" : "Đạt mục tiêu";
                             return (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEvalTrackingLevel(val);
+                                  setEvalTrackingLevel("Ổn định");
                                   setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
                                 }}
                                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
@@ -4797,31 +4797,30 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               >
                                 <div className="flex items-center justify-between w-full mb-1">
                                   <span className="text-xs font-black text-emerald-800 flex items-center gap-1">
-                                    🌟 Đạt mục tiêu / Đã ổn định
+                                    🌟 Ổn định
                                   </span>
                                   {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
                                 </div>
                                 <span className="text-[10px] text-emerald-700/90 font-medium leading-tight">
-                                  Hoàn thành mục tiêu tháng, tiến bộ vượt bậc
+                                  Đạt mục tiêu tháng, tiến độ và năng lực đã ổn định
                                 </span>
                               </button>
                             );
                           })()}
 
-                          {/* Tháng - Mức 2: Có tiến bộ / Cải thiện */}
+                          {/* Tháng - Mức 2: Có tiến triển */}
                           {(() => {
                             const isSelected =
-                              evalTrackingLevel === "Có tiến bộ / Cải thiện" ||
+                              evalTrackingLevel === "Có tiến triển" ||
                               evalTrackingLevel === "Có tiến bộ" ||
                               evalTrackingLevel === "Có cải thiện" ||
                               evalTrackingLevel === "Cải thiện" ||
                               (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "IMPROVING");
-                            const val = evalTargetType === "PSYCHOLOGICAL" ? "Có cải thiện" : "Có tiến bộ";
                             return (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEvalTrackingLevel(val);
+                                  setEvalTrackingLevel("Có tiến triển");
                                   setEvalUpdatedStatus("Tiếp tục theo dõi");
                                 }}
                                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
@@ -4832,31 +4831,30 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               >
                                 <div className="flex items-center justify-between w-full mb-1">
                                   <span className="text-xs font-black text-sky-800 flex items-center gap-1">
-                                    📈 Có tiến bộ / Cải thiện
+                                    📈 Có tiến triển
                                   </span>
                                   {isSelected && <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />}
                                 </div>
                                 <span className="text-[10px] text-sky-700/90 font-medium leading-tight">
-                                  Có chuyển biến tích cực trong tháng
+                                  Có chuyển biến tích cực, tiến bộ tốt trong tháng
                                 </span>
                               </button>
                             );
                           })()}
 
-                          {/* Tháng - Mức 3: Duy trì / Tiếp tục theo dõi */}
+                          {/* Tháng - Mức 3: Chưa tiến triển */}
                           {(() => {
                             const isSelected =
-                              evalTrackingLevel === "Duy trì / Tiếp tục theo dõi" ||
+                              evalTrackingLevel === "Chưa tiến triển" ||
                               evalTrackingLevel === "Duy trì" ||
                               evalTrackingLevel === "Tiếp tục theo dõi" ||
                               evalTrackingLevel === "Duy trì theo dõi" ||
                               (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "MAINTAINING");
-                            const val = evalTargetType === "PSYCHOLOGICAL" ? "Tiếp tục theo dõi" : "Duy trì";
                             return (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEvalTrackingLevel(val);
+                                  setEvalTrackingLevel("Chưa tiến triển");
                                   setEvalUpdatedStatus("Tiếp tục theo dõi");
                                 }}
                                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
@@ -4867,33 +4865,33 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               >
                                 <div className="flex items-center justify-between w-full mb-1">
                                   <span className="text-xs font-black text-amber-800 flex items-center gap-1">
-                                    🔄 Duy trì / Tiếp tục theo dõi
+                                    🔄 Chưa tiến triển
                                   </span>
                                   {isSelected && <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />}
                                 </div>
                                 <span className="text-[10px] text-amber-700/90 font-medium leading-tight">
-                                  Chưa có nhiều thay đổi đáng kể, tiếp tục đồng hành
+                                  Chưa có cải thiện đáng kể, tiếp tục đồng hành
                                 </span>
                               </button>
                             );
                           })()}
 
-                          {/* Tháng - Mức 4: Chưa tiến bộ / Hỗ trợ chuyên sâu */}
+                          {/* Tháng - Mức 4: Có dấu hiệu tăng mức */}
                           {(() => {
                             const isSelected =
-                              evalTrackingLevel === "Chưa tiến bộ / Hỗ trợ chuyên sâu" ||
-                              evalTrackingLevel === "Chưa tiến bộ" ||
+                              evalTrackingLevel === "Có dấu hiệu tăng mức" ||
                               evalTrackingLevel === "Hỗ trợ chuyên sâu" ||
+                              evalTrackingLevel === "Chưa tiến bộ" ||
                               evalTrackingLevel === "Chưa cải thiện" ||
                               evalTrackingLevel === "Giảm sút" ||
                               evalTrackingLevel === "Diễn biến phức tạp" ||
+                              evalTrackingLevel === "Cần hỗ trợ ưu tiên" ||
                               (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "CRITICAL");
-                            const val = evalTargetType === "PSYCHOLOGICAL" ? "Hỗ trợ chuyên sâu" : "Chưa tiến bộ";
                             return (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEvalTrackingLevel(val);
+                                  setEvalTrackingLevel("Có dấu hiệu tăng mức");
                                   setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
                                 }}
                                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
@@ -4904,12 +4902,12 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               >
                                 <div className="flex items-center justify-between w-full mb-1">
                                   <span className="text-xs font-black text-rose-800 flex items-center gap-1">
-                                    ⚠️ Chưa tiến bộ / Hỗ trợ chuyên sâu
+                                    🚨 Có dấu hiệu tăng mức
                                   </span>
                                   {isSelected && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
                                 </div>
                                 <span className="text-[10px] text-rose-700/90 font-medium leading-tight">
-                                  Cần tăng cường kèm cặp / can thiệp chuyên sâu
+                                  Tăng mức độ nghiêm trọng/giảm sút, cần can thiệp gấp
                                 </span>
                               </button>
                             );
@@ -4923,27 +4921,21 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                             const val = e.target.value;
                             setEvalTrackingLevel(val);
                             if (
+                              val === "Ổn định" ||
                               val === "Đạt mục tiêu" ||
                               val === "Đã ổn định" ||
-                              val === "Có tiến bộ" ||
-                              val === "Có cải thiện" ||
-                              val === "Cải thiện" ||
-                              val.includes("Đạt mục tiêu") ||
-                              val.includes("Đã ổn định") ||
-                              val.includes("Có tiến bộ") ||
-                              val.includes("Cải thiện")
+                              val.includes("Ổn định") ||
+                              val.includes("Đạt mục tiêu")
                             ) {
                               setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
                             } else if (
+                              val === "Có dấu hiệu tăng mức" ||
+                              val === "Hỗ trợ chuyên sâu" ||
                               val === "Chưa tiến bộ" ||
-                              val === "Chưa cải thiện" ||
                               val === "Giảm sút" ||
                               val === "Diễn biến phức tạp" ||
-                              val === "Chuyển hỗ trợ chuyên sâu" ||
-                              val === "Hỗ trợ chuyên sâu" ||
-                              val.includes("Chưa tiến bộ") ||
-                              val.includes("Hỗ trợ chuyên sâu") ||
-                              val.includes("Chưa cải thiện")
+                              val.includes("tăng mức") ||
+                              val.includes("chuyên sâu")
                             ) {
                               setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
                             } else if (val) {
@@ -4955,48 +4947,29 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           className="w-full rounded-xl border-amber-300 border py-2.5 px-3.5 text-xs sm:text-sm font-black focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/40 text-amber-950 cursor-pointer shadow-2xs"
                         >
                           <option value="">-- Chọn mức độ kết quả tổng kết tháng --</option>
-                          {evalTargetType === "ACADEMIC" ? (
-                            <>
-                              <option value="Đạt mục tiêu">🌟 Đạt mục tiêu / Đã ổn định (Hoàn thành kế hoạch, tiến bộ vượt bậc)</option>
-                              <option value="Có tiến bộ">📈 Có tiến bộ / Cải thiện (Có chuyển biến tích cực trong tháng)</option>
-                              <option value="Duy trì">🔄 Duy trì / Tiếp tục theo dõi (Chưa có nhiều thay đổi đáng kể)</option>
-                              <option value="Chưa tiến bộ">⚠️ Chưa tiến bộ / Cần tăng cường kèm cặp</option>
-                              <option value="Hỗ trợ chuyên sâu">🚨 Chưa tiến bộ / Hỗ trợ chuyên sâu (Cần can thiệp chuyên sâu)</option>
-                              <option value="Giảm sút">📉 Giảm sút (Kết quả/thái độ đi xuống)</option>
-                              <option value="Chưa đủ dữ liệu">❓ Chưa đủ dữ liệu</option>
-                            </>
-                          ) : (
-                            <>
-                              <option value="Đã ổn định">🌟 Đã ổn định / Đạt mục tiêu (Tâm lý và hành vi đã ổn định tốt)</option>
-                              <option value="Có cải thiện">📈 Có cải thiện / Cải thiện (Có dấu hiệu hồi phục tích cực trong tháng)</option>
-                              <option value="Cải thiện">📈 Cải thiện (Dấu hiệu cải thiện rõ rệt)</option>
-                              <option value="Tiếp tục theo dõi">🔄 Duy trì / Tiếp tục theo dõi (Cần tiếp tục đồng hành)</option>
-                              <option value="Duy trì theo dõi">🔄 Duy trì theo dõi (Chưa có chuyển biến rõ rệt)</option>
-                              <option value="Chưa cải thiện">⚠️ Chưa cải thiện (Biểu hiện chưa thuyên giảm)</option>
-                              <option value="Hỗ trợ chuyên sâu">🚨 Chưa tiến bộ / Hỗ trợ chuyên sâu (Cần can thiệp chuyên sâu/chuyển tuyến)</option>
-                              <option value="Diễn biến phức tạp">🚨 Diễn biến phức tạp (Cần hỗ trợ can thiệp khẩn)</option>
-                              <option value="Chưa đủ dữ liệu">❓ Chưa đủ dữ liệu</option>
-                            </>
-                          )}
+                          <option value="Ổn định">🌟 Ổn định (Đạt mục tiêu tháng, tiến độ và năng lực đã ổn định)</option>
+                          <option value="Có tiến triển">📈 Có tiến triển (Có chuyển biến tích cực, tiến bộ tốt trong tháng)</option>
+                          <option value="Chưa tiến triển">🔄 Chưa tiến triển (Chưa có cải thiện đáng kể, tiếp tục đồng hành)</option>
+                          <option value="Có dấu hiệu tăng mức">🚨 Có dấu hiệu tăng mức (Tăng mức độ nghiêm trọng/giảm sút, cần can thiệp gấp)</option>
                         </select>
                       </div>
                     ) : (
                       /* ====== 2. GIAO DIỆN THEO TUẦN (TIẾN ĐỘ THEO TUẦN) ====== */
                       <div className="space-y-2.5">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                          {/* Tuần - Mức 1: Đạt mục tiêu / Đã ổn định */}
+                          {/* Tuần - Mức 1: Ổn định */}
                           {(() => {
                             const isSelected =
-                              evalTrackingLevel === "Đạt mục tiêu / Đã ổn định" ||
-                              evalTrackingLevel === "Đạt mục tiêu" ||
+                              evalTrackingLevel === "Ổn định" ||
+                              evalTrackingLevel === "1 - Ổn định" ||
                               evalTrackingLevel === "Đã ổn định" ||
+                              evalTrackingLevel === "Đạt mục tiêu" ||
                               (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "POSITIVE");
-                            const val = evalTargetType === "PSYCHOLOGICAL" ? "Đã ổn định" : "Đạt mục tiêu";
                             return (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEvalTrackingLevel(val);
+                                  setEvalTrackingLevel("Ổn định");
                                   setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
                                 }}
                                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
@@ -5007,31 +4980,31 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               >
                                 <div className="flex items-center justify-between w-full mb-1">
                                   <span className="text-xs font-black text-emerald-800 flex items-center gap-1">
-                                    🌟 Đạt mục tiêu / Đã ổn định
+                                    🌟 Mức 1: Ổn định
                                   </span>
                                   {isSelected && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
                                 </div>
                                 <span className="text-[10px] text-emerald-700/90 font-medium leading-tight">
-                                  Tiến bộ vượt bậc, hoàn thành kế hoạch tuần
+                                  Duy trì nề nếp, kết quả học tập/tâm lý ổn định tốt
                                 </span>
                               </button>
                             );
                           })()}
 
-                          {/* Tuần - Mức 2: Có tiến bộ / Cải thiện */}
+                          {/* Tuần - Mức 2: Có tiến triển */}
                           {(() => {
                             const isSelected =
-                              evalTrackingLevel === "Có tiến bộ / Cải thiện" ||
+                              evalTrackingLevel === "Có tiến triển" ||
+                              evalTrackingLevel === "2 - Có tiến triển" ||
                               evalTrackingLevel === "Có tiến bộ" ||
                               evalTrackingLevel === "Có cải thiện" ||
                               evalTrackingLevel === "Cải thiện" ||
                               (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "IMPROVING");
-                            const val = evalTargetType === "PSYCHOLOGICAL" ? "Có cải thiện" : "Có tiến bộ";
                             return (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEvalTrackingLevel(val);
+                                  setEvalTrackingLevel("Có tiến triển");
                                   setEvalUpdatedStatus("Tiếp tục theo dõi");
                                 }}
                                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
@@ -5042,31 +5015,31 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               >
                                 <div className="flex items-center justify-between w-full mb-1">
                                   <span className="text-xs font-black text-sky-800 flex items-center gap-1">
-                                    📈 Có tiến bộ / Cải thiện
+                                    📈 Mức 2: Có tiến triển
                                   </span>
                                   {isSelected && <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />}
                                 </div>
                                 <span className="text-[10px] text-sky-700/90 font-medium leading-tight">
-                                  Có chuyển biến tích cực trong tuần
+                                  Có chuyển biến tích cực, tiến bộ rõ rệt trong tuần
                                 </span>
                               </button>
                             );
                           })()}
 
-                          {/* Tuần - Mức 3: Duy trì / Tiếp tục theo dõi */}
+                          {/* Tuần - Mức 3: Cần tiếp tục theo dõi, hỗ trợ */}
                           {(() => {
                             const isSelected =
-                              evalTrackingLevel === "Duy trì / Tiếp tục theo dõi" ||
+                              evalTrackingLevel === "Cần tiếp tục theo dõi, hỗ trợ" ||
+                              evalTrackingLevel === "3 - Cần tiếp tục theo dõi, hỗ trợ" ||
                               evalTrackingLevel === "Duy trì" ||
                               evalTrackingLevel === "Tiếp tục theo dõi" ||
                               evalTrackingLevel === "Duy trì theo dõi" ||
                               (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "MAINTAINING");
-                            const val = evalTargetType === "PSYCHOLOGICAL" ? "Tiếp tục theo dõi" : "Duy trì";
                             return (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEvalTrackingLevel(val);
+                                  setEvalTrackingLevel("Cần tiếp tục theo dõi, hỗ trợ");
                                   setEvalUpdatedStatus("Tiếp tục theo dõi");
                                 }}
                                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
@@ -5077,33 +5050,33 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               >
                                 <div className="flex items-center justify-between w-full mb-1">
                                   <span className="text-xs font-black text-amber-800 flex items-center gap-1">
-                                    🔄 Duy trì / Tiếp tục theo dõi
+                                    🔄 Mức 3: Theo dõi, hỗ trợ
                                   </span>
                                   {isSelected && <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />}
                                 </div>
                                 <span className="text-[10px] text-amber-700/90 font-medium leading-tight">
-                                  Chưa có nhiều thay đổi đáng kể, tiếp tục đồng hành
+                                  Chưa có chuyển biến nhiều, tiếp tục hỗ trợ đều đặn
                                 </span>
                               </button>
                             );
                           })()}
 
-                          {/* Tuần - Mức 4: Chưa tiến bộ / Hỗ trợ chuyên sâu */}
+                          {/* Tuần - Mức 4: Cần hỗ trợ ưu tiên */}
                           {(() => {
                             const isSelected =
-                              evalTrackingLevel === "Chưa tiến bộ / Hỗ trợ chuyên sâu" ||
-                              evalTrackingLevel === "Chưa tiến bộ" ||
+                              evalTrackingLevel === "Cần hỗ trợ ưu tiên" ||
+                              evalTrackingLevel === "4 - Cần hỗ trợ ưu tiên" ||
                               evalTrackingLevel === "Hỗ trợ chuyên sâu" ||
+                              evalTrackingLevel === "Chưa tiến bộ" ||
                               evalTrackingLevel === "Chưa cải thiện" ||
                               evalTrackingLevel === "Giảm sút" ||
                               evalTrackingLevel === "Diễn biến phức tạp" ||
                               (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "CRITICAL");
-                            const val = evalTargetType === "PSYCHOLOGICAL" ? "Hỗ trợ chuyên sâu" : "Chưa tiến bộ";
                             return (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  setEvalTrackingLevel(val);
+                                  setEvalTrackingLevel("Cần hỗ trợ ưu tiên");
                                   setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
                                 }}
                                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
@@ -5114,12 +5087,12 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               >
                                 <div className="flex items-center justify-between w-full mb-1">
                                   <span className="text-xs font-black text-rose-800 flex items-center gap-1">
-                                    ⚠️ Chưa tiến bộ / Hỗ trợ chuyên sâu
+                                    🚨 Mức 4: Hỗ trợ ưu tiên
                                   </span>
                                   {isSelected && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
                                 </div>
                                 <span className="text-[10px] text-rose-700/90 font-medium leading-tight">
-                                  Cần tăng cường kèm cặp / can thiệp tuần tới
+                                  Gặp khó khăn lớn/giảm sút, cần can thiệp ưu tiên gấp
                                 </span>
                               </button>
                             );
@@ -5133,27 +5106,22 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                             const val = e.target.value;
                             setEvalTrackingLevel(val);
                             if (
+                              val === "Ổn định" ||
+                              val === "1 - Ổn định" ||
                               val === "Đạt mục tiêu" ||
                               val === "Đã ổn định" ||
-                              val === "Có tiến bộ" ||
-                              val === "Có cải thiện" ||
-                              val === "Cải thiện" ||
-                              val.includes("Đạt mục tiêu") ||
-                              val.includes("Đã ổn định") ||
-                              val.includes("Có tiến bộ") ||
-                              val.includes("Cải thiện")
+                              val.includes("Ổn định")
                             ) {
                               setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
                             } else if (
+                              val === "Cần hỗ trợ ưu tiên" ||
+                              val === "4 - Cần hỗ trợ ưu tiên" ||
+                              val === "Hỗ trợ chuyên sâu" ||
                               val === "Chưa tiến bộ" ||
-                              val === "Chưa cải thiện" ||
                               val === "Giảm sút" ||
                               val === "Diễn biến phức tạp" ||
-                              val === "Chuyển hỗ trợ chuyên sâu" ||
-                              val === "Hỗ trợ chuyên sâu" ||
-                              val.includes("Chưa tiến bộ") ||
-                              val.includes("Hỗ trợ chuyên sâu") ||
-                              val.includes("Chưa cải thiện")
+                              val.includes("ưu tiên") ||
+                              val.includes("chuyên sâu")
                             ) {
                               setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
                             } else if (val) {
@@ -5165,29 +5133,10 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           className="w-full rounded-xl border-emerald-300 border py-2.5 px-3.5 text-xs sm:text-sm font-black focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-emerald-50/40 text-emerald-950 cursor-pointer shadow-2xs"
                         >
                           <option value="">-- Chọn mức độ kết quả theo tuần --</option>
-                          {evalTargetType === "ACADEMIC" ? (
-                            <>
-                              <option value="Đạt mục tiêu">🌟 Đạt mục tiêu / Đã ổn định (Tiến bộ vượt bậc, hoàn thành kế hoạch tuần)</option>
-                              <option value="Có tiến bộ">📈 Có tiến bộ / Cải thiện (Có chuyển biến tích cực trong tuần)</option>
-                              <option value="Duy trì">🔄 Duy trì / Tiếp tục theo dõi (Chưa có nhiều thay đổi đáng kể)</option>
-                              <option value="Chưa tiến bộ">⚠️ Chưa tiến bộ / Cần tăng cường kèm cặp tuần tới</option>
-                              <option value="Hỗ trợ chuyên sâu">🚨 Chưa tiến bộ / Hỗ trợ chuyên sâu (Cần can thiệp chuyên sâu)</option>
-                              <option value="Giảm sút">📉 Giảm sút (Kết quả/thái độ đi xuống)</option>
-                              <option value="Chưa đủ dữ liệu">❓ Chưa đủ dữ liệu</option>
-                            </>
-                          ) : (
-                            <>
-                              <option value="Đã ổn định">🌟 Đã ổn định / Đạt mục tiêu (Tâm lý và hành vi tuần này đã tốt)</option>
-                              <option value="Có cải thiện">📈 Có cải thiện / Cải thiện (Có dấu hiệu hồi phục tích cực trong tuần)</option>
-                              <option value="Cải thiện">📈 Cải thiện (Dấu hiệu cải thiện rõ rệt)</option>
-                              <option value="Tiếp tục theo dõi">🔄 Duy trì / Tiếp tục theo dõi (Cần tiếp tục đồng hành)</option>
-                              <option value="Duy trì theo dõi">🔄 Duy trì theo dõi (Chưa có chuyển biến rõ rệt)</option>
-                              <option value="Chưa cải thiện">⚠️ Chưa cải thiện (Biểu hiện chưa thuyên giảm)</option>
-                              <option value="Hỗ trợ chuyên sâu">🚨 Chưa tiến bộ / Hỗ trợ chuyên sâu (Cần can thiệp chuyên sâu)</option>
-                              <option value="Diễn biến phức tạp">🚨 Diễn biến phức tạp (Cần hỗ trợ can thiệp khẩn)</option>
-                              <option value="Chưa đủ dữ liệu">❓ Chưa đủ dữ liệu</option>
-                            </>
-                          )}
+                          <option value="Ổn định">🌟 Mức 1: Ổn định (Duy trì nề nếp, kết quả học tập/tâm lý ổn định tốt)</option>
+                          <option value="Có tiến triển">📈 Mức 2: Có tiến triển (Có chuyển biến tích cực, tiến bộ rõ rệt trong tuần)</option>
+                          <option value="Cần tiếp tục theo dõi, hỗ trợ">🔄 Mức 3: Cần tiếp tục theo dõi, hỗ trợ (Chưa có chuyển biến nhiều, tiếp tục đồng hành)</option>
+                          <option value="Cần hỗ trợ ưu tiên">🚨 Mức 4: Cần hỗ trợ ưu tiên (Khó khăn lớn/giảm sút, cần can thiệp & hỗ trợ ưu tiên)</option>
                         </select>
                       </div>
                     )}
