@@ -9,6 +9,24 @@ import {
 } from "lucide-react"
 
 export const ACADEMIC_MONTHS = ["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"];
+
+export const formatDateSafe = (dateVal: any, fallback = "Chưa có dữ liệu") => {
+  if (!dateVal) return fallback;
+  if (typeof dateVal === "string") {
+    const trimmed = dateVal.trim();
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(trimmed)) {
+      return trimmed;
+    }
+  }
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return typeof dateVal === "string" ? dateVal : fallback;
+    return d.toLocaleDateString("vi-VN");
+  } catch {
+    return typeof dateVal === "string" ? dateVal : fallback;
+  }
+};
+
 export const parseEvaluationComment = (fullComment: string) => {
   if (!fullComment) return { mainComment: "", gvcnFeedback: "", phhsFeedback: "" };
   let mainComment = fullComment;
@@ -2134,31 +2152,8 @@ export function TeacherSupportClient({
                           {canEvaluate && !isTerminated && !isPending && (
                             <>
                               <button
-                                onClick={() => {
-                                  setSelectedEvalTargetIds([t.id])
-                                  setEvalTargetId(t.id)
-                                  setEvalTargetName(t.student?.studentName)
-                                  setEvalTargetType(t.supportType)
-                                  setEvalComment("")
-                                  setEvalGvcnFeedback("")
-                                  setEvalPhhsFeedback("")
-                                  setRecentConsultationLogs([])
-                                  setEvalStudent(t.student)
-                                  setEvalTargetObj(t)
-                                  if (t.student?.id) {
-                                    fetchRecentStudentFeedback(t.student.id);
-                                  }
-                                  const curMonth = "Tháng " + (new Date().getMonth() + 1)
-                                  const validMonth = ACADEMIC_MONTHS.includes(curMonth) ? curMonth : "Tháng 9"
-                                  setEvalSelectedMonth(validMonth)
-                                  setEvalSelectedWeek("Tuần 1")
-                                  setEvalIsMonthlySummary(false)
-                                  setEvalPeriodType("WEEK")
-                                  setEvalPeriodName(`Tuần 1 - ${validMonth}`)
-                                  const options = configs.filter((c:any) => c.supportType === t.supportType)
-                                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                                  setIsEvaluationModalOpen(true)
-                                }}
+                                type="button"
+                                onClick={() => handleOpenEvaluationModal(t)}
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm cursor-pointer"
                               >
                                 Nhận xét & Đánh giá
@@ -4224,22 +4219,22 @@ export function TeacherSupportClient({
         const targetColor = isCommitment ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800";
         
         const startDateLabel = isCommitment ? "Ngày nhập học:" : "Ngày duyệt đề xuất:";
-        let startDateValue = "Chưa có dữ liệu";
-        
-        if (isCommitment && evalStudent?.enrollmentDate) {
-          startDateValue = new Date(evalStudent.enrollmentDate).toLocaleDateString("vi-VN");
-        } else if (!isCommitment && evalTargetObj?.approvedAt) {
-          startDateValue = new Date(evalTargetObj.approvedAt).toLocaleDateString("vi-VN");
-        }
+        const startDateValue = isCommitment
+          ? formatDateSafe(evalStudent?.enrollmentDate, "Chưa có dữ liệu")
+          : formatDateSafe(evalTargetObj?.approvedAt || evalTargetObj?.createdAt, "Chưa có dữ liệu");
 
-        
+        const months = ACADEMIC_MONTHS;
 
-        const months = ["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"];
-
-        const historyEvals = evalTargetObj?.evaluations ? [...evalTargetObj.evaluations].sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
+        const historyEvals = Array.isArray(evalTargetObj?.evaluations)
+          ? [...evalTargetObj.evaluations].sort((a: any, b: any) => {
+              const timeA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const timeB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+            })
+          : [];
 
         return (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-[60]">
             <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh]">
               <div className="px-6 py-4 border-b flex justify-between items-center bg-emerald-50">
                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -4337,7 +4332,7 @@ export function TeacherSupportClient({
                         <div key={ev.id} className="text-sm bg-white border border-slate-200 rounded p-2 shadow-sm">
                           <div className="flex justify-between items-center mb-1">
                             <span className="font-bold text-slate-800">{ev.periodName} ({ev.periodType === "MONTH" ? "Tháng" : "Tuần"})</span>
-                            <span className="text-[11px] font-semibold bg-slate-100 px-2 py-0.5 rounded text-slate-600">{new Date(ev.createdAt).toLocaleDateString("vi-VN")}</span>
+                            <span className="text-[11px] font-semibold bg-slate-100 px-2 py-0.5 rounded text-slate-600">{formatDateSafe(ev?.createdAt, "N/A")}</span>
                           </div>
                           <div className="font-bold text-indigo-700 text-xs mb-1">Mức độ: {ev.trackingLevel}</div>
                           <div className="text-slate-600 text-xs italic">{ev.comment}</div>
