@@ -897,6 +897,98 @@ export function TeacherSupportClient({
   }
 
   
+  // Mở modal đánh giá định kỳ cho 1 học sinh
+  const handleOpenEvaluationModal = (t: any) => {
+    if (!t) return;
+    try {
+      setSelectedEvalTargetIds([t.id]);
+      setEvalTargetId(t.id);
+      setEvalTargetName(t.student?.studentName || t.student?.fullName || "Học sinh");
+      setEvalTargetType(t.supportType || "ACADEMIC");
+      setEvalComment("");
+      setEvalGvcnFeedback("");
+      setEvalPhhsFeedback("");
+      setRecentConsultationLogs([]);
+      setEvalStudent(t.student || null);
+      setEvalTargetObj(t);
+      setEditingEvalId(null);
+
+      const curMonth = "Tháng " + (new Date().getMonth() + 1);
+      const validMonth = ACADEMIC_MONTHS.includes(curMonth) ? curMonth : "Tháng 9";
+      setEvalSelectedMonth(validMonth);
+      setEvalSelectedWeek("Tuần 1");
+      setEvalIsMonthlySummary(false);
+      setEvalPeriodType("WEEK");
+      setEvalPeriodName(`Tuần 1 - ${validMonth}`);
+
+      const options = Array.isArray(configs) ? configs.filter((c: any) => c.supportType === t.supportType) : [];
+      if (t.supportType === "ACADEMIC") {
+        setEvalTrackingLevel(options[0]?.outcomeLabel || "Duy trì");
+      } else {
+        setEvalTrackingLevel(options[0]?.outcomeLabel || "Duy trì theo dõi");
+      }
+      setEvalUpdatedStatus("Tiếp tục theo dõi");
+
+      if (t.student?.id) {
+        fetchRecentStudentFeedback(t.student.id);
+      }
+      setIsEvaluationModalOpen(true);
+    } catch (err: any) {
+      console.error("Error opening evaluation modal:", err);
+      toast.error("Lỗi khi mở form đánh giá: " + err.message);
+    }
+  };
+
+  // Mở modal đánh giá hàng loạt cho các học sinh đã chọn
+  const handleOpenBatchEvaluation = () => {
+    if (selectedEvalTargetIds.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 học sinh để đánh giá");
+      return;
+    }
+    try {
+      const selectedTargets = filteredTargets.filter((t: any) => selectedEvalTargetIds.includes(t.id));
+      const firstSelected = selectedTargets[0] || filteredTargets.find((t: any) => t.id === selectedEvalTargetIds[0]) || targets.find((t: any) => t.id === selectedEvalTargetIds[0]);
+
+      if (!firstSelected) return;
+
+      if (selectedEvalTargetIds.length === 1) {
+        handleOpenEvaluationModal(firstSelected);
+        return;
+      }
+
+      setEvalTargetId(firstSelected.id);
+      setEvalTargetName(`Danh sách ${selectedEvalTargetIds.length} học sinh`);
+      setEvalTargetType(firstSelected.supportType || "ACADEMIC");
+      setEditingEvalId(null);
+      setEvalStudent(firstSelected.student || null);
+      setEvalTargetObj(firstSelected);
+      setEvalComment("");
+      setEvalGvcnFeedback("");
+      setEvalPhhsFeedback("");
+      setRecentConsultationLogs([]);
+
+      const curMonth = "Tháng " + (new Date().getMonth() + 1);
+      const validMonth = ACADEMIC_MONTHS.includes(curMonth) ? curMonth : "Tháng 9";
+      setEvalSelectedMonth(validMonth);
+      setEvalSelectedWeek("Tuần 1");
+      setEvalIsMonthlySummary(false);
+      setEvalPeriodType("WEEK");
+      setEvalPeriodName(`Tuần 1 - ${validMonth}`);
+
+      const options = Array.isArray(configs) ? configs.filter((c: any) => c.supportType === firstSelected.supportType) : [];
+      if (firstSelected.supportType === "ACADEMIC") {
+        setEvalTrackingLevel(options[0]?.outcomeLabel || "Duy trì");
+      } else {
+        setEvalTrackingLevel(options[0]?.outcomeLabel || "Duy trì theo dõi");
+      }
+      setEvalUpdatedStatus("Tiếp tục theo dõi");
+      setIsEvaluationModalOpen(true);
+    } catch (err: any) {
+      console.error("Error opening batch evaluation modal:", err);
+      toast.error("Lỗi khi mở form đánh giá hàng loạt: " + err.message);
+    }
+  };
+
   // Edit evaluation handler
   const handleEditEvaluation = (evalItem: any) => {
     const target = evalItem.target || targets.find((t: any) => t.id === evalItem.targetId);
