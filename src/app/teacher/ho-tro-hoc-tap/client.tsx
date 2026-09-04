@@ -400,7 +400,7 @@ export function TeacherSupportClient({
   const [summaryMonthFilter, setSummaryMonthFilter] = useState<string>("ALL")
   const [summaryLevelFilter, setSummaryLevelFilter] = useState<string>("ALL")
   const [summaryCategoryFilter, setSummaryCategoryFilter] = useState<string>("ALL")
-  const [summaryViewMode, setSummaryViewMode] = useState<"MATRIX" | "TABLE" | "CARDS">("MATRIX")
+  const [summaryViewMode, setSummaryViewMode] = useState<"WEEK_MATRIX" | "MATRIX" | "TABLE" | "CARDS">("WEEK_MATRIX")
   const [selectedDetailEval, setSelectedDetailEval] = useState<any>(null)
   const [editingEvalId, setEditingEvalId] = useState<string | null>(null)
   const [selectedStudentJourneyTarget, setSelectedStudentJourneyTarget] = useState<any>(null)
@@ -1519,8 +1519,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
   // Tab 3 Filtered Evaluations
   const filteredSummaryEvaluations = useMemo(() => {
     return summaryEvaluations.filter((ev) => {
-      if (summaryMonthFilter !== "ALL" && ev.periodName !== summaryMonthFilter) {
-        return false;
+      if (summaryMonthFilter !== "ALL") {
+        const matchMonth = ev.periodName === summaryMonthFilter || (ev.periodName && ev.periodName.includes(summaryMonthFilter));
+        if (!matchMonth) return false;
       }
       if (summaryLevelFilter !== "ALL") {
         const badgeInfo = getTrackingLevelBadge(ev.trackingLevel);
@@ -1536,28 +1537,31 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     });
   }, [summaryEvaluations, summaryMonthFilter, summaryLevelFilter, summaryCategoryFilter]);
 
-  // Tab 3 Monthly Evaluation Counts
+  // Tab 3 Monthly Evaluation Counts (count both weekly & monthly evaluations for each month)
   const evalCountByMonth = useMemo(() => {
     const counts: Record<string, number> = {};
     ACADEMIC_MONTHS.forEach(m => { counts[m] = 0; });
     summaryEvaluations.forEach(ev => {
-      if (ev.periodName && counts[ev.periodName] !== undefined) {
-        counts[ev.periodName]++;
-      }
+      ACADEMIC_MONTHS.forEach(m => {
+        if (ev.periodName === m || (ev.periodName && ev.periodName.includes(m))) {
+          counts[m]++;
+        }
+      });
     });
     return counts;
   }, [summaryEvaluations]);
 
   // Tab 3 KPI Stats
   const summaryKpiStats = useMemo(() => {
-    const total = summaryEvaluations.length;
-    const uniqueStudents = new Set(summaryEvaluations.map(e => e.studentId)).size;
+    const evalsToCalculate = summaryMonthFilter === "ALL" ? summaryEvaluations : filteredSummaryEvaluations;
+    const total = evalsToCalculate.length;
+    const uniqueStudents = new Set(evalsToCalculate.map(e => e.studentId)).size;
     let positive = 0;
     let improving = 0;
     let maintaining = 0;
     let critical = 0;
 
-    summaryEvaluations.forEach(e => {
+    evalsToCalculate.forEach(e => {
       const b = getTrackingLevelBadge(e.trackingLevel);
       if (b.category === "POSITIVE") positive++;
       else if (b.category === "IMPROVING") improving++;
@@ -1574,7 +1578,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       critical,
       positiveRate: total > 0 ? Math.round(((positive + improving) / total) * 100) : 0
     };
-  }, [summaryEvaluations]);
+  }, [summaryEvaluations, filteredSummaryEvaluations, summaryMonthFilter]);
 
   // Tab 3 Matrix rows (Filtered targets that match search & filters)
   const matrixTargets = useMemo(() => {
@@ -1584,7 +1588,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       if (summaryCategoryFilter !== "ALL" && cat !== summaryCategoryFilter) return false;
 
       if (summaryMonthFilter !== "ALL") {
-        const hasMonth = (t.evaluations || []).some((e: any) => e.periodName === summaryMonthFilter);
+        const hasMonth = (t.evaluations || []).some((e: any) => e.periodName === summaryMonthFilter || (e.periodName && e.periodName.includes(summaryMonthFilter)));
         if (!hasMonth) return false;
       }
 
@@ -2483,7 +2487,27 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               <div className="flex items-center bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
                 <button
                   type="button"
-                  onClick={() => setSummaryViewMode("MATRIX")}
+                  onClick={() => {
+                    setSummaryViewMode("WEEK_MATRIX");
+                    if (summaryMonthFilter === "ALL") {
+                      setSummaryMonthFilter("Tháng 9");
+                    }
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    summaryViewMode === "WEEK_MATRIX"
+                      ? "bg-white text-[#003B3A] shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                  title="Ma trận kết quả theo các Tuần trong Tháng"
+                >
+                  <Calendar className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Ma trận theo Tuần</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSummaryViewMode("MATRIX");
+                  }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                     summaryViewMode === "MATRIX"
                       ? "bg-white text-[#003B3A] shadow-xs"
@@ -2492,7 +2516,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                   title="Ma trận tiến trình đánh giá theo 10 tháng"
                 >
                   <LayoutGrid className="h-3.5 w-3.5 text-[#009085]" />
-                  <span>Ma trận theo Tháng</span>
+                  <span>Ma trận 10 Tháng</span>
                 </button>
                 <button
                   type="button"
@@ -2533,7 +2557,259 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
             </div>
           </div>
 
-          {/* VIEW MODE 1: MA TRẬN TIẾN TRÌNH THEO 10 THÁNG */}
+          {/* VIEW MODE 1: MA TRẬN KẾT QUẢ THEO TUẦN CỦA THÁNG */}
+          {summaryViewMode === "WEEK_MATRIX" && (() => {
+            const activeMonth = summaryMonthFilter !== "ALL" ? summaryMonthFilter : "Tháng 9";
+            const weeksList = MONTH_WEEKS_CONFIG[activeMonth] || ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"];
+            return (
+              <div className="bg-white border border-emerald-200 rounded-3xl overflow-hidden shadow-xs space-y-0">
+                <div className="bg-gradient-to-r from-emerald-50/90 via-teal-50/60 to-white px-5 py-4 border-b border-emerald-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 bg-gradient-to-br from-emerald-700 to-teal-700 text-white rounded-xl shadow-xs">
+                      <Calendar className="h-4 w-4 text-emerald-200" />
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="text-xs font-black text-[#003B3A] uppercase tracking-tight">
+                          Ma trận kết quả đánh giá theo từng Tuần - <span className="text-emerald-700 underline font-black">{activeMonth}</span> ({matrixTargets.length} học sinh)
+                        </h4>
+                        <select
+                          value={activeMonth}
+                          onChange={(e) => setSummaryMonthFilter(e.target.value)}
+                          className="bg-white text-emerald-900 border border-emerald-300 rounded-xl px-2.5 py-1 text-xs font-black outline-none cursor-pointer shadow-2xs hover:border-emerald-500"
+                        >
+                          {ACADEMIC_MONTHS.map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium pt-0.5">
+                        Theo dõi chi tiết mức độ từng tuần học & kết quả đánh giá tổng kết trong {activeMonth}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-slate-600">
+                    <span className="flex items-center gap-1 bg-emerald-50 px-2 py-1 rounded-xl border border-emerald-200 text-emerald-900">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Mức 1: Ổn định
+                    </span>
+                    <span className="flex items-center gap-1 bg-sky-50 px-2 py-1 rounded-xl border border-sky-200 text-sky-900">
+                      <span className="w-2 h-2 rounded-full bg-sky-500 inline-block"></span> Mức 2: Có tiến triển
+                    </span>
+                    <span className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-xl border border-amber-200 text-amber-900">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span> Mức 3: Theo dõi
+                    </span>
+                    <span className="flex items-center gap-1 bg-rose-50 px-2 py-1 rounded-xl border border-rose-200 text-rose-900">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 inline-block"></span> Mức 4: Ưu tiên
+                    </span>
+                    <span className="flex items-center gap-1 bg-amber-100/90 px-2 py-1 rounded-xl border border-amber-300 text-amber-950 font-black">
+                      ⭐ Tổng kết Tháng
+                    </span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200/80 text-left">
+                    <thead className="bg-slate-50/90 text-slate-700 font-extrabold text-[11px] uppercase tracking-wider">
+                      <tr>
+                        <th className="px-3 py-3 text-center w-10 sticky left-0 bg-slate-50 z-10">TT</th>
+                        <th className="px-3 py-3 whitespace-nowrap sticky left-10 bg-slate-50 z-10">Mã HS</th>
+                        <th className="px-4 py-3 whitespace-nowrap sticky left-24 bg-slate-50 z-10">Họ và tên</th>
+                        <th className="px-3 py-3 text-center whitespace-nowrap">Lớp</th>
+                        <th className="px-3 py-3 text-center whitespace-nowrap">Đối tượng</th>
+                        <th className="px-3 py-3 whitespace-nowrap">Môn bồi dưỡng</th>
+
+                        {/* Weekly Columns for this month */}
+                        {weeksList.map((w: string) => (
+                          <th
+                            key={w}
+                            className="px-3 py-3 text-center text-xs font-black whitespace-nowrap text-teal-900 bg-teal-50/70 border-l border-r border-teal-100"
+                          >
+                            📅 {w}
+                          </th>
+                        ))}
+
+                        {/* ⭐ Monthly summary column */}
+                        <th className="px-4 py-3 text-center text-xs font-black whitespace-nowrap text-amber-900 bg-amber-100/80 border-l border-r border-amber-200">
+                          ⭐ Tổng kết {activeMonth}
+                        </th>
+
+                        <th className="px-4 py-3 text-center whitespace-nowrap sticky right-0 bg-slate-50 z-10">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs">
+                      {matrixTargets.length === 0 ? (
+                        <tr>
+                          <td colSpan={7 + weeksList.length} className="text-center py-12 text-slate-400 font-medium">
+                            Không tìm thấy học sinh nào phù hợp với bộ lọc hiện tại.
+                          </td>
+                        </tr>
+                      ) : (
+                        matrixTargets.map((target: any, idx: number) => {
+                          const isCommitment = target.sourceType === "ADMISSION" || (target.notes && target.notes.includes("Cam kết Khảo sát đầu vào"));
+                          const targetEvals = target.evaluations || [];
+                          const subjectDisplay = target.reason || (target.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý");
+
+                          // Tìm đánh giá tổng kết tháng
+                          const monthlySummaryEval = targetEvals.find((e: any) =>
+                            (e.periodType === "MONTH" && (e.periodName === activeMonth || e.periodName?.includes(activeMonth))) ||
+                            e.periodName === activeMonth ||
+                            e.periodName === `Tổng kết ${activeMonth}` ||
+                            (e.periodName?.includes(activeMonth) && !e.periodName?.includes("Tuần"))
+                          );
+
+                          return (
+                            <tr key={target.id} className="hover:bg-emerald-50/30 transition-colors group">
+                              <td className="px-3 py-3 text-center font-bold text-slate-400 sticky left-0 bg-white group-hover:bg-emerald-50/30 z-10">
+                                {idx + 1}
+                              </td>
+                              <td className="px-3 py-3 font-semibold text-slate-600 whitespace-nowrap sticky left-10 bg-white group-hover:bg-emerald-50/30 z-10">
+                                {target.student?.studentCode || target.student?.code || "N/A"}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap sticky left-24 bg-white group-hover:bg-emerald-50/30 z-10">
+                                <button
+                                  onClick={() => handleOpenProfile(target.studentId)}
+                                  className="font-extrabold text-[#003B3A] hover:text-[#009085] hover:underline text-left cursor-pointer transition-colors block"
+                                >
+                                  {target.student?.studentName || target.student?.fullName || "N/A"}
+                                </button>
+                              </td>
+                              <td className="px-3 py-3 text-center font-bold text-slate-700 whitespace-nowrap">
+                                {target.student?.class?.className || target.student?.className || "N/A"}
+                              </td>
+                              <td className="px-3 py-3 text-center whitespace-nowrap">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                  isCommitment
+                                    ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                    : "bg-indigo-100 text-indigo-900 border border-indigo-300"
+                                }`}>
+                                  {isCommitment ? "CKĐV" : "BSTD"}
+                                </span>
+                              </td>
+                              <td className="px-3 py-3 whitespace-nowrap">
+                                <span className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border ${getSubjectBadgeStyle(subjectDisplay)}`}>
+                                  {subjectDisplay}
+                                </span>
+                              </td>
+
+                              {/* Cells for each week */}
+                              {weeksList.map((w: string) => {
+                                const wEval = targetEvals.find((e: any) =>
+                                  e.periodName === `${w} - ${activeMonth}` ||
+                                  (e.periodName && e.periodName.includes(w) && e.periodName.includes(activeMonth)) ||
+                                  (e.periodType === "WEEK" && e.periodName === w)
+                                );
+
+                                if (wEval) {
+                                  const badgeInfo = getTrackingLevelBadge(wEval.trackingLevel);
+                                  const IconComp = badgeInfo.icon;
+                                  return (
+                                    <td key={w} className="px-2 py-2.5 text-center whitespace-nowrap bg-teal-50/20 border-l border-r border-teal-100/60">
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedDetailEval({
+                                          ...wEval,
+                                          targetId: target.id,
+                                          studentId: target.studentId,
+                                          studentCode: target.student?.studentCode || target.student?.code,
+                                          studentName: target.student?.studentName || target.student?.fullName,
+                                          className: target.student?.class?.className || target.student?.className,
+                                          category: isCommitment ? "CKĐV" : "BSTD",
+                                          subject: subjectDisplay,
+                                          evaluatorName: wEval.evaluator?.name || teacher?.name || "Giáo viên",
+                                          target
+                                        })}
+                                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-black border transition-all transform hover:scale-105 cursor-pointer shadow-2xs ${badgeInfo.badge}`}
+                                        title={`${w} (${activeMonth}): ${wEval.trackingLevel} - ${wEval.comment || ""}`}
+                                      >
+                                        <IconComp className="h-3 w-3 shrink-0" />
+                                        <span>{badgeInfo.shortLabel}</span>
+                                      </button>
+                                    </td>
+                                  );
+                                }
+
+                                return (
+                                  <td key={w} className="px-2 py-2.5 text-center whitespace-nowrap bg-teal-50/10 border-l border-r border-teal-100/30">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenEvaluationForSpecificPeriod(target, activeMonth, w)}
+                                      className="text-[11px] font-bold text-teal-600 hover:text-teal-900 hover:bg-teal-100/80 border border-dashed border-teal-200/80 rounded-lg px-2 py-1 transition-all cursor-pointer opacity-70 hover:opacity-100 inline-flex items-center gap-0.5"
+                                      title={`Thêm đánh giá ${w} - ${activeMonth}`}
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                      <span>Đánh giá</span>
+                                    </button>
+                                  </td>
+                                );
+                              })}
+
+                              {/* ⭐ Cell for Monthly Summary */}
+                              <td className="px-3 py-2.5 text-center whitespace-nowrap bg-amber-50/40 border-l border-r border-amber-200/80">
+                                {monthlySummaryEval ? (
+                                  (() => {
+                                    const bInfo = getTrackingLevelBadge(monthlySummaryEval.trackingLevel);
+                                    const IconComp = bInfo.icon;
+                                    return (
+                                      <button
+                                        type="button"
+                                        onClick={() => setSelectedDetailEval({
+                                          ...monthlySummaryEval,
+                                          targetId: target.id,
+                                          studentId: target.studentId,
+                                          studentCode: target.student?.studentCode || target.student?.code,
+                                          studentName: target.student?.studentName || target.student?.fullName,
+                                          className: target.student?.class?.className || target.student?.className,
+                                          category: isCommitment ? "CKĐV" : "BSTD",
+                                          subject: subjectDisplay,
+                                          evaluatorName: monthlySummaryEval.evaluator?.name || teacher?.name || "Giáo viên",
+                                          target
+                                        })}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border transition-all transform hover:scale-105 cursor-pointer shadow-xs ${bInfo.badge} ring-1 ring-amber-400/40`}
+                                        title={`Tổng kết ${activeMonth}: ${monthlySummaryEval.trackingLevel} - ${monthlySummaryEval.comment || ""}`}
+                                      >
+                                        <Sparkles className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                        <span>{bInfo.shortLabel}</span>
+                                      </button>
+                                    );
+                                  })()
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEvaluationForSpecificPeriod(target, activeMonth)}
+                                    className="text-[11px] font-bold text-amber-700 hover:text-amber-950 hover:bg-amber-100 border border-dashed border-amber-300 rounded-lg px-2 py-1 transition-all cursor-pointer opacity-80 hover:opacity-100 inline-flex items-center gap-0.5"
+                                    title={`Thêm đánh giá tổng kết ${activeMonth}`}
+                                  >
+                                    <Sparkles className="w-3 h-3 text-amber-600" />
+                                    <span>Tổng kết</span>
+                                  </button>
+                                )}
+                              </td>
+
+                              {/* Actions column */}
+                              <td className="px-4 py-3 text-center whitespace-nowrap sticky right-0 bg-white group-hover:bg-emerald-50/30 z-10">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedStudentJourneyTarget(target)}
+                                  className="text-xs font-bold text-[#003B3A] hover:text-white hover:bg-[#003B3A] bg-teal-50 border border-teal-200/90 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1 shadow-2xs"
+                                  title="Xem toàn bộ hành trình tiến trình các tháng của học sinh này"
+                                >
+                                  <Compass className="h-3 w-3 text-[#009085]" />
+                                  <span>Tiến trình</span>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* VIEW MODE 2: MA TRẬN TIẾN TRÌNH THEO 10 THÁNG */}
           {summaryViewMode === "MATRIX" && (
             <div className="bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-xs">
               <div className="bg-gradient-to-r from-teal-50/80 via-slate-50 to-white px-5 py-3.5 border-b border-teal-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -2711,7 +2987,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
             </div>
           )}
 
-          {/* VIEW MODE 2: BẢNG CHI TIẾT ĐẦY ĐỦ CÁC BẢN GHI */}
+          {/* VIEW MODE 3: BẢNG CHI TIẾT ĐẦY ĐỦ CÁC BẢN GHI */}
           {summaryViewMode === "TABLE" && (
             <div className="bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-xs">
               <div className="bg-gradient-to-r from-teal-50/80 via-slate-50 to-white px-5 py-3.5 border-b border-teal-100 flex items-center justify-between">
