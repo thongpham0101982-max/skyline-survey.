@@ -2073,7 +2073,7 @@ export function TeacherSupportClient({
                     
                     const matchedClass = assignedClasses.find((c: any) => c.id === t.student?.classId)
                     const isHomeroomTeacherOfThisClass = matchedClass ? matchedClass.isHomeroom : false
-                    const canEvaluate = isCreatedByMe || isAssigned || (matchedClass != null && t.supportType === "ACADEMIC")
+                    const canEvaluate = true
                     
                     const evals = t.evaluations || [];
                     const sortedEvals = [...evals].sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
