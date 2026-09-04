@@ -117,7 +117,6 @@ export const getTrackingLevelBadge = (level: string) => {
 import toast from "react-hot-toast"
 import { UrgentEmailModal } from "./components/UrgentEmailModal"
 import { FeedbackGvcnPhhsModal } from "./components/FeedbackGvcnPhhsModal"
-import { PsychologicalCumulativeModal } from "./components/PsychologicalCumulativeModal"
 import { MONTH_WEEKS_CONFIG } from "./academic-calendar"
 
 
@@ -404,8 +403,7 @@ export function TeacherSupportClient({
   const [isUrgentEmailModalOpen, setIsUrgentEmailModalOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
   const [selectedFeedbackTarget, setSelectedFeedbackTarget] = useState<any>(null)
-      const [isPsychExportModalOpen, setIsPsychExportModalOpen] = useState(false)
-  const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
+const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
   const [evalSelectedWeek, setEvalSelectedWeek] = useState<string>("Tuần 1")
   const [evalIsMonthlySummary, setEvalIsMonthlySummary] = useState(false)
 
@@ -1846,15 +1844,7 @@ export function TeacherSupportClient({
 
             
 
-            <button
-              type="button"
-              onClick={() => setIsPsychExportModalOpen(true)}
-              className="bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 text-purple-900 border border-purple-200 py-2.5 px-3.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-2xs hover:shadow-xs transition-all cursor-pointer transform active:scale-95"
-              title="Xem và Xuất Sổ theo dõi đánh giá Tâm lý Học sinh Lũy tiến (10 tháng)"
-            >
-              <Activity className="h-4 w-4 text-purple-600" />
-              <span>🧠 Sổ Tâm lý Lũy tiến</span>
-            </button>
+            
           </div>
 
           {/* Search and Filters */}
@@ -4775,13 +4765,7 @@ export function TeacherSupportClient({
 
 
 
-      {/* 8. Modal Xuất Sổ theo dõi đánh giá Tâm lý Học sinh Lũy tiến */}
-      <PsychologicalCumulativeModal
-        isOpen={isPsychExportModalOpen}
-        onClose={() => setIsPsychExportModalOpen(false)}
-        targets={targets}
-        academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
-      />
+      
 
       {/* 4. Sổ theo dõi kết quả từng Học sinh Modal (Học bạ điện tử bồi dưỡng) */}
       {isProfileModalOpen && (
