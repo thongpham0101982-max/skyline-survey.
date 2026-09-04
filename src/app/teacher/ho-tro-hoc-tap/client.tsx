@@ -55,7 +55,33 @@ export const parseEvaluationComment = (fullComment: string) => {
 
 export const getTrackingLevelBadge = (level: string) => {
   const l = (level || "").trim().toLowerCase();
-  if (l.includes("đạt mục tiêu") || l.includes("đã ổn định") || l.includes("hoàn thành")) {
+  if (
+    l.includes("chưa") ||
+    l.includes("giảm") ||
+    l.includes("phức tạp") ||
+    l.includes("chuyên sâu") ||
+    l.includes("can thiệp") ||
+    l.includes("kém") ||
+    l.includes("yếu")
+  ) {
+    return {
+      bg: "bg-rose-50 text-rose-800 border-rose-300 ring-rose-500/20",
+      badge: "bg-rose-100 text-rose-800 border-rose-200",
+      pill: "bg-rose-500 text-white",
+      dot: "bg-rose-500",
+      icon: AlertCircle,
+      shortLabel: "Chưa TB",
+      colorName: "rose",
+      category: "CRITICAL"
+    };
+  }
+  if (
+    l.includes("đạt mục tiêu") ||
+    l.includes("đã ổn định") ||
+    l.includes("hoàn thành") ||
+    l.includes("xuất sắc") ||
+    l.includes("tốt")
+  ) {
     return {
       bg: "bg-emerald-50 text-emerald-800 border-emerald-300 ring-emerald-500/20",
       badge: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -67,7 +93,7 @@ export const getTrackingLevelBadge = (level: string) => {
       category: "POSITIVE"
     };
   }
-  if (l.includes("tiến bộ") || l.includes("cải thiện")) {
+  if (l.includes("tiến bộ") || l.includes("cải thiện") || l.includes("khá")) {
     return {
       bg: "bg-sky-50 text-sky-800 border-sky-300 ring-sky-500/20",
       badge: "bg-sky-100 text-sky-800 border-sky-200",
@@ -89,18 +115,6 @@ export const getTrackingLevelBadge = (level: string) => {
       shortLabel: "Duy trì",
       colorName: "amber",
       category: "MAINTAINING"
-    };
-  }
-  if (l.includes("chưa") || l.includes("giảm") || l.includes("phức tạp") || l.includes("chuyên sâu") || l.includes("can thiệp")) {
-    return {
-      bg: "bg-rose-50 text-rose-800 border-rose-300 ring-rose-500/20",
-      badge: "bg-rose-100 text-rose-800 border-rose-200",
-      pill: "bg-rose-500 text-white",
-      dot: "bg-rose-500",
-      icon: AlertCircle,
-      shortLabel: "Chưa TB",
-      colorName: "rose",
-      category: "CRITICAL"
     };
   }
   return {
@@ -1364,7 +1378,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
       const latestEval = sortedEvals[0];
       const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ";
-      if (levelFilter !== "ALL" && currentLevel !== levelFilter) return false;
+      if (levelFilter !== "ALL") {
+        const badgeInfo = getTrackingLevelBadge(currentLevel);
+        const match =
+          currentLevel === levelFilter ||
+          (levelFilter === "Đạt mục tiêu" && badgeInfo.category === "POSITIVE") ||
+          (levelFilter === "Có tiến bộ" && badgeInfo.category === "IMPROVING") ||
+          (levelFilter === "Duy trì" && badgeInfo.category === "MAINTAINING") ||
+          (levelFilter === "Chưa tiến bộ" && badgeInfo.category === "CRITICAL") ||
+          (levelFilter === "Đang hỗ trợ" && currentLevel === "Đang hỗ trợ");
+        if (!match) return false;
+      }
 
       const name = t.student?.studentName || t.student?.fullName || "";
       const code = t.student?.studentCode || t.student?.code || "";
@@ -1923,9 +1947,11 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                   className="bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none cursor-pointer shadow-2xs"
                 >
                   <option value="ALL">Tất cả mức độ</option>
-                  <option value="Đang hỗ trợ">Đang hỗ trợ</option>
-                  <option value="Tiến bộ">Tiến bộ</option>
-                  <option value="Chưa tiến bộ">Chưa tiến bộ</option>
+                  <option value="Đạt mục tiêu">🟢 Đạt mục tiêu / Đã ổn định</option>
+                  <option value="Có tiến bộ">🔵 Có tiến bộ / Cải thiện</option>
+                  <option value="Duy trì">🟡 Duy trì / Tiếp tục theo dõi</option>
+                  <option value="Chưa tiến bộ">🔴 Chưa tiến bộ / Hỗ trợ chuyên sâu</option>
+                  <option value="Đang hỗ trợ">⚪ Đang hỗ trợ</option>
                 </select>
               </>
             )}
@@ -4605,50 +4631,232 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                   </div>
 
                   {/* Kết quả đánh giá (Mức độ đạt được) */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black text-slate-800 uppercase flex items-center gap-1.5">
-                      <Award className="h-4 w-4 text-indigo-600" />
-                      2. Kết quả đánh giá (Mức độ đạt được):
-                    </label>
-                    <select
-                      value={evalTrackingLevel}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setEvalTrackingLevel(val);
-                        if (val === "Đạt mục tiêu" || val === "Đã ổn định" || val === "Có tiến bộ" || val === "Có cải thiện") {
-                          setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
-                        } else if (val === "Chưa tiến bộ" || val === "Chưa cải thiện" || val === "Giảm sút" || val === "Diễn biến phức tạp" || val === "Chuyển hỗ trợ chuyên sâu") {
-                          setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
-                        } else if (val) {
-                          setEvalUpdatedStatus("Tiếp tục theo dõi");
-                        } else {
-                          setEvalUpdatedStatus("");
-                        }
-                      }}
-                      className="w-full rounded-xl border-slate-300 border py-2.5 px-3.5 text-xs sm:text-sm font-black focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-indigo-50/40 text-indigo-950 cursor-pointer shadow-2xs"
-                    >
-                      <option value="">-- Chọn mức độ kết quả --</option>
-                      {evalTargetType === "ACADEMIC" ? (
-                        <>
-                          <option value="Đạt mục tiêu">🌟 Đạt mục tiêu (Tiến bộ vượt bậc, hoàn thành kế hoạch)</option>
-                          <option value="Có tiến bộ">📈 Có tiến bộ (Có chuyển biến tích cực)</option>
-                          <option value="Duy trì">🔄 Duy trì (Chưa có nhiều thay đổi đáng kể)</option>
-                          <option value="Chưa tiến bộ">⚠️ Chưa tiến bộ (Cần tăng cường kèm cặp)</option>
-                          <option value="Giảm sút">📉 Giảm sút (Kết quả/thái độ đi xuống)</option>
-                          <option value="Chưa đủ dữ liệu">❓ Chưa đủ dữ liệu</option>
-                        </>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-800 uppercase flex items-center gap-1.5">
+                        <Award className="h-4 w-4 text-indigo-600" />
+                        2. Kết quả đánh giá (Mức độ đạt được):
+                      </label>
+                      {evalIsMonthlySummary ? (
+                        <span className="text-[10px] font-black uppercase text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300 shadow-2xs flex items-center gap-1">
+                          ⭐ Đánh giá Tổng kết Tháng
+                        </span>
                       ) : (
-                        <>
-                          <option value="Đã ổn định">🌟 Đã ổn định (Tâm lý và hành vi đã tốt)</option>
-                          <option value="Có cải thiện">📈 Có cải thiện (Có dấu hiệu hồi phục tích cực)</option>
-                          <option value="Duy trì theo dõi">🔄 Duy trì theo dõi (Cần tiếp tục đồng hành)</option>
-                          <option value="Chưa cải thiện">⚠️ Chưa cải thiện (Biểu hiện chưa thuyên giảm)</option>
-                          <option value="Diễn biến phức tạp">🚨 Diễn biến phức tạp (Cần hỗ trợ chuyên sâu)</option>
-                          <option value="Chuyển hỗ trợ chuyên sâu">🏥 Chuyển hỗ trợ chuyên sâu</option>
-                          <option value="Chưa đủ dữ liệu">❓ Chưa đủ dữ liệu</option>
-                        </>
+                        <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+                          📅 Đánh giá theo Tuần
+                        </span>
                       )}
-                    </select>
+                    </div>
+
+                    {/* 4 Khối Chọn Nhanh Mức Đạt Được */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {/* Mức 1: Đạt mục tiêu / Đã ổn định */}
+                      {(() => {
+                        const isPositive =
+                          evalTrackingLevel === "Đạt mục tiêu / Đã ổn định" ||
+                          evalTrackingLevel === "Đạt mục tiêu" ||
+                          evalTrackingLevel === "Đã ổn định" ||
+                          (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "POSITIVE");
+                        const val = evalTargetType === "PSYCHOLOGICAL" ? "Đã ổn định" : "Đạt mục tiêu";
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEvalTrackingLevel(val);
+                              setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
+                            }}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+                              isPositive
+                                ? "bg-emerald-50 border-emerald-500 ring-2 ring-emerald-500/30 shadow-xs"
+                                : "bg-white border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/30"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full mb-1">
+                              <span className="text-xs font-black text-emerald-800 flex items-center gap-1">
+                                🌟 Đạt mục tiêu / Đã ổn định
+                              </span>
+                              {isPositive && <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />}
+                            </div>
+                            <span className="text-[10px] text-emerald-700/80 font-semibold leading-tight">
+                              Tiến bộ vượt bậc / Hoàn thành kế hoạch
+                            </span>
+                          </button>
+                        );
+                      })()}
+
+                      {/* Mức 2: Có tiến bộ / Cải thiện */}
+                      {(() => {
+                        const isImproving =
+                          evalTrackingLevel === "Có tiến bộ / Cải thiện" ||
+                          evalTrackingLevel === "Có tiến bộ" ||
+                          evalTrackingLevel === "Có cải thiện" ||
+                          evalTrackingLevel === "Cải thiện" ||
+                          (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "IMPROVING");
+                        const val = evalTargetType === "PSYCHOLOGICAL" ? "Có cải thiện" : "Có tiến bộ";
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEvalTrackingLevel(val);
+                              setEvalUpdatedStatus("Tiếp tục theo dõi");
+                            }}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+                              isImproving
+                                ? "bg-sky-50 border-sky-500 ring-2 ring-sky-500/30 shadow-xs"
+                                : "bg-white border-slate-200 hover:border-sky-300 hover:bg-sky-50/30"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full mb-1">
+                              <span className="text-xs font-black text-sky-800 flex items-center gap-1">
+                                📈 Có tiến bộ / Cải thiện
+                              </span>
+                              {isImproving && <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0" />}
+                            </div>
+                            <span className="text-[10px] text-sky-700/80 font-semibold leading-tight">
+                              Có chuyển biến tích cực trong kỳ
+                            </span>
+                          </button>
+                        );
+                      })()}
+
+                      {/* Mức 3: Duy trì / Tiếp tục theo dõi */}
+                      {(() => {
+                        const isMaintaining =
+                          evalTrackingLevel === "Duy trì / Tiếp tục theo dõi" ||
+                          evalTrackingLevel === "Duy trì" ||
+                          evalTrackingLevel === "Tiếp tục theo dõi" ||
+                          evalTrackingLevel === "Duy trì theo dõi" ||
+                          (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "MAINTAINING");
+                        const val = evalTargetType === "PSYCHOLOGICAL" ? "Tiếp tục theo dõi" : "Duy trì";
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEvalTrackingLevel(val);
+                              setEvalUpdatedStatus("Tiếp tục theo dõi");
+                            }}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+                              isMaintaining
+                                ? "bg-amber-50 border-amber-500 ring-2 ring-amber-500/30 shadow-xs"
+                                : "bg-white border-slate-200 hover:border-amber-300 hover:bg-amber-50/30"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full mb-1">
+                              <span className="text-xs font-black text-amber-800 flex items-center gap-1">
+                                🔄 Duy trì / Tiếp tục theo dõi
+                              </span>
+                              {isMaintaining && <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />}
+                            </div>
+                            <span className="text-[10px] text-amber-700/80 font-semibold leading-tight">
+                              Chưa có nhiều thay đổi đáng kể
+                            </span>
+                          </button>
+                        );
+                      })()}
+
+                      {/* Mức 4: Chưa tiến bộ / Hỗ trợ chuyên sâu */}
+                      {(() => {
+                        const isCritical =
+                          evalTrackingLevel === "Chưa tiến bộ / Hỗ trợ chuyên sâu" ||
+                          evalTrackingLevel === "Chưa tiến bộ" ||
+                          evalTrackingLevel === "Hỗ trợ chuyên sâu" ||
+                          evalTrackingLevel === "Chưa cải thiện" ||
+                          evalTrackingLevel === "Giảm sút" ||
+                          evalTrackingLevel === "Diễn biến phức tạp" ||
+                          (evalTrackingLevel && getTrackingLevelBadge(evalTrackingLevel).category === "CRITICAL");
+                        const val = evalTargetType === "PSYCHOLOGICAL" ? "Hỗ trợ chuyên sâu" : "Chưa tiến bộ";
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEvalTrackingLevel(val);
+                              setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
+                            }}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between relative group ${
+                              isCritical
+                                ? "bg-rose-50 border-rose-500 ring-2 ring-rose-500/30 shadow-xs"
+                                : "bg-white border-slate-200 hover:border-rose-300 hover:bg-rose-50/30"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full mb-1">
+                              <span className="text-xs font-black text-rose-800 flex items-center gap-1">
+                                ⚠️ Chưa tiến bộ / Hỗ trợ chuyên sâu
+                              </span>
+                              {isCritical && <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />}
+                            </div>
+                            <span className="text-[10px] text-rose-700/80 font-semibold leading-tight">
+                              Cần tăng cường hỗ trợ / can thiệp
+                            </span>
+                          </button>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Danh sách chọn chi tiết bổ sung */}
+                    <div className="space-y-1">
+                      <select
+                        value={evalTrackingLevel}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setEvalTrackingLevel(val);
+                          if (
+                            val === "Đạt mục tiêu" ||
+                            val === "Đã ổn định" ||
+                            val === "Có tiến bộ" ||
+                            val === "Có cải thiện" ||
+                            val === "Cải thiện" ||
+                            val.includes("Đạt mục tiêu") ||
+                            val.includes("Đã ổn định") ||
+                            val.includes("Có tiến bộ") ||
+                            val.includes("Cải thiện")
+                          ) {
+                            setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
+                          } else if (
+                            val === "Chưa tiến bộ" ||
+                            val === "Chưa cải thiện" ||
+                            val === "Giảm sút" ||
+                            val === "Diễn biến phức tạp" ||
+                            val === "Chuyển hỗ trợ chuyên sâu" ||
+                            val === "Hỗ trợ chuyên sâu" ||
+                            val.includes("Chưa tiến bộ") ||
+                            val.includes("Hỗ trợ chuyên sâu") ||
+                            val.includes("Chưa cải thiện")
+                          ) {
+                            setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
+                          } else if (val) {
+                            setEvalUpdatedStatus("Tiếp tục theo dõi");
+                          } else {
+                            setEvalUpdatedStatus("");
+                          }
+                        }}
+                        className="w-full rounded-xl border-slate-300 border py-2.5 px-3.5 text-xs sm:text-sm font-black focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-indigo-50/40 text-indigo-950 cursor-pointer shadow-2xs"
+                      >
+                        <option value="">-- Chọn mức độ kết quả --</option>
+                        {evalTargetType === "ACADEMIC" ? (
+                          <>
+                            <option value="Đạt mục tiêu">🌟 Đạt mục tiêu / Đã ổn định (Hoàn thành kế hoạch, tiến bộ vượt bậc)</option>
+                            <option value="Có tiến bộ">📈 Có tiến bộ / Cải thiện (Có chuyển biến tích cực)</option>
+                            <option value="Duy trì">🔄 Duy trì / Tiếp tục theo dõi (Chưa có nhiều thay đổi đáng kể)</option>
+                            <option value="Chưa tiến bộ">⚠️ Chưa tiến bộ / Hỗ trợ chuyên sâu (Cần tăng cường kèm cặp)</option>
+                            <option value="Hỗ trợ chuyên sâu">🚨 Hỗ trợ chuyên sâu (Cần kế hoạch can thiệp đặc biệt)</option>
+                            <option value="Giảm sút">📉 Giảm sút (Kết quả/thái độ đi xuống)</option>
+                            <option value="Chưa đủ dữ liệu">❓ Chưa đủ dữ liệu</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="Đã ổn định">🌟 Đã ổn định / Đạt mục tiêu (Tâm lý và hành vi đã ổn định tốt)</option>
+                            <option value="Có cải thiện">📈 Có cải thiện / Cải thiện (Có dấu hiệu hồi phục tích cực)</option>
+                            <option value="Cải thiện">📈 Cải thiện (Dấu hiệu cải thiện rõ rệt)</option>
+                            <option value="Tiếp tục theo dõi">🔄 Duy trì / Tiếp tục theo dõi (Cần tiếp tục đồng hành)</option>
+                            <option value="Duy trì theo dõi">🔄 Duy trì theo dõi (Chưa có chuyển biến rõ rệt)</option>
+                            <option value="Chưa cải thiện">⚠️ Chưa tiến bộ / Chưa cải thiện (Biểu hiện chưa thuyên giảm)</option>
+                            <option value="Hỗ trợ chuyên sâu">🚨 Chưa tiến bộ / Hỗ trợ chuyên sâu (Cần can thiệp chuyên sâu/chuyển tuyến)</option>
+                            <option value="Diễn biến phức tạp">🚨 Diễn biến phức tạp (Cần hỗ trợ can thiệp khẩn)</option>
+                            <option value="Chưa đủ dữ liệu">❓ Chưa đủ dữ liệu</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
                   </div>
 
                   {/* Nhận xét chi tiết */}
@@ -4674,6 +4882,15 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
                         <Sparkles className="h-3 w-3 text-amber-500" /> Gợi ý nhanh:
                       </span>
+                      {evalIsMonthlySummary && (
+                        <button
+                          type="button"
+                          onClick={() => setEvalComment(prev => (prev ? prev + " " : "") + `Tổng kết ${evalSelectedMonth}: Học sinh đạt mục tiêu tháng, tiến bộ rõ rệt và duy trì thái độ tích cực.`)}
+                          className="text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 px-2.5 py-1 rounded-lg border border-amber-300 cursor-pointer transition-colors"
+                        >
+                          ⭐ Tổng kết tháng đạt MT
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setEvalComment(prev => (prev ? prev + " " : "") + "Học sinh tiếp thu bài tốt, có ý thức làm bài tập đầy đủ.")}
@@ -4683,7 +4900,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                       </button>
                       <button
                         type="button"
-                        onClick={() => setEvalComment(prev => (prev ? prev + " " : "") + "Có tiến bộ rõ rệt so với giai đoạn trước, hoàn thành các mục tiêu tuần.")}
+                        onClick={() => setEvalComment(prev => (prev ? prev + " " : "") + "Có tiến bộ rõ rệt so với giai đoạn trước, hoàn thành các mục tiêu đề ra.")}
                         className="text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-300 cursor-pointer transition-colors"
                       >
                         + Tiến bộ rõ rệt
@@ -4701,6 +4918,13 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                         className="text-[10px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg border border-emerald-300 cursor-pointer transition-colors"
                       >
                         + Đạt yêu cầu kết thúc
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEvalComment(prev => (prev ? prev + " " : "") + "Chưa đạt yêu cầu theo dõi, đề xuất phối hợp gia đình và tăng cường hỗ trợ chuyên sâu.")}
+                        className="text-[10px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-800 px-2.5 py-1 rounded-lg border border-rose-300 cursor-pointer transition-colors"
+                      >
+                        + Cần hỗ trợ chuyên sâu
                       </button>
                     </div>
                   </div>
