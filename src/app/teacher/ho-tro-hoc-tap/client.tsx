@@ -897,6 +897,34 @@ export function TeacherSupportClient({
   }
 
   
+  // Tải ý kiến GV/PH gần nhất của học sinh
+  const fetchRecentStudentFeedback = async (studentId: string) => {
+    if (!studentId) return;
+    setLoadingRecentLogs(true);
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "getFeedbackLogs",
+          studentId,
+          academicYearId: selectedYearId
+        })
+      });
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setRecentConsultationLogs(data);
+      } else {
+        setRecentConsultationLogs([]);
+      }
+    } catch (err) {
+      console.error("Failed to load student feedback logs", err);
+      setRecentConsultationLogs([]);
+    } finally {
+      setLoadingRecentLogs(false);
+    }
+  };
+
   // Mở modal đánh giá định kỳ cho 1 học sinh
   const handleOpenEvaluationModal = (t: any) => {
     if (!t) return;
