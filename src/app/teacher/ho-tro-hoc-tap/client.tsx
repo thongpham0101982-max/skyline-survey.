@@ -909,6 +909,44 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
 
   // Mở modal đánh giá định kỳ cho 1 học sinh
+  const handleOpenEvaluationForSpecificPeriod = (t: any, month: string, week?: string) => {
+    if (!t) return;
+    try {
+      setSelectedEvalTargetIds([t.id]);
+      setEvalTargetId(t.id);
+      setEvalTargetName(t.student?.studentName || t.student?.fullName || "Học sinh");
+      setEvalTargetType(t.supportType || "ACADEMIC");
+      setEvalComment("");
+      setEvalStudent(t.student || null);
+      setEvalTargetObj(t);
+      setEditingEvalId(null);
+
+      setEvalSelectedMonth(month);
+      if (week) {
+        setEvalSelectedWeek(week);
+        setEvalIsMonthlySummary(false);
+        setEvalPeriodType("WEEK");
+        setEvalPeriodName(`${week} - ${month}`);
+      } else {
+        setEvalIsMonthlySummary(true);
+        setEvalPeriodType("MONTH");
+        setEvalPeriodName(month);
+      }
+
+      const options = Array.isArray(configs) ? configs.filter((c: any) => c.supportType === t.supportType) : [];
+      if (t.supportType === "ACADEMIC") {
+        setEvalTrackingLevel(options[0]?.outcomeLabel || "Duy trì");
+      } else {
+        setEvalTrackingLevel(options[0]?.outcomeLabel || "Duy trì theo dõi");
+      }
+      setEvalUpdatedStatus("Tiếp tục theo dõi");
+      setIsEvaluationModalOpen(true);
+    } catch (err: any) {
+      console.error("Error opening specific evaluation modal:", err);
+      toast.error("Lỗi khi mở form đánh giá: " + err.message);
+    }
+  };
+
   const handleOpenEvaluationModal = (t: any) => {
     if (!t) return;
     try {
@@ -4543,74 +4581,48 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
                 {/* 3. KHỐI NHẬP LIỆU ĐÁNH GIÁ KỲ NÀY */}
                 <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-2xs space-y-4">
-                  {/* Kỳ đánh giá */}
-                  <div className="space-y-3 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="text-xs font-black text-slate-800 uppercase flex items-center gap-1.5">
-                        <Calendar className="h-4 w-4 text-emerald-600" />
-                        1. Chọn Kỳ đánh giá (Theo Tháng & Tuần)
-                      </label>
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-100/90 px-3 py-1 rounded-xl border border-emerald-300 shadow-2xs">
-                        Đang chọn: <strong className="font-black text-emerald-950">{evalPeriodName || "Chưa chọn"}</strong>
-                      </span>
-                    </div>
-
-                    {/* 10 Nút Tháng */}
-                    <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5 pt-1">
-                      {months.map(m => {
-                        const isMonthActive = evalSelectedMonth === m;
-                        return (
-                          <button
-                            key={m}
-                            type="button"
-                            onClick={() => {
-                              setEvalSelectedMonth(m);
-                              if (evalIsMonthlySummary) {
-                                setEvalPeriodName(m);
-                                setEvalPeriodType("MONTH");
-                              } else {
-                                setEvalPeriodName(`${evalSelectedWeek} - ${m}`);
-                                setEvalPeriodType("WEEK");
-                              }
-                            }}
-                            className={`py-2 px-1 text-xs font-extrabold rounded-xl border transition-all cursor-pointer text-center ${
-                              isMonthActive
-                                ? "bg-gradient-to-r from-[#003B3A] to-[#009085] text-white border-transparent shadow-md shadow-[#003B3A]/30 scale-[1.04]"
-                                : "bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/70 hover:border-emerald-300"
-                            }`}
-                          >
-                            {m.replace("Tháng ", "T")}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Chọn Tuần & Tổng kết Tháng */}
-                    <div className="bg-white p-3 rounded-xl border border-emerald-200/80 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {(MONTH_WEEKS_CONFIG[evalSelectedMonth] || ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"]).map(w => {
-                          const isWeekActive = !evalIsMonthlySummary && (evalSelectedWeek === w || evalPeriodName.startsWith(w));
-                          return (
-                            <button
-                              key={w}
-                              type="button"
-                              onClick={() => {
-                                setEvalSelectedWeek(w);
-                                setEvalIsMonthlySummary(false);
-                                setEvalPeriodType("WEEK");
-                                setEvalPeriodName(`${w} - ${evalSelectedMonth}`);
-                              }}
-                              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
-                                isWeekActive
-                                  ? "bg-emerald-700 text-white border-emerald-800 shadow-xs scale-105"
-                                  : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50"
-                              }`}
-                            >
-                              {w} ({evalSelectedMonth.replace("Tháng ", "T")})
-                            </button>
-                          );
-                        })}
+                  {/* 1. KỲ ĐÁNH GIÁ: TÁCH BIỆT 2 TAB (ĐÁNH GIÁ THEO TUẦN VÀ ĐÁNH GIÁ TỔNG KẾT THÁNG) */}
+                  <div className="space-y-3.5 bg-emerald-50/50 p-4 sm:p-5 rounded-2xl border border-emerald-200">
+                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/70 pb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-emerald-700 text-white rounded-xl shadow-xs">
+                          <Calendar className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-black text-slate-800 uppercase block">
+                            1. Chọn Kỳ Đánh Giá
+                          </label>
+                          <span className="text-[11px] text-slate-500 font-medium">
+                            Chọn kỳ đánh giá theo Tuần hoặc Tổng kết Tháng
+                          </span>
+                        </div>
                       </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-emerald-950 bg-emerald-100/90 px-3 py-1 rounded-xl border border-emerald-300 shadow-2xs">
+                          Đang chọn: <strong className="font-black text-emerald-900">{evalPeriodName || "Chưa chọn"}</strong>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* NÚT CHUYỂN ĐỔI CHẾ ĐỘ (TAB SWITCHER: THEO TUẦN / THEO THÁNG) */}
+                    <div className="grid grid-cols-2 gap-2 bg-slate-200/80 p-1 rounded-2xl">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEvalIsMonthlySummary(false);
+                          setEvalPeriodType("WEEK");
+                          setEvalPeriodName(`${evalSelectedWeek} - ${evalSelectedMonth}`);
+                        }}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                          !evalIsMonthlySummary
+                            ? "bg-white text-emerald-950 shadow-md shadow-slate-300/60 scale-[1.01]"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
+                        }`}
+                      >
+                        <Calendar className={`w-4 h-4 ${!evalIsMonthlySummary ? "text-emerald-600" : "text-slate-500"}`} />
+                        <span>📅 1. ĐÁNH GIÁ THEO TUẦN</span>
+                      </button>
 
                       <button
                         type="button"
@@ -4619,15 +4631,122 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           setEvalPeriodType("MONTH");
                           setEvalPeriodName(evalSelectedMonth);
                         }}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer border ${
-                          evalIsMonthlySummary || evalPeriodName === evalSelectedMonth
-                            ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-800 shadow-xs scale-105"
-                            : "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                        className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                          evalIsMonthlySummary
+                            ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-md shadow-amber-600/30 scale-[1.01]"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-white/40"
                         }`}
                       >
-                        ⭐ Đánh giá Tổng kết {evalSelectedMonth}
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        <span>⭐ 2. ĐÁNH GIÁ TỔNG KẾT THÁNG</span>
                       </button>
                     </div>
+
+                    {/* NỘI DUNG CHỌN KỲ THEO TỪNG CHẾ ĐỘ */}
+                    {!evalIsMonthlySummary ? (
+                      /* === CHẾ ĐỘ 1: ĐÁNH GIÁ THEO TUẦN === */
+                      <div className="space-y-3 bg-white p-4 rounded-2xl border border-emerald-200 shadow-2xs">
+                        {/* Bước 1: Chọn Tháng */}
+                        <div>
+                          <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
+                            <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">1</span>
+                            Bước 1: Chọn Tháng
+                          </span>
+                          <div className="grid grid-cols-5 sm:grid-cols-10 gap-1.5">
+                            {months.map(m => {
+                              const isMonthActive = evalSelectedMonth === m;
+                              return (
+                                <button
+                                  key={m}
+                                  type="button"
+                                  onClick={() => {
+                                    setEvalSelectedMonth(m);
+                                    setEvalPeriodName(`${evalSelectedWeek} - ${m}`);
+                                  }}
+                                  className={`py-2 px-1 text-xs font-black rounded-xl border transition-all cursor-pointer text-center ${
+                                    isMonthActive
+                                      ? "bg-gradient-to-r from-[#003B3A] to-[#009085] text-white border-transparent shadow-sm shadow-[#003B3A]/30 scale-105"
+                                      : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300"
+                                  }`}
+                                >
+                                  {m.replace("Tháng ", "T")}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Bước 2: Chọn Tuần học */}
+                        <div className="pt-1 border-t border-slate-100">
+                          <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider block mb-1.5 flex items-center gap-1.5">
+                            <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-black">2</span>
+                            Bước 2: Chọn Tuần học ({evalSelectedMonth})
+                          </span>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {(MONTH_WEEKS_CONFIG[evalSelectedMonth] || ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4"]).map(w => {
+                              const isWeekActive = evalSelectedWeek === w || evalPeriodName.startsWith(w);
+                              return (
+                                <button
+                                  key={w}
+                                  type="button"
+                                  onClick={() => {
+                                    setEvalSelectedWeek(w);
+                                    setEvalPeriodType("WEEK");
+                                    setEvalPeriodName(`${w} - ${evalSelectedMonth}`);
+                                  }}
+                                  className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer border flex items-center gap-2 ${
+                                    isWeekActive
+                                      ? "bg-emerald-700 text-white border-emerald-800 shadow-md shadow-emerald-700/25 scale-105"
+                                      : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-300"
+                                  }`}
+                                >
+                                  <Calendar className="w-3.5 h-3.5" />
+                                  <span>{w} ({evalSelectedMonth.replace("Tháng ", "T")})</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* === CHẾ ĐỘ 2: ĐÁNH GIÁ TỔNG KẾT THÁNG === */
+                      <div className="space-y-3 bg-amber-50/70 p-4 rounded-2xl border border-amber-200 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                            <Sparkles className="w-4 h-4 text-amber-600" />
+                            Chọn Tháng cần Đánh giá Tổng kết:
+                          </span>
+                          <span className="text-[11px] font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300">
+                            10 tháng năm học
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1">
+                          {months.map(m => {
+                            const isMonthActive = evalSelectedMonth === m;
+                            return (
+                              <button
+                                key={m}
+                                type="button"
+                                onClick={() => {
+                                  setEvalSelectedMonth(m);
+                                  setEvalPeriodName(m);
+                                  setEvalPeriodType("MONTH");
+                                }}
+                                className={`py-3 px-3 rounded-2xl border text-xs font-black transition-all cursor-pointer flex items-center justify-between ${
+                                  isMonthActive
+                                    ? "bg-gradient-to-r from-amber-600 to-amber-700 text-white border-amber-800 shadow-md shadow-amber-600/30 scale-[1.03]"
+                                    : "bg-white text-slate-800 border-amber-200 hover:bg-amber-100/80 hover:border-amber-400"
+                                }`}
+                              >
+                                <span>⭐ Tổng kết {m}</span>
+                                {isMonthActive && <CheckCircle2 className="w-4 h-4 text-white shrink-0" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Kết quả đánh giá (Mức độ đạt được) - TÁCH BIỆT THEO TUẦN & THEO THÁNG */}
