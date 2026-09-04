@@ -74,7 +74,6 @@ export const getTrackingLevelBadge = (level: string) => {
 import toast from "react-hot-toast"
 import { UrgentEmailModal } from "./components/UrgentEmailModal"
 import { FeedbackGvcnPhhsModal } from "./components/FeedbackGvcnPhhsModal"
-import { TutoringPlanModal } from "./components/TutoringPlanModal"
 import { PsychologicalCumulativeModal } from "./components/PsychologicalCumulativeModal"
 import { MONTH_WEEKS_CONFIG } from "./academic-calendar"
 
@@ -362,9 +361,7 @@ export function TeacherSupportClient({
   const [isUrgentEmailModalOpen, setIsUrgentEmailModalOpen] = useState(false)
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false)
   const [selectedFeedbackTarget, setSelectedFeedbackTarget] = useState<any>(null)
-  const [isTutoringPlanModalOpen, setIsTutoringPlanModalOpen] = useState(false)
-  const [selectedPlanTarget, setSelectedPlanTarget] = useState<any>(null)
-  const [isPsychExportModalOpen, setIsPsychExportModalOpen] = useState(false)
+      const [isPsychExportModalOpen, setIsPsychExportModalOpen] = useState(false)
   const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
   const [evalSelectedWeek, setEvalSelectedWeek] = useState<string>("Tuần 1")
   const [evalIsMonthlySummary, setEvalIsMonthlySummary] = useState(false)
@@ -2103,18 +2100,7 @@ export function TeacherSupportClient({
                                 Ý kiến GV/PH
                               </button>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedPlanTarget(t);
-                                  setIsTutoringPlanModalOpen(true);
-                                }}
-                                className="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-bold py-1.5 px-2.5 rounded-lg text-xs transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1"
-                                title="Lập & In Kế hoạch Phụ đạo, Bồi dưỡng Chi tiết"
-                              >
-                                <Target className="h-3 w-3 text-indigo-600" />
-                                Kế hoạch
-                              </button>
+
 
                               <button
                                 type="button"
@@ -4625,17 +4611,7 @@ export function TeacherSupportClient({
         academicYearId={selectedYearId}
       />
 
-      {/* 7. Modal Lập Kế hoạch Phụ đạo & Bồi dưỡng Chi tiết */}
-      <TutoringPlanModal
-        isOpen={isTutoringPlanModalOpen}
-        onClose={() => {
-          setIsTutoringPlanModalOpen(false);
-          setSelectedPlanTarget(null);
-        }}
-        target={selectedPlanTarget}
-        academicYearId={selectedYearId}
-        onPlanSaved={() => fetchTeacherData()}
-      />
+
 
       {/* 8. Modal Xuất Sổ theo dõi đánh giá Tâm lý Học sinh Lũy tiến */}
       <PsychologicalCumulativeModal

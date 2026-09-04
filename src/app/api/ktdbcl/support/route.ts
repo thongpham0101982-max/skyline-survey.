@@ -950,45 +950,7 @@ export async function GET(req: Request) {
       return NextResponse.json(logs)
     }
 
-    // 18. Action: saveTutoringPlan (Lập kế hoạch chi tiết bồi dưỡng, phụ đạo học sinh)
-    if (action === "saveTutoringPlan") {
-      const { targetId, studentId, academicYearId, subject, weakKnowledgePoints, targetGoals, scheduleTime, sessionsPerWeek, methodsAndMaterials, teacherName } = body
-      if (!targetId && !studentId) {
-        return NextResponse.json({ error: "Thiếu thông tin đối tượng bồi dưỡng" }, { status: 400 })
-      }
-
-      const planSummary = JSON.stringify({
-        subject,
-        weakKnowledgePoints,
-        targetGoals,
-        scheduleTime,
-        sessionsPerWeek,
-        methodsAndMaterials,
-        teacherName,
-        updatedAt: new Date().toISOString()
-      })
-
-      if (targetId) {
-        const target = await prisma.learningSupportTarget.findUnique({ where: { id: targetId } })
-        let currentNotes = target?.notes || ""
-        if (currentNotes.includes("[PLAN:")) {
-          currentNotes = currentNotes.replace(/\[PLAN:.*?\]/s, `[PLAN:${planSummary}]`)
-        } else {
-          currentNotes = `${currentNotes} [PLAN:${planSummary}]`.trim()
-        }
-
-        const updated = await prisma.learningSupportTarget.update({
-          where: { id: targetId },
-          data: { notes: currentNotes }
-        })
-        return NextResponse.json({ success: true, target: updated, plan: JSON.parse(planSummary) })
-      }
-
-      return NextResponse.json({ success: true, plan: JSON.parse(planSummary) })
-    }
-
-
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 })
+return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
@@ -2193,14 +2155,13 @@ export async function POST(req: Request) {
         }
       }
 
-      return NextResponse.json({
+            return NextResponse.json({
         success: true,
         sentCount: sentSuccessCount,
         totalRecipients: recipients.length,
         results
       })
     }
-
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (err: any) {
