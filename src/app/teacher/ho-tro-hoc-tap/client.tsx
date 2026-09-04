@@ -1863,9 +1863,13 @@ export function TeacherSupportClient({
                   setEvalTargetName("Nhiều học sinh")
                   const firstSelected = targets.find((t:any) => t.id === selectedEvalTargetIds[0])
                   setEvalTargetType(firstSelected?.supportType || "ACADEMIC")
-                  setEvalPeriodType("MONTH")
                   const curMonth = "Tháng " + (new Date().getMonth() + 1)
-                  setEvalPeriodName(curMonth)
+                  const validMonth = ACADEMIC_MONTHS.includes(curMonth) ? curMonth : "Tháng 9"
+                  setEvalSelectedMonth(validMonth)
+                  setEvalSelectedWeek("Tuần 1")
+                  setEvalIsMonthlySummary(false)
+                  setEvalPeriodType("WEEK")
+                  setEvalPeriodName(`Tuần 1 - ${validMonth}`)
                   setEvalComment("")
                   setEvalStudent(null)
                   setEvalTargetObj(null)
@@ -2006,9 +2010,13 @@ export function TeacherSupportClient({
                                   setEvalComment("")
                                   setEvalStudent(t.student)
                                   setEvalTargetObj(t)
-                                  setEvalPeriodType("MONTH")
                                   const curMonth = "Tháng " + (new Date().getMonth() + 1)
-                                  setEvalPeriodName(curMonth)
+                                  const validMonth = ACADEMIC_MONTHS.includes(curMonth) ? curMonth : "Tháng 9"
+                                  setEvalSelectedMonth(validMonth)
+                                  setEvalSelectedWeek("Tuần 1")
+                                  setEvalIsMonthlySummary(false)
+                                  setEvalPeriodType("WEEK")
+                                  setEvalPeriodName(`Tuần 1 - ${validMonth}`)
                                   const options = configs.filter((c:any) => c.supportType === t.supportType)
                                   setEvalTrackingLevel(options[0]?.outcomeLabel || "")
                                   setIsEvaluationModalOpen(true)
@@ -4180,10 +4188,10 @@ export function TeacherSupportClient({
                     <div className="bg-white p-3 rounded-xl border border-emerald-200/80 space-y-2 mt-2">
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-black text-emerald-900 uppercase">
-                          Chọn Tuần trong ${evalSelectedMonth} hoặc Đánh giá Tổng kết Tháng:
+                          Chọn Tuần trong {evalSelectedMonth} hoặc Đánh giá Tổng kết Tháng:
                         </span>
                         <span className="text-[11px] font-bold text-slate-500">
-                          Đang chọn: <strong className="text-emerald-700 font-black">${evalPeriodName || "Chưa chọn"}</strong>
+                          Đang chọn: <strong className="text-emerald-700 font-black">{evalPeriodName || "Chưa chọn"}</strong>
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-1.5">
@@ -4205,7 +4213,7 @@ export function TeacherSupportClient({
                                   : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50"
                               }`}
                             >
-                              {w} (${evalSelectedMonth.replace("Tháng ", "T")})
+                              {w} ({evalSelectedMonth.replace("Tháng ", "T")})
                             </button>
                           );
                         })}
@@ -4222,7 +4230,7 @@ export function TeacherSupportClient({
                               : "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
                           }`}
                         >
-                          ⭐ Đánh giá Tổng kết ${evalSelectedMonth}
+                          ⭐ Đánh giá Tổng kết {evalSelectedMonth}
                         </button>
                       </div>
                     </div>
