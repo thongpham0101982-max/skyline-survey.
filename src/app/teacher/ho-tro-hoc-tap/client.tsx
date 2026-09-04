@@ -2155,20 +2155,10 @@ export function TeacherSupportClient({
                               <button
                                 type="button"
                                 onClick={() => handleOpenEvaluationModal(t)}
-                                className="bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold py-1.5 px-3.5 rounded-xl text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer transform active:scale-95"
+                                className="bg-gradient-to-r from-[#003B3A] to-[#009085] hover:from-[#002a29] hover:to-[#007a70] text-white font-bold py-1.5 px-4 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1.5 cursor-pointer transform active:scale-95"
                               >
-                                <Edit3 className="h-3.5 w-3.5 text-emerald-100" />
+                                <Edit3 className="h-3.5 w-3.5 text-[#48BFE3]" />
                                 <span>Nhận xét & Đánh giá</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleReturnTarget(t.id, t.student?.studentName || t.student?.fullName || "")}
-                                className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200/90 font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-2xs cursor-pointer inline-flex items-center gap-1 transform active:scale-95"
-                                title="Hoàn trả học sinh khỏi Sổ theo dõi"
-                              >
-                                <RotateCcw className="h-3 w-3 text-amber-700" />
-                                <span>Hoàn trả</span>
                               </button>
                             </>
                           )}
