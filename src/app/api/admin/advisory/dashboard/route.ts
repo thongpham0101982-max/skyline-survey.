@@ -82,12 +82,14 @@ export async function GET(req: Request) {
         studentCode: true,
         studentName: true,
         academicYearId: true,
+        classId: true,
         class: {
           select: {
             id: true,
             className: true,
             level: true,
             grade: true,
+            homeroomTeacherId: true,
             campus: { select: { id: true, campusName: true, campusCode: true } }
           }
         }
@@ -124,6 +126,37 @@ export async function GET(req: Request) {
       where: { studentId: { in: studentIds } }
     }).catch(() => [])
 
+    // 6. Fetch Teachers and Class Assignments to resolve GVCN accurately
+    const teachers = await prisma.teacher.findMany({
+      select: {
+        id: true,
+        teacherName: true,
+        email: true,
+        phone: true,
+        homeroomClass: true
+      }
+    }).catch(() => [])
+
+    const teacherMap: Record<string, any> = {}
+    teachers.forEach(t => {
+      teacherMap[t.id] = t
+      if (t.homeroomClass) {
+        teacherMap[t.homeroomClass] = t
+      }
+    })
+
+    const classIds = Array.from(new Set(students.map(s => s.class?.id).filter(Boolean))) as string[]
+    const classAssignments = await prisma.teacherClassAssignment.findMany({
+      where: { classId: { in: classIds } },
+      include: { teacher: true }
+    }).catch(() => [])
+
+    const classAssignmentMap: Record<string, any[]> = {}
+    classAssignments.forEach(ca => {
+      if (!classAssignmentMap[ca.classId]) classAssignmentMap[ca.classId] = []
+      classAssignmentMap[ca.classId].push(ca)
+    })
+
     // Group goals by student
     const studentGoalMap: Record<string, any[]> = {}
     goals.forEach(g => {
@@ -145,7 +178,7 @@ export async function GET(req: Request) {
       }
     })
 
-    // Build comprehensive list
+    // Build comprehensive student list
     const studentRows = students.map(st => {
       const stGoals = studentGoalMap[st.id] || []
       const hasSubmitted = stGoals.length > 0
@@ -157,6 +190,7 @@ export async function GET(req: Request) {
         id: st.id,
         studentCode: st.studentCode,
         studentName: st.studentName,
+        classId: st.classId || st.class?.id || "",
         gradeLevel: (st.class as any)?.gradeLevel || st.class?.grade || st.class?.className || "Khối",
         className: st.class?.className || "Chưa xếp lớp",
         campusName: st.class?.campus?.campusName || "Chưa xác định",
@@ -171,7 +205,69 @@ export async function GET(req: Request) {
       }
     })
 
-    // Filter by statusColor if requested
+    // Group by Class to build Class-Level Summary
+    const classGroupMap: Record<string, any> = {}
+    studentRows.forEach(st => {
+      const cId = st.classId || st.className
+      if (!classGroupMap[cId]) {
+        const matchingCls = st.classId ? students.find(s => s.class?.id === st.classId)?.class : null
+        let gvcnName = ""
+        
+        // 1. Check homeroomTeacherId from Class
+        if (matchingCls?.homeroomTeacherId && teacherMap[matchingCls.homeroomTeacherId]) {
+          gvcnName = teacherMap[matchingCls.homeroomTeacherId].teacherName
+        }
+        
+        // 2. Check TeacherClassAssignment
+        if (!gvcnName && classAssignmentMap[cId] && classAssignmentMap[cId].length > 0) {
+          const gAss = classAssignmentMap[cId].find((ca: any) => ca.roleInClass === "GVCN" || ca.roleInClass === "HOMEROOM") || classAssignmentMap[cId][0]
+          gvcnName = gAss?.teacher?.teacherName || ""
+        }
+
+        // 3. Check Teacher homeroomClass
+        if (!gvcnName && teacherMap[st.className]) {
+          gvcnName = teacherMap[st.className].teacherName
+        }
+
+        classGroupMap[cId] = {
+          classId: cId,
+          className: st.className,
+          gradeLevel: st.gradeLevel,
+          campusName: st.campusName,
+          campusCode: st.campusCode,
+          homeroomTeacherName: gvcnName || "Chưa phân công",
+          totalStudents: 0,
+          submittedCount: 0,
+          unsubmittedCount: 0,
+          greenCount: 0,
+          yellowCount: 0,
+          redCount: 0,
+          parentSignedCount: 0,
+          reviewedByTeacherCount: 0,
+          students: []
+        }
+      }
+
+      classGroupMap[cId].totalStudents += 1
+      if (st.hasSubmitted) classGroupMap[cId].submittedCount += 1
+      else classGroupMap[cId].unsubmittedCount += 1
+
+      if (st.statusColor === "GREEN") classGroupMap[cId].greenCount += 1
+      else if (st.statusColor === "YELLOW") classGroupMap[cId].yellowCount += 1
+      else if (st.statusColor === "RED") classGroupMap[cId].redCount += 1
+
+      if (st.parentSigned) classGroupMap[cId].parentSignedCount += 1
+      if (st.hasTeacherNotes) classGroupMap[cId].reviewedByTeacherCount += 1
+
+      classGroupMap[cId].students.push(st)
+    })
+
+    const classRows = Object.values(classGroupMap).map(cls => ({
+      ...cls,
+      submissionPercent: cls.totalStudents > 0 ? Math.round((cls.submittedCount / cls.totalStudents) * 100) : 0
+    })).sort((a, b) => a.className.localeCompare(b.className))
+
+    // Filter students by statusColor if requested
     let finalRows = studentRows
     if (statusColor && statusColor !== "ALL") {
       finalRows = finalRows.filter(r => r.statusColor === statusColor)
@@ -197,8 +293,10 @@ export async function GET(req: Request) {
         yellowCount,
         redCount,
         parentSignedCount,
-        reviewedByTeacherCount
+        reviewedByTeacherCount,
+        totalClasses: classRows.length
       },
+      classes: classRows,
       students: finalRows
     })
   } catch (e: any) {
