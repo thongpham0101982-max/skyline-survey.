@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const getAll = searchParams.get("all") === "true";
+
     const rawYears = await prisma.academicYear.findMany({
       orderBy: { startDate: 'desc' }
     });
+
+    if (getAll) {
+      // Deduplicate by name
+      const seenNames = new Set();
+      const allYears = rawYears.filter(y => {
+        if (seenNames.has(y.name)) return false;
+        seenNames.add(y.name);
+        return true;
+      });
+      return NextResponse.json(allYears);
+    }
 
     const activeYears = rawYears.filter(y => y.status === 'ACTIVE');
     

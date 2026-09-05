@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 
 export const dynamic = "force-dynamic"
 
@@ -17,17 +18,54 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const campusId = searchParams.get("campusId") || ""
-    const academicYearId = searchParams.get("academicYearId") || ""
+    let academicYearId = searchParams.get("academicYearId") || ""
     const classId = searchParams.get("classId") || ""
     const statusColor = searchParams.get("statusColor") || ""
     const search = (searchParams.get("search") || "").trim()
 
-    // 1. Fetch Students based on filters
-    const whereStudent: any = {}
+    // 1. Tự động lấy Năm học hoạt động mặc định nếu không truyền academicYearId
+    if (!academicYearId) {
+      const activeYear = await getDefaultAcademicYear(prisma)
+      if (activeYear) {
+        academicYearId = activeYear.id
+      }
+    }
+
+    // 2. Thiết lập điều kiện lọc học sinh (Bao gồm Năm học, trạng thái ACTIVE và loại trừ Mầm non)
+    const classConditions: any = {
+      NOT: [
+        { level: "Mam non" },
+        { level: "Mầm non" },
+        { level: "MAM_NON" },
+        { level: "Preschool" },
+        { level: "PRESCHOOL" },
+        { className: { contains: "Mầm" } },
+        { className: { contains: "mầm" } },
+        { className: { contains: "Mam" } },
+        { className: { contains: "mam" } },
+        { grade: "MAM" },
+        { grade: "CHOI" },
+        { grade: "LA" },
+        { grade: "NHA_TRE" },
+        { grade: "MAM_NON" }
+      ]
+    }
+
+    if (campusId) {
+      classConditions.campusId = campusId
+    }
+
+    const whereStudent: any = {
+      status: "ACTIVE",
+      class: classConditions
+    }
+
+    if (academicYearId) {
+      whereStudent.academicYearId = academicYearId
+    }
+
     if (classId) {
       whereStudent.classId = classId
-    } else if (campusId) {
-      whereStudent.class = { campusId }
     }
 
     if (search) {
@@ -37,17 +75,19 @@ export async function GET(req: Request) {
       ]
     }
 
-    const students = await prisma.student.findMany({
+    const rawStudents = await prisma.student.findMany({
       where: whereStudent,
       select: {
         id: true,
         studentCode: true,
         studentName: true,
-        
+        academicYearId: true,
         class: {
           select: {
             id: true,
             className: true,
+            level: true,
+            grade: true,
             campus: { select: { id: true, campusName: true, campusCode: true } }
           }
         }
@@ -55,20 +95,31 @@ export async function GET(req: Request) {
       orderBy: { studentName: "asc" }
     })
 
+    // Lọc loại trừ thêm ở tầng JS để đảm bảo 100% không sót bất kỳ lớp Mầm non nào
+    const students = rawStudents.filter(st => {
+      const clsName = (st.class?.className || "").toLowerCase()
+      const lvl = (st.class?.level || "").toLowerCase()
+      const grd = (st.class?.grade || "").toLowerCase()
+      const isMamNon = lvl.includes("mầm") || lvl.includes("mam") || lvl.includes("preschool") ||
+                       clsName.includes("mầm") || clsName.includes("mam") ||
+                       ["mam", "choi", "la", "nha_tre", "mam_non"].includes(grd)
+      return !isMamNon
+    })
+
     const studentIds = students.map(s => s.id)
 
-    // 2. Fetch goals for these students
+    // 3. Fetch goals for these students
     const goals = await prisma.studentGoal.findMany({
       where: { studentId: { in: studentIds } },
       include: { actions: true }
     }).catch(() => [])
 
-    // 3. Fetch warnings for these students
+    // 4. Fetch warnings for these students
     const warnings = await prisma.studentAdvisoryStatus.findMany({
       where: { studentId: { in: studentIds } }
     }).catch(() => [])
 
-    // 4. Fetch tracking logs
+    // 5. Fetch tracking logs
     const trackingLogs = await prisma.studentGoalTrackingLog.findMany({
       where: { studentId: { in: studentIds } }
     }).catch(() => [])
@@ -106,7 +157,7 @@ export async function GET(req: Request) {
         id: st.id,
         studentCode: st.studentCode,
         studentName: st.studentName,
-        gradeLevel: st.class?.gradeLevel || st.class?.className || "Khối 8",
+        gradeLevel: (st.class as any)?.gradeLevel || st.class?.grade || st.class?.className || "Khối",
         className: st.class?.className || "Chưa xếp lớp",
         campusName: st.class?.campus?.campusName || "Chưa xác định",
         campusCode: st.class?.campus?.campusCode || "CS",
@@ -136,6 +187,7 @@ export async function GET(req: Request) {
     const reviewedByTeacherCount = studentRows.filter(r => r.hasTeacherNotes).length
 
     return jsonResponse({
+      currentAcademicYearId: academicYearId,
       metrics: {
         totalStudents,
         submittedCount,

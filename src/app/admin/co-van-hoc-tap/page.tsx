@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { 
-  Compass, 
+  Compass,
+  Calendar, 
   Users, 
   Layers, 
   ShieldAlert, 
@@ -53,6 +54,8 @@ export default function AdminAdvisoryDashboard() {
   })
 
   // --- TAB 2: DASHBOARD STATE ---
+  const [academicYears, setAcademicYears] = useState<any[]>([])
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string>("")
   const [campuses, setCampuses] = useState<any[]>([])
   const [selectedCampusId, setSelectedCampusId] = useState<string>("")
   const [selectedStatusColor, setSelectedStatusColor] = useState<string>("ALL")
@@ -81,13 +84,39 @@ export default function AdminAdvisoryDashboard() {
     loadPresets()
   }, [selectedGradeGroup])
 
-  // Load Dashboard
+  // Load Dashboard & Master Data
   useEffect(() => {
     if (activeTab === "dashboard") {
+      loadAcademicYears()
       loadCampuses()
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    if (activeTab === "dashboard") {
       loadDashboard()
     }
-  }, [activeTab, selectedCampusId, selectedStatusColor])
+  }, [activeTab, selectedCampusId, selectedAcademicYearId, selectedStatusColor])
+
+  async function loadAcademicYears() {
+    try {
+      const res = await fetch("/api/academic-years?all=true")
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setAcademicYears(data)
+          if (!selectedAcademicYearId) {
+            const active = data.find((y: any) => y.status === "ACTIVE" && !y.isOff) || data[0]
+            if (active) {
+              setSelectedAcademicYearId(active.id)
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   function showToast(msg: string) {
     setToastMessage(msg)
@@ -135,13 +164,18 @@ export default function AdminAdvisoryDashboard() {
     }
   }
 
-  async function loadDashboard() {
+  async function loadDashboard(overrideYearId?: string) {
+    const yearId = overrideYearId !== undefined ? overrideYearId : selectedAcademicYearId
     setLoadingDashboard(true)
     try {
-      const url = "/api/admin/advisory/dashboard?campusId=" + selectedCampusId + "&statusColor=" + selectedStatusColor + "&search=" + encodeURIComponent(searchQuery) + "&_t=" + Date.now()
+      const url = "/api/admin/advisory/dashboard?campusId=" + selectedCampusId + "&academicYearId=" + yearId + "&statusColor=" + selectedStatusColor + "&search=" + encodeURIComponent(searchQuery) + "&_t=" + Date.now()
       const res = await fetch(url, { cache: "no-store" })
       if (res.ok) {
-        setDashboardData(await res.json())
+        const data = await res.json()
+        setDashboardData(data)
+        if (data.currentAcademicYearId && !selectedAcademicYearId) {
+          setSelectedAcademicYearId(data.currentAcademicYearId)
+        }
       }
     } catch (e) {
       console.error(e)
@@ -431,6 +465,24 @@ export default function AdminAdvisoryDashboard() {
               </span>
 
               <div className="flex flex-wrap items-center gap-2">
+                {/* Academic Year Filter */}
+                <select
+                  value={selectedAcademicYearId}
+                  onChange={e => {
+                    const newYearId = e.target.value
+                    setSelectedAcademicYearId(newYearId)
+                    loadDashboard(newYearId)
+                  }}
+                  className="px-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-black border border-slate-300 outline-none"
+                >
+                  <option value="">📅 Năm học hiện tại</option>
+                  {academicYears.map(y => (
+                    <option key={y.id} value={y.id}>
+                      📅 {y.name} {y.status === "ACTIVE" ? "(Hiện tại)" : ""}
+                    </option>
+                  ))}
+                </select>
+
                 {/* Campus Filter */}
                 <select
                   value={selectedCampusId}
