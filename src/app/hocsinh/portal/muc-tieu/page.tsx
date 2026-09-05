@@ -357,7 +357,7 @@ export default function StudentGoalPortalPage() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
       
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-sky-600 via-teal-600 to-[#003B3A] rounded-3xl p-6 text-white shadow-xl space-y-3">
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#007A72] rounded-3xl p-6 text-white shadow-xl space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-white/20 uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" />
