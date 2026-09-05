@@ -115,7 +115,7 @@ export default function StudentPortalHomePage() {
               <Shield className="w-8 h-8 text-amber-300" />
             </div>
             <div>
-              <p className="text-xs font-black text-white uppercase tracking-wider">HỌC TẬP KHAI PHÓNG</p>
+              <p className="text-xs font-black text-white uppercase tracking-wider">ĐỒNG HÀNH PHÁT TRIỂN</p>
               <p className="text-[11px] text-teal-200 font-medium mt-0.5">5 Trụ Cột Phát Triển Toàn Diện</p>
             </div>
             <div className="flex flex-wrap justify-center gap-1 pt-1">

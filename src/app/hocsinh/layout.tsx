@@ -187,7 +187,7 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
           <div className="flex items-center gap-2">
             <span className="font-black text-[#003B3A]">SKY-LINE EDUCATION</span>
             <span className="text-slate-300">|</span>
-            <span>Hệ Thống Giáo Dục Khai Phóng Chuẩn Quốc Tế</span>
+            <span>Cổng Học Sinh 360°</span>
           </div>
           <div className="flex items-center gap-3 text-[11px] font-bold text-teal-800">
             <span>5 Trụ Cột Phát Triển</span>
