@@ -68,18 +68,18 @@ export default function AdminAdvisoryDashboard() {
   const [classStudentSearch, setClassStudentSearch] = useState<string>("")
 
   const GRADE_GROUPS = [
-    { key: "K2", label: "Khối 2 ✏️", desc: "Rèn chữ viết, tự giác hoàn thành bài tập" },
-    { key: "K3", label: "Khối 3 📚", desc: "Nâng cao năng lực tự học, tự tin giao tiếp" },
-    { key: "K4_K5", label: "Khối 4 - 5 🏆", desc: "Chuẩn bị hành trang chuyển cấp THCS" },
-    { key: "K6_K8", label: "Khối 6 - 8 🚀", desc: "Tự chủ phương pháp học & Định hướng bản thân" },
-    { key: "K9_K12", label: "Khối 9 - 12 🎓", desc: "Bứt phá thi cử, săn học bổng & Hướng nghiệp" }
+    { key: "K2", label: "Khối 2", desc: "Rèn chữ viết, tự giác hoàn thành bài tập" },
+    { key: "K3", label: "Khối 3", desc: "Nâng cao năng lực tự học, tự tin giao tiếp" },
+    { key: "K4_K5", label: "Khối 4 - 5", desc: "Chuẩn bị hành trang chuyển cấp THCS" },
+    { key: "K6_K8", label: "Khối 6 - 8", desc: "Tự chủ phương pháp học & Định hướng bản thân" },
+    { key: "K9_K12", label: "Khối 9 - 12", desc: "Bứt phá thi cử, săn học bổng & Hướng nghiệp" }
   ]
 
   const CATEGORIES = [
-    { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚", icon: BookOpen, color: "text-sky-600 bg-sky-50 border-sky-200" },
-    { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰", icon: Clock, color: "text-amber-600 bg-amber-50 border-amber-200" },
-    { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨", icon: Heart, color: "text-rose-600 bg-rose-50 border-rose-200" },
-    { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀", icon: Rocket, color: "text-purple-600 bg-purple-50 border-purple-200" }
+    { key: "HOC_TAP", label: "1. Mục tiêu học tập", icon: BookOpen, color: "text-sky-600 bg-sky-50 border-sky-200" },
+    { key: "THOI_QUEN", label: "2. Mục tiêu thói quen", icon: Clock, color: "text-amber-600 bg-amber-50 border-amber-200" },
+    { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc", icon: Heart, color: "text-rose-600 bg-rose-50 border-rose-200" },
+    { key: "DINH_HUONG", label: "4. Mục tiêu định hướng", icon: Rocket, color: "text-purple-600 bg-purple-50 border-purple-200" }
   ]
 
   // Load Presets
@@ -286,7 +286,7 @@ export default function AdminAdvisoryDashboard() {
             }`}
           >
             <BookOpen className="w-4 h-4" />
-            <span>📋 QL PHIẾU MẪU MỤC TIÊU</span>
+            <span>QL Phiếu Mẫu Mục Tiêu</span>
           </button>
 
           <button
@@ -298,7 +298,7 @@ export default function AdminAdvisoryDashboard() {
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>📊 DASHBOARD GIÁM SÁT 360°</span>
+            <span>Dashboard Giám Sát 360°</span>
           </button>
         </div>
       </div>
@@ -418,7 +418,7 @@ export default function AdminAdvisoryDashboard() {
                                 </div>
                                 {item.actionPreset && (
                                   <p className="text-[11px] text-teal-800 font-medium pl-7 bg-teal-50/60 py-1 px-2 rounded-lg border border-teal-100/60">
-                                    ⚡ <strong>Hành động gợi ý:</strong> {item.actionPreset}
+                                    <strong>Hành động gợi ý:</strong> {item.actionPreset}
                                   </p>
                                 )}
                               </div>
@@ -478,10 +478,10 @@ export default function AdminAdvisoryDashboard() {
                   }}
                   className="px-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-black border border-slate-300 outline-none"
                 >
-                  <option value="">📅 Năm học hiện tại</option>
+                  <option value="">Năm học hiện tại</option>
                   {academicYears.map(y => (
                     <option key={y.id} value={y.id}>
-                      📅 {y.name} {y.status === "ACTIVE" ? "(Hiện tại)" : ""}
+                      {y.name} {y.status === "ACTIVE" ? "(Hiện tại)" : ""}
                     </option>
                   ))}
                 </select>
@@ -492,7 +492,7 @@ export default function AdminAdvisoryDashboard() {
                   onChange={e => setSelectedCampusId(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-black border border-slate-300 outline-none"
                 >
-                  <option value="">🏫 Tất cả Cơ sở</option>
+                  <option value="">Tất cả Cơ sở</option>
                   {campuses.map(c => (
                     <option key={c.id} value={c.id}>{c.campusName}</option>
                   ))}
@@ -504,10 +504,10 @@ export default function AdminAdvisoryDashboard() {
                   onChange={e => setSelectedStatusColor(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-black border border-slate-300 outline-none"
                 >
-                  <option value="ALL">🚥 Tất cả Trạng thái Cảnh báo</option>
-                  <option value="GREEN">🟢 Bình thường & Phát triển</option>
-                  <option value="YELLOW">🟡 Cần theo dõi thêm</option>
-                  <option value="RED">🔴 Cần hỗ trợ đặc biệt</option>
+                  <option value="ALL">Tất cả trạng thái cảnh báo</option>
+                  <option value="GREEN">Bình thường & Phát triển</option>
+                  <option value="YELLOW">Cần theo dõi thêm</option>
+                  <option value="RED">Cần hỗ trợ đặc biệt</option>
                 </select>
 
                 {/* Search */}
@@ -552,10 +552,10 @@ export default function AdminAdvisoryDashboard() {
 
               <div className="bg-white border border-slate-200 rounded-3xl p-5 shadow-xs space-y-1">
                 <span className="text-[10px] font-black uppercase text-rose-600">PHÂN LOẠI CẢNH BÁO</span>
-                <div className="flex items-center gap-3 pt-1">
-                  <span className="text-xs font-black text-emerald-600">🟢 {dashboardData.metrics.greenCount}</span>
-                  <span className="text-xs font-black text-amber-600">🟡 {dashboardData.metrics.yellowCount}</span>
-                  <span className="text-xs font-black text-rose-600">🔴 {dashboardData.metrics.redCount}</span>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">Bình thường: {dashboardData.metrics.greenCount}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200">Theo dõi: {dashboardData.metrics.yellowCount}</span>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">Hỗ trợ: {dashboardData.metrics.redCount}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium">Theo tiêu chí BGH</p>
               </div>
@@ -655,7 +655,6 @@ export default function AdminAdvisoryDashboard() {
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-1.5 text-slate-800 font-extrabold">
-                              <span className="text-sm">👨‍🏫</span>
                               <span>{cls.homeroomTeacherName}</span>
                             </div>
                           </td>
@@ -742,37 +741,37 @@ export default function AdminAdvisoryDashboard() {
                         <td className="p-3 text-center">
                           {st.hasSubmitted ? (
                             <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black inline-flex items-center gap-1">
-                              🟢 Đã nộp ({st.goalCount} mục tiêu)
+                              Đã nộp ({st.goalCount} mục tiêu)
                             </span>
                           ) : (
                             <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold inline-flex items-center gap-1">
-                              ⚪ Chưa điền
+                              Chưa điền
                             </span>
                           )}
                         </td>
                         <td className="p-3 text-center">
                           {st.statusColor === "RED" && (
                             <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black">
-                              🔴 Cần hỗ trợ đặc biệt
+                              Cần hỗ trợ đặc biệt
                             </span>
                           )}
                           {st.statusColor === "YELLOW" && (
                             <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black">
-                              🟡 Cần theo dõi thêm
+                              Cần theo dõi thêm
                             </span>
                           )}
                           {st.statusColor === "GREEN" && (
                             <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
-                              🟢 Bình thường
+                              Bình thường
                             </span>
                           )}
                         </td>
                         <td className="p-3 text-center space-y-0.5">
                           <p className={`text-[10px] font-black ${st.hasTeacherNotes ? "text-emerald-700" : "text-slate-400"}`}>
-                            {st.hasTeacherNotes ? "✓ GVCN đã nhận xét" : "• Chưa có nhận xét"}
+                            {st.hasTeacherNotes ? "✓ GVCN đã nhận xét" : "Chưa có nhận xét"}
                           </p>
                           <p className={`text-[10px] font-black ${st.parentSigned ? "text-purple-700" : "text-slate-400"}`}>
-                            {st.parentSigned ? "✍️ Gia đình đã ký" : "• Gia đình chưa ký"}
+                            {st.parentSigned ? "Gia đình đã ký" : "Gia đình chưa ký"}
                           </p>
                         </td>
                         <td className="p-3 text-center">
@@ -780,7 +779,7 @@ export default function AdminAdvisoryDashboard() {
                             onClick={() => setSelectedStudentDetail(st)}
                             className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-black transition-all border border-teal-200"
                           >
-                            👁️ Xem chi tiết
+                            Xem chi tiết
                           </button>
                         </td>
                       </tr>
@@ -812,9 +811,9 @@ export default function AdminAdvisoryDashboard() {
                   </span>
                 </div>
                 <p className="text-xs text-teal-100 font-medium flex flex-wrap items-center gap-x-4 gap-y-1">
-                  <span>👨‍🏫 GVCN: <strong>{selectedClassDetail.homeroomTeacherName}</strong></span>
-                  <span>👥 Sỹ số: <strong>{selectedClassDetail.totalStudents} HS</strong></span>
-                  <span>📝 Đã nộp phiếu: <strong>{selectedClassDetail.submittedCount} / {selectedClassDetail.totalStudents} ({selectedClassDetail.submissionPercent}%)</strong></span>
+                  <span>GVCN: <strong>{selectedClassDetail.homeroomTeacherName}</strong></span>
+                  <span>Sỹ số: <strong>{selectedClassDetail.totalStudents} HS</strong></span>
+                  <span>Đã nộp phiếu: <strong>{selectedClassDetail.submittedCount} / {selectedClassDetail.totalStudents} ({selectedClassDetail.submissionPercent}%)</strong></span>
                 </p>
               </div>
 
@@ -841,13 +840,13 @@ export default function AdminAdvisoryDashboard() {
 
               <div className="flex items-center gap-2 text-xs font-bold">
                 <span className="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800">
-                  🟢 Bình thường: {selectedClassDetail.greenCount || 0}
+                  Bình thường: {selectedClassDetail.greenCount || 0}
                 </span>
                 <span className="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
-                  🟡 Cần theo dõi: {selectedClassDetail.yellowCount || 0}
+                  Cần theo dõi: {selectedClassDetail.yellowCount || 0}
                 </span>
                 <span className="px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800">
-                  🔴 Cần hỗ trợ: {selectedClassDetail.redCount || 0}
+                  Cần hỗ trợ: {selectedClassDetail.redCount || 0}
                 </span>
               </div>
             </div>
@@ -895,37 +894,37 @@ export default function AdminAdvisoryDashboard() {
                           <td className="p-2.5 text-center">
                             {st.hasSubmitted ? (
                               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
-                                🟢 Đã nộp ({st.goalCount} mục tiêu)
+                                Đã nộp ({st.goalCount} mục tiêu)
                               </span>
                             ) : (
                               <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold">
-                                ⚪ Chưa điền
+                                Chưa điền
                               </span>
                             )}
                           </td>
                           <td className="p-2.5 text-center">
                             {st.statusColor === "RED" && (
                               <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black">
-                                🔴 Cần hỗ trợ
+                                Cần hỗ trợ
                               </span>
                             )}
                             {st.statusColor === "YELLOW" && (
                               <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black">
-                                🟡 Cần theo dõi
+                                Cần theo dõi
                               </span>
                             )}
                             {st.statusColor === "GREEN" && (
                               <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
-                                🟢 Bình thường
+                                Bình thường
                               </span>
                             )}
                           </td>
                           <td className="p-2.5 text-center space-y-0.5">
                             <p className={`text-[10px] font-black ${st.hasTeacherNotes ? "text-emerald-700" : "text-slate-400"}`}>
-                              {st.hasTeacherNotes ? "✓ Đã nhận xét" : "• Chưa nhận xét"}
+                              {st.hasTeacherNotes ? "Đã nhận xét" : "Chưa nhận xét"}
                             </p>
                             <p className={`text-[10px] font-black ${st.parentSigned ? "text-purple-700" : "text-slate-400"}`}>
-                              {st.parentSigned ? "✍️ Đã ký" : "• Chưa ký"}
+                              {st.parentSigned ? "Đã ký" : "Chưa ký"}
                             </p>
                           </td>
                           <td className="p-2.5 text-center">
@@ -933,7 +932,7 @@ export default function AdminAdvisoryDashboard() {
                               onClick={() => setSelectedStudentDetail(st)}
                               className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-black transition-all border border-teal-200"
                             >
-                              👁️ Xem phiếu
+                              Xem phiếu
                             </button>
                           </td>
                         </tr>
@@ -1110,8 +1109,8 @@ export default function AdminAdvisoryDashboard() {
                     onChange={e => setPresetForm(p => ({ ...p, status: e.target.value }))}
                     className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-300 font-bold outline-none"
                   >
-                    <option value="ACTIVE">🟢 Đang hoạt động (ACTIVE)</option>
-                    <option value="INACTIVE">⚪ Tạm ẩn (INACTIVE)</option>
+                    <option value="ACTIVE">Đang hoạt động (ACTIVE)</option>
+                    <option value="INACTIVE">Tạm ẩn (INACTIVE)</option>
                   </select>
                 </div>
               </div>
@@ -1121,7 +1120,7 @@ export default function AdminAdvisoryDashboard() {
               {presetRows.some(r => r.goalText) && (
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                   <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider flex items-center justify-between">
-                    <span>👁️ XEM TRƯỚC HỌC SINH CHỌN MỤC TIÊU (LIVE PREVIEW)</span>
+                    <span>XEM TRƯỚC HỌC SINH CHỌN MỤC TIÊU (PREVIEW)</span>
                     <span className="text-teal-700 font-bold">Tự động hiện hành động gợi ý</span>
                   </span>
                   <div className="space-y-2">
@@ -1133,7 +1132,7 @@ export default function AdminAdvisoryDashboard() {
                         </p>
                         {r.actionPreset && (
                           <p className="text-[11px] text-teal-800 font-semibold bg-teal-50 p-1.5 rounded-lg border border-teal-100 pl-6">
-                            ⚡ <strong>Hành động gợi ý:</strong> {r.actionPreset}
+                            <strong>Hành động gợi ý:</strong> {r.actionPreset}
                           </p>
                         )}
                       </div>
@@ -1200,7 +1199,7 @@ export default function AdminAdvisoryDashboard() {
                       <span className="text-[10px] text-slate-400 font-bold">Mức đạt: {g.achievementLevel}</span>
                     </div>
 
-                    <p className="text-xs font-extrabold text-slate-900">📌 Mục tiêu: {g.targetText}</p>
+                    <p className="text-xs font-extrabold text-slate-900">Mục tiêu: {g.targetText}</p>
 
                     {g.actions?.length > 0 && (
                       <p className="text-xs text-teal-800 font-medium bg-teal-50 p-2 rounded-xl border border-teal-100">
@@ -1210,7 +1209,7 @@ export default function AdminAdvisoryDashboard() {
 
                     {g.teacherSupportRequest && (
                       <p className="text-[11px] text-slate-600 font-medium">
-                        💬 <strong>Mong muốn Thầy Cô hỗ trợ:</strong> {g.teacherSupportRequest}
+                        <strong>Mong muốn Thầy Cô hỗ trợ:</strong> {g.teacherSupportRequest}
                       </p>
                     )}
                   </div>
@@ -1219,8 +1218,8 @@ export default function AdminAdvisoryDashboard() {
 
               {/* Commitment & Parent info */}
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2 text-xs font-bold text-amber-900">
-                <p>💬 <strong>Lời cam kết của học sinh:</strong> {selectedStudentDetail.studentCommitment || "Chưa nhập"}</p>
-                <p>✍️ <strong>Gia đình xác nhận chữ ký:</strong> {selectedStudentDetail.parentSigned ? "🟢 ĐÃ KÝ CAM KẾT ĐỒNG HÀNH" : "⚪ CHƯA KÝ"}</p>
+                <p><strong>Lời cam kết của học sinh:</strong> {selectedStudentDetail.studentCommitment || "Chưa nhập"}</p>
+                <p><strong>Gia đình xác nhận chữ ký:</strong> {selectedStudentDetail.parentSigned ? "Đã ký cam kết đồng hành" : "Chưa ký"}</p>
               </div>
             </div>
 
