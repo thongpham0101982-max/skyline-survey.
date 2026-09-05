@@ -1498,7 +1498,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true })
     }
 
-    // 8. Action: requestTermination (Teacher/Psychologist requests completion)
+    // 8. Action: requestTermination (Direct completion / refund without requiring admin approval)
     if (action === "requestTermination") {
       const { id, outcome, notes } = body
       if (!id) return NextResponse.json({ error: "Missing target ID" }, { status: 400 })
@@ -1506,9 +1506,13 @@ export async function POST(req: Request) {
       const updated = await prisma.learningSupportTarget.update({
         where: { id },
         data: {
-          terminationStatus: "PENDING_TERMINATION",
+          terminationStatus: "TERMINATED",
+          status: "KẾT THÚC BỒI DƯỠNG",
           outcome: outcome || "Hoàn thành bồi dưỡng",
-          notes: notes || undefined
+          notes: notes || undefined,
+          endDate: new Date(),
+          terminationApprovedById: session?.user?.id,
+          terminationApprovedAt: new Date()
         }
       })
       return NextResponse.json(updated)

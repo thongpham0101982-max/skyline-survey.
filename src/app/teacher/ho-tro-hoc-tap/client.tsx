@@ -2108,17 +2108,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                   <th className="px-4 py-3 w-10">
                     <input type="checkbox" onChange={e => {
                       if (e.target.checked) {
-                        const allIds = filteredTargets
-                          .filter((t:any) => {
-                            const isAssigned = t.assignments?.some((a:any) => a.teacherId === teacher?.id);
-                            const matchedClass = assignedClasses.find((c: any) => c.id === t.student?.classId);
-                            const isHomeroomTeacherOfThisClass = matchedClass ? matchedClass.isHomeroom : false;
-                            const canEval = t.supportType === "PSYCHOLOGICAL"
-                              ? (isAssigned && !isHomeroomTeacherOfThisClass)
-                              : isAssigned;
-                            return canEval && t.terminationStatus !== "TERMINATED" && t.terminationStatus !== "PENDING_TERMINATION";
-                          })
-                          .map((t:any) => t.id);
+                        const allIds = filteredTargets.map((t: any) => t.id);
                         setSelectedEvalTargetIds(allIds);
                       } else setSelectedEvalTargetIds([]);
                     }} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"/>
@@ -2165,8 +2155,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                     return (
                       <tr key={t.id} className="hover:bg-slate-50">
                         <td className="px-4 py-4 whitespace-nowrap">
-                          {canEvaluate && !isTerminated && !isPending && (
-                            <input 
+                          <input
                               type="checkbox" 
                               checked={selectedEvalTargetIds.includes(t.id)} 
                               onChange={e => {
@@ -2175,7 +2164,6 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                               }} 
                               className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                             />
-                          )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-500 font-medium">{index + 1}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-semibold">{t.student?.studentCode || t.student?.code || "N/A"}</td>
@@ -2208,8 +2196,6 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                           {isTerminated ? t.outcome : currentLevel}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-center space-x-2">
-                          {canEvaluate && !isTerminated && !isPending && (
-                            <>
                               <button
                                 type="button"
                                 onClick={() => handleOpenEvaluationModal(t)}
@@ -2218,11 +2204,6 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 <Edit3 className="h-3.5 w-3.5 text-[#48BFE3]" />
                                 <span>Nhận xét & Đánh giá</span>
                               </button>
-                            </>
-                          )}
-                          {(isTerminated || isPending) && (
-                            <span className="text-[11px] text-slate-400 font-medium">Không thể thao tác</span>
-                          )}
                         </td>
                       </tr>
                     )
