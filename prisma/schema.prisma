@@ -148,6 +148,7 @@ model AcademicYear {
   subjectGradeEntries             SubjectGradeEntry[]
   careerOrientations             StudentCareerOrientation[]
   studentGoals                   StudentGoal[]
+  goalUnlocks                   StudentGoalUnlock[]
   consultationLogs               AcademicConsultationLog[]
   reflections                    StudentReflection[]
   helpRequests                   StudentHelpRequest[]
@@ -229,6 +230,7 @@ model Student {
 
   // Co Van Hoc Tap & Ho So 360
   goals                  StudentGoal[]
+  goalUnlocks            StudentGoalUnlock[]
   consultationLogs       AcademicConsultationLog[]
   reflections            StudentReflection[]
   helpRequests           StudentHelpRequest[]
@@ -1815,6 +1817,7 @@ model StudentGoal {
   student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
   academicYear AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   actions      StudentGoalAction[]
+  unlocks      StudentGoalUnlock[]
 
   @@index([studentId])
   @@index([academicYearId])
@@ -2213,4 +2216,46 @@ model StudentSubjectCompetencySummary {
 
   @@unique([academicYearId, studentId, subjectId, assessmentPeriod])
   @@index([studentId, academicYearId])
+}
+
+
+model StudentGoalUnlock {
+  id                  String       @id @default(cuid())
+  goalId              String
+  studentId           String
+  academicYearId      String
+  
+  targetCategory      String       // HOC_TAP, THOI_QUEN, KY_NANG_CAM_XUC, DINH_HUONG
+  targetText          String       // Noi dung muc tieu duoc chon mo khoa tu GD1
+  
+  currentState        String       // STILL_COMMITTED, STALLED, NOT_STARTED
+  barriers            String       // JSON string of selected barriers array
+  otherBarrier        String?      // Noi dung nhap khi chon "Khac"
+  
+  selectedKey         String       // FIND_REASON, CHANGE_METHOD, START_SMALL, FIND_COMPANION, ADJUST_GOAL
+  
+  sevenDayAction      String       // Viec nho se thu trong 7 ngay toi
+  actionTiming        String?      // Buoi sang, Sau gio hoc, Buoi toi, Cuoi tuan, Khac
+  companion           String?      // Toi tu thuc hien, Ban be, Co van hoc tap/GVCN, Giao vien bo mon, Ba me, Khac
+  
+  needSupport         Boolean      @default(false)
+  supportStatus       String       @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED
+  teacherSupportNotes String?      // Nhan xet, ho tro tu GVCN / CVHT
+  
+  startDate           DateTime     @default(now())
+  endDate             DateTime
+  status              String       @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED, CANCELLED
+  completedAt         DateTime?
+  
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  goal                StudentGoal  @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  student             Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear        AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([goalId])
+  @@index([academicYearId])
+  @@index([status])
 }

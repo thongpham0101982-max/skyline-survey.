@@ -2,7 +2,8 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect } from "react"
+import {
+  Key, Flame, useState, useEffect } from "react"
 import {
   Compass, Plus, Search, Calendar, User, MessageSquare, AlertTriangle,
   CheckCircle2, Clock, Filter, Save, Trash2, Heart, Sparkles, AlertCircle,
@@ -16,7 +17,7 @@ export default function TeacherAdvisoryPage() {
   const [students, setStudents] = useState<any[]>([]); const [submittedStudentCodes, setSubmittedStudentCodes] = useState<string[]>([]); const [submissionFilter, setSubmissionFilter] = useState<"ALL" | "SUBMITTED" | "NOT_SUBMITTED">("ALL")
   const [selectedStudentId, setSelectedStudentId] = useState("")
   
-  const [activeTab, setActiveTab] = useState<"consultations" | "sos" | "tracking" | "rubric_eval">("tracking")
+  const [activeTab, setActiveTab] = useState<"consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks">("tracking")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toastMessage, setToastMessage] = useState("")
@@ -25,6 +26,16 @@ export default function TeacherAdvisoryPage() {
   const [consultations, setConsultations] = useState<any[]>([])
   const [helpRequests, setHelpRequests] = useState<any[]>([])
   
+  
+  // 4. Goal Unlocks Sprint State (Stage 2 - K9-12)
+  const [unlocksList, setUnlocksList] = useState<any[]>([])
+  const [unlocksLoading, setUnlocksLoading] = useState(false)
+  const [unlockFilter, setUnlockFilter] = useState<"ALL" | "NOT_UNLOCKED" | "UNLOCKED" | "IN_PROGRESS" | "NEED_SUPPORT">("ALL")
+  const [selectedUnlockForModal, setSelectedUnlockForModal] = useState<any | null>(null)
+  const [teacherNoteInput, setTeacherNoteInput] = useState("")
+  const [supportStatusInput, setSupportStatusInput] = useState("NEED_ACTION")
+  const [savingUnlockNote, setSavingUnlockNote] = useState(false)
+
   // 1. Student-Focused Goal Progress Tracking State
   const [checkPoint, setCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
   const [singleStudentTrackingRows, setSingleStudentTrackingRows] = useState<any[]>([]); const [viewMode, setViewMode] = useState<"card" | "table">("card"); const [activeStudentCommitment, setActiveStudentCommitment] = useState<string>("")
@@ -50,6 +61,53 @@ export default function TeacherAdvisoryPage() {
     deadline: "",
     notes: ""
   })
+
+  
+  async function loadClassUnlocks() {
+    if (!selectedClassId) return
+    try {
+      setUnlocksLoading(true)
+      const res = await fetch("/api/teacher/advisory/unlocks?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "") + "&_t=" + Date.now(), { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        setUnlocksList(Array.isArray(data.students) ? data.students : [])
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setUnlocksLoading(false)
+    }
+  }
+
+  async function handleSaveTeacherUnlockNote() {
+    if (!selectedUnlockForModal || !selectedUnlockForModal.unlockId) return
+    try {
+      setSavingUnlockNote(true)
+      const res = await fetch("/api/advisory/goals/unlock", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          unlockId: selectedUnlockForModal.unlockId,
+          teacherSupportNotes: teacherNoteInput,
+          supportStatus: supportStatusInput
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setToastMessage("Đã lưu ghi chú hỗ trợ cho học sinh thành công!")
+        setSelectedUnlockForModal(null)
+        loadClassUnlocks()
+        setTimeout(() => setToastMessage(""), 4000)
+      } else {
+        alert(data.error || "Lỗi khi lưu ghi chú.")
+      }
+    } catch (e: any) {
+      console.error(e)
+      alert("Lỗi kết nối: " + (e.message || "Vui lòng thử lại"))
+    } finally {
+      setSavingUnlockNote(false)
+    }
+  }
 
   // Rubric Definitions matching Excel
   const RUBRICS = {
@@ -130,6 +188,7 @@ export default function TeacherAdvisoryPage() {
       .catch(console.error)
 
     loadClassConsultations()
+    loadClassUnlocks()
   }, [selectedClassId, academicYearId])
 
   // Load Goal Tracking & Rubric Data for currently selected student
@@ -541,6 +600,22 @@ export default function TeacherAdvisoryPage() {
             <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
             <span>4. Yêu Cầu SOS ({helpRequests.length})</span>
           </button>
+
+          <button
+            onClick={() => {
+              setActiveTab("unlocks")
+              loadClassUnlocks()
+            }}
+            className={
+              activeTab === "unlocks"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
+          >
+            <Key className="w-4 h-4 text-amber-300" />
+            <span>5. Mở Khóa Mục Tiêu (K9–12)</span>
+          </button>
+
         </div>
       </div>
 
