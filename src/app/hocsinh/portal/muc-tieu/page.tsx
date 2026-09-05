@@ -115,10 +115,11 @@ export default function StudentGoalPortalPage() {
           setFingerprintStamped(!!data.existingSheet.signedByStudent)
           
           const rawGoals = data.existingSheet.goals || []
-          const extractedList: Array<{ category: string, targetText: string }> = []
-          rawGoals.forEach((g: any) => {
+          const extractedList: Array<{ id: string, category: string, targetText: string }> = []
+          rawGoals.forEach((g: any, idx: number) => {
             if (g.targetText && g.targetText.trim()) {
               extractedList.push({
+                id: g.id || `goal-${idx}`,
                 category: g.category,
                 targetText: g.targetText.trim()
               })
@@ -829,6 +830,7 @@ export default function StudentGoalPortalPage() {
               studentId={studentId}
               goalSheetId={goalSheetId}
               academicYearId={academicYearId}
+              goals={stage1GoalItems}
               stage1Goals={stage1GoalItems}
               onFinish={(createdUnlock) => {
                 setUnlockData(createdUnlock)

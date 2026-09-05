@@ -8,18 +8,21 @@ import {
 } from "lucide-react"
 
 export interface Stage1GoalItem {
-  id: string
+  id?: string
   category: string
   targetText: string
   deadline?: string
   status?: string
 }
 
-interface GoalUnlockWizardProps {
-  goals: Stage1GoalItem[]
+export interface GoalUnlockWizardProps {
+  goals?: Stage1GoalItem[]
+  stage1Goals?: Stage1GoalItem[]
   studentId: string
-  academicYearId: string
-  onUnlockSuccess: (unlockData: any) => void
+  academicYearId?: string
+  goalSheetId?: string
+  onUnlockSuccess?: (unlockData: any) => void
+  onFinish?: (unlockData: any) => void
   onCancel?: () => void
 }
 
@@ -138,7 +141,7 @@ const COMPANION_OPTIONS = [
   "Khác"
 ]
 
-export function GoalUnlockWizard({ goals, studentId, academicYearId, onUnlockSuccess, onCancel }: GoalUnlockWizardProps) {
+export function GoalUnlockWizard({ goals, stage1Goals, studentId, academicYearId, goalSheetId, onUnlockSuccess, onFinish, onCancel }: GoalUnlockWizardProps) {
   const [currentStep, setCurrentStep] = useState<number>(1)
   const [submitting, setSubmitting] = useState<boolean>(false)
 
@@ -160,10 +163,23 @@ export function GoalUnlockWizard({ goals, studentId, academicYearId, onUnlockSuc
   const [actionTiming, setActionTiming] = useState<string>(TIMING_OPTIONS[2])
   const [companion, setCompanion] = useState<string>(COMPANION_OPTIONS[0])
 
+  // Normalized Goals List
+  const normalizedGoals = useMemo(() => {
+    const list = goals || stage1Goals || []
+    if (!Array.isArray(list)) return []
+    return list.map((g, idx) => ({
+      ...g,
+      id: g.id || `goal-${idx}-${(g.targetText || '').slice(0, 10)}`,
+      category: g.category || "HOC_TAP",
+      targetText: g.targetText || ""
+    }))
+  }, [goals, stage1Goals])
+
   // Selected Goal Object
   const selectedGoal = useMemo(() => {
-    return goals.find(g => g.id === selectedGoalId) || null
-  }, [goals, selectedGoalId])
+    if (!normalizedGoals || !Array.isArray(normalizedGoals)) return null
+    return normalizedGoals.find(g => g.id === selectedGoalId) || null
+  }, [normalizedGoals, selectedGoalId])
 
   // Suggested Key based on Step 3 barriers
   const suggestedKeys = useMemo(() => {
@@ -239,7 +255,8 @@ export function GoalUnlockWizard({ goals, studentId, academicYearId, onUnlockSuc
 
       const data = await res.json()
       if (res.ok && data.success) {
-        onUnlockSuccess(data)
+        const callback = onUnlockSuccess || onFinish
+        if (callback) callback(data.activeUnlock || data)
       } else {
         alert(data.error || "Có lỗi xảy ra khi mở khóa mục tiêu.")
       }
@@ -320,7 +337,7 @@ export function GoalUnlockWizard({ goals, studentId, academicYearId, onUnlockSuc
               </p>
             </div>
 
-            {goals.length === 0 ? (
+            {normalizedGoals.length === 0 ? (
               <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 space-y-2">
                 <AlertCircle className="w-8 h-8 text-slate-300 mx-auto" />
                 <p className="text-xs font-bold text-slate-600">Chưa tìm thấy mục tiêu nào từ Giai đoạn 1.</p>
@@ -328,7 +345,7 @@ export function GoalUnlockWizard({ goals, studentId, academicYearId, onUnlockSuc
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {goals.map((g, idx) => {
+                {normalizedGoals.map((g, idx) => {
                   const meta = CATEGORY_META[g.category] || CATEGORY_META.HOC_TAP
                   const Icon = meta.icon
                   const isSelected = selectedGoalId === g.id

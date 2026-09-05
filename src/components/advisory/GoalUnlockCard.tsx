@@ -7,15 +7,16 @@ import {
   Compass, Check, RotateCcw
 } from "lucide-react"
 
-interface GoalUnlockCardProps {
+export interface GoalUnlockCardProps {
   unlock: any
-  progressInfo: {
+  progressInfo?: {
     dayNumber: number
     totalDays: number
     percent: number
     isExpired: boolean
   } | null
   onRefresh?: () => void
+  onSprintCompleted?: (updated: any) => void
   onStartNewSprint?: () => void
 }
 
@@ -33,16 +34,20 @@ const STATE_LABELS: Record<string, { label: string; badge: string }> = {
   NOT_STARTED: { label: "Chưa biết bắt đầu từ đâu", badge: "bg-sky-50 text-sky-800 border-sky-300" }
 }
 
-export function GoalUnlockCard({ unlock, progressInfo, onRefresh, onStartNewSprint }: GoalUnlockCardProps) {
+export function GoalUnlockCard({ unlock, progressInfo, onRefresh, onSprintCompleted, onStartNewSprint }: GoalUnlockCardProps) {
   const [completing, setCompleting] = useState(false)
 
-  const keyTitle = KEY_LABELS[unlock.selectedKey] || unlock.selectedKey
+  if (!unlock) return null
+
+  const keyTitle = KEY_LABELS[unlock.selectedKey] || unlock.selectedKey || ""
   const stateMeta = STATE_LABELS[unlock.currentState] || STATE_LABELS.STALLED
 
   const startDateFormatted = unlock.startDate ? new Date(unlock.startDate).toLocaleDateString("vi-VN") : ""
   const endDateFormatted = unlock.endDate ? new Date(unlock.endDate).toLocaleDateString("vi-VN") : ""
 
-  const dayNumber = progressInfo?.dayNumber || 1
+  const startDateMs = unlock.startDate ? new Date(unlock.startDate).getTime() : Date.now()
+  const calcDay = Math.min(7, Math.max(1, Math.floor((Date.now() - startDateMs) / (1000 * 60 * 60 * 24)) + 1))
+  const dayNumber = progressInfo?.dayNumber || unlock.currentSprintDay || calcDay
   const percent = progressInfo?.percent || Math.round((dayNumber / 7) * 100)
   const isCompleted = unlock.status === "COMPLETED"
 
@@ -53,9 +58,11 @@ export function GoalUnlockCard({ unlock, progressInfo, onRefresh, onStartNewSpri
       const res = await fetch("/api/advisory/goals/unlock", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: unlock.id, action: "COMPLETE" })
+        body: JSON.stringify({ unlockId: unlock.id, action: "COMPLETE" })
       })
+      const data = await res.json().catch(() => ({}))
       if (res.ok) {
+        if (onSprintCompleted) onSprintCompleted(data.activeUnlock || { ...unlock, status: "COMPLETED" })
         if (onRefresh) onRefresh()
       }
     } catch (e) {
