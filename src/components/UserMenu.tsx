@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { LogOut, KeyRound, ChevronDown, Bell, CheckCircle2, X } from "lucide-react";
+import { LogOut, KeyRound, ChevronDown, Bell, CheckCircle2, X, GraduationCap, LayoutDashboard } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import { getUserNotificationsAction, markNotificationsAsReadAction } from "@/lib/notification_actions";
@@ -83,6 +83,41 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                 </div>
 
                 <div className="space-y-0.5">
+                  {/* Link to Teacher workspace */}
+                  {(() => {
+                    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+                    const isTeach = ["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(userRole) || userRole === "ADMIN" || userRole === "SUPER_ADMIN";
+                    if (!isTeach) return null;
+                    return (
+                      <Link
+                        href="/teacher"
+                        onClick={() => setIsOpen(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black text-[#1E8B87] bg-teal-50/70 hover:bg-teal-100/90 transition-all text-left mb-1"
+                      >
+                        <GraduationCap className="w-4 h-4 text-[#1E8B87] shrink-0" />
+                        <span>Giao diện Giáo viên</span>
+                      </Link>
+                    );
+                  })()}
+
+                  {/* Link to Admin workspace if superadmin or has admin privileges */}
+                  {(() => {
+                    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+                    const isSuper = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
+                    const hasAdminModules = permissionModules && permissionModules.length > 0 && !["TEACHER", "GV_MN"].includes(userRole);
+                    if (!isSuper && !hasAdminModules) return null;
+                    return (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black text-slate-700 bg-slate-100/80 hover:bg-slate-200/80 transition-all text-left mb-1"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-slate-500 shrink-0" />
+                        <span>Giao diện Quản trị</span>
+                      </Link>
+                    );
+                  })()}
+
                   {(() => {
                     const userRole = ((session?.user as any)?.role || "").toUpperCase();
                     const isSuper = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
@@ -92,7 +127,7 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                       <Link
                         href="/admin/xet-duyet-ket-qua"
                         onClick={() => setIsOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-[#1E8B87] bg-teal-50/60 hover:bg-teal-100/80 transition-all text-left mb-1"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-[#1E8B87] hover:bg-teal-50/50 transition-all text-left mb-1"
                       >
                         <CheckCircle2 className="w-4 h-4 text-[#1E8B87] shrink-0" />
                         <span>Xét duyệt kết quả</span>

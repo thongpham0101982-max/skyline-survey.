@@ -37,6 +37,15 @@ const preschoolLabels = [
   "T5: Không khí tiết học vui tươi, kích thích tương tác"
 ];
 
+const isSurpriseSlot = (slot: any) => {
+  if (!slot) return false;
+  return (
+    slot.requestOrigin === "SURPRISE" ||
+    (typeof slot.description === "string" && (slot.description.includes("[SURPRISE]") || slot.description.toLowerCase().includes("dự giờ đột xuất"))) ||
+    (typeof slot.topic === "string" && slot.topic.toLowerCase().includes("đột xuất"))
+  );
+};
+
 interface ReceivedEvaluationsTabProps {
   receivedEvaluations: any[];
   isPreschoolEvaluations: boolean;
@@ -53,15 +62,28 @@ export function ReceivedEvaluationsTab({
   RATING_COLORS
 }: ReceivedEvaluationsTabProps) {
   const [selectedEvalMonth, setSelectedEvalMonth] = useState<string>("ALL");
+  const [selectedOriginType, setSelectedOriginType] = useState<"ALL" | "PLAN" | "SURPRISE">("ALL");
+
+  const surpriseReceivedCount = useMemo(() => {
+    return receivedEvaluations.filter(e => isSurpriseSlot(e.slot)).length;
+  }, [receivedEvaluations]);
 
   const competencyResult = useMemo(() => {
     const competencyData: any[] = [];
     const weaknessData: any[] = [];
-    const hasEvals = receivedEvaluations.length > 0;
+
+    // Filter by origin type first (ALL / PLAN / SURPRISE)
+    const originFilteredEvals = receivedEvaluations.filter(item => {
+      if (selectedOriginType === "ALL") return true;
+      const isSurprise = isSurpriseSlot(item.slot);
+      return selectedOriginType === "SURPRISE" ? isSurprise : !isSurprise;
+    });
+
+    const hasEvals = originFilteredEvals.length > 0;
 
     // Group received evaluations by month (YYYY-MM)
     const monthMap: Record<string, typeof receivedEvaluations> = {};
-    receivedEvaluations.forEach(item => {
+    originFilteredEvals.forEach(item => {
       const d = new Date(item.slot?.date || item.evaluation?.createdAt || new Date());
       const m = d.getMonth() + 1;
       const y = d.getFullYear();
@@ -120,7 +142,7 @@ export function ReceivedEvaluationsTab({
 
     const activeEvals = selectedEvalMonth !== "ALL" && monthMap[selectedEvalMonth]
       ? monthMap[selectedEvalMonth]
-      : receivedEvaluations;
+      : originFilteredEvals;
 
     const currentStats = calcStatsForEvals(activeEvals);
     const prevStats = prevMonthKey ? calcStatsForEvals(monthMap[prevMonthKey]) : null;
@@ -237,7 +259,7 @@ export function ReceivedEvaluationsTab({
       activeEvalsCount: activeEvals.length,
       currentAvgScore: currentStats.avgScore ? (isPreschoolEvaluations ? currentStats.avgScore.toFixed(2) : currentStats.avgScore.toFixed(1)) : "18.8"
     };
-  }, [receivedEvaluations, isPreschoolEvaluations, selectedEvalMonth]);
+  }, [receivedEvaluations, isPreschoolEvaluations, selectedEvalMonth, selectedOriginType]);
 
   const {
     competencyData,
@@ -324,34 +346,62 @@ export function ReceivedEvaluationsTab({
     ? linePathStr + " L " + trendPoints[trendPoints.length - 1].x + "," + (padT + usableH) + " L " + trendPoints[0].x + "," + (padT + usableH) + " Z"
     : "";
 
-  const filteredList = selectedEvalMonth === "ALL"
-    ? receivedEvaluations
-    : receivedEvaluations.filter(item => {
+  const filteredList = useMemo(() => {
+    return receivedEvaluations.filter(item => {
+      if (selectedEvalMonth !== "ALL") {
         const d = new Date(item.slot?.date || item.evaluation?.createdAt || new Date());
         const m = d.getMonth() + 1;
         const y = d.getFullYear();
-        return `${y}-${m < 10 ? '0' + m : m}` === selectedEvalMonth;
-      });
+        if (`${y}-${m < 10 ? '0' + m : m}` !== selectedEvalMonth) return false;
+      }
+      if (selectedOriginType !== "ALL") {
+        const isSurprise = isSurpriseSlot(item.slot);
+        if (selectedOriginType === "SURPRISE" ? !isSurprise : isSurprise) return false;
+      }
+      return true;
+    });
+  }, [receivedEvaluations, selectedEvalMonth, selectedOriginType]);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-300">
-      {/* TOP TOOLBAR: MONTH FILTER */}
+      {/* TOP TOOLBAR: MONTH & ORIGIN FILTER */}
       <div className="bg-white/95 backdrop-blur-md rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Xem kết quả theo Tháng:</span>
-          <select
-            value={selectedEvalMonth}
-            onChange={e => setSelectedEvalMonth(e.target.value)}
-            className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
-          >
-            <option value="ALL">Toàn bộ năm học (Tất cả các tháng)</option>
-            {availableMonths.map(m => (
-              <option key={m.key} value={m.key}>{m.label} ({m.count} phiếu)</option>
-            ))}
-          </select>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Tháng:</span>
+            <select
+              value={selectedEvalMonth}
+              onChange={e => setSelectedEvalMonth(e.target.value)}
+              className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
+            >
+              <option value="ALL">Toàn bộ năm học (Tất cả)</option>
+              {availableMonths.map(m => (
+                <option key={m.key} value={m.key}>{m.label} ({m.count} phiếu)</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Hình thức:</span>
+            <select
+              value={selectedOriginType}
+              onChange={e => setSelectedOriginType(e.target.value as any)}
+              className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
+            >
+              <option value="ALL">Mọi hình thức (Tất cả)</option>
+              <option value="PLAN">📋 Tiết theo kế hoạch</option>
+              <option value="SURPRISE">⚡ Được dự đột xuất ({surpriseReceivedCount})</option>
+            </select>
+          </div>
         </div>
         <div className="text-[11px] font-bold text-slate-400">
-          {selectedEvalMonth === "ALL" ? "Hiển thị dữ liệu tổng hợp toàn năm học" : "Đang lọc dữ liệu theo tháng đã chọn"}
+          {selectedOriginType === "SURPRISE"
+            ? "Đang lọc các tiết bạn được dự giờ đột xuất"
+            : selectedOriginType === "PLAN"
+            ? "Đang lọc các tiết dự giờ theo kế hoạch"
+            : selectedEvalMonth === "ALL"
+            ? "Hiển thị dữ liệu tổng hợp toàn năm học"
+            : "Đang lọc dữ liệu theo tháng đã chọn"}
         </div>
       </div>
 
@@ -411,7 +461,14 @@ export function ReceivedEvaluationsTab({
               <span>Lượt dự giờ</span>
               <Info className="w-3 h-3 text-slate-300" />
             </div>
-            <p className="text-3xl font-black text-indigo-700 tracking-tight">{activeEvalsCount || receivedEvaluations.length}</p>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <p className="text-3xl font-black text-indigo-700 tracking-tight">{activeEvalsCount}</p>
+              {surpriseReceivedCount > 0 && selectedOriginType === "ALL" && (
+                <span className="text-[11px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full shadow-2xs">
+                  ⚡ {surpriseReceivedCount} đột xuất
+                </span>
+              )}
+            </div>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
             <Users className="w-6 h-6" />
@@ -761,9 +818,14 @@ export function ReceivedEvaluationsTab({
                       <td className="p-4">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-black text-[#003B3A]">{evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
-                          {evalItem.slot.requestOrigin === "SURPRISE" && (
-                            <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md">
+                          {isSurpriseSlot(evalItem.slot) && (
+                            <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md shadow-2xs">
                               ⚡ Dự giờ đột xuất
+                            </span>
+                          )}
+                          {evalItem.slot.isDoublePeriod && (
+                            <span className="px-2 py-0.5 text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-300 rounded-md shadow-2xs">
+                              Tiết đôi (x2)
                             </span>
                           )}
                         </div>

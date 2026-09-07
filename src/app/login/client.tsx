@@ -100,10 +100,10 @@ export function LoginClient() {
 
           if (userRole === 'PARENT') {
             window.location.href = '/parent'
+          } else if (['TEACHER', 'GV_MN', 'GVNN', 'GV', 'GIAO_VIEN'].includes(userRole)) {
+            window.location.href = '/teacher'
           } else if (userRole === 'STUDENT') {
             window.location.href = '/hocsinh/hs-khaosat/danh-sach'
-          } else if (['TEACHER', 'GV_MN'].includes(userRole) && (!permRes?.readableModules || permRes.readableModules.length === 0)) {
-            window.location.href = '/teacher'
           } else if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
             window.location.href = '/admin'
           } else if (permRes?.defaultRoute) {

@@ -31,6 +31,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Địa chỉ email người nhận không hợp lệ" }, { status: 400 });
     }
 
+    const isSurpriseSlot = (slot: any) => {
+      if (!slot) return false;
+      return (
+        slot.requestOrigin === "SURPRISE" ||
+        (typeof slot.description === "string" && (slot.description.includes("[SURPRISE]") || slot.description.toLowerCase().includes("dự giờ đột xuất"))) ||
+        (typeof slot.topic === "string" && slot.topic.toLowerCase().includes("đột xuất"))
+      );
+    };
+
     let deptSummaries = [];
 
     if (departmentSummaries && Array.isArray(departmentSummaries) && departmentSummaries.length > 0) {
@@ -40,7 +49,9 @@ export async function POST(req: Request) {
         teacherCount: d.teacherCount || 0,
         ttcmName: d.ttcm?.teacherName || d.ttcmName || "Chưa gán TTCM",
         totalTaught: d.totalTaught || 0,
-        totalObserved: d.totalObserved || 0
+        taughtSurprise: d.taughtSurprise || 0,
+        totalObserved: d.totalObserved || 0,
+        observedSurprise: d.observedSurprise || 0
       }));
     } else {
       // 1. Fetch active Academic Year
@@ -134,20 +145,25 @@ export async function POST(req: Request) {
         );
 
         let totalTaught = 0;
+        let taughtSurprise = 0;
         let totalObserved = 0;
+        let observedSurprise = 0;
 
         slots.forEach(slot => {
           const isHost = teacherIds.has(slot.teacherId);
           const increment = slot.isDoublePeriod ? 2 : 1;
           const hasEvaluations = slot.registrations?.some(r => r.evaluation !== null && r.evaluation !== undefined);
+          const isSurprise = isSurpriseSlot(slot);
 
           if (isHost && hasEvaluations) {
             totalTaught += increment;
+            if (isSurprise) taughtSurprise += increment;
           }
 
           slot.registrations?.forEach(reg => {
             if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
               totalObserved += increment;
+              if (isSurprise) observedSurprise += increment;
             }
           });
         });
@@ -158,7 +174,9 @@ export async function POST(req: Request) {
           teacherCount: deptTeachersList.length,
           ttcmName: ttcm?.teacherName || "Chưa gán TTCM",
           totalTaught,
-          totalObserved
+          taughtSurprise,
+          totalObserved,
+          observedSurprise
         };
       });
     }
@@ -166,19 +184,17 @@ export async function POST(req: Request) {
     // Grand totals
     let grandTeachers = 0;
     let grandTaught = 0;
+    let grandTaughtSurprise = 0;
     let grandObserved = 0;
-    let grandEvals = 0;
-    let grandPassingEvals = 0;
+    let grandObservedSurprise = 0;
 
     deptSummaries.forEach(d => {
       grandTeachers += d.teacherCount;
       grandTaught += d.totalTaught;
+      grandTaughtSurprise += (d.taughtSurprise || 0);
       grandObserved += d.totalObserved;
-      grandEvals += d.totalEvals;
-      grandPassingEvals += d.passingEvals;
+      grandObservedSurprise += (d.observedSurprise || 0);
     });
-
-    const grandPassRate = grandEvals > 0 ? Math.round((grandPassingEvals / grandEvals) * 100) : 0;
 
     let monthLabel = "Toàn bộ năm học";
     if (month && month !== "all") {
@@ -217,9 +233,23 @@ export async function POST(req: Request) {
             </span>
           </td>
           <td align="center" style="padding:10px 8px;">
+            ${dept.taughtSurprise > 0 ? `
+              <span style="display:inline-block; background-color:#FEF3C7; color:#92400E; padding:4px 8px; border-radius:10px; font-weight:800; font-size:11px; border:1px solid #FCD34D;">
+                ⚡ ${dept.taughtSurprise} tiết
+              </span>
+            ` : `<span style="color:#94A3B8; font-size:11px; font-weight:600;">0</span>`}
+          </td>
+          <td align="center" style="padding:10px 8px;">
             <span style="display:inline-block; background-color:#F0F9FF; color:#0369A1; padding:4px 10px; border-radius:10px; font-weight:800; font-size:11px; border:1px solid #BAE6FD;">
               ${dept.totalObserved} lượt
             </span>
+          </td>
+          <td align="center" style="padding:10px 8px;">
+            ${dept.observedSurprise > 0 ? `
+              <span style="display:inline-block; background-color:#FEF3C7; color:#92400E; padding:4px 8px; border-radius:10px; font-weight:800; font-size:11px; border:1px solid #FCD34D;">
+                ⚡ ${dept.observedSurprise} lượt
+              </span>
+            ` : `<span style="color:#94A3B8; font-size:11px; font-weight:600;">0</span>`}
           </td>
         </tr>
       `;
@@ -279,24 +309,31 @@ export async function POST(req: Request) {
               <!-- Stats Summary Cards -->
               <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
-                  <td width="32%" bgcolor="#F8FAFC" style="padding:14px 10px; background-color:#F8FAFC; border-radius:12px; border:1px solid #E2E8F0; text-align:center;">
+                  <td width="23%" bgcolor="#F8FAFC" style="padding:14px 10px; background-color:#F8FAFC; border-radius:12px; border:1px solid #E2E8F0; text-align:center;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#64748B;">Tổng Tổ & GV</div>
-                    <div style="font-size:20px; font-weight:900; color:#003B3A; margin-top:4px;">${deptSummaries.length} Tổ / ${grandTeachers} GV</div>
+                    <div style="font-size:18px; font-weight:900; color:#003B3A; margin-top:4px;">${deptSummaries.length} Tổ / ${grandTeachers} GV</div>
                   </td>
                   <td width="2%"></td>
-                  <td width="32%" bgcolor="#ECFDF5" style="padding:14px 10px; background-color:#ECFDF5; border-radius:12px; border:1px solid #A7F3D0; text-align:center;">
+                  <td width="23%" bgcolor="#ECFDF5" style="padding:14px 10px; background-color:#ECFDF5; border-radius:12px; border:1px solid #A7F3D0; text-align:center;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#065F46;">Tổng Tiết Dạy</div>
-                    <div style="font-size:20px; font-weight:900; color:#047857; margin-top:4px;">${grandTaught} tiết</div>
+                    <div style="font-size:18px; font-weight:900; color:#047857; margin-top:4px;">${grandTaught} tiết</div>
+                    <div style="font-size:10px; font-weight:700; color:#B45309; margin-top:2px;">⚡ ${grandTaughtSurprise} đột xuất</div>
                   </td>
                   <td width="2%"></td>
-                  <td width="32%" bgcolor="#F0F9FF" style="padding:14px 10px; background-color:#F0F9FF; border-radius:12px; border:1px solid #BAE6FD; text-align:center;">
+                  <td width="23%" bgcolor="#F0F9FF" style="padding:14px 10px; background-color:#F0F9FF; border-radius:12px; border:1px solid #BAE6FD; text-align:center;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#0369A1;">Tổng Tiết Dự</div>
-                    <div style="font-size:20px; font-weight:900; color:#0284C7; margin-top:4px;">${grandObserved} lượt</div>
+                    <div style="font-size:18px; font-weight:900; color:#0284C7; margin-top:4px;">${grandObserved} lượt</div>
+                    <div style="font-size:10px; font-weight:700; color:#B45309; margin-top:2px;">⚡ ${grandObservedSurprise} đột xuất</div>
+                  </td>
+                  <td width="2%"></td>
+                  <td width="25%" bgcolor="#FEF3C7" style="padding:14px 10px; background-color:#FEF3C7; border-radius:12px; border:1px solid #FCD34D; text-align:center;">
+                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#92400E;">Tiết Đột Xuất (⚡)</div>
+                    <div style="font-size:16px; font-weight:900; color:#B45309; margin-top:4px;">Dạy: ${grandTaughtSurprise} | Dự: ${grandObservedSurprise}</div>
                   </td>
                 </tr>
               </table>
 
-              <!-- Table: BẢNG THỐNG KÊ TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN THEO THÁNG (No icons in rows) -->
+              <!-- Table: BẢNG THỐNG KÊ TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN THEO THÁNG -->
               <div style="margin-bottom:24px;">
                 <h3 style="margin:0 0 10px 0; font-size:13px; font-weight:900; text-transform:uppercase; color:#003B3A; letter-spacing:0.5px;">
                   BẢNG THỐNG KÊ TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN THEO THÁNG (${deptSummaries.length} Tổ)
@@ -306,14 +343,26 @@ export async function POST(req: Request) {
                     <tr bgcolor="#003B3A" style="background-color:#003B3A; color:#FFFFFF; font-size:11px; font-weight:800; text-transform:uppercase;">
                       <th style="padding:10px 8px; text-align:center; width:35px; border-right:1px solid #065F46; color:#FFFFFF;">STT</th>
                       <th style="padding:10px 12px; text-align:left; border-right:1px solid #065F46; color:#FFFFFF;">Tổ Chuyên Môn</th>
-                      <th style="padding:10px 8px; text-align:center; width:100px; border-right:1px solid #065F46; color:#FFFFFF;">Giáo Viên Tổ</th>
-                      <th style="padding:10px 8px; text-align:center; width:120px; border-right:1px solid #065F46; color:#FFFFFF;">Tổng Tiết Dạy</th>
-                      <th style="padding:10px 8px; text-align:center; width:120px; color:#FFFFFF;">Tổng Tiết Dự</th>
+                      <th style="padding:10px 8px; text-align:center; width:80px; border-right:1px solid #065F46; color:#FFFFFF;">Giáo Viên</th>
+                      <th style="padding:10px 8px; text-align:center; width:95px; border-right:1px solid #065F46; color:#FFFFFF;">Tổng Dạy</th>
+                      <th style="padding:10px 8px; text-align:center; width:95px; border-right:1px solid #065F46; color:#FDE047;">Dạy ĐX ⚡</th>
+                      <th style="padding:10px 8px; text-align:center; width:95px; border-right:1px solid #065F46; color:#FFFFFF;">Tổng Dự</th>
+                      <th style="padding:10px 8px; text-align:center; width:95px; color:#FDE047;">Dự ĐX ⚡</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${deptRowsHtml}
                   </tbody>
+                  <tfoot>
+                    <tr bgcolor="#F1F5F9" style="background-color:#F1F5F9; border-top:2px solid #94A3B8; font-weight:900; font-size:11px; color:#0F172A;">
+                      <td colspan="2" style="padding:10px 12px; text-transform:uppercase; color:#003B3A;">TỔNG TOÀN BỘ (${deptSummaries.length} TỔ)</td>
+                      <td align="center" style="padding:10px 8px;">${grandTeachers} GV</td>
+                      <td align="center" style="padding:10px 8px; color:#047857;">${grandTaught} tiết</td>
+                      <td align="center" style="padding:10px 8px; color:#92400E;">⚡ ${grandTaughtSurprise} tiết</td>
+                      <td align="center" style="padding:10px 8px; color:#0369A1;">${grandObserved} lượt</td>
+                      <td align="center" style="padding:10px 8px; color:#92400E;">⚡ ${grandObservedSurprise} lượt</td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
 
@@ -328,6 +377,9 @@ export async function POST(req: Request) {
                   </li>
                   <li style="margin-bottom:4px;">
                     <strong>Tiết dự hoàn thành:</strong> Chỉ được tính khi Giáo viên đã được duyệt dự <strong>VÀ ĐÃ HOÀN TẤT GỬI PHIẾU ĐÁNH GIÁ</strong> cho tiết học đó. <em>(Tiết đơn tính 1 lượt, tiết đôi tính 2 lượt)</em>.
+                  </li>
+                  <li style="margin-bottom:4px;">
+                    <strong>Tiết đột xuất (⚡):</strong> Báo cáo tự động phân loại và thống kê riêng biệt số tiết dự giờ đột xuất và tiết dạy của GV được dự đột xuất.
                   </li>
                   <li>
                     <strong>Chỉ tiêu định mức:</strong> Được đối chiếu theo định mức (tháng hoặc năm học) đã được thiết lập cho từng Giáo viên bộ môn.

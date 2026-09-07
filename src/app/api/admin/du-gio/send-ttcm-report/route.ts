@@ -147,10 +147,21 @@ export async function POST(req: Request) {
         })
       : allSlots;
 
+    const isSurpriseSlot = (slot: any) => {
+      if (!slot) return false;
+      return (
+        slot.requestOrigin === "SURPRISE" ||
+        (typeof slot.description === "string" && (slot.description.includes("[SURPRISE]") || slot.description.toLowerCase().includes("dự giờ đột xuất"))) ||
+        (typeof slot.topic === "string" && slot.topic.toLowerCase().includes("đột xuất"))
+      );
+    };
+
     // 4. Compute statistics (EXACT same business logic as UI)
     const teacherStatsMap: Record<string, {
       taughtCount: number;
+      taughtSurpriseCount: number;
       observedCount: number;
+      observedSurpriseCount: number;
       evaluationsGiven: any[];
       evaluationsReceived: any[];
       teachingSlots: any[];
@@ -160,7 +171,9 @@ export async function POST(req: Request) {
     deptTeachers.forEach(t => {
       teacherStatsMap[t.id] = {
         taughtCount: 0,
+        taughtSurpriseCount: 0,
         observedCount: 0,
+        observedSurpriseCount: 0,
         evaluationsGiven: [],
         evaluationsReceived: [],
         teachingSlots: [],
@@ -174,6 +187,7 @@ export async function POST(req: Request) {
     slots.forEach(slot => {
       const isDeptHost = teacherIds.includes(slot.teacherId);
       const increment = slot.isDoublePeriod ? 2 : 1;
+      const isSurprise = isSurpriseSlot(slot);
 
       // Tiết dạy chỉ tính khi CÓ PHIẾU ĐÁNH GIÁ từ người dự
       const hasEvaluations = slot.registrations?.some(r => r.evaluation !== null && r.evaluation !== undefined);
@@ -182,6 +196,9 @@ export async function POST(req: Request) {
         if (hasEvaluations) {
           if (teacherStatsMap[slot.teacherId]) {
             teacherStatsMap[slot.teacherId].taughtCount += increment;
+            if (isSurprise) {
+              teacherStatsMap[slot.teacherId].taughtSurpriseCount += increment;
+            }
             teacherStatsMap[slot.teacherId].teachingSlots.push(slot);
           }
         }
@@ -199,6 +216,9 @@ export async function POST(req: Request) {
         if (reg.isApproved && reg.evaluation && teacherIds.includes(reg.teacherId)) {
           if (teacherStatsMap[reg.teacherId]) {
             teacherStatsMap[reg.teacherId].observedCount += increment;
+            if (isSurprise) {
+              teacherStatsMap[reg.teacherId].observedSurpriseCount += increment;
+            }
             teacherStatsMap[reg.teacherId].observationSlots.push({
               slot,
               reg
@@ -213,14 +233,18 @@ export async function POST(req: Request) {
     // Summary counts
     const totalTeachersCount = deptTeachers.length;
     let totalTaughtCount = 0;
+    let totalTaughtSurpriseCount = 0;
     let totalObservedCount = 0;
+    let totalObservedSurpriseCount = 0;
     let totalEvalsCount = 0;
     let totalPassedEvalsCount = 0;
 
     deptTeachers.forEach(t => {
       const st = teacherStatsMap[t.id];
       totalTaughtCount += st.taughtCount;
+      totalTaughtSurpriseCount += st.taughtSurpriseCount;
       totalObservedCount += st.observedCount;
+      totalObservedSurpriseCount += st.observedSurpriseCount;
     });
 
     deptTeachingSlots.forEach(s => {
@@ -256,7 +280,7 @@ export async function POST(req: Request) {
 
     const getHtmlTemplate = () => {
       const teacherRowsHtml = deptTeachers.map((t, idx) => {
-        const st = teacherStatsMap[t.id] || { taughtCount: 0, observedCount: 0 };
+        const st = teacherStatsMap[t.id] || { taughtCount: 0, taughtSurpriseCount: 0, observedCount: 0, observedSurpriseCount: 0 };
         const target = (t.academicYearTargets && t.academicYearTargets[0]) || {};
         const reqTaught = target.requiredTaught ?? t.requiredTaught ?? 0;
         const reqObserved = target.requiredObserved ?? t.requiredObserved ?? 0;
@@ -274,6 +298,14 @@ export async function POST(req: Request) {
           ? `<span style="display:inline-block; background-color:#ECFDF5; color:#047857; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #A7F3D0;">${st.observedCount} ${reqObserved > 0 ? '/ ' + reqObserved + ' (' + observedUnit + ')' : 'lượt'}</span>`
           : `<span style="display:inline-block; background-color:#FFFBEB; color:#B45309; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #FDE68A;">${st.observedCount} / ${reqObserved} (${observedUnit})</span>`;
 
+        const taughtSurprise = st.taughtSurpriseCount > 0 
+          ? `<div style="font-size:10px; color:#B45309; font-weight:800; margin-top:2px;">⚡ ${st.taughtSurpriseCount} đột xuất</div>` 
+          : '';
+
+        const observedSurprise = st.observedSurpriseCount > 0 
+          ? `<div style="font-size:10px; color:#B45309; font-weight:800; margin-top:2px;">⚡ ${st.observedSurpriseCount} đột xuất</div>` 
+          : '';
+
         return `
           <tr bgcolor="${idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'}" style="border-bottom:1px solid #E2E8F0;">
             <td align="center" style="padding:10px 8px; font-size:12px; font-weight:700; color:#64748B;">${idx + 1}</td>
@@ -283,8 +315,8 @@ export async function POST(req: Request) {
                 Mã GV: <strong>${t.teacherCode}</strong> ${t.position ? '• <span style="color:#B45309; font-weight:800; background-color:#FEF3C7; padding:1px 6px; border-radius:4px;">' + t.position + '</span>' : ''}
               </div>
             </td>
-            <td align="center" style="padding:10px 8px;">${taughtBadge}</td>
-            <td align="center" style="padding:10px 8px;">${observedBadge}</td>
+            <td align="center" style="padding:10px 8px;">${taughtBadge}${taughtSurprise}</td>
+            <td align="center" style="padding:10px 8px;">${observedBadge}${observedSurprise}</td>
           </tr>
         `;
       }).join("");
@@ -292,6 +324,9 @@ export async function POST(req: Request) {
       const teachingSlotRowsHtml = deptTeachingSlots.filter(s => s.registrations?.some(r => r.evaluation)).slice(0, 15).map((slot) => {
         const d = slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "--";
         const evals = slot.registrations?.filter(r => r.evaluation) || [];
+        const isSurprise = isSurpriseSlot(slot);
+        const surpriseTag = isSurprise ? `<span style="display:inline-block; background-color:#FEF3C7; color:#92400E; padding:1px 6px; border-radius:4px; font-weight:800; font-size:9px; border:1px solid #FCD34D; margin-left:4px;">⚡ Đột xuất</span>` : '';
+
         let avgScoreDisplay = "--";
         if (evals.length > 0) {
           if (slot.level === "Mầm non") {
@@ -307,7 +342,7 @@ export async function POST(req: Request) {
             <td style="padding:8px 10px; color:#475569; font-weight:600;">📅 ${d}</td>
             <td style="padding:8px 10px; font-weight:700; color:#003B3A;">👨‍🏫 ${slot.teacher?.teacherName || '--'}</td>
             <td style="padding:8px 10px; color:#1E293B;">
-              <strong>📖 ${slot.topic || slot.subjectName || '--'}</strong>
+              <strong>📖 ${slot.topic || slot.subjectName || '--'}</strong>${surpriseTag}
               <div style="font-size:10px; color:#64748B; margin-top:2px;">🏫 Lớp: ${slot.className || '--'} • Cấp: ${slot.level}</div>
             </td>
             <td align="center" style="padding:8px 10px; font-weight:800; color:#047857;">⭐ ${avgScoreDisplay}</td>
@@ -380,12 +415,14 @@ export async function POST(req: Request) {
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#065F46;">🎓 Tổng Tiết Dạy</div>
                     <div style="font-size:20px; font-weight:900; color:#047857; margin-top:4px;">${totalTaughtCount}</div>
                     <div style="font-size:10px; color:#10B981; font-weight:600;">tiết hoàn thành</div>
+                    ${totalTaughtSurpriseCount > 0 ? `<div style="font-size:10px; color:#B45309; font-weight:800; margin-top:2px;">⚡ ${totalTaughtSurpriseCount} đột xuất</div>` : ''}
                   </td>
                   <td width="2%"></td>
                   <td width="23%" bgcolor="#F0F9FF" style="padding:12px 8px; background-color:#F0F9FF; border-radius:12px; border:1px solid #BAE6FD; text-align:center;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#0369A1;">👁️ Tổng Tiết Dự</div>
                     <div style="font-size:20px; font-weight:900; color:#0284C7; margin-top:4px;">${totalObservedCount}</div>
                     <div style="font-size:10px; color:#38BDF8; font-weight:600;">lượt dự giờ</div>
+                    ${totalObservedSurpriseCount > 0 ? `<div style="font-size:10px; color:#B45309; font-weight:800; margin-top:2px;">⚡ ${totalObservedSurpriseCount} đột xuất</div>` : ''}
                   </td>
                   <td width="2%"></td>
                   <td width="23%" bgcolor="#FEF3C7" style="padding:12px 8px; background-color:#FEF3C7; border-radius:12px; border:1px solid #FDE68A; text-align:center;">
@@ -428,6 +465,8 @@ export async function POST(req: Request) {
                   <li style="margin-bottom:5px;">
                     👁️ <strong>Tiết dự (Lượt dự) hoàn thành:</strong> Chỉ được tính khi Giáo viên đã được duyệt tham gia dự giờ <strong>VÀ ĐÃ HOÀN TẤT GỬI PHIẾU ĐÁNH GIÁ DỰ GIỜ</strong> cho tiết học đó. <em>(Tiết dự đơn tính 1 lượt, tiết dự đôi tính 2 lượt)</em>.
                   </li>
+                  <li style="margin-bottom:5px;">
+                    ⚡ <strong>Tiết đột xuất:</strong> Báo cáo tự động phân loại và thống kê rõ ràng số tiết dự giờ đột xuất và tiết dạy của GV được dự đột xuất.
                   <li>
                     🎯 <strong>Chỉ tiêu định mức:</strong> Được đối chiếu theo định mức (tháng hoặc năm học) đã được thiết lập cho từng Giáo viên bộ môn.
                   </li>

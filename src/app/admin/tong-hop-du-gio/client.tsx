@@ -248,6 +248,18 @@ export function AdminTongHopClient({
   const [searchSlotQuery, setSearchSlotQuery] = useState("")
   const [filterLevel, setFilterLevel] = useState("all")
   const [filterGrade, setFilterGrade] = useState("all")
+  const [filterSlotOrigin, setFilterSlotOrigin] = useState<string>("all")
+  const [filterObservedSlotOrigin, setFilterObservedSlotOrigin] = useState<string>("all")
+
+  // Helper to determine whether a slot is a surprise observation
+  const isSurpriseSlot = (slot: any) => {
+    if (!slot) return false;
+    return (
+      slot.requestOrigin === "SURPRISE" ||
+      (typeof slot.description === "string" && (slot.description.includes("[SURPRISE]") || slot.description.toLowerCase().includes("dự giờ đột xuất"))) ||
+      (typeof slot.topic === "string" && slot.topic.toLowerCase().includes("đột xuất"))
+    );
+  };
 
   // Extract all unique months from initialSlots
   const availableMonths = useMemo(() => {
@@ -274,6 +286,8 @@ export function AdminTongHopClient({
     const statsMap: Record<string, { 
       taughtCount: number; 
       observedCount: number;
+      taughtSurpriseCount: number;
+      observedSurpriseCount: number;
       taughtMamNon: number;
       taughtPhoThong: number;
       observedMamNon: number;
@@ -284,6 +298,8 @@ export function AdminTongHopClient({
       statsMap[t.id] = { 
         taughtCount: 0, 
         observedCount: 0,
+        taughtSurpriseCount: 0,
+        observedSurpriseCount: 0,
         taughtMamNon: 0,
         taughtPhoThong: 0,
         observedMamNon: 0,
@@ -301,12 +317,14 @@ export function AdminTongHopClient({
 
       const isMamNon = slot.level === "Mầm non" || 
         (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
+      const isSurprise = isSurpriseSlot(slot);
 
       if (statsMap[slot.teacherId]) {
         const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null);
         if (hasEvaluations) {
           const increment = slot.isDoublePeriod ? 2 : 1;
           statsMap[slot.teacherId].taughtCount += increment;
+          if (isSurprise) statsMap[slot.teacherId].taughtSurpriseCount += increment;
           if (isMamNon) statsMap[slot.teacherId].taughtMamNon += increment;
           else statsMap[slot.teacherId].taughtPhoThong += increment;
         }
@@ -316,6 +334,7 @@ export function AdminTongHopClient({
         if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
           const increment = slot.isDoublePeriod ? 2 : 1;
           statsMap[reg.teacherId].observedCount += increment;
+          if (isSurprise) statsMap[reg.teacherId].observedSurpriseCount += increment;
           if (isMamNon) statsMap[reg.teacherId].observedMamNon += increment;
           else statsMap[reg.teacherId].observedPhoThong += increment;
         }
@@ -362,6 +381,8 @@ export function AdminTongHopClient({
     const statsMap: Record<string, { 
       taughtCount: number; 
       observedCount: number;
+      taughtSurpriseCount: number;
+      observedSurpriseCount: number;
       taughtMamNon: number;
       taughtPhoThong: number;
       observedMamNon: number;
@@ -371,6 +392,8 @@ export function AdminTongHopClient({
       statsMap[t.id] = allTeacherStats[t.id] || { 
         taughtCount: 0, 
         observedCount: 0,
+        taughtSurpriseCount: 0,
+        observedSurpriseCount: 0,
         taughtMamNon: 0,
         taughtPhoThong: 0,
         observedMamNon: 0,
@@ -385,17 +408,21 @@ export function AdminTongHopClient({
     let taughtPhoThong = 0;
     let observedMamNon = 0;
     let observedPhoThong = 0;
+    let taughtSurprise = 0;
+    let observedSurprise = 0;
     let totalEvaluations = 0;
     let passingEvaluations = 0;
 
     const teacherIds = new Set(deptTeachers.map(t => t.id));
 
     deptTeachers.forEach((t: any) => {
-      const stats = teacherStats[t.id] || { taughtMamNon: 0, taughtPhoThong: 0, observedMamNon: 0, observedPhoThong: 0 };
+      const stats = teacherStats[t.id] || { taughtMamNon: 0, taughtPhoThong: 0, observedMamNon: 0, observedPhoThong: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 };
       taughtMamNon += stats.taughtMamNon || 0;
       taughtPhoThong += stats.taughtPhoThong || 0;
       observedMamNon += stats.observedMamNon || 0;
       observedPhoThong += stats.observedPhoThong || 0;
+      taughtSurprise += stats.taughtSurpriseCount || 0;
+      observedSurprise += stats.observedSurpriseCount || 0;
     });
 
     initialSlots.forEach(slot => {
@@ -426,6 +453,8 @@ export function AdminTongHopClient({
       taughtPhoThong,
       observedMamNon,
       observedPhoThong,
+      taughtSurprise,
+      observedSurprise,
       totalTaught: taughtMamNon + taughtPhoThong,
       totalObserved: observedMamNon + observedPhoThong,
       totalEvaluations,
@@ -508,9 +537,13 @@ export function AdminTongHopClient({
         hostName.toLowerCase().includes(searchSlotQuery.toLowerCase());
       const matchLevel = filterLevel === "all" || slot.level === filterLevel;
       const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
-      return matchQuery && matchLevel && matchGrade;
+      const isSurprise = isSurpriseSlot(slot);
+      const matchOrigin = filterObservedSlotOrigin === "all" ||
+        (filterObservedSlotOrigin === "SURPRISE" && isSurprise) ||
+        (filterObservedSlotOrigin === "PLAN" && !isSurprise);
+      return matchQuery && matchLevel && matchGrade && matchOrigin;
     });
-  }, [selTeacherObservedSlots, searchSlotQuery, filterLevel, filterGrade]);
+  }, [selTeacherObservedSlots, searchSlotQuery, filterLevel, filterGrade, filterObservedSlotOrigin]);
 
   const deptTTCM = useMemo(() => {
     return deptTeachers.find((t: any) => 
@@ -521,7 +554,7 @@ export function AdminTongHopClient({
 
   const deptTeacherMatrix = useMemo(() => {
     return deptTeachers.map((t: any) => {
-      const stats = teacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
+      const stats = teacherStats[t.id] || { taughtCount: 0, observedCount: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 };
       const reqTaught = t.requiredTaught || 0;
       const reqObserved = t.requiredObserved || 0;
       const taughtUnit = t.taughtUnit || "tháng";
@@ -538,6 +571,8 @@ export function AdminTongHopClient({
         ...t,
         taughtCount: stats.taughtCount,
         observedCount: stats.observedCount,
+        taughtSurpriseCount: stats.taughtSurpriseCount || 0,
+        observedSurpriseCount: stats.observedSurpriseCount || 0,
         reqTaught,
         reqObserved,
         taughtUnit,
@@ -580,6 +615,8 @@ export function AdminTongHopClient({
 
       let totalTaught = 0;
       let totalObserved = 0;
+      let taughtSurprise = 0;
+      let observedSurprise = 0;
 
       (initialSlots || []).forEach((slot: any) => {
         if (allDeptsMonth !== "all") {
@@ -593,14 +630,17 @@ export function AdminTongHopClient({
         const isHost = teacherIds.has(slot.teacherId);
         const increment = slot.isDoublePeriod ? 2 : 1;
         const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+        const isSurprise = isSurpriseSlot(slot);
 
         if (isHost && hasEvaluations) {
           totalTaught += increment;
+          if (isSurprise) taughtSurprise += increment;
         }
 
         slot.registrations?.forEach((reg: any) => {
           if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
             totalObserved += increment;
+            if (isSurprise) observedSurprise += increment;
           }
         });
       });
@@ -611,7 +651,9 @@ export function AdminTongHopClient({
         teacherCount: deptTeachersList.length,
         ttcm,
         totalTaught,
-        totalObserved
+        totalObserved,
+        taughtSurprise,
+        observedSurprise
       };
     });
   }, [activeDepartments, initialTeachers, initialSlots, allDeptsMonth]);
@@ -667,7 +709,9 @@ export function AdminTongHopClient({
           "Tổ Chuyên Môn",
           "Chức vụ",
           "Tổng Tiết Dạy",
+          "Dạy Đột Xuất",
           "Tổng Tiết Dự",
+          "Dự Đột Xuất",
           "Chỉ tiêu Tiết Dạy",
           "Chỉ tiêu Tiết Dự",
           "Trạng thái"
@@ -681,19 +725,23 @@ export function AdminTongHopClient({
         ];
 
         let sumTaught = 0;
+        let sumSurpriseTaught = 0;
         let sumObserved = 0;
+        let sumSurpriseObserved = 0;
         let sumReqTaught = 0;
         let sumReqObserved = 0;
 
         list.forEach((t, idx) => {
-          const stats = allTeacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
+          const stats = allTeacherStats[t.id] || { taughtCount: 0, observedCount: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 };
           const deptName = getTeacherDeptName(t);
           const pos = t.position || "GV";
           const reqT = t.requiredTaught || 0;
           const reqO = t.requiredObserved || 0;
 
           sumTaught += stats.taughtCount;
+          sumSurpriseTaught += (stats.taughtSurpriseCount || 0);
           sumObserved += stats.observedCount;
+          sumSurpriseObserved += (stats.observedSurpriseCount || 0);
           sumReqTaught += reqT;
           sumReqObserved += reqO;
 
@@ -717,7 +765,9 @@ export function AdminTongHopClient({
             deptName,
             pos,
             stats.taughtCount,
+            stats.taughtSurpriseCount || 0,
             stats.observedCount,
+            stats.observedSurpriseCount || 0,
             reqT > 0 ? `${reqT} (${t.taughtUnit || "tháng"})` : "—",
             reqO > 0 ? `${reqO} (${t.observedUnit || "tháng"})` : "—",
             status
@@ -733,7 +783,9 @@ export function AdminTongHopClient({
           "",
           "",
           sumTaught,
+          sumSurpriseTaught,
           sumObserved,
+          sumSurpriseObserved,
           sumReqTaught > 0 ? sumReqTaught : "—",
           sumReqObserved > 0 ? sumReqObserved : "—",
           ""
@@ -748,7 +800,9 @@ export function AdminTongHopClient({
           { wch: 24 }, // Tổ Chuyên Môn
           { wch: 18 }, // Chức vụ
           { wch: 16 }, // Tổng Tiết Dạy
+          { wch: 16 }, // Dạy Đột Xuất
           { wch: 16 }, // Tổng Tiết Dự
+          { wch: 16 }, // Dự Đột Xuất
           { wch: 20 }, // Chỉ tiêu Dạy
           { wch: 20 }, // Chỉ tiêu Dự
           { wch: 20 }, // Trạng thái
@@ -767,7 +821,9 @@ export function AdminTongHopClient({
           "Tổ Chuyên Môn",
           "Số Lượng GV",
           "Tổng Tiết Dạy",
+          "Dạy Đột Xuất",
           "Tổng Tiết Dự",
+          "Dự Đột Xuất",
           "Tỷ Lệ Đạt Chuẩn"
         ];
 
@@ -780,7 +836,9 @@ export function AdminTongHopClient({
 
         let totalGV = 0;
         let totalTaughtAll = 0;
+        let totalSurpriseTaughtAll = 0;
         let totalObservedAll = 0;
+        let totalSurpriseObservedAll = 0;
         let stt = 1;
 
         const blocks = [
@@ -798,7 +856,9 @@ export function AdminTongHopClient({
             const teacherIds = new Set(deptTeachersList.map((t: any) => t.id));
 
             let deptTaught = 0;
+            let deptSurpriseTaught = 0;
             let deptObserved = 0;
+            let deptSurpriseObserved = 0;
             let totalEvals = 0;
             let passingEvals = 0;
 
@@ -814,10 +874,12 @@ export function AdminTongHopClient({
               const isHost = teacherIds.has(slot.teacherId);
               const increment = slot.isDoublePeriod ? 2 : 1;
               const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+              const isSurprise = isSurpriseSlot(slot);
 
               if (isHost) {
                 if (hasEvaluations) {
                   deptTaught += increment;
+                  if (isSurprise) deptSurpriseTaught += increment;
                 }
                 slot.registrations?.forEach((r: any) => {
                   if (r.evaluation) {
@@ -834,6 +896,7 @@ export function AdminTongHopClient({
               slot.registrations?.forEach((reg: any) => {
                 if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
                   deptObserved += increment;
+                  if (isSurprise) deptSurpriseObserved += increment;
                 }
               });
             });
@@ -842,7 +905,9 @@ export function AdminTongHopClient({
 
             totalGV += deptTeachersList.length;
             totalTaughtAll += deptTaught;
+            totalSurpriseTaughtAll += deptSurpriseTaught;
             totalObservedAll += deptObserved;
+            totalSurpriseObservedAll += deptSurpriseObserved;
 
             rows.push([
               stt++,
@@ -850,7 +915,9 @@ export function AdminTongHopClient({
               dept.name,
               deptTeachersList.length,
               deptTaught,
+              deptSurpriseTaught,
               deptObserved,
+              deptSurpriseObserved,
               passRate
             ]);
           });
@@ -863,7 +930,9 @@ export function AdminTongHopClient({
           `${departments.length} Tổ CM`,
           totalGV,
           totalTaughtAll,
+          totalSurpriseTaughtAll,
           totalObservedAll,
+          totalSurpriseObservedAll,
           ""
         ]);
 
@@ -873,6 +942,8 @@ export function AdminTongHopClient({
           { wch: 18 },
           { wch: 28 },
           { wch: 15 },
+          { wch: 16 },
+          { wch: 16 },
           { wch: 16 },
           { wch: 16 },
           { wch: 18 }
@@ -966,9 +1037,9 @@ export function AdminTongHopClient({
 
   // Compute live matrix preview for email based on selected emailMonth
   const emailPreviewTeacherMatrix = useMemo(() => {
-    const statsMap: Record<string, { taughtCount: number; observedCount: number }> = {};
+    const statsMap: Record<string, { taughtCount: number; observedCount: number; taughtSurpriseCount: number; observedSurpriseCount: number }> = {};
     deptTeachers.forEach((t: any) => {
-      statsMap[t.id] = { taughtCount: 0, observedCount: 0 };
+      statsMap[t.id] = { taughtCount: 0, observedCount: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 };
     });
 
     initialSlots.forEach((slot: any) => {
@@ -980,11 +1051,14 @@ export function AdminTongHopClient({
         if (`${yyyy}-${mm}` !== emailMonth) return;
       }
 
+      const isSurprise = isSurpriseSlot(slot);
+
       if (statsMap[slot.teacherId]) {
         const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null);
         if (hasEvaluations) {
           const increment = slot.isDoublePeriod ? 2 : 1;
           statsMap[slot.teacherId].taughtCount += increment;
+          if (isSurprise) statsMap[slot.teacherId].taughtSurpriseCount += increment;
         }
       }
 
@@ -992,12 +1066,13 @@ export function AdminTongHopClient({
         if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
           const increment = slot.isDoublePeriod ? 2 : 1;
           statsMap[reg.teacherId].observedCount += increment;
+          if (isSurprise) statsMap[reg.teacherId].observedSurpriseCount += increment;
         }
       });
     });
 
     return deptTeachers.map((t: any) => {
-      const stats = statsMap[t.id] || { taughtCount: 0, observedCount: 0 };
+      const stats = statsMap[t.id] || { taughtCount: 0, observedCount: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 };
       const reqTaught = t.requiredTaught || 0;
       const reqObserved = t.requiredObserved || 0;
       const taughtUnit = t.taughtUnit || "tháng";
@@ -1011,6 +1086,8 @@ export function AdminTongHopClient({
         ...t,
         taughtCount: stats.taughtCount,
         observedCount: stats.observedCount,
+        taughtSurpriseCount: stats.taughtSurpriseCount || 0,
+        observedSurpriseCount: stats.observedSurpriseCount || 0,
         reqTaught,
         reqObserved,
         taughtUnit,
@@ -1025,11 +1102,15 @@ export function AdminTongHopClient({
   const emailPreviewSummary = useMemo(() => {
     let totalTaught = 0;
     let totalObserved = 0;
+    let totalSurpriseTaught = 0;
+    let totalSurpriseObserved = 0;
     emailPreviewTeacherMatrix.forEach(t => {
       totalTaught += t.taughtCount;
       totalObserved += t.observedCount;
+      totalSurpriseTaught += (t.taughtSurpriseCount || 0);
+      totalSurpriseObserved += (t.observedSurpriseCount || 0);
     });
-    return { totalTaught, totalObserved };
+    return { totalTaught, totalObserved, totalSurpriseTaught, totalSurpriseObserved };
   }, [emailPreviewTeacherMatrix]);
 
   // Compute summary for ALL active departments by month
@@ -1046,6 +1127,8 @@ export function AdminTongHopClient({
 
       let totalTaught = 0;
       let totalObserved = 0;
+      let taughtSurprise = 0;
+      let observedSurprise = 0;
       let totalEvals = 0;
       let passingEvals = 0;
 
@@ -1061,10 +1144,12 @@ export function AdminTongHopClient({
         const isHost = teacherIds.has(slot.teacherId);
         const increment = slot.isDoublePeriod ? 2 : 1;
         const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+        const isSurprise = isSurpriseSlot(slot);
 
         if (isHost) {
           if (hasEvaluations) {
             totalTaught += increment;
+            if (isSurprise) taughtSurprise += increment;
           }
           slot.registrations?.forEach((r: any) => {
             if (r.evaluation) {
@@ -1081,6 +1166,7 @@ export function AdminTongHopClient({
         slot.registrations?.forEach((reg: any) => {
           if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
             totalObserved += increment;
+            if (isSurprise) observedSurprise += increment;
           }
         });
       });
@@ -1094,6 +1180,8 @@ export function AdminTongHopClient({
         ttcm,
         totalTaught,
         totalObserved,
+        taughtSurprise,
+        observedSurprise,
         totalEvals,
         passingEvals,
         passRate
@@ -1166,9 +1254,13 @@ export function AdminTongHopClient({
         (slot.className && slot.className.toLowerCase().includes(searchSlotQuery.toLowerCase()));
       const matchLevel = filterLevel === "all" || slot.level === filterLevel;
       const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
-      return matchQuery && matchLevel && matchGrade;
+      const isSurprise = isSurpriseSlot(slot);
+      const matchOrigin = filterSlotOrigin === "all" ||
+        (filterSlotOrigin === "SURPRISE" && isSurprise) ||
+        (filterSlotOrigin === "PLAN" && !isSurprise);
+      return matchQuery && matchLevel && matchGrade && matchOrigin;
     });
-  }, [selTeacherSlots, searchSlotQuery, filterLevel, filterGrade]);
+  }, [selTeacherSlots, searchSlotQuery, filterLevel, filterGrade, filterSlotOrigin]);
 
   const teacherEvaluations = useMemo(() => {
     const evals: any[] = [];
@@ -1312,7 +1404,7 @@ export function AdminTongHopClient({
   }, [deptTeachers, initialSlots, selectedMonth, activeDepartments, selectedDeptId]);
 
   const selectedTeacher = teachersList.find(t => t.id === selectedTeacherId) || null;
-  const currentStats = selectedTeacher ? (teacherStats[selectedTeacher.id] || { taughtCount: 0, observedCount: 0 }) : { taughtCount: 0, observedCount: 0 };
+  const currentStats = selectedTeacher ? (teacherStats[selectedTeacher.id] || { taughtCount: 0, observedCount: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 }) : { taughtCount: 0, observedCount: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 };
 
   const teacherAvgScore = useMemo(() => {
     if (teacherEvaluations.length === 0) return null;
@@ -1394,6 +1486,11 @@ export function AdminTongHopClient({
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-teal-200">Tổng tiết dạy</div>
               <div className="text-xl font-black text-white mt-0.5">{departmentSummary.totalTaught} <span className="text-[10px] font-normal text-teal-200">tiết</span></div>
+              {departmentSummary.taughtSurprise > 0 && (
+                <div className="text-[9.5px] font-extrabold text-rose-300 flex items-center gap-1 mt-0.5">
+                  <span>⚡ Trong đó: {departmentSummary.taughtSurprise} đột xuất</span>
+                </div>
+              )}
             </div>
             <GraduationCap className="w-5 h-5 text-emerald-300 opacity-80" />
           </div>
@@ -1402,6 +1499,11 @@ export function AdminTongHopClient({
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wider text-teal-200">Tổng tiết dự</div>
               <div className="text-xl font-black text-white mt-0.5">{departmentSummary.totalObserved} <span className="text-[10px] font-normal text-teal-200">lượt</span></div>
+              {departmentSummary.observedSurprise > 0 && (
+                <div className="text-[9.5px] font-extrabold text-amber-300 flex items-center gap-1 mt-0.5">
+                  <span>⚡ Trong đó: {departmentSummary.observedSurprise} đột xuất</span>
+                </div>
+              )}
             </div>
             <Eye className="w-5 h-5 text-sky-300 opacity-80" />
           </div>
@@ -1426,7 +1528,6 @@ export function AdminTongHopClient({
 
       {/* Main Workspace Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        
         {/* Left Column: Unified Clean Sidebar */}
         <div className="lg:col-span-4 flex flex-col gap-3.5">
           
@@ -1580,16 +1681,30 @@ export function AdminTongHopClient({
                         </div>
 
                         <div className="flex flex-col gap-0.5 items-end shrink-0 text-[9px] font-bold">
-                          <span className={`px-1.5 py-0.5 rounded-md border ${
-                            taughtPassed ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
-                          }`}>
-                            Dạy: {stats.taughtCount}{teacher.requiredTaught ? `/${teacher.requiredTaught}` : ""}
-                          </span>
-                          <span className={`px-1.5 py-0.5 rounded-md border ${
-                            observedPassed ? "bg-violet-50 text-violet-800 border-violet-200" : "bg-slate-100 text-slate-500 border-slate-200"
-                          }`}>
-                            Dự: {stats.observedCount}{teacher.requiredObserved ? `/${teacher.requiredObserved}` : ""}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            {stats.taughtSurpriseCount > 0 && (
+                              <span className="px-1 py-0.2 rounded bg-amber-100 text-amber-900 font-extrabold text-[8px] border border-amber-300" title={`Có ${stats.taughtSurpriseCount} tiết được dự đột xuất`}>
+                                ⚡{stats.taughtSurpriseCount}
+                              </span>
+                            )}
+                            <span className={`px-1.5 py-0.5 rounded-md border ${
+                              taughtPassed ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
+                            }`}>
+                              Dạy: {stats.taughtCount}{teacher.requiredTaught ? `/${teacher.requiredTaught}` : ""}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {stats.observedSurpriseCount > 0 && (
+                              <span className="px-1 py-0.2 rounded bg-amber-100 text-amber-900 font-extrabold text-[8px] border border-amber-300" title={`Đã dự ${stats.observedSurpriseCount} tiết đột xuất`}>
+                                ⚡{stats.observedSurpriseCount}
+                              </span>
+                            )}
+                            <span className={`px-1.5 py-0.5 rounded-md border ${
+                              observedPassed ? "bg-violet-50 text-violet-800 border-violet-200" : "bg-slate-100 text-slate-500 border-slate-200"
+                            }`}>
+                              Dự: {stats.observedCount}{teacher.requiredObserved ? `/${teacher.requiredObserved}` : ""}
+                            </span>
+                          </div>
                         </div>
                       </button>
                     );
@@ -1672,6 +1787,13 @@ export function AdminTongHopClient({
                   <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeDetailTab === "lich-su" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
                     {filteredSlots.length}
                   </span>
+                  {teacherStats.taughtSurpriseCount > 0 && (
+                    <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold flex items-center gap-0.5 ${
+                      activeDetailTab === "lich-su" ? "bg-amber-400 text-slate-950" : "bg-amber-100 text-amber-900 border border-amber-300"
+                    }`}>
+                      ⚡ {teacherStats.taughtSurpriseCount} ĐX
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -1687,6 +1809,13 @@ export function AdminTongHopClient({
                   <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeDetailTab === "lich-su-du" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
                     {filteredObservedSlots.length}
                   </span>
+                  {teacherStats.observedSurpriseCount > 0 && (
+                    <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold flex items-center gap-0.5 ${
+                      activeDetailTab === "lich-su-du" ? "bg-amber-400 text-slate-950" : "bg-amber-100 text-amber-900 border border-amber-300"
+                    }`}>
+                      ⚡ {teacherStats.observedSurpriseCount} ĐX
+                    </span>
+                  )}
                 </button>
 
                 <button
@@ -1742,7 +1871,7 @@ export function AdminTongHopClient({
               
               {/* Compact Filter Row */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                <div className="sm:col-span-6 relative">
+                <div className="sm:col-span-5 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                   <input
                     type="text"
@@ -1752,7 +1881,7 @@ export function AdminTongHopClient({
                     className="w-full text-xs font-bold pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:border-[#48BFE3] outline-none"
                   />
                 </div>
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-2">
                   <select 
                     value={filterLevel} 
                     onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
@@ -1765,7 +1894,7 @@ export function AdminTongHopClient({
                     <option value="Mầm non">Mầm non</option>
                   </select>
                 </div>
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-2">
                   <select 
                     value={filterGrade} 
                     onChange={e => setFilterGrade(e.target.value)}
@@ -1775,6 +1904,17 @@ export function AdminTongHopClient({
                     {Array.from(new Set(selTeacherSlots.map(s => s.grade))).filter(Boolean).sort().map(g => (
                       <option key={g} value={g}>{g}</option>
                     ))}
+                  </select>
+                </div>
+                <div className="sm:col-span-3">
+                  <select 
+                    value={filterSlotOrigin} 
+                    onChange={e => setFilterSlotOrigin(e.target.value as any)}
+                    className="w-full text-xs font-black p-2 bg-white border border-slate-200 rounded-xl text-slate-800 focus:border-[#48BFE3] outline-none"
+                  >
+                    <option value="all">Mọi hình thức</option>
+                    <option value="PLAN">📋 Theo kế hoạch</option>
+                    <option value="SURPRISE">⚡ Đột xuất</option>
                   </select>
                 </div>
               </div>
@@ -1794,6 +1934,7 @@ export function AdminTongHopClient({
                     const evals = slot.registrations?.filter((r: any) => r.evaluation !== null) || [];
                     const isMamNonBlock = slot.level === "Mầm non" || 
                       (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
+                    const isSurprise = isSurpriseSlot(slot);
 
                     return (
                       <div 
@@ -1807,6 +1948,11 @@ export function AdminTongHopClient({
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 pt-1">
                           <div className="space-y-1.5">
                             <div className="flex flex-wrap items-center gap-1.5">
+                              {isSurprise && (
+                                <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[9px] font-black flex items-center gap-1 shadow-2xs">
+                                  ⚡ Tiết dự đột xuất
+                                </span>
+                              )}
                               <span className={`px-2 py-0.5 text-[9px] font-black rounded-md uppercase ${
                                 isMamNonBlock 
                                   ? "bg-amber-100 text-amber-800 border border-amber-300" 
@@ -1826,6 +1972,11 @@ export function AdminTongHopClient({
                               {slot.className && (
                                 <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[9px] font-bold">
                                   Lớp: {slot.className}
+                                </span>
+                              )}
+                              {slot.isDoublePeriod && (
+                                <span className="px-1.5 py-0.2 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[9px] font-bold">
+                                  Tiết đôi (x2)
                                 </span>
                               )}
                             </div>
@@ -1942,7 +2093,7 @@ export function AdminTongHopClient({
               
               {/* Compact Filter Row */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 p-3 bg-slate-50 rounded-2xl border border-slate-200">
-                <div className="sm:col-span-6 relative">
+                <div className="sm:col-span-5 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                   <input
                     type="text"
@@ -1952,7 +2103,7 @@ export function AdminTongHopClient({
                     className="w-full text-xs font-bold pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:border-[#48BFE3] outline-none"
                   />
                 </div>
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-2">
                   <select 
                     value={filterLevel} 
                     onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
@@ -1965,7 +2116,7 @@ export function AdminTongHopClient({
                     <option value="Mầm non">Mầm non</option>
                   </select>
                 </div>
-                <div className="sm:col-span-3">
+                <div className="sm:col-span-2">
                   <select 
                     value={filterGrade} 
                     onChange={e => setFilterGrade(e.target.value)}
@@ -1975,6 +2126,17 @@ export function AdminTongHopClient({
                     {Array.from(new Set(selTeacherObservedSlots.map(s => s.slot.grade))).filter(Boolean).sort().map(g => (
                       <option key={g} value={g}>{g}</option>
                     ))}
+                  </select>
+                </div>
+                <div className="sm:col-span-3">
+                  <select 
+                    value={filterObservedSlotOrigin} 
+                    onChange={e => setFilterObservedSlotOrigin(e.target.value as any)}
+                    className="w-full text-xs font-black p-2 bg-white border border-slate-200 rounded-xl text-slate-800 focus:border-[#48BFE3] outline-none"
+                  >
+                    <option value="all">Mọi hình thức</option>
+                    <option value="PLAN">📋 Theo kế hoạch</option>
+                    <option value="SURPRISE">⚡ Đột xuất</option>
                   </select>
                 </div>
               </div>
@@ -1991,6 +2153,7 @@ export function AdminTongHopClient({
                   {filteredObservedSlots.map(({ slot, reg, evaluation, hostTeacher }) => {
                     const slotDate = new Date(slot.date);
                     const isMamNon = slot.level === "Mầm non";
+                    const isSurprise = isSurpriseSlot(slot);
                     const passed = isMamNon
                       ? (evaluation?.overallRating === "Tốt" || evaluation?.overallRating === "Khá" || evaluation?.overallRating === "Đạt")
                       : (evaluation?.totalScore !== null && evaluation?.totalScore !== undefined ? evaluation?.totalScore >= 14 : (evaluation?.overallRating === "Giỏi" || evaluation?.overallRating === "Khá"));
@@ -2005,6 +2168,11 @@ export function AdminTongHopClient({
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 pt-1">
                           <div className="space-y-1.5">
                             <div className="flex flex-wrap items-center gap-1.5">
+                              {isSurprise && (
+                                <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 rounded text-[9px] font-black flex items-center gap-1 shadow-2xs">
+                                  ⚡ Dự giờ đột xuất
+                                </span>
+                              )}
                               <span className="px-2 py-0.5 text-[9px] font-black rounded-md uppercase bg-teal-100 text-teal-800 border border-teal-300">
                                 {slot.level}
                               </span>
@@ -2020,6 +2188,11 @@ export function AdminTongHopClient({
                               {slot.className && (
                                 <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded text-[9px] font-bold">
                                   Lớp: {slot.className}
+                                </span>
+                              )}
+                              {slot.isDoublePeriod && (
+                                <span className="px-1.5 py-0.2 bg-purple-50 text-purple-700 border border-purple-200 rounded text-[9px] font-bold">
+                                  Tiết đôi (x2)
                                 </span>
                               )}
                               <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-md text-[10px] font-bold">
@@ -2142,11 +2315,13 @@ export function AdminTongHopClient({
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-100/80 text-[11px] font-black uppercase text-slate-700 tracking-wider">
                         <th className="py-3 px-3 text-center w-12">STT</th>
-                        <th className="py-3 px-4 min-w-[200px]">Tổ Chuyên Môn</th>
-                        <th className="py-3 px-3 text-center min-w-[110px]">Giáo Viên Tổ</th>
-                        <th className="py-3 px-3 text-center min-w-[130px]">Tổng Tiết Dạy</th>
-                        <th className="py-3 px-3 text-center min-w-[130px]">Tổng Tiết Dự</th>
-                        <th className="py-3 px-3 text-center min-w-[130px]">Gửi Mail</th>
+                        <th className="py-3 px-4 min-w-[190px]">Tổ Chuyên Môn</th>
+                        <th className="py-3 px-3 text-center min-w-[90px]">Giáo Viên Tổ</th>
+                        <th className="py-3 px-3 text-center min-w-[110px]">Tổng Tiết Dạy</th>
+                        <th className="py-3 px-3 text-center min-w-[110px] text-amber-900 bg-amber-50/50">Dạy Đột Xuất ⚡</th>
+                        <th className="py-3 px-3 text-center min-w-[110px]">Tổng Tiết Dự</th>
+                        <th className="py-3 px-3 text-center min-w-[110px] text-amber-900 bg-amber-50/50">Dự Đột Xuất ⚡</th>
+                        <th className="py-3 px-3 text-center min-w-[100px]">Gửi Mail</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
@@ -2198,8 +2373,26 @@ export function AdminTongHopClient({
                               </span>
                             </td>
                             <td className="py-3 px-3 text-center">
+                              <span className={`px-2.5 py-1 rounded-lg font-black text-[11px] border inline-block ${
+                                dept.taughtSurprise > 0 
+                                  ? "bg-amber-100/70 text-amber-900 border-amber-300 shadow-2xs" 
+                                  : "bg-slate-50 text-slate-400 border-slate-200"
+                              }`}>
+                                {dept.taughtSurprise > 0 ? `⚡ ${dept.taughtSurprise} tiết` : "0"}
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center">
                               <span className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-800 font-black text-[11px] border border-sky-200 inline-block">
                                 {dept.totalObserved} lượt
+                              </span>
+                            </td>
+                            <td className="py-3 px-3 text-center">
+                              <span className={`px-2.5 py-1 rounded-lg font-black text-[11px] border inline-block ${
+                                dept.observedSurprise > 0 
+                                  ? "bg-amber-100/70 text-amber-900 border-amber-300 shadow-2xs" 
+                                  : "bg-slate-50 text-slate-400 border-slate-200"
+                              }`}>
+                                {dept.observedSurprise > 0 ? `⚡ ${dept.observedSurprise} lượt` : "0"}
                               </span>
                             </td>
                             <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
@@ -2216,6 +2409,29 @@ export function AdminTongHopClient({
                         );
                       })}
                     </tbody>
+                    <tfoot className="bg-slate-50 font-black text-xs border-t-2 border-slate-300 text-slate-800">
+                      <tr>
+                        <td colSpan={2} className="py-3 px-4 uppercase text-slate-700 font-black">
+                          Tổng Toàn Bộ ({allDepartmentsSummary.length} Tổ CM)
+                        </td>
+                        <td className="py-3 px-3 text-center font-black">
+                          {allDepartmentsSummary.reduce((sum: number, d: any) => sum + (d.teacherCount || 0), 0)} GV
+                        </td>
+                        <td className="py-3 px-3 text-center font-black text-emerald-800">
+                          {allDepartmentsSummary.reduce((sum: number, d: any) => sum + (d.totalTaught || 0), 0)} tiết
+                        </td>
+                        <td className="py-3 px-3 text-center font-black text-amber-900 bg-amber-50/50">
+                          ⚡ {allDepartmentsSummary.reduce((sum: number, d: any) => sum + (d.taughtSurprise || 0), 0)} tiết
+                        </td>
+                        <td className="py-3 px-3 text-center font-black text-sky-800">
+                          {allDepartmentsSummary.reduce((sum: number, d: any) => sum + (d.totalObserved || 0), 0)} lượt
+                        </td>
+                        <td className="py-3 px-3 text-center font-black text-amber-900 bg-amber-50/50">
+                          ⚡ {allDepartmentsSummary.reduce((sum: number, d: any) => sum + (d.observedSurprise || 0), 0)} lượt
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </div>
@@ -2283,22 +2499,36 @@ export function AdminTongHopClient({
                               </div>
                             </td>
                             <td className="py-2.5 px-3 text-center">
-                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
-                                t.isTaughtMet 
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
-                                  : "bg-rose-50 text-rose-700 border-rose-200"
-                              }`}>
-                                {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught} (${t.taughtUnit})` : "tiết"}
-                              </span>
+                              <div>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
+                                  t.isTaughtMet 
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
+                                    : "bg-rose-50 text-rose-700 border-rose-200"
+                                }`}>
+                                  {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught} (${t.taughtUnit})` : "tiết"}
+                                </span>
+                                {t.taughtSurpriseCount > 0 && (
+                                  <div className="text-[9px] text-amber-800 font-extrabold mt-0.5 flex items-center justify-center gap-0.5">
+                                    ⚡ {t.taughtSurpriseCount} đột xuất
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="py-2.5 px-3 text-center">
-                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
-                                t.isObservedMet 
-                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
-                                  : "bg-amber-50 text-amber-800 border-amber-200"
-                              }`}>
-                                {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"}
-                              </span>
+                              <div>
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
+                                  t.isObservedMet 
+                                    ? "bg-emerald-50 text-emerald-800 border-emerald-200" 
+                                    : "bg-amber-50 text-amber-800 border-amber-200"
+                                }`}>
+                                  {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"}
+                                </span>
+                                {t.observedSurpriseCount > 0 && (
+                                  <div className="text-[9px] text-amber-800 font-extrabold mt-0.5 flex items-center justify-center gap-0.5">
+                                    ⚡ {t.observedSurpriseCount} đột xuất
+                                  </div>
+                                )}
+                              </div>
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               <button
@@ -2585,10 +2815,20 @@ export function AdminTongHopClient({
                 <div className="border-x border-teal-200/80 px-2">
                   <span className="text-[9px] text-slate-500 font-bold block uppercase">Tiết Dạy Hoàn Thành</span>
                   <strong className="text-sm font-black text-emerald-700">{emailPreviewSummary.totalTaught} tiết</strong>
+                  {emailPreviewSummary.taughtSurprise > 0 && (
+                    <span className="text-[9px] text-amber-800 font-bold block mt-0.5">
+                      (⚡ {emailPreviewSummary.taughtSurprise} đột xuất)
+                    </span>
+                  )}
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-500 font-bold block uppercase">Tiết Dự Hoàn Thành</span>
                   <strong className="text-sm font-black text-sky-700">{emailPreviewSummary.totalObserved} lượt</strong>
+                  {emailPreviewSummary.observedSurprise > 0 && (
+                    <span className="text-[9px] text-amber-800 font-bold block mt-0.5">
+                      (⚡ {emailPreviewSummary.observedSurprise} đột xuất)
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -2630,18 +2870,32 @@ export function AdminTongHopClient({
                             </div>
                           </td>
                           <td className="py-2 px-2 text-center">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
-                              t.isTaughtMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
-                            }`}>
-                              {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught} (${t.taughtUnit})` : "tiết"}
-                            </span>
+                            <div>
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
+                                t.isTaughtMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-700 border-rose-200"
+                              }`}>
+                                {t.taughtCount} {t.reqTaught > 0 ? `/ ${t.reqTaught} (${t.taughtUnit})` : "tiết"}
+                              </span>
+                              {t.taughtSurpriseCount > 0 && (
+                                <div className="text-[8.5px] text-amber-800 font-bold mt-0.5">
+                                  ⚡ {t.taughtSurpriseCount} ĐX
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="py-2 px-2 text-center">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
-                              t.isObservedMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"
-                            }`}>
-                              {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"}
-                            </span>
+                            <div>
+                              <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
+                                t.isObservedMet ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"
+                              }`}>
+                                {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved} (${t.observedUnit})` : "lượt"}
+                              </span>
+                              {t.observedSurpriseCount > 0 && (
+                                <div className="text-[8.5px] text-amber-800 font-bold mt-0.5">
+                                  ⚡ {t.observedSurpriseCount} ĐX
+                                </div>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -2659,6 +2913,7 @@ export function AdminTongHopClient({
                 <ul className="list-disc pl-4 space-y-0.5 text-[10.5px] text-emerald-800">
                   <li><strong>Tiết dạy:</strong> Chỉ được tính khi tiết dạy đã diễn ra, có giáo viên tham gia dự giờ <strong>VÀ người dự ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 tiết).</li>
                   <li><strong>Tiết dự:</strong> Chỉ được tính khi Giáo viên đã được duyệt tham gia dự giờ <strong>VÀ ĐÃ HOÀN TẤT GỬI PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 lượt).</li>
+                  <li><strong>Tiết đột xuất (⚡):</strong> Báo cáo tự động tổng hợp số tiết dự giờ đột xuất và tiết dạy của GV được dự đột xuất.</li>
                   <li>Email sẽ gửi toàn bộ Bảng đối chiếu chỉ tiêu chi tiết của <strong>{deptTeachers.length} Giáo viên</strong> này đến TTCM.</li>
                 </ul>
               </div>
@@ -2803,10 +3058,12 @@ export function AdminTongHopClient({
                     <thead className="bg-slate-100 text-slate-700 text-[10px] font-black uppercase sticky top-0 z-10 border-b border-slate-200">
                       <tr>
                         <th className="py-2 px-2 text-center w-8">STT</th>
-                        <th className="py-2 px-3 min-w-[160px]">Tổ Chuyên Môn</th>
-                        <th className="py-2 px-2 text-center w-24">Giáo Viên Tổ</th>
-                        <th className="py-2 px-2 text-center w-28">Tổng Tiết Dạy</th>
-                        <th className="py-2 px-2 text-center w-28">Tổng Tiết Dự</th>
+                        <th className="py-2 px-3 min-w-[150px]">Tổ Chuyên Môn</th>
+                        <th className="py-2 px-2 text-center w-20">Giáo Viên</th>
+                        <th className="py-2 px-2 text-center w-24">Tổng Dạy</th>
+                        <th className="py-2 px-2 text-center w-24 text-amber-900 bg-amber-50/50">Dạy ĐX ⚡</th>
+                        <th className="py-2 px-2 text-center w-24">Tổng Dự</th>
+                        <th className="py-2 px-2 text-center w-24 text-amber-900 bg-amber-50/50">Dự ĐX ⚡</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white text-[11px]">
@@ -2828,8 +3085,22 @@ export function AdminTongHopClient({
                             </span>
                           </td>
                           <td className="py-2 px-2 text-center">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
+                              d.taughtSurprise > 0 ? "bg-amber-100/70 text-amber-900 border-amber-300" : "bg-slate-50 text-slate-400 border-slate-200"
+                            }`}>
+                              {d.taughtSurprise > 0 ? `⚡ ${d.taughtSurprise}` : "0"}
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-center">
                             <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-sky-50 text-sky-800 border border-sky-200 inline-block">
                               {d.totalObserved} lượt
+                            </span>
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border inline-block ${
+                              d.observedSurprise > 0 ? "bg-amber-100/70 text-amber-900 border-amber-300" : "bg-slate-50 text-slate-400 border-slate-200"
+                            }`}>
+                              {d.observedSurprise > 0 ? `⚡ ${d.observedSurprise}` : "0"}
                             </span>
                           </td>
                         </tr>
@@ -2848,6 +3119,7 @@ export function AdminTongHopClient({
                 <ul className="list-disc pl-4 space-y-0.5 text-[10.5px] text-emerald-800">
                   <li><strong>Tiết dạy:</strong> Chỉ được tính khi tiết dạy đã diễn ra, có giáo viên tham gia dự giờ <strong>VÀ người dự ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 tiết).</li>
                   <li><strong>Tiết dự:</strong> Chỉ được tính khi Giáo viên đã được duyệt tham gia dự giờ <strong>VÀ ĐÃ HOÀN TẤT GỬI PHIẾU ĐÁNH GIÁ</strong>. (Tiết đôi tính 2 lượt).</li>
+                  <li><strong>Tiết đột xuất (⚡):</strong> Báo cáo tự động phân loại và thống kê riêng biệt số tiết dự giờ đột xuất và tiết dạy được dự đột xuất.</li>
                   <li>Báo cáo tổng hợp này được gửi riêng cho <strong>Ban Điều hành Chuyên môn (Ban ĐHCM)</strong>, không tự động gửi đến 19 Tổ chuyên môn.</li>
                 </ul>
               </div>

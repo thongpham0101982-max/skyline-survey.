@@ -363,6 +363,15 @@ const getKhacChuyenDeSubjectId = (subjectsList: any[]) => {
   return found ? found.id : "Chủ đề/Chuyên đề";
 };
 
+const isSurpriseSlot = (slot: any) => {
+  if (!slot) return false;
+  return (
+    slot.requestOrigin === "SURPRISE" ||
+    (typeof slot.description === "string" && (slot.description.includes("[SURPRISE]") || slot.description.toLowerCase().includes("dự giờ đột xuất"))) ||
+    (typeof slot.topic === "string" && slot.topic.toLowerCase().includes("đột xuất"))
+  );
+};
+
 export function ObservationClient(props: ObservationClientProps) {
   const {
     initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
@@ -446,6 +455,8 @@ export function ObservationClient(props: ObservationClientProps) {
   const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
+  const [taughtOriginFilter, setTaughtOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
+  const [observedOriginFilter, setObservedOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
   const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
 
@@ -1646,7 +1657,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const monthlyStats = useMemo(() => {
-    const stats: Record<string, { monthStr: string; year: number; month: number; taughtCount: number; observedCount: number }> = {};
+    const stats: Record<string, { monthStr: string; year: number; month: number; taughtCount: number; taughtSurpriseCount: number; observedCount: number; observedSurpriseCount: number }> = {};
     slots.forEach(slot => {
       const slotDate = new Date(slot.date);
       if (isNaN(slotDate.getTime())) return;
@@ -1656,6 +1667,7 @@ export function ObservationClient(props: ObservationClientProps) {
       
       const isHost = slot.teacherId === currentTeacher?.id;
       const isObserverApproved = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
+      const isSurprise = isSurpriseSlot(slot);
       
       if (!stats[key]) {
         stats[key] = {
@@ -1663,22 +1675,26 @@ export function ObservationClient(props: ObservationClientProps) {
           year,
           month,
           taughtCount: 0,
-          observedCount: 0
+          taughtSurpriseCount: 0,
+          observedCount: 0,
+          observedSurpriseCount: 0
         };
       }
       
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       if (isHost) {
         const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
-        const allEvaluated = approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation);
+        const allEvaluated = approvedRegs.length > 0 && approvedRegs.some((r: any) => !!r.evaluation);
         if (allEvaluated) {
           stats[key].taughtCount += countWeight;
+          if (isSurprise) stats[key].taughtSurpriseCount += countWeight;
         }
       }
       if (isObserverApproved) {
         const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
         if (myReg && myReg.evaluation) {
           stats[key].observedCount += countWeight;
+          if (isSurprise) stats[key].observedSurpriseCount += countWeight;
         }
       }
     });
@@ -1900,10 +1916,26 @@ export function ObservationClient(props: ObservationClientProps) {
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [slots, currentTeacher?.id]);
 
+  const displayedMyTaughtSlots = useMemo(() => {
+    return myTaughtSlots.filter(slot => {
+      if (taughtOriginFilter === "all") return true;
+      const isSurprise = isSurpriseSlot(slot);
+      return taughtOriginFilter === "SURPRISE" ? isSurprise : !isSurprise;
+    });
+  }, [myTaughtSlots, taughtOriginFilter]);
+
   const myObservedSlots = useMemo(() => {
     return slots.filter(slot => slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [slots, currentTeacher?.id]);
+
+  const displayedMyObservedSlots = useMemo(() => {
+    return myObservedSlots.filter(slot => {
+      if (observedOriginFilter === "all") return true;
+      const isSurprise = isSurpriseSlot(slot);
+      return observedOriginFilter === "SURPRISE" ? isSurprise : !isSurprise;
+    });
+  }, [myObservedSlots, observedOriginFilter]);
 
   const myObservedCount = useMemo(() => {
     let count = 0;
@@ -1917,7 +1949,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const mySurpriseObservedCount = useMemo(() => {
     let count = 0;
     slots.forEach(slot => {
-      if (slot.requestOrigin === "SURPRISE") {
+      if (isSurpriseSlot(slot)) {
         const reg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved && r.evaluation);
         if (reg) count += (slot.isDoublePeriod ? 2 : 1);
       }
@@ -1928,9 +1960,9 @@ export function ObservationClient(props: ObservationClientProps) {
   const mySurpriseTaughtCount = useMemo(() => {
     let count = 0;
     slots.forEach(slot => {
-      if (slot.teacherId === currentTeacher?.id && slot.requestOrigin === "SURPRISE") {
+      if (slot.teacherId === currentTeacher?.id && isSurpriseSlot(slot)) {
         const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
-        if (approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation)) {
+        if (approvedRegs.length > 0 && approvedRegs.some((r: any) => !!r.evaluation)) {
           count += (slot.isDoublePeriod ? 2 : 1);
         }
       }
@@ -1943,7 +1975,7 @@ export function ObservationClient(props: ObservationClientProps) {
     slots.forEach(slot => {
       if (slot.teacherId === currentTeacher?.id) {
         const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
-        if (approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation)) {
+        if (approvedRegs.length > 0 && approvedRegs.some((r: any) => !!r.evaluation)) {
           count += (slot.isDoublePeriod ? 2 : 1);
         }
       }
@@ -2148,9 +2180,19 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex gap-2">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 font-extrabold text-xs border border-teal-200/60">
                       Dạy: {stat.taughtCount}
+                      {stat.taughtSurpriseCount > 0 && (
+                        <span className="text-[10px] text-amber-800 font-black ml-1">
+                          (⚡{stat.taughtSurpriseCount})
+                        </span>
+                      )}
                     </span>
                     <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-50 text-violet-800 font-extrabold text-xs border border-violet-200/60">
                       Dự: {stat.observedCount}
+                      {stat.observedSurpriseCount > 0 && (
+                        <span className="text-[10px] text-amber-800 font-black ml-1">
+                          (⚡{stat.observedSurpriseCount})
+                        </span>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -3632,7 +3674,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                 <span className="font-black text-slate-900 truncate text-xs" title={slot.topic}>
                                   {slot.topic}
                                 </span>
-                                {slot.requestOrigin === "SURPRISE" && (
+                                {isSurpriseSlot(slot) && (
                                   <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
                                     ⚡ Đột xuất
                                   </span>
@@ -4269,19 +4311,66 @@ export function ObservationClient(props: ObservationClientProps) {
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
                       Tiết dạy của tôi (Tôi trực tiếp giảng dạy)
                     </h3>
                     <span className="px-2.5 py-0.5 text-xs font-black bg-amber-100 text-amber-900 rounded-full border border-amber-300">
                       {myTaughtSlots.length} tiết
                     </span>
+                    {myTaughtSlots.filter(s => isSurpriseSlot(s)).length > 0 && (
+                      <span className="px-2.5 py-0.5 text-xs font-black bg-rose-50 text-rose-700 rounded-full border border-rose-200 flex items-center gap-1 shadow-2xs">
+                        <span>⚡</span>
+                        <span>{myTaughtSlots.filter(s => isSurpriseSlot(s)).length} đột xuất</span>
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-400 font-medium mt-0.5">
                     Quản lý danh sách tiết bạn mở, duyệt danh sách giáo viên đăng ký tham gia dự giờ
                   </p>
                 </div>
               </div>
+
+              {/* Filter tabs */}
+              {myTaughtSlots.length > 0 && (
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setTaughtOriginFilter("all")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      taughtOriginFilter === "all"
+                        ? "bg-white text-slate-800 shadow-xs"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Tất cả ({myTaughtSlots.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTaughtOriginFilter("PLAN")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                      taughtOriginFilter === "PLAN"
+                        ? "bg-white text-teal-800 shadow-xs"
+                        : "text-slate-500 hover:text-teal-800"
+                    }`}
+                  >
+                    <span>📋 Kế hoạch</span>
+                    <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => !isSurpriseSlot(s)).length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTaughtOriginFilter("SURPRISE")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                      taughtOriginFilter === "SURPRISE"
+                        ? "bg-white text-rose-700 shadow-xs"
+                        : "text-slate-500 hover:text-rose-700"
+                    }`}
+                  >
+                    <span>⚡ Đột xuất</span>
+                    <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => isSurpriseSlot(s)).length})</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {myTaughtSlots.length === 0 ? (
@@ -4294,6 +4383,18 @@ export function ObservationClient(props: ObservationClientProps) {
                   className="mt-3 px-4 py-2 text-xs font-black text-white bg-[#008B82] hover:bg-[#007068] rounded-xl transition-all shadow-xs cursor-pointer"
                 >
                   + Mở tiết dạy mới ngay
+                </button>
+              </div>
+            ) : displayedMyTaughtSlots.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                <Calendar className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
+                <p className="text-xs font-bold text-center">Không có tiết dạy nào phù hợp với bộ lọc hình thức đã chọn.</p>
+                <button
+                  type="button"
+                  onClick={() => setTaughtOriginFilter("all")}
+                  className="mt-3 px-4 py-1.5 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition-all cursor-pointer"
+                >
+                  Xem tất cả ({myTaughtSlots.length}) tiết dạy
                 </button>
               </div>
             ) : (
@@ -4311,7 +4412,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
-                    {myTaughtSlots.map((slot, index) => {
+                    {displayedMyTaughtSlots.map((slot, index) => {
                       const slotDate = new Date(slot.date);
                       const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "Sky-Line";
 
@@ -4334,9 +4435,14 @@ export function ObservationClient(props: ObservationClientProps) {
                                 <p className="font-black text-[#003B3A] text-xs leading-snug" title={slot.topic}>
                                   {slot.topic}
                                 </p>
-                                {slot.requestOrigin === "SURPRISE" && (
+                                {isSurpriseSlot(slot) && (
                                   <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
                                     ⚡ Đột xuất
+                                  </span>
+                                )}
+                                {slot.isDoublePeriod && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-300 rounded shrink-0">
+                                    Tiết đôi (x2)
                                   </span>
                                 )}
                               </div>
@@ -4486,19 +4592,66 @@ export function ObservationClient(props: ObservationClientProps) {
                   <ClipboardList className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
                       Tiết tôi dự (Đã đăng ký tham gia)
                     </h3>
                     <span className="px-2.5 py-0.5 text-xs font-black bg-teal-100 text-teal-900 rounded-full border border-teal-300">
                       {myObservedSlots.length} tiết
                     </span>
+                    {myObservedSlots.filter(s => isSurpriseSlot(s)).length > 0 && (
+                      <span className="px-2.5 py-0.5 text-xs font-black bg-rose-50 text-rose-700 rounded-full border border-rose-200 flex items-center gap-1 shadow-2xs">
+                        <span>⚡</span>
+                        <span>{myObservedSlots.filter(s => isSurpriseSlot(s)).length} đột xuất</span>
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-400 font-medium mt-0.5">
                     Theo dõi trạng thái duyệt, tiến hành nhập phiếu chấm điểm hoặc xem lại kết quả đánh giá
                   </p>
                 </div>
               </div>
+
+              {/* Filter tabs */}
+              {myObservedSlots.length > 0 && (
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setObservedOriginFilter("all")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                      observedOriginFilter === "all"
+                        ? "bg-white text-slate-800 shadow-xs"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    Tất cả ({myObservedSlots.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setObservedOriginFilter("PLAN")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                      observedOriginFilter === "PLAN"
+                        ? "bg-white text-teal-800 shadow-xs"
+                        : "text-slate-500 hover:text-teal-800"
+                    }`}
+                  >
+                    <span>📋 Kế hoạch</span>
+                    <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => !isSurpriseSlot(s)).length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setObservedOriginFilter("SURPRISE")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                      observedOriginFilter === "SURPRISE"
+                        ? "bg-white text-rose-700 shadow-xs"
+                        : "text-slate-500 hover:text-rose-700"
+                    }`}
+                  >
+                    <span>⚡ Đột xuất</span>
+                    <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => isSurpriseSlot(s)).length})</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {myObservedSlots.length === 0 ? (
@@ -4511,6 +4664,18 @@ export function ObservationClient(props: ObservationClientProps) {
                   className="mt-3 px-4 py-2 text-xs font-black text-white bg-[#008B82] hover:bg-[#007068] rounded-xl transition-all shadow-xs cursor-pointer"
                 >
                   Xem danh sách tiết dạy để đăng ký
+                </button>
+              </div>
+            ) : displayedMyObservedSlots.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
+                <p className="text-xs font-bold text-center">Không có tiết dự nào phù hợp với bộ lọc hình thức đã chọn.</p>
+                <button
+                  type="button"
+                  onClick={() => setObservedOriginFilter("all")}
+                  className="mt-3 px-4 py-1.5 text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 rounded-xl transition-all cursor-pointer"
+                >
+                  Xem tất cả ({myObservedSlots.length}) tiết dự
                 </button>
               </div>
             ) : (
@@ -4529,7 +4694,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
-                    {myObservedSlots.map((slot, index) => {
+                    {displayedMyObservedSlots.map((slot, index) => {
                       const slotDate = new Date(slot.date);
                       const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
                       const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "Sky-Line";
@@ -4570,9 +4735,14 @@ export function ObservationClient(props: ObservationClientProps) {
                                 <p className="font-black text-[#003B3A] text-xs leading-snug" title={slot.topic}>
                                   {slot.topic}
                                 </p>
-                                {slot.requestOrigin === "SURPRISE" && (
+                                {isSurpriseSlot(slot) && (
                                   <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
                                     ⚡ Đột xuất
+                                  </span>
+                                )}
+                                {slot.isDoublePeriod && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-300 rounded shrink-0">
+                                    Tiết đôi (x2)
                                   </span>
                                 )}
                               </div>
@@ -4785,7 +4955,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       <h3 className="font-black text-base sm:text-lg flex items-center gap-2">
                         <ClipboardList className="w-5 h-5" /> Phiếu Đánh Giá Tiết Dự Giờ
                       </h3>
-                      {evalModal.slot.requestOrigin === "SURPRISE" && (
+                      {isSurpriseSlot(evalModal.slot) && (
                         <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-rose-500/90 text-white border border-rose-300/40 shadow-2xs">
                           ⚡ Dự giờ đột xuất
                         </span>

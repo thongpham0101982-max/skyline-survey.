@@ -24,8 +24,12 @@ export async function GET() {
       }
     }
 
+    const upperRole = roleCode.toUpperCase().trim()
     const readableModules = await getRoleReadableModules(roleCode)
-    const defaultRoute = await getDefaultRouteForRole(roleCode)
+    let defaultRoute = await getDefaultRouteForRole(roleCode)
+    if (["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(upperRole)) {
+      defaultRoute = "/teacher"
+    }
 
     return NextResponse.json({
       role: roleCode,

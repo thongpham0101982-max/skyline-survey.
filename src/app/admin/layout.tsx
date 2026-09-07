@@ -1,6 +1,8 @@
 export const dynamic = "force-dynamic"
 import { ChatBotWidget } from "@/components/ChatBotWidget"
 import { redirect } from "next/navigation"
+import Link from "next/link"
+import { GraduationCap } from "lucide-react"
 
 import { Sidebar } from "@/components/Sidebar"
 import { NotificationBell } from "@/components/NotificationBell"
@@ -24,11 +26,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   const roleCode = (session?.user as any)?.role || "PARENT"
+  const upperRole = (roleCode || "").toUpperCase().trim()
   let readableModules: string[] = []
   let taskCount = 0
   let isTTCM = false
+  let hasTeacherProfile = false
 
   try {
+    const pAny = prisma as any
     readableModules = await getRoleReadableModules(roleCode)
     if (pAny && pAny.workTask) {
       const currentUserId = (session?.user as any)?.id || ""
@@ -44,18 +49,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     if (session?.user?.id) {
       const teacher = await prisma.teacher.findUnique({
         where: { userId: session.user.id },
-        select: { position: true }
+        select: { position: true, id: true }
       }).catch(() => null)
-      isTTCM = teacher?.position === "TTCM"
+      if (teacher) {
+        hasTeacherProfile = true
+        isTTCM = teacher?.position === "TTCM"
+      }
     }
   } catch (error) {
     console.error("Admin layout DB error:", error)
   }
 
-  // Redirect teachers without admin permissions to the teacher workspace
-  const isTeacher = ['TEACHER', 'GV_MN'].includes(roleCode);
-  if (isTeacher && roleCode !== "ADMIN" && readableModules.length === 0) {
-    redirect("/teacher")
+  const isTeacherUser = ["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(upperRole) || hasTeacherProfile;
+
+  // Redirect teachers without specific admin permissions to the teacher workspace
+  if (["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(upperRole) && !["ADMIN", "SUPER_ADMIN"].includes(upperRole)) {
+    const adminOnlyModules = readableModules.filter(m => !["TASKS", "WEEKLY_REPORTS"].includes(m))
+    if (adminOnlyModules.length === 0) {
+      redirect("/teacher")
+    }
   }
 
   return (
@@ -76,6 +88,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <span className="mx-2">/</span>
               <span>Workspace</span>
             </div>
+            {isTeacherUser && (
+              <Link 
+                href="/teacher" 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-[#1E8B87] hover:bg-teal-100/80 font-bold text-xs transition-all shadow-xs"
+              >
+                <GraduationCap className="w-4 h-4 text-[#1E8B87]" />
+                <span>Giao diện Giáo viên</span>
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <AcademicYearSelector />

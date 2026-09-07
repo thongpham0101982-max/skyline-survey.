@@ -87,6 +87,9 @@ export async function getDefaultRouteForRole(roleCode: string): Promise<string |
   if (upper === "ADMIN" || upper === "SUPER_ADMIN" || upper === "SUPERADMIN") {
     return "/admin"
   }
+  if (["TEACHER", "GV_MN", "GVNN", "GV", "GIAO_VIEN"].includes(upper)) {
+    return "/teacher"
+  }
 
   const readable = await getRoleReadableModules(roleCode)
   if (!readable || readable.length === 0) {
