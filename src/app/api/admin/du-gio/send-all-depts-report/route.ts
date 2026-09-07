@@ -152,7 +152,9 @@ export async function POST(req: Request) {
         slots.forEach(slot => {
           const isHost = teacherIds.has(slot.teacherId);
           const increment = slot.isDoublePeriod ? 2 : 1;
-          const hasEvaluations = slot.registrations?.some(r => r.evaluation !== null && r.evaluation !== undefined);
+          const hasEvaluations = slot.registrations?.some(
+            r => r.evaluation !== null && r.evaluation !== undefined && r.evaluation?.reEvaluationStatus !== "DRAFT"
+          );
           const isSurprise = isSurpriseSlot(slot);
 
           if (isHost && hasEvaluations) {
@@ -161,7 +163,7 @@ export async function POST(req: Request) {
           }
 
           slot.registrations?.forEach(reg => {
-            if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
+            if (reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && teacherIds.has(reg.teacherId)) {
               totalObserved += increment;
               if (isSurprise) observedSurprise += increment;
             }

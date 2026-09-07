@@ -189,8 +189,10 @@ export async function POST(req: Request) {
       const increment = slot.isDoublePeriod ? 2 : 1;
       const isSurprise = isSurpriseSlot(slot);
 
-      // Tiết dạy chỉ tính khi CÓ PHIẾU ĐÁNH GIÁ từ người dự
-      const hasEvaluations = slot.registrations?.some(r => r.evaluation !== null && r.evaluation !== undefined);
+      // Tiết dạy chỉ tính khi CÓ PHIẾU ĐÁNH GIÁ từ người dự (loại bỏ DRAFT/chờ)
+      const hasEvaluations = slot.registrations?.some(
+        r => r.evaluation !== null && r.evaluation !== undefined && r.evaluation?.reEvaluationStatus !== "DRAFT"
+      );
 
       if (isDeptHost) {
         if (hasEvaluations) {
@@ -205,15 +207,15 @@ export async function POST(req: Request) {
         deptTeachingSlots.push(slot);
 
         slot.registrations?.forEach(reg => {
-          if (reg.evaluation && teacherStatsMap[slot.teacherId]) {
+          if (reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && teacherStatsMap[slot.teacherId]) {
             teacherStatsMap[slot.teacherId].evaluationsReceived.push(reg.evaluation);
           }
         });
       }
 
-      // Tiết dự chỉ tính khi ĐƯỢC DUYỆT và ĐÃ HOÀN TẤT ĐÁNH GIÁ
+      // Tiết dự chỉ tính khi ĐƯỢC DUYỆT và ĐÃ HOÀN TẤT ĐÁNH GIÁ (loại bỏ DRAFT/chờ)
       slot.registrations?.forEach(reg => {
-        if (reg.isApproved && reg.evaluation && teacherIds.includes(reg.teacherId)) {
+        if (reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && teacherIds.includes(reg.teacherId)) {
           if (teacherStatsMap[reg.teacherId]) {
             teacherStatsMap[reg.teacherId].observedCount += increment;
             if (isSurprise) {

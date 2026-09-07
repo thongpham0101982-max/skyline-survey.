@@ -320,7 +320,10 @@ export function AdminTongHopClient({
       const isSurprise = isSurpriseSlot(slot);
 
       if (statsMap[slot.teacherId]) {
-        const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null);
+        // Chỉ tính tiết dạy khi CÓ PHIẾU ĐÁNH GIÁ (loại bỏ phiếu DRAFT/chờ)
+        const hasEvaluations = slot.registrations?.some(
+          (r: any) => r.evaluation !== null && r.evaluation !== undefined && r.evaluation?.reEvaluationStatus !== "DRAFT"
+        );
         if (hasEvaluations) {
           const increment = slot.isDoublePeriod ? 2 : 1;
           statsMap[slot.teacherId].taughtCount += increment;
@@ -331,7 +334,8 @@ export function AdminTongHopClient({
       }
 
       slot.registrations?.forEach((reg: any) => {
-        if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
+        // Chỉ tính tiết dự khi đã duyệt và ĐÃ HOÀN THÀNH ĐÁNH GIÁ (loại bỏ phiếu DRAFT/chờ)
+        if (reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && statsMap[reg.teacherId]) {
           const increment = slot.isDoublePeriod ? 2 : 1;
           statsMap[reg.teacherId].observedCount += increment;
           if (isSurprise) statsMap[reg.teacherId].observedSurpriseCount += increment;
@@ -435,7 +439,7 @@ export function AdminTongHopClient({
         if (`${yyyy}-${mm}` !== selectedMonth) return;
       }
       slot.registrations?.forEach((r: any) => {
-        if (r.evaluation) {
+        if (r.evaluation && r.evaluation?.reEvaluationStatus !== "DRAFT") {
           totalEvaluations++;
           const isK12 = slot.level !== "Mầm non";
           const passed = isK12
@@ -467,7 +471,7 @@ export function AdminTongHopClient({
   const getSlotAverageScore = (slot: any) => {
     const isK12 = !["Mầm non"].includes(slot.level);
     const passedEvals = slot.registrations?.filter((r: any) => {
-      if (!r.evaluation) return false;
+      if (!r.evaluation || r.evaluation?.reEvaluationStatus === "DRAFT") return false;
       const passed = isK12
         ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
         : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá" || r.evaluation.overallRating === "Đạt");
@@ -487,6 +491,12 @@ export function AdminTongHopClient({
     if (!selectedTeacherId) return [];
     return initialSlots.filter(s => {
       if (s.teacherId !== selectedTeacherId) return false;
+      // Chỉ thống kê các tiết dạy CÓ PHIẾU ĐÁNH GIÁ (loại bỏ các tiết đăng ký mà không có phiếu đánh giá / chờ)
+      const hasEvaluations = s.registrations?.some(
+        (r: any) => r.evaluation !== null && r.evaluation !== undefined && r.evaluation?.reEvaluationStatus !== "DRAFT"
+      );
+      if (!hasEvaluations) return false;
+
       if (selectedMonth !== "all") {
         if (!s.date) return false;
         const d = new Date(s.date);
@@ -499,7 +509,7 @@ export function AdminTongHopClient({
     });
   }, [selectedTeacherId, initialSlots, selectedMonth]);
 
-  // Selected teacher's observed slots (where this teacher is the observer)
+  // Selected teacher's observed slots (where this teacher is the observer and completed evaluation)
   const selTeacherObservedSlots = useMemo(() => {
     if (!selectedTeacherId) return [];
     const results: any[] = [];
@@ -513,7 +523,8 @@ export function AdminTongHopClient({
         if (`${yyyy}-${mm}` !== selectedMonth) return;
       }
       slot.registrations?.forEach((reg: any) => {
-        if (reg.teacherId === selectedTeacherId && reg.isApproved) {
+        // Chỉ lấy các tiết dự đã duyệt VÀ ĐÃ HOÀN THÀNH ĐÁNH GIÁ (phiếu ở trạng thái chờ/draft thì không thống kê)
+        if (reg.teacherId === selectedTeacherId && reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT") {
           results.push({
             slot,
             reg,
@@ -629,7 +640,9 @@ export function AdminTongHopClient({
 
         const isHost = teacherIds.has(slot.teacherId);
         const increment = slot.isDoublePeriod ? 2 : 1;
-        const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+        const hasEvaluations = slot.registrations?.some(
+          (r: any) => r.evaluation !== null && r.evaluation !== undefined && r.evaluation?.reEvaluationStatus !== "DRAFT"
+        );
         const isSurprise = isSurpriseSlot(slot);
 
         if (isHost && hasEvaluations) {
@@ -638,7 +651,7 @@ export function AdminTongHopClient({
         }
 
         slot.registrations?.forEach((reg: any) => {
-          if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
+          if (reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && teacherIds.has(reg.teacherId)) {
             totalObserved += increment;
             if (isSurprise) observedSurprise += increment;
           }
@@ -873,7 +886,9 @@ export function AdminTongHopClient({
 
               const isHost = teacherIds.has(slot.teacherId);
               const increment = slot.isDoublePeriod ? 2 : 1;
-              const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+              const hasEvaluations = slot.registrations?.some(
+                (r: any) => r.evaluation !== null && r.evaluation !== undefined && r.evaluation?.reEvaluationStatus !== "DRAFT"
+              );
               const isSurprise = isSurpriseSlot(slot);
 
               if (isHost) {
@@ -882,7 +897,7 @@ export function AdminTongHopClient({
                   if (isSurprise) deptSurpriseTaught += increment;
                 }
                 slot.registrations?.forEach((r: any) => {
-                  if (r.evaluation) {
+                  if (r.evaluation && r.evaluation?.reEvaluationStatus !== "DRAFT") {
                     totalEvals++;
                     const isK12 = slot.level !== "Mầm non";
                     const passed = isK12
@@ -894,7 +909,7 @@ export function AdminTongHopClient({
               }
 
               slot.registrations?.forEach((reg: any) => {
-                if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
+                if (reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && teacherIds.has(reg.teacherId)) {
                   deptObserved += increment;
                   if (isSurprise) deptSurpriseObserved += increment;
                 }
@@ -1054,7 +1069,9 @@ export function AdminTongHopClient({
       const isSurprise = isSurpriseSlot(slot);
 
       if (statsMap[slot.teacherId]) {
-        const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null);
+        const hasEvaluations = slot.registrations?.some(
+          (r: any) => r.evaluation !== null && r.evaluation !== undefined && r.evaluation?.reEvaluationStatus !== "DRAFT"
+        );
         if (hasEvaluations) {
           const increment = slot.isDoublePeriod ? 2 : 1;
           statsMap[slot.teacherId].taughtCount += increment;
@@ -1063,7 +1080,7 @@ export function AdminTongHopClient({
       }
 
       slot.registrations?.forEach((reg: any) => {
-        if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
+        if (reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && statsMap[reg.teacherId]) {
           const increment = slot.isDoublePeriod ? 2 : 1;
           statsMap[reg.teacherId].observedCount += increment;
           if (isSurprise) statsMap[reg.teacherId].observedSurpriseCount += increment;
@@ -1143,7 +1160,9 @@ export function AdminTongHopClient({
 
         const isHost = teacherIds.has(slot.teacherId);
         const increment = slot.isDoublePeriod ? 2 : 1;
-        const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+        const hasEvaluations = slot.registrations?.some(
+          (r: any) => r.evaluation !== null && r.evaluation !== undefined && r.evaluation?.reEvaluationStatus !== "DRAFT"
+        );
         const isSurprise = isSurpriseSlot(slot);
 
         if (isHost) {
@@ -1152,7 +1171,7 @@ export function AdminTongHopClient({
             if (isSurprise) taughtSurprise += increment;
           }
           slot.registrations?.forEach((r: any) => {
-            if (r.evaluation) {
+            if (r.evaluation && r.evaluation?.reEvaluationStatus !== "DRAFT") {
               totalEvals++;
               const isK12 = slot.level !== "Mầm non";
               const passed = isK12
@@ -1164,7 +1183,7 @@ export function AdminTongHopClient({
         }
 
         slot.registrations?.forEach((reg: any) => {
-          if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
+          if (reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT" && teacherIds.has(reg.teacherId)) {
             totalObserved += increment;
             if (isSurprise) observedSurprise += increment;
           }
@@ -1266,7 +1285,7 @@ export function AdminTongHopClient({
     const evals: any[] = [];
     selTeacherSlots.forEach(slot => {
       slot.registrations?.forEach((reg: any) => {
-        if (reg.evaluation) {
+        if (reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT") {
           evals.push({
             evaluation: reg.evaluation,
             level: slot.level,
@@ -1370,7 +1389,7 @@ export function AdminTongHopClient({
         if (d2.getFullYear() + "-" + mm2 !== selectedMonth) return;
       }
       sl.registrations?.forEach((r: any) => { 
-        if (r.evaluation) dep.push({ ev: r.evaluation, lv: sl.level }); 
+        if (r.evaluation && r.evaluation?.reEvaluationStatus !== "DRAFT") dep.push({ ev: r.evaluation, lv: sl.level }); 
       });
     });
 
@@ -1931,7 +1950,9 @@ export function AdminTongHopClient({
                   {filteredSlots.map(slot => {
                     const avgScore = getSlotAverageScore(slot);
                     const slotDate = new Date(slot.date);
-                    const evals = slot.registrations?.filter((r: any) => r.evaluation !== null) || [];
+                    const evals = slot.registrations?.filter(
+                      (r: any) => r.evaluation !== null && r.evaluation?.reEvaluationStatus !== "DRAFT"
+                    ) || [];
                     const isMamNonBlock = slot.level === "Mầm non" || 
                       (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
                     const isSurprise = isSurpriseSlot(slot);
