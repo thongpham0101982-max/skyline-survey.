@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic"
 export const revalidate = 0
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
+import { getDefaultRouteForRole, getRoleReadableModules } from "@/lib/permissions"
 
 export default async function Home() {
   const session = await auth()
@@ -10,37 +11,54 @@ export default async function Home() {
     redirect("/login")
   }
 
-  const role = (session.user as any)?.role || "PARENT"
-  
-  if (role === "STUDENT") {
-    redirect("/hocsinh/hs-khaosat/danh-sach")
-  } else if (["TEACHER", "GV_MN"].includes(role)) {
-    redirect("/teacher")
-  } else if (role === "PARENT") {
-    redirect("/parent")
-  } else if (role === "KT_DBCL") {
-    redirect("/admin/surveys")
-  } else if (["BGH_MN", "BGH MN", "BGH_MAM_NON"].includes(role)) {
-    redirect("/admin/xet-duyet-ket-qua")
-  } else if (["TVAN", "TVTS"].includes(role)) {
-    redirect("/admin/ho-so-hoc-sinh")
-  } else if (["GIAO_VU", "GIAO_VU_CS"].includes(role)) {
-    redirect("/admin/thoi-khoa-bieu")
-  } else if (["GDCS", "GĐCS"].includes(role)) {
-    redirect("/admin/xet-duyet-ket-qua")
-  } else {
-    try {
-      const { prisma } = require("@/lib/db");
-      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
-      if (teacher) {
-        redirect("/teacher");
+  let role = (session.user as any)?.role || "PARENT"
+  try {
+    const { prisma } = require("@/lib/db")
+    if (session.user.id) {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+      })
+      if (dbUser?.role) {
+        role = dbUser.role
       }
-    } catch (e) {
-      console.error("Defensive teacher redirect check failed:", e);
     }
-    if (role !== "ADMIN" && role !== "Admin") {
-      redirect("/admin/xet-duyet-ket-qua");
+  } catch (e) {}
+
+  const upperRole = role.toUpperCase().trim()
+  
+  if (upperRole === "STUDENT") {
+    redirect("/hocsinh/hs-khaosat/danh-sach")
+  } else if (upperRole === "PARENT") {
+    redirect("/parent")
+  } else if (upperRole === "ADMIN" || upperRole === "SUPER_ADMIN") {
+    redirect("/admin")
+  } else {
+    // Check if user is a teacher without any admin permissions
+    try {
+      const { prisma } = require("@/lib/db")
+      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+      if (teacher) {
+        const readable = await getRoleReadableModules(role)
+        if (readable.length === 0) {
+          redirect("/teacher")
+        }
+      }
+    } catch (e: any) {
+      if (e?.digest?.includes("NEXT_REDIRECT")) throw e
+      console.error("Teacher check in Home:", e)
     }
+
+    // Determine default landing page based on database permissions
+    const defaultRoute = await getDefaultRouteForRole(role)
+    if (defaultRoute) {
+      redirect(defaultRoute)
+    }
+
+    if (["TEACHER", "GV_MN"].includes(upperRole)) {
+      redirect("/teacher")
+    }
+
     redirect("/admin")
   }
 }

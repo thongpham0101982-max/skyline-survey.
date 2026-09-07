@@ -103,7 +103,9 @@ export default function AdminDashboard() {
 
   const userName = session?.user?.name || "Thành viên"
   const roleCode = (session?.user as any)?.role || ""
-  const isSuperAdmin = roleCode === "ADMIN" || roleCode === "Admin"
+  const isSuperAdmin = roleCode === "ADMIN" || roleCode === "Admin" || roleCode === "SUPER_ADMIN"
+  const [noPermission, setNoPermission] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   // Initial read of stored academic year
   useEffect(() => {
@@ -113,19 +115,24 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (status === "authenticated" && !isSuperAdmin) {
-      if (["BGH_MN", "BGH MN", "BGH_MAM_NON"].includes(roleCode)) {
-        window.location.replace("/admin/xet-duyet-ket-qua")
-      } else if (["TVAN", "TVTS"].includes(roleCode)) {
-        window.location.replace("/admin/ho-so-hoc-sinh")
-      } else if (["GIAO_VU", "GIAO_VU_CS"].includes(roleCode)) {
-        window.location.replace("/admin/thoi-khoa-bieu")
-      } else if (["KT_DBCL", "KHAO_THI"].includes(roleCode)) {
-        window.location.replace("/admin/surveys")
-      } else if (["GDCS", "GĐCS"].includes(roleCode)) {
-        window.location.replace("/admin/xet-duyet-ket-qua")
-      } else {
-        window.location.replace("/admin/xet-duyet-ket-qua")
-      }
+      setIsRedirecting(true)
+      fetch("/api/user-permissions")
+        .then(r => r.json())
+        .then(data => {
+          if (data?.defaultRoute && data.defaultRoute !== "/admin") {
+            window.location.replace(data.defaultRoute)
+          } else if (!data?.readableModules || data.readableModules.length === 0) {
+            setIsRedirecting(false)
+            setNoPermission(true)
+          } else {
+            setIsRedirecting(false)
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch user permissions:", err)
+          setIsRedirecting(false)
+          setNoPermission(true)
+        })
     }
   }, [status, isSuperAdmin, roleCode])
 
@@ -192,6 +199,29 @@ export default function AdminDashboard() {
   const handleCampusSelect = (campusId: string) => {
     setSelectedCampusId(campusId)
     fetchMetrics(false, selectedYearId, campusId)
+  }
+
+  if (isRedirecting) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 space-y-4">
+        <Loader2 className="w-12 h-12 text-[#48BFE3] animate-spin opacity-80" />
+        <p className="text-slate-500 font-bold tracking-wider uppercase text-xs">Đang chuyển hướng đến trang làm việc theo phân quyền...</p>
+      </div>
+    )
+  }
+
+  if (noPermission) {
+    return (
+      <div className="flex flex-col items-center justify-center py-28 text-center max-w-md mx-auto">
+        <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold">
+          <AlertCircle className="w-10 h-10 text-amber-500" />
+        </div>
+        <h3 className="text-base font-black text-slate-800 mb-2">Tài khoản chưa được phân quyền</h3>
+        <p className="text-sm text-slate-500 font-medium leading-relaxed">
+          Tài khoản của bạn ({roleCode}) hiện chưa được cấp quyền truy cập chức năng nào trong hệ thống. Vui lòng liên hệ Quản trị viên để được cấp quyền.
+        </p>
+      </div>
+    )
   }
 
   if (status === "loading" || loading) {

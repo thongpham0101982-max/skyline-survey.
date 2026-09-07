@@ -92,21 +92,22 @@ export function LoginClient() {
           setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
           addStep('Đăng nhập thành công! Đang chuyển trang...')
           
-          const sessRes = await fetch('/api/auth/session').then(r => r.json()).catch(() => null)
-          const userRole = sessRes?.user?.role
-
-          await new Promise(r => setTimeout(r, 300))
+          const [sessRes, permRes] = await Promise.all([
+            fetch('/api/auth/session').then(r => r.json()).catch(() => null),
+            fetch('/api/user-permissions').then(r => r.json()).catch(() => null)
+          ]);
+          const userRole = (sessRes?.user?.role || '').toUpperCase().trim();
 
           if (userRole === 'PARENT') {
             window.location.href = '/parent'
-          } else if (userRole && ['TEACHER', 'GV_MN'].includes(userRole)) {
-            window.location.href = '/teacher'
           } else if (userRole === 'STUDENT') {
             window.location.href = '/hocsinh/hs-khaosat/danh-sach'
-          } else if (userRole === 'KT_DBCL') {
-            window.location.href = '/admin/surveys'
-          } else if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'GDCS' || userRole === 'BGH') {
+          } else if (['TEACHER', 'GV_MN'].includes(userRole) && (!permRes?.readableModules || permRes.readableModules.length === 0)) {
+            window.location.href = '/teacher'
+          } else if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN') {
             window.location.href = '/admin'
+          } else if (permRes?.defaultRoute) {
+            window.location.href = permRes.defaultRoute
           } else {
             window.location.href = '/admin'
           }

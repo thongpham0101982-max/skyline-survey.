@@ -122,7 +122,8 @@ export default async function PhanCongKhaoSatPage() {
   let rolePermissions: any[] = [];
   try {
     const roleCode = (session?.user as any)?.role || "ADMIN";
-    rolePermissions = await prisma.permission.findMany({ where: { roleCode } });
+    const { getRolePermissions } = await import("@/lib/permissions");
+    rolePermissions = await getRolePermissions(roleCode);
   } catch {}
 
   return (

@@ -129,7 +129,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
         // 14. activeYear
         pAny.academicYear ? getDefaultAcademicYear(pAny).catch(() => null) : Promise.resolve(null),
         // 15. rolePermissions
-        pAny.permission ? pAny.permission.findMany({ where: { roleCode } }).catch(() => []) : Promise.resolve([]),
+        import("@/lib/permissions").then(m => m.getRolePermissions(roleCode)).catch(() => []),
         // 16. destinationSchools
         pAny.destinationSchool ? pAny.destinationSchool.findMany({
           orderBy: [{ level: "desc" }, { name: "asc" }]

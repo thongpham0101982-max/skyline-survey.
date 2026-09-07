@@ -1,7 +1,9 @@
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { XetDuyetKetQuaClient } from "./client"
+import { hasModulePermission, getDefaultRouteForRole } from "@/lib/permissions"
 
 export const metadata = { title: "Xét duyệt Kết quả | Admin" }
 export const dynamic = "force-dynamic";
@@ -14,10 +16,27 @@ export default async function XetDuyetKetQuaPage() {
     console.error("Auth error:", e);
   }
   
-  const user = session?.user as any;
-  const userRole = (user?.role || "").toUpperCase();
-  const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
-  const allowedCampusIds = user?.campusIds || [];
+  if (!session?.user) {
+    redirect("/login");
+  }
+
+  const rawRole = (session?.user as any)?.role || "";
+  const userRole = rawRole.toUpperCase().trim();
+  const isAdmin = userRole === "ADMIN" || userRole === "SUPER_ADMIN" || userRole === "KT_DBCL" || userRole === "KTDBCL";
+  const isBghPreschoolRole = ["BGH_MN", "BGH MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole);
+  const isGdcsRole = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+
+  const hasK12 = isAdmin || await hasModulePermission(rawRole, ["INPUT_ASSESSMENTS_REPORTS", "XET_DUYET_KET_QUA"]);
+  const hasPreschool = isAdmin || isBghPreschoolRole || isGdcsRole || await hasModulePermission(rawRole, ["XET_DUYET_MAM_NON", "XET_DUYET_KET_QUA", "PRESCHOOL_INPUT_ASSESSMENTS"]);
+
+  if (!hasK12 && !hasPreschool) {
+    const defaultRoute = await getDefaultRouteForRole(rawRole);
+    if (defaultRoute && defaultRoute !== "/admin/xet-duyet-ket-qua") {
+      redirect(defaultRoute);
+    }
+  }
+
+  const allowedCampusIds = (session?.user as any)?.campusIds || [];
   let liveCampusIds = [...allowedCampusIds];
   try {
     if (user?.id) {
@@ -188,9 +207,8 @@ export default async function XetDuyetKetQuaPage() {
         rolePermissions={await (async () => {
           try {
             const roleCode = (session?.user as any)?.role || "ADMIN";
-            return await prisma.permission.findMany({
-              where: { roleCode }
-            });
+            const { getRolePermissions } = await import("@/lib/permissions");
+            return await getRolePermissions(roleCode);
           } catch (e) {
             console.error("Error fetching permissions for xet-duyet-ket-qua page:", e);
             return [];

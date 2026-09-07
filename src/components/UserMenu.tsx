@@ -10,9 +10,10 @@ import Link from "next/link";
 
 interface UserMenuProps {
   session: any;
+  permissionModules?: string[];
 }
 
-export function UserMenu({ session }: UserMenuProps) {
+export function UserMenu({ session, permissionModules }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [notifs, setNotifs] = useState<any[]>([]);
@@ -82,14 +83,22 @@ export function UserMenu({ session }: UserMenuProps) {
                 </div>
 
                 <div className="space-y-0.5">
-                  <Link
-                    href="/admin/xet-duyet-ket-qua"
-                    onClick={() => setIsOpen(false)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-[#1E8B87] bg-teal-50/60 hover:bg-teal-100/80 transition-all text-left mb-1"
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-[#1E8B87] shrink-0" />
-                    <span>Xét duyệt kết quả</span>
-                  </Link>
+                  {(() => {
+                    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+                    const isSuper = userRole === "ADMIN" || userRole === "SUPER_ADMIN";
+                    const canAccess = isSuper || (permissionModules && permissionModules.some(m => ["XET_DUYET_KET_QUA", "INPUT_ASSESSMENTS_REPORTS", "XET_DUYET_MAM_NON"].includes(m)));
+                    if (!canAccess) return null;
+                    return (
+                      <Link
+                        href="/admin/xet-duyet-ket-qua"
+                        onClick={() => setIsOpen(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-[#1E8B87] bg-teal-50/60 hover:bg-teal-100/80 transition-all text-left mb-1"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-[#1E8B87] shrink-0" />
+                        <span>Xét duyệt kết quả</span>
+                      </Link>
+                    );
+                  })()}
                   <button
                     onClick={() => {
                       setIsOpen(false);

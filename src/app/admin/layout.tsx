@@ -9,6 +9,7 @@ import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { prisma } from "@/lib/db"
 import { APP_CATEGORIES } from "@/config/modules"
+import { getRoleReadableModules } from "@/lib/permissions"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   let session: any = null
@@ -28,36 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   let isTTCM = false
 
   try {
-    const pAny = prisma as any
-    if (pAny && pAny.permission) {
-      const normRole = (roleCode || "").trim()
-      const roleVariants = Array.from(new Set([
-        normRole,
-        normRole.toUpperCase(),
-        normRole.toLowerCase(),
-        normRole.replace(/\s+/g, "_"),
-        normRole.replace(/_/g, " "),
-        normRole.toUpperCase().replace(/\s+/g, "_"),
-        normRole.toUpperCase().replace(/_/g, " ")
-      ]))
-
-      const permissions = await pAny.permission.findMany({ 
-        where: { roleCode: { in: roleVariants } } 
-      }).catch(() => [])
-      readableModules = permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
-
-      const categories = APP_CATEGORIES
-      categories.forEach((cat: any) => {
-        cat.modules.forEach((m: any) => {
-          if (m.subModules && m.subModules.length > 0) {
-            const hasReadableSub = m.subModules.some((sub: any) => readableModules.includes(sub.code))
-            if (hasReadableSub && !readableModules.includes(m.code)) {
-              readableModules.push(m.code)
-            }
-          }
-        })
-      })
-    }
+    readableModules = await getRoleReadableModules(roleCode)
     if (pAny && pAny.workTask) {
       const currentUserId = (session?.user as any)?.id || ""
       taskCount = await pAny.workTask.count({
@@ -108,7 +80,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="flex items-center gap-4">
             <AcademicYearSelector />
             <NotificationBell />
-            <UserMenu session={session} />
+            <UserMenu session={session} permissionModules={readableModules} />
           </div>
         </header>
         <div className="p-4 sm:p-6 md:p-8 flex-1 overflow-x-hidden overflow-y-auto text-xs font-semibold">

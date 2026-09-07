@@ -23,7 +23,15 @@ export default async function AdminStudentProfilesPage() {
 
   const user = session.user as any
   const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
-  if (!ALLOWED_ROLES.includes(user?.role)) {
+  const { hasModulePermission } = await import("@/lib/permissions")
+  const hasProfilePerm = await hasModulePermission(user?.role, [
+    "ADMIN_STUDENT_PROFILES",
+    "STUDENT_INFO",
+    "STUDENT_INFO_K12",
+    "STUDENT_INFO_MAM_NON"
+  ])
+
+  if (!ALLOWED_ROLES.includes(user?.role) && !hasProfilePerm) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl max-w-xl mx-auto mt-20 text-center">
         <h3 className="font-extrabold text-base mb-2">Quyền truy cập hạn chế</h3>

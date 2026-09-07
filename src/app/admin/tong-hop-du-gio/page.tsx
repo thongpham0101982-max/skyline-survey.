@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { getObservationData, getObservationSlots } from "@/app/teacher/du-gio/actions"
 import { AdminTongHopClient } from "./client"
 import { prisma } from "@/lib/db"
+import { hasModulePermission } from "@/lib/permissions"
 
 export default async function AdminTongHopPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
@@ -33,7 +34,18 @@ export default async function AdminTongHopPage(props: {
     }
   }
 
-  const isSuperAdmin = roleCode === "ADMIN" || (session.user as any)?.role === "ADMIN"
+  const isSuperAdmin = roleCode === "ADMIN" || roleCode === "Admin" || roleCode === "SUPER_ADMIN" || (session.user as any)?.role === "ADMIN"
+
+  const hasTongHopPerm = await hasModulePermission(roleCode, [
+    "TONG_HOP_DU_GIO",
+    "TONG_HOP_DU_GIO_K12",
+    "TONG_HOP_DU_GIO_MN",
+    "TONG_HOP_DU_GIO_DIEU_HANH",
+    "DU_GIO_K12",
+    "DU_GIO_MAM_NON",
+    "DU_GIO_GVNN",
+    "XET_DUYET_DANH_GIA_LAI"
+  ])
 
   const currentTeacher = await prisma.teacher.findUnique({
     where: { userId: session.user.id },
@@ -44,61 +56,7 @@ export default async function AdminTongHopPage(props: {
   const isBGHMN = ["BGH_MN", "BGH MN", "BGHMN"].includes(roleCode)
   const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
-  // Find all possible role identifiers for this user in Role table
-  const matchingRoles = await prisma.role.findMany({
-    where: {
-      OR: [
-        { code: roleCode },
-        { name: roleCode },
-        { code: (session.user as any)?.role || "" },
-        { name: (session.user as any)?.role || "" }
-      ]
-    }
-  }).catch(() => [])
-
-  const allRoleKeys = new Set<string>([
-    roleCode,
-    (session.user as any)?.role || "",
-    ...matchingRoles.map(r => r.code),
-    ...matchingRoles.map(r => r.name)
-  ])
-
-  const roleVariants: string[] = []
-  allRoleKeys.forEach(r => {
-    if (!r) return
-    const trimmed = r.trim()
-    roleVariants.push(trimmed)
-    roleVariants.push(trimmed.toUpperCase())
-    roleVariants.push(trimmed.toLowerCase())
-    roleVariants.push(trimmed.replace(/\s+/g, "_"))
-    roleVariants.push(trimmed.replace(/_/g, " "))
-    roleVariants.push(trimmed.toUpperCase().replace(/\s+/g, "_"))
-    roleVariants.push(trimmed.toUpperCase().replace(/_/g, " "))
-  })
-  const uniqueRoleVariants = Array.from(new Set(roleVariants))
-
-  const permissions = await prisma.permission.findMany({
-    where: {
-      roleCode: { in: uniqueRoleVariants },
-      canRead: true,
-      module: {
-        in: [
-          "TONG_HOP_DU_GIO",
-          "TONG_HOP_DU_GIO_K12",
-          "TONG_HOP_DU_GIO_MN",
-          "TONG_HOP_DU_GIO_DIEU_HANH",
-          "DU_GIO_K12",
-          "DU_GIO_MAM_NON",
-          "DU_GIO_GVNN",
-          "XET_DUYET_DANH_GIA_LAI"
-        ]
-      }
-    }
-  }).catch(() => [])
-
-  const hasPerm = permissions.length > 0
-
-  if (!isSuperAdmin && !isTTCM && !isBGHMN && !isGDCS && !hasPerm) {
+  if (!isSuperAdmin && !isTTCM && !isBGHMN && !isGDCS && !hasTongHopPerm) {
     return (
       <div className="p-6 text-red-500 font-bold text-xs font-semibold">
         Bạn không có quyền truy cập trang này.

@@ -136,7 +136,7 @@ export default async function StudentInfoPage() {
           orderBy: { createdAt: "asc" }
         }).catch(() => []) : Promise.resolve([]),
         // 13. rolePermissions
-        pAny.permission ? pAny.permission.findMany({ where: { roleCode } }).catch(() => []) : Promise.resolve([]),
+        import("@/lib/permissions").then(m => m.getRolePermissions(roleCode)).catch(() => []),
         // 14. generalPeriods
         pAny.inputAssessmentPeriod ? pAny.inputAssessmentPeriod.findMany({
           where: activeYearId ? { academicYearId: activeYearId } : {},
