@@ -193,7 +193,7 @@ export async function getObservationData(academicYearId?: string) {
       where: {
         status: "ACTIVE"
       },
-      select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true },
+      select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true, homeroomTeacherId: true },
       orderBy: { className: "asc" }
     })
 
@@ -336,12 +336,17 @@ export async function getObservationSlots(filters: {
     }
     if (filters.deptId && filters.deptId !== "all") {
       andConditions.push({
-        teacher: {
-          OR: [
-            { departmentId: filters.deptId },
-            { departmentAssignments: { some: { departmentId: filters.deptId } } }
-          ]
-        }
+        OR: [
+          { targetDeptId: filters.deptId },
+          {
+            teacher: {
+              OR: [
+                { departmentId: filters.deptId },
+                { departmentAssignments: { some: { departmentId: filters.deptId } } }
+              ]
+            }
+          }
+        ]
       })
     }
     if (filters.classId && filters.classId !== "all") {
@@ -2792,7 +2797,18 @@ export async function createSurpriseObservation(data: {
 
       const hasCommonDept = Array.from(ttcmDeptIds).some(id => hostDeptIds.has(id))
       if (!hasCommonDept) {
-        return { success: false, error: "TTCM chỉ có quyền thực hiện dự giờ đột xuất cho Giáo viên thuộc Tổ chuyên môn của mình." }
+        // Đặc thù Mầm non: TTCM / Nhóm trưởng Mầm non được phép dự giờ các giáo viên trong khối Mầm non hoặc tiết Mầm non
+        const isObserverPreschool = (currentTeacher.departmentRel?.blockCM || "").toLowerCase().includes("mam non") ||
+                                    currentTeacher.departmentAssignments?.some((da: any) => (da.department?.blockCM || "").toLowerCase().includes("mam non")) ||
+                                    (currentTeacher.departmentRel?.code && ["TO_TACTQ_MN.S", "NHA_TRE", "MGB", "MGN", "MGL"].includes(currentTeacher.departmentRel.code));
+        const isHostPreschool = (hostTeacher.departmentRel?.blockCM || "").toLowerCase().includes("mam non") ||
+                                hostTeacher.departmentAssignments?.some((da: any) => (da.department?.blockCM || "").toLowerCase().includes("mam non")) ||
+                                (hostTeacher.departmentRel?.code && ["TO_TACTQ_MN.S", "NHA_TRE", "MGB", "MGN", "MGL", "TO_TACTQ_PT.G"].includes(hostTeacher.departmentRel.code)) ||
+                                data.level === "Mầm non";
+
+        if (!(isObserverPreschool && isHostPreschool)) {
+          return { success: false, error: "TTCM chỉ có quyền thực hiện dự giờ đột xuất cho Giáo viên thuộc Tổ chuyên môn của mình." }
+        }
       }
     }
 
@@ -2809,7 +2825,11 @@ export async function createSurpriseObservation(data: {
       "Tiết 5": { start: "13:30", end: "14:15" },
       "Tiết 6": { start: "14:20", end: "15:05" },
       "Tiết 7": { start: "15:10", end: "15:55" },
-      "Tiết 8": { start: "15:55", end: "16:40" }
+      "Tiết 8": { start: "15:55", end: "16:40" },
+      "HĐ Học sáng": { start: "08:30", end: "09:15" },
+      "HĐ Tiếng Anh": { start: "09:15", end: "09:45" },
+      "HĐ Góc/Ngoài trời": { start: "09:45", end: "10:30" },
+      "HĐ Chiều": { start: "14:30", end: "15:15" }
     }
 
     const timeRange = periodMap[data.period || "Tiết 1"] || { start: "07:30", end: "08:15" }

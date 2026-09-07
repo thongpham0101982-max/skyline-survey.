@@ -323,6 +323,7 @@ const isPreschoolDepartment = (deptNameOrCode: string) => {
     raw.includes("bghmn") ||
     raw.includes("bgh mn") ||
     raw.includes("bgh_mn") ||
+    raw.includes("to_tactq_mn") ||
     norm.includes("bghmn") ||
     norm.includes("bgh mn") ||
     norm.includes("ban giam hieu mam non") ||
@@ -330,6 +331,8 @@ const isPreschoolDepartment = (deptNameOrCode: string) => {
     norm.includes("mau giao nho") ||
     norm.includes("mau giao lon") ||
     norm.includes("nha tre") ||
+    norm.includes("mam non") ||
+    norm.includes("ta mam non") ||
     norm === "mgb" ||
     norm === "mgn" ||
     norm === "mgl" ||
@@ -1084,7 +1087,14 @@ export function ObservationClient(props: ObservationClientProps) {
   const ttcmAllowedDepartments = useMemo(() => {
     let depts = departments;
     if (isMamNonTeacher) {
-      depts = depts.filter(d => isPreschoolDepartment(d.name || d.code || "") || (d as any).blockCM === "Mầm non");
+      depts = depts.filter(d => 
+        isPreschoolDepartment(d.name || d.code || "") || 
+        ((d as any).blockCM || "").toLowerCase().includes("mam non") ||
+        (d.code && ["TO_TACTQ_MN.S", "TO_TACTQ_PT.G"].includes(d.code)) ||
+        (d.name && (d.name.includes("Mầm non") || d.name.includes("Mầm Non") || d.name.includes("TA Quốc tế")))
+      );
+      // Với Mầm non: TTCM, QLCM, BGH MN đều được quyền xem và chọn bất kỳ tổ Mầm non & Tổ TA Quốc tế nào
+      return depts;
     }
     if (isAdminUser || isQLCM || isBGHMN) return depts;
     if (!isTTCM) return depts;
@@ -1103,34 +1113,73 @@ export function ObservationClient(props: ObservationClientProps) {
   // Set default surprise department for TTCM or Preschool
   useEffect(() => {
     if (ttcmAllowedDepartments.length > 0 && !surpriseDeptId) {
-      setSurpriseDeptId(ttcmAllowedDepartments[0].id);
+      // Ưu tiên tổ của cô Hân nếu có
+      const myDept = currentTeacher?.departmentId && ttcmAllowedDepartments.find(d => d.id === currentTeacher.departmentId);
+      setSurpriseDeptId(myDept ? myDept.id : ttcmAllowedDepartments[0].id);
     }
-  }, [ttcmAllowedDepartments, surpriseDeptId]);
+  }, [ttcmAllowedDepartments, surpriseDeptId, currentTeacher?.departmentId]);
 
   const filteredTeachersForSurprise = useMemo(() => {
-    let baseTeachers = teachers;
+    let list = teachers;
+
+    // 1. Nếu có chọn Tổ chuyên môn cụ thể (surpriseDeptId)
+    if (surpriseDeptId && surpriseDeptId !== "all") {
+      const byDept = list.filter((t: any) => {
+        if (t.departmentId === surpriseDeptId) return true;
+        if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+          return t.departmentAssignments.some((da: any) => da.departmentId === surpriseDeptId);
+        }
+        return false;
+      });
+
+      // Nếu là Mầm non và tổ được chọn hiện tại chỉ có 1 mình (như Tổ TA Mầm non hiện tại chỉ có cô Hân):
+      if (isMamNonTeacher && byDept.length <= 1) {
+        // Nạp thêm các giáo viên Tiếng Anh / GV Quốc tế / GV Mầm non tại cùng cơ sở để người dùng luôn có GV để chọn
+        const extra = list.filter((t: any) => {
+          if (currentTeacher && t.id === currentTeacher.id) return false;
+          const dName = t.departmentRel?.name || t.departmentRel?.code || "";
+          const block = t.departmentRel?.blockCM || "";
+          const isMN = isPreschoolDepartment(dName) || block.toLowerCase().includes("mam non") || (t.position || "").includes("MN") || (t.user?.role || "").includes("MN");
+          const isTA = (t.departmentRel?.code && ["TO_TACTQ_PT.G", "TO_TACTQ_TH.S", "TO_TACTQ_MN.S"].includes(t.departmentRel.code)) || dName.includes("TA");
+          if (surpriseCampusId && t.campusId && t.campusId !== surpriseCampusId) return false;
+          return isMN || isTA;
+        });
+        const combined = [...byDept, ...extra.filter(e => !byDept.some(b => b.id === e.id))];
+        return combined;
+      }
+
+      // Lọc theo campus nếu đã chọn campus
+      if (surpriseCampusId) {
+        const atCampus = byDept.filter((t: any) => !t.campusId || t.campusId === surpriseCampusId);
+        if (atCampus.length > 0) return atCampus;
+      }
+      return byDept;
+    }
+
+    // 2. Nếu không chọn surpriseDeptId (Tất cả tổ)
     if (isMamNonTeacher) {
-      baseTeachers = baseTeachers.filter((t: any) => {
+      list = list.filter((t: any) => {
         const dName = t.departmentRel?.name || t.departmentRel?.code || "";
         const block = t.departmentRel?.blockCM || "";
-        return isPreschoolDepartment(dName) || block.toLowerCase().includes("mam non") || (t.position || "").includes("MN") || (t.user?.role || "").includes("MN");
+        const isMN = isPreschoolDepartment(dName) || block.toLowerCase().includes("mam non") || (t.position || "").includes("MN") || (t.user?.role || "").includes("MN");
+        const isTA = (t.departmentRel?.code && ["TO_TACTQ_PT.G", "TO_TACTQ_TH.S", "TO_TACTQ_MN.S"].includes(t.departmentRel.code)) || dName.includes("TA");
+        if (surpriseCampusId && t.campusId && t.campusId !== surpriseCampusId) return false;
+        return isMN || isTA;
       });
+      return list;
     }
-    if (!surpriseDeptId) {
-      if (!isAdminUser && !isQLCM && !isBGHMN && isTTCM) {
-        const allowedIds = new Set(ttcmAllowedDepartments.map(d => d.id));
-        return baseTeachers.filter((t: any) => allowedIds.has(t.departmentId));
-      }
-      return baseTeachers;
+
+    if (!isAdminUser && !isQLCM && !isBGHMN && isTTCM) {
+      const allowedIds = new Set(ttcmAllowedDepartments.map(d => d.id));
+      return list.filter((t: any) => allowedIds.has(t.departmentId));
     }
-    return baseTeachers.filter((t: any) => {
-      if (t.departmentId === surpriseDeptId) return true;
-      if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
-        return t.departmentAssignments.some((da: any) => da.departmentId === surpriseDeptId);
-      }
-      return false;
-    });
-  }, [teachers, surpriseDeptId, isAdminUser, isTTCM, ttcmAllowedDepartments, isMamNonTeacher]);
+
+    if (surpriseCampusId) {
+      return list.filter((t: any) => !t.campusId || t.campusId === surpriseCampusId);
+    }
+
+    return list;
+  }, [teachers, surpriseDeptId, surpriseCampusId, isAdminUser, isTTCM, isQLCM, isBGHMN, ttcmAllowedDepartments, isMamNonTeacher, currentTeacher]);
 
   const filteredClassesForSurprise = useMemo(() => {
     if (!classes || classes.length === 0) return [];
@@ -2313,8 +2362,11 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span>Tổ chuyên môn *</span>
-                      {!isAdminUser && isTTCM && (
+                      {!isAdminUser && isTTCM && !isMamNonTeacher && (
                         <span className="text-[10px] text-amber-600 font-bold">🔒 Khóa theo TCM</span>
+                      )}
+                      {isMamNonTeacher && (
+                        <span className="text-[10px] text-emerald-600 font-bold">✨ Tổ Mầm non & TA</span>
                       )}
                     </label>
                     <select
@@ -2337,7 +2389,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       }}
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
                     >
-                      {isAdminUser && <option value="">-- Tất cả Tổ chuyên môn --</option>}
+                      {(isAdminUser || isMamNonTeacher) && <option value="">-- Tất cả Tổ Mầm non & TA --</option>}
                       {ttcmAllowedDepartments.map((d: any) => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                       ))}
@@ -2346,8 +2398,11 @@ export function ObservationClient(props: ObservationClientProps) {
 
                   {/* Giáo viên dạy */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
-                      Giáo viên dạy được dự *
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                      <span>Giáo viên dạy được dự *</span>
+                      {filteredTeachersForSurprise.length > 0 && (
+                        <span className="text-[10px] text-slate-500 font-normal">({filteredTeachersForSurprise.length} giáo viên)</span>
+                      )}
                     </label>
                     <select
                       value={surpriseTeacherId}
@@ -2373,11 +2428,15 @@ export function ObservationClient(props: ObservationClientProps) {
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
                     >
                       <option value="">-- Chọn Giáo viên dạy --</option>
-                      {filteredTeachersForSurprise.map((t: any) => (
-                        <option key={t.id} value={t.id}>
-                          {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {t.departmentRel?.name ? `• ${t.departmentRel.name}` : ""}
-                        </option>
-                      ))}
+                      {filteredTeachersForSurprise.map((t: any) => {
+                        const campusObj = campuses.find((c: any) => c.id === t.campusId);
+                        const campusShort = campusObj?.campusCode || campusObj?.campusName?.replace("Sky-Line ", "") || "";
+                        return (
+                          <option key={t.id} value={t.id}>
+                            {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {t.departmentRel?.name ? `• ${t.departmentRel.name}` : ""} {campusShort ? `[${campusShort}]` : ""}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -2410,12 +2469,22 @@ export function ObservationClient(props: ObservationClientProps) {
 
                   {/* Tiết dự */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Tiết dự *</label>
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                      {isMamNonTeacher ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}
+                    </label>
                     <select
                       value={surprisePeriod}
                       onChange={e => setSurprisePeriod(e.target.value)}
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
                     >
+                      {isMamNonTeacher && (
+                        <>
+                          <option value="HĐ Học sáng">Hoạt động học có chủ đích (08:30 - 09:15)</option>
+                          <option value="HĐ Tiếng Anh">Làm quen Tiếng Anh (09:15 - 09:45)</option>
+                          <option value="HĐ Góc/Ngoài trời">Hoạt động góc / Ngoài trời (09:45 - 10:30)</option>
+                          <option value="HĐ Chiều">Hoạt động chiều / Năng khiếu (14:30 - 15:15)</option>
+                        </>
+                      )}
                       <option value="Tiết 1">Tiết 1 (07:30 - 08:15)</option>
                       <option value="Tiết 2">Tiết 2 (08:20 - 09:05)</option>
                       <option value="Tiết 3">Tiết 3 (09:20 - 10:05)</option>
@@ -2429,7 +2498,12 @@ export function ObservationClient(props: ObservationClientProps) {
 
                   {/* Lớp học */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Lớp học *</label>
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                      <span>Lớp học *</span>
+                      {filteredClassesForSurprise.length > 0 && (
+                        <span className="text-[10px] text-slate-500 font-normal">({filteredClassesForSurprise.length} lớp)</span>
+                      )}
+                    </label>
                     <div className="flex gap-2">
                       <select
                         value={surpriseClassId}
@@ -2442,6 +2516,29 @@ export function ObservationClient(props: ObservationClientProps) {
                             if (clsObj.grade) setSurpriseGrade(clsObj.grade);
                             if (clsObj.level) setSurpriseLevel(clsObj.level);
                             if (clsObj.campusId && !surpriseCampusId) setSurpriseCampusId(clsObj.campusId);
+
+                            // Tự động nhận diện Tổ chuyên môn theo Khối của lớp Mầm non
+                            if (isMamNonTeacher || clsObj.level === "Mầm non") {
+                              const gClean = (clsObj.grade || clsObj.className || "").toLowerCase();
+                              let matchedDept = null;
+                              if (gClean.includes("nha tre") || gClean.includes("nhà trẻ")) {
+                                matchedDept = departments.find((d: any) => d.code === "NHA_TRE" || d.name.includes("Nhà Trẻ"));
+                              } else if (gClean.includes("be") || gClean.includes("bé")) {
+                                matchedDept = departments.find((d: any) => d.code === "MGB" || d.name.includes("Mẫu giáo Bé"));
+                              } else if (gClean.includes("nho") || gClean.includes("nhỡ")) {
+                                matchedDept = departments.find((d: any) => d.code === "MGN" || d.name.includes("Mẫu giáo Nhỡ"));
+                              } else if (gClean.includes("lon") || gClean.includes("lớn")) {
+                                matchedDept = departments.find((d: any) => d.code === "MGL" || d.name.includes("Mẫu giáo Lớn"));
+                              }
+                              if (matchedDept && (!surpriseDeptId || surpriseDeptId === "all")) {
+                                setSurpriseDeptId(matchedDept.id);
+                              }
+
+                              // Gợi ý giáo viên chủ nhiệm của lớp nếu chưa chọn GV
+                              if (clsObj.homeroomTeacherId && !surpriseTeacherId) {
+                                setSurpriseTeacherId(clsObj.homeroomTeacherId);
+                              }
+                            }
                           }
                         }}
                         className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
@@ -3704,8 +3801,11 @@ export function ObservationClient(props: ObservationClientProps) {
             <span className="text-[11px] font-black text-slate-400 uppercase">Tổ chuyên môn</span>
             <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
               className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
-              <option value="all">Tất cả TCM</option>
-              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+              <option value="all">{isMamNonTeacher ? "Tất cả Tổ Mầm non & TA" : "Tất cả TCM"}</option>
+              {(isMamNonTeacher
+                ? departments.filter(d => isPreschoolDepartment(d.name || d.code || "") || ((d as any).blockCM || "").toLowerCase().includes("mam non") || (d.code && ["TO_TACTQ_MN.S", "TO_TACTQ_PT.G"].includes(d.code)))
+                : departments
+              ).map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
 
