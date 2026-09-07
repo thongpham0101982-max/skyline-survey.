@@ -347,15 +347,20 @@ const getKhacChuyenDeSubjectId = (subjectsList: any[]) => {
     const name = (s.subjectName || "").toLowerCase().trim();
     const norm = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     return (
+      name === "chủ đề/chuyên đề" ||
+      name === "chủ đề / chuyên đề" ||
+      norm === "chu de/chuyen de" ||
+      norm === "chu de / chuyen de" ||
       name === "khác/chuyên đề" ||
       name === "khác / chuyên đề" ||
       name === "môn học khác / chuyên đề" ||
       norm === "khac/chuyen de" ||
       norm === "khac / chuyen de" ||
+      (norm.includes("chu de") && norm.includes("chuyen de")) ||
       (norm.includes("khac") && norm.includes("chuyen de"))
     );
   });
-  return found ? found.id : "Khác/Chuyên đề";
+  return found ? found.id : "Chủ đề/Chuyên đề";
 };
 
 export function ObservationClient(props: ObservationClientProps) {
@@ -400,8 +405,8 @@ export function ObservationClient(props: ObservationClientProps) {
   const [surpriseCampusId, setSurpriseCampusId] = useState<string>("")
   const [surpriseClassId, setSurpriseClassId] = useState<string>("")
   const [surpriseClassName, setSurpriseClassName] = useState<string>("")
-  const [surpriseSubjectId, setSurpriseSubjectId] = useState<string>("")
-  const [surpriseSubjectName, setSurpriseSubjectName] = useState<string>(() => isMamNonTeacher ? "Khác/Chuyên đề" : "")
+  const [surpriseSubjectId, setSurpriseSubjectId] = useState<string>(() => isMamNonTeacher ? getKhacChuyenDeSubjectId(subjects) : "")
+  const [surpriseSubjectName, setSurpriseSubjectName] = useState<string>(() => isMamNonTeacher ? "Chủ đề/Chuyên đề" : "")
   const [surpriseLevel, setSurpriseLevel] = useState<string>(() => isMamNonTeacher ? "Mầm non" : "Phổ thông K-12")
   const [surpriseGrade, setSurpriseGrade] = useState<string>(() => isMamNonTeacher ? "Mầm non" : "Khối 10")
   const [surpriseTopic, setSurpriseTopic] = useState<string>("")
@@ -2381,7 +2386,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             setSurpriseLevel("Mầm non");
                             const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
                             setSurpriseSubjectId(khacChuyenDeId);
-                            setSurpriseSubjectName("Khác/Chuyên đề");
+                            setSurpriseSubjectName("Chủ đề/Chuyên đề");
                           } else {
                             if (surpriseLevel === "Mầm non") setSurpriseLevel("Phổ thông K-12");
                           }
@@ -2553,21 +2558,47 @@ export function ObservationClient(props: ObservationClientProps) {
 
                   {/* Môn học */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Môn học *</label>
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                      <span>Môn học *</span>
+                      {isMamNonTeacher && (
+                        <span className="text-[10px] text-emerald-600 font-bold">✨ Chủ đề/Chuyên đề</span>
+                      )}
+                    </label>
                     <select
                       value={surpriseSubjectId}
                       onChange={e => {
                         const sId = e.target.value;
                         setSurpriseSubjectId(sId);
                         const sObj = subjects.find((s: any) => s.id === sId);
-                        if (sObj) setSurpriseSubjectName(sObj.subjectName);
+                        if (sObj) {
+                          setSurpriseSubjectName(sObj.subjectName);
+                        } else if (sId) {
+                          setSurpriseSubjectName(sId);
+                        }
                       }}
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
                     >
                       <option value="">-- Chọn môn học --</option>
-                      {subjects.map((s: any) => (
-                        <option key={s.id} value={s.id}>{s.subjectName}</option>
-                      ))}
+                      {/* Đưa môn Chủ đề/Chuyên đề lên đầu danh sách */}
+                      {(() => {
+                        const chuDeSub = subjects.find((s: any) => {
+                          const n = (s.subjectName || "").toLowerCase();
+                          return n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề";
+                        });
+                        const chuDeId = chuDeSub ? chuDeSub.id : "Chủ đề/Chuyên đề";
+                        return (
+                          <option key="opt_chude" value={chuDeId}>
+                            🌟 Chủ đề/Chuyên đề {isMamNonTeacher ? "(Mầm non)" : ""}
+                          </option>
+                        );
+                      })()}
+                      {subjects.map((s: any) => {
+                        const n = (s.subjectName || "").toLowerCase();
+                        if (n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề") return null;
+                        return (
+                          <option key={s.id} value={s.id}>{s.subjectName}</option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -2607,7 +2638,9 @@ export function ObservationClient(props: ObservationClientProps) {
                   </label>
                   <input
                     type="text"
-                    placeholder="VD: Bài 12: Phân tích số liệu và biểu đồ thống kê..."
+                    placeholder={isMamNonTeacher || surpriseLevel === "Mầm non" 
+                      ? "VD: Chủ đề: Bản thân và gia đình, Hoạt động góc, STEAM, Khám phá khoa học..." 
+                      : "VD: Bài 12: Phân tích số liệu và biểu đồ thống kê..."}
                     value={surpriseTopic}
                     onChange={e => setSurpriseTopic(e.target.value)}
                     required
