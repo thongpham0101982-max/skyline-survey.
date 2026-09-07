@@ -139,7 +139,7 @@ export function LoginClient() {
     setShowForgotModal(true)
   }
 
-  if (!mounted) return null
+  // Render SSR safely without blank screen
 
   const roleLabel = role === 'STUDENT' ? 'Học sinh' : role === 'PARENT' ? 'Phụ huynh' : 'CBGV'
 

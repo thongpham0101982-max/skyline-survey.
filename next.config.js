@@ -3,6 +3,12 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  allowedDevOrigins: [
+    '192.168.10.239',
+    'localhost',
+    '127.0.0.1',
+    'ssm.skylineschool.edu.vn',
+  ],
   outputFileTracingIncludes: {
     '/api/**': ['./dev.db', './prisma/dev.db'],
     '/**': ['./dev.db', './prisma/dev.db'],
