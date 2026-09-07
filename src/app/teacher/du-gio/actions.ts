@@ -3197,9 +3197,31 @@ export async function getTTCMDepartmentOverview(params?: {
     if (teacherIds.length > 0) {
       andConditions.push({
         OR: [
-          { teacherId: { in: teacherIds } },
-          { targetDeptId: targetDeptId },
-          { registrations: { some: { teacherId: { in: teacherIds } } } }
+          // Tiết dạy do GV trong tổ đứng lớp VÀ đã có phiếu đánh giá (không tính DRAFT)
+          {
+            teacherId: { in: teacherIds },
+            registrations: {
+              some: {
+                evaluation: {
+                  isNot: null,
+                  NOT: { reEvaluationStatus: "DRAFT" }
+                }
+              }
+            }
+          },
+          // Tiết dự do GV trong tổ tham gia VÀ đã hoàn thành đánh giá (có phiếu đánh giá, không tính DRAFT)
+          {
+            registrations: {
+              some: {
+                teacherId: { in: teacherIds },
+                isApproved: true,
+                evaluation: {
+                  isNot: null,
+                  NOT: { reEvaluationStatus: "DRAFT" }
+                }
+              }
+            }
+          }
         ]
       });
     }

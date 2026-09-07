@@ -249,19 +249,20 @@ export function TTCMDepartmentSummaryTab({
       const isSurprise = isSurpriseSlot(slot);
       const inc = slot.isDoublePeriod ? 2 : 1;
 
-      // Check host teacher (tiết dạy)
+      // Check host teacher (tiết dạy: yêu cầu lấy các tiết dạy CÓ PHIẾU ĐÁNH GIÁ)
       if (map[slot.teacherId]) {
-        const hasApprovedReg = slot.registrations?.some((r: any) => r.isApproved);
-        const hasEval = slot.registrations?.some((r: any) => r.evaluation !== null);
+        const hasEval = slot.registrations?.some(
+          (r: any) => r.evaluation !== null && r.evaluation?.reEvaluationStatus !== "DRAFT"
+        );
         
-        if (hasEval || hasApprovedReg || slot.status === "ACTIVE") {
+        if (hasEval) {
           map[slot.teacherId].taughtCount += inc;
           if (isSurprise) map[slot.teacherId].taughtSurpriseCount += inc;
           else map[slot.teacherId].taughtPlanCount += inc;
           map[slot.teacherId].taughtSlots.push(slot);
 
           slot.registrations?.forEach((r: any) => {
-            if (r.evaluation) {
+            if (r.evaluation && r.evaluation.reEvaluationStatus !== "DRAFT") {
               if (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined) {
                 map[slot.teacherId].scores.push(r.evaluation.totalScore);
               }
@@ -272,9 +273,10 @@ export function TTCMDepartmentSummaryTab({
         }
       }
 
-      // Check observers (tiết dự)
+      // Check observers (tiết dự: yêu cầu PHẢI HOÀN THÀNH ĐÁNH GIÁ)
       slot.registrations?.forEach((r: any) => {
-        if (map[r.teacherId] && r.isApproved) {
+        const hasCompletedEval = r.isApproved && r.evaluation !== null && r.evaluation?.reEvaluationStatus !== "DRAFT";
+        if (map[r.teacherId] && hasCompletedEval) {
           map[r.teacherId].observedCount += inc;
           if (isSurprise) map[r.teacherId].observedSurpriseCount += inc;
           else map[r.teacherId].observedPlanCount += inc;
@@ -321,7 +323,7 @@ export function TTCMDepartmentSummaryTab({
     filteredSlots.forEach(slot => {
       if (!deptTeacherIdSet.has(slot.teacherId)) return;
       slot.registrations?.forEach((r: any) => {
-        if (r.evaluation) {
+        if (r.evaluation && r.evaluation.reEvaluationStatus !== "DRAFT") {
           totalEvals++;
           const score = r.evaluation.totalScore;
           if (score !== null && score !== undefined) {
@@ -369,13 +371,13 @@ export function TTCMDepartmentSummaryTab({
     };
   }, [teachers, teacherStats, filteredSlots, deptTeacherIdSet, isPreschool]);
 
-  // Evaluated sessions in this department (for ratings and feedback)
+  // All non-draft completed evaluations for the department (for radar chart, warnings & comments)
   const departmentEvaluations = useMemo(() => {
     const list: any[] = [];
     filteredSlots.forEach(slot => {
       if (deptTeacherIdSet.has(slot.teacherId)) {
         slot.registrations?.forEach((reg: any) => {
-          if (reg.evaluation) {
+          if (reg.evaluation && reg.evaluation.reEvaluationStatus !== "DRAFT") {
             list.push({
               slot,
               registration: reg,
@@ -585,11 +587,11 @@ export function TTCMDepartmentSummaryTab({
         "Mã GV": t.teacherCode,
         "Họ và tên": t.teacherName,
         "Chức vụ": t.position || "GV",
-        "Tiết dạy Đã thực hiện": stats.taughtCount,
+        "Tiết dạy (Có phiếu ĐG)": stats.taughtCount,
         "Tiết dạy Chỉ tiêu": reqTaught,
         "Tiết dạy Kế hoạch": stats.taughtPlanCount,
         "Tiết dạy Đột xuất": stats.taughtSurpriseCount,
-        "Tiết dự Đã thực hiện": stats.observedCount,
+        "Tiết dự (Hoàn thành ĐG)": stats.observedCount,
         "Tiết dự Chỉ tiêu": reqObserved,
         "Tiết dự Kế hoạch": stats.observedPlanCount,
         "Tiết dự Đột xuất": stats.observedSurpriseCount,
@@ -879,7 +881,7 @@ export function TTCMDepartmentSummaryTab({
         <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-              Tiết Dạy Của Tổ
+              Tiết Dạy (Có Phiếu ĐG)
             </span>
             <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
               <GraduationCap className="w-4 h-4" />
@@ -910,7 +912,7 @@ export function TTCMDepartmentSummaryTab({
         <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-              Tiết Dự Giờ Của Tổ
+              Tiết Dự (Hoàn Thành ĐG)
             </span>
             <div className="w-8 h-8 rounded-xl bg-cyan-50 text-cyan-700 flex items-center justify-center">
               <Users className="w-4 h-4" />
@@ -1004,7 +1006,7 @@ export function TTCMDepartmentSummaryTab({
                 Tiến Độ Dạy & Dự Giờ Của Giáo Viên Trong Tổ
               </h3>
               <p className="text-xs text-slate-500 font-medium">
-                Đối chiếu số tiết thực hiện với chỉ tiêu năm học {selectedMonth === "all" ? "(Toàn bộ năm học)" : `(Kỳ ${selectedMonth})`}
+                Đối chiếu số tiết thực hiện với chỉ tiêu năm học {selectedMonth === "all" ? "(Toàn bộ năm học)" : `(Kỳ ${selectedMonth})`} • Thống kê tiết dạy có phiếu đánh giá và tiết dự đã hoàn thành đánh giá.
               </p>
             </div>
 
@@ -1041,8 +1043,8 @@ export function TTCMDepartmentSummaryTab({
                   <th className="py-3 px-4 rounded-l-xl">STT</th>
                   <th className="py-3 px-4">Giáo Viên</th>
                   <th className="py-3 px-4">Chức Vụ</th>
-                  <th className="py-3 px-4 text-center">Tiết Dạy (Đã dạy / Chỉ tiêu)</th>
-                  <th className="py-3 px-4 text-center">Tiết Dự (Đã dự / Chỉ tiêu)</th>
+                  <th className="py-3 px-4 text-center">Tiết Dạy (Có phiếu / Chỉ tiêu)</th>
+                  <th className="py-3 px-4 text-center">Tiết Dự (Đã đánh giá / Chỉ tiêu)</th>
                   <th className="py-3 px-4 text-center">Điểm TB Tiết Dạy</th>
                   <th className="py-3 px-4 text-center">Đánh Giá Tiến Độ</th>
                   <th className="py-3 px-4 text-right rounded-r-xl">Hành Động</th>
@@ -1937,7 +1939,7 @@ export function TTCMDepartmentSummaryTab({
                     <div className="grid grid-cols-3 gap-3">
                       <div className="p-3 bg-teal-50/60 border border-teal-100 rounded-2xl text-center">
                         <span className="text-[10px] font-black text-teal-700 uppercase block">
-                          Tiết Dạy Đã Dạy
+                          Tiết Dạy (Có phiếu ĐG)
                         </span>
                         <span className="text-xl font-black text-[#003B3A]">
                           {s.taughtCount}
@@ -1948,7 +1950,7 @@ export function TTCMDepartmentSummaryTab({
                       </div>
                       <div className="p-3 bg-cyan-50/60 border border-cyan-100 rounded-2xl text-center">
                         <span className="text-[10px] font-black text-cyan-700 uppercase block">
-                          Tiết Dự Đã Dự
+                          Tiết Dự (Hoàn thành ĐG)
                         </span>
                         <span className="text-xl font-black text-cyan-900">
                           {s.observedCount}
@@ -1970,10 +1972,10 @@ export function TTCMDepartmentSummaryTab({
                     {/* Section: Taught Slots */}
                     <div>
                       <h4 className="font-black text-sm text-[#003B3A] mb-2">
-                        Các Tiết Dạy Đã Thực Hiện ({s.taughtSlots.length})
+                        Các Tiết Dạy Có Phiếu Đánh Giá ({s.taughtSlots.length})
                       </h4>
                       {s.taughtSlots.length === 0 ? (
-                        <p className="text-slate-400 italic py-2">Chưa có tiết dạy nào.</p>
+                        <p className="text-slate-400 italic py-2">Chưa có tiết dạy nào có phiếu đánh giá.</p>
                       ) : (
                         <div className="space-y-2">
                           {s.taughtSlots.map((slot: any, sIdx: number) => (
@@ -2001,10 +2003,10 @@ export function TTCMDepartmentSummaryTab({
                     {/* Section: Observed Slots */}
                     <div>
                       <h4 className="font-black text-sm text-[#003B3A] mb-2">
-                        Các Tiết Đã Tham Gia Dự Giờ ({s.observedSlots.length})
+                        Các Tiết Dự Giờ Đã Hoàn Thành Đánh Giá ({s.observedSlots.length})
                       </h4>
                       {s.observedSlots.length === 0 ? (
-                        <p className="text-slate-400 italic py-2">Chưa tham gia dự giờ tiết nào.</p>
+                        <p className="text-slate-400 italic py-2">Chưa có tiết dự giờ nào hoàn thành đánh giá.</p>
                       ) : (
                         <div className="space-y-2">
                           {s.observedSlots.map((item: any, oIdx: number) => (
@@ -2021,7 +2023,7 @@ export function TTCMDepartmentSummaryTab({
                                 </span>
                               </div>
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-cyan-100 text-cyan-800">
-                                {item.registration.evaluation ? "Đã nộp phiếu" : "Chờ đánh giá"}
+                                Đã hoàn thành đánh giá
                               </span>
                             </div>
                           ))}
