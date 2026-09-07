@@ -37,9 +37,30 @@ async function checkIsObservationAdmin(roleCode: string, userId?: string): Promi
     try {
       const dbUser = await prisma.user.findUnique({
         where: { id: userId },
-        select: { role: true }
+        select: {
+          role: true,
+          teacher: {
+            select: {
+              position: true,
+              departmentRel: { select: { code: true, name: true } },
+              departmentAssignments: { select: { position: true, department: { select: { code: true, name: true } } } }
+            }
+          }
+        }
       });
       if (dbUser?.role) activeRole = dbUser.role.trim();
+      const teacher = dbUser?.teacher;
+      const deptCode = teacher?.departmentRel?.code || "";
+      const deptName = teacher?.departmentRel?.name || "";
+      const pos = teacher?.position || "";
+      if (
+        deptCode.includes("KT") || deptCode.includes("DBCL") ||
+        deptName.includes("KT&ĐBCL") || deptName.includes("ĐBCL") || deptName.includes("Khảo thí") ||
+        ["KT_DBCL", "BAN_DHCM", "BGH", "ADMIN"].includes(deptCode) ||
+        ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"].includes(pos)
+      ) {
+        return true;
+      }
     } catch (e) {}
   }
 
@@ -3046,8 +3067,6 @@ export async function getTTCMDepartmentOverview(params?: {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER";
-    const isAdmin = await checkIsObservationAdmin(roleCode, session.user.id);
-
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
       include: {
@@ -3057,6 +3076,15 @@ export async function getTTCMDepartmentOverview(params?: {
         }
       }
     });
+
+    const isKTDBCL = currentTeacher?.departmentRel?.code?.includes("KT") || 
+      currentTeacher?.departmentRel?.name?.includes("KT&ĐBCL") || 
+      currentTeacher?.departmentRel?.name?.includes("ĐBCL") ||
+      currentTeacher?.departmentAssignments?.some((da: any) => 
+        da.department?.code?.includes("KT") || da.department?.name?.includes("KT&ĐBCL") || da.department?.name?.includes("ĐBCL")
+      );
+
+    const isAdmin = (await checkIsObservationAdmin(roleCode, session.user.id)) || isKTDBCL;
 
     if (!currentTeacher && !isAdmin) {
       return { success: false, error: "Teacher profile not found" };
@@ -3197,31 +3225,8 @@ export async function getTTCMDepartmentOverview(params?: {
     if (teacherIds.length > 0) {
       andConditions.push({
         OR: [
-          // Tiết dạy do GV trong tổ đứng lớp VÀ đã có phiếu đánh giá (không tính DRAFT)
-          {
-            teacherId: { in: teacherIds },
-            registrations: {
-              some: {
-                evaluation: {
-                  isNot: null,
-                  NOT: { reEvaluationStatus: "DRAFT" }
-                }
-              }
-            }
-          },
-          // Tiết dự do GV trong tổ tham gia VÀ đã hoàn thành đánh giá (có phiếu đánh giá, không tính DRAFT)
-          {
-            registrations: {
-              some: {
-                teacherId: { in: teacherIds },
-                isApproved: true,
-                evaluation: {
-                  isNot: null,
-                  NOT: { reEvaluationStatus: "DRAFT" }
-                }
-              }
-            }
-          }
+          { teacherId: { in: teacherIds } },
+          { registrations: { some: { teacherId: { in: teacherIds } } } }
         ]
       });
     }

@@ -1072,7 +1072,16 @@ export function ObservationClient(props: ObservationClientProps) {
   
   const isAdminUser = useMemo(() => {
     const roleCode = currentTeacher?.user?.role || currentTeacher?.position || "";
-    return ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "QLCM", "QUAN_LY_CM", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN"].includes(roleCode) || (typeof pathname === "string" && pathname.startsWith("/admin"));
+    const deptCode = currentTeacher?.departmentRel?.code || "";
+    const deptName = currentTeacher?.departmentRel?.name || "";
+    const isKTDBCL = deptCode.includes("KT") || deptCode.includes("DBCL") ||
+      deptName.includes("KT&ĐBCL") || deptName.includes("ĐBCL") || deptName.includes("Khảo thí") ||
+      ["KT_DBCL", "BAN_DHCM", "BGH", "ADMIN"].includes(deptCode) ||
+      currentTeacher?.departmentAssignments?.some((da: any) => 
+        da.department?.code?.includes("KT") || da.department?.name?.includes("KT&ĐBCL") || da.department?.name?.includes("ĐBCL")
+      );
+
+    return isKTDBCL || ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "QLCM", "QUAN_LY_CM", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN"].includes(roleCode) || ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"].includes(currentTeacher?.position || "") || (typeof pathname === "string" && pathname.startsWith("/admin"));
   }, [currentTeacher, pathname]);
 
   const isQLCM = useMemo(() => {

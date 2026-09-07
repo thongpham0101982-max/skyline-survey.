@@ -122,14 +122,13 @@ export function TTCMDepartmentSummaryTab({
   });
 
   // Fetch department data from server
-  const fetchDeptData = async (deptId: string, month: string = "all") => {
+  const fetchDeptData = async (deptId: string) => {
     if (!deptId) return;
     setLoading(true);
     try {
       const res = await getTTCMDepartmentOverview({
         departmentId: deptId,
-        academicYearId: selectedYearId,
-        month: month === "all" ? undefined : month
+        academicYearId: selectedYearId
       });
       if (res.success) {
         setDepartmentData({
@@ -147,9 +146,9 @@ export function TTCMDepartmentSummaryTab({
 
   useEffect(() => {
     if (selectedDeptId) {
-      fetchDeptData(selectedDeptId, selectedMonth);
+      fetchDeptData(selectedDeptId);
     }
-  }, [selectedDeptId, selectedMonth, selectedYearId]);
+  }, [selectedDeptId, selectedYearId]);
 
   const { department, teachers, slots } = departmentData;
 
@@ -695,7 +694,7 @@ export function TTCMDepartmentSummaryTab({
             </button>
             <button
               type="button"
-              onClick={() => fetchDeptData(selectedDeptId, selectedMonth)}
+              onClick={() => fetchDeptData(selectedDeptId)}
               disabled={loading}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all cursor-pointer"
               title="Làm mới dữ liệu"
