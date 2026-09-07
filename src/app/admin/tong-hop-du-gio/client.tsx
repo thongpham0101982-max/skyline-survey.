@@ -697,11 +697,18 @@ export function AdminTongHopClient({
           sumReqTaught += reqT;
           sumReqObserved += reqO;
 
-          let status = "Đạt";
-          if (reqT > 0 && stats.taughtCount < reqT) status = "Chưa đạt dạy";
-          if (reqO > 0 && stats.observedCount < reqO) {
-            status = status === "Chưa đạt dạy" ? "Chưa đạt dạy & dự" : "Chưa đạt dự";
+          let isAllMet = false;
+          if (reqT > 0 && reqO > 0) {
+            isAllMet = stats.taughtCount >= reqT && stats.observedCount >= reqO;
+          } else if (reqT > 0) {
+            isAllMet = stats.taughtCount >= reqT;
+          } else if (reqO > 0) {
+            isAllMet = stats.observedCount >= reqO;
+          } else {
+            isAllMet = stats.taughtCount > 0 || stats.observedCount > 0;
           }
+
+          const status = isAllMet ? "Đạt" : "";
 
           rows.push([
             idx + 1,
