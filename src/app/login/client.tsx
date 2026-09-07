@@ -108,7 +108,7 @@ export function LoginClient() {
           } else if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'GDCS' || userRole === 'BGH') {
             window.location.href = '/admin'
           } else {
-            window.location.href = '/teacher'
+            window.location.href = '/admin'
           }
 
         } catch (err: any) {

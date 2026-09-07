@@ -1,5 +1,10 @@
 "use client"
 function PositionBadge({ position }: { position?: string | null }) {
+  if (position === "NV") return (
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-cyan-700">
+      NV
+    </span>
+  );
   if (position === "TTCM") return (
     <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-amber-700">
       TTCM
@@ -512,6 +517,7 @@ export function TeacherManagerClient({
               <select value={newForm.position} onChange={e => setNewForm({ ...newForm, position: e.target.value })}
                 className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-white transition-all font-bold cursor-pointer">
                 <option value="GV">GV (Giáo viên)</option>
+                <option value="NV">NV (Nhân viên)</option>
                 <option value="TTCM">TTCM (Tổ trưởng CM)</option>
                 <option value="TPTCM">TPTCM (Tổ phó CM)</option>
                 <option value="QLCM">QLCM (Quản lý CM)</option>
@@ -765,6 +771,7 @@ export function TeacherManagerClient({
                                         setEditForm({ ...editForm, departmentAssignments: next, position: hasTTCM ? "TTCM" : (editForm.position || "GV") });
                                       }} className="text-[10px] font-extrabold px-1.5 py-0.5 border border-amber-300 rounded-md outline-none bg-amber-50 text-amber-800 cursor-pointer">
                                         <option value="GV">GV</option>
+                                 <option value="NV">NV</option>
                                         <option value="TTCM">TTCM</option>
                                         <option value="TPTCM">TPTCM</option>
                                         <option value="QLCM">QLCM</option>
@@ -793,7 +800,7 @@ export function TeacherManagerClient({
                                 {t.department}
                               </span>
                             ) : (
-                              <span className="text-slate-350 text-xs italic">Ch�a ph�n t?</span>
+                              <span className="text-slate-400 text-xs font-semibold italic">Không thuộc Tổ CM</span>
                             )}
                           </div>
                         )}
@@ -813,6 +820,7 @@ export function TeacherManagerClient({
                           }}
                             className="border border-[#48BFE3] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#48BFE3] w-full cursor-pointer">
                             <option value="GV">GV</option>
+                                 <option value="NV">NV</option>
                             <option value="TTCM">TTCM</option>
                             <option value="TPTCM">TPTCM</option>
                             <option value="QLCM">QLCM</option>

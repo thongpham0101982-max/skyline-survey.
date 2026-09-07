@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { updateTeacherObservationTargets } from "@/app/teacher/du-gio/actions"
 import toast, { Toaster } from "react-hot-toast"
+import * as XLSX from "xlsx"
 import { 
   ClipboardList, CheckCircle, CheckCircle2, PieChart, Calendar, Layers,
   ChevronDown, ChevronUp, AlertCircle, Plus, Search, X, Check,
@@ -615,6 +616,299 @@ export function AdminTongHopClient({
     });
   }, [activeDepartments, initialTeachers, initialSlots, allDeptsMonth]);
 
+  
+  // Helper to determine block of teacher
+  const getTeacherBlock = (t: any) => {
+    const dept = departments.find(d => d.id === t.departmentId);
+    if (dept?.blockCM) {
+      if (dept.blockCM === "Mầm Non" || dept.blockCM === "Mầm non") return "Mầm non";
+      if (dept.blockCM === "Điều hành") return "Điều hành";
+      if (dept.blockCM === "Phổ thông") return "Phổ thông K-12";
+    }
+    if (t.departmentAssignments && t.departmentAssignments.length > 0) {
+      for (const da of t.departmentAssignments) {
+        const daDept = departments.find(d => d.id === da.departmentId);
+        if (daDept?.blockCM === "Mầm Non" || daDept?.blockCM === "Mầm non") return "Mầm non";
+        if (daDept?.blockCM === "Điều hành") return "Điều hành";
+        if (daDept?.blockCM === "Phổ thông") return "Phổ thông K-12";
+      }
+    }
+    return "Phổ thông K-12";
+  };
+
+  const getTeacherDeptName = (t: any) => {
+    const dept = departments.find(d => d.id === t.departmentId);
+    if (dept) return dept.name;
+    if (t.departmentAssignments && t.departmentAssignments.length > 0) {
+      const daDept = departments.find(d => d.id === t.departmentAssignments[0].departmentId);
+      if (daDept) return daDept.name;
+    }
+    return "Chưa phân tổ";
+  };
+
+  const handleExportExcel = () => {
+    try {
+      const activeYearObj = academicYears?.find((y: any) => y.id === filterAcademicYearId) || academicYears?.[0];
+      const yearName = activeYearObj?.name || "Năm học hiện tại";
+      const periodText = selectedMonth === "all" ? "Tất cả các tháng (Cả năm học)" : `Tháng ${selectedMonth.split("-")[1]}/${selectedMonth.split("-")[0]}`;
+
+      const wb = XLSX.utils.book_new();
+
+      const createTeacherSheet = (
+        title: string,
+        list: any[],
+        period: string,
+        yrName: string
+      ) => {
+        const headers = [
+          "STT",
+          "Mã GV",
+          "Họ và tên",
+          "Tổ Chuyên Môn",
+          "Chức vụ",
+          "Tổng Tiết Dạy",
+          "Tổng Tiết Dự",
+          "Chỉ tiêu Tiết Dạy",
+          "Chỉ tiêu Tiết Dự",
+          "Trạng thái"
+        ];
+
+        const rows: any[][] = [
+          [title.toUpperCase()],
+          [`Kỳ báo cáo: ${period}`, `Năm học: ${yrName}`, `Thời gian xuất: ${new Date().toLocaleString("vi-VN")}`],
+          [],
+          headers
+        ];
+
+        let sumTaught = 0;
+        let sumObserved = 0;
+        let sumReqTaught = 0;
+        let sumReqObserved = 0;
+
+        list.forEach((t, idx) => {
+          const stats = allTeacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
+          const deptName = getTeacherDeptName(t);
+          const pos = t.position || "GV";
+          const reqT = t.requiredTaught || 0;
+          const reqO = t.requiredObserved || 0;
+
+          sumTaught += stats.taughtCount;
+          sumObserved += stats.observedCount;
+          sumReqTaught += reqT;
+          sumReqObserved += reqO;
+
+          let status = "Đạt";
+          if (reqT > 0 && stats.taughtCount < reqT) status = "Chưa đạt dạy";
+          if (reqO > 0 && stats.observedCount < reqO) {
+            status = status === "Chưa đạt dạy" ? "Chưa đạt dạy & dự" : "Chưa đạt dự";
+          }
+
+          rows.push([
+            idx + 1,
+            t.teacherCode || "",
+            t.teacherName || "",
+            deptName,
+            pos,
+            stats.taughtCount,
+            stats.observedCount,
+            reqT > 0 ? `${reqT} (${t.taughtUnit || "tháng"})` : "—",
+            reqO > 0 ? `${reqO} (${t.observedUnit || "tháng"})` : "—",
+            status
+          ]);
+        });
+
+        // Summary row
+        rows.push([]);
+        rows.push([
+          "",
+          "",
+          `TỔNG CỘNG (${list.length} nhân sự)`,
+          "",
+          "",
+          sumTaught,
+          sumObserved,
+          sumReqTaught > 0 ? sumReqTaught : "—",
+          sumReqObserved > 0 ? sumReqObserved : "—",
+          ""
+        ]);
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+
+        ws["!cols"] = [
+          { wch: 6 },  // STT
+          { wch: 15 }, // Mã GV
+          { wch: 28 }, // Họ và tên
+          { wch: 24 }, // Tổ Chuyên Môn
+          { wch: 18 }, // Chức vụ
+          { wch: 16 }, // Tổng Tiết Dạy
+          { wch: 16 }, // Tổng Tiết Dự
+          { wch: 20 }, // Chỉ tiêu Dạy
+          { wch: 20 }, // Chỉ tiêu Dự
+          { wch: 20 }, // Trạng thái
+        ];
+
+        return ws;
+      };
+
+      const createDepartmentSummarySheet = (
+        period: string,
+        yrName: string
+      ) => {
+        const headers = [
+          "STT",
+          "Khối",
+          "Tổ Chuyên Môn",
+          "Số Lượng GV",
+          "Tổng Tiết Dạy",
+          "Tổng Tiết Dự",
+          "Tỷ Lệ Đạt Chuẩn"
+        ];
+
+        const rows: any[][] = [
+          ["BẢNG TỔNG HỢP TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN"],
+          [`Kỳ báo cáo: ${period}`, `Năm học: ${yrName}`, `Thời gian xuất: ${new Date().toLocaleString("vi-VN")}`],
+          [],
+          headers
+        ];
+
+        let totalGV = 0;
+        let totalTaughtAll = 0;
+        let totalObservedAll = 0;
+        let stt = 1;
+
+        const blocks = [
+          { key: "Phổ thông", name: "Phổ thông K-12" },
+          { key: "Mầm Non", name: "Mầm non" },
+          { key: "Điều hành", name: "Điều hành" }
+        ];
+
+        blocks.forEach(b => {
+          const deptsInBlock = departments.filter(d => d.blockCM === b.key);
+          deptsInBlock.forEach(dept => {
+            const deptTeachersList = teachersList.filter((t: any) => 
+              t.departmentId === dept.id || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id)
+            );
+            const teacherIds = new Set(deptTeachersList.map((t: any) => t.id));
+
+            let deptTaught = 0;
+            let deptObserved = 0;
+            let totalEvals = 0;
+            let passingEvals = 0;
+
+            initialSlots.forEach((slot: any) => {
+              if (selectedMonth !== "all") {
+                if (!slot.date) return;
+                const d = new Date(slot.date);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                if (`${yyyy}-${mm}` !== selectedMonth) return;
+              }
+
+              const isHost = teacherIds.has(slot.teacherId);
+              const increment = slot.isDoublePeriod ? 2 : 1;
+              const hasEvaluations = slot.registrations?.some((r: any) => r.evaluation !== null && r.evaluation !== undefined);
+
+              if (isHost) {
+                if (hasEvaluations) {
+                  deptTaught += increment;
+                }
+                slot.registrations?.forEach((r: any) => {
+                  if (r.evaluation) {
+                    totalEvals++;
+                    const isK12 = slot.level !== "Mầm non";
+                    const passed = isK12
+                      ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
+                      : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá" || r.evaluation.overallRating === "Đạt");
+                    if (passed) passingEvals++;
+                  }
+                });
+              }
+
+              slot.registrations?.forEach((reg: any) => {
+                if (reg.isApproved && reg.evaluation && teacherIds.has(reg.teacherId)) {
+                  deptObserved += increment;
+                }
+              });
+            });
+
+            const passRate = totalEvals > 0 ? `${Math.round((passingEvals / totalEvals) * 100)}%` : "100%";
+
+            totalGV += deptTeachersList.length;
+            totalTaughtAll += deptTaught;
+            totalObservedAll += deptObserved;
+
+            rows.push([
+              stt++,
+              b.name,
+              dept.name,
+              deptTeachersList.length,
+              deptTaught,
+              deptObserved,
+              passRate
+            ]);
+          });
+        });
+
+        rows.push([]);
+        rows.push([
+          "",
+          "TỔNG CỘNG",
+          `${departments.length} Tổ CM`,
+          totalGV,
+          totalTaughtAll,
+          totalObservedAll,
+          ""
+        ]);
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws["!cols"] = [
+          { wch: 6 },
+          { wch: 18 },
+          { wch: 28 },
+          { wch: 15 },
+          { wch: 16 },
+          { wch: 16 },
+          { wch: 18 }
+        ];
+        return ws;
+      };
+
+      // Group teachers by block
+      const k12Teachers = teachersList.filter(t => getTeacherBlock(t) === "Phổ thông K-12");
+      const mnTeachers = teachersList.filter(t => getTeacherBlock(t) === "Mầm non");
+      const dhTeachers = teachersList.filter(t => getTeacherBlock(t) === "Điều hành");
+
+      // 1. Sheet Phổ thông K-12
+      const wsK12 = createTeacherSheet("Báo cáo tổng hợp dự giờ - Khối Phổ thông K-12", k12Teachers, periodText, yearName);
+      XLSX.utils.book_append_sheet(wb, wsK12, "Pho_Thong_K12");
+
+      // 2. Sheet Mầm non
+      const wsMN = createTeacherSheet("Báo cáo tổng hợp dự giờ - Khối Mầm non", mnTeachers, periodText, yearName);
+      XLSX.utils.book_append_sheet(wb, wsMN, "Mam_Non");
+
+      // 3. Sheet Điều hành
+      const wsDH = createTeacherSheet("Báo cáo tổng hợp dự giờ - Khối Điều hành", dhTeachers, periodText, yearName);
+      XLSX.utils.book_append_sheet(wb, wsDH, "Dieu_Hanh");
+
+      // 4. Sheet Toàn trường (Tổng hợp)
+      const wsAll = createTeacherSheet("Báo cáo tổng hợp dự giờ - Toàn trường", teachersList, periodText, yearName);
+      XLSX.utils.book_append_sheet(wb, wsAll, "Toan_Truong");
+
+      // 5. Sheet Thống kê theo Tổ CM
+      const wsDeptSummary = createDepartmentSummarySheet(periodText, yearName);
+      XLSX.utils.book_append_sheet(wb, wsDeptSummary, "Tien_Do_To_CM");
+
+      const sanitizedMonth = selectedMonth === "all" ? "Tat_Ca_Thang" : `Thang_${selectedMonth.replace("-", "_")}`;
+      const fileName = `Bao_Cao_Tong_Hop_Du_Gio_${sanitizedMonth}.xlsx`;
+
+      XLSX.writeFile(wb, fileName);
+      toast.success(`Đã xuất báo cáo Excel thành công: ${fileName}`);
+    } catch (error: any) {
+      console.error("Export Excel error:", error);
+      toast.error("Có lỗi xảy ra khi xuất file Excel");
+    }
+  };
+
   const openAllDeptsEmailModal = () => {
     // Find Ban ĐHCM teachers/staff if any
     const dhcmTeachers = (initialTeachers || []).filter(
@@ -1050,6 +1344,15 @@ export function AdminTongHopClient({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              title="Xuất file Excel theo tháng cho các khối Phổ thông, Mầm non, Điều hành"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-white" />
+              <span>Xuất Excel {selectedMonth === "all" ? "(Tất cả)" : `(Tháng ${selectedMonth.split("-")[1]})`}</span>
+            </button>
             <button
               onClick={openEmailModal}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
@@ -1808,6 +2111,15 @@ export function AdminTongHopClient({
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
+
+                    <button
+                      onClick={handleExportExcel}
+                      className="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center gap-1.5 transition-all shrink-0 border border-emerald-500 cursor-pointer"
+                      title="Xuất file Excel theo tháng cho các khối Phổ thông, Mầm non, Điều hành"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-white" />
+                      <span>Xuất File Excel</span>
+                    </button>
                     <button
                       onClick={openAllDeptsEmailModal}
                       className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition-all shrink-0 border border-amber-300"

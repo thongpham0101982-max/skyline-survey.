@@ -28,6 +28,7 @@ function PositionBadge({ position }: { position: string }) {
     TTCM: "bg-amber-100 text-amber-700",
     QLCM: "bg-indigo-100 text-indigo-700",
     GĐCS: "bg-rose-100 text-rose-700",
+    NV: "bg-cyan-100 text-cyan-700",
     GV: "bg-slate-100 text-slate-600",
   }
   return (
