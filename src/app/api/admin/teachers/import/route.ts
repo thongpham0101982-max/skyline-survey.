@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         continue
       }
       
-      const teacherCode = String(row[1] || "").trim()
+      const teacherCode = String(row[1] || "").replace(/-/g, "").trim().toUpperCase()
       const teacherName = String(row[2] || "").trim()
       const email = String(row[3] || "").trim()
       const campus = String(row[4] || "").trim()

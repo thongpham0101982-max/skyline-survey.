@@ -92,11 +92,11 @@ export function AdminTongHopClient({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const blockParam = searchParams.get("block") || ""
+  const rawBlock = (searchParams.get("block") || "").toLowerCase().trim()
   const [activeBlockTab, setActiveBlockTab] = useState(() => {
-    if (blockParam === "mammon") return "Mầm non";
-    if (blockParam === "dieuhan") return "Điều hành";
-    if (blockParam === "k12") return "Phổ thông K-12";
+    if (["mammon", "mam-non", "mamnon", "mn"].includes(rawBlock)) return "Mầm non";
+    if (["dieuhan", "dieuhanh", "dieu-hanh", "dh"].includes(rawBlock)) return "Điều hành";
+    if (["k12", "pho-thong", "phothong"].includes(rawBlock)) return "Phổ thông K-12";
     if (isTTCM && currentTeacher?.departmentId) {
       const d = departments.find(dept => dept.id === currentTeacher.departmentId);
       if (d) {
@@ -108,10 +108,10 @@ export function AdminTongHopClient({
   })
 
   useEffect(() => {
-    if (blockParam === "mammon") { setActiveBlockTab("Mầm non"); return; }
-    if (blockParam === "dieuhan") { setActiveBlockTab("Điều hành"); return; }
-    if (blockParam === "k12") { setActiveBlockTab("Phổ thông K-12"); return; }
-  }, [blockParam]);
+    if (["mammon", "mam-non", "mamnon", "mn"].includes(rawBlock)) { setActiveBlockTab("Mầm non"); return; }
+    if (["dieuhan", "dieuhanh", "dieu-hanh", "dh"].includes(rawBlock)) { setActiveBlockTab("Điều hành"); return; }
+    if (["k12", "pho-thong", "phothong"].includes(rawBlock)) { setActiveBlockTab("Phổ thông K-12"); return; }
+  }, [rawBlock]);
 
   const availableBlocks = useMemo(() => {
     if (isTTCM && currentTeacher?.departmentId) {

@@ -31,6 +31,53 @@ import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { sendEmail } from "@/lib/mail"
 
+async function checkIsObservationAdmin(roleCode: string): Promise<boolean> {
+  const normRole = (roleCode || "").trim();
+  const directRoles = [
+    "ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS",
+    "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"
+  ];
+  if (directRoles.includes(normRole.toUpperCase()) || directRoles.includes(normRole)) {
+    return true;
+  }
+  
+  try {
+    const roleVariants = Array.from(new Set([
+      normRole,
+      normRole.toUpperCase(),
+      normRole.toLowerCase(),
+      normRole.replace(/\s+/g, "_"),
+      normRole.replace(/_/g, " "),
+      normRole.toUpperCase().replace(/\s+/g, "_"),
+      normRole.toUpperCase().replace(/_/g, " ")
+    ]));
+
+    const perms = await prisma.permission.findMany({
+      where: {
+        roleCode: { in: roleVariants },
+        canRead: true,
+        module: {
+          in: [
+            "TONG_HOP_DU_GIO",
+            "TONG_HOP_DU_GIO_K12",
+            "TONG_HOP_DU_GIO_MN",
+            "TONG_HOP_DU_GIO_DIEU_HANH",
+            "DU_GIO_K12",
+            "DU_GIO_MAM_NON",
+            "DU_GIO_GVNN",
+            "XET_DUYET_DANH_GIA_LAI"
+          ]
+        }
+      }
+    });
+    return perms.length > 0;
+  } catch (e) {
+    console.error("checkIsObservationAdmin error:", e);
+    return false;
+  }
+}
+
+
 export async function getObservationData(academicYearId?: string) {
   try {
     const session = await auth()
@@ -39,7 +86,7 @@ export async function getObservationData(academicYearId?: string) {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
+    const isAdmin = await checkIsObservationAdmin(roleCode)
 
     let currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
@@ -233,7 +280,7 @@ export async function getObservationSlots(filters: {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
+    const isAdmin = await checkIsObservationAdmin(roleCode)
 
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }

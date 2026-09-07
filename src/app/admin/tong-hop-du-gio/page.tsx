@@ -25,7 +25,36 @@ export default async function AdminTongHopPage(props: {
   const isBGHMN = roleCode === "BGH_MN" || roleCode === "BGH MN"
   const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
-  if (!isSuperAdmin && !isTTCM && !isBGHMN && !isGDCS) {
+  // Check dynamic RBAC permissions for the user's role
+  const normRole = (roleCode || "").trim()
+  const roleVariants = Array.from(new Set([
+    normRole,
+    normRole.toUpperCase(),
+    normRole.toLowerCase(),
+    normRole.replace(/\s+/g, "_"),
+    normRole.replace(/_/g, " "),
+    normRole.toUpperCase().replace(/\s+/g, "_"),
+    normRole.toUpperCase().replace(/_/g, " ")
+  ]))
+
+  const permissions = await prisma.permission.findMany({
+    where: {
+      roleCode: { in: roleVariants },
+      canRead: true,
+      module: {
+        in: [
+          "TONG_HOP_DU_GIO",
+          "TONG_HOP_DU_GIO_K12",
+          "TONG_HOP_DU_GIO_MN",
+          "TONG_HOP_DU_GIO_DIEU_HANH"
+        ]
+      }
+    }
+  }).catch(() => [])
+
+  const hasPerm = permissions.length > 0
+
+  if (!isSuperAdmin && !isTTCM && !isBGHMN && !isGDCS && !hasPerm) {
     return (
       <div className="p-6 text-red-500 font-bold text-xs font-semibold">
         Bạn không có quyền truy cập trang này.

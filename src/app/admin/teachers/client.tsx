@@ -478,7 +478,7 @@ export function TeacherManagerClient({
             <div>
               <label className="block text-xs font-black text-slate-500 mb-1.5 uppercase tracking-wider">Mã GV *</label>
               <input type="text" value={newForm.teacherCode}
-                onChange={e => setNewForm({ ...newForm, teacherCode: e.target.value.trim().toUpperCase() })}
+                onChange={e => setNewForm({ ...newForm, teacherCode: e.target.value.replace(/-/g, "").trim().toUpperCase() })}
                 placeholder="GV001"
                 className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none font-mono font-black transition-all bg-white" />
             </div>

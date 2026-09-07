@@ -79,7 +79,7 @@ async function syncAdditionalCampuses(userId: string, additionalCampusIds: strin
 
 export async function createTeacherAction(data: any) {
   try {
-    const teacherCode = data.teacherCode?.trim().toUpperCase()
+    const teacherCode = data.teacherCode?.replace(/-/g, '').trim().toUpperCase()
     if (!teacherCode) {
       return { success: false, error: "Mã GV không được để trống!" }
     }
@@ -169,6 +169,17 @@ export async function updateTeacherAction(data: any) {
   try {
     const { id, teacherName, dateOfBirth, campusId } = data
 
+    if (data.teacherCode) {
+      const cleanCode = String(data.teacherCode).replace(/-/g, '').trim().toUpperCase()
+      if (cleanCode) {
+        const conflict = await prisma.teacher.findUnique({ where: { teacherCode: cleanCode } })
+        if (conflict && conflict.id !== id) {
+          return { success: false, error: `Mã GV '${cleanCode}' đã tồn tại!` }
+        }
+        updateData.teacherCode = cleanCode
+      }
+    }
+
     const updateData: any = {}
     if (teacherName) updateData.teacherName = teacherName
     if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
@@ -197,12 +208,13 @@ export async function updateTeacherAction(data: any) {
       updateData
     )
 
-    if (teacherName || data.status !== undefined) {
+    if (teacherName || data.status !== undefined || updateData.teacherCode) {
       const teacher = await prisma.teacher.findUnique({ where: { id } })
       if (teacher) {
         const userUpdate: any = {}
         if (teacherName) userUpdate.fullName = teacherName
         if (data.status !== undefined) userUpdate.status = data.status
+        if (updateData.teacherCode) userUpdate.email = updateData.teacherCode
         await prisma.user.update({ where: { id: teacher.userId }, data: userUpdate }).catch(() => {})
       }
     }
@@ -315,7 +327,7 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
   await Promise.all(
     rows.map(async (row) => {
       if (row.teacherCode) {
-        const code = String(row.teacherCode).trim().toUpperCase()
+        const code = String(row.teacherCode).replace(/-/g, '').trim().toUpperCase()
         const hash = await bcrypt.hash(code, 10)
         hashedPasswordsMap.set(code, hash)
       }
@@ -325,7 +337,7 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
   // 3. Process database updates sequentially
   for (const row of rows) {
     if (!row.teacherCode || !row.teacherName) { skipped++; continue }
-    const code = String(row.teacherCode).trim().toUpperCase()
+    const code = String(row.teacherCode).replace(/-/g, '').trim().toUpperCase()
     if (seenCodesInFile.has(code)) {
       skipped++
       warnings.push(`Mã GV trùng lặp trong tệp Excel: ${code}`)
