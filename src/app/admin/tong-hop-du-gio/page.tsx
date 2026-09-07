@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getObservationData, getObservationSlots } from "@/app/teacher/du-gio/actions"
@@ -7,14 +10,30 @@ import { prisma } from "@/lib/db"
 export default async function AdminTongHopPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
 }) {
-  const session = await auth()
-  if (!session) {
+  let session: any = null
+  try {
+    session = await auth()
+  } catch (e) {
+    console.error("Auth error in AdminTongHopPage:", e)
+  }
+
+  if (!session?.user) {
     redirect("/login")
   }
 
-  // Check if they are TTCM or Admin
-  const roleCode = (session.user as any)?.role || "ADMIN"
-  const isSuperAdmin = roleCode === "ADMIN"
+  // Get user role directly from DB or session
+  let roleCode = (session.user as any)?.role || "ADMIN"
+  if (session.user.id) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true }
+    }).catch(() => null)
+    if (dbUser?.role) {
+      roleCode = dbUser.role
+    }
+  }
+
+  const isSuperAdmin = roleCode === "ADMIN" || (session.user as any)?.role === "ADMIN"
 
   const currentTeacher = await prisma.teacher.findUnique({
     where: { userId: session.user.id },
@@ -22,31 +41,56 @@ export default async function AdminTongHopPage(props: {
   }).catch(() => null)
 
   const isTTCM = currentTeacher?.position === "TTCM" || (currentTeacher?.departmentAssignments || []).some((da: any) => da.position === "TTCM")
-  const isBGHMN = roleCode === "BGH_MN" || roleCode === "BGH MN"
+  const isBGHMN = ["BGH_MN", "BGH MN", "BGHMN"].includes(roleCode)
   const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
-  // Check dynamic RBAC permissions for the user's role
-  const normRole = (roleCode || "").trim()
-  const roleVariants = Array.from(new Set([
-    normRole,
-    normRole.toUpperCase(),
-    normRole.toLowerCase(),
-    normRole.replace(/\s+/g, "_"),
-    normRole.replace(/_/g, " "),
-    normRole.toUpperCase().replace(/\s+/g, "_"),
-    normRole.toUpperCase().replace(/_/g, " ")
-  ]))
+  // Find all possible role identifiers for this user in Role table
+  const matchingRoles = await prisma.role.findMany({
+    where: {
+      OR: [
+        { code: roleCode },
+        { name: roleCode },
+        { code: (session.user as any)?.role || "" },
+        { name: (session.user as any)?.role || "" }
+      ]
+    }
+  }).catch(() => [])
+
+  const allRoleKeys = new Set<string>([
+    roleCode,
+    (session.user as any)?.role || "",
+    ...matchingRoles.map(r => r.code),
+    ...matchingRoles.map(r => r.name)
+  ])
+
+  const roleVariants: string[] = []
+  allRoleKeys.forEach(r => {
+    if (!r) return
+    const trimmed = r.trim()
+    roleVariants.push(trimmed)
+    roleVariants.push(trimmed.toUpperCase())
+    roleVariants.push(trimmed.toLowerCase())
+    roleVariants.push(trimmed.replace(/\s+/g, "_"))
+    roleVariants.push(trimmed.replace(/_/g, " "))
+    roleVariants.push(trimmed.toUpperCase().replace(/\s+/g, "_"))
+    roleVariants.push(trimmed.toUpperCase().replace(/_/g, " "))
+  })
+  const uniqueRoleVariants = Array.from(new Set(roleVariants))
 
   const permissions = await prisma.permission.findMany({
     where: {
-      roleCode: { in: roleVariants },
+      roleCode: { in: uniqueRoleVariants },
       canRead: true,
       module: {
         in: [
           "TONG_HOP_DU_GIO",
           "TONG_HOP_DU_GIO_K12",
           "TONG_HOP_DU_GIO_MN",
-          "TONG_HOP_DU_GIO_DIEU_HANH"
+          "TONG_HOP_DU_GIO_DIEU_HANH",
+          "DU_GIO_K12",
+          "DU_GIO_MAM_NON",
+          "DU_GIO_GVNN",
+          "XET_DUYET_DANH_GIA_LAI"
         ]
       }
     }

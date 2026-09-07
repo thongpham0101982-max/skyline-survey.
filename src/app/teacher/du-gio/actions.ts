@@ -31,30 +31,61 @@ import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { sendEmail } from "@/lib/mail"
 
-async function checkIsObservationAdmin(roleCode: string): Promise<boolean> {
-  const normRole = (roleCode || "").trim();
+async function checkIsObservationAdmin(roleCode: string, userId?: string): Promise<boolean> {
+  let activeRole = (roleCode || "").trim();
+  if (userId) {
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true }
+      });
+      if (dbUser?.role) activeRole = dbUser.role.trim();
+    } catch (e) {}
+  }
+
   const directRoles = [
     "ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS",
     "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"
   ];
-  if (directRoles.includes(normRole.toUpperCase()) || directRoles.includes(normRole)) {
+  if (directRoles.includes(activeRole.toUpperCase()) || directRoles.includes(activeRole)) {
     return true;
   }
   
   try {
-    const roleVariants = Array.from(new Set([
-      normRole,
-      normRole.toUpperCase(),
-      normRole.toLowerCase(),
-      normRole.replace(/\s+/g, "_"),
-      normRole.replace(/_/g, " "),
-      normRole.toUpperCase().replace(/\s+/g, "_"),
-      normRole.toUpperCase().replace(/_/g, " ")
-    ]));
+    const matchingRoles = await prisma.role.findMany({
+      where: {
+        OR: [
+          { code: activeRole },
+          { name: activeRole },
+          { code: roleCode },
+          { name: roleCode }
+        ]
+      }
+    }).catch(() => []);
+
+    const allRoleKeys = new Set<string>([
+      activeRole,
+      roleCode,
+      ...matchingRoles.map(r => r.code),
+      ...matchingRoles.map(r => r.name)
+    ]);
+
+    const roleVariants = [];
+    allRoleKeys.forEach(r => {
+      if (!r) return;
+      const trimmed = r.trim();
+      roleVariants.push(trimmed);
+      roleVariants.push(trimmed.toUpperCase());
+      roleVariants.push(trimmed.toLowerCase());
+      roleVariants.push(trimmed.replace(/\s+/g, "_"));
+      roleVariants.push(trimmed.replace(/_/g, " "));
+      roleVariants.push(trimmed.toUpperCase().replace(/\s+/g, "_"));
+      roleVariants.push(trimmed.toUpperCase().replace(/_/g, " "));
+    });
 
     const perms = await prisma.permission.findMany({
       where: {
-        roleCode: { in: roleVariants },
+        roleCode: { in: Array.from(new Set(roleVariants)) },
         canRead: true,
         module: {
           in: [
@@ -86,7 +117,7 @@ export async function getObservationData(academicYearId?: string) {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdmin = await checkIsObservationAdmin(roleCode)
+    const isAdmin = await checkIsObservationAdmin(roleCode, session.user.id)
 
     let currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
@@ -280,7 +311,7 @@ export async function getObservationSlots(filters: {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdmin = await checkIsObservationAdmin(roleCode)
+    const isAdmin = await checkIsObservationAdmin(roleCode, session.user.id)
 
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
