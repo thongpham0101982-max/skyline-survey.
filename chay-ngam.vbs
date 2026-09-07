@@ -1,3 +1,5 @@
 Set WshShell = CreateObject("WScript.Shell")
-strPath = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
-WshShell.Run "cmd.exe /c """ & strPath & "\start-server.bat""", 0, False
+Set fso = CreateObject("Scripting.FileSystemObject")
+strDir = fso.GetParentFolderName(WScript.ScriptFullName)
+WshShell.CurrentDirectory = strDir
+WshShell.Run "cmd.exe /c """ & strDir & "\start-server.bat""", 0, False

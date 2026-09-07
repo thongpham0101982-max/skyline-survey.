@@ -3032,3 +3032,224 @@ export async function createSurpriseObservation(data: {
     return { success: false, error: e.message || "Lỗi khi tạo dự giờ đột xuất" }
   }
 }
+
+export async function getTTCMDepartmentOverview(params?: {
+  departmentId?: string
+  academicYearId?: string
+  month?: string
+}) {
+  try {
+    await ensureDbColumns();
+    const session = await auth();
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const roleCode = (session.user as any)?.role || "TEACHER";
+    const isAdmin = await checkIsObservationAdmin(roleCode, session.user.id);
+
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        departmentRel: true,
+        departmentAssignments: {
+          include: { department: true }
+        }
+      }
+    });
+
+    if (!currentTeacher && !isAdmin) {
+      return { success: false, error: "Teacher profile not found" };
+    }
+
+    const isTTCM = currentTeacher?.position === "TTCM" ||
+      ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(currentTeacher?.position || "") ||
+      currentTeacher?.departmentAssignments?.some((da: any) => ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position));
+
+    if (!isAdmin && !isTTCM) {
+      return { success: false, error: "Chỉ Tổ trưởng chuyên môn (TTCM) hoặc Quản trị viên mới có quyền xem tổng hợp Tổ chuyên môn." };
+    }
+
+    // Determine candidate department IDs for this TTCM / Admin
+    const ttcmDeptIds = new Set<string>();
+    if (currentTeacher?.departmentId) ttcmDeptIds.add(currentTeacher.departmentId);
+    if (currentTeacher?.departmentAssignments) {
+      currentTeacher.departmentAssignments.forEach((da: any) => {
+        if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position) && da.departmentId) {
+          ttcmDeptIds.add(da.departmentId);
+        }
+      });
+    }
+
+    let targetDeptId = params?.departmentId;
+    if (!targetDeptId || targetDeptId === "all") {
+      if (currentTeacher?.departmentId && (isAdmin || ttcmDeptIds.has(currentTeacher.departmentId))) {
+        targetDeptId = currentTeacher.departmentId;
+      } else if (ttcmDeptIds.size > 0) {
+        targetDeptId = Array.from(ttcmDeptIds)[0];
+      }
+    }
+
+    let targetDept = null;
+    if (targetDeptId) {
+      targetDept = await prisma.department.findUnique({
+        where: { id: targetDeptId }
+      });
+    }
+
+    // Determine active academic year
+    const activeYear = params?.academicYearId
+      ? await prisma.academicYear.findUnique({ where: { id: params.academicYearId } })
+      : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } });
+
+    // Fetch all teachers in this department (including secondary assignments)
+    const deptTeachersRaw = targetDeptId ? await prisma.teacher.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { departmentId: targetDeptId },
+          { departmentAssignments: { some: { departmentId: targetDeptId } } }
+        ]
+      },
+      select: {
+        id: true,
+        teacherName: true,
+        teacherCode: true,
+        email: true,
+        departmentId: true,
+        position: true,
+        campusId: true,
+        departmentAssignments: {
+          select: { departmentId: true, position: true }
+        }
+      },
+      orderBy: { teacherName: "asc" }
+    }) : [];
+
+    const teacherIds = deptTeachersRaw.map(t => t.id);
+
+    // Fetch targets for these teachers
+    const targets = (activeYear && teacherIds.length > 0) ? await prisma.teacherAcademicYearTarget.findMany({
+      where: {
+        academicYearId: activeYear.id,
+        teacherId: { in: teacherIds }
+      }
+    }) : [];
+
+    const targetsMap = new Map(targets.map(t => [t.teacherId, t]));
+
+    const teachers = deptTeachersRaw.map(t => {
+      const target = targetsMap.get(t.id);
+      return {
+        ...t,
+        observerType: target?.observerType || null,
+        observeeType: target?.observeeType || null,
+        requiredObserved: target?.requiredObserved || 0,
+        observedUnit: target?.observedUnit || "tháng",
+        requiredTaught: target?.requiredTaught || 0,
+        taughtUnit: target?.taughtUnit || "tháng"
+      };
+    });
+
+    // Query slots where teacher is in this department OR an observer is in this department
+    const slotWhere: any = {
+      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] }
+    };
+
+    const andConditions: any[] = [];
+    if (activeYear) {
+      andConditions.push({
+        OR: [
+          { academicYearId: activeYear.id },
+          {
+            AND: [
+              { academicYearId: null },
+              {
+                date: {
+                  gte: activeYear.startDate,
+                  lte: activeYear.endDate
+                }
+              }
+            ]
+          }
+        ]
+      });
+    }
+
+    if (params?.month && params.month !== "all") {
+      const parts = params.month.split("-");
+      if (parts.length === 2) {
+        const mYear = parseInt(parts[0], 10);
+        const mMonth = parseInt(parts[1], 10);
+        if (!isNaN(mYear) && !isNaN(mMonth)) {
+          const startOfMonth = new Date(mYear, mMonth - 1, 1);
+          const endOfMonth = new Date(mYear, mMonth, 1);
+          andConditions.push({
+            date: {
+              gte: startOfMonth,
+              lt: endOfMonth
+            }
+          });
+        }
+      }
+    }
+
+    if (teacherIds.length > 0) {
+      andConditions.push({
+        OR: [
+          { teacherId: { in: teacherIds } },
+          { targetDeptId: targetDeptId },
+          { registrations: { some: { teacherId: { in: teacherIds } } } }
+        ]
+      });
+    }
+
+    if (andConditions.length > 0) {
+      slotWhere.AND = andConditions;
+    }
+
+    const slots = (teacherIds.length > 0) ? await prisma.observationSlot.findMany({
+      where: slotWhere,
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            teacherName: true,
+            teacherCode: true,
+            email: true,
+            departmentId: true,
+            position: true,
+            campus: { select: { campusName: true } }
+          }
+        },
+        registrations: {
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                teacherName: true,
+                teacherCode: true,
+                departmentId: true,
+                position: true,
+                email: true
+              }
+            },
+            evaluation: true
+          }
+        }
+      },
+      orderBy: { date: "asc" }
+    }) : [];
+
+    return {
+      success: true,
+      department: targetDept,
+      teachers,
+      slots,
+      academicYear: activeYear
+    };
+  } catch (e: any) {
+    console.error("[getTTCMDepartmentOverview Error]:", e);
+    return { success: false, error: e.message || "Lỗi khi lấy dữ liệu tổng hợp tổ chuyên môn" };
+  }
+}

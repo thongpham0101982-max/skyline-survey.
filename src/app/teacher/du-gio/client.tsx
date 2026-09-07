@@ -2,6 +2,7 @@
 "use client"
 
 import { ReceivedEvaluationsTab } from './components/ReceivedEvaluationsTab';
+import { TTCMDepartmentSummaryTab } from './components/TTCMDepartmentSummaryTab';
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
@@ -301,11 +302,12 @@ const getAvatarGradient = (name: string) => {
 };
 
 
-const mapTabToMainTab = (tab: string | null | undefined): "register_request" | "overview_slots" | "my_schedule" | "evaluations" | "re_evaluations" => {
+const mapTabToMainTab = (tab: string | null | undefined): "register_request" | "overview_slots" | "my_schedule" | "evaluations" | "ttcm_summary" | "re_evaluations" => {
   if (!tab) return "register_request";
   if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview") return "overview_slots";
   if (tab === "my_schedule" || tab === "my-schedule" || tab === "lich-day" || tab === "schedule") return "my_schedule";
   if (tab === "evaluations" || tab === "evaluation" || tab === "danh-gia") return "evaluations";
+  if (tab === "ttcm_summary" || tab === "ttcm" || tab === "theo-doi-tong-hop" || tab === "tong-hop-ttcm" || tab === "to-chuyen-mon") return "ttcm_summary";
   if (tab === "re_evaluations" || tab === "re-evaluations" || tab === "xet-duyet" || tab === "xet-duyet-danh-gia-lai") return "re_evaluations";
   return "register_request";
 };
@@ -452,7 +454,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [selectedEvalMonth, setSelectedEvalMonth] = useState('ALL');
-  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
+  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
   const [taughtOriginFilter, setTaughtOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
@@ -2204,7 +2206,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
       {/* MAIN TOP NAVIGATION TABS */}
       <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 p-2 shadow-sm sticky top-2 z-20">
-        <div className={`grid grid-cols-2 ${isAdminUser ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-4"} gap-2`}>
+        <div className={`grid grid-cols-2 ${(isAdminUser && isTTCM) ? "lg:grid-cols-3 xl:grid-cols-6" : (isAdminUser || isTTCM) ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-4"} gap-2`}>
           {/* Tab 1: Emerald / Teal */}
           <button
             type="button"
@@ -2282,7 +2284,30 @@ export function ObservationClient(props: ObservationClientProps) {
             </span>
           </button>
 
-          {/* Tab 5: Rose / Red - Admin / BGH Only */}
+          {/* Tab 5: Indigo / Blue - TTCM Summary Monitoring */}
+          {(isTTCM || isAdminUser) && (
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("ttcm_summary")}
+              className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeMainTab === "ttcm_summary"
+                  ? "bg-gradient-to-r from-blue-700 via-indigo-700 to-[#003B3A] text-white shadow-lg shadow-indigo-900/30 scale-[1.02] border border-indigo-400/40"
+                  : "text-indigo-950 bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200/80 hover:scale-[1.01]"
+              }`}
+            >
+              <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
+              <span className="truncate">5. THEO DÕI TỔNG HỢP</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                activeMainTab === "ttcm_summary" 
+                  ? "bg-white/25 text-white border border-white/30" 
+                  : "bg-indigo-200/80 text-indigo-950 border border-indigo-300/80"
+              }`}>
+                TTCM
+              </span>
+            </button>
+          )}
+
+          {/* Tab 6: Rose / Red - Admin / BGH Only */}
           {isAdminUser && (
             <button
               type="button"
@@ -2294,7 +2319,7 @@ export function ObservationClient(props: ObservationClientProps) {
               }`}
             >
               <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
-              <span className="truncate">5. XÉT DUYỆT ĐÁNH GIÁ LẠI</span>
+              <span className="truncate">{isTTCM ? "6. XÉT DUYỆT ĐÁNH GIÁ LẠI" : "5. XÉT DUYỆT ĐÁNH GIÁ LẠI"}</span>
               {pendingReEvalCount > 0 && (
                 <span className="px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 bg-red-500 text-white border border-white animate-pulse">
                   {pendingReEvalCount}
@@ -4869,6 +4894,21 @@ export function ObservationClient(props: ObservationClientProps) {
           openEvalModal={openEvalModal}
           getAvatarGradient={getAvatarGradient}
           RATING_COLORS={RATING_COLORS}
+        />
+      )}
+
+      {/* TAB 5: THEO DÕI TỔNG HỢP TỔ CHUYÊN MÔN (DÀNH CHO TTCM / ADMIN) */}
+      {activeMainTab === 'ttcm_summary' && (isTTCM || isAdminUser) && (
+        <TTCMDepartmentSummaryTab
+          currentTeacher={currentTeacher}
+          departments={departments}
+          ttcmAllowedDepartments={ttcmAllowedDepartments}
+          academicYears={academicYears}
+          selectedYearId={filterAcademicYearId}
+          openEvalModal={openEvalModal}
+          getAvatarGradient={getAvatarGradient}
+          RATING_COLORS={RATING_COLORS}
+          isMamNonTeacher={isMamNonTeacher}
         />
       )}
 

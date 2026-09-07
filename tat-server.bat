@@ -7,10 +7,8 @@ echo ====================================================
 
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (
     echo Tat tien trinh PID: %%a
-    taskkill /F /PID %%a >nul 2>&1
+    taskkill /F /T /PID %%a >nul 2>&1
 )
-
-taskkill /F /FI "WINDOWTITLE eq Skyline Survey*" >nul 2>&1
 
 echo.
 echo Da dung server thanh cong!
