@@ -6,25 +6,30 @@ import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 
 export function AcademicYearSelector() {
   const pathname = usePathname();
-  const [years, setYears] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("sqms_academic_years_cache");
-        if (cached) return JSON.parse(cached);
-      } catch (e) {}
-    }
-    return [];
-  });
-  const [selectedYear, setSelectedYear] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("selectedAcademicYear") || null;
-    }
-    return null;
-  });
+  const [mounted, setMounted] = useState(false);
+  const [years, setYears] = useState<any[]>([]);
+  const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [loading, setLoading] = useState(years.length === 0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setMounted(true);
+
+    try {
+      const cached = sessionStorage.getItem("sqms_academic_years_cache");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setYears(parsed);
+          setLoading(false);
+        }
+      }
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored) {
+        setSelectedYear(stored);
+      }
+    } catch (e) {}
+
     const fetchYears = async () => {
       try {
         const res = await fetch("/api/academic-years").catch(() => null);
@@ -67,10 +72,17 @@ export function AcademicYearSelector() {
     window.location.reload();
   };
 
-  const isPortal = pathname.startsWith("/admin") || pathname.startsWith("/teacher") || pathname.startsWith("/parent") || pathname.startsWith("/hocsinh");
-  if (!isPortal || loading || years.length === 0) return null;
+  const isPortal = pathname ? (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/teacher") ||
+    pathname.startsWith("/parent") ||
+    pathname.startsWith("/hocsinh")
+  ) : false;
+
+  if (!mounted || !isPortal || loading || years.length === 0) return null;
 
   const current = years.find(y => y.id === selectedYear) || years[0];
+  if (!current) return null;
 
   return (
     <div className="relative">
