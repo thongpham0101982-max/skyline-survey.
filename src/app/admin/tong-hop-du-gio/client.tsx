@@ -179,9 +179,31 @@ export function AdminTongHopClient({
 
   const openTargetConfig = (teacher: any) => {
     setTargetTeacher(teacher);
-    setObserverType(teacher.observerType || "");
-    setObserveeType(teacher.observeeType || "");
-    setRequiredObserved(teacher.requiredObserved || 0);
+    
+    // Auto detect observerType if not already configured
+    const posUpper = (teacher.position || "").toUpperCase();
+    const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(posUpper) ||
+      posUpper.includes("GIÁM ĐỐC") || posUpper.includes("GIAM DOC");
+    const isBanDH = posUpper === "BAN ĐHCM" || posUpper.includes("ĐHCM") || posUpper.includes("DHCM");
+    const isTT = posUpper === "TTCM" || posUpper.includes("TỔ TRƯỞNG") || posUpper.includes("TO TRUONG");
+
+    const defaultObserverType = isBanDH ? "Ban ĐHCM" : (isGDCS ? "GĐCS" : (isTT ? "TTCM" : "Giáo viên cũ"));
+    const obsType = teacher.observerType || defaultObserverType;
+
+    setObserverType(obsType);
+    setObserveeType(teacher.observeeType || (isGDCS || isBanDH ? "GĐCS" : ""));
+
+    let reqObs = teacher.requiredObserved;
+    if (reqObs === undefined || reqObs === null || reqObs === 0) {
+      if (obsType === "Ban ĐHCM") reqObs = 10;
+      else if (obsType === "GĐCS" || obsType === "Giám đốc Điều hành cơ sở" || obsType === "GDCS") reqObs = 4;
+      else if (obsType === "TTCM" || obsType === "Nhóm trưởng CM CS") reqObs = 8;
+      else if (obsType === "Giáo viên mới") reqObs = 10;
+      else if (obsType === "Giáo viên cũ") reqObs = 4;
+      else reqObs = 4;
+    }
+
+    setRequiredObserved(reqObs);
     setObservedUnit(teacher.observedUnit || "tháng");
     setRequiredTaught(teacher.requiredTaught || 0);
     setTaughtUnit(teacher.taughtUnit || "tháng");
@@ -192,12 +214,12 @@ export function AdminTongHopClient({
     setObserverType(type);
     if (type === "Ban ĐHCM") {
       setRequiredObserved(10); setObservedUnit("tháng");
+    } else if (type === "GĐCS" || type === "Giám đốc Điều hành cơ sở" || type === "GDCS") {
+      setRequiredObserved(4); setObservedUnit("tháng");
     } else if (type === "TTCM") {
       setRequiredObserved(8); setObservedUnit("tháng");
     } else if (type === "Nhóm trưởng CM CS") {
       setRequiredObserved(8); setObservedUnit("tháng");
-    } else if (type === "Giám đốc Điều hành cơ sở") {
-      setRequiredObserved(4); setObservedUnit("tháng");
     } else if (type === "Giáo viên mới") {
       setRequiredObserved(10); setObservedUnit("tháng");
     } else if (type === "Giáo viên cũ") {
@@ -207,7 +229,9 @@ export function AdminTongHopClient({
 
   const handleObserveeTypePreset = (type: string) => {
     setObserveeType(type);
-    if (type === "TTCM") {
+    if (type === "GĐCS" || type === "Ban ĐHCM") {
+      setRequiredTaught(0); setTaughtUnit("tháng");
+    } else if (type === "TTCM") {
       setRequiredTaught(1); setTaughtUnit("năm");
     } else if (type === "Nhóm trưởng CM CS") {
       setRequiredTaught(1); setTaughtUnit("năm");
@@ -803,18 +827,24 @@ export function AdminTongHopClient({
       const homeCampus = getTeacherCampusName(ttcm);
 
       // Resolve observerType & target strictly according to "Thiết lập Chỉ tiêu Dự giờ"
+      const posUpper = (ttcm.position || "").toUpperCase();
+      const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(posUpper) || 
+        posUpper.includes("GIÁM ĐỐC") || posUpper.includes("GIAM DOC");
+      const isBanDH = posUpper === "BAN ĐHCM" || posUpper.includes("ĐHCM") || posUpper.includes("DHCM");
+
       const observerType = ttcm.observerType || (
-        ttcm.position === "Ban ĐHCM" ? "Ban ĐHCM" :
-        (ttcm.position?.includes("Giám đốc") || ttcm.position === "GDCS") ? "Giám đốc Điều hành cơ sở" :
+        isBanDH ? "Ban ĐHCM" :
+        isGDCS ? "GĐCS" :
         (ttcm.position?.includes("Nhóm trưởng") ? "Nhóm trưởng CM CS" : "TTCM")
       );
 
       const getPresetTarget = (type: string) => {
         if (type === "Ban ĐHCM") return 10;
+        if (type === "GĐCS" || type === "GDCS" || type === "Giám đốc Điều hành cơ sở") return 4;
         if (type === "TTCM" || type === "Nhóm trưởng CM CS") return 8;
-        if (type === "Giám đốc Điều hành cơ sở" || type === "Giáo viên cũ") return 4;
+        if (type === "Giáo viên cũ") return 4;
         if (type === "Giáo viên mới") return 10;
-        return 8;
+        return 4;
       };
 
       const configuredObserved = ttcm.requiredObserved;
@@ -4224,20 +4254,24 @@ export function AdminTongHopClient({
                   1. Chỉ tiêu Người DỰ giờ
                 </label>
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {["Ban ĐHCM", "TTCM", "Nhóm trưởng CM CS", "Giáo viên mới", "Giáo viên cũ"].map(preset => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => handleObserverTypePreset(preset)}
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-md border transition-all ${
-                        observerType === preset 
-                          ? "bg-indigo-600 text-white border-indigo-600" 
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      {preset}
-                    </button>
-                  ))}
+                  {["Ban ĐHCM", "GĐCS", "TTCM", "Nhóm trưởng CM CS", "Giáo viên mới", "Giáo viên cũ"].map(preset => {
+                    const isSelected = observerType === preset || 
+                      (preset === "GĐCS" && (observerType === "Giám đốc Điều hành cơ sở" || observerType === "GDCS"));
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => handleObserverTypePreset(preset)}
+                        className={`text-[9px] font-bold px-2 py-0.5 rounded-md border transition-all ${
+                          isSelected 
+                            ? "bg-indigo-600 text-white border-indigo-600" 
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    );
+                  })}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <input
@@ -4265,20 +4299,24 @@ export function AdminTongHopClient({
                   2. Chỉ tiêu Người DẠY
                 </label>
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {["TTCM", "Nhóm trưởng CM CS", "Giáo viên mới", "Giáo viên cũ"].map(preset => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => handleObserveeTypePreset(preset)}
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded-md border transition-all ${
-                        observeeType === preset 
-                          ? "bg-emerald-600 text-white border-emerald-600" 
-                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                      }`}
-                    >
-                      {preset}
-                    </button>
-                  ))}
+                  {["GĐCS", "TTCM", "Nhóm trưởng CM CS", "Giáo viên mới", "Giáo viên cũ"].map(preset => {
+                    const isSelected = observeeType === preset || 
+                      (preset === "GĐCS" && (observeeType === "Giám đốc Điều hành cơ sở" || observeeType === "GDCS"));
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => handleObserveeTypePreset(preset)}
+                        className={`text-[9px] font-bold px-2 py-0.5 rounded-md border transition-all ${
+                          isSelected 
+                            ? "bg-emerald-600 text-white border-emerald-600" 
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    );
+                  })}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <input
