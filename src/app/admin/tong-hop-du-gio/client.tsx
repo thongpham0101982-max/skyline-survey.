@@ -793,13 +793,35 @@ export function AdminTongHopClient({
     return Array.from(names).sort();
   }, [campuses, initialSlots]);
 
-  // Compute TTCM matrix data according to active month
+  // Compute TTCM matrix data according to active month & Target Configuration
   const ttcmMatrixData = useMemo(() => {
     const activeMonth = ttcmMatrixMonth !== "all" ? ttcmMatrixMonth : selectedMonth;
 
-    return allTTCMList.map(ttcm => {
+    return allTTCMList.map(baseTTCM => {
+      // Always reference the freshest teacher state from teachersList
+      const ttcm = (teachersList || []).find((t: any) => t.id === baseTTCM.id) || baseTTCM;
       const homeCampus = getTeacherCampusName(ttcm);
-      const reqObserved = ttcm.requiredObserved || 8; // Định mức chuẩn TTCM 8 tiết/tháng
+
+      // Resolve observerType & target strictly according to "Thiết lập Chỉ tiêu Dự giờ"
+      const observerType = ttcm.observerType || (
+        ttcm.position === "Ban ĐHCM" ? "Ban ĐHCM" :
+        (ttcm.position?.includes("Giám đốc") || ttcm.position === "GDCS") ? "Giám đốc Điều hành cơ sở" :
+        (ttcm.position?.includes("Nhóm trưởng") ? "Nhóm trưởng CM CS" : "TTCM")
+      );
+
+      const getPresetTarget = (type: string) => {
+        if (type === "Ban ĐHCM") return 10;
+        if (type === "TTCM" || type === "Nhóm trưởng CM CS") return 8;
+        if (type === "Giám đốc Điều hành cơ sở" || type === "Giáo viên cũ") return 4;
+        if (type === "Giáo viên mới") return 10;
+        return 8;
+      };
+
+      const configuredObserved = ttcm.requiredObserved;
+      const observedUnit = ttcm.observedUnit || "tháng";
+      const reqObserved = (configuredObserved !== undefined && configuredObserved !== null && configuredObserved > 0)
+        ? configuredObserved
+        : getPresetTarget(observerType);
 
       const campusStats: Record<string, { periods: number; surprisePeriods: number }> = {};
       let totalObserved = 0;
@@ -848,21 +870,27 @@ export function AdminTongHopClient({
         isCrossCampus: campusName !== homeCampus
       })).sort((a, b) => b.periods - a.periods);
 
+      const isTargetMet = reqObserved === 0 || totalObserved >= reqObserved;
+      const progressPct = reqObserved > 0 ? Math.round((totalObserved / reqObserved) * 100) : 100;
+
       return {
         id: ttcm.id,
         ttcm,
         teacherName: ttcm.teacherName,
         teacherCode: ttcm.teacherCode,
         position: ttcm.position || "TTCM",
-        deptName: ttcm.deptName || "Tổ chuyên môn",
-        block: ttcm.block || "Phổ thông K-12",
+        observerType,
+        observedUnit,
+        deptName: baseTTCM.deptName || ttcm.deptName || "Tổ chuyên môn",
+        block: baseTTCM.block || ttcm.block || "Phổ thông K-12",
         homeCampus,
         reqObserved,
         totalObserved,
         totalSurprise,
         internalObserved,
         crossObserved,
-        isTargetMet: totalObserved >= reqObserved,
+        isTargetMet,
+        progressPct,
         breakdown: breakdown.length > 0 ? breakdown : [{
           campusName: "Chưa có tiết dự",
           periods: 0,
@@ -871,7 +899,7 @@ export function AdminTongHopClient({
         }]
       };
     });
-  }, [allTTCMList, initialSlots, ttcmMatrixMonth, selectedMonth, campuses]);
+  }, [allTTCMList, teachersList, initialSlots, ttcmMatrixMonth, selectedMonth, campuses]);
 
   // Filter TTCM matrix data according to interactive tab filters
   const filteredTTCMMatrix = useMemo(() => {
@@ -944,7 +972,8 @@ export function AdminTongHopClient({
         "Trong đó đột xuất",
         "Phân loại",
         "Tổng tiết cả kỳ",
-        "Chỉ tiêu tháng",
+        "Chỉ tiêu dự giờ",
+        "Đối tượng người dự",
         "Đánh giá"
       ];
 
@@ -971,8 +1000,9 @@ export function AdminTongHopClient({
             b.surprisePeriods > 0 ? b.surprisePeriods : 0,
             b.periods === 0 ? "-" : (b.isCrossCampus ? "Liên cơ sở" : "Nội bộ cơ sở"),
             bIdx === 0 ? item.totalObserved : "",
-            bIdx === 0 ? item.reqObserved : "",
-            bIdx === 0 ? (item.isTargetMet ? "Đạt chỉ tiêu" : "Chưa đạt") : ""
+            bIdx === 0 ? `${item.reqObserved} tiết / ${item.observedUnit}` : "",
+            bIdx === 0 ? (item.observerType || "") : "",
+            bIdx === 0 ? (item.isTargetMet ? "Đạt chỉ tiêu" : `Chưa đạt (${item.progressPct}%)`) : ""
           ]);
         });
         stt++;
@@ -982,7 +1012,7 @@ export function AdminTongHopClient({
       wsDetail["!cols"] = [
         { wch: 6 }, { wch: 24 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
         { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 16 },
-        { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 14 }
+        { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 18 }, { wch: 16 }
       ];
       XLSX.utils.book_append_sheet(wb, wsDetail, "Chi_Tiet_Du_Gio_TTCM");
 
@@ -996,7 +1026,8 @@ export function AdminTongHopClient({
         "Cơ sở công tác",
         ...distinctObservedCampusNames,
         "Tổng tiết dự",
-        "Chỉ tiêu",
+        "Chỉ tiêu dự giờ",
+        "Đối tượng",
         "Đánh giá"
       ];
 
@@ -1020,8 +1051,9 @@ export function AdminTongHopClient({
           item.homeCampus,
           ...campusCols,
           item.totalObserved,
-          item.reqObserved,
-          item.isTargetMet ? "Đạt" : "Chưa đạt"
+          `${item.reqObserved} tiết / ${item.observedUnit}`,
+          item.observerType || "",
+          item.isTargetMet ? "Đạt" : `Chưa đạt (${item.progressPct}%)`
         ]);
       });
 
@@ -3073,7 +3105,7 @@ export function AdminTongHopClient({
 
                     <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs col-span-2 sm:col-span-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase text-slate-500">Đạt chỉ tiêu tháng</span>
+                        <span className="text-[10px] font-black uppercase text-slate-500">Đạt chỉ tiêu dự giờ</span>
                         <CheckCheck className="w-4 h-4 text-amber-600" />
                       </div>
                       <div className="text-lg font-black text-slate-900 mt-1 flex items-baseline gap-1">
@@ -3217,7 +3249,7 @@ export function AdminTongHopClient({
                             <th className="py-3 px-3 min-w-[150px]">Cơ Sở (Công tác)</th>
                             <th className="py-3 px-4 min-w-[190px]">Cơ Sở Dự Giờ</th>
                             <th className="py-3 px-3 text-center min-w-[110px]">Số Tiết</th>
-                            <th className="py-3 px-3 text-center min-w-[140px]">Chỉ Tiêu Tháng</th>
+                            <th className="py-3 px-3 text-center min-w-[165px]">Chỉ Tiêu Dự Giờ</th>
                             <th className="py-3 px-2 text-center w-20">Chi Tiết</th>
                           </tr>
                         </thead>
@@ -3313,27 +3345,55 @@ export function AdminTongHopClient({
 
                                 {bIdx === 0 && (
                                   <>
-                                    {/* Cột Chỉ tiêu tháng */}
+                                    {/* Cột Chỉ tiêu Dự giờ theo đúng Thiết lập Chỉ tiêu Dự giờ */}
                                     <td 
                                       rowSpan={rowCount} 
                                       className="py-3 px-3 text-center border-r border-slate-100 bg-white align-top"
                                     >
-                                      <div className="space-y-1">
-                                        <span className={`px-2.5 py-0.5 rounded-full font-extrabold text-[10px] border inline-flex items-center gap-1 ${
-                                          item.isTargetMet 
-                                            ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
-                                            : "bg-amber-100 text-amber-900 border-amber-300"
-                                        }`}>
-                                          {item.isTargetMet ? <CheckCircle2 className="w-3 h-3 text-emerald-600" /> : <Clock className="w-3 h-3 text-amber-600" />}
-                                          <span>{item.isTargetMet ? "Đạt chỉ tiêu" : "Chưa đạt"}</span>
-                                        </span>
-                                        <div className="text-[10px] font-bold text-slate-600">
-                                          Tổng: <strong>{item.totalObserved}</strong> / {item.reqObserved} tiết
+                                      <div className="space-y-1.5">
+                                        {/* Target Badge & Quick Settings Trigger */}
+                                        <div className="flex items-center justify-center gap-1">
+                                          <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 font-extrabold text-[10.5px] shadow-2xs">
+                                            {item.reqObserved} tiết / {item.observedUnit}
+                                          </span>
+                                          <button
+                                            onClick={() => openTargetConfig(item.ttcm)}
+                                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all"
+                                            title={`Thiết lập chỉ tiêu dự giờ cho ${item.teacherName}`}
+                                          >
+                                            <Settings className="w-3.5 h-3.5" />
+                                          </button>
                                         </div>
+
+                                        {/* Observer Type badge */}
+                                        {item.observerType && (
+                                          <span className="text-[9px] font-semibold text-slate-400 block -mt-0.5">
+                                            ({item.observerType})
+                                          </span>
+                                        )}
+
+                                        {/* Met Status Badge */}
+                                        <div>
+                                          <span className={`px-2 py-0.5 rounded-full font-extrabold text-[9.5px] border inline-flex items-center gap-1 ${
+                                            item.isTargetMet 
+                                              ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
+                                              : "bg-amber-100 text-amber-900 border-amber-300"
+                                          }`}>
+                                            {item.isTargetMet ? <CheckCircle2 className="w-3 h-3 text-emerald-600" /> : <Clock className="w-3 h-3 text-amber-600" />}
+                                            <span>{item.isTargetMet ? "Đạt chỉ tiêu" : `Chưa đạt (${item.progressPct}%)`}</span>
+                                          </span>
+                                        </div>
+
+                                        {/* Total & Target Text */}
+                                        <div className="text-[10px] font-bold text-slate-600">
+                                          Đã dự: <strong>{item.totalObserved}</strong> / {item.reqObserved} tiết
+                                        </div>
+
+                                        {/* Visual Progress Bar */}
                                         <div className="w-20 bg-slate-100 rounded-full h-1.5 mx-auto overflow-hidden">
                                           <div 
-                                            className={`h-full rounded-full ${item.isTargetMet ? "bg-emerald-500" : "bg-amber-500"}`} 
-                                            style={{ width: `${Math.min(100, Math.round((item.totalObserved / (item.reqObserved || 8)) * 100))}%` }} 
+                                            className={`h-full rounded-full transition-all duration-300 ${item.isTargetMet ? "bg-emerald-500" : "bg-amber-500"}`} 
+                                            style={{ width: `${Math.min(100, item.progressPct)}%` }} 
                                           />
                                         </div>
                                       </div>
@@ -3400,7 +3460,7 @@ export function AdminTongHopClient({
                             <th className="py-3 px-3 text-center min-w-[110px] bg-sky-50/80 text-sky-950 font-black">
                               Tổng Tiết Dự
                             </th>
-                            <th className="py-3 px-3 text-center min-w-[90px]">Chỉ Tiêu</th>
+                            <th className="py-3 px-3 text-center min-w-[130px]">Chỉ Tiêu Dự Giờ</th>
                             <th className="py-3 px-3 text-center min-w-[110px]">Đánh Giá</th>
                           </tr>
                         </thead>
@@ -3461,8 +3521,22 @@ export function AdminTongHopClient({
                                 </td>
 
                                 {/* Target Column */}
-                                <td className="py-3 px-3 text-center font-bold text-slate-600">
-                                  {item.reqObserved} tiết
+                                <td className="py-3 px-3 text-center">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <span className="font-extrabold text-slate-800 text-[11px]">
+                                      {item.reqObserved} tiết/{item.observedUnit}
+                                    </span>
+                                    <button
+                                      onClick={() => openTargetConfig(item.ttcm)}
+                                      className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
+                                      title={`Thiết lập chỉ tiêu dự giờ cho ${item.teacherName}`}
+                                    >
+                                      <Settings className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                  {item.observerType && (
+                                    <span className="text-[9px] text-slate-400 block font-medium">({item.observerType})</span>
+                                  )}
                                 </td>
 
                                 {/* Status Column */}
@@ -3472,7 +3546,7 @@ export function AdminTongHopClient({
                                       ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
                                       : "bg-amber-100 text-amber-900 border-amber-300"
                                   }`}>
-                                    {item.isTargetMet ? "Đạt chuẩn" : `${Math.round((item.totalObserved / (item.reqObserved || 8)) * 100)}%`}
+                                    {item.isTargetMet ? "Đạt chuẩn" : `${item.progressPct}%`}
                                   </span>
                                 </td>
                               </tr>
