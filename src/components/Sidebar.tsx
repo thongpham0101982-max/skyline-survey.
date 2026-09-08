@@ -4,6 +4,7 @@ import {
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { signOut } from "next-auth/react"
+// imports updated
 import { 
   LogOut, 
   LayoutDashboard, 
@@ -28,7 +29,8 @@ import {
   Calendar,
   RotateCcw,
   Baby,
-  Globe
+  Globe,
+  Grid3X3
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
@@ -215,28 +217,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">1. Dự giờ đánh giá Giáo viên</span>}
               </Link>
 
-              {/* 3. Dự giờ GVNN (ESL) */}
-              <Link 
-                href="/admin/du-gio-gvnn" 
-                onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                  pathname.startsWith("/admin/du-gio-gvnn")
-                    ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
-                    : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                }`}
-              >
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                  pathname.startsWith("/admin/du-gio-gvnn")
-                    ? "bg-sky-500/20 border border-sky-500/40 shadow-[0_0_8px_rgba(14,165,233,0.25)]"
-                    : "bg-white/5 border border-white/10 group-hover:border-sky-500/30"
-                }`}>
-                  <Globe className={`w-4 h-4 transition-all ${
-                    pathname.startsWith("/admin/du-gio-gvnn") ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
-                  }`} />
-                </div>
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">3. Dự giờ GVNN (ESL)</span>}
-              </Link>
-
               {/* 2. Dự giờ đánh giá Mầm non */}
               <Link 
                 href="/admin/du-gio-mam-non" 
@@ -259,27 +239,49 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">2. Dự giờ đánh giá Mầm non</span>}
               </Link>
 
-              {/* 3. Tổng hợp kết quả (Dropdown block) */}
+              {/* 3. Dự giờ GVNN (ESL) */}
+              <Link 
+                href="/admin/du-gio-gvnn" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                  pathname.startsWith("/admin/du-gio-gvnn")
+                    ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                    : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                  pathname.startsWith("/admin/du-gio-gvnn")
+                    ? "bg-sky-500/20 border border-sky-500/40 shadow-[0_0_8px_rgba(14,165,233,0.25)]"
+                    : "bg-white/5 border border-white/10 group-hover:border-sky-500/30"
+                }`}>
+                  <Globe className={`w-4 h-4 transition-all ${
+                    pathname.startsWith("/admin/du-gio-gvnn") ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
+                  }`} />
+                </div>
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">3. Dự giờ GVNN (ESL)</span>}
+              </Link>
+
+              {/* 4. Tổng hợp dự giờ (Dropdown block) */}
               <div className="flex flex-col">
                 <button 
                   onClick={() => setObservesExpanded(!observesExpanded)}
                   className={`group relative flex items-center justify-between ${isCollapsed ? 'px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 text-left w-full hover:bg-white/5 outline-none ${
-                    pathname.startsWith("/admin/tong-hop-du-gio") 
+                    pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") !== "ma-tran"
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                       : "text-white/70 hover:text-white hover:bg-white/5"
                   }`}
                 >
                   <div className="flex items-center">
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                      pathname.startsWith("/admin/tong-hop-du-gio")
+                      pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") !== "ma-tran"
                         ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
                         : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
                     }`}>
                       <PieChart className={`w-4 h-4 transition-all ${
-                        pathname.startsWith("/admin/tong-hop-du-gio") ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
+                        pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") !== "ma-tran" ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">2. Tổng hợp kết quả</span>}
+                    {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">4. Tổng hợp dự giờ</span>}
                   </div>
                   {!isCollapsed && (
                     <ChevronDown className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${observesExpanded ? 'rotate-180' : ''}`} />
@@ -289,7 +291,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/10 pl-3 animate-in slide-in-from-top-2 duration-200">
                     <Link href="/admin/tong-hop-du-gio?block=k12" onClick={() => setIsOpen(false)}
                       className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                        pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") !== "mammon" && searchParams?.get("block") !== "dieuhan"
+                        pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") !== "ma-tran" && searchParams?.get("block") !== "mammon" && searchParams?.get("block") !== "dieuhan"
                           ? "bg-indigo-500/20 text-white border border-indigo-500/30"
                           : "text-white/60 hover:text-white hover:bg-indigo-500/10"
                       }`}>
@@ -298,7 +300,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     </Link>
                     <Link href="/admin/tong-hop-du-gio?block=mammon" onClick={() => setIsOpen(false)}
                       className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                        pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") === "mammon"
+                        pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") !== "ma-tran" && searchParams?.get("block") === "mammon"
                           ? "bg-amber-500/20 text-white border border-amber-500/30"
                           : "text-white/60 hover:text-white hover:bg-amber-500/10"
                       }`}>
@@ -307,7 +309,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     </Link>
                     <Link href="/admin/tong-hop-du-gio?block=dieuhan" onClick={() => setIsOpen(false)}
                       className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                        pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") === "dieuhan"
+                        pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") !== "ma-tran" && searchParams?.get("block") === "dieuhan"
                           ? "bg-teal-500/20 text-white border border-teal-500/30"
                           : "text-white/60 hover:text-white hover:bg-teal-500/10"
                       }`}>
@@ -318,7 +320,29 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 )}
               </div>
 
-              {/* 4. Xét duyệt đánh giá lại */}
+              {/* 5. Ma trận dự giờ TTCM (Tách riêng bên cạnh Tổng hợp dự giờ) */}
+              <Link 
+                href="/admin/tong-hop-du-gio?tab=ma-tran" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                  (pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") === "ma-tran") || pathname.startsWith("/admin/ma-tran-du-gio-ttcm")
+                    ? "bg-gradient-to-r from-teal-500/25 to-emerald-600/15 border border-teal-500/40 text-teal-200 shadow-md shadow-black/10" 
+                    : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                  (pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") === "ma-tran") || pathname.startsWith("/admin/ma-tran-du-gio-ttcm")
+                    ? "bg-teal-500/30 border border-teal-500/50 shadow-[0_0_10px_rgba(20,184,166,0.35)]"
+                    : "bg-white/5 border border-white/10 group-hover:border-teal-500/30"
+                }`}>
+                  <Grid3X3 className={`w-4 h-4 transition-all ${
+                    (pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("tab") === "ma-tran") || pathname.startsWith("/admin/ma-tran-du-gio-ttcm") ? "text-teal-300" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
+                  }`} />
+                </div>
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">5. Ma trận dự giờ TTCM</span>}
+              </Link>
+
+              {/* 6. Xét duyệt đánh giá lại */}
               <Link 
                 href="/admin/du-gio?tab=xet-duyet-danh-gia-lai" 
                 onClick={() => setIsOpen(false)} 
@@ -337,7 +361,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     (pathname === "/admin/du-gio" && (searchParams?.get("tab") === "xet-duyet-danh-gia-lai" || searchParams?.get("tab") === "re_evaluations")) ? "text-rose-400" : "text-slate-400 group-hover:text-rose-400 group-hover:scale-110"
                   }`} />
                 </div>
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">3. Xét duyệt đánh giá lại</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">6. Xét duyệt đánh giá lại</span>}
               </Link>
             </div>
           )}

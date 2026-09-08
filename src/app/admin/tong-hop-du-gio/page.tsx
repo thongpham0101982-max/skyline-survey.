@@ -41,6 +41,7 @@ export default async function AdminTongHopPage(props: {
     "TONG_HOP_DU_GIO_K12",
     "TONG_HOP_DU_GIO_MN",
     "TONG_HOP_DU_GIO_DIEU_HANH",
+    "MA_TRAN_DU_GIO_TTCM",
     "DU_GIO_K12",
     "DU_GIO_MAM_NON",
     "DU_GIO_GVNN",

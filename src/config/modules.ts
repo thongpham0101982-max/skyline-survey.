@@ -27,7 +27,8 @@ import {
   Globe,
   FileText,
   Compass,
-  Sparkles
+  Sparkles,
+  Grid3X3
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -252,6 +253,12 @@ export const APP_CATEGORIES = [
           { code: "TONG_HOP_DU_GIO_MN", name: "Mầm non", href: "/admin/tong-hop-du-gio?block=mammon" },
           { code: "TONG_HOP_DU_GIO_DIEU_HANH", name: "Điều hành", href: "/admin/tong-hop-du-gio?block=dieuhan" },
         ]
+      },
+      {
+        code: "MA_TRAN_DU_GIO_TTCM",
+        name: "Ma trận dự giờ TTCM",
+        icon: Grid3X3,
+        href: "/admin/tong-hop-du-gio?tab=ma-tran"
       },
       { code: "XET_DUYET_DANH_GIA_LAI", name: "Xét duyệt đánh giá lại", icon: RefreshCcw, href: "/admin/du-gio?tab=xet-duyet-danh-gia-lai" }
     ]
