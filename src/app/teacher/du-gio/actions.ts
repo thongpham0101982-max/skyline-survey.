@@ -91,7 +91,7 @@ async function checkIsObservationAdmin(roleCode: string, userId?: string): Promi
       ...matchingRoles.map(r => r.name)
     ]);
 
-    const roleVariants = [];
+    const roleVariants: string[] = [];
     allRoleKeys.forEach(r => {
       if (!r) return;
       const trimmed = r.trim();
@@ -287,9 +287,11 @@ export async function getObservationData(academicYearId?: string) {
       currentTeacher?.id && !currentTeacher.id.startsWith("admin-")
         ? prisma.observationEvaluation.findMany({
             where: {
-              slot: {
-                teacherId: currentTeacher.id,
-                ...(activeYearId ? { academicYearId: activeYearId } : {})
+              registration: {
+                slot: {
+                  teacherId: currentTeacher.id,
+                  ...(activeYearId ? { academicYearId: activeYearId } : {})
+                }
               }
             },
             include: {
@@ -305,17 +307,17 @@ export async function getObservationData(academicYearId?: string) {
                       campusId: true,
                       position: true
                     }
-                  }
-                }
-              },
-              slot: {
-                include: {
-                  teacher: {
-                    select: {
-                      id: true,
-                      teacherName: true,
-                      teacherCode: true,
-                      email: true
+                  },
+                  slot: {
+                    include: {
+                      teacher: {
+                        select: {
+                          id: true,
+                          teacherName: true,
+                          teacherCode: true,
+                          email: true
+                        }
+                      }
                     }
                   }
                 }
@@ -347,13 +349,13 @@ export async function getObservationData(academicYearId?: string) {
     })
 
     const myReceivedEvaluations = (dbEvals || []).map((e: any) => ({
-      slot: e.slot,
+      slot: e.registration?.slot,
       registration: {
         ...(e.registration || {}),
         evaluation: e
       },
       evaluation: e
-    }));
+    })).filter((item: any) => item.slot != null);
 
     return {
       success: true,
