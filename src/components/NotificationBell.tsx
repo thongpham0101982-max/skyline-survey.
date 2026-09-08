@@ -6,32 +6,83 @@ import Link from "next/link"
 
 export function resolveNotificationLink(n: { title?: string; message?: string; link?: string | null }): string {
   const text = ((n.title || "") + " " + (n.message || "")).toLowerCase()
+  const rawMsg = (n.title || "") + " " + (n.message || "")
 
-  if (n.link && n.link.trim() !== "") {
-    // If link is already pointing to du-gio, route to proper tab
-    if (n.link === "/teacher/du-gio" || n.link === "/teacher/du-gio?tab=dang-ky") {
-      if (text.includes("đánh giá") || text.includes("hoàn tất nhập")) {
-        return "/teacher/du-gio?tab=evaluations"
-      }
-      if (text.includes("đề xuất") || text.includes("xác nhận") || text.includes("hết hạn") || text.includes("nhắc lịch") || text.includes("đã đăng ký")) {
-        return "/teacher/du-gio?tab=my_schedule"
-      }
-      if (text.includes("mở tiết") || text.includes("tổ chuyên môn") || text.includes("đăng ký")) {
-        return "/teacher/du-gio?tab=register_request"
-      }
+  // Helper to extract teacher name and topic from notification text (backward compatibility for old notifications)
+  const extractTeacherAndTopic = () => {
+    let teacherName = ""
+    let topic = ""
+
+    // Match patterns like: "Thầy/Cô Đặng Thị Thúy Nga vừa mở tiết...", "Cô Thúy Nga vừa có tiết...", "GV Nguyễn Văn A..."
+    const matchTeacher = rawMsg.match(/(?:thầy\/cô|thay\/co|thầy|cô|gv)\s+([^,.(]+?)\s+vừa (?:mở|có|đăng ký)/i)
+    if (matchTeacher && matchTeacher[1]) {
+      teacherName = matchTeacher[1].trim()
     }
-    return n.link
+
+    // Match topic inside parentheses: "(Toán - Phép cộng có nhớ)" or "(Hình học 10)"
+    const matchTopic = rawMsg.match(/\((?:[^(]*?-\s*)?([^)]+)\)/)
+    if (matchTopic && matchTopic[1]) {
+      topic = matchTopic[1].trim()
+    }
+
+    let query = ""
+    if (teacherName) query += `&teacherName=${encodeURIComponent(teacherName)}`
+    if (topic) query += `&topic=${encodeURIComponent(topic)}`
+    return query
   }
 
-  // Fallback if link was missing
+  // If notification has a link
+  if (n.link && n.link.trim() !== "") {
+    let link = n.link.trim()
+
+    // Normalize du-gio links
+    if (link.startsWith("/teacher/du-gio")) {
+      // If notification is about a new open slot for observation registration
+      if (text.includes("mở tiết") || text.includes("tổ chuyên môn") || text.includes("đăng ký tham dự") || text.includes("đăng ký dự giờ") || text.includes("tiết dạy mới")) {
+        // If old link pointed to register_request or generic du-gio
+        if (link === "/teacher/du-gio" || link.includes("tab=register_request") || link === "/teacher/du-gio?tab=dang-ky") {
+          const extractedQuery = extractTeacherAndTopic()
+          return `/teacher/du-gio?tab=overview_slots${extractedQuery}&action=register`
+        }
+        // If link already has slotId or overview_slots, ensure action=register exists
+        if (!link.includes("action=register")) {
+          link += (link.includes("?") ? "&" : "?") + "action=register"
+        }
+        return link
+      }
+
+      // If notification is about evaluation
+      if (text.includes("đánh giá") || text.includes("hoàn tất nhập")) {
+        if (link === "/teacher/du-gio" || link === "/teacher/du-gio?tab=dang-ky") {
+          return "/teacher/du-gio?tab=evaluations"
+        }
+        return link
+      }
+
+      // If notification is for host teacher to confirm or check schedule
+      if (text.includes("đề xuất") || text.includes("xác nhận") || text.includes("hết hạn") || text.includes("nhắc lịch") || text.includes("đã đăng ký")) {
+        if (link === "/teacher/du-gio" || link === "/teacher/du-gio?tab=dang-ky") {
+          return "/teacher/du-gio?tab=my_schedule"
+        }
+        return link
+      }
+
+      return link
+    }
+
+    return link
+  }
+
+  // Fallback if link was missing in DB
   if (text.includes("dự giờ") || text.includes("tiết dạy") || text.includes("tiết học")) {
     if (text.includes("đánh giá") || text.includes("hoàn tất nhập")) {
       return "/teacher/du-gio?tab=evaluations"
     }
-    if (text.includes("đề xuất") || text.includes("xác nhận") || text.includes("hết hạn") || text.includes("nhắc lịch") || text.includes("đã đăng ký")) {
+    if (text.includes("đề xuất") || text.includes("xác nhận") || text.includes("hết hạn") || text.includes("nhắc lịch")) {
       return "/teacher/du-gio?tab=my_schedule"
     }
-    return "/teacher/du-gio?tab=register_request"
+    const extractedQuery = extractTeacherAndTopic()
+    return `/teacher/du-gio?tab=overview_slots${extractedQuery}&action=register`
   }
   if (text.includes("khảo sát") || text.includes("nps") || text.includes("survey")) {
     return "/teacher/nps"

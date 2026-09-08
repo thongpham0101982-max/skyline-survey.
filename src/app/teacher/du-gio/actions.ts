@@ -236,43 +236,55 @@ export async function getObservationData(academicYearId?: string) {
       } as any
     }
 
-    const subjects = await prisma.subject.findMany({
-      where: { status: "ACTIVE" },
-      orderBy: { subjectName: "asc" }
-    })
-
-    const departments = await prisma.department.findMany({
-      where: { status: "ACTIVE" },
-      orderBy: { name: "asc" }
-    })
-
-    const rawTeachers = await prisma.teacher.findMany({
-      where: { status: "ACTIVE" },
-      select: {
-        id: true,
-        teacherName: true,
-        teacherCode: true,
-        email: true,
-        departmentId: true,
-        campusId: true,
-        campus: {
-          select: {
-            id: true,
-            campusName: true,
-            campusCode: true
+    const [subjects, departments, rawTeachers, allTargets, campuses, classes] = await Promise.all([
+      prisma.subject.findMany({
+        where: { status: "ACTIVE" },
+        orderBy: { subjectName: "asc" }
+      }),
+      prisma.department.findMany({
+        where: { status: "ACTIVE" },
+        orderBy: { name: "asc" }
+      }),
+      prisma.teacher.findMany({
+        where: { status: "ACTIVE" },
+        select: {
+          id: true,
+          teacherName: true,
+          teacherCode: true,
+          email: true,
+          departmentId: true,
+          campusId: true,
+          campus: {
+            select: {
+              id: true,
+              campusName: true,
+              campusCode: true
+            }
+          },
+          position: true,
+          departmentAssignments: {
+            select: { departmentId: true, position: true }
           }
         },
-        position: true,
-        departmentAssignments: {
-          select: { departmentId: true, position: true }
-        }
-      },
-      orderBy: { teacherName: "asc" }
-    })
-
-    const allTargets = activeYearId ? await prisma.teacherAcademicYearTarget.findMany({
-      where: { academicYearId: activeYearId }
-    }) : []
+        orderBy: { teacherName: "asc" }
+      }),
+      activeYearId ? prisma.teacherAcademicYearTarget.findMany({
+        where: { academicYearId: activeYearId }
+      }) : Promise.resolve([]),
+      prisma.campus.findMany({
+        where: {
+          NOT: { status: "INACTIVE" }
+        },
+        orderBy: { campusName: "asc" }
+      }),
+      prisma.class.findMany({
+        where: {
+          status: "ACTIVE"
+        },
+        select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true, homeroomTeacherId: true },
+        orderBy: { className: "asc" }
+      })
+    ]);
 
     const targetsMap = new Map(allTargets.map(t => [t.teacherId, t]))
 
@@ -287,21 +299,6 @@ export async function getObservationData(academicYearId?: string) {
         requiredTaught: target?.requiredTaught || 0,
         taughtUnit: target?.taughtUnit || "tháng"
       }
-    })
-
-    const campuses = await prisma.campus.findMany({
-      where: {
-        NOT: { status: "INACTIVE" }
-      },
-      orderBy: { campusName: "asc" }
-    })
-
-    const classes = await prisma.class.findMany({
-      where: {
-        status: "ACTIVE"
-      },
-      select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true, homeroomTeacherId: true },
-      orderBy: { className: "asc" }
     })
 
     return {
@@ -747,7 +744,7 @@ export async function createObservationSlot(data: {
           userId: m.user!.id,
           title: "Tiết dạy dự giờ mới trong Tổ chuyên môn",
           message: `Thầy/Cô ${currentTeacher.teacherName} vừa mở tiết dạy dự giờ mới (${newSlot.subjectName} - ${newSlot.topic}). Kính mời Thầy/Cô đăng ký tham dự.`,
-          link: "/teacher/du-gio?tab=register_request",
+          link: `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}&action=register`,
           isRead: false
         }));
 
@@ -770,7 +767,7 @@ export async function createObservationSlot(data: {
 
       if (data.sendEmailNotif !== false && memberEmails.length > 0) {
         const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
-        const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + "/teacher/du-gio?tab=dang-ky";
+        const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}&action=register`;
         
         const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
         const emailHtml = `
@@ -782,7 +779,7 @@ export async function createObservationSlot(data: {
             <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa mở một tiết dạy dự giờ mới cho Tổ chuyên môn. Kính mời Thầy/Cô đăng ký tham dự.</p>
             
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #48BFE3; font-weight: bold;">${newSlot.topic}</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.subjectName} (${newSlot.grade} - ${newSlot.className || "Lớp học"})</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.campusName || "Trường"} - ${newSlot.room || "Phòng học"}</td></tr>
@@ -872,61 +869,6 @@ export async function createObservationSlot(data: {
       console.error("Error sending department member notifications:", deptNotifErr);
     }
 
-    
-    // Notify host teacher about observation request from GVBM
-    try {
-      if (hostTeacher.user?.id) {
-        const formattedDate = new Date(data.date).toLocaleDateString("vi-VN");
-        const notifTitle = `Thông báo đăng ký tiết dạy`;
-        const notifMsg = `Thầy/Cô ${observerTeacher.teacherName} vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.`;
-
-        await prisma.notification.create({
-          data: {
-            userId: hostTeacher.user.id,
-            title: notifTitle,
-            message: notifMsg,
-            link: "/teacher/du-gio",
-            isRead: false
-          }
-        });
-
-        const hostEmail = getTeacherResolvedEmail(hostTeacher);
-        if (data.sendEmailNotif !== false && hostEmail && hostEmail.includes("@")) {
-          const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <h2 style="color: #48BFE3; margin-top: 0;">Thông Báo Đề Xuất Xin Dự Giờ</h2>
-              <p>Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
-              <p>Thầy/Cô <strong>${observerTeacher.teacherName}</strong> vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.</p>
-              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 40%;">Giáo viên xin dự giờ:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${observerTeacher.teacherName} (${observerTeacher.teacherCode})</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tên bài dạy / Chủ đề:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.topic || "Đề xuất xin dự giờ tiết học"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Môn học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.subjectName || "Môn học"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Cấp học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.level || "N/A"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Khối lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.grade || "N/A"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.className || "N/A"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Ngày dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${formattedDate}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.period || "Tiết 1"}</td></tr>
-              </table>
-              <p>Thầy/Cô vui lòng truy cập hệ thống Skyline để phê duyệt hoặc xem chi tiết yêu cầu.</p>
-              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
-                Hệ thống Quản lý Dự giờ Skyline
-              </div>
-            </div>
-          `;
-
-          try {
-            const emailSubject = `[Skyline - Dự Giờ] Đề xuất xin dự giờ từ ${observerTeacher.teacherName}`;
-            await sendEmail({ to: hostEmail, subject: emailSubject, html: emailHtml });
-            console.log("[Skyline Email] Sent request email to host teacher:", hostEmail);
-          } catch (mailErr) {
-            console.error("Failed to send email for requestObservationSlot:", mailErr);
-          }
-        }
-      }
-    } catch (notifErr) {
-      console.error("Error sending requestObservationSlot notification:", notifErr);
-    }
-
     return { success: true, slot: newSlot }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -999,7 +941,7 @@ export async function registerObservation(slotId: string) {
             userId: slot.teacher.user.id,
             title: notifTitle,
             message: notifMsg,
-            link: "/teacher/du-gio",
+            link: `/teacher/du-gio?tab=my_schedule&slotId=${slot.id}`,
             isRead: false
           }
         });
@@ -1540,7 +1482,11 @@ export async function updateTeacherObservationTargets(
 
 
 
+let isDbColumnsEnsured = false;
+
 async function ensureDbColumns() {
+  if (isDbColumnsEnsured) return;
+  isDbColumnsEnsured = true;
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "Teacher" ADD COLUMN "teamsWebhookUrl" TEXT;`);
   } catch (e) {}
@@ -1728,7 +1674,7 @@ export async function requestObservationSlot(data: {
             userId: hostTeacher.user.id,
             title: notifTitle,
             message: notifMsg,
-            link: "/teacher/du-gio",
+            link: `/teacher/du-gio?tab=my_schedule&slotId=${newSlot.id}`,
             isRead: false
           }
         });
@@ -1859,7 +1805,7 @@ export async function requestObservationSlot(data: {
                 userId: t.user.id,
                 title: "Thông báo đăng ký tiết dự giờ mới",
                 message: `Thầy/Cô ${hostTeacher.teacherName} vừa có tiết dạy đăng ký dự giờ (${data.subjectName || "Môn học"} - ${data.topic || "Tiết dạy mở"}). Vui lòng đăng nhập hệ thống để đăng ký dự giờ.`,
-                link: "/teacher/du-gio?tab=register_request",
+                link: `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}&action=register`,
                 isRead: false
               }
             });
@@ -1873,14 +1819,14 @@ export async function requestObservationSlot(data: {
                 <p>Kính gửi Thầy/Cô <strong>${t.teacherName}</strong>,</p>
                 <p>Thầy/Cô <strong>${hostTeacher.teacherName}</strong> thuộc Tổ Chuyên Môn vừa khởi tạo tiết dạy đăng ký dự giờ. Kính mời Thầy/Cô đăng nhập hệ thống để đăng ký dự giờ.</p>
                 <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
-                  <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 40%;">Giáo viên đăng ký tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 40%;">Giáo viên đăng ký tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${observerTeacher.teacherName} (${observerTeacher.teacherCode})</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tên bài dạy / Chủ đề:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.topic || "Tiết dạy đăng ký dự giờ"}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Môn học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.subjectName || "Môn học"}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Cấp học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.level || "N/A"}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Khối lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.grade || "N/A"}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.className || "N/A"}</td></tr>
                   <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Ngày dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${formattedDate}</td></tr>
-                  <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.startTime || "Tiết 1"}</td></tr>
+                  <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${(data as any).startTime || (data as any).period || "Tiết 1"}</td></tr>
                 </table>
                 <p>Thầy/Cô vui lòng truy cập hệ thống Skyline để xem chi tiết và chọn tiết đăng ký dự giờ.</p>
                 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
@@ -2176,7 +2122,7 @@ export async function processExpiredSlotsNotifications() {
           userId: uId,
           title: "Hết hạn đăng ký dự giờ & Nhắc lịch dạy",
           message: `Tiết dạy dự giờ (${slot.subjectName} - ${slot.topic}) đã hết hạn đăng ký (Có ${registeredCount}/4 GV tham dự). Vui lòng thực hiện tiết dạy theo đúng lịch.`,
-          link: "/teacher/du-gio?tab=my_schedule",
+          link: `/teacher/du-gio?tab=my_schedule&slotId=${slot.id}`,
           isRead: false
         }));
         await prisma.notification.createMany({ data: notifData }).catch(e => console.error("Notif error:", e));
@@ -2298,7 +2244,7 @@ export async function sendPendingEvaluationReminder(registrationId: string) {
           userId: observer.user.id,
           title: "Nhắc nhở hoàn tất nhập đánh giá dự giờ",
           message: `Vui lòng hoàn tất nhập đánh giá tiết dạy "${slot.topic}" của Thầy/Cô ${hostTeacher?.teacherName}. Hệ thống chỉ ghi nhận khi hoàn tất đánh giá.`,
-          link: "/teacher/du-gio?tab=evaluations",
+          link: `/teacher/du-gio?tab=evaluations&evalSlotId=${slot.id}`,
           isRead: false
         }
       }).catch(e => console.error("In-app notif error:", e));
@@ -2438,7 +2384,7 @@ export async function sendBatchPendingEvaluationReminders() {
               userId: observerUserId,
               title: "Nhắc nhở hoàn tất nhập đánh giá dự giờ",
               message: `[Dự giờ #${reg.id}] Vui lòng hoàn tất nhập đánh giá tiết dạy "${slot.topic}" của Thầy/Cô ${hostTeacher?.teacherName}. Hệ thống chỉ ghi nhận khi hoàn tất đánh giá.`,
-              link: "/teacher/du-gio?tab=evaluations",
+              link: `/teacher/du-gio?tab=evaluations&evalSlotId=${slot.id}`,
               isRead: false
             }
           }).catch(e => console.error("Batch notif error:", e));

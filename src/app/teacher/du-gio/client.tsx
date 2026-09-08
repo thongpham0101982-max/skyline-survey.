@@ -304,7 +304,7 @@ const getAvatarGradient = (name: string) => {
 
 const mapTabToMainTab = (tab: string | null | undefined): "register_request" | "overview_slots" | "my_schedule" | "evaluations" | "ttcm_summary" | "re_evaluations" => {
   if (!tab) return "register_request";
-  if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview") return "overview_slots";
+  if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview" || tab === "slots" || tab === "danh-sach" || tab === "dang-ky-du-gio") return "overview_slots";
   if (tab === "my_schedule" || tab === "my-schedule" || tab === "lich-day" || tab === "schedule") return "my_schedule";
   if (tab === "evaluations" || tab === "evaluation" || tab === "danh-gia") return "evaluations";
   if (tab === "ttcm_summary" || tab === "ttcm" || tab === "theo-doi-tong-hop" || tab === "tong-hop-ttcm" || tab === "to-chuyen-mon") return "ttcm_summary";
@@ -450,6 +450,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [historySlot, setHistorySlot] = useState<any | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
+  const [highlightedSlotId, setHighlightedSlotId] = useState<string | null>(null)
 
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
@@ -709,6 +710,101 @@ export function ObservationClient(props: ObservationClientProps) {
         } else if (targetSlot.registrations && targetSlot.registrations.length > 0) {
           openEvalModal(targetSlot.registrations[0], targetSlot);
         }
+      }
+    }
+  }, [searchParams, slots, currentTeacher]);
+
+  // Deep-linking from notification or email: Auto switch tab, scroll to slot, highlight, and open registration modal
+  useEffect(() => {
+    const slotIdParam = searchParams.get("slotId");
+    const teacherNameParam = searchParams.get("teacherName");
+    const topicParam = searchParams.get("topic");
+    const actionParam = searchParams.get("action");
+    const tabParam = searchParams.get("tab");
+
+    if (!slotIdParam && !teacherNameParam && !topicParam) return;
+    if (tabParam === "evaluations") return;
+
+    if (slots && slots.length > 0) {
+      let targetSlot: any = null;
+
+      if (slotIdParam) {
+        targetSlot = slots.find((s: any) => s.id === slotIdParam);
+      }
+
+      if (!targetSlot && teacherNameParam) {
+        const cleanTeacher = teacherNameParam.trim().toLowerCase();
+        targetSlot = slots.find((s: any) => {
+          const sTeacher = (s.teacher?.teacherName || "").trim().toLowerCase();
+          return sTeacher.includes(cleanTeacher) || cleanTeacher.includes(sTeacher);
+        });
+      }
+
+      if (!targetSlot && topicParam) {
+        const cleanTopic = topicParam.trim().toLowerCase();
+        targetSlot = slots.find((s: any) => {
+          const sTopic = (s.topic || "").trim().toLowerCase();
+          return sTopic.includes(cleanTopic) || cleanTopic.includes(sTopic);
+        });
+      }
+
+      if (targetSlot) {
+        const isHost = targetSlot.teacherId === currentTeacher?.id || targetSlot.teacher?.id === currentTeacher?.id;
+
+        if (isHost) {
+          // Logged-in teacher is the host of this slot -> go to my_schedule
+          setActiveMainTab("my_schedule");
+          setHighlightedSlotId(targetSlot.id);
+          setTimeout(() => {
+            const el = document.getElementById(`my-taught-slot-${targetSlot.id}`) || document.getElementById(`slot-row-${targetSlot.id}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 400);
+        } else {
+          // Observer user -> Switch to overview_slots, reset filters that could hide this slot
+          setActiveMainTab("overview_slots");
+          setActiveFilterTab("all");
+          setFilterSchoolBlock("all");
+          setHighlightedSlotId(targetSlot.id);
+
+          setTimeout(() => {
+            const el = document.getElementById(`slot-row-${targetSlot.id}`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 400);
+
+          // If action is register, open the registration modal or notify status
+          if (actionParam === "register") {
+            const todayStr = new Date().toISOString().split("T")[0];
+            const isExpired = targetSlot.status === "EXPIRED" || (targetSlot.date && targetSlot.date.split("T")[0] < todayStr);
+            const myReg = targetSlot.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
+            const observerCount = targetSlot.registrations?.length || 0;
+
+            if (myReg) {
+              setToast({
+                message: `Bạn đã đăng ký tham dự tiết dạy của Thầy/Cô ${targetSlot.teacher?.teacherName} (${myReg.isApproved ? "Đã được xác nhận" : "Đang chờ duyệt"}).`,
+                type: "info"
+              });
+            } else if (isExpired) {
+              setToast({
+                message: `Tiết dạy của Thầy/Cô ${targetSlot.teacher?.teacherName} đã diễn ra hoặc hết hạn đăng ký.`,
+                type: "error"
+              });
+            } else if (observerCount >= (targetSlot.maxSeats || 4)) {
+              setToast({
+                message: `Tiết dạy của Thầy/Cô ${targetSlot.teacher?.teacherName} đã đủ ${targetSlot.maxSeats || 4} giáo viên đăng ký.`,
+                type: "error"
+              });
+            } else {
+              // Valid to register! Open registration modal popup directly
+              setRegisterDetailSlot(targetSlot);
+            }
+          }
+        }
+
+        // Auto remove highlight pulse after 7 seconds
+        const timer = setTimeout(() => {
+          setHighlightedSlotId(null);
+        }, 7000);
+        return () => clearTimeout(timer);
       }
     }
   }, [searchParams, slots, currentTeacher]);
@@ -4062,7 +4158,13 @@ export function ObservationClient(props: ObservationClientProps) {
                     const observerName = observerReg?.teacher?.teacherName || observerReg?.teacherName || "GVBM";
 
                     return (
-                      <tr key={slot.id} className="hover:bg-indigo-50/30 transition-colors">
+                      <tr 
+                        key={slot.id} 
+                        id={`slot-row-${slot.id}`}
+                        className={`hover:bg-indigo-50/30 transition-all duration-500 ${
+                          highlightedSlotId === slot.id ? "bg-amber-100/90 ring-4 ring-amber-400 ring-offset-2 rounded-xl shadow-lg scale-[1.01]" : ""
+                        }`}
+                      >
                         <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
                         <td className="p-4 font-bold text-slate-800">
                           <div className="flex items-center gap-2.5">
@@ -4138,7 +4240,13 @@ export function ObservationClient(props: ObservationClientProps) {
                   }
 
                   return (
-                    <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr 
+                      key={slot.id} 
+                      id={`slot-row-${slot.id}`}
+                      className={`hover:bg-slate-50/80 transition-all duration-500 ${
+                        highlightedSlotId === slot.id ? "bg-amber-100/90 ring-4 ring-amber-400 ring-offset-2 rounded-xl shadow-lg scale-[1.01]" : ""
+                      }`}
+                    >
                       <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
                       
                       {/* Cột GIÁO VIÊN */}
@@ -4451,7 +4559,13 @@ export function ObservationClient(props: ObservationClientProps) {
                       const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "Sky-Line";
 
                       return (
-                        <tr key={slot.id} className="hover:bg-amber-50/20 transition-colors">
+                        <tr 
+                          key={slot.id} 
+                          id={`my-taught-slot-${slot.id}`}
+                          className={`hover:bg-amber-50/20 transition-all duration-500 ${
+                            highlightedSlotId === slot.id ? "bg-amber-100/90 ring-4 ring-amber-400 ring-offset-2 rounded-xl shadow-lg scale-[1.01]" : ""
+                          }`}
+                        >
                           {/* TT */}
                           <td className="p-3.5 text-center font-black text-slate-400">{index + 1}</td>
 
@@ -4734,7 +4848,13 @@ export function ObservationClient(props: ObservationClientProps) {
                       const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "Sky-Line";
 
                       return (
-                        <tr key={slot.id} className="hover:bg-teal-50/20 transition-colors">
+                        <tr 
+                          key={slot.id} 
+                          id={`my-observed-slot-${slot.id}`}
+                          className={`hover:bg-teal-50/20 transition-all duration-500 ${
+                            highlightedSlotId === slot.id ? "bg-amber-100/90 ring-4 ring-amber-400 ring-offset-2 rounded-xl shadow-lg scale-[1.01]" : ""
+                          }`}
+                        >
                           {/* TT */}
                           <td className="p-3.5 text-center font-black text-slate-400">{index + 1}</td>
 
