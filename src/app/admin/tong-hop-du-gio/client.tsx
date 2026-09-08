@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { updateTeacherObservationTargets } from "@/app/teacher/du-gio/actions"
 import toast, { Toaster } from "react-hot-toast"
@@ -10,7 +10,7 @@ import {
   BookOpen, User, Award, ThumbsUp, MessageSquare, GraduationCap,
   Eye, Settings, Sparkles, Filter, TrendingUp, BarChart3, School,
   Baby, Building2, Star, CheckCheck, Clock, Mail, Send, FileSpreadsheet,
-  UserCheck, AlertTriangle, ArrowRight, BookMarked, Grid3X3, Table2, ArrowLeftRight, MapPin
+  UserCheck, AlertTriangle, ArrowRight, BookMarked, Grid3X3, Table2, ArrowLeftRight, MapPin, RefreshCw
 } from "lucide-react"
 
 interface TeacherInfo { 
@@ -671,6 +671,93 @@ export function AdminTongHopClient({
   const [allDeptsMonth, setAllDeptsMonth] = useState<string>("all");
   const [allDeptsNotes, setAllDeptsNotes] = useState("");
   const [sendingAllDeptsEmail, setSendingAllDeptsEmail] = useState(false);
+
+  // Cấu hình Tự động gửi email đến TTCM vào ngày cuối cùng của tháng
+  const [isAutoEmailModalOpen, setIsAutoEmailModalOpen] = useState(false);
+  const [autoEmailConfig, setAutoEmailConfig] = useState<{
+    enabled: boolean;
+    currentMonth: string;
+    nextRunDate: string;
+    isRunDay: boolean;
+    lastSentMonth: string;
+    lastSentAt: string;
+    lastLog: string;
+    departments: any[];
+  } | null>(null);
+  const [loadingAutoConfig, setLoadingAutoConfig] = useState(false);
+  const [togglingAutoEmail, setTogglingAutoEmail] = useState(false);
+  const [runningAutoTest, setRunningAutoTest] = useState(false);
+  const [autoTestMessage, setAutoTestMessage] = useState<string | null>(null);
+
+  const fetchAutoEmailConfig = useCallback(async () => {
+    try {
+      setLoadingAutoConfig(true);
+      const res = await fetch("/api/admin/du-gio/auto-email-config");
+      if (res.ok) {
+        const data = await res.json();
+        setAutoEmailConfig(data);
+      }
+    } catch (err) {
+      console.error("Error fetching auto email config:", err);
+    } finally {
+      setLoadingAutoConfig(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAutoEmailConfig();
+  }, [fetchAutoEmailConfig]);
+
+  const handleToggleAutoEmail = async (newVal: boolean) => {
+    try {
+      setTogglingAutoEmail(true);
+      const res = await fetch("/api/admin/du-gio/auto-email-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: newVal })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAutoEmailConfig(prev => prev ? { ...prev, enabled: newVal } : null);
+        toast.success(data.message || (newVal ? "Đã bật tự động gửi email" : "Đã tắt tự động gửi email"));
+      } else {
+        toast.error("Không thể cập nhật cấu hình tự động gửi email");
+      }
+    } catch (err) {
+      toast.error("Lỗi khi kết nối đến máy chủ");
+    } finally {
+      setTogglingAutoEmail(false);
+    }
+  };
+
+  const handleRunAutoTest = async () => {
+    if (!confirm("Hệ thống sẽ gửi email báo cáo tháng hiện tại cho TẤT CẢ các Tổ trưởng chuyên môn ngay bây giờ. Bạn có chắc chắn muốn chạy thử nghiệm?")) {
+      return;
+    }
+    try {
+      setRunningAutoTest(true);
+      setAutoTestMessage(null);
+      const res = await fetch("/api/admin/du-gio/auto-email-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ triggerNow: true })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAutoTestMessage(`Thành công: ${data.message}`);
+        toast.success(data.message);
+        fetchAutoEmailConfig();
+      } else {
+        setAutoTestMessage(`Thất bại: ${data.error || "Có lỗi xảy ra"}`);
+        toast.error(data.error || "Gửi thử nghiệm thất bại");
+      }
+    } catch (err: any) {
+      setAutoTestMessage(`Lỗi: ${err.message}`);
+      toast.error("Lỗi kết nối máy chủ");
+    } finally {
+      setRunningAutoTest(false);
+    }
+  };
 
   // Compute live summary for all departments based on allDeptsMonth (used for email preview and sending)
   const allDeptsEmailSummary = useMemo(() => {
@@ -2591,6 +2678,21 @@ export function AdminTongHopClient({
             <Mail className="w-3.5 h-3.5 text-slate-950" />
             <span>Báo cáo cho TTCM</span>
           </button>
+
+          {/* Nút Cấu hình Tự động gửi email cuối tháng */}
+          <button
+            type="button"
+            onClick={() => setIsAutoEmailModalOpen(true)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold shadow-2xs transition-all cursor-pointer ${
+              autoEmailConfig?.enabled
+                ? "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+                : "bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200"
+            }`}
+            title="Cấu hình tự động gửi email báo cáo cho TTCM vào ngày cuối cùng của tháng"
+          >
+            <span className={`w-2 h-2 rounded-full ${autoEmailConfig?.enabled ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
+            <span>Tự động gửi cuối tháng: {autoEmailConfig?.enabled ? "BẬT" : "TẮT"}</span>
+          </button>
         </div>
       </div>
 
@@ -4350,6 +4452,208 @@ export function AdminTongHopClient({
                 className="px-4 py-1.5 rounded-lg bg-[#003B3A] text-white text-xs font-black hover:bg-[#002d2c] flex items-center gap-1"
               >
                 {savingTargets ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auto Email Configuration Modal */}
+      {isAutoEmailModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
+                  Cấu hình Tự động gửi Email Báo cáo TTCM
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tự động gửi báo cáo đối chiếu chỉ tiêu dự giờ đến các Tổ trưởng chuyên môn vào ngày cuối cùng của tháng
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsAutoEmailModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1 text-xs">
+              {/* Toggle Switch On/Off Card */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <span>Tự động gửi email cuối tháng:</span>
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                      autoEmailConfig?.enabled 
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300" 
+                        : "bg-slate-200 text-slate-700 border border-slate-300"
+                    }`}>
+                      {autoEmailConfig?.enabled ? "ĐANG BẬT (ON)" : "ĐANG TẮT (OFF)"}
+                    </span>
+                  </div>
+                  <p className="text-slate-500 text-xs mt-1 leading-relaxed">
+                    Khi BẬT, hệ thống tự động tổng hợp và gửi email báo cáo tháng hiện tại cho từng TTCM vào 18:00 ngày cuối cùng của tháng.
+                  </p>
+                </div>
+
+                <div className="shrink-0 flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={togglingAutoEmail}
+                    onClick={() => handleToggleAutoEmail(!autoEmailConfig?.enabled)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      autoEmailConfig?.enabled ? "bg-emerald-600" : "bg-slate-300"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                        autoEmailConfig?.enabled ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span className="font-semibold text-xs text-slate-700">
+                    {autoEmailConfig?.enabled ? "Bật" : "Tắt"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Information Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Lịch gửi tiếp theo
+                  </span>
+                  <div className="text-sm font-bold text-slate-800">
+                    {autoEmailConfig?.nextRunDate || "--"} lúc 18:00
+                  </div>
+                  <span className="text-[11px] text-slate-500 block">
+                    (Ngày cuối cùng của tháng {autoEmailConfig?.currentMonth ? autoEmailConfig.currentMonth.split("-")[1] : ""})
+                  </span>
+                </div>
+
+                <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Kỳ báo cáo
+                  </span>
+                  <div className="text-sm font-bold text-teal-800">
+                    Theo tháng hiện tại
+                  </div>
+                  <span className="text-[11px] text-slate-500 block">
+                    {autoEmailConfig?.currentMonth ? `Tháng ${autoEmailConfig.currentMonth.split("-")[1]}/${autoEmailConfig.currentMonth.split("-")[0]}` : "--"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Last Run Log */}
+              <div className="p-3 bg-white border border-slate-200 rounded-xl space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                  Nhật ký lần gửi gần nhất
+                </span>
+                <div className="text-xs text-slate-700 font-medium">
+                  {autoEmailConfig?.lastLog || "Chưa có lượt gửi tự động nào"}
+                </div>
+                {autoEmailConfig?.lastSentAt && (
+                  <span className="text-[10px] text-slate-400 block">
+                    Thời gian: {new Date(autoEmailConfig.lastSentAt).toLocaleString("vi-VN")}
+                  </span>
+                )}
+              </div>
+
+              {/* Departments Preview List */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Danh sách TTCM nhận báo cáo ({autoEmailConfig?.departments?.length || 0} Tổ)
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Chỉ gửi tới các tổ có TTCM và địa chỉ email hợp lệ
+                  </span>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[10px] font-bold uppercase sticky top-0">
+                      <tr>
+                        <th className="py-2 px-2 text-center w-8">STT</th>
+                        <th className="py-2 px-3">Tổ Chuyên Môn</th>
+                        <th className="py-2 px-3">Tổ Trưởng (TTCM)</th>
+                        <th className="py-2 px-3">Email Nhận</th>
+                        <th className="py-2 px-2 text-center w-24">Trạng Thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(autoEmailConfig?.departments || []).map((d: any, idx: number) => (
+                        <tr key={d.id} className="hover:bg-slate-50">
+                          <td className="py-2 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>
+                          <td className="py-2 px-3 font-semibold text-slate-800">{d.name}</td>
+                          <td className="py-2 px-3 text-slate-700">
+                            {d.ttcmName || <span className="text-slate-400 italic">Chưa gán</span>}
+                          </td>
+                          <td className="py-2 px-3 text-slate-600 font-mono text-[11px]">
+                            {d.ttcmEmail || <span className="text-slate-400 italic">--</span>}
+                          </td>
+                          <td className="py-2 px-2 text-center">
+                            {d.hasValidEmail ? (
+                              <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px]">
+                                Sẵn sàng
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 font-semibold text-[10px]">
+                                Thiếu email
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Test Run Section */}
+              <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <span className="text-xs font-bold text-amber-950 block">
+                      Kiểm thử tính năng gửi báo cáo
+                    </span>
+                    <span className="text-[11px] text-amber-800">
+                      Gửi thử nghiệm báo cáo tháng hiện tại cho tất cả TTCM ngay bây giờ mà không cần chờ đến cuối tháng.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={runningAutoTest}
+                    onClick={handleRunAutoTest}
+                    className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#002B2A] text-white font-semibold text-xs rounded-lg shadow-2xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {runningAutoTest ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Đang gửi thử...</span>
+                      </>
+                    ) : (
+                      <span>Chạy thử nghiệm ngay</span>
+                    )}
+                  </button>
+                </div>
+                {autoTestMessage && (
+                  <div className="p-2 bg-white rounded border border-amber-200 text-slate-800 text-[11px] font-medium">
+                    {autoTestMessage}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end pt-3 border-t border-slate-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsAutoEmailModalOpen(false)}
+                className="px-4 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Đóng
               </button>
             </div>
           </div>
