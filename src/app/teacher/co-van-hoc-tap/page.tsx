@@ -2,12 +2,12 @@
 
 export const dynamic = "force-dynamic"
 
-import {
-  Key, Flame, useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import {
   Compass, Plus, Search, Calendar, User, MessageSquare, AlertTriangle,
   CheckCircle2, Clock, Filter, Save, Trash2, Heart, Sparkles, AlertCircle,
-  TrendingUp, Award, Table, BookOpen, Layers, Info, ChevronRight, ChevronLeft, FileText, X, Edit3, ShieldCheck
+  TrendingUp, Award, Table, BookOpen, Layers, Info, ChevronRight, ChevronLeft, FileText, X, Edit3, ShieldCheck,
+  Key, Flame
 } from "lucide-react"
 
 export default function TeacherAdvisoryPage() {
@@ -1729,6 +1729,324 @@ export default function TeacherAdvisoryPage() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- TAB 5: MỞ KHÓA MỤC TIÊU & SPRINT 7 NGÀY (GIAI ĐOẠN 2 - K9-12) ----------------- */}
+      {activeTab === "unlocks" && (
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-base font-black text-[#003B3A] flex items-center gap-2">
+                <Key className="w-5 h-5 text-amber-500" />
+                <span>Theo Dõi Mở Khóa Mục Tiêu & Sprint 7 Ngày (K9–12) — Lớp {selectedClass?.className}</span>
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Quản lý các mục tiêu đang được học sinh mở khóa, tiến độ hành động 7 ngày và hỗ trợ kịp thời cho học sinh.
+              </p>
+            </div>
+
+            {/* Quick Filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setUnlockFilter("ALL")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  unlockFilter === "ALL"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                Tất cả ({unlocksList.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setUnlockFilter("IN_PROGRESS")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  unlockFilter === "IN_PROGRESS"
+                    ? "bg-teal-600 text-white shadow-xs"
+                    : "bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100"
+                }`}
+              >
+                Đang Sprint ({unlocksList.filter(u => u.status === "IN_PROGRESS").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setUnlockFilter("NEED_SUPPORT")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  unlockFilter === "NEED_SUPPORT"
+                    ? "bg-rose-600 text-white shadow-xs"
+                    : "bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100"
+                }`}
+              >
+                Cần hỗ trợ ({unlocksList.filter(u => u.needSupport).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setUnlockFilter("NOT_UNLOCKED")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  unlockFilter === "NOT_UNLOCKED"
+                    ? "bg-amber-600 text-white shadow-xs"
+                    : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+                }`}
+              >
+                Chưa mở khóa ({unlocksList.filter(u => !u.hasUnlocked && u.hasGoalSheet).length})
+              </button>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left border-collapse border border-slate-200">
+              <thead>
+                <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
+                  <th className="p-3 border-r border-slate-200 w-12 text-center">STT</th>
+                  <th className="p-3 border-r border-slate-200 w-44">Học sinh</th>
+                  <th className="p-3 border-r border-slate-200 w-32">Trạng thái</th>
+                  <th className="p-3 border-r border-slate-200 min-w-[200px]">Mục tiêu đang mở khóa</th>
+                  <th className="p-3 border-r border-slate-200 min-w-[220px]">Hành động 7 ngày & Chìa khóa</th>
+                  <th className="p-3 border-r border-slate-200 w-36">Tiến độ Sprint</th>
+                  <th className="p-3 border-r border-slate-200 min-w-[180px]">Đồng hành & Ghi chú GV</th>
+                  <th className="p-3 text-center w-24">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+                {unlocksLoading ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
+                      Đang tải dữ liệu mở khóa mục tiêu...
+                    </td>
+                  </tr>
+                ) : unlocksList.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center text-slate-400 font-medium">
+                      Chưa có dữ liệu học sinh trong lớp {selectedClass?.className}.
+                    </td>
+                  </tr>
+                ) : (
+                  unlocksList
+                    .filter(u => {
+                      if (unlockFilter === "IN_PROGRESS") return u.status === "IN_PROGRESS"
+                      if (unlockFilter === "NEED_SUPPORT") return u.needSupport
+                      if (unlockFilter === "NOT_UNLOCKED") return !u.hasUnlocked && u.hasGoalSheet
+                      if (unlockFilter === "UNLOCKED") return u.hasUnlocked
+                      return true
+                    })
+                    .map((item, idx) => (
+                      <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="p-3 border-r border-slate-200 text-center font-bold text-slate-500">
+                          {idx + 1}
+                        </td>
+                        <td className="p-3 border-r border-slate-200 font-black text-slate-900 bg-slate-50/50">
+                          <div>{item.studentName}</div>
+                          <span className="text-[10px] text-slate-500 font-medium">({item.studentCode})</span>
+                        </td>
+                        <td className="p-3 border-r border-slate-200">
+                          {item.status === "IN_PROGRESS" ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-200 inline-block">
+                              Đang chạy Sprint
+                            </span>
+                          ) : item.status === "COMPLETED" ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 inline-block">
+                              Hoàn thành
+                            </span>
+                          ) : item.hasUnlocked ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-800 border border-blue-200 inline-block">
+                              Đã mở khóa
+                            </span>
+                          ) : item.hasGoalSheet ? (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-100 text-slate-600 border border-slate-200 inline-block">
+                              Chưa mở khóa ({item.goalCount} MT)
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-50 text-rose-600 border border-rose-200 inline-block">
+                              Chưa lập mục tiêu
+                            </span>
+                          )}
+                          {item.needSupport && (
+                            <span className="mt-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-300 block text-center animate-pulse">
+                              Cần GV hỗ trợ
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3 border-r border-slate-200">
+                          {item.targetText ? (
+                            <div>
+                              <span className="font-bold text-slate-900 text-xs block mb-1">
+                                {item.targetText}
+                              </span>
+                              {item.currentState && (
+                                <span className="text-[11px] text-slate-500 block italic">
+                                  Hiện tại: {item.currentState}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">—</span>
+                          )}
+                        </td>
+                        <td className="p-3 border-r border-slate-200">
+                          {item.sevenDayAction ? (
+                            <div className="space-y-1">
+                              <p className="font-bold text-slate-900 text-xs leading-relaxed">
+                                {item.sevenDayAction}
+                              </p>
+                              {item.selectedKey && (
+                                <span className="inline-block px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 text-[10px] font-extrabold">
+                                  🔑 {item.selectedKey}
+                                </span>
+                              )}
+                              {item.actionTiming && (
+                                <span className="text-[10px] text-slate-500 block">
+                                  ⏰ {item.actionTiming}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">—</span>
+                          )}
+                        </td>
+                        <td className="p-3 border-r border-slate-200">
+                          {item.progressInfo ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                                <span>Ngày {item.progressInfo.dayNumber}/7</span>
+                                <span className="text-teal-700 font-extrabold">{item.progressInfo.percent}%</span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                <div
+                                  className="bg-teal-600 h-2 rounded-full transition-all"
+                                  style={{ width: `${item.progressInfo.percent}%` }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">—</span>
+                          )}
+                        </td>
+                        <td className="p-3 border-r border-slate-200 text-xs">
+                          {item.companion && (
+                            <span className="text-[11px] font-bold text-teal-800 block mb-1">
+                              🤝 {item.companion}
+                            </span>
+                          )}
+                          {item.teacherSupportNotes ? (
+                            <div className="p-1.5 rounded-lg bg-teal-50 border border-teal-200 text-teal-950 text-[10px] font-semibold">
+                              GV: "{item.teacherSupportNotes}"
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">Chưa có ghi chú</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {item.hasUnlocked ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedUnlockForModal(item)
+                                setTeacherNoteInput(item.teacherSupportNotes || "")
+                                setSupportStatusInput(item.supportStatus || "IN_PROGRESS")
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-teal-50 text-teal-700 hover:text-teal-900 text-xs font-bold transition-all border border-slate-200 inline-flex items-center gap-1"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Ghi chú</span>
+                            </button>
+                          ) : (
+                            <span className="text-slate-300 text-xs">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL GHI CHÚ ĐỒNG HÀNH MỞ KHÓA MỤC TIÊU ----------------- */}
+      {selectedUnlockForModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#003B3A]">
+                    Đồng Hành & Hỗ Trợ Mục Tiêu
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Học sinh: {selectedUnlockForModal.studentName} ({selectedUnlockForModal.studentCode})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedUnlockForModal(null)}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs font-semibold text-slate-700">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-[11px] text-slate-500 font-bold block mb-0.5">Mục tiêu mở khóa:</span>
+                <p className="text-xs font-black text-slate-900">{selectedUnlockForModal.targetText}</p>
+                {selectedUnlockForModal.sevenDayAction && (
+                  <p className="text-[11px] text-teal-800 font-bold mt-1.5">
+                    🚀 Việc thử 7 ngày: {selectedUnlockForModal.sevenDayAction}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block mb-1 font-bold text-slate-800">Trạng thái hỗ trợ của GV:</label>
+                <select
+                  value={supportStatusInput}
+                  onChange={(e) => setSupportStatusInput(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50"
+                >
+                  <option value="NEED_ACTION">🟡 Cần hành động / Cần trao đổi</option>
+                  <option value="IN_PROGRESS">🔵 Đang hỗ trợ & nhắc nhở</option>
+                  <option value="COMPLETED">🟢 Đã giải tỏa khó khăn / Hoàn thành</option>
+                  <option value="NOT_NEEDED">⚪ Không cần hỗ trợ thêm</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block mb-1 font-bold text-slate-800">Ghi chú hỗ trợ của Thầy/Cô:</label>
+                <textarea
+                  rows={3}
+                  value={teacherNoteInput}
+                  onChange={(e) => setTeacherNoteInput(e.target.value)}
+                  placeholder="Nhập lời khuyên, kế hoạch nhắc nhở hoặc hướng dẫn cho học sinh..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSelectedUnlockForModal(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                disabled={savingUnlockNote}
+                onClick={handleSaveTeacherUnlockNote}
+                className="px-5 py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md"
+              >
+                <Save className="w-4 h-4" />
+                <span>{savingUnlockNote ? "Đang lưu..." : "Lưu Ghi Chú Hỗ Trợ"}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
