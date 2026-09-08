@@ -178,6 +178,7 @@ interface ObservationClientProps {
   initialFilters: { level: string; period: string; grade: string; classId?: string; date: string; month?: string; campusId: string; deptId: string; academicYearId?: string }
   academicYears?: { id: string; name: string; status: string }[]
   selectedYearId?: string
+  initialReceivedEvaluations?: any[]
 }
 
 const CRITERIA_LABELS = [
@@ -1810,12 +1811,23 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [slots, currentTeacher?.id]);
 
   const receivedEvaluations = useMemo(() => {
-    const list: any[] = [];
+    const map = new Map<string, any>();
+    
+    // 1. Populate from initialReceivedEvaluations (full academic year)
+    (props.initialReceivedEvaluations || []).forEach((item: any) => {
+      const evalId = item.evaluation?.id || item.registration?.id;
+      if (evalId) {
+        map.set(evalId, item);
+      }
+    });
+
+    // 2. Merge/update with any evaluations from current slots state
     slots.forEach(slot => {
       if (slot.teacherId === currentTeacher?.id) {
-        slot.registrations.forEach((reg: any) => {
+        slot.registrations?.forEach((reg: any) => {
           if (reg.evaluation) {
-            list.push({
+            const evalId = reg.evaluation.id || reg.id;
+            map.set(evalId, {
               slot,
               registration: reg,
               evaluation: reg.evaluation
@@ -1824,8 +1836,10 @@ export function ObservationClient(props: ObservationClientProps) {
         });
       }
     });
+
+    const list = Array.from(map.values());
     return list.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
-  }, [slots, currentTeacher?.id]);
+  }, [slots, currentTeacher?.id, props.initialReceivedEvaluations]);
 
   const isPreschoolEvaluations = useMemo(() => {
     if (isMamNonTeacher) return true;

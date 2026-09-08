@@ -114,17 +114,24 @@ export function ReceivedEvaluationsTab({
         for (let i = 1; i <= 11; i++) {
           const scoreKey = "score" + i;
           const maxVal = maxScoresK12[i - 1];
-          const sum = evals.reduce((acc, curr) => acc + (curr.evaluation?.[scoreKey] || 0), 0);
+          const sum = evals.reduce((acc, curr) => acc + (Number(curr.evaluation?.[scoreKey]) || 0), 0);
           const avg = sum / evals.length;
-          const pct = Math.round((avg / maxVal) * 100);
+          const pct = maxVal > 0 ? Math.round((avg / maxVal) * 100) : 0;
           res["Y" + i] = { avg, pct, max: maxVal, label: k12Labels[i - 1] };
           totalScoreSum += avg;
           maxPossibleScore += maxVal;
         }
+        if (totalScoreSum === 0) {
+          const altSum = evals.reduce((acc, curr) => acc + (Number(curr.evaluation?.totalScore) || 0), 0);
+          if (altSum > 0) {
+            totalScoreSum = altSum / evals.length;
+            maxPossibleScore = 20;
+          }
+        }
       } else {
         for (let i = 1; i <= 5; i++) {
           const critKey = "criterion" + i;
-          const sum = evals.reduce((acc, curr) => acc + (curr.evaluation?.[critKey] || 0), 0);
+          const sum = evals.reduce((acc, curr) => acc + (Number(curr.evaluation?.[critKey]) || 0), 0);
           const avg = sum / evals.length;
           const pct = Math.round((avg / 4) * 100);
           res["T" + i] = { avg, pct, max: 4, label: preschoolLabels[i - 1] };
@@ -144,8 +151,9 @@ export function ReceivedEvaluationsTab({
       ? monthMap[selectedEvalMonth]
       : originFilteredEvals;
 
+    const hasActiveEvals = activeEvals.length > 0;
     const currentStats = calcStatsForEvals(activeEvals);
-    const prevStats = prevMonthKey ? calcStatsForEvals(monthMap[prevMonthKey]) : null;
+    const prevStats = prevMonthKey && monthMap[prevMonthKey]?.length > 0 ? calcStatsForEvals(monthMap[prevMonthKey]) : null;
 
     // Monthly trend data theo Tháng
     const monthlyTrendData = sortedMonthKeys.map(mKey => {
@@ -156,37 +164,35 @@ export function ReceivedEvaluationsTab({
         label: `Tháng ${sp[1]}`,
         fullLabel: `Tháng ${sp[1]}/${sp[0]}`,
         score: stats.overallPct,
-        avgScore: stats.avgScore.toFixed(1),
+        avgScore: isPreschoolEvaluations ? stats.avgScore.toFixed(2) : stats.avgScore.toFixed(1),
         count: monthMap[mKey].length
       };
     });
 
-    const displayTrendData = monthlyTrendData.length > 0 ? monthlyTrendData : [
-      { monthKey: "2026-09", label: "Tháng 09", fullLabel: "Tháng 09/2026", score: 78, avgScore: "15.6", count: 1 },
-      { monthKey: "2026-10", label: "Tháng 10", fullLabel: "Tháng 10/2026", score: 82, avgScore: "16.4", count: 1 },
-      { monthKey: "2026-11", label: "Tháng 11", fullLabel: "Tháng 11/2026", score: 86, avgScore: "17.2", count: 1 },
-      { monthKey: "2026-12", label: "Tháng 12", fullLabel: "Tháng 12/2026", score: 91, avgScore: "18.2", count: 1 },
-      { monthKey: "2027-01", label: "Tháng 01", fullLabel: "Tháng 01/2027", score: 94, avgScore: "18.8", count: 1 }
-    ];
+    const displayTrendData = monthlyTrendData;
 
-    const currentOverallPct = hasEvals ? currentStats.overallPct : 94;
-    const prevOverallPct = prevStats ? prevStats.overallPct : (hasEvals ? Math.max(0, currentOverallPct - 4) : 88);
-    const progressDelta = hasEvals && prevStats ? (currentOverallPct - prevOverallPct) : 6.5;
+    const currentOverallPct = hasActiveEvals ? currentStats.overallPct : null;
+    const prevOverallPct = prevStats ? prevStats.overallPct : null;
+    const progressDelta = (hasActiveEvals && prevStats && currentOverallPct !== null && prevOverallPct !== null)
+      ? (currentOverallPct - prevOverallPct)
+      : null;
 
     if (!isPreschoolEvaluations) {
       for (let i = 1; i <= 11; i++) {
         const id = "Y" + i;
         const maxVal = maxScoresK12[i - 1];
-        const currItem = currentStats.criteria[id] || { avg: 1.90, pct: 95, max: maxVal, label: k12Labels[i - 1] };
+        const currItem = currentStats.criteria[id] || { avg: 0, pct: 0, max: maxVal, label: k12Labels[i - 1] };
         const prevItem = prevStats ? prevStats.criteria[id] : null;
-        const prevPct = prevItem ? prevItem.pct : (hasEvals ? Math.max(0, Math.min(100, currItem.pct - (i % 3 === 0 ? 5 : i % 2 === 0 ? -3 : 0))) : 90);
-        const diff = currItem.pct - prevPct;
+        const prevPct = prevItem ? prevItem.pct : null;
+        const diff = (prevItem && hasActiveEvals) ? currItem.pct - prevItem.pct : null;
 
-        const lowCount = hasEvals ? activeEvals.filter(curr => {
-          const val = curr.evaluation?.["score" + i] !== null ? Number(curr.evaluation?.["score" + i]) : 0;
+        const lowCount = hasActiveEvals ? activeEvals.filter(curr => {
+          const val = curr.evaluation?.["score" + i] !== null && curr.evaluation?.["score" + i] !== undefined
+            ? Number(curr.evaluation?.["score" + i])
+            : 0;
           return val < maxVal * 0.70;
         }).length : 0;
-        const lowPct = hasEvals && activeEvals.length > 0 ? Math.round((lowCount / activeEvals.length) * 100) : 0;
+        const lowPct = hasActiveEvals && activeEvals.length > 0 ? Math.round((lowCount / activeEvals.length) * 100) : 0;
 
         competencyData.push({
           id,
@@ -196,28 +202,30 @@ export function ReceivedEvaluationsTab({
           pct: currItem.pct,
           prevPct: prevPct,
           trendDiff: diff,
-          trendDir: diff > 1 ? "UP" : diff < -1 ? "DOWN" : "FLAT",
+          trendDir: diff !== null ? (diff > 1 ? "UP" : diff < -1 ? "DOWN" : "FLAT") : "NONE",
           standard: i <= 2 ? 1 : i <= 5 ? 2 : i <= 9 ? 3 : 4
         });
 
-        weaknessData.push({
-          id,
-          label: k12Labels[i - 1],
-          lowCount,
-          lowPct,
-          avgPct: currItem.pct
-        });
+        if (hasActiveEvals) {
+          weaknessData.push({
+            id,
+            label: k12Labels[i - 1],
+            lowCount,
+            lowPct,
+            avgPct: currItem.pct
+          });
+        }
       }
     } else {
       for (let i = 1; i <= 5; i++) {
         const id = "T" + i;
-        const currItem = currentStats.criteria[id] || { avg: 3.8, pct: 95, max: 4, label: preschoolLabels[i - 1] };
+        const currItem = currentStats.criteria[id] || { avg: 0, pct: 0, max: 4, label: preschoolLabels[i - 1] };
         const prevItem = prevStats ? prevStats.criteria[id] : null;
-        const prevPct = prevItem ? prevItem.pct : (hasEvals ? Math.max(0, Math.min(100, currItem.pct - 4)) : 90);
-        const diff = currItem.pct - prevPct;
+        const prevPct = prevItem ? prevItem.pct : null;
+        const diff = (prevItem && hasActiveEvals) ? currItem.pct - prevItem.pct : null;
 
-        const lowCount = hasEvals ? activeEvals.filter(curr => (curr.evaluation?.["criterion" + i] || 0) <= 2).length : 0;
-        const lowPct = hasEvals && activeEvals.length > 0 ? Math.round((lowCount / activeEvals.length) * 100) : 0;
+        const lowCount = hasActiveEvals ? activeEvals.filter(curr => (Number(curr.evaluation?.["criterion" + i]) || 0) <= 2).length : 0;
+        const lowPct = hasActiveEvals && activeEvals.length > 0 ? Math.round((lowCount / activeEvals.length) * 100) : 0;
 
         competencyData.push({
           id,
@@ -227,29 +235,33 @@ export function ReceivedEvaluationsTab({
           pct: currItem.pct,
           prevPct: prevPct,
           trendDiff: diff,
-          trendDir: diff > 1 ? "UP" : diff < -1 ? "DOWN" : "FLAT",
+          trendDir: diff !== null ? (diff > 1 ? "UP" : diff < -1 ? "DOWN" : "FLAT") : "NONE",
           standard: 1
         });
 
-        weaknessData.push({
-          id,
-          label: preschoolLabels[i - 1],
-          lowCount,
-          lowPct,
-          avgPct: currItem.pct
-        });
+        if (hasActiveEvals) {
+          weaknessData.push({
+            id,
+            label: preschoolLabels[i - 1],
+            lowCount,
+            lowPct,
+            avgPct: currItem.pct
+          });
+        }
       }
     }
 
-    const sortedWeaknesses = [...weaknessData].sort((a, b) => a.avgPct - b.avgPct);
-    const sortedStrengths = [...weaknessData].sort((a, b) => b.avgPct - a.avgPct);
-    const nextGoalPct = Math.min(100, Math.max(96, Math.round((currentOverallPct + 2) / 2) * 2));
+    const sortedWeaknesses = hasActiveEvals ? [...weaknessData].sort((a, b) => a.avgPct - b.avgPct) : [];
+    const sortedStrengths = hasActiveEvals ? [...weaknessData].sort((a, b) => b.avgPct - a.avgPct) : [];
+    const nextGoalPct = (hasActiveEvals && currentOverallPct !== null)
+      ? Math.min(100, Math.max(90, Math.round((currentOverallPct + 2) / 2) * 2))
+      : null;
 
     return {
       competencyData,
       sortedWeaknesses,
       sortedStrengths,
-      hasEvals,
+      hasEvals: hasActiveEvals,
       currentOverallPct,
       prevOverallPct,
       progressDelta,
@@ -257,7 +269,9 @@ export function ReceivedEvaluationsTab({
       nextGoalPct,
       availableMonths,
       activeEvalsCount: activeEvals.length,
-      currentAvgScore: currentStats.avgScore ? (isPreschoolEvaluations ? currentStats.avgScore.toFixed(2) : currentStats.avgScore.toFixed(1)) : "18.8"
+      currentAvgScore: hasActiveEvals && currentStats.avgScore > 0
+        ? (isPreschoolEvaluations ? currentStats.avgScore.toFixed(2) : currentStats.avgScore.toFixed(1))
+        : null
     };
   }, [receivedEvaluations, isPreschoolEvaluations, selectedEvalMonth, selectedOriginType]);
 
@@ -308,21 +322,23 @@ export function ReceivedEvaluationsTab({
 
   const currentPoints = competencyData.map((d, i) => {
     const angle = i * angleStep;
-    const r = radius * (Math.max(10, d.pct) / 100);
+    const r = radius * ((hasEvals ? Math.max(0, d.pct) : 0) / 100);
     return {
       x: center + r * Math.sin(angle),
       y: center - r * Math.cos(angle),
       str: (center + r * Math.sin(angle)).toFixed(1) + "," + (center - r * Math.cos(angle)).toFixed(1)
     };
   });
-  const currentPath = currentPoints.map(p => p.str).join(" ");
+  const currentPath = (hasEvals && currentOverallPct !== null && currentOverallPct > 0)
+    ? currentPoints.map(p => p.str).join(" ")
+    : "";
 
-  const prevPoints = competencyData.map((d, i) => {
+  const prevPoints = (hasEvals && competencyData.some(d => d.prevPct !== null)) ? competencyData.map((d, i) => {
     const angle = i * angleStep;
-    const r = radius * (Math.max(10, d.prevPct) / 100);
+    const r = radius * (Math.max(0, d.prevPct ?? 0) / 100);
     return (center + r * Math.sin(angle)).toFixed(1) + "," + (center - r * Math.cos(angle)).toFixed(1);
-  });
-  const prevPath = prevPoints.join(" ");
+  }) : [];
+  const prevPath = prevPoints.length > 0 ? prevPoints.join(" ") : "";
 
   // Monthly Trend Chart SVG Dimensions
   const trendW = 580;
@@ -341,7 +357,7 @@ export function ReceivedEvaluationsTab({
     const y = padT + (1 - Math.max(0, Math.min(1, yRatio))) * usableH;
     return { x, y, score: item.score, label: item.label, fullLabel: item.fullLabel };
   });
-  const linePathStr = trendPoints.map((p, i) => (i === 0 ? "M " + p.x + "," + p.y : "L " + p.x + "," + p.y)).join(" ");
+  const linePathStr = trendPoints.length > 0 ? trendPoints.map((p, i) => (i === 0 ? "M " + p.x + "," + p.y : "L " + p.x + "," + p.y)).join(" ") : "";
   const areaPathStr = trendPoints.length > 0
     ? linePathStr + " L " + trendPoints[trendPoints.length - 1].x + "," + (padT + usableH) + " L " + trendPoints[0].x + "," + (padT + usableH) + " Z"
     : "";
@@ -374,7 +390,7 @@ export function ReceivedEvaluationsTab({
               onChange={e => setSelectedEvalMonth(e.target.value)}
               className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
             >
-              <option value="ALL">Toàn bộ năm học (Tất cả)</option>
+              <option value="ALL">Toàn bộ năm học ({receivedEvaluations.length} phiếu)</option>
               {availableMonths.map(m => (
                 <option key={m.key} value={m.key}>{m.label} ({m.count} phiếu)</option>
               ))}
@@ -414,7 +430,9 @@ export function ReceivedEvaluationsTab({
               <span>Năng lực hiện tại</span>
               <Info className="w-3 h-3 text-slate-300" />
             </div>
-            <p className="text-3xl font-black text-[#00A99D] tracking-tight">{currentOverallPct}%</p>
+            <p className="text-3xl font-black text-[#00A99D] tracking-tight">
+              {currentOverallPct !== null ? `${currentOverallPct}%` : "--"}
+            </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#00A99D] flex items-center justify-center border border-sky-100 shadow-2xs">
             <Target className="w-6 h-6" />
@@ -429,7 +447,14 @@ export function ReceivedEvaluationsTab({
               <Info className="w-3 h-3 text-slate-300" />
             </div>
             <p className="text-3xl font-black text-slate-900 tracking-tight">
-              {currentAvgScore}<span className="text-sm font-bold text-slate-400">/{isPreschoolEvaluations ? "4.0" : "20"}</span>
+              {currentAvgScore !== null ? (
+                <>
+                  {currentAvgScore}
+                  <span className="text-sm font-bold text-slate-400">/{isPreschoolEvaluations ? "4.0" : "20"}</span>
+                </>
+              ) : (
+                <span className="text-slate-400">--</span>
+              )}
             </p>
           </div>
           <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#008B82] flex items-center justify-center border border-teal-100 shadow-2xs">
@@ -444,12 +469,24 @@ export function ReceivedEvaluationsTab({
               <span>Tiến bộ</span>
               <Info className="w-3 h-3 text-slate-300" />
             </div>
-            <p className={"text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-0.5 " + (progressDelta >= 0 ? "text-emerald-600" : "text-rose-600")}>
-              {progressDelta >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
-              <span>{progressDelta >= 0 ? "+" + progressDelta.toFixed(1) + "%" : progressDelta.toFixed(1) + "%"}</span>
-            </p>
+            <div className="flex items-center gap-0.5">
+              {progressDelta !== null ? (
+                <p className={"text-2xl sm:text-3xl font-black tracking-tight flex items-center gap-0.5 " + (progressDelta >= 0 ? "text-emerald-600" : "text-rose-600")}>
+                  {progressDelta >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+                  <span>{progressDelta >= 0 ? "+" + progressDelta.toFixed(1) + "%" : progressDelta.toFixed(1) + "%"}</span>
+                </p>
+              ) : (
+                <p className="text-2xl sm:text-3xl font-black tracking-tight text-slate-400">--</p>
+              )}
+            </div>
           </div>
-          <div className={"w-12 h-12 rounded-2xl flex items-center justify-center border shadow-2xs " + (progressDelta >= 0 ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100")}>
+          <div className={"w-12 h-12 rounded-2xl flex items-center justify-center border shadow-2xs " + (
+            progressDelta === null
+              ? "bg-slate-50 text-slate-400 border-slate-200"
+              : progressDelta >= 0
+              ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+              : "bg-rose-50 text-rose-600 border-rose-100"
+          )}>
             <TrendingUp className="w-6 h-6" />
           </div>
         </div>
@@ -495,7 +532,7 @@ export function ReceivedEvaluationsTab({
               </div>
             </div>
 
-            <div className="flex flex-col items-center justify-center py-4">
+            <div className="relative flex flex-col items-center justify-center py-4">
               <svg width="280" height="280" viewBox="0 0 280 280" className="overflow-visible">
                 {gridLayers.map((level, idx) => (
                   <polygon
@@ -532,22 +569,26 @@ export function ReceivedEvaluationsTab({
                   </g>
                 ))}
                 {/* Previous Period Polygon (Dashed Sky Blue) */}
-                <polygon
-                  points={prevPath}
-                  fill="rgba(56, 189, 248, 0.12)"
-                  stroke="#38BDF8"
-                  strokeWidth="1.5"
-                  strokeDasharray="4 4"
-                />
+                {prevPath && (
+                  <polygon
+                    points={prevPath}
+                    fill="rgba(56, 189, 248, 0.12)"
+                    stroke="#38BDF8"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 4"
+                  />
+                )}
                 {/* Current Period Polygon (Solid Teal) */}
-                <polygon
-                  points={currentPath}
-                  fill="rgba(0, 169, 157, 0.22)"
-                  stroke="#00A99D"
-                  strokeWidth="2.5"
-                />
+                {currentPath && (
+                  <polygon
+                    points={currentPath}
+                    fill="rgba(0, 169, 157, 0.22)"
+                    stroke="#00A99D"
+                    strokeWidth="2.5"
+                  />
+                )}
                 {/* Current Period Vertex Dots */}
-                {currentPoints.map((p, idx) => (
+                {hasEvals && currentPoints.map((p, idx) => (
                   <circle
                     key={idx}
                     cx={p.x}
@@ -557,12 +598,24 @@ export function ReceivedEvaluationsTab({
                   />
                 ))}
               </svg>
+
+              {!hasEvals && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-2xl border border-slate-200/90 shadow-2xs text-center max-w-[200px]">
+                    <Target className="w-6 h-6 text-slate-300 mx-auto mb-1 stroke-1" />
+                    <p className="text-xs font-bold text-slate-700">Chưa có đánh giá</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5">Biểu đồ sẽ vẽ khi có ít nhất 1 phiếu dự giờ</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
             <span>Đánh giá đa chiều {isPreschoolEvaluations ? "5 tiêu chí Mầm non" : "11 yêu cầu Chuẩn nghề nghiệp"}</span>
-            <span className="text-[#00A99D] font-bold">Mức đạt: {currentOverallPct}%</span>
+            <span className="text-[#00A99D] font-bold">
+              {currentOverallPct !== null ? `Mức đạt: ${currentOverallPct}%` : "Chưa có dữ liệu"}
+            </span>
           </div>
         </div>
 
@@ -595,16 +648,16 @@ export function ReceivedEvaluationsTab({
                   <div className="w-24 sm:w-32 bg-slate-200 rounded-full h-1.5 overflow-hidden shrink-0 hidden sm:block">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-teal-500 to-[#48BFE3] transition-all"
-                      style={{ width: `${item.pct}%` }}
+                      style={{ width: `${hasEvals ? item.pct : 0}%` }}
                     />
                   </div>
 
                   <div className="grid grid-cols-3 gap-6 text-right items-center shrink-0">
                     <span className="text-xs font-black text-slate-800">
-                      {item.avg.toFixed(2)}/{item.max}đ
+                      {hasEvals ? `${item.avg.toFixed(2)}/${item.max}đ` : `--/${item.max}đ`}
                     </span>
                     <span className="text-xs font-black text-slate-700">
-                      {item.pct}%
+                      {hasEvals ? `${item.pct}%` : "--"}
                     </span>
                     <div className="flex justify-end">
                       {item.trendDir === "UP" ? (
@@ -613,7 +666,7 @@ export function ReceivedEvaluationsTab({
                         </span>
                       ) : item.trendDir === "DOWN" ? (
                         <span className="inline-flex items-center gap-0.5 text-[11px] font-black text-rose-600 bg-rose-50 border border-rose-200/60 px-1.5 py-0.5 rounded-md">
-                          ↓ {Math.abs(item.trendDiff)}%
+                          ↓ {Math.abs(item.trendDiff || 0)}%
                         </span>
                       ) : (
                         <span className="text-slate-400 font-bold px-1">→</span>
@@ -646,53 +699,69 @@ export function ReceivedEvaluationsTab({
             </div>
 
             {/* SVG Area Line Chart Theo Tháng */}
-            <div className="w-full overflow-x-auto py-2">
-              <svg width="100%" height="180" viewBox={`0 0 ${trendW} ${trendH}`} className="overflow-visible min-w-[480px]">
-                <defs>
-                  <linearGradient id="monthAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#48BFE3" stopOpacity="0.35" />
-                    <stop offset="100%" stopColor="#48BFE3" stopOpacity="0.02" />
-                  </linearGradient>
-                </defs>
+            {monthlyTrendData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[180px] text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 my-2">
+                <TrendingUp className="w-8 h-8 text-slate-300 mb-2 stroke-1" />
+                <p className="text-xs font-bold">Chưa có dữ liệu xu hướng qua các tháng</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Biểu đồ sẽ hiển thị khi có các phiếu đánh giá qua từng tháng</p>
+              </div>
+            ) : (
+              <div className="w-full overflow-x-auto py-2">
+                <svg width="100%" height="180" viewBox={`0 0 ${trendW} ${trendH}`} className="overflow-visible min-w-[480px]">
+                  <defs>
+                    <linearGradient id="monthAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#48BFE3" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#48BFE3" stopOpacity="0.02" />
+                    </linearGradient>
+                  </defs>
 
-                {/* Horizontal Grid lines */}
-                {[100, 75, 50].map(lvl => {
-                  const y = padT + (1 - (lvl - 50) / 50) * usableH;
-                  return (
-                    <g key={lvl}>
-                      <line x1={padL} y1={y} x2={trendW - padR} y2={y} stroke="#f1f5f9" strokeWidth="1" />
-                      <text x={padL - 8} y={y + 3} textAnchor="end" className="text-[9px] fill-slate-400 font-bold">
-                        {lvl}%
+                  {/* Horizontal Grid lines */}
+                  {[100, 75, 50].map(lvl => {
+                    const y = padT + (1 - (lvl - 50) / 50) * usableH;
+                    return (
+                      <g key={lvl}>
+                        <line x1={padL} y1={y} x2={trendW - padR} y2={y} stroke="#f1f5f9" strokeWidth="1" />
+                        <text x={padL - 8} y={y + 3} textAnchor="end" className="text-[9px] fill-slate-400 font-bold">
+                          {lvl}%
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Area Gradient Fill */}
+                  {areaPathStr && <path d={areaPathStr} fill="url(#monthAreaGrad)" />}
+
+                  {/* Stroke Line */}
+                  {linePathStr && <path d={linePathStr} fill="none" stroke="#00A99D" strokeWidth="2.5" strokeLinecap="round" />}
+
+                  {/* Data points and labels */}
+                  {trendPoints.map((p, idx) => (
+                    <g key={idx}>
+                      <circle cx={p.x} cy={p.y} r="4.5" className="fill-white stroke-[#003B3A] stroke-2" />
+                      <text x={p.x} y={p.y - 9} textAnchor="middle" className="text-[11px] font-black fill-slate-800">
+                        {p.score}%
+                      </text>
+                      <text x={p.x} y={trendH - 12} textAnchor="middle" className="text-[10px] font-bold fill-slate-500">
+                        {p.label}
                       </text>
                     </g>
-                  );
-                })}
-
-                {/* Area Gradient Fill */}
-                {areaPathStr && <path d={areaPathStr} fill="url(#monthAreaGrad)" />}
-
-                {/* Stroke Line */}
-                {linePathStr && <path d={linePathStr} fill="none" stroke="#00A99D" strokeWidth="2.5" strokeLinecap="round" />}
-
-                {/* Data points and labels */}
-                {trendPoints.map((p, idx) => (
-                  <g key={idx}>
-                    <circle cx={p.x} cy={p.y} r="4.5" className="fill-white stroke-[#003B3A] stroke-2" />
-                    <text x={p.x} y={p.y - 9} textAnchor="middle" className="text-[11px] font-black fill-slate-800">
-                      {p.score}%
-                    </text>
-                    <text x={p.x} y={trendH - 12} textAnchor="middle" className="text-[10px] font-bold fill-slate-500">
-                      {p.label}
-                    </text>
-                  </g>
-                ))}
-              </svg>
-            </div>
+                  ))}
+                </svg>
+              </div>
+            )}
           </div>
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
             <span>Theo dõi tiến trình tăng trưởng chuyên môn qua từng tháng trong năm học</span>
-            <span className="text-emerald-600 font-bold">Đà tăng trưởng ổn định</span>
+            {monthlyTrendData.length > 0 ? (
+              <span className="text-emerald-600 font-bold">
+                {monthlyTrendData.length >= 2 && monthlyTrendData[monthlyTrendData.length - 1].score >= monthlyTrendData[0].score
+                  ? "Đà tăng trưởng ổn định"
+                  : "Ghi nhận dữ liệu thực tế"}
+              </span>
+            ) : (
+              <span className="text-slate-400 font-bold">Chưa ghi nhận</span>
+            )}
           </div>
         </div>
 
@@ -706,37 +775,45 @@ export function ReceivedEvaluationsTab({
               <h4 className="font-black text-sm text-slate-900">Nhận định nhanh</h4>
             </div>
 
-            <div className="space-y-3.5 text-xs">
-              {/* Điểm mạnh */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-emerald-700 font-black">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>Điểm mạnh nổi bật:</span>
+            {hasEvals && sortedStrengths.length > 0 ? (
+              <div className="space-y-3.5 text-xs">
+                {/* Điểm mạnh */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-emerald-700 font-black">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>Điểm mạnh nổi bật:</span>
+                  </div>
+                  <div className="space-y-1.5 pl-5">
+                    {sortedStrengths.slice(0, 3).map((st, i) => (
+                      <p key={i} className="text-slate-700 font-semibold leading-relaxed">
+                        • <strong className="text-slate-900">{st.id}.</strong> {st.label.split(":")[1] || st.label}
+                      </p>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-1.5 pl-5">
-                  {sortedStrengths.slice(0, 3).map((st, i) => (
-                    <p key={i} className="text-slate-700 font-semibold leading-relaxed">
-                      • <strong className="text-slate-900">{st.id}.</strong> {st.label.split(":")[1] || st.label}
-                    </p>
-                  ))}
-                </div>
-              </div>
 
-              {/* Cần cải thiện */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-1.5 text-rose-700 font-black">
-                  <Target className="w-4 h-4 text-rose-600" />
-                  <span>Cần cải thiện:</span>
-                </div>
-                <div className="space-y-1.5 pl-5">
-                  {sortedWeaknesses.slice(0, 2).map((wk, i) => (
-                    <p key={i} className="text-slate-700 font-semibold leading-relaxed">
-                      • <strong className="text-slate-900">{wk.id}.</strong> {wk.label.split(":")[1] || wk.label}
-                    </p>
-                  ))}
+                {/* Cần cải thiện */}
+                <div className="space-y-2 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5 text-rose-700 font-black">
+                    <Target className="w-4 h-4 text-rose-600" />
+                    <span>Cần cải thiện:</span>
+                  </div>
+                  <div className="space-y-1.5 pl-5">
+                    {sortedWeaknesses.slice(0, 2).map((wk, i) => (
+                      <p key={i} className="text-slate-700 font-semibold leading-relaxed">
+                        • <strong className="text-slate-900">{wk.id}.</strong> {wk.label.split(":")[1] || wk.label}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="py-8 text-center text-slate-400 text-xs font-medium border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                <Sparkles className="w-7 h-7 text-slate-300 mx-auto mb-2 stroke-1" />
+                <p className="font-bold text-slate-500">Chưa đủ dữ liệu phân tích</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Cần có kết quả đánh giá để xác định điểm mạnh và điểm cần cải thiện</p>
+              </div>
+            )}
           </div>
 
           {/* Goal Banner */}
@@ -746,7 +823,7 @@ export function ReceivedEvaluationsTab({
               <span className="text-xs font-bold text-slate-700">Mục tiêu lượt dự tiếp theo:</span>
             </div>
             <span className="text-sm font-black text-[#003B3A] bg-white px-3 py-1 rounded-xl shadow-2xs border border-teal-200">
-              ≥{nextGoalPct}%
+              {nextGoalPct !== null ? `≥${nextGoalPct}%` : "--"}
             </span>
           </div>
         </div>
@@ -803,7 +880,7 @@ export function ReceivedEvaluationsTab({
                 {filteredList.map(evalItem => {
                   const rating = evalItem.evaluation?.overallRating || "Đạt";
                   const slotDate = new Date(evalItem.slot.date);
-                  const evaluatorName = evalItem.registration?.teacher?.teacherName || "Giáo viên";
+                  const evaluatorName = evalItem.registration?.teacher?.teacherName || evalItem.registration?.observerTeacher?.teacherName || "Giáo viên";
 
                   return (
                     <tr key={evalItem.evaluation?.id || evalItem.registration?.id} className="hover:bg-slate-50/80 transition-colors">
@@ -846,7 +923,7 @@ export function ReceivedEvaluationsTab({
                       </td>
                       <td className="p-4 text-right">
                         <button 
-                          onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
+                          onClick={() => openEvalModal({ ...(evalItem.registration || {}), evaluation: evalItem.evaluation }, evalItem.slot)}
                           className="px-3.5 py-1.5 text-xs font-black rounded-xl transition-all shadow-xs bg-[#008B82] hover:bg-[#007068] text-white cursor-pointer"
                         >
                           Xem phiếu

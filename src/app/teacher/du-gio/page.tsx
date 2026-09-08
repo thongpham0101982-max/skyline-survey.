@@ -63,6 +63,7 @@ export default async function ObservationPage(props: {
       initialFilters={{ level, grade, classId, period, date, month, campusId, deptId, academicYearId }}
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
+      initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}
     />
   )
 }

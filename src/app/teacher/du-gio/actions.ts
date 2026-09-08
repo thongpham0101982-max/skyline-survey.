@@ -236,7 +236,7 @@ export async function getObservationData(academicYearId?: string) {
       } as any
     }
 
-    const [subjects, departments, rawTeachers, allTargets, campuses, classes] = await Promise.all([
+    const [subjects, departments, rawTeachers, allTargets, campuses, classes, dbEvals] = await Promise.all([
       prisma.subject.findMany({
         where: { status: "ACTIVE" },
         orderBy: { subjectName: "asc" }
@@ -283,7 +283,52 @@ export async function getObservationData(academicYearId?: string) {
         },
         select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true, homeroomTeacherId: true },
         orderBy: { className: "asc" }
-      })
+      }),
+      currentTeacher?.id && !currentTeacher.id.startsWith("admin-")
+        ? prisma.observationEvaluation.findMany({
+            where: {
+              slot: {
+                teacherId: currentTeacher.id,
+                ...(activeYearId ? { academicYearId: activeYearId } : {})
+              }
+            },
+            include: {
+              registration: {
+                include: {
+                  teacher: {
+                    select: {
+                      id: true,
+                      teacherName: true,
+                      teacherCode: true,
+                      email: true,
+                      departmentId: true,
+                      campusId: true,
+                      position: true
+                    }
+                  }
+                }
+              },
+              slot: {
+                include: {
+                  teacher: {
+                    select: {
+                      id: true,
+                      teacherName: true,
+                      teacherCode: true,
+                      email: true
+                    }
+                  }
+                }
+              }
+            },
+            orderBy: {
+              submittedAt: "desc"
+            }
+          }).catch(err => {
+            console.error("Error fetching myReceivedEvaluations:", err);
+            return [];
+          })
+        : Promise.resolve([])
     ]);
 
     const targetsMap = new Map(allTargets.map(t => [t.teacherId, t]))
@@ -301,6 +346,15 @@ export async function getObservationData(academicYearId?: string) {
       }
     })
 
+    const myReceivedEvaluations = (dbEvals || []).map((e: any) => ({
+      slot: e.slot,
+      registration: {
+        ...(e.registration || {}),
+        evaluation: e
+      },
+      evaluation: e
+    }));
+
     return {
       success: true,
       currentTeacher,
@@ -310,7 +364,8 @@ export async function getObservationData(academicYearId?: string) {
       campuses,
       classes,
       academicYears,
-      selectedYearId: activeYearId
+      selectedYearId: activeYearId,
+      myReceivedEvaluations
     }
   } catch (e: any) {
     return { success: false, error: e.message }

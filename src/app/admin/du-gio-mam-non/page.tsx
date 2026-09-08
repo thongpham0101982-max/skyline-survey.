@@ -59,6 +59,7 @@ export default async function AdminPreschoolObservationPage(props: {
       initialFilters={{ level, grade, classId, period, date, campusId, deptId, academicYearId }}
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
+      initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}
     />
   )
 }
