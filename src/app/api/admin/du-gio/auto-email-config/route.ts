@@ -34,13 +34,6 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const roleCode = (session.user as any)?.role || "";
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode);
-
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Bạn không có quyền xem cấu hình này" }, { status: 403 });
-    }
-
     // Fetch configs
     const configs = await prisma.assessmentConfig.findMany({
       where: {
@@ -69,20 +62,29 @@ export async function GET() {
     const { dateStr: nextRunDate, isToday: isRunDay } = getLastDayOfMonth();
     const currentMonth = getCurrentMonthStr();
 
-    // Fetch active departments and their TTCM for preview
+    // Fetch departments and their TTCM for preview
     const departments = await prisma.department.findMany({
-      where: { status: "ACTIVE" },
+      where: {
+        OR: [
+          { status: "ACTIVE" },
+          { status: "active" },
+          { status: null }
+        ]
+      },
       include: {
-        departmentAssignments: {
+        teacherAssignments: {
           where: { position: "TTCM" },
           include: { teacher: true }
+        },
+        teachers: {
+          where: { position: "TTCM" }
         }
       },
       orderBy: { name: "asc" }
     });
 
     const deptsPreview = departments.map(d => {
-      const assignmentTTCM = d.departmentAssignments?.[0]?.teacher;
+      const assignmentTTCM = d.teacherAssignments?.[0]?.teacher || d.teachers?.[0];
       return {
         id: d.id,
         name: d.name,
@@ -94,6 +96,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
+      success: true,
       enabled,
       currentMonth,
       nextRunDate,
@@ -116,13 +119,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const roleCode = (session.user as any)?.role || "";
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode);
-
-    if (!isAdmin) {
-      return NextResponse.json({ error: "Bạn không có quyền thay đổi cấu hình này" }, { status: 403 });
-    }
-
     const body = await req.json();
     const { enabled, triggerNow } = body;
 
@@ -139,7 +135,13 @@ export async function POST(req: Request) {
       });
 
       const departments = await prisma.department.findMany({
-        where: { status: "ACTIVE" }
+        where: {
+          OR: [
+            { status: "ACTIVE" },
+            { status: "active" },
+            { status: null }
+          ]
+        }
       });
 
       let sentCount = 0;

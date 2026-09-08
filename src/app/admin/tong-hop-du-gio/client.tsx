@@ -672,6 +672,22 @@ export function AdminTongHopClient({
   const [allDeptsNotes, setAllDeptsNotes] = useState("");
   const [sendingAllDeptsEmail, setSendingAllDeptsEmail] = useState(false);
 
+  // Tính toán trước ngày cuối tháng & tháng hiện tại trên client làm giá trị dự phòng
+  const clientNextRunDate = useMemo(() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = now.getMonth();
+    const lastDay = new Date(yyyy, mm + 1, 0).getDate();
+    return `${String(lastDay).padStart(2, "0")}/${String(mm + 1).padStart(2, "0")}/${yyyy}`;
+  }, []);
+
+  const clientCurrentMonth = useMemo(() => {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    return `${yyyy}-${mm}`;
+  }, []);
+
   // Cấu hình Tự động gửi email đến TTCM vào ngày cuối cùng của tháng
   const [isAutoEmailModalOpen, setIsAutoEmailModalOpen] = useState(false);
   const [autoEmailConfig, setAutoEmailConfig] = useState<{
@@ -683,7 +699,16 @@ export function AdminTongHopClient({
     lastSentAt: string;
     lastLog: string;
     departments: any[];
-  } | null>(null);
+  }>({
+    enabled: false,
+    currentMonth: "",
+    nextRunDate: "",
+    isRunDay: false,
+    lastSentMonth: "",
+    lastSentAt: "",
+    lastLog: "",
+    departments: []
+  });
   const [loadingAutoConfig, setLoadingAutoConfig] = useState(false);
   const [togglingAutoEmail, setTogglingAutoEmail] = useState(false);
   const [runningAutoTest, setRunningAutoTest] = useState(false);
@@ -693,9 +718,13 @@ export function AdminTongHopClient({
     try {
       setLoadingAutoConfig(true);
       const res = await fetch("/api/admin/du-gio/auto-email-config");
-      if (res.ok) {
-        const data = await res.json();
-        setAutoEmailConfig(data);
+      const data = await res.json();
+      if (res.ok && data) {
+        setAutoEmailConfig(prev => ({
+          ...prev,
+          ...data,
+          enabled: Boolean(data.enabled)
+        }));
       }
     } catch (err) {
       console.error("Error fetching auto email config:", err);
@@ -709,6 +738,8 @@ export function AdminTongHopClient({
   }, [fetchAutoEmailConfig]);
 
   const handleToggleAutoEmail = async (newVal: boolean) => {
+    // Optimistic update ngay lập tức trên UI
+    setAutoEmailConfig(prev => ({ ...prev, enabled: newVal }));
     try {
       setTogglingAutoEmail(true);
       const res = await fetch("/api/admin/du-gio/auto-email-config", {
@@ -716,14 +747,17 @@ export function AdminTongHopClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: newVal })
       });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
-        setAutoEmailConfig(prev => prev ? { ...prev, enabled: newVal } : null);
-        toast.success(data.message || (newVal ? "Đã bật tự động gửi email" : "Đã tắt tự động gửi email"));
+        setAutoEmailConfig(prev => ({ ...prev, enabled: newVal }));
+        toast.success(data.message || (newVal ? "Đã BẬT tự động gửi email cuối tháng" : "Đã TẮT tự động gửi email cuối tháng"));
       } else {
-        toast.error("Không thể cập nhật cấu hình tự động gửi email");
+        // Rollback nếu thất bại
+        setAutoEmailConfig(prev => ({ ...prev, enabled: !newVal }));
+        toast.error(data.error || "Không thể cập nhật cấu hình tự động gửi email");
       }
     } catch (err) {
+      setAutoEmailConfig(prev => ({ ...prev, enabled: !newVal }));
       toast.error("Lỗi khi kết nối đến máy chủ");
     } finally {
       setTogglingAutoEmail(false);
@@ -4526,10 +4560,10 @@ export function AdminTongHopClient({
                     Lịch gửi tiếp theo
                   </span>
                   <div className="text-sm font-bold text-slate-800">
-                    {autoEmailConfig?.nextRunDate || "--"} lúc 18:00
+                    {autoEmailConfig?.nextRunDate || clientNextRunDate} lúc 18:00
                   </div>
                   <span className="text-[11px] text-slate-500 block">
-                    (Ngày cuối cùng của tháng {autoEmailConfig?.currentMonth ? autoEmailConfig.currentMonth.split("-")[1] : ""})
+                    (Ngày cuối cùng của tháng {(autoEmailConfig?.currentMonth || clientCurrentMonth).split("-")[1]})
                   </span>
                 </div>
 
@@ -4541,7 +4575,7 @@ export function AdminTongHopClient({
                     Theo tháng hiện tại
                   </div>
                   <span className="text-[11px] text-slate-500 block">
-                    {autoEmailConfig?.currentMonth ? `Tháng ${autoEmailConfig.currentMonth.split("-")[1]}/${autoEmailConfig.currentMonth.split("-")[0]}` : "--"}
+                    Tháng {(autoEmailConfig?.currentMonth || clientCurrentMonth).split("-")[1]}/{(autoEmailConfig?.currentMonth || clientCurrentMonth).split("-")[0]}
                   </span>
                 </div>
               </div>
@@ -4562,55 +4596,73 @@ export function AdminTongHopClient({
               </div>
 
               {/* Departments Preview List */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Danh sách TTCM nhận báo cáo ({autoEmailConfig?.departments?.length || 0} Tổ)
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    Chỉ gửi tới các tổ có TTCM và địa chỉ email hợp lệ
-                  </span>
-                </div>
+              {(() => {
+                const previewDepts = (autoEmailConfig?.departments && autoEmailConfig.departments.length > 0)
+                  ? autoEmailConfig.departments
+                  : (departments || []).map(d => {
+                      const ttcm = allTTCMList.find((t: any) => t.deptId === d.id);
+                      return {
+                        id: d.id,
+                        name: d.name,
+                        blockCM: d.blockCM,
+                        ttcmName: ttcm?.teacherName || null,
+                        ttcmEmail: ttcm?.email || null,
+                        hasValidEmail: !!(ttcm?.email && ttcm.email.includes("@"))
+                      };
+                    });
 
-                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[10px] font-bold uppercase sticky top-0">
-                      <tr>
-                        <th className="py-2 px-2 text-center w-8">STT</th>
-                        <th className="py-2 px-3">Tổ Chuyên Môn</th>
-                        <th className="py-2 px-3">Tổ Trưởng (TTCM)</th>
-                        <th className="py-2 px-3">Email Nhận</th>
-                        <th className="py-2 px-2 text-center w-24">Trạng Thái</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {(autoEmailConfig?.departments || []).map((d: any, idx: number) => (
-                        <tr key={d.id} className="hover:bg-slate-50">
-                          <td className="py-2 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>
-                          <td className="py-2 px-3 font-semibold text-slate-800">{d.name}</td>
-                          <td className="py-2 px-3 text-slate-700">
-                            {d.ttcmName || <span className="text-slate-400 italic">Chưa gán</span>}
-                          </td>
-                          <td className="py-2 px-3 text-slate-600 font-mono text-[11px]">
-                            {d.ttcmEmail || <span className="text-slate-400 italic">--</span>}
-                          </td>
-                          <td className="py-2 px-2 text-center">
-                            {d.hasValidEmail ? (
-                              <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px]">
-                                Sẵn sàng
-                              </span>
-                            ) : (
-                              <span className="px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 font-semibold text-[10px]">
-                                Thiếu email
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                return (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Danh sách TTCM nhận báo cáo ({previewDepts.length} Tổ)
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        Chỉ gửi tới các tổ có TTCM và địa chỉ email hợp lệ
+                      </span>
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 text-[10px] font-bold uppercase sticky top-0">
+                          <tr>
+                            <th className="py-2 px-2 text-center w-8">STT</th>
+                            <th className="py-2 px-3">Tổ Chuyên Môn</th>
+                            <th className="py-2 px-3">Tổ Trưởng (TTCM)</th>
+                            <th className="py-2 px-3">Email Nhận</th>
+                            <th className="py-2 px-2 text-center w-24">Trạng Thái</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {previewDepts.map((d: any, idx: number) => (
+                            <tr key={d.id} className="hover:bg-slate-50">
+                              <td className="py-2 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>
+                              <td className="py-2 px-3 font-semibold text-slate-800">{d.name}</td>
+                              <td className="py-2 px-3 text-slate-700">
+                                {d.ttcmName || <span className="text-slate-400 italic">Chưa gán</span>}
+                              </td>
+                              <td className="py-2 px-3 text-slate-600 font-mono text-[11px]">
+                                {d.ttcmEmail || <span className="text-slate-400 italic">--</span>}
+                              </td>
+                              <td className="py-2 px-2 text-center">
+                                {d.hasValidEmail ? (
+                                  <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-semibold text-[10px]">
+                                    Sẵn sàng
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 font-semibold text-[10px]">
+                                    Thiếu email
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Test Run Section */}
               <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2">

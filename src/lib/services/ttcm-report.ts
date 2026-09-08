@@ -41,9 +41,12 @@ export async function sendReportForDepartment(
     const department = await prisma.department.findUnique({
       where: { id: departmentId },
       include: {
-        departmentAssignments: {
+        teacherAssignments: {
           where: { position: "TTCM" },
           include: { teacher: true }
+        },
+        teachers: {
+          where: { position: "TTCM" }
         }
       }
     });
@@ -62,7 +65,7 @@ export async function sendReportForDepartment(
     let ttcmName = options.ttcmName;
 
     if (!ttcmEmail) {
-      const assignmentTTCM = department.departmentAssignments?.[0]?.teacher;
+      const assignmentTTCM = department.teacherAssignments?.[0]?.teacher || department.teachers?.[0];
       if (assignmentTTCM) {
         ttcmEmail = assignmentTTCM.email;
         ttcmName = assignmentTTCM.teacherName;
