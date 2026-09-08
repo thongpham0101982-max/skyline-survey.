@@ -190,7 +190,7 @@ export function AdminTongHopClient({
   const [ttcmMatrixCampus, setTtcmMatrixCampus] = useState<string>("all")
   const [ttcmMatrixObservedCampus, setTtcmMatrixObservedCampus] = useState<string>("all")
   const [ttcmSearchQuery, setTtcmSearchQuery] = useState<string>("")
-  const [ttcmViewMode, setTtcmViewMode] = useState<"detailed-list" | "pivot-matrix">("detailed-list")
+  const [ttcmViewMode, setTtcmViewMode] = useState<"pivot-matrix" | "detailed-list">("pivot-matrix")
   
   // Target Config modal state
   const [isTargetModalOpen, setIsTargetModalOpen] = useState(false)
@@ -1888,594 +1888,386 @@ export function AdminTongHopClient({
     const activeMonthText = activeMonth === "all" ? "Toàn bộ năm học" : `Tháng ${activeMonth.split("-")[1]}/${activeMonth.split("-")[0]}`;
 
     return (
-      <div className="space-y-5 animate-in fade-in duration-200">
-        {/* 1. Header Banner & View Controls */}
-        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-md overflow-hidden">
-          <div className="p-4 sm:p-5 bg-gradient-to-r from-[#003B3A] via-[#064E3B] to-[#0369A1] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-200 border border-teal-400/30 text-[9.5px] font-extrabold uppercase tracking-wide flex items-center gap-1">
-                  <Grid3X3 className="w-3 h-3 text-teal-300" />
-                  <span>Ma trận đối chiếu liên cơ sở</span>
-                </span>
-                <span className="text-[11px] text-amber-300 font-bold">
-                  {filteredTTCMMatrix.length} Tổ trưởng chuyên môn
-                </span>
-              </div>
-              <h3 className="text-base sm:text-lg font-black tracking-tight mt-1 text-white flex items-center gap-2">
-                <span>BẢNG MA TRẬN DỰ GIỜ TTCM THEO THÁNG</span>
-              </h3>
-              <p className="text-[11px] text-teal-100/80 mt-0.5">
-                Kỳ báo cáo: <strong className="text-amber-200">{activeMonthText}</strong> &bull; Thống kê số tiết dự giờ theo Cơ sở công tác &amp; Cơ sở dự giờ thực tế
-              </p>
+      <div className="space-y-4 animate-in fade-in duration-200">
+        {/* 1. Header Quản Trị & Thanh Công Cụ */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-[10.5px] font-bold uppercase tracking-wider">
+                Báo cáo quản trị
+              </span>
+              <span className="text-xs text-slate-500 font-medium">
+                {filteredTTCMMatrix.length} Tổ trưởng chuyên môn
+              </span>
             </div>
+            <h3 className="text-lg font-bold text-slate-900 tracking-tight mt-1">
+              MA TRẬN DỰ GIỜ TỔ TRƯỞNG CHUYÊN MÔN
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Kỳ báo cáo: <span className="font-semibold text-slate-700">{activeMonthText}</span> &bull; Thống kê đối chiếu số tiết dự giờ nội bộ và liên cơ sở
+            </p>
+          </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* View Mode Toggle */}
-              <div className="bg-white/10 backdrop-blur-md p-1 rounded-xl border border-white/15 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setTtcmViewMode("detailed-list")}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    ttcmViewMode === "detailed-list"
-                      ? "bg-white text-[#003B3A] shadow-xs font-black"
-                      : "text-teal-100 hover:text-white hover:bg-white/10"
-                  }`}
-                  title="Chế độ Bảng danh sách chi tiết (STT, Họ tên, Chức vụ, Cơ sở, Cơ sở dự giờ, Số tiết)"
-                >
-                  <Table2 className="w-3.5 h-3.5" />
-                  <span>Danh sách chi tiết</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTtcmViewMode("pivot-matrix")}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    ttcmViewMode === "pivot-matrix"
-                      ? "bg-white text-[#003B3A] shadow-xs font-black"
-                      : "text-teal-100 hover:text-white hover:bg-white/10"
-                  }`}
-                  title="Chế độ Ma trận 2 chiều đối chiếu các Cơ sở"
-                >
-                  <Grid3X3 className="w-3.5 h-3.5" />
-                  <span>Ma trận Pivot 2D</span>
-                </button>
-              </div>
-
-              {/* Export Excel Button */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Chế độ xem */}
+            <div className="bg-slate-100 p-1 rounded-xl border border-slate-200 flex items-center gap-1">
               <button
                 type="button"
-                onClick={handleExportTTCMExcel}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center gap-1.5 transition-all shrink-0 border border-emerald-500 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                title="Xuất dữ liệu Ma trận dự giờ TTCM ra file Excel đầy đủ 2 Sheet"
+                onClick={() => setTtcmViewMode("pivot-matrix")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  ttcmViewMode === "pivot-matrix"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                }`}
               >
-                <FileSpreadsheet className="w-4 h-4 text-white" />
-                <span>Xuất Excel Ma Trận</span>
+                Ma trận 2 chiều (Pivot)
+              </button>
+              <button
+                type="button"
+                onClick={() => setTtcmViewMode("detailed-list")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  ttcmViewMode === "detailed-list"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                }`}
+              >
+                Danh sách chi tiết
               </button>
             </div>
+
+            {/* Nút Xuất Excel */}
+            <button
+              type="button"
+              onClick={handleExportTTCMExcel}
+              className="px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#002B2A] text-white font-semibold text-xs shadow-2xs flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-teal-300" />
+              <span>Xuất Excel</span>
+            </button>
           </div>
+        </div>
 
-          {/* 2. Top KPI Metric Cards (5 Cards) */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 bg-slate-50/80 border-b border-slate-200">
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500">Tổng TTCM</span>
-                <UserCheck className="w-4 h-4 text-teal-600" />
-              </div>
-              <div className="text-lg font-black text-slate-900 mt-1">
-                {ttcmMatrixKPIs.totalTTCM} <span className="text-[10px] font-normal text-slate-500">nhân sự</span>
-              </div>
-              <div className="text-[10px] font-semibold text-teal-700 mt-0.5">
-                {ttcmMatrixBlock === "all" ? "Tất cả các khối" : ttcmMatrixBlock}
-              </div>
+        {/* 2. Thẻ KPI Quản Trị (5 Cards tinh gọn) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+              Tổng số TTCM
             </div>
-
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500">Tổng tiết đã dự</span>
-                <Eye className="w-4 h-4 text-sky-600" />
-              </div>
-              <div className="text-lg font-black text-sky-800 mt-1">
-                {ttcmMatrixKPIs.totalObserved} <span className="text-[10px] font-normal text-slate-500">tiết</span>
-              </div>
-              <div className="text-[10px] font-bold text-amber-700 mt-0.5">
-                {ttcmMatrixKPIs.totalSurprise > 0 ? `⚡ ${ttcmMatrixKPIs.totalSurprise} tiết đột xuất` : "Không có đột xuất"}
-              </div>
+            <div className="text-2xl font-bold text-slate-900 mt-1">
+              {ttcmMatrixKPIs.totalTTCM}
             </div>
-
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500">Dự tại cơ sở (Nội bộ)</span>
-                <School className="w-4 h-4 text-emerald-600" />
-              </div>
-              <div className="text-lg font-black text-emerald-800 mt-1">
-                {ttcmMatrixKPIs.totalInternal} <span className="text-[10px] font-normal text-slate-500">tiết</span>
-              </div>
-              <div className="text-[10px] font-semibold text-emerald-600 mt-0.5">
-                {ttcmMatrixKPIs.totalObserved > 0 ? `${Math.round((ttcmMatrixKPIs.totalInternal / ttcmMatrixKPIs.totalObserved) * 100)}% tổng số tiết` : "0%"}
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500">Dự liên cơ sở (Chéo CS)</span>
-                <ArrowLeftRight className="w-4 h-4 text-indigo-600" />
-              </div>
-              <div className="text-lg font-black text-indigo-800 mt-1">
-                {ttcmMatrixKPIs.totalCross} <span className="text-[10px] font-normal text-slate-500">tiết</span>
-              </div>
-              <div className="text-[10px] font-semibold text-indigo-600 mt-0.5">
-                {ttcmMatrixKPIs.totalObserved > 0 ? `${Math.round((ttcmMatrixKPIs.totalCross / ttcmMatrixKPIs.totalObserved) * 100)}% liên cơ sở` : "0%"}
-              </div>
-            </div>
-
-            <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs col-span-2 sm:col-span-1">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase text-slate-500">Đạt chỉ tiêu dự giờ</span>
-                <CheckCheck className="w-4 h-4 text-amber-600" />
-              </div>
-              <div className="text-lg font-black text-slate-900 mt-1 flex items-baseline gap-1">
-                <span>{ttcmMatrixKPIs.targetMetCount}/{ttcmMatrixKPIs.totalTTCM}</span>
-                <span className="text-xs font-black text-amber-700">({ttcmMatrixKPIs.metRate}%)</span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-teal-500 to-emerald-500 h-full rounded-full transition-all duration-500"
-                  style={{ width: `${ttcmMatrixKPIs.metRate}%` }}
-                />
-              </div>
+            <div className="text-[11px] text-slate-500 mt-1">
+              {ttcmMatrixBlock === "all" ? "Tất cả các khối" : ttcmMatrixBlock}
             </div>
           </div>
 
-          {/* 3. Interactive Filter Toolbar */}
-          <div className="p-3.5 sm:p-4 bg-white border-b border-slate-100 flex flex-wrap items-center gap-2.5">
-            {/* Month Filter */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
-              <Calendar className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-              <span className="text-[10.5px] font-bold text-slate-500">Tháng:</span>
-              <select
-                value={ttcmMatrixMonth}
-                onChange={(e) => setTtcmMatrixMonth(e.target.value)}
-                className="bg-transparent font-black text-slate-800 outline-none cursor-pointer text-xs"
-              >
-                <option value="all">Toàn bộ năm học</option>
-                {availableMonths.map(m => (
-                  <option key={m} value={m}>
-                    Tháng {m.split("-")[1]}/{m.split("-")[0]}
-                  </option>
-                ))}
-              </select>
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+              Tổng tiết đã dự
             </div>
-
-            {/* Block Filter */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
-              <Layers className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-              <span className="text-[10.5px] font-bold text-slate-500">Khối:</span>
-              <select
-                value={ttcmMatrixBlock}
-                onChange={(e) => setTtcmMatrixBlock(e.target.value)}
-                className="bg-transparent font-black text-slate-800 outline-none cursor-pointer text-xs"
-              >
-                <option value="all">Tất cả khối</option>
-                <option value="Phổ thông K-12">Phổ thông K-12</option>
-                <option value="Mầm non">Mầm non</option>
-                <option value="Điều hành">Điều hành</option>
-              </select>
+            <div className="text-2xl font-bold text-teal-800 mt-1">
+              {ttcmMatrixKPIs.totalObserved} <span className="text-xs font-normal text-slate-500">tiết</span>
             </div>
-
-            {/* Home Campus Filter */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
-              <School className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-              <span className="text-[10.5px] font-bold text-slate-500">Cơ sở TTCM:</span>
-              <select
-                value={ttcmMatrixCampus}
-                onChange={(e) => setTtcmMatrixCampus(e.target.value)}
-                className="bg-transparent font-black text-slate-800 outline-none cursor-pointer text-xs max-w-[140px] truncate"
-              >
-                <option value="all">Tất cả cơ sở</option>
-                {campuses.map(c => (
-                  <option key={c.id} value={c.campusName}>
-                    {c.campusName}
-                  </option>
-                ))}
-              </select>
+            <div className="text-[11px] text-slate-500 mt-1">
+              {ttcmMatrixKPIs.totalSurprise > 0 ? `${ttcmMatrixKPIs.totalSurprise} tiết đột xuất` : "100% theo kế hoạch"}
             </div>
+          </div>
 
-            {/* Observed Campus Filter */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
-              <MapPin className="w-3.5 h-3.5 text-teal-700 shrink-0" />
-              <span className="text-[10.5px] font-bold text-slate-500">Cơ sở dự giờ:</span>
-              <select
-                value={ttcmMatrixObservedCampus}
-                onChange={(e) => setTtcmMatrixObservedCampus(e.target.value)}
-                className="bg-transparent font-black text-slate-800 outline-none cursor-pointer text-xs max-w-[140px] truncate"
-              >
-                <option value="all">Tất cả cơ sở</option>
-                {distinctObservedCampusNames.map(cn => (
-                  <option key={cn} value={cn}>
-                    {cn}
-                  </option>
-                ))}
-              </select>
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+              Dự nội bộ cơ sở
             </div>
-
-            {/* Search Input */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs flex-1 min-w-[180px]">
-              <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <input
-                type="text"
-                value={ttcmSearchQuery}
-                onChange={(e) => setTtcmSearchQuery(e.target.value)}
-                placeholder="Tìm theo tên, mã GV, tổ CM..."
-                className="bg-transparent font-bold text-slate-800 outline-none text-xs w-full"
-              />
-              {ttcmSearchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setTtcmSearchQuery("")}
-                  className="p-0.5 text-slate-400 hover:text-slate-600 rounded cursor-pointer"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+            <div className="text-2xl font-bold text-emerald-800 mt-1">
+              {ttcmMatrixKPIs.totalInternal} <span className="text-xs font-normal text-slate-500">tiết</span>
             </div>
+            <div className="text-[11px] text-emerald-700 font-medium mt-1">
+              {ttcmMatrixKPIs.totalObserved > 0 ? `${Math.round((ttcmMatrixKPIs.totalInternal / ttcmMatrixKPIs.totalObserved) * 100)}% tổng số tiết` : "0%"}
+            </div>
+          </div>
 
-            {/* Reset Filters */}
-            {(ttcmMatrixMonth !== "all" || ttcmMatrixBlock !== "all" || ttcmMatrixCampus !== "all" || ttcmMatrixObservedCampus !== "all" || ttcmSearchQuery) && (
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+              Dự chéo liên cơ sở
+            </div>
+            <div className="text-2xl font-bold text-sky-800 mt-1">
+              {ttcmMatrixKPIs.totalCross} <span className="text-xs font-normal text-slate-500">tiết</span>
+            </div>
+            <div className="text-[11px] text-sky-700 font-medium mt-1">
+              {ttcmMatrixKPIs.totalObserved > 0 ? `${Math.round((ttcmMatrixKPIs.totalCross / ttcmMatrixKPIs.totalObserved) * 100)}% tổng số tiết` : "0%"}
+            </div>
+          </div>
+
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs col-span-2 sm:col-span-1">
+            <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
+              Đạt chỉ tiêu dự giờ
+            </div>
+            <div className="text-2xl font-bold text-slate-900 mt-1">
+              {ttcmMatrixKPIs.targetMetCount}/{ttcmMatrixKPIs.totalTTCM}
+            </div>
+            <div className="text-[11px] text-slate-600 font-medium mt-1">
+              Tỷ lệ hoàn thành: <span className="font-bold text-slate-900">{ttcmMatrixKPIs.metRate}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Thanh Bộ Lọc Quản Trị (Filter Toolbar) */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-2xs p-3 flex flex-wrap items-center gap-2.5">
+          {/* Lọc Tháng */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
+            <span className="text-[11px] font-semibold text-slate-500">Tháng:</span>
+            <select
+              value={ttcmMatrixMonth}
+              onChange={(e) => setTtcmMatrixMonth(e.target.value)}
+              className="bg-transparent font-semibold text-slate-800 outline-none cursor-pointer text-xs"
+            >
+              <option value="all">Toàn bộ năm học</option>
+              {availableMonths.map(m => (
+                <option key={m} value={m}>
+                  Tháng {m.split("-")[1]}/{m.split("-")[0]}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lọc Khối */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
+            <span className="text-[11px] font-semibold text-slate-500">Khối:</span>
+            <select
+              value={ttcmMatrixBlock}
+              onChange={(e) => setTtcmMatrixBlock(e.target.value)}
+              className="bg-transparent font-semibold text-slate-800 outline-none cursor-pointer text-xs"
+            >
+              <option value="all">Tất cả khối</option>
+              <option value="Phổ thông K-12">Phổ thông K-12</option>
+              <option value="Mầm non">Mầm non</option>
+              <option value="Điều hành">Điều hành</option>
+            </select>
+          </div>
+
+          {/* Lọc Cơ sở công tác */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
+            <span className="text-[11px] font-semibold text-slate-500">Cơ sở TTCM:</span>
+            <select
+              value={ttcmMatrixCampus}
+              onChange={(e) => setTtcmMatrixCampus(e.target.value)}
+              className="bg-transparent font-semibold text-slate-800 outline-none cursor-pointer text-xs max-w-[140px] truncate"
+            >
+              <option value="all">Tất cả cơ sở</option>
+              {campuses.map(c => (
+                <option key={c.id} value={c.campusName}>
+                  {c.campusName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lọc Cơ sở dự giờ */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
+            <span className="text-[11px] font-semibold text-slate-500">Cơ sở dự giờ:</span>
+            <select
+              value={ttcmMatrixObservedCampus}
+              onChange={(e) => setTtcmMatrixObservedCampus(e.target.value)}
+              className="bg-transparent font-semibold text-slate-800 outline-none cursor-pointer text-xs max-w-[140px] truncate"
+            >
+              <option value="all">Tất cả cơ sở</option>
+              {distinctObservedCampusNames.map(cn => (
+                <option key={cn} value={cn}>
+                  {cn}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Ô Tìm kiếm */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs flex-1 min-w-[200px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={ttcmSearchQuery}
+              onChange={(e) => setTtcmSearchQuery(e.target.value)}
+              placeholder="Tìm theo tên, mã giáo viên, tổ CM..."
+              className="bg-transparent font-medium text-slate-800 outline-none text-xs w-full"
+            />
+            {ttcmSearchQuery && (
               <button
                 type="button"
-                onClick={() => {
-                  setTtcmMatrixMonth("all");
-                  setTtcmMatrixBlock("all");
-                  setTtcmMatrixCampus("all");
-                  setTtcmMatrixObservedCampus("all");
-                  setTtcmSearchQuery("");
-                }}
-                className="px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition-all shrink-0 cursor-pointer"
+                onClick={() => setTtcmSearchQuery("")}
+                className="p-0.5 text-slate-400 hover:text-slate-600 rounded cursor-pointer"
               >
-                Xóa bộ lọc
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>
 
-          {/* 4. Table Views */}
+          {/* Nút Xóa Lọc */}
+          {(ttcmMatrixMonth !== "all" || ttcmMatrixBlock !== "all" || ttcmMatrixCampus !== "all" || ttcmMatrixObservedCampus !== "all" || ttcmSearchQuery) && (
+            <button
+              type="button"
+              onClick={() => {
+                setTtcmMatrixMonth("all");
+                setTtcmMatrixBlock("all");
+                setTtcmMatrixCampus("all");
+                setTtcmMatrixObservedCampus("all");
+                setTtcmSearchQuery("");
+              }}
+              className="px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200 transition-all shrink-0 cursor-pointer"
+            >
+              Xóa lọc
+            </button>
+          )}
+        </div>
+
+        {/* 4. Table Views */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
           {filteredTTCMMatrix.length === 0 ? (
-            <div className="p-12 text-center bg-white space-y-2">
-              <AlertCircle className="w-8 h-8 text-slate-300 mx-auto" />
-              <p className="text-xs font-black text-slate-600 uppercase">Không tìm thấy TTCM nào phù hợp với bộ lọc</p>
-              <p className="text-[11px] text-slate-400 font-medium">Vui lòng thay đổi tháng, khối hoặc cơ sở đang lọc</p>
+            <div className="p-12 text-center text-slate-500">
+              <p className="text-sm font-semibold text-slate-700">Không tìm thấy dữ liệu phù hợp với bộ lọc</p>
+              <p className="text-xs text-slate-400 mt-1">Vui lòng thay đổi tháng, khối hoặc cơ sở đang lọc</p>
             </div>
-          ) : ttcmViewMode === "detailed-list" ? (
-            /* VIEW 1: BẢNG DANH SÁCH CHI TIẾT (STT, Họ và tên, Chức vụ, Cơ sở, Cơ sở dự giờ, Số tiết) */
-            <div className="overflow-x-auto">
+          ) : ttcmViewMode === "pivot-matrix" ? (
+            /* VIEW 1: BẢNG MA TRẬN 2 CHIỀU (PIVOT GRID - CHUẨN QUẢN TRỊ, KHÔNG ICON DỮ LIỆU) */
+            <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-100/90 text-[10.5px] font-black uppercase text-slate-700 tracking-wider">
-                    <th className="py-3 px-3 text-center w-12">STT</th>
-                    <th className="py-3 px-4 min-w-[200px]">Họ và Tên</th>
-                    <th className="py-3 px-3 text-center min-w-[100px]">Chức Vụ</th>
-                    <th className="py-3 px-3 min-w-[150px]">Cơ Sở (Công tác)</th>
-                    <th className="py-3 px-4 min-w-[190px]">Cơ Sở Dự Giờ</th>
-                    <th className="py-3 px-3 text-center min-w-[110px]">Số Tiết</th>
-                    <th className="py-3 px-3 text-center min-w-[165px]">Chỉ Tiêu Dự Giờ</th>
-                    <th className="py-3 px-2 text-center w-20">Chi Tiết</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
-                  {filteredTTCMMatrix.map((item, idx) => {
-                    const rowCount = item.breakdown.length;
-                    return item.breakdown.map((b, bIdx) => (
-                      <tr 
-                        key={`${item.id}-${b.campusName}-${bIdx}`}
-                        className="hover:bg-teal-50/40 transition-colors"
-                      >
-                        {bIdx === 0 && (
-                          <>
-                            <td 
-                              rowSpan={rowCount} 
-                              className="py-3 px-3 text-center font-bold text-slate-500 border-r border-slate-100 bg-white align-top"
-                            >
-                              {idx + 1}
-                            </td>
-                            <td 
-                              rowSpan={rowCount} 
-                              className="py-3 px-4 border-r border-slate-100 bg-white align-top"
-                            >
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-xl bg-[#003B3A] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
-                                  {item.teacherName.charAt(0)}
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="font-black text-slate-900 text-xs truncate">{item.teacherName}</p>
-                                  <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold mt-0.5">
-                                    <span>{item.teacherCode}</span>
-                                    <span>&bull;</span>
-                                    <span className="text-teal-700 font-bold">{item.deptName}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td 
-                              rowSpan={rowCount} 
-                              className="py-3 px-3 text-center border-r border-slate-100 bg-white align-top"
-                            >
-                              <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] uppercase inline-block">
-                                {item.position}
-                              </span>
-                            </td>
-                            <td 
-                              rowSpan={rowCount} 
-                              className="py-3 px-3 border-r border-slate-100 bg-white align-top text-xs font-bold text-slate-700"
-                            >
-                              <div className="flex items-center gap-1.5">
-                                <School className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                <span>{item.homeCampus}</span>
-                              </div>
-                            </td>
-                          </>
-                        )}
-
-                        {/* Cột Cơ sở dự giờ */}
-                        <td className="py-2.5 px-4 text-xs border-r border-slate-100">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className={`font-semibold ${b.periods > 0 ? "text-slate-800" : "text-slate-400 italic"}`}>
-                              {b.campusName}
-                            </span>
-                            {b.periods > 0 && (
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold shrink-0 ${
-                                b.isCrossCampus 
-                                  ? "bg-sky-100 text-sky-800 border border-sky-200" 
-                                  : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                              }`}>
-                                {b.isCrossCampus ? "Liên CS ✈️" : "Nội bộ CS"}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        {/* Cột Số tiết */}
-                        <td className="py-2.5 px-3 text-center border-r border-slate-100">
-                          <div>
-                            <span className={`px-2.5 py-1 rounded-lg font-black text-[11px] inline-block ${
-                              b.periods > 0 
-                                ? (b.isCrossCampus ? "bg-sky-50 text-sky-800 border border-sky-200" : "bg-emerald-50 text-emerald-800 border border-emerald-200") 
-                                : "bg-slate-50 text-slate-400 border border-slate-200"
-                            }`}>
-                              {b.periods} tiết
-                            </span>
-                            {b.surprisePeriods > 0 && (
-                              <div className="text-[9px] text-amber-800 font-extrabold mt-0.5">
-                                ⚡ {b.surprisePeriods} đột xuất
-                              </div>
-                            )}
-                          </div>
-                        </td>
-
-                        {bIdx === 0 && (
-                          <>
-                            {/* Cột Chỉ tiêu Dự giờ theo đúng Thiết lập Chỉ tiêu Dự giờ */}
-                            <td 
-                              rowSpan={rowCount} 
-                              className="py-3 px-3 text-center border-r border-slate-100 bg-white align-top"
-                            >
-                              <div className="space-y-1.5">
-                                {/* Target Badge & Quick Settings Trigger */}
-                                <div className="flex items-center justify-center gap-1">
-                                  <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-900 border border-indigo-200 font-extrabold text-[10.5px] shadow-2xs">
-                                    {item.reqObserved} tiết / {item.observedUnit}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => openTargetConfig(item.ttcm)}
-                                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-all cursor-pointer"
-                                    title={`Thiết lập chỉ tiêu dự giờ cho ${item.teacherName}`}
-                                  >
-                                    <Settings className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-
-                                {/* Observer Type badge */}
-                                {item.observerType && (
-                                  <span className="text-[9px] font-semibold text-slate-400 block -mt-0.5">
-                                    ({item.observerType})
-                                  </span>
-                                )}
-
-                                {/* Met Status Badge */}
-                                <div>
-                                  <span className={`px-2 py-0.5 rounded-full font-extrabold text-[9.5px] border inline-flex items-center gap-1 ${
-                                    item.isTargetMet 
-                                      ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
-                                      : "bg-amber-100 text-amber-900 border-amber-300"
-                                  }`}>
-                                    {item.isTargetMet ? <CheckCircle2 className="w-3 h-3 text-emerald-600" /> : <Clock className="w-3 h-3 text-amber-600" />}
-                                    <span>{item.isTargetMet ? "Đạt chỉ tiêu" : `Chưa đạt (${item.progressPct}%)`}</span>
-                                  </span>
-                                </div>
-
-                                {/* Total & Target Text */}
-                                <div className="text-[10px] font-bold text-slate-600">
-                                  Đã dự: <strong>{item.totalObserved}</strong> / {item.reqObserved} tiết
-                                </div>
-
-                                {/* Visual Progress Bar */}
-                                <div className="w-20 bg-slate-100 rounded-full h-1.5 mx-auto overflow-hidden">
-                                  <div 
-                                    className={`h-full rounded-full transition-all duration-300 ${item.isTargetMet ? "bg-emerald-500" : "bg-amber-500"}`} 
-                                    style={{ width: `${Math.min(100, item.progressPct)}%` }} 
-                                  />
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Cột Xem chi tiết */}
-                            <td 
-                              rowSpan={rowCount} 
-                              className="py-3 px-2 text-center bg-white align-top"
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSwitchMainTab("tong-hop");
-                                  setSelectedTeacherId(item.id);
-                                  setActiveDetailTab("lich-su-du");
-                                }}
-                                className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-[#003B3A] text-slate-700 hover:text-white font-bold text-[10.5px] transition-all cursor-pointer"
-                                title="Xem chi tiết các tiết dự của TTCM này trong Tổng hợp"
-                              >
-                                Xem dự
-                              </button>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ));
-                  })}
-                </tbody>
-                <tfoot className="bg-slate-50 font-black text-xs border-t-2 border-slate-300 text-slate-800">
-                  <tr>
-                    <td colSpan={5} className="py-3 px-4 uppercase text-slate-700 font-black">
-                      Tổng cộng toàn bộ ({filteredTTCMMatrix.length} TTCM)
-                    </td>
-                    <td className="py-3 px-3 text-center font-black text-sky-900">
-                      {ttcmMatrixKPIs.totalObserved} tiết
-                      {ttcmMatrixKPIs.totalSurprise > 0 && (
-                        <span className="block text-[9.5px] text-amber-800 font-bold">
-                          ⚡ {ttcmMatrixKPIs.totalSurprise} ĐX
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-3 text-center font-black text-emerald-800">
-                      {ttcmMatrixKPIs.targetMetCount}/{ttcmMatrixKPIs.totalTTCM} TTCM đạt ({ttcmMatrixKPIs.metRate}%)
-                    </td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          ) : (
-            /* VIEW 2: BẢNG MA TRẬN 2 CHIỀU (PIVOT GRID - TTCM x Các Cơ Sở) */
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-100/90 text-[10.5px] font-black uppercase text-slate-700 tracking-wider">
-                    <th className="py-3 px-3 text-center w-12">STT</th>
-                    <th className="py-3 px-4 min-w-[190px]">Họ và Tên TTCM</th>
-                    <th className="py-3 px-3 text-center min-w-[90px]">Chức vụ</th>
-                    <th className="py-3 px-3 min-w-[140px]">Cơ sở công tác</th>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-700 tracking-wider">
+                    <th className="py-3 px-3 text-center w-12 border-r border-slate-200">STT</th>
+                    <th className="py-3 px-3 min-w-[170px] max-w-[210px] border-r border-slate-200">Họ và Tên TTCM</th>
+                    <th className="py-3 px-2 text-center w-20 border-r border-slate-200">Chức vụ</th>
+                    <th className="py-3 px-3 min-w-[130px] border-r border-slate-200">Tổ chuyên môn</th>
+                    <th className="py-3 px-3 min-w-[120px] border-r border-slate-200">Cơ sở công tác</th>
                     {distinctObservedCampusNames.map(cn => (
-                      <th key={cn} className="py-3 px-3 text-center min-w-[110px] bg-teal-50/50 text-teal-900">
+                      <th key={cn} className="py-3 px-2 text-center min-w-[85px] border-r border-slate-200 bg-slate-100/70 text-slate-800 font-bold">
                         {cn}
                       </th>
                     ))}
-                    <th className="py-3 px-3 text-center min-w-[110px] bg-sky-50/80 text-sky-950 font-black">
-                      Tổng Tiết Dự
+                    <th className="py-3 px-2 text-center w-24 border-r border-slate-200 bg-teal-50/60 text-teal-900 font-bold">
+                      Tổng dự
                     </th>
-                    <th className="py-3 px-3 text-center min-w-[130px]">Chỉ Tiêu Dự Giờ</th>
-                    <th className="py-3 px-3 text-center min-w-[110px]">Đánh Giá</th>
+                    <th className="py-3 px-2 text-center w-28 border-r border-slate-200">Chỉ tiêu</th>
+                    <th className="py-3 px-2 text-center w-28 border-r border-slate-200">Đánh giá</th>
+                    <th className="py-3 px-2 text-center w-24">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
                   {filteredTTCMMatrix.map((item, idx) => {
                     const campusPeriodsMap = new Map(item.breakdown.map(b => [b.campusName, b.periods]));
+                    const campusSurpriseMap = new Map(item.breakdown.map(b => [b.campusName, b.surprisePeriods]));
                     return (
-                      <tr key={item.id} className="hover:bg-teal-50/40 transition-colors">
-                        <td className="py-3 px-3 text-center font-bold text-slate-400">
+                      <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-2.5 px-3 text-center text-slate-500 font-medium border-r border-slate-100">
                           {idx + 1}
                         </td>
-                        <td className="py-3 px-4">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleSwitchMainTab("tong-hop");
-                              setSelectedTeacherId(item.id);
-                              setActiveDetailTab("lich-su-du");
-                            }}
-                            className="flex items-center gap-2.5 text-left group/t cursor-pointer"
-                            title="Bấm để xem lịch sử dự giờ của TTCM này"
-                          >
-                            <div className="w-7 h-7 rounded-lg bg-[#003B3A] text-white flex items-center justify-center font-black text-xs shrink-0 group-hover/t:bg-teal-600 transition-colors">
-                              {item.teacherName.charAt(0)}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-black text-slate-900 text-xs truncate group-hover/t:text-teal-700 transition-colors">{item.teacherName}</p>
-                              <p className="text-[10px] text-slate-400 font-semibold">{item.deptName}</p>
-                            </div>
-                          </button>
+                        <td className="py-2.5 px-3 border-r border-slate-100">
+                          <div className="font-semibold text-slate-900 text-xs">{item.teacherName}</div>
+                          <div className="text-[11px] text-slate-400 font-mono mt-0.5">{item.teacherCode}</div>
                         </td>
-                        <td className="py-3 px-3 text-center">
-                          <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[9.5px] uppercase">
+                        <td className="py-2.5 px-2 text-center border-r border-slate-100">
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
                             {item.position}
                           </span>
                         </td>
-                        <td className="py-3 px-3 text-xs font-bold text-slate-700">
+                        <td className="py-2.5 px-3 text-slate-700 text-xs font-medium border-r border-slate-100">
+                          {item.deptName}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-700 text-xs font-medium border-r border-slate-100">
                           {item.homeCampus}
                         </td>
 
-                        {/* Dynamic Columns for each observed campus */}
+                        {/* Các cột cơ sở dự giờ */}
                         {distinctObservedCampusNames.map(cn => {
                           const count = campusPeriodsMap.get(cn) || 0;
+                          const surprise = campusSurpriseMap.get(cn) || 0;
                           const isHome = cn === item.homeCampus;
                           return (
-                            <td key={cn} className="py-3 px-3 text-center">
+                            <td 
+                              key={cn} 
+                              className={`py-2 px-2 text-center border-r border-slate-100 ${
+                                isHome ? "bg-emerald-50/25" : ""
+                              }`}
+                            >
                               {count > 0 ? (
-                                <span className={`px-2 py-1 rounded-lg font-black text-xs inline-block ${
-                                  isHome 
-                                    ? "bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs" 
-                                    : "bg-sky-100 text-sky-900 border border-sky-300 shadow-2xs"
-                                }`} title={isHome ? "Dự tại cơ sở công tác" : "Dự liên cơ sở"}>
-                                  {count} tiết
-                                </span>
+                                <div>
+                                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                                    isHome 
+                                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200" 
+                                      : "bg-sky-50 text-sky-800 border border-sky-200"
+                                  }`}>
+                                    {count} tiết
+                                  </span>
+                                  {surprise > 0 && (
+                                    <div className="text-[10px] text-amber-700 font-medium mt-0.5">
+                                      ({surprise} đột xuất)
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
-                                <span className="text-slate-300 font-bold">-</span>
+                                <span className="text-slate-300 font-normal">-</span>
                               )}
                             </td>
                           );
                         })}
 
-                        {/* Total Observed Column */}
-                        <td className="py-3 px-3 text-center bg-sky-50/30">
-                          <span className="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-900 border border-sky-300 font-black text-xs inline-block">
-                            {item.totalObserved} tiết
-                          </span>
+                        {/* Tổng đã dự */}
+                        <td className="py-2.5 px-2 text-center font-bold text-slate-900 border-r border-slate-100 bg-teal-50/20">
+                          {item.totalObserved} tiết
                         </td>
 
-                        {/* Target Column */}
-                        <td className="py-3 px-3 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <span className="font-extrabold text-slate-800 text-[11px]">
-                              {item.reqObserved} tiết/{item.observedUnit}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => openTargetConfig(item.ttcm)}
-                              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all cursor-pointer"
-                              title={`Thiết lập chỉ tiêu dự giờ cho ${item.teacherName}`}
-                            >
-                              <Settings className="w-3 h-3" />
-                            </button>
+                        {/* Chỉ tiêu */}
+                        <td className="py-2.5 px-2 text-center border-r border-slate-100 text-slate-700">
+                          <div className="font-semibold text-xs">
+                            {item.reqObserved} tiết/{item.observedUnit}
                           </div>
                           {item.observerType && (
-                            <span className="text-[9px] text-slate-400 block font-medium">({item.observerType})</span>
+                            <div className="text-[10px] text-slate-400 mt-0.5">
+                              {item.observerType}
+                            </div>
                           )}
                         </td>
 
-                        {/* Status Column */}
-                        <td className="py-3 px-3 text-center">
-                          <span className={`px-2 py-0.5 rounded-full font-extrabold text-[10px] border inline-block ${
-                            item.isTargetMet 
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
-                              : "bg-amber-100 text-amber-900 border-amber-300"
-                          }`}>
-                            {item.isTargetMet ? "Đạt chuẩn" : `${item.progressPct}%`}
-                          </span>
+                        {/* Đánh giá */}
+                        <td className="py-2.5 px-2 text-center border-r border-slate-100">
+                          {item.isTargetMet ? (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Đạt chỉ tiêu
+                            </span>
+                          ) : (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              Chưa đạt ({item.progressPct}%)
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Thao tác */}
+                        <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleSwitchMainTab("tong-hop");
+                                setSelectedTeacherId(item.id);
+                                setActiveDetailTab("lich-su-du");
+                              }}
+                              className="text-teal-700 hover:text-teal-900 hover:underline text-xs font-semibold cursor-pointer"
+                            >
+                              Xem dự
+                            </button>
+                            <span className="text-slate-300">|</span>
+                            <button
+                              type="button"
+                              onClick={() => openTargetConfig(item.ttcm)}
+                              className="text-slate-500 hover:text-slate-800 hover:underline text-xs font-medium cursor-pointer"
+                            >
+                              Chỉ tiêu
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
                   })}
                 </tbody>
-                <tfoot className="bg-slate-50 font-black text-xs border-t-2 border-slate-300 text-slate-800">
+                <tfoot className="bg-slate-100 font-bold text-xs border-t-2 border-slate-300 text-slate-800">
                   <tr>
-                    <td colSpan={4} className="py-3 px-4 uppercase text-slate-700 font-black">
+                    <td colSpan={5} className="py-3 px-3 uppercase text-slate-700 border-r border-slate-200">
                       Tổng cộng từng cơ sở ({filteredTTCMMatrix.length} TTCM)
                     </td>
                     {distinctObservedCampusNames.map(cn => {
@@ -2484,22 +2276,233 @@ export function AdminTongHopClient({
                         return sum + (campusPeriodsMap.get(cn) || 0);
                       }, 0);
                       return (
-                        <td key={cn} className="py-3 px-3 text-center font-black text-teal-950 bg-teal-50/70">
+                        <td key={cn} className="py-3 px-2 text-center font-bold text-slate-900 border-r border-slate-200 bg-slate-200/50">
                           {campusTotal} tiết
                         </td>
                       );
                     })}
-                    <td className="py-3 px-3 text-center font-black text-sky-950 bg-sky-100/70">
+                    <td className="py-3 px-2 text-center font-bold text-teal-900 border-r border-slate-200 bg-teal-100/50">
                       {ttcmMatrixKPIs.totalObserved} tiết
                     </td>
-                    <td colSpan={2} className="py-3 px-3 text-center text-emerald-800 font-black">
+                    <td className="py-3 px-2 text-center border-r border-slate-200 text-slate-500">
+                      -
+                    </td>
+                    <td className="py-3 px-2 text-center text-emerald-800 border-r border-slate-200">
                       {ttcmMatrixKPIs.targetMetCount}/{ttcmMatrixKPIs.totalTTCM} Đạt ({ttcmMatrixKPIs.metRate}%)
                     </td>
+                    <td className="py-3 px-2 text-center text-slate-400">-</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          ) : (
+            /* VIEW 2: BẢNG DANH SÁCH CHI TIẾT (CHUẨN QUẢN TRỊ, KHÔNG ICON DỮ LIỆU) */
+            <div className="overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-700 tracking-wider">
+                    <th className="py-3 px-3 text-center w-12 border-r border-slate-200">STT</th>
+                    <th className="py-3 px-3 min-w-[170px] max-w-[210px] border-r border-slate-200">Họ và Tên TTCM</th>
+                    <th className="py-3 px-2 text-center w-20 border-r border-slate-200">Chức vụ</th>
+                    <th className="py-3 px-3 min-w-[130px] border-r border-slate-200">Tổ chuyên môn</th>
+                    <th className="py-3 px-3 min-w-[120px] border-r border-slate-200">Cơ sở công tác</th>
+                    <th className="py-3 px-3 min-w-[140px] border-r border-slate-200">Cơ sở dự giờ</th>
+                    <th className="py-3 px-2 text-center w-24 border-r border-slate-200">Phân loại</th>
+                    <th className="py-3 px-2 text-center w-24 border-r border-slate-200">Số tiết</th>
+                    <th className="py-3 px-2 text-center w-28 border-r border-slate-200">Chỉ tiêu</th>
+                    <th className="py-3 px-2 text-center w-28 border-r border-slate-200">Đánh giá</th>
+                    <th className="py-3 px-2 text-center w-24">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {filteredTTCMMatrix.map((item, idx) => {
+                    const rowCount = item.breakdown.length;
+                    return item.breakdown.map((b, bIdx) => (
+                      <tr 
+                        key={`${item.id}-${b.campusName}-${bIdx}`}
+                        className="hover:bg-slate-50/80 transition-colors"
+                      >
+                        {bIdx === 0 && (
+                          <>
+                            <td 
+                              rowSpan={rowCount} 
+                              className="py-2.5 px-3 text-center text-slate-500 font-medium border-r border-slate-100 bg-white align-top"
+                            >
+                              {idx + 1}
+                            </td>
+                            <td 
+                              rowSpan={rowCount} 
+                              className="py-2.5 px-3 border-r border-slate-100 bg-white align-top"
+                            >
+                              <div className="font-semibold text-slate-900 text-xs">{item.teacherName}</div>
+                              <div className="text-[11px] text-slate-400 font-mono mt-0.5">{item.teacherCode}</div>
+                            </td>
+                            <td 
+                              rowSpan={rowCount} 
+                              className="py-2.5 px-2 text-center border-r border-slate-100 bg-white align-top"
+                            >
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                {item.position}
+                              </span>
+                            </td>
+                            <td 
+                              rowSpan={rowCount} 
+                              className="py-2.5 px-3 text-slate-700 text-xs font-medium border-r border-slate-100 bg-white align-top"
+                            >
+                              {item.deptName}
+                            </td>
+                            <td 
+                              rowSpan={rowCount} 
+                              className="py-2.5 px-3 text-slate-700 text-xs font-medium border-r border-slate-100 bg-white align-top"
+                            >
+                              {item.homeCampus}
+                            </td>
+                          </>
+                        )}
+
+                        {/* Cơ sở dự giờ */}
+                        <td className="py-2 px-3 border-r border-slate-100">
+                          <span className={`text-xs ${b.periods > 0 ? "font-medium text-slate-800" : "text-slate-400 italic"}`}>
+                            {b.campusName}
+                          </span>
+                        </td>
+
+                        {/* Phân loại (Nội bộ / Liên cơ sở) */}
+                        <td className="py-2 px-2 text-center border-r border-slate-100">
+                          {b.periods > 0 ? (
+                            <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
+                              b.isCrossCampus 
+                                ? "bg-sky-50 text-sky-800 border border-sky-200" 
+                                : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                            }`}>
+                              {b.isCrossCampus ? "Liên cơ sở" : "Nội bộ"}
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 font-normal">-</span>
+                          )}
+                        </td>
+
+                        {/* Số tiết dự */}
+                        <td className="py-2 px-2 text-center border-r border-slate-100">
+                          {b.periods > 0 ? (
+                            <div>
+                              <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                                b.isCrossCampus ? "bg-sky-50 text-sky-800 border border-sky-200" : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                              }`}>
+                                {b.periods} tiết
+                              </span>
+                              {b.surprisePeriods > 0 && (
+                                <div className="text-[10px] text-amber-700 font-medium mt-0.5">
+                                  ({b.surprisePeriods} đột xuất)
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-300 font-normal">-</span>
+                          )}
+                        </td>
+
+                        {bIdx === 0 && (
+                          <>
+                            {/* Chỉ tiêu */}
+                            <td 
+                              rowSpan={rowCount} 
+                              className="py-2.5 px-2 text-center border-r border-slate-100 bg-white align-top text-slate-700"
+                            >
+                              <div className="font-semibold text-xs">
+                                {item.reqObserved} tiết/{item.observedUnit}
+                              </div>
+                              {item.observerType && (
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  {item.observerType}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Đánh giá */}
+                            <td 
+                              rowSpan={rowCount} 
+                              className="py-2.5 px-2 text-center border-r border-slate-100 bg-white align-top"
+                            >
+                              {item.isTargetMet ? (
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  Đạt chỉ tiêu
+                                </span>
+                              ) : (
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                  Chưa đạt ({item.progressPct}%)
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Thao tác */}
+                            <td 
+                              rowSpan={rowCount} 
+                              className="py-2.5 px-2 text-center bg-white align-top whitespace-nowrap"
+                            >
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    handleSwitchMainTab("tong-hop");
+                                    setSelectedTeacherId(item.id);
+                                    setActiveDetailTab("lich-su-du");
+                                  }}
+                                  className="text-teal-700 hover:text-teal-900 hover:underline text-xs font-semibold cursor-pointer"
+                                >
+                                  Xem dự
+                                </button>
+                                <span className="text-slate-300">|</span>
+                                <button
+                                  type="button"
+                                  onClick={() => openTargetConfig(item.ttcm)}
+                                  className="text-slate-500 hover:text-slate-800 hover:underline text-xs font-medium cursor-pointer"
+                                >
+                                  Chỉ tiêu
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ));
+                  })}
+                </tbody>
+                <tfoot className="bg-slate-100 font-bold text-xs border-t-2 border-slate-300 text-slate-800">
+                  <tr>
+                    <td colSpan={7} className="py-3 px-3 uppercase text-slate-700 border-r border-slate-200">
+                      Tổng cộng ({filteredTTCMMatrix.length} TTCM)
+                    </td>
+                    <td className="py-3 px-2 text-center font-bold text-teal-900 border-r border-slate-200 bg-teal-100/50">
+                      {ttcmMatrixKPIs.totalObserved} tiết
+                    </td>
+                    <td className="py-3 px-2 text-center border-r border-slate-200 text-slate-500">-</td>
+                    <td className="py-3 px-2 text-center text-emerald-800 border-r border-slate-200">
+                      {ttcmMatrixKPIs.targetMetCount}/{ttcmMatrixKPIs.totalTTCM} Đạt ({ttcmMatrixKPIs.metRate}%)
+                    </td>
+                    <td className="py-3 px-2 text-center text-slate-400">-</td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           )}
+        </div>
+
+        {/* 5. Chú thích chuẩn Quản Trị */}
+        <div className="flex flex-wrap items-center gap-6 px-4 py-3 bg-white rounded-xl border border-slate-200 text-xs text-slate-600 shadow-2xs">
+          <span className="font-semibold text-slate-800">Chú thích dữ liệu:</span>
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></span>
+            <span>Tiết dự nội bộ (tại cơ sở công tác)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-3 h-3 rounded bg-sky-100 border border-sky-300"></span>
+            <span>Tiết dự liên cơ sở (chéo cơ sở)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-400">-</span>
+            <span>Không có tiết dự</span>
+          </div>
         </div>
       </div>
     );
