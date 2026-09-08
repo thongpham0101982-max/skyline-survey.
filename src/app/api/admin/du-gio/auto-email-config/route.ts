@@ -65,11 +65,7 @@ export async function GET() {
     // Fetch departments and their TTCM for preview
     const departments = await prisma.department.findMany({
       where: {
-        OR: [
-          { status: "ACTIVE" },
-          { status: "active" },
-          { status: null }
-        ]
+        status: { not: "INACTIVE" }
       },
       include: {
         teacherAssignments: {
@@ -136,11 +132,7 @@ export async function POST(req: Request) {
 
       const departments = await prisma.department.findMany({
         where: {
-          OR: [
-            { status: "ACTIVE" },
-            { status: "active" },
-            { status: null }
-          ]
+          status: { not: "INACTIVE" }
         }
       });
 

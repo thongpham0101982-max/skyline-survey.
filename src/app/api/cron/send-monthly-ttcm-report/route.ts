@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     });
 
     const departments = await prisma.department.findMany({
-      where: { status: "ACTIVE" }
+      where: { status: { not: "INACTIVE" } }
     });
 
     let sentCount = 0;
