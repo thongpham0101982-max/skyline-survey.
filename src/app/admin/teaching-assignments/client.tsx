@@ -10,9 +10,17 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
   const [selectedCampusId, setSelectedCampusId] = useState("")
   const [selectedFormCampusId, setSelectedFormCampusId] = useState("")
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
+  const [searchTeacher, setSearchTeacher] = useState("")
 
   const filteredTeachers = useMemo(() => {
     let list = teachers;
+    if (searchTeacher.trim()) {
+      const q = searchTeacher.toLowerCase().trim()
+      list = list.filter((t: any) => 
+        (t.teacherName || "").toLowerCase().includes(q) || 
+        (t.teacherCode || "").toLowerCase().includes(q)
+      )
+    }
     if (selectedDeptId) {
       list = list.filter((t: any) => t.departmentId === selectedDeptId);
     }
@@ -20,7 +28,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
       list = list.filter((t: any) => t.campusId === selectedCampusId || t.campus?.id === selectedCampusId);
     }
     return list;
-  }, [teachers, selectedDeptId, selectedCampusId])
+  }, [teachers, searchTeacher, selectedDeptId, selectedCampusId])
   const [assignments, setAssignments] = useState(initialAssignments)
   const [loading, setLoading] = useState(false)
 
@@ -34,34 +42,104 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
 
   // Extract levels and grades for the selected year
   const levels = useMemo(() => {
-    const set = new Set()
-    classes.filter((c: any) => c.academicYearId === selectedYear).forEach((c: any) => {
-      if (c.level) set.add(c.level.trim())
+    const set = new Set<string>()
+    classes
+      .filter((c: any) => !selectedYear || c.academicYearId === selectedYear)
+      .forEach((c: any) => {
+        if (c.level) {
+          const lvl = c.level.trim()
+          if (["nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mầm non", "mam non"].includes(lvl.toLowerCase())) {
+            set.add("Mầm non")
+          } else {
+            set.add(lvl)
+          }
+        }
+      })
+    const LEVEL_ORDER: Record<string, number> = {
+      "mầm non": 1,
+      "tiểu học": 2,
+      "thcs": 3,
+      "thpt": 4,
+    }
+    return Array.from(set).sort((a, b) => {
+      const oa = LEVEL_ORDER[a.toLowerCase()] ?? 99
+      const ob = LEVEL_ORDER[b.toLowerCase()] ?? 99
+      if (oa !== ob) return oa - ob
+      return a.localeCompare(b)
     })
-    return Array.from(set).sort()
   }, [classes, selectedYear])
 
   const grades = useMemo(() => {
-    const set = new Set()
-    classes.filter((c: any) => c.academicYearId === selectedYear).forEach((c: any) => {
-      if (c.grade) set.add(c.grade.trim())
-    })
+    const set = new Set<string>()
+    classes
+      .filter((c: any) => {
+        if (selectedYear && c.academicYearId !== selectedYear) return false
+        if (selectedFormCampusId && c.campusId !== selectedFormCampusId) return false
+        if (selectedLevel) {
+          const cLvl = (c.level || "").toLowerCase().trim()
+          const sLvl = selectedLevel.toLowerCase().trim()
+          if (sLvl === "mầm non") {
+            return ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mam non"].includes(cLvl)
+          }
+          return cLvl === sLvl
+        }
+        return true
+      })
+      .forEach((c: any) => {
+        const g = (c.grade || "").trim()
+        if (g && g.toLowerCase() !== "ko thấy") {
+          set.add(g)
+        }
+      })
+
+    const MN_ORDER: Record<string, number> = {
+      "nhà trẻ 12-18 tháng": 1,
+      "12 đến 18 tháng": 1,
+      "nhà trẻ 18-24 tháng": 2,
+      "18 đến 24 tháng": 2,
+      "nhà trẻ 24-36 tháng": 3,
+      "24 đến 36 tháng": 3,
+      "nhà trẻ": 4,
+      "mẫu giáo bé": 5,
+      "3 đến 4 tuổi": 5,
+      "mẫu giáo nhỡ": 6,
+      "4 đến 5 tuổi": 6,
+      "mẫu giáo lớn": 7,
+      "5 đến 6 tuổi": 7,
+    }
+
     return Array.from(set).sort((a, b) => {
+      const aLower = a.toLowerCase()
+      const bLower = b.toLowerCase()
+      const aMn = MN_ORDER[aLower]
+      const bMn = MN_ORDER[bLower]
+
+      if (aMn !== undefined && bMn !== undefined) return aMn - bMn
+      if (aMn !== undefined) return -1
+      if (bMn !== undefined) return 1
+
       const na = parseInt(a, 10)
       const nb = parseInt(b, 10)
       if (!isNaN(na) && !isNaN(nb)) return na - nb
       return String(a).localeCompare(String(b))
     })
-  }, [classes, selectedYear])
+  }, [classes, selectedYear, selectedFormCampusId, selectedLevel])
 
-  // Filter classes by year, level and grade
+  // Filter classes by year, campus, level and grade
   const filteredClasses = useMemo(() => {
-    let list = classes.filter((c: any) => c.academicYearId === selectedYear)
+    let list = classes.filter((c: any) => !selectedYear || c.academicYearId === selectedYear)
     if (selectedFormCampusId) {
       list = list.filter((c: any) => c.campusId === selectedFormCampusId)
     }
     if (selectedLevel) {
-      list = list.filter((c: any) => (c.level || "").toLowerCase().trim() === selectedLevel.toLowerCase().trim())
+      const sLvl = selectedLevel.toLowerCase().trim()
+      list = list.filter((c: any) => {
+        const cLvl = (c.level || "").toLowerCase().trim()
+        if (sLvl === "mầm non") {
+          return ["mầm non", "nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mam non"].includes(cLvl)
+        }
+        return cLvl === sLvl
+      })
     }
     if (selectedGrade) {
       list = list.filter((c: any) => (c.grade || "").toLowerCase().trim() === selectedGrade.toLowerCase().trim())
@@ -135,17 +213,28 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
       {/* LEFT: MAIN TABLE */}
       <div className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 flex-1 w-full overflow-hidden">
         <div className="p-4 flex flex-wrap gap-3 justify-between items-center text-xs font-semibold">
-          <div className="font-bold text-slate-700 flex items-center"><Layers className="w-5 h-5 mr-2 text-indigo-500"/>Bảng phân công</div>
-          <div className="flex gap-2">
-            <select value={selectedCampusId} onChange={e=>setSelectedCampusId(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none bg-white">
+          <div className="font-bold text-slate-700 flex items-center">
+            <Layers className="w-5 h-5 mr-2 text-indigo-500"/>
+            Bảng phân công
+            <span className="ml-2 text-xs font-normal text-slate-400">({filteredTeachers.length} giáo viên)</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <input 
+              type="text"
+              placeholder="Tìm giáo viên..."
+              value={searchTeacher}
+              onChange={e => setSearchTeacher(e.target.value)}
+              className="p-2 rounded-lg border border-slate-200 text-xs outline-none bg-white w-36 focus:border-[#48BFE3]"
+            />
+            <select value={selectedCampusId} onChange={e=>setSelectedCampusId(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-xs outline-none bg-white">
               <option value="">Tất cả Cơ sở</option>
               {(campuses || []).map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
             </select>
-            <select value={selectedDeptId} onChange={e=>setSelectedDeptId(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none bg-white">
+            <select value={selectedDeptId} onChange={e=>setSelectedDeptId(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-xs outline-none bg-white">
               <option value="">Tất cả Tổ chuyên môn</option>
               {(departments || []).map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
-            <select value={selectedYear} onChange={e=>{ setSelectedYear(e.target.value); setSelectedLevel(""); setSelectedGrade(""); setNewClasses([]); }} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
+            <select value={selectedYear} onChange={e=>{ setSelectedYear(e.target.value); setSelectedLevel(""); setSelectedGrade(""); setNewClasses([]); }} className="p-2 rounded-lg border border-slate-200 font-semibold text-xs outline-none">
               {years.filter((y: any) => !y.isOff).map((y:any) => <option key={y.id} value={y.id}>{y.name}</option>)}
             </select>
           </div>
@@ -195,17 +284,44 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                   {subjects.map((s:any) => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
                 </select>
                 <div className="grid grid-cols-3 gap-2">
-                  <select value={selectedFormCampusId} onChange={e=>{ setSelectedFormCampusId(e.target.value); setNewClasses([]); }} className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium">
+                  <select 
+                    value={selectedFormCampusId} 
+                    onChange={e=>{ 
+                      setSelectedFormCampusId(e.target.value); 
+                      setSelectedGrade(""); 
+                      setNewClasses([]); 
+                    }} 
+                    className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium"
+                  >
                     <option value="">Tất cả Cơ sở</option>
                     {(campuses || []).map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                   </select>
-                  <select value={selectedLevel} onChange={e=>{ setSelectedLevel(e.target.value); setNewClasses([]); }} className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium">
+                  <select 
+                    value={selectedLevel} 
+                    onChange={e=>{ 
+                      setSelectedLevel(e.target.value); 
+                      setSelectedGrade(""); 
+                      setNewClasses([]); 
+                    }} 
+                    className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium"
+                  >
                     <option value="">Tất cả Bậc học</option>
                     {levels.map((l: any) => <option key={l} value={l}>{l}</option>)}
                   </select>
-                  <select value={selectedGrade} onChange={e=>{ setSelectedGrade(e.target.value); setNewClasses([]); }} className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium">
+                  <select 
+                    value={selectedGrade} 
+                    onChange={e=>{ 
+                      setSelectedGrade(e.target.value); 
+                      setNewClasses([]); 
+                    }} 
+                    className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium"
+                  >
                     <option value="">Tất cả Khối</option>
-                    {grades.map((g: any) => <option key={g} value={g}>Khối {g}</option>)}
+                    {grades.map((g: any) => (
+                      <option key={g} value={g}>
+                        {g.toLowerCase().startsWith("khối") ? g : (!isNaN(Number(g)) ? `Khối ${g}` : g)}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -235,7 +351,11 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                       {filteredClasses.map((c: any) => {
                         const isChecked = newClasses.includes(c.id);
                         return (
-                          <label key={c.id} className={`flex items-center gap-1.5 p-1.5 rounded-lg border cursor-pointer text-xs transition-all ${isChecked ? 'bg-[#48BFE3]/10 border-[#48BFE3] text-[#48BFE3] font-bold' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                          <label 
+                            key={c.id} 
+                            title={c.className}
+                            className={`flex items-center gap-1.5 p-1.5 rounded-lg border cursor-pointer text-xs transition-all ${isChecked ? 'bg-[#48BFE3]/10 border-[#48BFE3] text-[#48BFE3] font-bold' : 'bg-white border-slate-200 hover:bg-slate-50'}`}
+                          >
                             <input 
                               type="checkbox" 
                               checked={isChecked}

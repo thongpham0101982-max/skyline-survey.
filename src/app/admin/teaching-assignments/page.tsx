@@ -5,21 +5,21 @@ import { TeachingClient } from "./client"
 export default async function TeachingAssignmentsPage() {
   const rawTeachers = await prisma.teacher.findMany({
     orderBy: { teacherName: 'asc' },
-    include: { departmentRel: true }
+    include: { departmentRel: true, campus: true }
   })
-  const teachers = rawTeachers.filter(t => {
-    const block = (t.departmentRel?.blockCM || "").toLowerCase().trim();
-    return block !== "mầm non" && block !== "mam non";
-  })
+  const teachers = rawTeachers
 
   const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
   const rawClasses = await prisma.class.findMany({ 
     where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
     orderBy: { className: 'asc' } 
   })
-  const classes = rawClasses.filter(c => {
+  const classes = rawClasses.map(c => {
     const lvl = (c.level || "").toLowerCase().trim();
-    return !["nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mầm non", "mam non"].includes(lvl);
+    if (["nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mầm non", "mam non"].includes(lvl)) {
+      return { ...c, level: "Mầm non" }
+    }
+    return c;
   })
   const campuses = await prisma.campus.findMany({
     where: { status: "ACTIVE" },
@@ -40,16 +40,18 @@ export default async function TeachingAssignmentsPage() {
   })
 
   // Format assignments for easy consumption
-  const formattedAssignments = assignments.map(a => ({
-    id: a.id,
-    teacherId: a.teacherId,
-    classId: a.classId,
-    className: a.class.className,
-    subjectId: a.subjectId,
-    subjectName: a.subject.subjectName,
-    academicYearId: a.academicYearId,
-    semester: a.semester
-  }))
+  const formattedAssignments = assignments
+    .filter(a => a.class && a.subject)
+    .map(a => ({
+      id: a.id,
+      teacherId: a.teacherId,
+      classId: a.classId,
+      className: a.class.className,
+      subjectId: a.subjectId,
+      subjectName: a.subject.subjectName,
+      academicYearId: a.academicYearId,
+      semester: a.semester
+    }))
 
   return (
     <div className="space-y-6">
