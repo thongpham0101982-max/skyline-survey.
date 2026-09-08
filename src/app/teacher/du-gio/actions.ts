@@ -254,6 +254,14 @@ export async function getObservationData(academicYearId?: string) {
         teacherCode: true,
         email: true,
         departmentId: true,
+        campusId: true,
+        campus: {
+          select: {
+            id: true,
+            campusName: true,
+            campusCode: true
+          }
+        },
         position: true,
         departmentAssignments: {
           select: { departmentId: true, position: true }
@@ -503,9 +511,21 @@ export async function getObservationSlots(filters: {
             teacher: {
               select: {
                 id: true,
-        teacherName: true,
-        teacherCode: true,
-        departmentId: true,
+                teacherName: true,
+                teacherCode: true,
+                departmentId: true,
+                campusId: true,
+                campus: {
+                  select: {
+                    id: true,
+                    campusName: true,
+                    campusCode: true
+                  }
+                },
+                position: true,
+                departmentAssignments: {
+                  select: { departmentId: true, position: true }
+                },
                 email: true
               }
             },

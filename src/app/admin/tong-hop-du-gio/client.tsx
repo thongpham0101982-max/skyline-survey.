@@ -10,7 +10,7 @@ import {
   BookOpen, User, Award, ThumbsUp, MessageSquare, GraduationCap,
   Eye, Settings, Sparkles, Filter, TrendingUp, BarChart3, School,
   Baby, Building2, Star, CheckCheck, Clock, Mail, Send, FileSpreadsheet,
-  UserCheck, AlertTriangle, ArrowRight, BookMarked
+  UserCheck, AlertTriangle, ArrowRight, BookMarked, Grid3X3, Table2, ArrowLeftRight, MapPin
 } from "lucide-react"
 
 interface TeacherInfo { 
@@ -20,7 +20,9 @@ interface TeacherInfo {
   email: string | null; 
   departmentId: string | null; 
   campusId: string; 
+  campus?: { id: string; campusName: string; campusCode: string } | null;
   position?: string;
+  departmentAssignments?: { departmentId: string; position: string }[];
   observerType?: string | null;
   observeeType?: string | null;
   requiredObserved?: number;
@@ -154,7 +156,15 @@ export function AdminTongHopClient({
   }, [activeBlockTab, departments, isTTCM]);
 
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
-  const [activeDetailTab, setActiveDetailTab] = useState<"lich-su" | "lich-su-du" | "tien-do-to" | "phan-tich" | "to-cm">("lich-su")
+  const [activeDetailTab, setActiveDetailTab] = useState<"lich-su" | "lich-su-du" | "tien-do-to" | "ma-tran-ttcm" | "phan-tich" | "to-cm">("lich-su")
+
+  // Filter & view states for TTCM Matrix Tab
+  const [ttcmMatrixMonth, setTtcmMatrixMonth] = useState<string>("all")
+  const [ttcmMatrixBlock, setTtcmMatrixBlock] = useState<string>("all")
+  const [ttcmMatrixCampus, setTtcmMatrixCampus] = useState<string>("all")
+  const [ttcmMatrixObservedCampus, setTtcmMatrixObservedCampus] = useState<string>("all")
+  const [ttcmSearchQuery, setTtcmSearchQuery] = useState<string>("")
+  const [ttcmViewMode, setTtcmViewMode] = useState<"detailed-list" | "pivot-matrix">("detailed-list")
   
   // Target Config modal state
   const [isTargetModalOpen, setIsTargetModalOpen] = useState(false)
@@ -264,13 +274,13 @@ export function AdminTongHopClient({
   // Extract all unique months from initialSlots
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
-    const activeYearObj = academicYears.find((y: any) => y.id === selectedYearId) || academicYears.find((y: any) => y.status === "ACTIVE");
+    const activeYearObj = (academicYears || []).find((y: any) => y.id === selectedYearId) || (academicYears || []).find((y: any) => y.status === "ACTIVE");
     initialSlots.forEach(s => {
       if (s.date) {
         const d = new Date(s.date);
-        if (activeYearObj?.startDate && activeYearObj?.endDate) {
-          const start = new Date(activeYearObj.startDate);
-          const end = new Date(activeYearObj.endDate);
+        if ((activeYearObj as any)?.startDate && (activeYearObj as any)?.endDate) {
+          const start = new Date((activeYearObj as any).startDate);
+          const end = new Date((activeYearObj as any).endDate);
           if (d < start || d > end) return;
         }
         const yyyy = d.getFullYear();
@@ -701,6 +711,333 @@ export function AdminTongHopClient({
     return "Chưa phân tổ";
   };
 
+  // Helper to find teacher's home campus name
+  const getTeacherCampusName = (t: any) => {
+    if (t?.campus?.campusName) return t.campus.campusName;
+    if (t?.campusId) {
+      const c = campuses.find(cp => cp.id === t.campusId);
+      if (c) return c.campusName;
+    }
+    return "Chưa rõ cơ sở";
+  };
+
+  // Helper to find slot's campus name
+  const getSlotCampusName = (slot: any) => {
+    if (slot?.campusName) return slot.campusName;
+    if (slot?.campusId) {
+      const c = campuses.find(cp => cp.id === slot.campusId);
+      if (c) return c.campusName;
+    }
+    if (slot?.teacher?.campus?.campusName) return slot.teacher.campus.campusName;
+    if (slot?.teacher?.campusId) {
+      const c = campuses.find(cp => cp.id === slot.teacher.campusId);
+      if (c) return c.campusName;
+    }
+    return "Cơ sở chưa rõ";
+  };
+
+  // Distinct list of all TTCMs across departments and teachersList
+  const allTTCMList = useMemo(() => {
+    const ttcmMap = new Map<string, any>();
+
+    // 1. From departments: every department's designated TTCM
+    departments.forEach(dept => {
+      const deptTeachersList = (teachersList || []).filter((t: any) => 
+        t.departmentId === dept.id || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id)
+      );
+      const ttcm = deptTeachersList.find((t: any) => 
+        t.position === "TTCM" || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id && da.position === "TTCM")
+      );
+      if (ttcm) {
+        ttcmMap.set(ttcm.id, {
+          ...ttcm,
+          deptId: dept.id,
+          deptName: dept.name,
+          block: getTeacherBlock(ttcm)
+        });
+      }
+    });
+
+    // 2. From teachersList: any teacher whose position or assignment is TTCM / Tổ trưởng
+    (teachersList || []).forEach((t: any) => {
+      const pos = (t.position || "").toUpperCase().trim();
+      const isTT = pos === "TTCM" || pos.includes("TTCM") || pos.includes("TỔ TRƯỞNG") || pos.includes("TO TRUONG") ||
+        t.observerType === "TTCM" ||
+        t.departmentAssignments?.some((da: any) => {
+          const p = (da.position || "").toUpperCase().trim();
+          return p === "TTCM" || p.includes("TTCM") || p.includes("TỔ TRƯỞNG") || p.includes("TO TRUONG");
+        });
+      if (isTT && !ttcmMap.has(t.id)) {
+        ttcmMap.set(t.id, {
+          ...t,
+          deptId: t.departmentId,
+          deptName: getTeacherDeptName(t),
+          block: getTeacherBlock(t)
+        });
+      }
+    });
+
+    return Array.from(ttcmMap.values()).sort((a, b) => a.teacherName.localeCompare(b.teacherName, 'vi'));
+  }, [departments, teachersList]);
+
+  // Distinct campus names for Observed Campuses (columns in pivot grid)
+  const distinctObservedCampusNames = useMemo(() => {
+    const names = new Set<string>();
+    campuses.forEach(c => {
+      if (c.campusName) names.add(c.campusName);
+    });
+    initialSlots.forEach(s => {
+      const cn = getSlotCampusName(s);
+      if (cn && cn !== "Cơ sở chưa rõ") names.add(cn);
+    });
+    return Array.from(names).sort();
+  }, [campuses, initialSlots]);
+
+  // Compute TTCM matrix data according to active month
+  const ttcmMatrixData = useMemo(() => {
+    const activeMonth = ttcmMatrixMonth !== "all" ? ttcmMatrixMonth : selectedMonth;
+
+    return allTTCMList.map(ttcm => {
+      const homeCampus = getTeacherCampusName(ttcm);
+      const reqObserved = ttcm.requiredObserved || 8; // Định mức chuẩn TTCM 8 tiết/tháng
+
+      const campusStats: Record<string, { periods: number; surprisePeriods: number }> = {};
+      let totalObserved = 0;
+      let totalSurprise = 0;
+      let internalObserved = 0;
+      let crossObserved = 0;
+
+      (initialSlots || []).forEach(slot => {
+        if (activeMonth !== "all") {
+          if (!slot.date) return;
+          const d = new Date(slot.date);
+          if (isNaN(d.getTime())) return;
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, '0');
+          if (`${yyyy}-${mm}` !== activeMonth) return;
+        }
+
+        const isSurprise = isSurpriseSlot(slot);
+        const increment = slot.isDoublePeriod ? 2 : 1;
+
+        slot.registrations?.forEach((reg: any) => {
+          if (reg.teacherId === ttcm.id && reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT") {
+            const observedCampus = getSlotCampusName(slot);
+            if (!campusStats[observedCampus]) {
+              campusStats[observedCampus] = { periods: 0, surprisePeriods: 0 };
+            }
+            campusStats[observedCampus].periods += increment;
+            if (isSurprise) campusStats[observedCampus].surprisePeriods += increment;
+
+            totalObserved += increment;
+            if (isSurprise) totalSurprise += increment;
+
+            if (observedCampus === homeCampus) {
+              internalObserved += increment;
+            } else {
+              crossObserved += increment;
+            }
+          }
+        });
+      });
+
+      const breakdown = Object.entries(campusStats).map(([campusName, stat]) => ({
+        campusName,
+        periods: stat.periods,
+        surprisePeriods: stat.surprisePeriods,
+        isCrossCampus: campusName !== homeCampus
+      })).sort((a, b) => b.periods - a.periods);
+
+      return {
+        id: ttcm.id,
+        ttcm,
+        teacherName: ttcm.teacherName,
+        teacherCode: ttcm.teacherCode,
+        position: ttcm.position || "TTCM",
+        deptName: ttcm.deptName || "Tổ chuyên môn",
+        block: ttcm.block || "Phổ thông K-12",
+        homeCampus,
+        reqObserved,
+        totalObserved,
+        totalSurprise,
+        internalObserved,
+        crossObserved,
+        isTargetMet: totalObserved >= reqObserved,
+        breakdown: breakdown.length > 0 ? breakdown : [{
+          campusName: "Chưa có tiết dự",
+          periods: 0,
+          surprisePeriods: 0,
+          isCrossCampus: false
+        }]
+      };
+    });
+  }, [allTTCMList, initialSlots, ttcmMatrixMonth, selectedMonth, campuses]);
+
+  // Filter TTCM matrix data according to interactive tab filters
+  const filteredTTCMMatrix = useMemo(() => {
+    return ttcmMatrixData.filter(item => {
+      if (ttcmMatrixBlock !== "all" && item.block !== ttcmMatrixBlock) return false;
+      if (ttcmMatrixCampus !== "all" && item.homeCampus !== ttcmMatrixCampus) return false;
+      if (ttcmMatrixObservedCampus !== "all") {
+        const hasObserved = item.breakdown.some(b => b.campusName === ttcmMatrixObservedCampus && b.periods > 0);
+        if (!hasObserved) return false;
+      }
+      if (ttcmSearchQuery.trim()) {
+        const q = ttcmSearchQuery.toLowerCase().trim();
+        const matchName = item.teacherName.toLowerCase().includes(q);
+        const matchCode = item.teacherCode.toLowerCase().includes(q);
+        const matchDept = item.deptName.toLowerCase().includes(q);
+        if (!matchName && !matchCode && !matchDept) return false;
+      }
+      return true;
+    });
+  }, [ttcmMatrixData, ttcmMatrixBlock, ttcmMatrixCampus, ttcmMatrixObservedCampus, ttcmSearchQuery]);
+
+  // Summary KPIs for TTCM matrix
+  const ttcmMatrixKPIs = useMemo(() => {
+    let totalTTCM = filteredTTCMMatrix.length;
+    let totalObserved = 0;
+    let totalSurprise = 0;
+    let totalInternal = 0;
+    let totalCross = 0;
+    let targetMetCount = 0;
+
+    filteredTTCMMatrix.forEach(item => {
+      totalObserved += item.totalObserved;
+      totalSurprise += item.totalSurprise;
+      totalInternal += item.internalObserved;
+      totalCross += item.crossObserved;
+      if (item.isTargetMet) targetMetCount++;
+    });
+
+    const metRate = totalTTCM > 0 ? Math.round((targetMetCount / totalTTCM) * 100) : 0;
+
+    return {
+      totalTTCM,
+      totalObserved,
+      totalSurprise,
+      totalInternal,
+      totalCross,
+      targetMetCount,
+      metRate
+    };
+  }, [filteredTTCMMatrix]);
+
+  // Export TTCM Matrix to Excel
+  const handleExportTTCMExcel = () => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const activeMonth = ttcmMatrixMonth !== "all" ? ttcmMatrixMonth : selectedMonth;
+      const periodText = activeMonth === "all" ? "Toàn bộ năm học" : `Tháng ${activeMonth.split("-")[1]}/${activeMonth.split("-")[0]}`;
+
+      // Sheet 1: Bảng Danh Sách Chi Tiết (Theo yêu cầu: STT, Họ và tên, Chức vụ, Cơ sở, Cơ sở dự giờ, Số tiết)
+      const detailHeaders = [
+        "STT",
+        "Họ và tên",
+        "Mã GV",
+        "Chức vụ",
+        "Tổ chuyên môn",
+        "Khối",
+        "Cơ sở công tác",
+        "Cơ sở dự giờ",
+        "Số tiết dự",
+        "Trong đó đột xuất",
+        "Phân loại",
+        "Tổng tiết cả kỳ",
+        "Chỉ tiêu tháng",
+        "Đánh giá"
+      ];
+
+      const detailRows: any[][] = [
+        ["MA TRẬN DỰ GIỜ TỔ TRƯỞNG CHUYÊN MÔN (TTCM) THEO THÁNG"],
+        [`Kỳ báo cáo: ${periodText}`, `Thời gian xuất: ${new Date().toLocaleString("vi-VN")}`],
+        [],
+        detailHeaders
+      ];
+
+      let stt = 1;
+      filteredTTCMMatrix.forEach(item => {
+        item.breakdown.forEach((b, bIdx) => {
+          detailRows.push([
+            bIdx === 0 ? stt : "",
+            bIdx === 0 ? item.teacherName : "",
+            bIdx === 0 ? item.teacherCode : "",
+            bIdx === 0 ? item.position : "",
+            bIdx === 0 ? item.deptName : "",
+            bIdx === 0 ? item.block : "",
+            bIdx === 0 ? item.homeCampus : "",
+            b.campusName,
+            b.periods,
+            b.surprisePeriods > 0 ? b.surprisePeriods : 0,
+            b.periods === 0 ? "-" : (b.isCrossCampus ? "Liên cơ sở" : "Nội bộ cơ sở"),
+            bIdx === 0 ? item.totalObserved : "",
+            bIdx === 0 ? item.reqObserved : "",
+            bIdx === 0 ? (item.isTargetMet ? "Đạt chỉ tiêu" : "Chưa đạt") : ""
+          ]);
+        });
+        stt++;
+      });
+
+      const wsDetail = XLSX.utils.aoa_to_sheet(detailRows);
+      wsDetail["!cols"] = [
+        { wch: 6 }, { wch: 24 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
+        { wch: 16 }, { wch: 22 }, { wch: 22 }, { wch: 12 }, { wch: 16 },
+        { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 14 }
+      ];
+      XLSX.utils.book_append_sheet(wb, wsDetail, "Chi_Tiet_Du_Gio_TTCM");
+
+      // Sheet 2: Ma Trận Đối Chiếu 2 Chiều (Pivot Grid)
+      const pivotHeaders = [
+        "STT",
+        "Họ và tên",
+        "Mã GV",
+        "Chức vụ",
+        "Tổ chuyên môn",
+        "Cơ sở công tác",
+        ...distinctObservedCampusNames,
+        "Tổng tiết dự",
+        "Chỉ tiêu",
+        "Đánh giá"
+      ];
+
+      const pivotRows: any[][] = [
+        ["MA TRẬN ĐỐI CHIẾU DỰ GIỜ TTCM - LIÊN CƠ SỞ"],
+        [`Kỳ báo cáo: ${periodText}`, `Thời gian xuất: ${new Date().toLocaleString("vi-VN")}`],
+        [],
+        pivotHeaders
+      ];
+
+      filteredTTCMMatrix.forEach((item, pIdx) => {
+        const campusPeriodsMap = new Map(item.breakdown.map(b => [b.campusName, b.periods]));
+        const campusCols = distinctObservedCampusNames.map(cn => campusPeriodsMap.get(cn) || 0);
+
+        pivotRows.push([
+          pIdx + 1,
+          item.teacherName,
+          item.teacherCode,
+          item.position,
+          item.deptName,
+          item.homeCampus,
+          ...campusCols,
+          item.totalObserved,
+          item.reqObserved,
+          item.isTargetMet ? "Đạt" : "Chưa đạt"
+        ]);
+      });
+
+      const wsPivot = XLSX.utils.aoa_to_sheet(pivotRows);
+      XLSX.utils.book_append_sheet(wb, wsPivot, "Ma_Tran_Cheo_Co_So");
+
+      const sanitizedMonth = activeMonth === "all" ? "Tat_Ca_Thang" : `Thang_${activeMonth.replace("-", "_")}`;
+      const fileName = `Ma_Tran_Du_Gio_TTCM_${sanitizedMonth}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      toast.success(`Đã xuất báo cáo Ma trận TTCM: ${fileName}`);
+    } catch (e: any) {
+      console.error("Export TTCM Excel error:", e);
+      toast.error("Có lỗi xảy ra khi xuất file Excel Ma trận TTCM");
+    }
+  };
+
   const handleExportExcel = () => {
     try {
       const activeYearObj = academicYears?.find((y: any) => y.id === filterAcademicYearId) || academicYears?.[0];
@@ -990,6 +1327,28 @@ export function AdminTongHopClient({
       // 5. Sheet Thống kê theo Tổ CM
       const wsDeptSummary = createDepartmentSummarySheet(periodText, yearName);
       XLSX.utils.book_append_sheet(wb, wsDeptSummary, "Tien_Do_To_CM");
+
+      // 6. Sheet Ma trận TTCM theo tháng
+      const ttcmHeaders = [
+        "STT", "Họ và tên", "Mã GV", "Chức vụ", "Tổ chuyên môn", "Khối", "Cơ sở công tác",
+        ...distinctObservedCampusNames, "Tổng tiết dự", "Chỉ tiêu", "Đánh giá"
+      ];
+      const ttcmRows: any[][] = [
+        ["MA TRẬN ĐỐI CHIẾU DỰ GIỜ TTCM - TOÀN TRƯỜNG"],
+        [`Kỳ báo cáo: ${periodText}`, `Năm học: ${yearName}`],
+        [],
+        ttcmHeaders
+      ];
+      ttcmMatrixData.forEach((item, pIdx) => {
+        const campusPeriodsMap = new Map(item.breakdown.map(b => [b.campusName, b.periods]));
+        const campusCols = distinctObservedCampusNames.map(cn => campusPeriodsMap.get(cn) || 0);
+        ttcmRows.push([
+          pIdx + 1, item.teacherName, item.teacherCode, item.position, item.deptName, item.block, item.homeCampus,
+          ...campusCols, item.totalObserved, item.reqObserved, item.isTargetMet ? "Đạt" : "Chưa đạt"
+        ]);
+      });
+      const wsTTCM = XLSX.utils.aoa_to_sheet(ttcmRows);
+      XLSX.utils.book_append_sheet(wb, wsTTCM, "Ma_Tran_TTCM");
 
       const sanitizedMonth = selectedMonth === "all" ? "Tat_Ca_Thang" : `Thang_${selectedMonth.replace("-", "_")}`;
       const fileName = `Bao_Cao_Tong_Hop_Du_Gio_${sanitizedMonth}.xlsx`;
@@ -1806,11 +2165,11 @@ export function AdminTongHopClient({
                   <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeDetailTab === "lich-su" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
                     {filteredSlots.length}
                   </span>
-                  {teacherStats.taughtSurpriseCount > 0 && (
+                  {(selectedTeacher && teacherStats[selectedTeacher.id]?.taughtSurpriseCount > 0) && (
                     <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold flex items-center gap-0.5 ${
                       activeDetailTab === "lich-su" ? "bg-amber-400 text-slate-950" : "bg-amber-100 text-amber-900 border border-amber-300"
                     }`}>
-                      ⚡ {teacherStats.taughtSurpriseCount} ĐX
+                      ⚡ {teacherStats[selectedTeacher.id]?.taughtSurpriseCount} ĐX
                     </span>
                   )}
                 </button>
@@ -1828,11 +2187,11 @@ export function AdminTongHopClient({
                   <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeDetailTab === "lich-su-du" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
                     {filteredObservedSlots.length}
                   </span>
-                  {teacherStats.observedSurpriseCount > 0 && (
+                  {(selectedTeacher && teacherStats[selectedTeacher.id]?.observedSurpriseCount > 0) && (
                     <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-extrabold flex items-center gap-0.5 ${
                       activeDetailTab === "lich-su-du" ? "bg-amber-400 text-slate-950" : "bg-amber-100 text-amber-900 border border-amber-300"
                     }`}>
-                      ⚡ {teacherStats.observedSurpriseCount} ĐX
+                      ⚡ {teacherStats[selectedTeacher.id]?.observedSurpriseCount} ĐX
                     </span>
                   )}
                 </button>
@@ -1849,6 +2208,22 @@ export function AdminTongHopClient({
                   <span>Tiến độ Tổ CM</span>
                   <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeDetailTab === "tien-do-to" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
                     {deptTeachers.length} GV
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setActiveDetailTab("ma-tran-ttcm")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                    activeDetailTab === "ma-tran-ttcm"
+                      ? "bg-gradient-to-r from-[#003B3A] to-teal-700 text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                  }`}
+                  title="Xem bảng Ma trận dự giờ Tổ trưởng chuyên môn theo tháng"
+                >
+                  <Grid3X3 className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Ma trận dự giờ TTCM</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] ${activeDetailTab === "ma-tran-ttcm" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-900"}`}>
+                    {allTTCMList.length} TTCM
                   </span>
                 </button>
 
@@ -2572,6 +2947,570 @@ export function AdminTongHopClient({
             </div>
           )}
 
+          {/* TAB: Ma trận dự giờ cho TTCM theo tháng */}
+          {activeDetailTab === "ma-tran-ttcm" && (() => {
+            const activeMonth = ttcmMatrixMonth !== "all" ? ttcmMatrixMonth : selectedMonth;
+            const activeMonthText = activeMonth === "all" ? "Toàn bộ năm học" : `Tháng ${activeMonth.split("-")[1]}/${activeMonth.split("-")[0]}`;
+
+            return (
+              <div className="space-y-5">
+                
+                {/* 1. Header Banner & View Controls */}
+                <div className="bg-white rounded-3xl border border-slate-200/90 shadow-md overflow-hidden">
+                  <div className="p-4 sm:p-5 bg-gradient-to-r from-[#003B3A] via-[#064E3B] to-[#0369A1] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-teal-400/20 text-teal-200 border border-teal-400/30 text-[9.5px] font-extrabold uppercase tracking-wide flex items-center gap-1">
+                          <Grid3X3 className="w-3 h-3 text-teal-300" />
+                          <span>Ma trận đối chiếu liên cơ sở</span>
+                        </span>
+                        <span className="text-[11px] text-amber-300 font-bold">
+                          {filteredTTCMMatrix.length} Tổ trưởng chuyên môn
+                        </span>
+                      </div>
+                      <h3 className="text-base sm:text-lg font-black tracking-tight mt-1 text-white flex items-center gap-2">
+                        <span>BẢNG MA TRẬN DỰ GIỜ TTCM THEO THÁNG</span>
+                      </h3>
+                      <p className="text-[11px] text-teal-100/80 mt-0.5">
+                        Kỳ báo cáo: <strong className="text-amber-200">{activeMonthText}</strong> &bull; Thống kê số tiết dự giờ theo Cơ sở công tác &amp; Cơ sở dự giờ thực tế
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* View Mode Toggle */}
+                      <div className="bg-white/10 backdrop-blur-md p-1 rounded-xl border border-white/15 flex items-center gap-1">
+                        <button
+                          onClick={() => setTtcmViewMode("detailed-list")}
+                          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            ttcmViewMode === "detailed-list"
+                              ? "bg-white text-[#003B3A] shadow-xs font-black"
+                              : "text-teal-100 hover:text-white hover:bg-white/10"
+                          }`}
+                          title="Chế độ Bảng danh sách chi tiết (STT, Họ tên, Chức vụ, Cơ sở, Cơ sở dự giờ, Số tiết)"
+                        >
+                          <Table2 className="w-3.5 h-3.5" />
+                          <span>Danh sách chi tiết</span>
+                        </button>
+                        <button
+                          onClick={() => setTtcmViewMode("pivot-matrix")}
+                          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                            ttcmViewMode === "pivot-matrix"
+                              ? "bg-white text-[#003B3A] shadow-xs font-black"
+                              : "text-teal-100 hover:text-white hover:bg-white/10"
+                          }`}
+                          title="Chế độ Ma trận 2 chiều đối chiếu các Cơ sở"
+                        >
+                          <Grid3X3 className="w-3.5 h-3.5" />
+                          <span>Ma trận Pivot 2D</span>
+                        </button>
+                      </div>
+
+                      {/* Export Excel Button */}
+                      <button
+                        onClick={handleExportTTCMExcel}
+                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-md flex items-center gap-1.5 transition-all shrink-0 border border-emerald-500 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                        title="Xuất dữ liệu Ma trận dự giờ TTCM ra file Excel đầy đủ 2 Sheet"
+                      >
+                        <FileSpreadsheet className="w-4 h-4 text-white" />
+                        <span>Xuất Excel Ma Trận</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2. Top KPI Metric Cards (5 Cards) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 bg-slate-50/80 border-b border-slate-200">
+                    <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-slate-500">Tổng TTCM</span>
+                        <UserCheck className="w-4 h-4 text-teal-600" />
+                      </div>
+                      <div className="text-lg font-black text-slate-900 mt-1">
+                        {ttcmMatrixKPIs.totalTTCM} <span className="text-[10px] font-normal text-slate-500">nhân sự</span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-teal-700 mt-0.5">
+                        {ttcmMatrixBlock === "all" ? "Tất cả các khối" : ttcmMatrixBlock}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-slate-500">Tổng tiết đã dự</span>
+                        <Eye className="w-4 h-4 text-sky-600" />
+                      </div>
+                      <div className="text-lg font-black text-sky-800 mt-1">
+                        {ttcmMatrixKPIs.totalObserved} <span className="text-[10px] font-normal text-slate-500">tiết</span>
+                      </div>
+                      <div className="text-[10px] font-bold text-amber-700 mt-0.5">
+                        {ttcmMatrixKPIs.totalSurprise > 0 ? `⚡ ${ttcmMatrixKPIs.totalSurprise} tiết đột xuất` : "Không có đột xuất"}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-slate-500">Dự tại cơ sở (Nội bộ)</span>
+                        <School className="w-4 h-4 text-emerald-600" />
+                      </div>
+                      <div className="text-lg font-black text-emerald-800 mt-1">
+                        {ttcmMatrixKPIs.totalInternal} <span className="text-[10px] font-normal text-slate-500">tiết</span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-emerald-600 mt-0.5">
+                        {ttcmMatrixKPIs.totalObserved > 0 ? `${Math.round((ttcmMatrixKPIs.totalInternal / ttcmMatrixKPIs.totalObserved) * 100)}% tổng số tiết` : "0%"}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-slate-500">Dự liên cơ sở (Chéo CS)</span>
+                        <ArrowLeftRight className="w-4 h-4 text-indigo-600" />
+                      </div>
+                      <div className="text-lg font-black text-indigo-800 mt-1">
+                        {ttcmMatrixKPIs.totalCross} <span className="text-[10px] font-normal text-slate-500">tiết</span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-indigo-600 mt-0.5">
+                        {ttcmMatrixKPIs.totalObserved > 0 ? `${Math.round((ttcmMatrixKPIs.totalCross / ttcmMatrixKPIs.totalObserved) * 100)}% liên cơ sở` : "0%"}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs col-span-2 sm:col-span-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-slate-500">Đạt chỉ tiêu tháng</span>
+                        <CheckCheck className="w-4 h-4 text-amber-600" />
+                      </div>
+                      <div className="text-lg font-black text-slate-900 mt-1 flex items-baseline gap-1">
+                        <span>{ttcmMatrixKPIs.targetMetCount}/{ttcmMatrixKPIs.totalTTCM}</span>
+                        <span className="text-xs font-black text-amber-700">({ttcmMatrixKPIs.metRate}%)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1 overflow-hidden">
+                        <div 
+                          className="bg-gradient-to-r from-teal-500 to-emerald-500 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${ttcmMatrixKPIs.metRate}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Interactive Filter Toolbar */}
+                  <div className="p-3.5 sm:p-4 bg-white border-b border-slate-100 flex flex-wrap items-center gap-2.5">
+                    {/* Month Filter */}
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+                      <Calendar className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                      <span className="text-[10.5px] font-bold text-slate-500">Tháng:</span>
+                      <select
+                        value={ttcmMatrixMonth}
+                        onChange={(e) => setTtcmMatrixMonth(e.target.value)}
+                        className="bg-transparent font-black text-slate-800 outline-none cursor-pointer text-xs"
+                      >
+                        <option value="all">Toàn bộ năm học</option>
+                        {availableMonths.map(m => (
+                          <option key={m} value={m}>
+                            Tháng {m.split("-")[1]}/{m.split("-")[0]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Block Filter */}
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+                      <Layers className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                      <span className="text-[10.5px] font-bold text-slate-500">Khối:</span>
+                      <select
+                        value={ttcmMatrixBlock}
+                        onChange={(e) => setTtcmMatrixBlock(e.target.value)}
+                        className="bg-transparent font-black text-slate-800 outline-none cursor-pointer text-xs"
+                      >
+                        <option value="all">Tất cả khối</option>
+                        <option value="Phổ thông K-12">Phổ thông K-12</option>
+                        <option value="Mầm non">Mầm non</option>
+                        <option value="Điều hành">Điều hành</option>
+                      </select>
+                    </div>
+
+                    {/* Home Campus Filter */}
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+                      <School className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                      <span className="text-[10.5px] font-bold text-slate-500">Cơ sở TTCM:</span>
+                      <select
+                        value={ttcmMatrixCampus}
+                        onChange={(e) => setTtcmMatrixCampus(e.target.value)}
+                        className="bg-transparent font-black text-slate-800 outline-none cursor-pointer text-xs max-w-[140px] truncate"
+                      >
+                        <option value="all">Tất cả cơ sở</option>
+                        {campuses.map(c => (
+                          <option key={c.id} value={c.campusName}>
+                            {c.campusName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Observed Campus Filter */}
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs">
+                      <MapPin className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+                      <span className="text-[10.5px] font-bold text-slate-500">Cơ sở dự giờ:</span>
+                      <select
+                        value={ttcmMatrixObservedCampus}
+                        onChange={(e) => setTtcmMatrixObservedCampus(e.target.value)}
+                        className="bg-transparent font-black text-slate-800 outline-none cursor-pointer text-xs max-w-[140px] truncate"
+                      >
+                        <option value="all">Tất cả cơ sở</option>
+                        {distinctObservedCampusNames.map(cn => (
+                          <option key={cn} value={cn}>
+                            {cn}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs flex-1 min-w-[180px]">
+                      <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <input
+                        type="text"
+                        value={ttcmSearchQuery}
+                        onChange={(e) => setTtcmSearchQuery(e.target.value)}
+                        placeholder="Tìm theo tên, mã GV, tổ CM..."
+                        className="bg-transparent font-bold text-slate-800 outline-none text-xs w-full"
+                      />
+                      {ttcmSearchQuery && (
+                        <button
+                          onClick={() => setTtcmSearchQuery("")}
+                          className="p-0.5 text-slate-400 hover:text-slate-600 rounded"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Reset Filters */}
+                    {(ttcmMatrixMonth !== "all" || ttcmMatrixBlock !== "all" || ttcmMatrixCampus !== "all" || ttcmMatrixObservedCampus !== "all" || ttcmSearchQuery) && (
+                      <button
+                        onClick={() => {
+                          setTtcmMatrixMonth("all");
+                          setTtcmMatrixBlock("all");
+                          setTtcmMatrixCampus("all");
+                          setTtcmMatrixObservedCampus("all");
+                          setTtcmSearchQuery("");
+                        }}
+                        className="px-2.5 py-1.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition-all shrink-0"
+                      >
+                        Xóa bộ lọc
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 4. Table Views */}
+                  {filteredTTCMMatrix.length === 0 ? (
+                    <div className="p-12 text-center bg-white space-y-2">
+                      <AlertCircle className="w-8 h-8 text-slate-300 mx-auto" />
+                      <p className="text-xs font-black text-slate-600 uppercase">Không tìm thấy TTCM nào phù hợp với bộ lọc</p>
+                      <p className="text-[11px] text-slate-400 font-medium">Vui lòng thay đổi tháng, khối hoặc cơ sở đang lọc</p>
+                    </div>
+                  ) : ttcmViewMode === "detailed-list" ? (
+                    /* VIEW 1: BẢNG DANH SÁCH CHI TIẾT (STT, Họ và tên, Chức vụ, Cơ sở, Cơ sở dự giờ, Số tiết) */
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200 bg-slate-100/90 text-[10.5px] font-black uppercase text-slate-700 tracking-wider">
+                            <th className="py-3 px-3 text-center w-12">STT</th>
+                            <th className="py-3 px-4 min-w-[200px]">Họ và Tên</th>
+                            <th className="py-3 px-3 text-center min-w-[100px]">Chức Vụ</th>
+                            <th className="py-3 px-3 min-w-[150px]">Cơ Sở (Công tác)</th>
+                            <th className="py-3 px-4 min-w-[190px]">Cơ Sở Dự Giờ</th>
+                            <th className="py-3 px-3 text-center min-w-[110px]">Số Tiết</th>
+                            <th className="py-3 px-3 text-center min-w-[140px]">Chỉ Tiêu Tháng</th>
+                            <th className="py-3 px-2 text-center w-20">Chi Tiết</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                          {filteredTTCMMatrix.map((item, idx) => {
+                            const rowCount = item.breakdown.length;
+                            return item.breakdown.map((b, bIdx) => (
+                              <tr 
+                                key={`${item.id}-${b.campusName}-${bIdx}`}
+                                className="hover:bg-teal-50/40 transition-colors"
+                              >
+                                {bIdx === 0 && (
+                                  <>
+                                    <td 
+                                      rowSpan={rowCount} 
+                                      className="py-3 px-3 text-center font-bold text-slate-500 border-r border-slate-100 bg-white align-top"
+                                    >
+                                      {idx + 1}
+                                    </td>
+                                    <td 
+                                      rowSpan={rowCount} 
+                                      className="py-3 px-4 border-r border-slate-100 bg-white align-top"
+                                    >
+                                      <div className="flex items-center gap-2.5">
+                                        <div className="w-8 h-8 rounded-xl bg-[#003B3A] text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs">
+                                          {item.teacherName.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="font-black text-slate-900 text-xs truncate">{item.teacherName}</p>
+                                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 font-semibold mt-0.5">
+                                            <span>{item.teacherCode}</span>
+                                            <span>&bull;</span>
+                                            <span className="text-teal-700 font-bold">{item.deptName}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </td>
+                                    <td 
+                                      rowSpan={rowCount} 
+                                      className="py-3 px-3 text-center border-r border-slate-100 bg-white align-top"
+                                    >
+                                      <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[10px] uppercase inline-block">
+                                        {item.position}
+                                      </span>
+                                    </td>
+                                    <td 
+                                      rowSpan={rowCount} 
+                                      className="py-3 px-3 border-r border-slate-100 bg-white align-top text-xs font-bold text-slate-700"
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <School className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <span>{item.homeCampus}</span>
+                                      </div>
+                                    </td>
+                                  </>
+                                )}
+
+                                {/* Cột Cơ sở dự giờ */}
+                                <td className="py-2.5 px-4 text-xs border-r border-slate-100">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className={`font-semibold ${b.periods > 0 ? "text-slate-800" : "text-slate-400 italic"}`}>
+                                      {b.campusName}
+                                    </span>
+                                    {b.periods > 0 && (
+                                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold shrink-0 ${
+                                        b.isCrossCampus 
+                                          ? "bg-sky-100 text-sky-800 border border-sky-200" 
+                                          : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                                      }`}>
+                                        {b.isCrossCampus ? "Liên CS ✈️" : "Nội bộ CS"}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {/* Cột Số tiết */}
+                                <td className="py-2.5 px-3 text-center border-r border-slate-100">
+                                  <div>
+                                    <span className={`px-2.5 py-1 rounded-lg font-black text-[11px] inline-block ${
+                                      b.periods > 0 
+                                        ? (b.isCrossCampus ? "bg-sky-50 text-sky-800 border border-sky-200" : "bg-emerald-50 text-emerald-800 border border-emerald-200") 
+                                        : "bg-slate-50 text-slate-400 border border-slate-200"
+                                    }`}>
+                                      {b.periods} tiết
+                                    </span>
+                                    {b.surprisePeriods > 0 && (
+                                      <div className="text-[9px] text-amber-800 font-extrabold mt-0.5">
+                                        ⚡ {b.surprisePeriods} đột xuất
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+
+                                {bIdx === 0 && (
+                                  <>
+                                    {/* Cột Chỉ tiêu tháng */}
+                                    <td 
+                                      rowSpan={rowCount} 
+                                      className="py-3 px-3 text-center border-r border-slate-100 bg-white align-top"
+                                    >
+                                      <div className="space-y-1">
+                                        <span className={`px-2.5 py-0.5 rounded-full font-extrabold text-[10px] border inline-flex items-center gap-1 ${
+                                          item.isTargetMet 
+                                            ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
+                                            : "bg-amber-100 text-amber-900 border-amber-300"
+                                        }`}>
+                                          {item.isTargetMet ? <CheckCircle2 className="w-3 h-3 text-emerald-600" /> : <Clock className="w-3 h-3 text-amber-600" />}
+                                          <span>{item.isTargetMet ? "Đạt chỉ tiêu" : "Chưa đạt"}</span>
+                                        </span>
+                                        <div className="text-[10px] font-bold text-slate-600">
+                                          Tổng: <strong>{item.totalObserved}</strong> / {item.reqObserved} tiết
+                                        </div>
+                                        <div className="w-20 bg-slate-100 rounded-full h-1.5 mx-auto overflow-hidden">
+                                          <div 
+                                            className={`h-full rounded-full ${item.isTargetMet ? "bg-emerald-500" : "bg-amber-500"}`} 
+                                            style={{ width: `${Math.min(100, Math.round((item.totalObserved / (item.reqObserved || 8)) * 100))}%` }} 
+                                          />
+                                        </div>
+                                      </div>
+                                    </td>
+
+                                    {/* Cột Xem chi tiết */}
+                                    <td 
+                                      rowSpan={rowCount} 
+                                      className="py-3 px-2 text-center bg-white align-top"
+                                    >
+                                      <button
+                                        onClick={() => {
+                                          setSelectedTeacherId(item.id);
+                                          setActiveDetailTab("lich-su-du");
+                                        }}
+                                        className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-[#003B3A] text-slate-700 hover:text-white font-bold text-[10.5px] transition-all"
+                                        title="Xem chi tiết các tiết dự của TTCM này"
+                                      >
+                                        Xem dự
+                                      </button>
+                                    </td>
+                                  </>
+                                )}
+                              </tr>
+                            ));
+                          })}
+                        </tbody>
+                        <tfoot className="bg-slate-50 font-black text-xs border-t-2 border-slate-300 text-slate-800">
+                          <tr>
+                            <td colSpan={5} className="py-3 px-4 uppercase text-slate-700 font-black">
+                              Tổng cộng toàn bộ ({filteredTTCMMatrix.length} TTCM)
+                            </td>
+                            <td className="py-3 px-3 text-center font-black text-sky-900">
+                              {ttcmMatrixKPIs.totalObserved} tiết
+                              {ttcmMatrixKPIs.totalSurprise > 0 && (
+                                <span className="block text-[9.5px] text-amber-800 font-bold">
+                                  ⚡ {ttcmMatrixKPIs.totalSurprise} ĐX
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-center font-black text-emerald-800">
+                              {ttcmMatrixKPIs.targetMetCount}/{ttcmMatrixKPIs.totalTTCM} TTCM đạt ({ttcmMatrixKPIs.metRate}%)
+                            </td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  ) : (
+                    /* VIEW 2: BẢNG MA TRẬN 2 CHIỀU (PIVOT GRID - TTCM x Các Cơ Sở) */
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-slate-200 bg-slate-100/90 text-[10.5px] font-black uppercase text-slate-700 tracking-wider">
+                            <th className="py-3 px-3 text-center w-12">STT</th>
+                            <th className="py-3 px-4 min-w-[190px]">Họ và Tên TTCM</th>
+                            <th className="py-3 px-3 text-center min-w-[90px]">Chức vụ</th>
+                            <th className="py-3 px-3 min-w-[140px]">Cơ sở công tác</th>
+                            {distinctObservedCampusNames.map(cn => (
+                              <th key={cn} className="py-3 px-3 text-center min-w-[110px] bg-teal-50/50 text-teal-900">
+                                {cn}
+                              </th>
+                            ))}
+                            <th className="py-3 px-3 text-center min-w-[110px] bg-sky-50/80 text-sky-950 font-black">
+                              Tổng Tiết Dự
+                            </th>
+                            <th className="py-3 px-3 text-center min-w-[90px]">Chỉ Tiêu</th>
+                            <th className="py-3 px-3 text-center min-w-[110px]">Đánh Giá</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-xs">
+                          {filteredTTCMMatrix.map((item, idx) => {
+                            const campusPeriodsMap = new Map(item.breakdown.map(b => [b.campusName, b.periods]));
+                            return (
+                              <tr key={item.id} className="hover:bg-teal-50/40 transition-colors">
+                                <td className="py-3 px-3 text-center font-bold text-slate-400">
+                                  {idx + 1}
+                                </td>
+                                <td className="py-3 px-4">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-7 h-7 rounded-lg bg-[#003B3A] text-white flex items-center justify-center font-black text-xs shrink-0">
+                                      {item.teacherName.charAt(0)}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="font-black text-slate-900 text-xs truncate">{item.teacherName}</p>
+                                      <p className="text-[10px] text-slate-400 font-semibold">{item.deptName}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 text-center">
+                                  <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-extrabold text-[9.5px] uppercase">
+                                    {item.position}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-3 text-xs font-bold text-slate-700">
+                                  {item.homeCampus}
+                                </td>
+
+                                {/* Dynamic Columns for each observed campus */}
+                                {distinctObservedCampusNames.map(cn => {
+                                  const count = campusPeriodsMap.get(cn) || 0;
+                                  const isHome = cn === item.homeCampus;
+                                  return (
+                                    <td key={cn} className="py-3 px-3 text-center">
+                                      {count > 0 ? (
+                                        <span className={`px-2 py-1 rounded-lg font-black text-xs inline-block ${
+                                          isHome 
+                                            ? "bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs" 
+                                            : "bg-sky-100 text-sky-900 border border-sky-300 shadow-2xs"
+                                        }`} title={isHome ? "Dự tại cơ sở công tác" : "Dự liên cơ sở"}>
+                                          {count} tiết
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-300 font-bold">-</span>
+                                      )}
+                                    </td>
+                                  );
+                                })}
+
+                                {/* Total Observed Column */}
+                                <td className="py-3 px-3 text-center bg-sky-50/30">
+                                  <span className="px-2.5 py-1 rounded-lg bg-sky-100 text-sky-900 border border-sky-300 font-black text-xs inline-block">
+                                    {item.totalObserved} tiết
+                                  </span>
+                                </td>
+
+                                {/* Target Column */}
+                                <td className="py-3 px-3 text-center font-bold text-slate-600">
+                                  {item.reqObserved} tiết
+                                </td>
+
+                                {/* Status Column */}
+                                <td className="py-3 px-3 text-center">
+                                  <span className={`px-2 py-0.5 rounded-full font-extrabold text-[10px] border inline-block ${
+                                    item.isTargetMet 
+                                      ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
+                                      : "bg-amber-100 text-amber-900 border-amber-300"
+                                  }`}>
+                                    {item.isTargetMet ? "Đạt chuẩn" : `${Math.round((item.totalObserved / (item.reqObserved || 8)) * 100)}%`}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot className="bg-slate-50 font-black text-xs border-t-2 border-slate-300 text-slate-800">
+                          <tr>
+                            <td colSpan={4} className="py-3 px-4 uppercase text-slate-700 font-black">
+                              Tổng cộng từng cơ sở ({filteredTTCMMatrix.length} TTCM)
+                            </td>
+                            {distinctObservedCampusNames.map(cn => {
+                              const campusTotal = filteredTTCMMatrix.reduce((sum, item) => {
+                                const campusPeriodsMap = new Map(item.breakdown.map(b => [b.campusName, b.periods]));
+                                return sum + (campusPeriodsMap.get(cn) || 0);
+                              }, 0);
+                              return (
+                                <td key={cn} className="py-3 px-3 text-center font-black text-teal-950 bg-teal-50/70">
+                                  {campusTotal} tiết
+                                </td>
+                              );
+                            })}
+                            <td className="py-3 px-3 text-center font-black text-sky-950 bg-sky-100/70">
+                              {ttcmMatrixKPIs.totalObserved} tiết
+                            </td>
+                            <td colSpan={2} className="py-3 px-3 text-center text-emerald-800 font-black">
+                              {ttcmMatrixKPIs.targetMetCount}/{ttcmMatrixKPIs.totalTTCM} Đạt ({ttcmMatrixKPIs.metRate}%)
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* TAB 4: Phân tích Năng lực & Điểm yếu cá nhân */}
           {activeDetailTab === "phan-tich" && selectedTeacher && (() => {
             const { competencyData, sortedWeaknesses } = teacherCompetencyResult;
@@ -2836,18 +3775,18 @@ export function AdminTongHopClient({
                 <div className="border-x border-teal-200/80 px-2">
                   <span className="text-[9px] text-slate-500 font-bold block uppercase">Tiết Dạy Hoàn Thành</span>
                   <strong className="text-sm font-black text-emerald-700">{emailPreviewSummary.totalTaught} tiết</strong>
-                  {emailPreviewSummary.taughtSurprise > 0 && (
+                  {emailPreviewSummary.totalSurpriseTaught > 0 && (
                     <span className="text-[9px] text-amber-800 font-bold block mt-0.5">
-                      (⚡ {emailPreviewSummary.taughtSurprise} đột xuất)
+                      (⚡ {emailPreviewSummary.totalSurpriseTaught} đột xuất)
                     </span>
                   )}
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-500 font-bold block uppercase">Tiết Dự Hoàn Thành</span>
                   <strong className="text-sm font-black text-sky-700">{emailPreviewSummary.totalObserved} lượt</strong>
-                  {emailPreviewSummary.observedSurprise > 0 && (
+                  {emailPreviewSummary.totalSurpriseObserved > 0 && (
                     <span className="text-[9px] text-amber-800 font-bold block mt-0.5">
-                      (⚡ {emailPreviewSummary.observedSurprise} đột xuất)
+                      (⚡ {emailPreviewSummary.totalSurpriseObserved} đột xuất)
                     </span>
                   )}
                 </div>
