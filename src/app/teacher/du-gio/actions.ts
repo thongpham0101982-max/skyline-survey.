@@ -1415,6 +1415,7 @@ export async function updateTeacherObservationTargets(
     observedUnit: string
     requiredTaught: number
     taughtUnit: string
+    academicYearId?: string
   }
 ) {
   try {
@@ -1424,36 +1425,54 @@ export async function updateTeacherObservationTargets(
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isSuperAdmin = roleCode === "ADMIN"
+    const isAdmin = await checkIsObservationAdmin(roleCode, session.user.id)
+    const isSuperAdmin = roleCode === "ADMIN" || isAdmin
     const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
     // Also allow TTCM or the teacher themselves to update their own targets
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
-      select: { id: true, position: true, departmentId: true }
+      select: { 
+        id: true, 
+        position: true, 
+        departmentId: true,
+        departmentAssignments: { select: { departmentId: true, position: true } }
+      }
     })
 
-    const isTTCM = currentTeacher?.position === "TTCM"
+    const isTTCM = currentTeacher?.position === "TTCM" || 
+      currentTeacher?.departmentAssignments?.some((da: any) => 
+        ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position)
+      );
     const isSelf = currentTeacher && currentTeacher.id === teacherId
 
     if (!isSuperAdmin && !isTTCM && !isSelf && !isGDCS) {
       return { success: false, error: "Bạn không có quyền cấu hình chỉ tiêu" }
     }
 
-    // If they are TTCM, make sure the target teacher is in their department (unless editing themselves)
+    // If they are TTCM, make sure the target teacher is in their department (unless editing themselves or admin)
     if (isTTCM && !isSuperAdmin && !isSelf) {
       const targetTeacher = await prisma.teacher.findUnique({
         where: { id: teacherId },
-        select: { departmentId: true }
+        select: { departmentId: true, departmentAssignments: { select: { departmentId: true } } }
       })
-      if (!targetTeacher || targetTeacher.departmentId !== currentTeacher.departmentId) {
+      const ttcmDeptIds = new Set<string>();
+      if (currentTeacher?.departmentId) ttcmDeptIds.add(currentTeacher.departmentId);
+      currentTeacher?.departmentAssignments?.forEach((da: any) => {
+        if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position) && da.departmentId) {
+          ttcmDeptIds.add(da.departmentId);
+        }
+      });
+      const isInDept = (targetTeacher?.departmentId && ttcmDeptIds.has(targetTeacher.departmentId)) ||
+        targetTeacher?.departmentAssignments?.some((da: any) => ttcmDeptIds.has(da.departmentId));
+      if (!isInDept) {
         return { success: false, error: "Bạn chỉ có thể cấu hình chỉ tiêu cho giáo viên thuộc tổ của mình" }
       }
     }
 
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
-    })
+    const activeYear = data.academicYearId
+      ? await prisma.academicYear.findUnique({ where: { id: data.academicYearId } })
+      : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
     if (!activeYear) {
       return { success: false, error: "Không tìm thấy năm học hoạt động" }
     }

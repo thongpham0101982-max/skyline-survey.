@@ -27,10 +27,125 @@ import {
   RefreshCw,
   Lightbulb,
   ThumbsUp,
-  UserCheck
+  UserCheck,
+  Settings
 } from "lucide-react";
 import * as XLSX from "xlsx";
-import { getTTCMDepartmentOverview } from "../actions";
+import toast from "react-hot-toast";
+import { getTTCMDepartmentOverview, updateTeacherObservationTargets } from "../actions";
+
+export interface TeacherProgressInfo {
+  key: "EXCEEDED" | "MET" | "IN_PROGRESS" | "UNMET" | "PARTICIPATED" | "NO_TARGET";
+  label: string;
+  shortLabel: string;
+  badgeClass: string;
+  hasTarget: boolean;
+  isOverallMet: boolean;
+  isExceeded: boolean;
+  taughtPct: number;
+  observedPct: number;
+}
+
+export function evaluateTeacherProgress(
+  taughtCount: number,
+  observedCount: number,
+  reqTaught: number,
+  reqObserved: number
+): TeacherProgressInfo {
+  const hasTarget = reqTaught > 0 || reqObserved > 0;
+
+  const isMetTaught = reqTaught > 0 ? taughtCount >= reqTaught : true;
+  const isMetObserved = reqObserved > 0 ? observedCount >= reqObserved : true;
+  const isOverallMet = hasTarget && isMetTaught && isMetObserved;
+  const isExceeded = hasTarget && isOverallMet && (
+    (reqTaught > 0 && taughtCount > reqTaught) ||
+    (reqObserved > 0 && observedCount > reqObserved)
+  );
+
+  const taughtPct = reqTaught > 0 ? Math.min(100, Math.round((taughtCount / reqTaught) * 100)) : 0;
+  const observedPct = reqObserved > 0 ? Math.min(100, Math.round((observedCount / reqObserved) * 100)) : 0;
+
+  if (!hasTarget) {
+    if (taughtCount > 0 || observedCount > 0) {
+      return {
+        key: "PARTICIPATED",
+        label: `Đã tham gia (${taughtCount + observedCount} tiết)`,
+        shortLabel: "Đã tham gia",
+        badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+        hasTarget: false,
+        isOverallMet: false,
+        isExceeded: false,
+        taughtPct: 0,
+        observedPct: 0
+      };
+    }
+    return {
+      key: "NO_TARGET",
+      label: "Chưa giao chỉ tiêu",
+      shortLabel: "Chưa giao",
+      badgeClass: "bg-slate-100 text-slate-500 border-slate-200",
+      hasTarget: false,
+      isOverallMet: false,
+      isExceeded: false,
+      taughtPct: 0,
+      observedPct: 0
+    };
+  }
+
+  if (isExceeded) {
+    return {
+      key: "EXCEEDED",
+      label: "Vượt chỉ tiêu",
+      shortLabel: "Vượt chỉ tiêu",
+      badgeClass: "bg-purple-100 text-purple-800 border-purple-200",
+      hasTarget: true,
+      isOverallMet: true,
+      isExceeded: true,
+      taughtPct,
+      observedPct
+    };
+  }
+
+  if (isOverallMet) {
+    return {
+      key: "MET",
+      label: "Đạt chỉ tiêu",
+      shortLabel: "Đạt chỉ tiêu",
+      badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      hasTarget: true,
+      isOverallMet: true,
+      isExceeded: false,
+      taughtPct,
+      observedPct
+    };
+  }
+
+  if (taughtCount > 0 || observedCount > 0) {
+    return {
+      key: "IN_PROGRESS",
+      label: "Đang thực hiện",
+      shortLabel: "Đang thực hiện",
+      badgeClass: "bg-amber-50 text-amber-800 border-amber-200",
+      hasTarget: true,
+      isOverallMet: false,
+      isExceeded: false,
+      taughtPct,
+      observedPct
+    };
+  }
+
+  return {
+    key: "UNMET",
+    label: "Chưa đạt",
+    shortLabel: "Chưa đạt",
+    badgeClass: "bg-rose-100 text-rose-800 border-rose-200",
+    hasTarget: true,
+    isOverallMet: false,
+    isExceeded: false,
+    taughtPct,
+    observedPct
+  };
+}
 
 const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
 const k12Labels = [
@@ -104,10 +219,25 @@ export function TTCMDepartmentSummaryTab({
     "overview" | "competency" | "warnings" | "ratings" | "feedback"
   >("overview");
   const [searchTeacherQuery, setSearchTeacherQuery] = useState("");
-  const [filterProgressStatus, setFilterProgressStatus] = useState<"ALL" | "MET" | "UNMET">("ALL");
+  const [filterProgressStatus, setFilterProgressStatus] = useState<
+    "ALL" | "MET" | "IN_PROGRESS" | "UNMET" | "NO_TARGET"
+  >("ALL");
 
   // Selected teacher detail modal state
   const [selectedTeacherForDetail, setSelectedTeacherForDetail] = useState<any | null>(null);
+
+  // Single teacher target configuration modal state
+  const [targetModalTeacher, setTargetModalTeacher] = useState<any | null>(null);
+  const [targetTaughtInput, setTargetTaughtInput] = useState<number>(2);
+  const [targetObservedInput, setTargetObservedInput] = useState<number>(4);
+  const [savingTarget, setSavingTarget] = useState(false);
+
+  // Batch target configuration modal state
+  const [isBatchTargetModalOpen, setIsBatchTargetModalOpen] = useState(false);
+  const [batchTargetTaught, setBatchTargetTaught] = useState<number>(2);
+  const [batchTargetObserved, setBatchTargetObserved] = useState<number>(4);
+  const [batchTargetApplyMode, setBatchTargetApplyMode] = useState<"UNSET_ONLY" | "ALL">("UNSET_ONLY");
+  const [savingBatchTargets, setSavingBatchTargets] = useState(false);
 
   // Data fetching state
   const [loading, setLoading] = useState(false);
@@ -157,6 +287,79 @@ export function TTCMDepartmentSummaryTab({
     if (isMamNonTeacher) return true;
     return false;
   }, [department, isMamNonTeacher]);
+
+  const openTargetConfig = (teacher: any) => {
+    setTargetModalTeacher(teacher);
+    setTargetTaughtInput(teacher.requiredTaught ?? (isPreschool ? 4 : 2));
+    setTargetObservedInput(teacher.requiredObserved ?? (isPreschool ? 8 : 4));
+  };
+
+  const handleSaveSingleTarget = async () => {
+    if (!targetModalTeacher) return;
+    setSavingTarget(true);
+    try {
+      const res = await updateTeacherObservationTargets(targetModalTeacher.id, {
+        requiredTaught: Number(targetTaughtInput) || 0,
+        taughtUnit: "TIET",
+        requiredObserved: Number(targetObservedInput) || 0,
+        observedUnit: "TIET",
+        academicYearId: selectedYearId
+      });
+      if (res.success) {
+        toast.success(`Đã cập nhật chỉ tiêu cho giáo viên ${targetModalTeacher.teacherName}!`);
+        setTargetModalTeacher(null);
+        if (selectedDeptId) {
+          fetchDeptData(selectedDeptId);
+        }
+      } else {
+        toast.error(res.error || "Không thể cập nhật chỉ tiêu");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Lỗi cập nhật chỉ tiêu");
+    } finally {
+      setSavingTarget(false);
+    }
+  };
+
+  const handleSaveBatchTargets = async () => {
+    if (teachers.length === 0) return;
+    const targetsToUpdate = teachers.filter(t => {
+      if (batchTargetApplyMode === "UNSET_ONLY") {
+        return !t.requiredTaught && !t.requiredObserved;
+      }
+      return true;
+    });
+
+    if (targetsToUpdate.length === 0) {
+      toast("Tất cả giáo viên đã có chỉ tiêu. Chọn 'Ghi đè' nếu muốn cập nhật lại.");
+      return;
+    }
+
+    setSavingBatchTargets(true);
+    try {
+      let successCount = 0;
+      for (const t of targetsToUpdate) {
+        const res = await updateTeacherObservationTargets(t.id, {
+          requiredTaught: Number(batchTargetTaught) || 0,
+          taughtUnit: "TIET",
+          requiredObserved: Number(batchTargetObserved) || 0,
+          observedUnit: "TIET",
+          academicYearId: selectedYearId
+        });
+        if (res.success) successCount++;
+      }
+
+      toast.success(`Đã cập nhật chỉ tiêu thành công cho ${successCount}/${targetsToUpdate.length} giáo viên!`);
+      setIsBatchTargetModalOpen(false);
+      if (selectedDeptId) {
+        fetchDeptData(selectedDeptId);
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Lỗi cập nhật chỉ tiêu hàng loạt");
+    } finally {
+      setSavingBatchTargets(false);
+    }
+  };
 
   // Extract available months dynamically from academic year and existing slots
   const availableMonths = useMemo(() => {
@@ -352,8 +555,8 @@ export function TTCMDepartmentSummaryTab({
       : null;
 
     const passRate = totalEvals > 0 ? Math.round((passingEvals / totalEvals) * 100) : 100;
-    const taughtRate = requiredTaughtTotal > 0 ? Math.round((totalTaught / requiredTaughtTotal) * 100) : 100;
-    const observedRate = requiredObservedTotal > 0 ? Math.round((totalObserved / requiredObservedTotal) * 100) : 100;
+    const taughtRate = requiredTaughtTotal > 0 ? Math.round((totalTaught / requiredTaughtTotal) * 100) : 0;
+    const observedRate = requiredObservedTotal > 0 ? Math.round((totalObserved / requiredObservedTotal) * 100) : 0;
 
     return {
       totalTaught,
@@ -577,9 +780,7 @@ export function TTCMDepartmentSummaryTab({
       };
       const reqTaught = t.requiredTaught || 0;
       const reqObserved = t.requiredObserved || 0;
-      const isMetTaught = reqTaught === 0 || stats.taughtCount >= reqTaught;
-      const isMetObserved = reqObserved === 0 || stats.observedCount >= reqObserved;
-      const statusStr = isMetTaught && isMetObserved ? "Đạt chỉ tiêu" : "Chưa đạt chỉ tiêu";
+      const progress = evaluateTeacherProgress(stats.taughtCount, stats.observedCount, reqTaught, reqObserved);
 
       return {
         STT: idx + 1,
@@ -587,15 +788,15 @@ export function TTCMDepartmentSummaryTab({
         "Họ và tên": t.teacherName,
         "Chức vụ": t.position || "GV",
         "Tiết dạy (Có phiếu ĐG)": stats.taughtCount,
-        "Tiết dạy Chỉ tiêu": reqTaught,
+        "Tiết dạy Chỉ tiêu": reqTaught > 0 ? reqTaught : "-",
         "Tiết dạy Kế hoạch": stats.taughtPlanCount,
         "Tiết dạy Đột xuất": stats.taughtSurpriseCount,
         "Tiết dự (Hoàn thành ĐG)": stats.observedCount,
-        "Tiết dự Chỉ tiêu": reqObserved,
+        "Tiết dự Chỉ tiêu": reqObserved > 0 ? reqObserved : "-",
         "Tiết dự Kế hoạch": stats.observedPlanCount,
         "Tiết dự Đột xuất": stats.observedSurpriseCount,
         "Điểm TB Tiết dạy": stats.avgScore !== null ? stats.avgScore.toFixed(1) : "-",
-        "Trạng thái": statusStr
+        "Đánh giá tiến độ": progress.label
       };
     });
 
@@ -619,10 +820,17 @@ export function TTCMDepartmentSummaryTab({
         const stats = teacherStats[t.id];
         const reqTaught = t.requiredTaught || 0;
         const reqObserved = t.requiredObserved || 0;
-        const isMet = (reqTaught === 0 || (stats?.taughtCount || 0) >= reqTaught) &&
-                      (reqObserved === 0 || (stats?.observedCount || 0) >= reqObserved);
-        if (filterProgressStatus === "MET" && !isMet) return false;
-        if (filterProgressStatus === "UNMET" && isMet) return false;
+        const progress = evaluateTeacherProgress(
+          stats?.taughtCount || 0,
+          stats?.observedCount || 0,
+          reqTaught,
+          reqObserved
+        );
+
+        if (filterProgressStatus === "MET" && progress.key !== "MET" && progress.key !== "EXCEEDED") return false;
+        if (filterProgressStatus === "IN_PROGRESS" && progress.key !== "IN_PROGRESS") return false;
+        if (filterProgressStatus === "UNMET" && progress.key !== "UNMET") return false;
+        if (filterProgressStatus === "NO_TARGET" && progress.key !== "NO_TARGET" && progress.key !== "PARTICIPATED") return false;
       }
 
       return true;
@@ -892,7 +1100,9 @@ export function TTCMDepartmentSummaryTab({
                 {departmentKPIs.totalTaught}
               </span>
               <span className="text-xs text-slate-400 font-bold">
-                / {departmentKPIs.requiredTaughtTotal} chỉ tiêu
+                {departmentKPIs.requiredTaughtTotal > 0
+                  ? `/ ${departmentKPIs.requiredTaughtTotal} chỉ tiêu`
+                  : "tiết"}
               </span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
@@ -902,7 +1112,9 @@ export function TTCMDepartmentSummaryTab({
               />
             </div>
             <span className="text-[11px] font-bold text-teal-700 mt-1.5 block">
-              {departmentKPIs.taughtRate}% hoàn thành kế hoạch
+              {departmentKPIs.requiredTaughtTotal > 0
+                ? `${departmentKPIs.taughtRate}% hoàn thành kế hoạch`
+                : "Chưa thiết lập chỉ tiêu tổ"}
             </span>
           </div>
         </div>
@@ -923,7 +1135,9 @@ export function TTCMDepartmentSummaryTab({
                 {departmentKPIs.totalObserved}
               </span>
               <span className="text-xs text-slate-400 font-bold">
-                / {departmentKPIs.requiredObservedTotal} chỉ tiêu
+                {departmentKPIs.requiredObservedTotal > 0
+                  ? `/ ${departmentKPIs.requiredObservedTotal} chỉ tiêu`
+                  : "tiết"}
               </span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
@@ -933,7 +1147,9 @@ export function TTCMDepartmentSummaryTab({
               />
             </div>
             <span className="text-[11px] font-bold text-cyan-700 mt-1.5 block">
-              {departmentKPIs.observedRate}% hoàn thành kế hoạch
+              {departmentKPIs.requiredObservedTotal > 0
+                ? `${departmentKPIs.observedRate}% hoàn thành kế hoạch`
+                : "Chưa thiết lập chỉ tiêu tổ"}
             </span>
           </div>
         </div>
@@ -1011,6 +1227,20 @@ export function TTCMDepartmentSummaryTab({
 
             {/* Table Search & Status Filter */}
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setBatchTargetTaught(isPreschool ? 4 : 2);
+                  setBatchTargetObserved(isPreschool ? 8 : 4);
+                  setIsBatchTargetModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#008B82] bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-all cursor-pointer shrink-0 shadow-2xs"
+                title="Giao chỉ tiêu tiết dạy và tiết dự cho giáo viên trong tổ"
+              >
+                <Target className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Giao chỉ tiêu tổ</span>
+              </button>
+
               <div className="relative">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
@@ -1018,7 +1248,7 @@ export function TTCMDepartmentSummaryTab({
                   placeholder="Tìm giáo viên..."
                   value={searchTeacherQuery}
                   onChange={e => setSearchTeacherQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-teal-500/20 w-40 sm:w-48"
+                  className="pl-8 pr-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-teal-500/20 w-36 sm:w-44"
                 />
               </div>
 
@@ -1028,8 +1258,10 @@ export function TTCMDepartmentSummaryTab({
                 className="px-2.5 py-1.5 text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl cursor-pointer"
               >
                 <option value="ALL">Tất cả tiến độ</option>
-                <option value="MET">Đã đạt chỉ tiêu</option>
-                <option value="UNMET">Chưa đạt chỉ tiêu</option>
+                <option value="MET">Đạt / Vượt chỉ tiêu</option>
+                <option value="IN_PROGRESS">Đang thực hiện</option>
+                <option value="UNMET">Chưa đạt</option>
+                <option value="NO_TARGET">Chưa giao chỉ tiêu</option>
               </select>
             </div>
           </div>
@@ -1070,15 +1302,12 @@ export function TTCMDepartmentSummaryTab({
 
                     const reqTaught = t.requiredTaught || 0;
                     const reqObserved = t.requiredObserved || 0;
-
-                    const isMetTaught = reqTaught === 0 || stats.taughtCount >= reqTaught;
-                    const isMetObserved = reqObserved === 0 || stats.observedCount >= reqObserved;
-                    const isOverallMet = isMetTaught && isMetObserved;
-                    const isExceeded = (reqTaught > 0 && stats.taughtCount > reqTaught) ||
-                                       (reqObserved > 0 && stats.observedCount > reqObserved);
-
-                    const taughtPct = reqTaught > 0 ? Math.min(100, Math.round((stats.taughtCount / reqTaught) * 100)) : 100;
-                    const observedPct = reqObserved > 0 ? Math.min(100, Math.round((stats.observedCount / reqObserved) * 100)) : 100;
+                    const progress = evaluateTeacherProgress(
+                      stats.taughtCount,
+                      stats.observedCount,
+                      reqTaught,
+                      reqObserved
+                    );
 
                     return (
                       <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
@@ -1114,21 +1343,29 @@ export function TTCMDepartmentSummaryTab({
                             <div className="flex items-baseline gap-1">
                               <span
                                 className={`font-black text-sm ${
-                                  isMetTaught ? "text-teal-700" : "text-amber-600"
+                                  reqTaught > 0
+                                    ? (stats.taughtCount >= reqTaught ? "text-teal-700" : "text-amber-600")
+                                    : (stats.taughtCount > 0 ? "text-teal-700" : "text-slate-600")
                                 }`}
                               >
                                 {stats.taughtCount}
                               </span>
-                              <span className="text-slate-400 text-[11px]">/ {reqTaught}</span>
+                              {reqTaught > 0 ? (
+                                <span className="text-slate-400 text-[11px]">/ {reqTaught}</span>
+                              ) : (
+                                <span className="text-slate-400 text-[10px]">tiết</span>
+                              )}
                             </div>
-                            <div className="w-20 bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${
-                                  isMetTaught ? "bg-teal-500" : "bg-amber-500"
-                                }`}
-                                style={{ width: `${taughtPct}%` }}
-                              />
-                            </div>
+                            {reqTaught > 0 ? (
+                              <div className="w-20 bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    stats.taughtCount >= reqTaught ? "bg-teal-500" : "bg-amber-500"
+                                  }`}
+                                  style={{ width: `${progress.taughtPct}%` }}
+                                />
+                              </div>
+                            ) : null}
                             <span className="text-[9px] text-slate-400 mt-0.5">
                               (KH: {stats.taughtPlanCount} • ĐX: {stats.taughtSurpriseCount})
                             </span>
@@ -1141,21 +1378,29 @@ export function TTCMDepartmentSummaryTab({
                             <div className="flex items-baseline gap-1">
                               <span
                                 className={`font-black text-sm ${
-                                  isMetObserved ? "text-cyan-700" : "text-amber-600"
+                                  reqObserved > 0
+                                    ? (stats.observedCount >= reqObserved ? "text-cyan-700" : "text-amber-600")
+                                    : (stats.observedCount > 0 ? "text-cyan-700" : "text-slate-600")
                                 }`}
                               >
                                 {stats.observedCount}
                               </span>
-                              <span className="text-slate-400 text-[11px]">/ {reqObserved}</span>
+                              {reqObserved > 0 ? (
+                                <span className="text-slate-400 text-[11px]">/ {reqObserved}</span>
+                              ) : (
+                                <span className="text-slate-400 text-[10px]">tiết</span>
+                              )}
                             </div>
-                            <div className="w-20 bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${
-                                  isMetObserved ? "bg-cyan-500" : "bg-amber-500"
-                                }`}
-                                style={{ width: `${observedPct}%` }}
-                              />
-                            </div>
+                            {reqObserved > 0 ? (
+                              <div className="w-20 bg-slate-100 h-1.5 rounded-full mt-1 overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    stats.observedCount >= reqObserved ? "bg-cyan-500" : "bg-amber-500"
+                                  }`}
+                                  style={{ width: `${progress.observedPct}%` }}
+                                />
+                              </div>
+                            ) : null}
                             <span className="text-[9px] text-slate-400 mt-0.5">
                               (KH: {stats.observedPlanCount} • ĐX: {stats.observedSurpriseCount})
                             </span>
@@ -1175,30 +1420,32 @@ export function TTCMDepartmentSummaryTab({
 
                         {/* Trạng thái tiến độ */}
                         <td className="py-3.5 px-4 text-center">
-                          {isExceeded ? (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-200">
-                              Vượt chỉ tiêu
-                            </span>
-                          ) : isOverallMet ? (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200">
-                              Đạt chỉ tiêu
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-100 text-rose-800 border border-rose-200">
-                              Chưa đạt
-                            </span>
-                          )}
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-black border inline-block ${progress.badgeClass}`}
+                          >
+                            {progress.label}
+                          </span>
                         </td>
 
                         {/* Thao tác */}
                         <td className="py-3.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedTeacherForDetail(t)}
-                            className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#008B82] hover:bg-teal-50 border border-teal-200/80 transition-all cursor-pointer"
-                          >
-                            Xem chi tiết
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openTargetConfig(t)}
+                              className="p-1.5 rounded-xl text-slate-500 hover:text-teal-700 hover:bg-teal-50 border border-slate-200 hover:border-teal-200 transition-all cursor-pointer"
+                              title="Cấu hình chỉ tiêu cho giáo viên này"
+                            >
+                              <Target className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTeacherForDetail(t)}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#008B82] hover:bg-teal-50 border border-teal-200/80 transition-all cursor-pointer"
+                            >
+                              Xem chi tiết
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1913,13 +2160,24 @@ export function TTCMDepartmentSummaryTab({
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setSelectedTeacherForDetail(null)}
-                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5 text-white/80" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openTargetConfig(selectedTeacherForDetail)}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 text-white flex items-center gap-1.5 transition-all cursor-pointer"
+                  title="Cấu hình lại chỉ tiêu cho giáo viên này"
+                >
+                  <Target className="w-3.5 h-3.5" />
+                  <span>Đổi chỉ tiêu</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTeacherForDetail(null)}
+                  className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5 text-white/80" />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 overflow-y-auto space-y-6 text-xs">
@@ -1942,8 +2200,10 @@ export function TTCMDepartmentSummaryTab({
                         </span>
                         <span className="text-xl font-black text-[#003B3A]">
                           {s.taughtCount}
-                          <span className="text-xs text-slate-400 font-bold">
-                            /{selectedTeacherForDetail.requiredTaught || 0}
+                          <span className="text-xs text-slate-400 font-bold ml-1">
+                            {selectedTeacherForDetail.requiredTaught > 0
+                              ? `/${selectedTeacherForDetail.requiredTaught}`
+                              : "tiết"}
                           </span>
                         </span>
                       </div>
@@ -1953,8 +2213,10 @@ export function TTCMDepartmentSummaryTab({
                         </span>
                         <span className="text-xl font-black text-cyan-900">
                           {s.observedCount}
-                          <span className="text-xs text-slate-400 font-bold">
-                            /{selectedTeacherForDetail.requiredObserved || 0}
+                          <span className="text-xs text-slate-400 font-bold ml-1">
+                            {selectedTeacherForDetail.requiredObserved > 0
+                              ? `/${selectedTeacherForDetail.requiredObserved}`
+                              : "tiết"}
                           </span>
                         </span>
                       </div>
@@ -2041,6 +2303,298 @@ export function TTCMDepartmentSummaryTab({
                 className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 9. MODAL: THIẾT LẬP CHỈ TIÊU DỰ GIỜ GIÁO VIÊN */}
+      {targetModalTeacher && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 bg-gradient-to-r from-[#008B82] to-[#003B3A] text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+                  <Target className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm">Thiết Lập Chỉ Tiêu Năm Học</h3>
+                  <p className="text-[11px] text-teal-100 font-medium">
+                    {targetModalTeacher.teacherName} ({targetModalTeacher.teacherCode})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTargetModalTeacher(null)}
+                className="w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4 text-white/80" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              {/* Presets */}
+              <div>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">
+                  Mẫu Chỉ Tiêu Nhanh
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTargetTaughtInput(2);
+                      setTargetObservedInput(4);
+                    }}
+                    className="px-2 py-1.5 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-[11px] text-center transition-all cursor-pointer"
+                  >
+                    Chuẩn K12
+                    <span className="block text-[10px] text-teal-600 font-normal">Dạy 2 • Dự 4</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTargetTaughtInput(4);
+                      setTargetObservedInput(8);
+                    }}
+                    className="px-2 py-1.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] text-center transition-all cursor-pointer"
+                  >
+                    Mầm Non
+                    <span className="block text-[10px] text-amber-600 font-normal">Dạy 4 • Dự 8</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTargetTaughtInput(0);
+                      setTargetObservedInput(0);
+                    }}
+                    className="px-2 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-[11px] text-center transition-all cursor-pointer"
+                  >
+                    Miễn trừ
+                    <span className="block text-[10px] text-slate-500 font-normal">Dạy 0 • Dự 0</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Inputs */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <div>
+                  <label className="text-[11px] font-black text-slate-600 block mb-1">
+                    Chỉ tiêu Tiết Dạy (tiết)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={targetTaughtInput}
+                    onChange={e => setTargetTaughtInput(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500/20"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Số tiết dạy tối thiểu</span>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-black text-slate-600 block mb-1">
+                    Chỉ tiêu Tiết Dự (tiết)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={targetObservedInput}
+                    onChange={e => setTargetObservedInput(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500/20"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Số tiết dự tối thiểu</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-[11px] leading-relaxed">
+                💡 Tiến độ sẽ được tự động cập nhật và phân loại: Chưa đạt, Đang thực hiện, Đạt chỉ tiêu, hoặc Vượt chỉ tiêu.
+              </div>
+            </div>
+
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setTargetModalTeacher(null)}
+                disabled={savingTarget}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveSingleTarget}
+                disabled={savingTarget}
+                className="px-5 py-2 bg-[#008B82] hover:bg-[#007069] text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {savingTarget ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang lưu...</span>
+                  </>
+                ) : (
+                  <span>Lưu chỉ tiêu</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 10. MODAL: GIAO CHỈ TIÊU TOÀN TỔ HÀNG LOẠT */}
+      {isBatchTargetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 bg-gradient-to-r from-[#008B82] to-[#003B3A] text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
+                  <Target className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm">Giao Chỉ Tiêu Dự Giờ Toàn Tổ</h3>
+                  <p className="text-[11px] text-teal-100 font-medium">
+                    {department?.name || "Tổ chuyên môn"} • {teachers.length} giáo viên
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchTargetModalOpen(false)}
+                className="w-7 h-7 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4 text-white/80" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 text-xs">
+              {/* Mode selection */}
+              <div>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">
+                  Đối Tượng Áp Dụng
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/70 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="batchApplyMode"
+                      checked={batchTargetApplyMode === "UNSET_ONLY"}
+                      onChange={() => setBatchTargetApplyMode("UNSET_ONLY")}
+                      className="text-[#008B82] focus:ring-teal-500"
+                    />
+                    <div>
+                      <span className="font-bold text-slate-800 block text-xs">Chỉ áp dụng cho GV chưa có chỉ tiêu</span>
+                      <span className="text-[10px] text-slate-500">
+                        ({teachers.filter(t => !t.requiredTaught && !t.requiredObserved).length} giáo viên chưa có chỉ tiêu)
+                      </span>
+                    </div>
+                  </label>
+                  <label className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/70 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="batchApplyMode"
+                      checked={batchTargetApplyMode === "ALL"}
+                      onChange={() => setBatchTargetApplyMode("ALL")}
+                      className="text-[#008B82] focus:ring-teal-500"
+                    />
+                    <div>
+                      <span className="font-bold text-slate-800 block text-xs">Ghi đè cho tất cả giáo viên trong tổ</span>
+                      <span className="text-[10px] text-slate-500">
+                        (Toàn bộ {teachers.length} giáo viên sẽ nhận chỉ tiêu này)
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Presets */}
+              <div>
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider block mb-2">
+                  Mẫu Chỉ Tiêu Nhanh
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBatchTargetTaught(2);
+                      setBatchTargetObserved(4);
+                    }}
+                    className="px-2 py-2 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-[11px] text-center transition-all cursor-pointer"
+                  >
+                    Chuẩn Phổ Thông (K12)
+                    <span className="block text-[10px] text-teal-600 font-normal">Dạy 2 tiết • Dự 4 tiết</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBatchTargetTaught(4);
+                      setBatchTargetObserved(8);
+                    }}
+                    className="px-2 py-2 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] text-center transition-all cursor-pointer"
+                  >
+                    Chuẩn Mầm Non
+                    <span className="block text-[10px] text-amber-600 font-normal">Dạy 4 tiết • Dự 8 tiết</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Target Inputs */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="text-[11px] font-black text-slate-600 block mb-1">
+                    Chỉ tiêu Tiết Dạy (tiết)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={batchTargetTaught}
+                    onChange={e => setBatchTargetTaught(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500/20"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-black text-slate-600 block mb-1">
+                    Chỉ tiêu Tiết Dự (tiết)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={batchTargetObserved}
+                    onChange={e => setBatchTargetObserved(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-teal-500/20"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsBatchTargetModalOpen(false)}
+                disabled={savingBatchTargets}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBatchTargets}
+                disabled={savingBatchTargets}
+                className="px-5 py-2 bg-[#008B82] hover:bg-[#007069] text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {savingBatchTargets ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang áp dụng...</span>
+                  </>
+                ) : (
+                  <span>Áp dụng chỉ tiêu</span>
+                )}
               </button>
             </div>
           </div>
