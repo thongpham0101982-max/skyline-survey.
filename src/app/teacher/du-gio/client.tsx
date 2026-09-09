@@ -2196,8 +2196,10 @@ export function ObservationClient(props: ObservationClientProps) {
     return count;
   }, [slots, currentTeacher?.id]);
 
-  const obsTarget = selfRequiredObserved || 0;
-  const taughtTarget = selfRequiredTaught || 0;
+  const defaultObsTarget = isMamNonTeacher ? 8 : (currentTeacher?.requiredObserved || 10);
+  const defaultTaughtTarget = isMamNonTeacher ? 4 : (currentTeacher?.requiredTaught || 2);
+  const obsTarget = selfRequiredObserved > 0 ? selfRequiredObserved : defaultObsTarget;
+  const taughtTarget = selfRequiredTaught > 0 ? selfRequiredTaught : defaultTaughtTarget;
 
   const obsProgress = obsTarget > 0 ? Math.min(100, Math.round((myObservedCount / obsTarget) * 100)) : 0;
   const taughtProgress = taughtTarget > 0 ? Math.min(100, Math.round((myTaughtCount / (taughtTarget || 1)) * 100)) : 0;
@@ -2379,9 +2381,16 @@ export function ObservationClient(props: ObservationClientProps) {
               <span className="text-xl sm:text-2xl font-black text-slate-900">{myObservedCount}</span>
               <span className="text-xs font-bold text-slate-400">/ {obsTarget} tiết</span>
             </div>
-            <span className="text-[10px] font-bold text-slate-500">
-              {obsTarget - myObservedCount > 0 ? `Thiếu ${obsTarget - myObservedCount} tiết` : "Đã đạt"}
-            </span>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-bold text-slate-500">
+                {obsTarget - myObservedCount > 0 ? `Thiếu ${obsTarget - myObservedCount} tiết` : "Đã đạt"}
+              </span>
+              {myObservedSlots.length > myObservedCount && (
+                <span className="text-[9px] text-amber-600 font-bold">
+                  ({myObservedSlots.length - myObservedCount} chưa nộp phiếu)
+                </span>
+              )}
+            </div>
           </div>
           <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full transition-all duration-500" style={{ width: `${obsProgress}%` }} />
@@ -2406,9 +2415,16 @@ export function ObservationClient(props: ObservationClientProps) {
               <span className="text-xl sm:text-2xl font-black text-slate-900">{myTaughtCount}</span>
               <span className="text-xs font-bold text-slate-400">/ {taughtTarget || 1} tiết</span>
             </div>
-            <span className="text-[10px] font-bold text-slate-500">
-              {taughtTarget - myTaughtCount > 0 ? `Thiếu ${taughtTarget - myTaughtCount} tiết` : "Đã đạt"}
-            </span>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-bold text-slate-500">
+                {taughtTarget - myTaughtCount > 0 ? `Thiếu ${taughtTarget - myTaughtCount} tiết` : "Đã đạt"}
+              </span>
+              {myTaughtSlots.length > myTaughtCount && (
+                <span className="text-[9px] text-teal-700 font-bold">
+                  ({myTaughtSlots.length - myTaughtCount} chờ chấm)
+                </span>
+              )}
+            </div>
           </div>
           <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div className="h-full bg-gradient-to-r from-[#48BFE3] to-[#008B82] rounded-full transition-all duration-500" style={{ width: `${taughtProgress}%` }} />
@@ -4617,14 +4633,13 @@ export function ObservationClient(props: ObservationClientProps) {
         <div className="w-full space-y-6 animate-in fade-in duration-300">
           {/* Personal Target Tracker Progress Bars */}
           <TeacherTargetTracker
-            taughtCount={myTaughtSlots.length}
-            targetTaught={currentTeacher?.requiredTaught || 2}
-            observedCount={myObservedSlots.length}
-            targetObserved={currentTeacher?.requiredObserved || 5}
-            pendingEvaluationCount={myObservedSlots.filter(s => {
-              const reg = s.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
-              return reg && !reg.evaluation;
-            }).length}
+            taughtCount={myTaughtCount}
+            targetTaught={taughtTarget}
+            observedCount={myObservedCount}
+            targetObserved={obsTarget}
+            totalTaughtSlots={myTaughtSlots.length}
+            totalObservedSlots={myObservedSlots.length}
+            pendingEvaluationCount={myPendingEvaluationsCount}
             isPreschool={isMamNonTeacher}
             academicYearName={academicYears.find(y => y.id === filterAcademicYearId)?.name}
           />

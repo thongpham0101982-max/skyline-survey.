@@ -1,13 +1,15 @@
 "use client"
 
 import React from "react"
-import { GraduationCap, Eye, CheckCircle2, AlertTriangle, Clock, Award, Target, TrendingUp } from "lucide-react"
+import { GraduationCap, Eye, CheckCircle2, AlertTriangle, Target, TrendingUp, Info } from "lucide-react"
 
 interface TeacherTargetTrackerProps {
   taughtCount: number
   targetTaught: number
   observedCount: number
   targetObserved: number
+  totalTaughtSlots?: number
+  totalObservedSlots?: number
   pendingEvaluationCount?: number
   isPreschool?: boolean
   academicYearName?: string
@@ -18,12 +20,14 @@ export function TeacherTargetTracker({
   targetTaught,
   observedCount,
   targetObserved,
+  totalTaughtSlots = 0,
+  totalObservedSlots = 0,
   pendingEvaluationCount = 0,
   isPreschool = false,
   academicYearName = ""
 }: TeacherTargetTrackerProps) {
-  const safeTargetTaught = targetTaught > 0 ? targetTaught : 2
-  const safeTargetObserved = targetObserved > 0 ? targetObserved : 5
+  const safeTargetTaught = targetTaught > 0 ? targetTaught : (isPreschool ? 4 : 2)
+  const safeTargetObserved = targetObserved > 0 ? targetObserved : (isPreschool ? 8 : 10)
 
   const taughtPercent = Math.min(100, Math.round((taughtCount / safeTargetTaught) * 100))
   const observedPercent = Math.min(100, Math.round((observedCount / safeTargetObserved) * 100))
@@ -65,8 +69,8 @@ export function TeacherTargetTracker({
           </h3>
           <p className="text-xs text-teal-100/90 leading-relaxed font-medium">
             {isPreschool
-              ? "Theo dõi số hoạt động trực tiếp tổ chức và số hoạt động tham gia dự giờ trong năm học."
-              : "Theo dõi số tiết trực tiếp giảng dạy và số tiết tham gia dự giờ theo quy chế chuyên môn."}
+              ? "Theo dõi số hoạt động trực tiếp tổ chức (yêu cầu có tối thiểu 1 phiếu đánh giá) và số hoạt động tham gia dự giờ (đã hoàn thành phiếu đánh giá)."
+              : "Theo dõi số tiết trực tiếp giảng dạy (yêu cầu có tối thiểu 1 phiếu đánh giá) và số tiết tham gia dự giờ (đã hoàn thành phiếu đánh giá)."}
           </p>
 
           {/* Pending evaluation warning if any */}
@@ -79,7 +83,7 @@ export function TeacherTargetTracker({
         </div>
 
         {/* Right Side: 2 Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:min-w-[460px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:min-w-[480px]">
           {/* Card 1: Chỉ tiêu Tiết Dạy */}
           <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex flex-col justify-between gap-3 shadow-inner">
             <div className="flex items-center justify-between">
@@ -91,7 +95,7 @@ export function TeacherTargetTracker({
                   <h4 className="text-xs font-black text-white uppercase tracking-wider">
                     {isPreschool ? "Tổ chức hoạt động" : "Tiết giảng dạy"}
                   </h4>
-                  <p className="text-[10px] text-teal-200">Trực tiếp lên lớp</p>
+                  <p className="text-[10px] text-teal-200">Yêu cầu tối thiểu 1 phiếu đánh giá</p>
                 </div>
               </div>
               <span className={`text-xs font-black px-2.5 py-1 rounded-xl border ${
@@ -105,7 +109,7 @@ export function TeacherTargetTracker({
 
             <div className="space-y-1.5">
               <div className="flex items-baseline justify-between text-xs">
-                <span className="text-teal-200 font-bold">Đã dạy:</span>
+                <span className="text-teal-200 font-bold">Đã có đánh giá:</span>
                 <span className="text-sm font-black text-white">
                   {taughtCount} <span className="text-[11px] text-teal-300 font-medium">/ {safeTargetTaught} tiết</span>
                 </span>
@@ -116,9 +120,14 @@ export function TeacherTargetTracker({
                   style={{ width: `${taughtPercent}%` }}
                 />
               </div>
-              <p className="text-[10px] text-teal-200 text-right font-medium">
-                {taughtRemaining === 0 ? "🎉 Đã hoàn thành chỉ tiêu dạy" : `Còn thiếu ${taughtRemaining} tiết`}
-              </p>
+              <div className="flex items-center justify-between text-[10px] text-teal-200 font-medium">
+                <span>
+                  {totalTaughtSlots > taughtCount ? `Đã mở ${totalTaughtSlots} tiết (${totalTaughtSlots - taughtCount} chờ chấm)` : `Tổng ${totalTaughtSlots} tiết`}
+                </span>
+                <span>
+                  {taughtRemaining === 0 ? "🎉 Đã đạt chỉ tiêu dạy" : `Thiếu ${taughtRemaining} tiết`}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -133,7 +142,7 @@ export function TeacherTargetTracker({
                   <h4 className="text-xs font-black text-white uppercase tracking-wider">
                     {isPreschool ? "Dự giờ hoạt động" : "Tiết đi dự giờ"}
                   </h4>
-                  <p className="text-[10px] text-teal-200">Đăng ký tham gia dự</p>
+                  <p className="text-[10px] text-teal-200">Yêu cầu hoàn thành phiếu đánh giá</p>
                 </div>
               </div>
               <span className={`text-xs font-black px-2.5 py-1 rounded-xl border ${
@@ -147,7 +156,7 @@ export function TeacherTargetTracker({
 
             <div className="space-y-1.5">
               <div className="flex items-baseline justify-between text-xs">
-                <span className="text-teal-200 font-bold">Đã dự:</span>
+                <span className="text-teal-200 font-bold">Đã nộp phiếu:</span>
                 <span className="text-sm font-black text-white">
                   {observedCount} <span className="text-[11px] text-teal-300 font-medium">/ {safeTargetObserved} tiết</span>
                 </span>
@@ -158,9 +167,14 @@ export function TeacherTargetTracker({
                   style={{ width: `${observedPercent}%` }}
                 />
               </div>
-              <p className="text-[10px] text-teal-200 text-right font-medium">
-                {observedRemaining === 0 ? "🎉 Đã hoàn thành chỉ tiêu dự" : `Còn thiếu ${observedRemaining} tiết`}
-              </p>
+              <div className="flex items-center justify-between text-[10px] text-teal-200 font-medium">
+                <span>
+                  {totalObservedSlots > observedCount ? `Đã dự ${totalObservedSlots} tiết (${totalObservedSlots - observedCount} chưa nộp)` : `Tổng ${totalObservedSlots} tiết`}
+                </span>
+                <span>
+                  {observedRemaining === 0 ? "🎉 Đã đạt chỉ tiêu dự" : `Thiếu ${observedRemaining} tiết`}
+                </span>
+              </div>
             </div>
           </div>
         </div>
