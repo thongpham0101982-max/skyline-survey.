@@ -1335,14 +1335,6 @@ export default function TeacherAdvisoryPage() {
                                   <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300">
                                     Trọng số: {item.categoryWeight || catEval?.weight || 25}%
                                   </span>
-                                  {catEval && (
-                                    <div className="text-[10px] font-bold text-slate-700">
-                                      Kết quả nhóm: <span className="text-teal-900 font-black">{catEval.averagePercent}%</span>
-                                      <span className="ml-1 text-[10px] font-bold">
-                                        ({catEval.status === "DAT" ? "🟢 Đạt" : catEval.status === "TIEN_TRIEN" ? "🟡 Tiến triển" : catEval.status === "CHUA_DAT" ? "🔴 Chưa đạt" : "⚪ Chưa đánh giá"})
-                                      </span>
-                                    </div>
-                                  )}
                                   <p className="text-[10px] text-slate-400 font-medium">
                                     ({sameCatRows.length} mục tiêu nhỏ)
                                   </p>
@@ -1368,33 +1360,91 @@ export default function TeacherAdvisoryPage() {
                             </div>
                           </td>
 
-                        {/* Kết quả theo dõi */}
+                        {/* 3. Kết quả theo dõi: TỰ ĐỘNG HIỆN KẾT QUẢ TỪ 3 TIÊU CHÍ */}
                         <td className="p-3 border-r border-slate-200 align-top">
-                          <select
-                            value={item.progressStatus || "CHUA_DANH_GIA"}
-                            onChange={(e) => {
-                              const updated = [...singleStudentTrackingRows]
-                              updated[idx].progressStatus = e.target.value
-                              setSingleStudentTrackingRows(updated)
-                            }}
-                            className={`w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
-                              item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                : item.progressStatus === "CHUA_DAT"
-                                ? "bg-rose-100 text-rose-800 border-rose-300"
-                                : item.progressStatus === "CAN_CO_GANG"
-                                ? "bg-amber-100 text-amber-900 border-amber-300"
-                                : item.progressStatus === "TIEN_TRIEN"
-                                ? "bg-amber-100 text-amber-950 border-amber-300"
-                                : "bg-slate-100 text-slate-700 border-slate-300"
-                            }`}
-                          >
-                            <option value="CHUA_DANH_GIA">⚪ Chưa đánh giá</option>
-                            <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
-                            <option value="DAT">🟢 Đạt / Đã hoàn thành</option>
-                            <option value="CHUA_DAT">🔴 Chưa đạt</option>
-                            <option value="CAN_CO_GANG">🟠 Cần cố gắng</option>
-                          </select>
+                          {(() => {
+                            const gLevel = item.goalCompletionLevel || 0
+                            const iLevel = item.initiativeLevel || 0
+                            const pLevel = item.participationAttitude || 0
+                            const scores = [gLevel, iLevel, pLevel].filter(v => v > 0)
+
+                            if (scores.length > 0) {
+                              const avg = scores.reduce((a, b) => a + b, 0) / scores.length
+                              if (avg >= 4.5) {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span>🟢 Đạt (100%)</span>
+                                  </span>
+                                )
+                              }
+                              if (avg >= 3.5) {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                    <span>🟢 Đạt (75%)</span>
+                                  </span>
+                                )
+                              }
+                              if (avg >= 2.5) {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                    <span>🟡 Tiến triển (50%)</span>
+                                  </span>
+                                )
+                              }
+                              if (avg >= 1.5) {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-100 text-orange-900 border border-orange-300 shadow-2xs">
+                                    <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                    <span>🟠 Cần cố gắng (25%)</span>
+                                  </span>
+                                )
+                              }
+                              return (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-rose-100 text-rose-900 border border-rose-300 shadow-2xs">
+                                  <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                                  <span>🔴 Chưa đạt (10%)</span>
+                                </span>
+                              )
+                            }
+
+                            if (item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH") {
+                              return (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                  <span>🟢 Đạt (100%)</span>
+                                </span>
+                              )
+                            }
+                            if (item.progressStatus === "TIEN_TRIEN") {
+                              return (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                  <span>🟡 Tiến triển (50%)</span>
+                                </span>
+                              )
+                            }
+                            if (item.progressStatus === "CAN_CO_GANG") {
+                              return (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-100 text-orange-900 border border-orange-300">
+                                  <span>🟠 Cần cố gắng (25%)</span>
+                                </span>
+                              )
+                            }
+                            if (item.progressStatus === "CHUA_DAT") {
+                              return (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-rose-100 text-rose-900 border border-rose-300">
+                                  <span>🔴 Chưa đạt (0%)</span>
+                                </span>
+                              )
+                            }
+
+                            return (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                <span>⚪ Chưa đánh giá</span>
+                              </span>
+                            )
+                          })()}
                         </td>
 
                         {/* Mức hoàn thành mục tiêu (1-5) cho TỪNG mục tiêu */}
@@ -1402,10 +1452,19 @@ export default function TeacherAdvisoryPage() {
                           <select
                             value={item.goalCompletionLevel !== undefined ? item.goalCompletionLevel : (rubricForm.goalCompletionLevel || 0)}
                             onChange={(e) => {
+                              const val = Number(e.target.value)
                               const updated = [...singleStudentTrackingRows]
-                              updated[idx].goalCompletionLevel = Number(e.target.value)
+                              updated[idx].goalCompletionLevel = val
+                              // Auto sync progress status
+                              const iL = updated[idx].initiativeLevel || 0
+                              const pL = updated[idx].participationAttitude || 0
+                              const scs = [val, iL, pL].filter(v => v > 0)
+                              if (scs.length > 0) {
+                                const avg = scs.reduce((a, b) => a + b, 0) / scs.length
+                                updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
+                              }
                               setSingleStudentTrackingRows(updated)
-                              if (idx === 0) setRubricForm(prev => ({ ...prev, goalCompletionLevel: Number(e.target.value) }))
+                              if (idx === 0) setRubricForm(prev => ({ ...prev, goalCompletionLevel: val }))
                             }}
                             className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-amber-400 ${
                               item.goalCompletionLevel
@@ -1425,10 +1484,19 @@ export default function TeacherAdvisoryPage() {
                           <select
                             value={item.initiativeLevel !== undefined ? item.initiativeLevel : (rubricForm.initiativeLevel || 0)}
                             onChange={(e) => {
+                              const val = Number(e.target.value)
                               const updated = [...singleStudentTrackingRows]
-                              updated[idx].initiativeLevel = Number(e.target.value)
+                              updated[idx].initiativeLevel = val
+                              // Auto sync progress status
+                              const gL = updated[idx].goalCompletionLevel || 0
+                              const pL = updated[idx].participationAttitude || 0
+                              const scs = [gL, val, pL].filter(v => v > 0)
+                              if (scs.length > 0) {
+                                const avg = scs.reduce((a, b) => a + b, 0) / scs.length
+                                updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
+                              }
                               setSingleStudentTrackingRows(updated)
-                              if (idx === 0) setRubricForm(prev => ({ ...prev, initiativeLevel: Number(e.target.value) }))
+                              if (idx === 0) setRubricForm(prev => ({ ...prev, initiativeLevel: val }))
                             }}
                             className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-blue-400 ${
                               item.initiativeLevel
@@ -1448,10 +1516,19 @@ export default function TeacherAdvisoryPage() {
                           <select
                             value={item.participationAttitude !== undefined ? item.participationAttitude : (rubricForm.participationAttitude || 0)}
                             onChange={(e) => {
+                              const val = Number(e.target.value)
                               const updated = [...singleStudentTrackingRows]
-                              updated[idx].participationAttitude = Number(e.target.value)
+                              updated[idx].participationAttitude = val
+                              // Auto sync progress status
+                              const gL = updated[idx].goalCompletionLevel || 0
+                              const iL = updated[idx].initiativeLevel || 0
+                              const scs = [gL, iL, val].filter(v => v > 0)
+                              if (scs.length > 0) {
+                                const avg = scs.reduce((a, b) => a + b, 0) / scs.length
+                                updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
+                              }
                               setSingleStudentTrackingRows(updated)
-                              if (idx === 0) setRubricForm(prev => ({ ...prev, participationAttitude: Number(e.target.value) }))
+                              if (idx === 0) setRubricForm(prev => ({ ...prev, participationAttitude: val }))
                             }}
                             className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-emerald-400 ${
                               item.participationAttitude
