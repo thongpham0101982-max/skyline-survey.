@@ -1,6 +1,24 @@
 import nodemailer from "nodemailer";
 
-export async function sendEmail({ to, cc, bcc, subject, html, attachments, replyTo }: { to: string; cc?: string; bcc?: string; subject: string; html: string; attachments?: any[]; replyTo?: string }) {
+export async function sendEmail({
+  to,
+  cc,
+  bcc,
+  subject,
+  html,
+  attachments,
+  replyTo,
+  from
+}: {
+  to: string | string[];
+  cc?: string | string[];
+  bcc?: string | string[];
+  subject: string;
+  html: string;
+  attachments?: any[];
+  replyTo?: string;
+  from?: string;
+}) {
   const host = process.env.SMTP_HOST || "smtp.office365.com";
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
   const secure = process.env.SMTP_SECURE === "true";
@@ -26,14 +44,14 @@ export async function sendEmail({ to, cc, bcc, subject, html, attachments, reply
   });
 
   const mailOptions = {
-    from: `"Ban Khảo thí & ĐBCL" <bankhaothi@skylineschool.edu.vn>`,
+    from: from || `"Ban Khảo thí & ĐBCL" <${user}>`,
     to,
     cc,
     bcc,
     subject,
     html,
     attachments,
-    replyTo
+    replyTo: replyTo || user
   };
 
   const info = await transporter.sendMail(mailOptions);

@@ -154,6 +154,7 @@ export default function ExperientialActivitiesList() {
         "STT": idx + 1,
         "Mã Hoạt động": act.code || "Tự động",
         "Tên Hoạt động": act.name || "",
+        "Người Tạo": act.creatorName || act.teacherName || "Giáo viên",
         "Mạch Hoạt động": ACTIVITY_STRANDS.find(s => s.id === act.strand)?.name || act.strand || "",
         "Loại Hoạt động": act.activityTypeName || act.catalogName || "",
         "Tổ CM Phụ Trách": act.tcmOrSubjectLabel || act.departmentName || act.subjectName || "Chung",
@@ -582,6 +583,7 @@ export default function ExperientialActivitiesList() {
                     <th className="py-4 px-4 text-center w-12">#</th>
                     <th className="py-4 px-5 min-w-[120px]">Mã HĐ</th>
                     <th className="py-4 px-5 min-w-[260px]">Tên Hoạt động & Mạch</th>
+                    <th className="py-4 px-4 text-center min-w-[140px]">Người tạo</th>
                     <th className="py-4 px-4 text-center min-w-[140px]">Tổ CM phụ trách</th>
                     <th className="py-4 px-4 text-center min-w-[90px]">Cơ sở</th>
                     <th className="py-4 px-4 text-center min-w-[110px]">Khối</th>
@@ -651,6 +653,15 @@ export default function ExperientialActivitiesList() {
                             </div>
                           </div>
                         </td>
+
+                        {/* CỘT NGƯỜI TẠO */}
+                        <td className="py-4 px-4 whitespace-nowrap text-center">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-slate-50 text-[#003B3A] border border-slate-200 shadow-2xs">
+                            <User className="w-3.5 h-3.5 text-[#00A99D]" />
+                            <span>{act.creatorName || act.teacherName || 'Giáo viên'}</span>
+                          </span>
+                        </td>
+
                         {/* CỘT TỔ CM PHỤ TRÁCH */}
                         <td className="py-4 px-4 whitespace-nowrap text-center">
                           {act.tcmOrSubjectLabel || act.departmentName || act.subjectName ? (
@@ -880,12 +891,12 @@ export default function ExperientialActivitiesList() {
                     <div className="pt-4 border-t border-slate-100 space-y-3">
                       <div className="flex items-center justify-between text-xs font-bold text-slate-500">
                         <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-[#00A99D]" />
-                          <span>{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : '-'}</span>
+                          <User className="w-3.5 h-3.5 text-[#00A99D]" />
+                          <span className="text-[11px] font-bold text-slate-600">Tạo bởi: <strong className="text-[#003B3A]">{act.creatorName || act.teacherName || 'Giáo viên'}</strong></span>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
-                          <Users className="w-3.5 h-3.5 text-indigo-600" />
-                          <span className="font-black text-slate-800">{act.participantsCount || 0}</span> HS
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : '-'}</span>
                         </div>
                       </div>
 

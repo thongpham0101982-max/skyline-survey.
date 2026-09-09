@@ -5,7 +5,8 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
   ArrowLeft, Check, CheckCheck, CheckCircle2, ChevronRight, Save, Send, Plus, 
   Trash2, Layers, Calendar, Users, Building2, BookOpen, Clock, 
-  Tag, Award, Sparkles, AlertCircle, Info, Shield, Compass, Leaf, User, GraduationCap
+  Tag, Award, Sparkles, AlertCircle, Info, Shield, Compass, Leaf, User, GraduationCap,
+  Mail, AtSign, MessageSquare, Eye, EyeOff, CheckSquare, Square, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { 
@@ -201,6 +202,20 @@ export default function CreateActivityWizard() {
     deadline: ''
   });
 
+  // Step 4: Email Notification & Sender Settings
+  const [emailSettings, setEmailSettings] = useState({
+    sendEmail: true,
+    senderOption: 'CTHS', // 'CTHS' | 'KTDBCL' | 'BGH' | 'TCM' | 'CUSTOM'
+    senderName: 'Tổ CTHS - Ban HĐNGLL',
+    senderEmail: 'bankhaothi@skylineschool.edu.vn',
+    replyTo: '',
+    customMessage: 'Thầy cô vui lòng thực hiện đánh giá vai trò của Học sinh lớp.',
+    includeGdcs: true,
+    gdcsEmails: [] as string[]
+  });
+  const [customGdcsInput, setCustomGdcsInput] = useState('');
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
+
   // Step 2: Evaluation Settings
   const [evalMode, setEvalMode] = useState('CRITERIA'); // 'PARTICIPATION_ONLY' | 'CRITERIA'
   const [criteria, setCriteria] = useState(DEFAULT_3_CRITERIA);
@@ -327,6 +342,12 @@ export default function CreateActivityWizard() {
             if (data.thresholds) setThresholds(data.thresholds);
             if (data.mandatoryRules) setMandatoryRules(data.mandatoryRules);
             if (Array.isArray(data.assignedClasses)) setAssignedClasses(data.assignedClasses);
+            if (data.emailSettings) {
+              setEmailSettings(prev => ({
+                ...prev,
+                ...data.emailSettings
+              }));
+            }
           }
         })
         .catch(console.error);
@@ -393,6 +414,19 @@ export default function CreateActivityWizard() {
       });
   }, [formData.academicYearId, campuses]);
 
+  // Helper to resolve display sender name
+  const getResolvedSenderName = () => {
+    if (emailSettings.senderOption === 'CUSTOM') return emailSettings.senderName || 'Ban Tổ Chức';
+    if (emailSettings.senderOption === 'KTDBCL') return 'Ban Khảo thí & Đảm bảo Chất lượng';
+    if (emailSettings.senderOption === 'BGH') return 'Ban Giám hiệu Nhà trường';
+    if (emailSettings.senderOption === 'TCM') {
+      if (formData.departmentName) return `Tổ Chuyên môn ${formData.departmentName}`;
+      if (formData.subjectName) return `Tổ Bộ môn ${formData.subjectName}`;
+      return 'Tổ Chuyên môn';
+    }
+    return 'Tổ CTHS - Ban HĐNGLL';
+  };
+
   // Preset switch
   const handleSelectCriteriaPreset = (preset) => {
     setCriteriaPreset(preset);
@@ -410,7 +444,7 @@ export default function CreateActivityWizard() {
 
   const handleAddCriterionFromLib = (item) => {
     if (criteria.some(c => c.id === item.id || c.name === item.name)) {
-      toast.error('Tiêu chí ny ? c trong danh sách');
+      toast.error('Tiêu chí này đã có trong danh sách');
       return;
     }
     const newCrit = {
@@ -420,12 +454,12 @@ export default function CreateActivityWizard() {
     };
     setCriteria(prev => [...prev, newCrit]);
     setCriteriaPreset('custom');
-    toast.success(`? thm tiêu chí: ${item.name}`);
+    toast.success(`Đã thêm tiêu chí: ${item.name}`);
   };
 
   const handleRemoveCriterion = (id) => {
     if (criteria.length <= 1) {
-      toast.error('Hoạt động còn c ít nhất 1 tiêu chí đánh giá');
+      toast.error('Hoạt động cần có ít nhất 1 tiêu chí đánh giá');
       return;
     }
     setCriteria(prev => prev.filter(c => c.id !== id));
@@ -524,6 +558,7 @@ export default function CreateActivityWizard() {
 
     setIsSubmitting(true);
     try {
+      const resolvedSender = getResolvedSenderName();
       const payload = {
         ...formData,
         evalMode,
@@ -532,7 +567,17 @@ export default function CreateActivityWizard() {
         thresholds,
         mandatoryRules,
         status: isDraft ? 'DRAFT' : 'ASSIGNED',
-        assignedClasses
+        assignedClasses,
+        emailSettings: {
+          sendEmail: emailSettings.sendEmail,
+          senderOption: emailSettings.senderOption,
+          senderName: resolvedSender,
+          senderEmail: emailSettings.senderEmail,
+          replyTo: emailSettings.replyTo,
+          customMessage: emailSettings.customMessage,
+          includeGdcs: emailSettings.includeGdcs,
+          gdcsEmails: emailSettings.gdcsEmails
+        }
       };
 
       const url = isEditMode ? `/api/experiential-activities/${editId}` : '/api/experiential-activities';
@@ -545,7 +590,7 @@ export default function CreateActivityWizard() {
       });
 
       if (res.ok) {
-        toast.success(isEditMode ? 'Đã cập nhật kế hoạch hoạt động thành công!' : (isDraft ? 'Đã lưu nháp hoạt động thành công!' : 'Đã giao hoạt động thành công cho GVCN!'));
+        toast.success(isEditMode ? 'Đã cập nhật kế hoạch hoạt động thành công!' : (isDraft ? 'Đã lưu nháp hoạt động thành công!' : 'Đã giao hoạt động và gửi thông báo thành công cho GVCN & GĐCS!'));
         router.push(basePath);
       } else {
         const err = await res.json();
@@ -1850,6 +1895,303 @@ export default function CreateActivityWizard() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* EMAIL NOTIFICATION & SENDER CONFIGURATION */}
+            <div className="bg-gradient-to-br from-teal-50/40 via-white to-sky-50/40 p-5 sm:p-6 rounded-3xl border border-teal-200/80 shadow-xs space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-teal-100/80 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#00A99D] text-white flex items-center justify-center shadow-md shadow-[#00A99D]/20">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
+                      <span>Cấu hình Đẩy Mail Tự Động cho GVCN & GĐCS</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00A99D]/10 text-[#003B3A]">
+                        Tự động hóa
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Hệ thống sẽ tự động gửi email thông tin & phân loại hoạt động đến tất cả GVCN và CC Giám đốc cơ sở
+                    </p>
+                  </div>
+                </div>
+
+                <label className="inline-flex items-center gap-2.5 cursor-pointer select-none bg-white px-3.5 py-2 rounded-2xl border border-slate-200 shadow-2xs">
+                  <input
+                    type="checkbox"
+                    checked={emailSettings.sendEmail}
+                    onChange={e => setEmailSettings({ ...emailSettings, sendEmail: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="relative w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#00A99D]"></div>
+                  <span className="text-xs font-black text-slate-700">
+                    {emailSettings.sendEmail ? 'Bật gửi email' : 'Tắt gửi email'}
+                  </span>
+                </label>
+              </div>
+
+              {emailSettings.sendEmail && (
+                <div className="space-y-5">
+                  {/* SENDER SELECTION */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-[#00A99D]" />
+                      <span>1. Tùy chọn Người gửi / Đơn vị thông báo (Sender):</span>
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { id: 'CTHS', label: 'Tổ CTHS - Ban HĐNGLL', desc: 'Công tác học sinh' },
+                        { id: 'KTDBCL', label: 'Ban Khảo thí & ĐBCL', desc: 'Đảm bảo chất lượng' },
+                        { id: 'BGH', label: 'Ban Giám hiệu', desc: 'BGH Nhà trường' },
+                        { id: 'TCM', label: formData.departmentName ? `TCM ${formData.departmentName}` : (formData.subjectName ? `Tổ môn ${formData.subjectName}` : 'Tổ Chuyên môn'), desc: 'Chuyên môn / Bộ môn' },
+                        { id: 'CUSTOM', label: 'Tùy chỉnh khác', desc: 'Tự nhập tên đơn vị' }
+                      ].map(opt => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setEmailSettings({ ...emailSettings, senderOption: opt.id })}
+                          className={`p-2.5 rounded-2xl border text-left transition-all ${
+                            emailSettings.senderOption === opt.id
+                              ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-xs'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="text-[11.5px] font-black truncate">{opt.label}</div>
+                          <div className={`text-[9.5px] font-semibold truncate ${emailSettings.senderOption === opt.id ? 'text-teal-100' : 'text-slate-400'}`}>
+                            {opt.desc}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {emailSettings.senderOption === 'CUSTOM' && (
+                      <div className="mt-2">
+                        <input
+                          type="text"
+                          value={emailSettings.senderName}
+                          onChange={e => setEmailSettings({ ...emailSettings, senderName: e.target.value })}
+                          placeholder="Nhập tên người gửi / đơn vị (ví dụ: Ban Tổ chức Hội thao, Tổ Ngoại ngữ,...)"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
+                        />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <span className="text-[11px] font-black text-slate-500 block mb-1">Email phản hồi (Reply-To / Tuỳ chọn):</span>
+                        <div className="relative">
+                          <AtSign className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                          <input
+                            type="email"
+                            value={emailSettings.replyTo}
+                            onChange={e => setEmailSettings({ ...emailSettings, replyTo: e.target.value })}
+                            placeholder="vd: thongpn@skylineschool.edu.vn"
+                            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-[11px] font-black text-slate-500 block mb-1">Tên đơn vị hiển thị trên Email:</span>
+                        <div className="py-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-black text-[#003B3A] truncate">
+                          {getResolvedSenderName()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* GDCS & CC CONFIGURATION */}
+                  <div className="space-y-2 pt-3 border-t border-teal-100/60">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-[#00A99D]" />
+                        <span>2. Email Giám đốc Cơ sở (GĐCS) & CC đồng gửi:</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[#003B3A]">
+                        <input
+                          type="checkbox"
+                          checked={emailSettings.includeGdcs}
+                          onChange={e => setEmailSettings({ ...emailSettings, includeGdcs: e.target.checked })}
+                          className="rounded text-[#00A99D] focus:ring-[#00A99D]"
+                        />
+                        <span>Tự động CC GĐCS theo từng cơ sở</span>
+                      </label>
+                    </div>
+
+                    {/* Detected Campuses Badge */}
+                    <div className="bg-white p-3 rounded-2xl border border-slate-200 space-y-2">
+                      <span className="text-[11px] font-bold text-slate-500 block">
+                        📍 Cơ sở có lớp tham gia & GĐCS tiếp nhận:
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.from(new Set(assignedClasses.map(c => c.campusCode || (c.className.includes('_') ? c.className.split('_').pop() : 'CS')))).map(code => {
+                          const matchedCampus = campuses.find(cp => cp.campusCode === code);
+                          const managerEmail = matchedCampus?.manager?.email;
+                          const managerName = matchedCampus?.manager?.fullName;
+                          return (
+                            <div key={code} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                              <Building2 className="w-3.5 h-3.5 text-[#00A99D]" />
+                              <span className="font-extrabold text-slate-800">Sky-Line {code}</span>
+                              <span className="text-slate-400">|</span>
+                              <span className="text-slate-600 font-semibold text-[11px]">
+                                {managerEmail ? `GĐCS: ${managerName ? managerName + ' (' + managerEmail + ')' : managerEmail}` : 'Tự động tra cứu email GĐCS'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Manual Extra CC Emails */}
+                      <div className="pt-2">
+                        <span className="text-[11px] font-bold text-slate-500 block mb-1">Bổ sung thêm Email CC (Ban Giám hiệu, Tổ trưởng,...):</span>
+                        <div className="flex gap-2">
+                          <input
+                            type="email"
+                            value={customGdcsInput}
+                            onChange={e => setCustomGdcsInput(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (customGdcsInput.trim() && customGdcsInput.includes('@')) {
+                                  if (!emailSettings.gdcsEmails.includes(customGdcsInput.trim())) {
+                                    setEmailSettings({
+                                      ...emailSettings,
+                                      gdcsEmails: [...emailSettings.gdcsEmails, customGdcsInput.trim()]
+                                    });
+                                    setCustomGdcsInput('');
+                                  }
+                                }
+                              }
+                            }}
+                            placeholder="Nhập email cần CC thêm và nhấn Thêm..."
+                            className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D]/30"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (customGdcsInput.trim() && customGdcsInput.includes('@')) {
+                                if (!emailSettings.gdcsEmails.includes(customGdcsInput.trim())) {
+                                  setEmailSettings({
+                                    ...emailSettings,
+                                    gdcsEmails: [...emailSettings.gdcsEmails, customGdcsInput.trim()]
+                                  });
+                                  setCustomGdcsInput('');
+                                }
+                              } else {
+                                toast.error('Vui lòng nhập định dạng email hợp lệ');
+                              }
+                            }}
+                            className="px-3.5 py-1.5 bg-[#003B3A] text-white rounded-xl text-xs font-bold hover:bg-[#002B2A] transition-all"
+                          >
+                            + Thêm CC
+                          </button>
+                        </div>
+
+                        {emailSettings.gdcsEmails.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {emailSettings.gdcsEmails.map((em, idx) => (
+                              <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 border border-teal-200 text-teal-800 text-[11px] font-bold">
+                                {em}
+                                <button
+                                  type="button"
+                                  onClick={() => setEmailSettings({
+                                    ...emailSettings,
+                                    gdcsEmails: emailSettings.gdcsEmails.filter((_, i) => i !== idx)
+                                  })}
+                                  className="hover:text-red-500"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MANDATORY MESSAGE & INSTRUCTIONS */}
+                  <div className="space-y-2 pt-3 border-t border-teal-100/60">
+                    <label className="text-xs font-black text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <MessageSquare className="w-3.5 h-3.5 text-[#00A99D]" />
+                        <span>3. Lời nhắn & Yêu cầu trọng tâm gửi đến GVCN:</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        ✨ Nội dung bắt buộc chuẩn Sky-Line
+                      </span>
+                    </label>
+
+                    <div className="relative">
+                      <textarea
+                        rows={2}
+                        value={emailSettings.customMessage}
+                        onChange={e => setEmailSettings({ ...emailSettings, customMessage: e.target.value })}
+                        placeholder="Thầy cô vui lòng thực hiện đánh giá vai trò của Học sinh lớp..."
+                        className="w-full p-3 bg-white border border-teal-300/80 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none shadow-2xs"
+                      />
+                    </div>
+                    <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-[11.5px] text-amber-900 leading-relaxed font-semibold">
+                      <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <span>
+                        Email gửi đi sẽ tự động đính kèm đầy đủ: <strong>Thông tin & Phân loại Hoạt động</strong>, Mạch hoạt động, Loại hình, Môn học tích hợp, Thời gian, Địa điểm, Danh sách lớp và Nút bấm trực tiếp mở Sổ đánh giá học sinh cho GVCN.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* LIVE EMAIL PREVIEW BUTTON */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailPreview(!showEmailPreview)}
+                      className="inline-flex items-center gap-2 text-xs font-black text-[#003B3A] hover:text-[#00A99D] transition-colors"
+                    >
+                      {showEmailPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <span>{showEmailPreview ? 'Ẩn xem trước mẫu Email' : '👁️ Xem trước nội dung Email sẽ gửi đến GVCN & GĐCS'}</span>
+                    </button>
+
+                    {showEmailPreview && (
+                      <div className="mt-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-inner space-y-3 font-sans">
+                        <div className="p-4 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white rounded-xl text-center">
+                          <div className="text-xs font-black uppercase tracking-wider">HỆ THỐNG HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</div>
+                          <div className="text-[11px] font-bold text-teal-100 mt-0.5">{getResolvedSenderName().toUpperCase()}</div>
+                          <div className="inline-block bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black mt-2">
+                            Mã HĐ: {formData.code || 'HDTN-AUTO'}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 text-xs">
+                          <div className="font-extrabold text-slate-800">Kính gửi Thầy/Cô [Tên GVCN],</div>
+                          <div className="text-slate-600 leading-relaxed">
+                            Lớp chủ nhiệm của Thầy/Cô vừa nhận được kế hoạch <strong>Hoạt động trải nghiệm</strong> từ <strong>{getResolvedSenderName()}</strong>.
+                          </div>
+
+                          <div className="bg-teal-50 border-l-4 border-[#00A99D] p-2.5 rounded-r-xl text-[#003B3A] font-bold text-[11.5px] leading-relaxed">
+                            📌 <strong>Yêu cầu từ Ban Tổ Chức:</strong><br/>
+                            "{emailSettings.customMessage}"
+                          </div>
+
+                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px] space-y-1 text-slate-700">
+                            <div>🎯 <strong>Tên HĐ:</strong> <span className="font-extrabold text-[#003B3A]">{formData.name || 'Tên hoạt động'}</span></div>
+                            <div>🏷️ <strong>Mạch HĐ:</strong> {ACTIVITY_STRANDS.find(s => s.id === formData.strand)?.name} ({formData.activityTypeName})</div>
+                            {formData.subjectName && <div>📚 <strong>Môn học:</strong> {formData.subjectName}</div>}
+                            <div>🗓️ <strong>Thời gian:</strong> {formData.date} ({formData.timeRange})</div>
+                            <div>📍 <strong>Địa điểm:</strong> {formData.location || 'Tại các cơ sở Sky-Line'}</div>
+                            <div>👥 <strong>Lớp phụ trách:</strong> {assignedClasses.map(c => c.className).join(', ') || 'Danh sách lớp'}</div>
+                            <div>⏰ <strong>Hạn nộp đánh giá:</strong> <span className="text-emerald-700 font-bold">{formData.deadline || 'Theo kế hoạch'}</span></div>
+                          </div>
+
+                          <div className="text-center py-2">
+                            <span className="inline-block bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white px-5 py-2.5 rounded-xl font-black text-xs shadow-md">
+                              TRUY CẬP VÀ ĐÁNH GIÁ VAI TRÒ HỌC SINH &rarr;
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}

@@ -237,8 +237,11 @@ export async function PUT(
       deadline: body.deadline !== undefined ? body.deadline : currentMeta.deadline,
       status: body.status !== undefined ? body.status : currentMeta.status,
       assignedClasses: body.assignedClasses !== undefined ? body.assignedClasses : currentMeta.assignedClasses,
+      departmentId: body.departmentId !== undefined ? body.departmentId : currentMeta.departmentId,
+      departmentName: body.departmentName !== undefined ? body.departmentName : currentMeta.departmentName,
       subjectId: body.subjectId !== undefined ? body.subjectId : currentMeta.subjectId,
-      subjectName: body.subjectName !== undefined ? body.subjectName : currentMeta.subjectName
+      subjectName: body.subjectName !== undefined ? body.subjectName : currentMeta.subjectName,
+      emailSettings: body.emailSettings !== undefined ? body.emailSettings : currentMeta.emailSettings
     };
 
     // Update ActivityRecord safely without any invalid columns
@@ -294,19 +297,32 @@ export async function PUT(
     }
 
     // Send email notification to GVCN & GVBM if updated and assigned
-    if (body.status !== 'DRAFT' && assignedClasses.length > 0) {
+    const emailSettings = body.emailSettings || updatedMeta.emailSettings || {};
+    if (body.status !== 'DRAFT' && assignedClasses.length > 0 && emailSettings.sendEmail !== false) {
       sendExperientialActivityNotification({
         activityId: updated.id,
         activityCode: existing.code || 'HDTN',
         activityName: updated.name,
         strand: updatedMeta.strand,
+        activityTypeId: updatedMeta.activityTypeId,
         activityTypeName: updatedMeta.activityTypeName,
         subjectId: updatedMeta.subjectId,
         subjectName: updatedMeta.subjectName,
+        departmentId: updatedMeta.departmentId,
+        departmentName: updatedMeta.departmentName,
+        scale: updatedMeta.scale,
+        evalMode: updatedMeta.evalMode,
+        criteria: updatedMeta.criteria,
         date: body.date || (existing.date ? existing.date.toISOString().split('T')[0] : null),
         timeRange: updatedMeta.timeRange,
         location: updatedMeta.location,
         deadline: updatedMeta.deadline,
+        senderName: emailSettings.senderName,
+        senderEmail: emailSettings.senderEmail,
+        replyTo: emailSettings.replyTo,
+        customMessage: emailSettings.customMessage,
+        includeGdcs: emailSettings.includeGdcs !== false,
+        gdcsEmails: emailSettings.gdcsEmails || [],
         assignedClasses: updatedMeta.assignedClasses
       }).catch(e => console.error('[HĐTN Email Trigger Error]:', e));
     }

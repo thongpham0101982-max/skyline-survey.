@@ -1,9 +1,14 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
   try {
     const rawCampuses = await prisma.campus.findMany({
+      include: {
+        manager: {
+          select: { id: true, fullName: true, email: true }
+        }
+      },
       orderBy: { campusName: 'asc' }
     });
 

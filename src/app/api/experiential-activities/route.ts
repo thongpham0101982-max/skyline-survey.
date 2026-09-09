@@ -83,7 +83,8 @@ export async function GET(req: Request) {
         academicYear: true,
         teacher: {
           include: {
-            campus: true
+            campus: true,
+            user: true
           }
         },
         participants: {
@@ -291,7 +292,10 @@ export async function GET(req: Request) {
         timeRange: extraData.timeRange || '',
         location: extraData.locationText || (act.locationId && !act.locationId.startsWith('{') ? act.locationId : ''),
         teacherId: act.teacherId,
-        teacherName: act.teacher?.teacherName || '',
+        teacherName: act.teacher?.teacherName || act.teacher?.user?.fullName || act.teacher?.user?.name || extraData.creatorName || '',
+        creatorName: extraData.creatorName || act.teacher?.teacherName || act.teacher?.user?.fullName || act.teacher?.user?.name || (act.teacher?.email ? act.teacher.email.split('@')[0] : 'Ban Quản trị'),
+        creatorEmail: extraData.creatorEmail || act.teacher?.email || act.teacher?.user?.email || '',
+        creatorRole: extraData.creatorRole || act.teacher?.user?.role || '',
         description: extraData.description || '',
         objectives: extraData.objectives || '',
         strand: extraData.strand || 'BAN_THAN',
@@ -310,7 +314,6 @@ export async function GET(req: Request) {
         isGVBM,
         isGVCN,
         hasTcmOrSubject,
-        tcmOrSubjectLabel,
         assignedRole,
         roleBadgeLabel,
         roleBadgeTheme,
@@ -479,7 +482,8 @@ export async function POST(req: Request) {
       mandatoryRules = [],
       deadline,
       status = 'ASSIGNED',
-      assignedClasses = []
+      assignedClasses = [],
+      emailSettings = {}
     } = body;
 
     if (!name || !name.trim()) {
@@ -551,6 +555,9 @@ export async function POST(req: Request) {
       selectedCampusIds: selectedCampusIds.length > 0 ? selectedCampusIds : (actualCampusCodes.length > 0 ? actualCampusCodes : []),
       educationLevel,
       grades: resolvedGrades,
+      creatorName: session.user.name || teacher.teacherName || session.user.email || 'Giáo viên',
+      creatorEmail: session.user.email || teacher.email || '',
+      creatorUserId: session.user.id,
       departmentId,
       departmentName,
       subjectId,
@@ -570,6 +577,7 @@ export async function POST(req: Request) {
       thresholds,
       mandatoryRules,
       deadline,
+      emailSettings,
       status: status || 'ASSIGNED',
       assignedClasses: assignedClasses.map((cls: any) => ({
         ...cls,
@@ -629,20 +637,32 @@ export async function POST(req: Request) {
       }
     }
 
-    // Send email notification to GVCN & GVBM if activity is assigned
-    if (status !== 'DRAFT' && assignedClasses.length > 0) {
+    // Send email notification to GVCN & GVBM & CC GĐCS if activity is assigned
+    if (status !== 'DRAFT' && assignedClasses.length > 0 && emailSettings?.sendEmail !== false) {
       sendExperientialActivityNotification({
         activityId: activityRecord.id,
         activityCode: recordCode,
         activityName: name.trim(),
         strand,
+        activityTypeId,
         activityTypeName,
         subjectId,
         subjectName,
+        departmentId,
+        departmentName,
+        scale,
+        evalMode,
+        criteria,
         date,
         timeRange,
         location,
         deadline,
+        senderName: emailSettings?.senderName,
+        senderEmail: emailSettings?.senderEmail,
+        replyTo: emailSettings?.replyTo,
+        customMessage: emailSettings?.customMessage,
+        includeGdcs: emailSettings?.includeGdcs !== false,
+        gdcsEmails: emailSettings?.gdcsEmails || [],
         assignedClasses
       }).catch(e => console.error('[HĐTN Email Trigger Error]:', e));
     }
