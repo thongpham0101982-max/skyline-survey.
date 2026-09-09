@@ -87,7 +87,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
     const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
     const activityUrl = `${appUrl}/teacher/experiential-activities/${activityId}`;
 
-    // 1. Find all GVCN for the assigned classes
+    // 1. Query classes with valid relations
     const classes = await prisma.class.findMany({
       where: { id: { in: classIds } },
       include: {
@@ -99,11 +99,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
             }
           }
         },
-        homeroomTeacher: {
-          include: { user: true }
-        },
         teachers: {
-          where: { roleInClass: "GVCN" },
           include: {
             teacher: {
               include: { user: true }
@@ -113,7 +109,54 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       }
     });
 
-    // 2. Discover GĐCS (Campus Directors) and Campus Managers for assigned campuses
+    // 2. Fetch all teachers for robust GVCN & GDCS email resolution
+    const allTeachers = await prisma.teacher.findMany({
+      include: { user: true }
+    });
+    const teacherMapById = new Map<string, any>();
+    const teacherMapByUserId = new Map<string, any>();
+    const teacherMapByCode = new Map<string, any>();
+    const teacherMapByName = new Map<string, any>();
+
+    const normKey = (str: string) => (str || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+    allTeachers.forEach(t => {
+      if (t.id) teacherMapById.set(t.id, t);
+      if (t.userId) teacherMapByUserId.set(t.userId, t);
+      if (t.teacherCode) teacherMapByCode.set(t.teacherCode.trim().toLowerCase(), t);
+      if (t.teacherName) teacherMapByName.set(normKey(t.teacherName), t);
+    });
+
+    const resolveTeacherEmail = (tObj?: any, uObj?: any, nameHint?: string): string | null => {
+      const candidates = [
+        tObj?.email,
+        tObj?.user?.email,
+        uObj?.email
+      ];
+      for (const c of candidates) {
+        if (c && typeof c === 'string' && c.includes('@')) {
+          return c.trim().toLowerCase();
+        }
+      }
+
+      // If user email or teacher code was stored as numeric staff ID (e.g. "0201000007")
+      const staffCode = (uObj?.email || uObj?.username || tObj?.teacherCode || '').trim().toLowerCase();
+      if (staffCode && teacherMapByCode.has(staffCode)) {
+        const matched = teacherMapByCode.get(staffCode);
+        if (matched?.email && matched.email.includes('@')) return matched.email.trim().toLowerCase();
+      }
+
+      // Try matching by name
+      const name = nameHint || tObj?.teacherName || uObj?.fullName;
+      if (name) {
+        const matched = teacherMapByName.get(normKey(name));
+        if (matched?.email && matched.email.includes('@')) return matched.email.trim().toLowerCase();
+      }
+
+      return null;
+    };
+
+    // 3. Discover GĐCS (Campus Directors) and Campus Managers for assigned campuses
     const campusGdcsMap = new Map<string, Set<string>>(); // campusId/code -> Set of emails
     const allCampusIds = new Set<string>();
     
@@ -122,14 +165,20 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       if (cls.campus) {
         const cKey = cls.campus.id;
         const set = campusGdcsMap.get(cKey) || new Set<string>();
-        if (cls.campus.manager?.email) {
-          set.add(cls.campus.manager.email.trim().toLowerCase());
+        
+        // Check Campus Manager
+        if (cls.campus.manager) {
+          const mEmail = resolveTeacherEmail(undefined, cls.campus.manager, cls.campus.manager.fullName);
+          if (mEmail) set.add(mEmail);
         }
+
+        // Check userAssignments on Campus
         if (Array.isArray(cls.campus.userAssignments)) {
           cls.campus.userAssignments.forEach(ua => {
             const u = ua.user;
-            if (u?.email && ["GĐ_CS", "GDCS", "GIAO_VU_CS", "GIAO_VU", "BGH"].includes(u.role)) {
-              set.add(u.email.trim().toLowerCase());
+            if (u && ["GĐ_CS", "GDCS", "GIAO_VU_CS", "GIAO_VU", "BGH", "KTDBCL"].includes(u.role)) {
+              const uEmail = resolveTeacherEmail(undefined, u, u.fullName);
+              if (uEmail) set.add(uEmail);
             }
           });
         }
@@ -140,11 +189,11 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       }
     });
 
-    // Also search users with role GDCS / GĐ_CS directly
+    // Also search users with role GDCS / GĐ_CS directly in DB
     if (allCampusIds.size > 0) {
       const gdcsUsers = await prisma.user.findMany({
         where: {
-          role: { in: ["GĐ_CS", "GDCS", "GIAO_VU_CS"] }
+          role: { in: ["GĐ_CS", "GDCS", "GIAO_VU_CS", "BGH"] }
         },
         include: {
           campusAssignments: true
@@ -152,11 +201,12 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       });
 
       gdcsUsers.forEach(u => {
-        if (u.email) {
+        const uEmail = resolveTeacherEmail(undefined, u, u.fullName);
+        if (uEmail) {
           u.campusAssignments.forEach(ca => {
             if (allCampusIds.has(ca.campusId)) {
               const set = campusGdcsMap.get(ca.campusId) || new Set<string>();
-              set.add(u.email.trim().toLowerCase());
+              set.add(uEmail);
               campusGdcsMap.set(ca.campusId, set);
             }
           });
@@ -164,7 +214,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       });
     }
 
-    // 3. Find all GVBM for the assigned classes if subjectId or departmentId is provided
+    // 4. Find all GVBM for the assigned classes if subjectId is provided
     let teachingAssignments: any[] = [];
     if (subjectId) {
       teachingAssignments = await prisma.teachingAssignment.findMany({
@@ -182,7 +232,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       });
     }
 
-    // 4. Aggregate unique teachers and their roles & campuses
+    // 5. Aggregate unique teachers and their roles & campuses
     type TeacherRecipient = {
       teacherId: string;
       teacherName: string;
@@ -195,46 +245,53 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
 
     const recipientMap = new Map<string, TeacherRecipient>();
 
-    // Process GVCN
+    // Process GVCN for each assigned class
     for (const cls of classes) {
-      const gvcnList: any[] = [];
-      if (cls.homeroomTeacher) gvcnList.push(cls.homeroomTeacher);
-      if (cls.teachers && cls.teachers.length > 0) {
-        cls.teachers.forEach(t => {
-          if (t.teacher) gvcnList.push(t.teacher);
-        });
+      let gvcnTeacher: any = null;
+      if (cls.homeroomTeacherId && teacherMapById.has(cls.homeroomTeacherId)) {
+        gvcnTeacher = teacherMapById.get(cls.homeroomTeacherId);
+      }
+      if (!gvcnTeacher && cls.teachers && cls.teachers.length > 0) {
+        const gvcnAssign = cls.teachers.find(t => t.roleInClass === "GVCN") || cls.teachers[0];
+        gvcnTeacher = gvcnAssign?.teacher;
+      }
+      if (!gvcnTeacher) {
+        const assignedClassMeta = assignedClasses.find(c => c.classId === cls.id);
+        if (assignedClassMeta?.homeroomTeacherName) {
+          gvcnTeacher = teacherMapByName.get(normKey(assignedClassMeta.homeroomTeacherName));
+        }
       }
 
-      for (const t of gvcnList) {
-        const email = t.email || t.user?.email;
-        if (!email) continue;
+      if (gvcnTeacher) {
+        const email = resolveTeacherEmail(gvcnTeacher, gvcnTeacher.user, gvcnTeacher.teacherName);
+        if (email) {
+          const key = gvcnTeacher.id || email;
+          const existing = recipientMap.get(key) || {
+            teacherId: gvcnTeacher.id,
+            teacherName: gvcnTeacher.teacherName || "Thầy/Cô",
+            email,
+            roles: [],
+            classes: [],
+            campusIds: [],
+            campusCodes: []
+          };
 
-        const key = t.id || email;
-        const existing = recipientMap.get(key) || {
-          teacherId: t.id,
-          teacherName: t.teacherName || "Thầy/Cô",
-          email,
-          roles: [],
-          classes: [],
-          campusIds: [],
-          campusCodes: []
-        };
+          const roleText = `GVCN Lớp ${cls.className}`;
+          if (!existing.roles.includes(roleText)) existing.roles.push(roleText);
+          if (!existing.classes.includes(cls.className)) existing.classes.push(cls.className);
+          if (cls.campusId && !existing.campusIds.includes(cls.campusId)) existing.campusIds.push(cls.campusId);
+          if (cls.campus?.campusCode && !existing.campusCodes.includes(cls.campus.campusCode)) existing.campusCodes.push(cls.campus.campusCode);
 
-        const roleText = `GVCN Lớp ${cls.className}`;
-        if (!existing.roles.includes(roleText)) existing.roles.push(roleText);
-        if (!existing.classes.includes(cls.className)) existing.classes.push(cls.className);
-        if (cls.campusId && !existing.campusIds.includes(cls.campusId)) existing.campusIds.push(cls.campusId);
-        if (cls.campus?.campusCode && !existing.campusCodes.includes(cls.campus.campusCode)) existing.campusCodes.push(cls.campus.campusCode);
-
-        recipientMap.set(key, existing);
+          recipientMap.set(key, existing);
+        }
       }
     }
 
-    // Process GVBM
+    // Process GVBM if applicable
     for (const ta of teachingAssignments) {
       const t = ta.teacher;
       if (!t) continue;
-      const email = t.email || t.user?.email;
+      const email = resolveTeacherEmail(t, t.user, t.teacherName);
       if (!email) continue;
 
       const key = t.id || email;
@@ -263,12 +320,13 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
     const allClassNames = assignedClasses.map(c => c.className).join(", ");
     const formattedDate = date ? new Date(date).toLocaleDateString("vi-VN") : "Theo lịch công tác";
     const displaySenderName = senderName || "Tổ CTHS - Ban HĐNGLL";
-    const fromAddress = senderEmail ? `"${displaySenderName}" <${senderEmail}>` : `"${displaySenderName}" <bankhaothi@skylineschool.edu.vn>`;
-    const resolvedReplyTo = replyTo || senderEmail || undefined;
+    const authSmtpUser = process.env.SMTP_USER || "bankhaothi@skylineschool.edu.vn";
+    const fromAddress = `"${displaySenderName}" <${authSmtpUser}>`;
+    const resolvedReplyTo = (replyTo && replyTo.includes('@')) ? replyTo : (senderEmail && senderEmail.includes('@') ? senderEmail : authSmtpUser);
 
     // Manual/custom GĐCS emails passed directly
     const manualGdcsClean = (gdcsEmails || [])
-      .map(e => e.trim().toLowerCase())
+      .map(e => String(e || '').trim().toLowerCase())
       .filter(e => e && e.includes("@"));
 
     // 5. Send email to each recipient

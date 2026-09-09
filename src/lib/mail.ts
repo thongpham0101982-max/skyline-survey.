@@ -38,20 +38,48 @@ export async function sendEmail({
       pass,
     },
     tls: {
-      ciphers: "SSLv3",
       rejectUnauthorized: false,
     },
   });
 
+  // Helper to filter valid email strings
+  const cleanEmails = (input?: string | string[]): string | string[] | undefined => {
+    if (!input) return undefined;
+    if (Array.isArray(input)) {
+      const valid = input.map(e => String(e || '').trim()).filter(e => e && e.includes('@'));
+      return valid.length > 0 ? valid : undefined;
+    }
+    const s = String(input).trim();
+    return s && s.includes('@') ? s : undefined;
+  };
+
+  const validTo = cleanEmails(to);
+  if (!validTo || (Array.isArray(validTo) && validTo.length === 0)) {
+    console.warn("[mail.ts] No valid 'to' email address provided. Skipping send.");
+    return { skipped: true, reason: "No valid recipient email" };
+  }
+
+  // Ensure From header uses authenticated account email address in brackets to prevent SendAsDenied
+  let resolvedFrom = `"QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE" <${user}>`;
+  if (from) {
+    if (from.includes('<') && from.includes('>')) {
+      const nameMatch = from.match(/^"?(.*?)"?\s*<.*?>$/);
+      const displayName = nameMatch ? nameMatch[1] : "QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE";
+      resolvedFrom = `"${displayName}" <${user}>`;
+    } else {
+      resolvedFrom = `"${from}" <${user}>`;
+    }
+  }
+
   const mailOptions = {
-    from: from || `"Ban Khảo thí & ĐBCL" <${user}>`,
-    to,
-    cc,
-    bcc,
+    from: resolvedFrom,
+    to: validTo,
+    cc: cleanEmails(cc),
+    bcc: cleanEmails(bcc),
     subject,
     html,
     attachments,
-    replyTo: replyTo || user
+    replyTo: cleanEmails(replyTo) || user
   };
 
   const info = await transporter.sendMail(mailOptions);
