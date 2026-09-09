@@ -1,5 +1,6 @@
-﻿"use client"
+"use client"
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Activity, BarChart3 } from 'lucide-react'
 
 interface ExperientialTabsProps {
@@ -7,9 +8,22 @@ interface ExperientialTabsProps {
 }
 
 export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
+  const pathname = usePathname() || ''
+  const isAdmin = pathname.startsWith('/admin')
+
   const tabs = [
-    { id: 'activities', label: 'Quản lý Hoạt động & Đánh giá', href: '/teacher/experiential-activities', icon: Activity },
-    { id: 'reports', label: 'Dashboard & Thống kê Báo cáo', href: '/admin/experiential-activities/reports', icon: BarChart3 }
+    { 
+      id: 'activities', 
+      label: 'Quản lý Hoạt động & Đánh giá', 
+      href: isAdmin ? '/admin/experiential-activities' : '/teacher/experiential-activities', 
+      icon: Activity 
+    },
+    { 
+      id: 'reports', 
+      label: 'Dashboard & Thống kê Báo cáo', 
+      href: '/admin/experiential-activities/reports', 
+      icon: BarChart3 
+    }
   ]
 
   return (

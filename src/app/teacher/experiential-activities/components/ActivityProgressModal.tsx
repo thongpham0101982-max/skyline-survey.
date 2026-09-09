@@ -1,10 +1,12 @@
 "use client";
 import React from 'react';
 import { X, Users, CheckCircle2, Clock, BarChart3, AlertCircle, ArrowRight, ExternalLink, Calendar } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export function ActivityProgressModal({ activity, isOpen, onClose }: { activity: any; isOpen: boolean; onClose: () => void }) {
   const router = useRouter();
+  const pathname = usePathname() || "";
+  const basePath = pathname.startsWith("/admin") ? "/admin/experiential-activities" : "/teacher/experiential-activities";
   if (!isOpen || !activity) return null;
 
   const assignedClasses = activity.assignedClasses || [];
@@ -101,7 +103,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
                     <button 
                       onClick={() => {
                         onClose();
-                        router.push(`/teacher/experiential-activities/${activity.id}?classId=${cls.classId}`);
+                        router.push(`${basePath}/${activity.id}?classId=${cls.classId}`);
                       }}
                       className="p-2.5 rounded-xl bg-slate-100 hover:bg-gradient-to-r hover:from-[#003B3A] hover:to-[#00A99D] hover:text-white text-slate-600 transition-all"
                       title="Mở sổ đánh giá của lớp này"

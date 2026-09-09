@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams, usePathname } from 'next/navigation';
 import { 
   ArrowLeft, Settings, Save, Search, CheckSquare,
   CheckCircle2, Plus, X, Hash, Edit3, Loader2,
@@ -20,6 +20,8 @@ import {
 
 export default function ActivityResultInput() {
   const router = useRouter();
+  const pathname = usePathname() || "";
+  const basePath = pathname.startsWith("/admin") ? "/admin/experiential-activities" : "/teacher/experiential-activities";
   const params = useParams();
   const searchParams = useSearchParams();
   const { id } = params;
@@ -165,7 +167,7 @@ export default function ActivityResultInput() {
         setLastSavedTime(new Date().toLocaleTimeString('vi-VN'));
         if (isSubmittingFinal) {
           toast.success('đã nộp kết quả đánh giá thành công!');
-          router.push('/teacher/experiential-activities');
+          router.push(basePath);
         } else {
           toast.success('Đã lưu kết quả thành công');
         }
@@ -402,7 +404,7 @@ export default function ActivityResultInput() {
           
           <div className="flex items-center gap-3 min-w-0">
             <button
-              onClick={() => router.push('/teacher/experiential-activities')}
+              onClick={() => router.push(basePath)}
               className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors shrink-0"
               title="Quay lại danh sách"
             >
@@ -432,7 +434,7 @@ export default function ActivityResultInput() {
 
             {activity?.canManage && (
               <button
-                onClick={() => router.push(`/teacher/experiential-activities/create?editId=${id}`)}
+                onClick={() => router.push(`${basePath}/create?editId=${id}`)}
                 className="px-3.5 py-2.5 bg-slate-100 hover:bg-teal-50 hover:text-[#003B3A] border border-slate-200 text-slate-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
                 title="Hiệu chỉnh thông tin, tiêu chí hoặc lớp gán"
               >

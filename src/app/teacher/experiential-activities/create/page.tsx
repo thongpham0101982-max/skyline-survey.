@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
   ArrowLeft, Check, CheckCheck, CheckCircle2, ChevronRight, Save, Send, Plus, 
   Trash2, Layers, Calendar, Users, Building2, BookOpen, Clock, 
@@ -154,6 +154,8 @@ const findMatchedGVBM = (cls, form) => {
 };
 export default function CreateActivityWizard() {
   const router = useRouter();
+  const pathname = usePathname() || "";
+  const basePath = pathname.startsWith("/admin") ? "/admin/experiential-activities" : "/teacher/experiential-activities";
   const searchParams = useSearchParams();
   const editId = searchParams.get('editId') || searchParams.get('id') || '';
   const isEditMode = !!editId;
@@ -250,8 +252,8 @@ export default function CreateActivityWizard() {
   };
 
   // Step 3: Class Assignment
-  const [assignedClasses, setAssignedClasses] = useState([]);
-  const [selectedFilterGrades, setSelectedFilterGrades] = useState([]);
+  const [assignedClasses, setAssignedClasses] = useState<any[]>([]);
+  const [selectedFilterGrades, setSelectedFilterGrades] = useState<any[]>([]);
 
   // Load existing activity if in Edit mode
   useEffect(() => {
@@ -261,7 +263,7 @@ export default function CreateActivityWizard() {
         .then(data => {
           if (data && data.canManage === false) {
             toast.error('Bạn không có quyền chỉnh sửa kế hoạch hoạt động được giao từ cấp trên');
-            router.push(`/teacher/experiential-activities/${editId}`);
+            router.push(`${basePath}/${editId}`);
             return;
           }
           if (data && !data.error) {
@@ -521,7 +523,7 @@ export default function CreateActivityWizard() {
 
       if (res.ok) {
         toast.success(isEditMode ? 'Đã cập nhật kế hoạch hoạt động thành công!' : (isDraft ? 'Đã lưu nháp hoạt động thành công!' : 'Đã giao hoạt động thành công cho GVCN!'));
-        router.push('/teacher/experiential-activities');
+        router.push(basePath);
       } else {
         const err = await res.json();
         toast.error(err.error || 'Lỗi khi lưu kế hoạch hoạt động');
@@ -540,7 +542,7 @@ export default function CreateActivityWizard() {
         {/* TOP HEADER */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => router.push('/teacher/experiential-activities')}
+            onClick={() => router.push(basePath)}
             className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-black text-slate-700 hover:text-[#003B3A] transition-all flex items-center gap-2 shadow-2xs"
             title="Quay về trang Quản lý Hoạt động trải nghiệm"
           >

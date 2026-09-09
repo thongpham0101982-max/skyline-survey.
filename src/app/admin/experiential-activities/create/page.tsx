@@ -1,17 +1,17 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import ExperientialActivitiesList from "@/app/teacher/experiential-activities/page"
+import CreateActivityWizard from "@/app/teacher/experiential-activities/create/page"
 import { hasModulePermission } from "@/lib/permissions"
 
-export const metadata = { title: "Quản lý Hoạt động Trải nghiệm | Admin Portal" }
+export const metadata = { title: "Thiết lập Hoạt động Trải nghiệm | Admin Portal" }
 export const dynamic = "force-dynamic"
 
-export default async function AdminExperientialIndexPage() {
+export default async function AdminCreateExperientialActivityPage() {
   let session: any = null
   try {
     session = await auth()
   } catch (e) {
-    console.error("Auth error in AdminExperientialIndexPage:", e)
+    console.error("Auth error in AdminCreateExperientialActivityPage:", e)
   }
 
   if (!session) {
@@ -32,10 +32,10 @@ export default async function AdminExperientialIndexPage() {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl max-w-xl mx-auto mt-20 text-center">
         <h3 className="font-extrabold text-base mb-2">Quyền truy cập hạn chế</h3>
-        <p className="text-xs font-semibold">Bạn không có quyền truy cập chức năng này.</p>
+        <p className="text-xs font-semibold">Bạn không có quyền thiết lập hoạt động trải nghiệm.</p>
       </div>
     )
   }
 
-  return <ExperientialActivitiesList />
+  return <CreateActivityWizard />
 }

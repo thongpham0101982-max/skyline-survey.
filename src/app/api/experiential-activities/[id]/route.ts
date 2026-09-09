@@ -2,6 +2,7 @@ import { sendExperientialActivityNotification } from "@/lib/experiential/email-n
 import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { hasModulePermission } from "@/lib/permissions";
 function parseDbJson<T>(value: string | null | undefined, fallback: T): T {
   if (!value) return fallback;
   try {
@@ -47,7 +48,10 @@ export async function GET(
 
     const session = await auth();
     const userRole = (session?.user as any)?.role || '';
-    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN'].includes(userRole);
+    const upperRole = (userRole || '').toUpperCase().trim();
+    const hasExpManageRead = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_MANAGE"], "canRead");
+    const hasExpManageUpdate = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_MANAGE"], "canUpdate");
+    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN', 'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'].includes(upperRole) || hasExpManageRead;
 
     let teacherRecord: any = null;
     if (session?.user?.id) {
@@ -55,7 +59,7 @@ export async function GET(
     }
 
     const isMyCreated = !!(teacherRecord && (activity.teacherId === teacherRecord.id || activity.teacher?.userId === session?.user?.id));
-    const canManage = isManagement || isMyCreated;
+    const canManage = isManagement || isMyCreated || hasExpManageUpdate;
 
     const meta = parseDbJson<any>(activity.locationId, {});
 
@@ -142,7 +146,9 @@ export async function PUT(
 
     const session = await auth();
     const userRole = (session?.user as any)?.role || '';
-    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN'].includes(userRole);
+    const upperRole = (userRole || '').toUpperCase().trim();
+    const hasExpManageUpdate = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_MANAGE"], "canUpdate");
+    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN', 'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'].includes(upperRole);
 
     let teacherRecord: any = null;
     if (session?.user?.id) {
@@ -150,7 +156,7 @@ export async function PUT(
     }
 
     const isMyCreated = !!(teacherRecord && (existing.teacherId === teacherRecord.id || existing.teacher?.userId === session?.user?.id));
-    const canManage = isManagement || isMyCreated;
+    const canManage = isManagement || isMyCreated || hasExpManageUpdate;
 
     if (!canManage) {
       return NextResponse.json({ error: "Bạn không có quyền hiệu chỉnh kế hoạch hoạt động được giao từ cấp trên" }, { status: 403 });
@@ -321,7 +327,32 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userRole = (session?.user as any)?.role || '';
+    const upperRole = (userRole || '').toUpperCase().trim();
+    const hasExpDeletePerm = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_MANAGE"], "canDelete");
+    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN', 'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'].includes(upperRole) || hasExpDeletePerm;
+
     const { id } = await params;
+    const existing = await prisma.activityRecord.findUnique({ where: { id } });
+    if (!existing) {
+      return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
+    }
+
+    let teacherRecord: any = null;
+    if (session.user.id) {
+      teacherRecord = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
+    }
+    const isMyCreated = !!(teacherRecord && (existing.teacherId === teacherRecord.id || existing.teacher?.userId === session.user.id));
+    const canDelete = isManagement || isMyCreated || hasExpDeletePerm;
+
+    if (!canDelete) {
+      return NextResponse.json({ error: "Bạn không có quyền xóa hoạt động này" }, { status: 403 });
+    }
 
     await prisma.activityParticipant.deleteMany({
       where: { recordId: id }

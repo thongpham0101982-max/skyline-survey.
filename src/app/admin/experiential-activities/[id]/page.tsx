@@ -1,17 +1,17 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import ExperientialActivitiesList from "@/app/teacher/experiential-activities/page"
+import ActivityResultInput from "@/app/teacher/experiential-activities/[id]/page"
 import { hasModulePermission } from "@/lib/permissions"
 
-export const metadata = { title: "Quản lý Hoạt động Trải nghiệm | Admin Portal" }
+export const metadata = { title: "Đánh giá Hoạt động Trải nghiệm | Admin Portal" }
 export const dynamic = "force-dynamic"
 
-export default async function AdminExperientialIndexPage() {
+export default async function AdminActivityResultPage() {
   let session: any = null
   try {
     session = await auth()
   } catch (e) {
-    console.error("Auth error in AdminExperientialIndexPage:", e)
+    console.error("Auth error in AdminActivityResultPage:", e)
   }
 
   if (!session) {
@@ -37,5 +37,5 @@ export default async function AdminExperientialIndexPage() {
     )
   }
 
-  return <ExperientialActivitiesList />
+  return <ActivityResultInput />
 }

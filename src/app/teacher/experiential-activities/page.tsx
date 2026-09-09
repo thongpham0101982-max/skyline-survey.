@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Plus, Search, Calendar, Users, ChevronRight, Activity, Trash2, Edit3, Tag, CheckCircle2, Clock, List, LayoutGrid, Sparkles, Filter, FileCheck, Layers, ArrowUpRight, CheckCircle, BarChart3, RefreshCw, X, Eye, FileSpreadsheet, Download, Lock, Unlock, Copy, AlertCircle, Building2, GraduationCap, Shield, Compass, Leaf, User, BookOpen } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
@@ -10,11 +10,13 @@ import { ExperientialTabs } from "@/components/ExperientialTabs";
 
 export default function ExperientialActivitiesList() {
   const router = useRouter();
-  const [rawActivities, setRawActivities] = useState([]);
-  const [activities, setActivities] = useState([]);
+  const pathname = usePathname() || "";
+  const basePath = pathname.startsWith("/admin") ? "/admin/experiential-activities" : "/teacher/experiential-activities";
+  const [rawActivities, setRawActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [academicYears, setAcademicYears] = useState([]);
-  const [campuses, setCampuses] = useState([]);
+  const [academicYears, setAcademicYears] = useState<any[]>([]);
+  const [campuses, setCampuses] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [selectedYearId, setSelectedYearId] = useState("");
   const [selectedCampusId, setSelectedCampusId] = useState("ALL");
@@ -25,7 +27,7 @@ export default function ExperientialActivitiesList() {
   const [scopeFilter, setScopeFilter] = useState("ALL"); // ALL | ASSIGNED | MY_CREATED
   const [roleScope, setRoleScope] = useState("ALL"); // ALL | GVBM | GVCN | MY_CREATED
   const [viewMode, setViewMode] = useState("list");
-  const [progressModalActivity, setProgressModalActivity] = useState(null);
+  const [progressModalActivity, setProgressModalActivity] = useState<any>(null);
   useEffect(() => {
     Promise.all([
       fetch("/api/academic-years").then(r => r.json()).catch(() => []),
@@ -266,7 +268,7 @@ export default function ExperientialActivitiesList() {
               </button>
 
               <button
-                onClick={() => router.push('/teacher/experiential-activities/create')}
+                onClick={() => router.push(`${basePath}/create`)}
                 className="px-6 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 transition-all flex items-center gap-2.5 group transform active:scale-95"
                 title="Khởi tạo hoạt động trải nghiệm mới cho lớp chủ nhiệm hoặc bộ môn"
               >
@@ -550,7 +552,7 @@ export default function ExperientialActivitiesList() {
                 }
               </p>
               <button
-                onClick={() => router.push('/teacher/experiential-activities/create')}
+                onClick={() => router.push(`${basePath}/create`)}
                 className="px-6 py-3 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 inline-flex items-center gap-2 mt-2"
               >
                 <Plus className="w-4 h-4" />
@@ -601,7 +603,7 @@ export default function ExperientialActivitiesList() {
                     return (
                       <tr
                         key={act.id}
-                        onClick={() => router.push(act.myAssignedClass?.classId ? `/teacher/experiential-activities/${act.id}?classId=${act.myAssignedClass.classId}` : `/teacher/experiential-activities/${act.id}`)}
+                        onClick={() => router.push(act.myAssignedClass?.classId ? `${basePath}/${act.id}?classId=${act.myAssignedClass.classId}` : `${basePath}/${act.id}`)}
                         className="hover:bg-teal-50/30 cursor-pointer transition-colors group"
                       >
                         <td className="py-4 px-4 text-center text-slate-400 font-bold">{index + 1}</td>
@@ -717,7 +719,7 @@ export default function ExperientialActivitiesList() {
                               <button
                                 onClick={e => {
                                   e.stopPropagation();
-                                  router.push(`/teacher/experiential-activities/create?editId=${act.id}`);
+                                  router.push(`${basePath}/create?editId=${act.id}`);
                                 }}
                                 className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#00A99D] transition-colors"
                                 title="Hiệu chỉnh kế hoạch hoạt động"
@@ -753,7 +755,7 @@ export default function ExperientialActivitiesList() {
                           ) : (
                             <div className="flex items-center justify-end">
                               <button
-                                onClick={() => router.push(act.myAssignedClass?.classId ? `/teacher/experiential-activities/${act.id}?classId=${act.myAssignedClass.classId}` : `/teacher/experiential-activities/${act.id}`)}
+                                onClick={() => router.push(act.myAssignedClass?.classId ? `${basePath}/${act.id}?classId=${act.myAssignedClass.classId}` : `${basePath}/${act.id}`)}
                                 className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A99D] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs font-black rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -781,7 +783,7 @@ export default function ExperientialActivitiesList() {
               return (
                 <div
                   key={act.id}
-                  onClick={() => router.push(`/teacher/experiential-activities/${act.id}`)}
+                  onClick={() => router.push(`${basePath}/${act.id}`)}
                   className="group bg-white/90 rounded-3xl border border-white shadow-md shadow-slate-200/40 hover:shadow-xl hover:border-[#00A99D]/40 transition-all duration-200 cursor-pointer flex flex-col overflow-hidden"
                 >
                   <div className="h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3]" />
@@ -803,7 +805,7 @@ export default function ExperientialActivitiesList() {
                           <button
                             onClick={e => {
                               e.stopPropagation();
-                              router.push(`/teacher/experiential-activities/create?editId=${act.id}`);
+                              router.push(`${basePath}/create?editId=${act.id}`);
                             }}
                             className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-teal-50 flex items-center justify-center text-[#00A99D]"
                             title="Hiệu chỉnh kế hoạch"

@@ -1,7 +1,8 @@
 import { sendExperientialActivityNotification } from "@/lib/experiential/email-notification";
-﻿import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { hasModulePermission } from "@/lib/permissions";
 
 export async function GET(req: Request) {
   try {
@@ -23,7 +24,10 @@ export async function GET(req: Request) {
     const q = searchParams.get('q');
 
     const userRole = (session?.user as any)?.role || '';
-    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN'].includes(userRole);
+    const upperRole = (userRole || '').toUpperCase().trim();
+    const hasExpManageRead = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_MANAGE"], "canRead");
+    const hasExpManageUpdate = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_MANAGE"], "canUpdate");
+    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN', 'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'].includes(upperRole) || hasExpManageRead;
 
     let teacherRecord: any = null;
     let homeroomClassIds = new Set<string>();
@@ -236,13 +240,13 @@ export async function GET(req: Request) {
         roleBadgeTheme = 'indigo';
       } else if (isManagement) {
         assignedRole = 'ADMIN';
-        roleBadgeLabel = 'Quản trị viên';
+        roleBadgeLabel = ['CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'].includes(upperRole) ? 'Ban Công tác HS' : 'Quản trị viên';
         roleBadgeTheme = 'blue';
       }
 
       const isAssignedToMe = (isGVBM || isGVCN) && !isMyCreated;
       const isVisibleToTeacher = isManagement || isMyCreated || isAssignedToMe || isGVBM || isGVCN;
-      const canManage = isManagement || isMyCreated;
+      const canManage = isManagement || isMyCreated || hasExpManageUpdate;
 
         // Accurately extract campus codes & grades from assignedClasses
         const assignedCampusCodes = Array.from(new Set(
@@ -393,6 +397,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userRole = (session?.user as any)?.role || '';
+    const upperRole = (userRole || '').toUpperCase().trim();
+    const hasExpCreatePerm = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_MANAGE"], "canCreate");
+    const isAuthorized = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN', 'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS', 'TEACHER', 'GV_MN', 'GVNN', 'GIAO_VIEN'].includes(upperRole) || hasExpCreatePerm;
+    if (!isAuthorized) {
+      return NextResponse.json({ error: 'Bạn không có quyền khởi tạo hoạt động trải nghiệm' }, { status: 403 });
+    }
+
     let teacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
     });
@@ -426,8 +438,8 @@ export async function POST(req: Request) {
 
       teacher = await prisma.teacher.create({
         data: {
-          teacherCode: `GV_${session.user.id.slice(-6)}`,
-          teacherName: session.user.name || session.user.email || 'Giáo viên',
+          teacherCode: upperRole.includes('CTHS') ? `CTHS_${session.user.id.slice(-6)}` : `GV_${session.user.id.slice(-6)}`,
+          teacherName: session.user.name || session.user.email || (upperRole.includes('CTHS') ? 'Cán bộ CTHS' : 'Giáo viên'),
           email: session.user.email || '',
           user: { connect: { id: session.user.id } },
           campus: { connect: { id: defaultCampus.id } }
