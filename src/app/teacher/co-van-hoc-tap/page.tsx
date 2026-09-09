@@ -1187,7 +1187,7 @@ export default function TeacherAdvisoryPage() {
               </div>
 
               {/* Score and Classification */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <div className="text-right">
                   <div className="text-3xl font-black text-amber-300">
                     {overallEvalResult.overallPercent}%
@@ -1199,6 +1199,34 @@ export default function TeacherAdvisoryPage() {
                 <div className={`px-4 py-2 rounded-2xl border text-xs font-black shadow-md ${overallEvalResult.classificationColor}`}>
                   {overallEvalResult.classificationLabel}
                 </div>
+              </div>
+            </div>
+
+            {/* 3 TIÊU CHÍ RUBRIC CHUẨN */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/10 p-3 rounded-2xl border border-white/15">
+              <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
+                <span className="text-xs text-amber-200 font-bold flex items-center gap-1.5">
+                  🎯 1. Mức hoàn thành mục tiêu:
+                </span>
+                <span className="text-sm font-black text-white">
+                  {overallEvalResult.overallGoalCompletion > 0 ? `${overallEvalResult.overallGoalCompletion} / 5.0` : "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
+                <span className="text-xs text-sky-200 font-bold flex items-center gap-1.5">
+                  ⚡ 2. Mức độ chủ động:
+                </span>
+                <span className="text-sm font-black text-white">
+                  {overallEvalResult.overallInitiative > 0 ? `${overallEvalResult.overallInitiative} / 5.0` : "-"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
+                <span className="text-xs text-emerald-200 font-bold flex items-center gap-1.5">
+                  🤝 3. Thái độ tham gia:
+                </span>
+                <span className="text-sm font-black text-white">
+                  {overallEvalResult.overallParticipation > 0 ? `${overallEvalResult.overallParticipation} / 5.0` : "-"}
+                </span>
               </div>
             </div>
 

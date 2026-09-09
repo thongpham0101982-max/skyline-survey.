@@ -209,6 +209,9 @@ export interface CategoryEvaluationResult {
   evaluatedCount: number
   averagePercent: number
   averageRubricLevel: number
+  avgGoalCompletion: number // Mức hoàn thành mục tiêu (1 - 5)
+  avgInitiative: number // Mức độ chủ động (1 - 5)
+  avgParticipation: number // Thái độ tham gia (1 - 5)
   status: "DAT" | "TIEN_TRIEN" | "CHUA_DAT" | "CHUA_DANH_GIA"
 }
 
@@ -216,6 +219,9 @@ export interface OverallEvaluationResult {
   gradeLevel: string
   overallPercent: number // 0 - 100%
   overallRubricScore: number // 1.0 - 5.0
+  overallGoalCompletion: number // 1.0 - 5.0 (Có trọng số)
+  overallInitiative: number // 1.0 - 5.0 (Có trọng số)
+  overallParticipation: number // 1.0 - 5.0 (Có trọng số)
   totalWeights: number
   classification: "XUAT_SAC" | "TOT" | "KHA" | "CAN_CO_GANG" | "CHUA_DANH_GIA"
   classificationLabel: string
@@ -224,7 +230,7 @@ export interface OverallEvaluationResult {
 }
 
 /**
- * Tính toán kết quả đánh giá theo trọng số nhóm và mục tiêu nhỏ
+ * Tính toán kết quả đánh giá theo trọng số nhóm và mục tiêu nhỏ cho cả 3 tiêu chí Rubric
  */
 export function calculateAdvisoryEvaluation(
   subGoals: SubGoalItem[],
@@ -236,6 +242,9 @@ export function calculateAdvisoryEvaluation(
 
   const categoriesResult: CategoryEvaluationResult[] = []
   let totalWeightedPercent = 0
+  let totalWeightedGoalCompletion = 0
+  let totalWeightedInitiative = 0
+  let totalWeightedParticipation = 0
   let totalWeightsCounted = 0
 
   for (const catDef of categoryDefs) {
@@ -253,24 +262,38 @@ export function calculateAdvisoryEvaluation(
         evaluatedCount: 0,
         averagePercent: 0,
         averageRubricLevel: 0,
+        avgGoalCompletion: 0,
+        avgInitiative: 0,
+        avgParticipation: 0,
         status: "CHUA_DANH_GIA"
       })
       continue
     }
 
     let sumPercent = 0
-    let sumRubric = 0
+    let sumGoalCompletion = 0
+    let sumInitiative = 0
+    let sumParticipation = 0
     let evaluatedCount = 0
 
     for (const item of matchedItems) {
       let percent = 0
-      if (item.goalCompletionLevel && item.goalCompletionLevel > 0) {
-        percent = convertRubricLevelToPercent(item.goalCompletionLevel)
-        sumRubric += item.goalCompletionLevel
+      const gLevel = item.goalCompletionLevel && item.goalCompletionLevel > 0 ? item.goalCompletionLevel : 0
+      const iLevel = item.initiativeLevel && item.initiativeLevel > 0 ? item.initiativeLevel : 0
+      const pLevel = item.participationAttitude && item.participationAttitude > 0 ? item.participationAttitude : 0
+
+      if (gLevel > 0 || iLevel > 0 || pLevel > 0) {
+        const criteriaScores = [gLevel, iLevel, pLevel].filter(v => v > 0)
+        const avgCriteria = criteriaScores.reduce((a, b) => a + b, 0) / criteriaScores.length
+        percent = convertRubricLevelToPercent(Math.round(avgCriteria))
+        if (gLevel > 0) sumGoalCompletion += gLevel
+        if (iLevel > 0) sumInitiative += iLevel
+        if (pLevel > 0) sumParticipation += pLevel
         evaluatedCount++
       } else if (item.progressStatus && item.progressStatus !== "CHUA_DANH_GIA") {
         percent = convertProgressStatusToPercent(item.progressStatus)
-        sumRubric += percent >= 100 ? 5 : percent >= 50 ? 3 : percent >= 25 ? 2 : 1
+        const equivalentRubric = percent >= 100 ? 5 : percent >= 50 ? 3 : percent >= 25 ? 2 : 1
+        sumGoalCompletion += equivalentRubric
         evaluatedCount++
       }
       sumPercent += percent
@@ -278,7 +301,10 @@ export function calculateAdvisoryEvaluation(
 
     const count = matchedItems.length
     const avgPercent = count > 0 ? Math.round(sumPercent / count) : 0
-    const avgRubric = evaluatedCount > 0 ? Number((sumRubric / evaluatedCount).toFixed(1)) : 0
+    const avgGoalComp = evaluatedCount > 0 && sumGoalCompletion > 0 ? Number((sumGoalCompletion / evaluatedCount).toFixed(1)) : 0
+    const avgInit = evaluatedCount > 0 && sumInitiative > 0 ? Number((sumInitiative / evaluatedCount).toFixed(1)) : 0
+    const avgPart = evaluatedCount > 0 && sumParticipation > 0 ? Number((sumParticipation / evaluatedCount).toFixed(1)) : 0
+    const avgRubric = Number((1 + (avgPercent / 100) * 4).toFixed(1))
 
     let status: "DAT" | "TIEN_TRIEN" | "CHUA_DAT" | "CHUA_DANH_GIA" = "CHUA_DANH_GIA"
     if (evaluatedCount > 0) {
@@ -295,15 +321,24 @@ export function calculateAdvisoryEvaluation(
       evaluatedCount,
       averagePercent: avgPercent,
       averageRubricLevel: avgRubric,
+      avgGoalCompletion: avgGoalComp,
+      avgInitiative: avgInit,
+      avgParticipation: avgPart,
       status
     })
 
     totalWeightedPercent += (avgPercent * catDef.weight) / 100
+    if (avgGoalComp > 0) totalWeightedGoalCompletion += (avgGoalComp * catDef.weight) / 100
+    if (avgInit > 0) totalWeightedInitiative += (avgInit * catDef.weight) / 100
+    if (avgPart > 0) totalWeightedParticipation += (avgPart * catDef.weight) / 100
     totalWeightsCounted += catDef.weight
   }
 
   const overallPercent = Math.round(totalWeightedPercent)
   const overallRubricScore = Number((1 + (overallPercent / 100) * 4).toFixed(1))
+  const overallGoalCompletion = totalWeightedGoalCompletion > 0 ? Number(totalWeightedGoalCompletion.toFixed(1)) : overallRubricScore
+  const overallInitiative = totalWeightedInitiative > 0 ? Number(totalWeightedInitiative.toFixed(1)) : overallRubricScore
+  const overallParticipation = totalWeightedParticipation > 0 ? Number(totalWeightedParticipation.toFixed(1)) : overallRubricScore
 
   let classification: "XUAT_SAC" | "TOT" | "KHA" | "CAN_CO_GANG" | "CHUA_DANH_GIA" = "CHUA_DANH_GIA"
   let classificationLabel = "Chưa đánh giá đầy đủ"
@@ -334,6 +369,9 @@ export function calculateAdvisoryEvaluation(
     gradeLevel,
     overallPercent,
     overallRubricScore,
+    overallGoalCompletion,
+    overallInitiative,
+    overallParticipation,
     totalWeights: totalWeightsCounted,
     classification,
     classificationLabel,
