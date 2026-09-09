@@ -1245,10 +1245,11 @@ export default function TeacherAdvisoryPage() {
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
                       cat.status === "DAT" ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/30" :
                       cat.status === "TIEN_TRIEN" ? "bg-amber-500/30 text-amber-200 border border-amber-400/30" :
+                      cat.status === "CAN_CO_GANG" ? "bg-orange-500/30 text-orange-200 border border-orange-400/30" :
                       cat.status === "CHUA_DAT" ? "bg-rose-500/30 text-rose-200 border border-rose-400/30" :
                       "bg-white/10 text-white/60"
                     }`}>
-                      {cat.status === "DAT" ? "🟢 Đạt" : cat.status === "TIEN_TRIEN" ? "🟡 Tiến triển" : cat.status === "CHUA_DAT" ? "🔴 Chưa đạt" : "⚪ Chưa đánh giá"}
+                      {cat.status === "DAT" ? "🟢 Đạt" : cat.status === "TIEN_TRIEN" ? "🟡 Tiến triển" : cat.status === "CAN_CO_GANG" ? "🟠 Cần cố gắng" : cat.status === "CHUA_DAT" ? "🔴 Chưa đạt" : "⚪ Chưa đánh giá"}
                     </span>
                   </div>
                   <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
@@ -1256,6 +1257,7 @@ export default function TeacherAdvisoryPage() {
                       className={`h-full transition-all duration-500 rounded-full ${
                         cat.status === "DAT" ? "bg-emerald-400" :
                         cat.status === "TIEN_TRIEN" ? "bg-amber-400" :
+                        cat.status === "CAN_CO_GANG" ? "bg-orange-400" :
                         cat.status === "CHUA_DAT" ? "bg-rose-400" : "bg-slate-400"
                       }`}
                       style={{ width: `${Math.min(100, Math.max(0, cat.averagePercent))}%` }}

@@ -212,7 +212,7 @@ export interface CategoryEvaluationResult {
   avgGoalCompletion: number // Mức hoàn thành mục tiêu (1 - 5)
   avgInitiative: number // Mức độ chủ động (1 - 5)
   avgParticipation: number // Thái độ tham gia (1 - 5)
-  status: "DAT" | "TIEN_TRIEN" | "CHUA_DAT" | "CHUA_DANH_GIA"
+  status: "DAT" | "TIEN_TRIEN" | "CAN_CO_GANG" | "CHUA_DAT" | "CHUA_DANH_GIA"
 }
 
 export interface OverallEvaluationResult {
@@ -306,10 +306,11 @@ export function calculateAdvisoryEvaluation(
     const avgPart = evaluatedCount > 0 && sumParticipation > 0 ? Number((sumParticipation / evaluatedCount).toFixed(1)) : 0
     const avgRubric = Number((1 + (avgPercent / 100) * 4).toFixed(1))
 
-    let status: "DAT" | "TIEN_TRIEN" | "CHUA_DAT" | "CHUA_DANH_GIA" = "CHUA_DANH_GIA"
+    let status: "DAT" | "TIEN_TRIEN" | "CAN_CO_GANG" | "CHUA_DAT" | "CHUA_DANH_GIA" = "CHUA_DANH_GIA"
     if (evaluatedCount > 0) {
       if (avgPercent >= 75) status = "DAT"
       else if (avgPercent >= 40) status = "TIEN_TRIEN"
+      else if (avgPercent >= 20) status = "CAN_CO_GANG"
       else status = "CHUA_DAT"
     }
 
