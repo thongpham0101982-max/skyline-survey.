@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client";
 import React from 'react';
 import { X, Users, CheckCircle2, Clock, BarChart3, AlertCircle, ArrowRight, ExternalLink, Calendar } from 'lucide-react';

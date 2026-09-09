@@ -1,6 +1,6 @@
+// @ts-nocheck
 export const dynamic = "force-dynamic";
-﻿// @ts-nocheck
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool"

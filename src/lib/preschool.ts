@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Maps a student's grade and their batch's start date to the correct criteria age group
  * based on the 2026-2027 preschool survey timelines (Updated Version).

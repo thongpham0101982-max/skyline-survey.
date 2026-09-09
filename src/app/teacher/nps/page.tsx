@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"

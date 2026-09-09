@@ -2,6 +2,7 @@
 // Forced Vercel Deployment: 2026-08-28T15:53:02.733Z
 "use client"
 
+import { CreateObservationModal } from './components/CreateObservationModal';
 import { ReceivedEvaluationsTab } from './components/ReceivedEvaluationsTab';
 import { TTCMDepartmentSummaryTab } from './components/TTCMDepartmentSummaryTab';
 import { PrintObservationEvaluationModal } from './components/PrintObservationEvaluationModal';
@@ -308,14 +309,14 @@ const getAvatarGradient = (name: string) => {
 };
 
 
-const mapTabToMainTab = (tab: string | null | undefined): "register_request" | "overview_slots" | "my_schedule" | "evaluations" | "ttcm_summary" | "re_evaluations" => {
-  if (!tab) return "register_request";
-  if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview" || tab === "slots" || tab === "danh-sach" || tab === "dang-ky-du-gio") return "overview_slots";
+const mapTabToMainTab = (tab: string | null | undefined): "my_schedule" | "overview_slots" | "evaluations" | "ttcm_summary" | "re_evaluations" => {
+  if (!tab) return "my_schedule";
   if (tab === "my_schedule" || tab === "my-schedule" || tab === "lich-day" || tab === "schedule") return "my_schedule";
+  if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview" || tab === "slots" || tab === "danh-sach" || tab === "dang-ky-du-gio" || tab === "dang-ky" || tab === "register_request") return "overview_slots";
   if (tab === "evaluations" || tab === "evaluation" || tab === "danh-gia") return "evaluations";
   if (tab === "ttcm_summary" || tab === "ttcm" || tab === "theo-doi-tong-hop" || tab === "tong-hop-ttcm" || tab === "to-chuyen-mon") return "ttcm_summary";
   if (tab === "re_evaluations" || tab === "re-evaluations" || tab === "xet-duyet" || tab === "xet-duyet-danh-gia-lai") return "re_evaluations";
-  return "register_request";
+  return "my_schedule";
 };
 
 const isPreschoolDepartment = (deptNameOrCode: string) => {
@@ -465,6 +466,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [selectedEvalMonth, setSelectedEvalMonth] = useState('ALL');
   const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
+  const [myScheduleSubTab, setMyScheduleSubTab] = useState<"all" | "taught" | "observed" | "requests">("all");
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
   const [taughtOriginFilter, setTaughtOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
@@ -2200,8 +2202,40 @@ export function ObservationClient(props: ObservationClientProps) {
   const obsProgress = obsTarget > 0 ? Math.min(100, Math.round((myObservedCount / obsTarget) * 100)) : 0;
   const taughtProgress = taughtTarget > 0 ? Math.min(100, Math.round((myTaughtCount / (taughtTarget || 1)) * 100)) : 0;
 
+  const myPendingEvaluationsCount = useMemo(() => {
+    return myObservedSlots.filter(s => {
+      const reg = s.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
+      return reg && reg.isApproved && !reg.evaluation;
+    }).length;
+  }, [myObservedSlots, currentTeacher?.id]);
+
+  const myReceivedEvaluationsStats = useMemo(() => {
+    let sum = 0;
+    let count = 0;
+    myTaughtSlots.forEach(slot => {
+      slot.registrations?.forEach((r: any) => {
+        if (r.evaluation && Number(r.evaluation.totalScore) > 0) {
+          sum += Number(r.evaluation.totalScore);
+          count++;
+        }
+      });
+    });
+    return {
+      avgScore: count > 0 ? (sum / count).toFixed(2) : null,
+      count
+    };
+  }, [myTaughtSlots]);
+
+  const pendingObserverRequestsCount = useMemo(() => {
+    return slots.filter(s => s.teacherId === currentTeacher?.id && s.requestOrigin === "OBSERVER_REQUEST" && s.status === "REQUEST_PENDING").length;
+  }, [slots, currentTeacher?.id]);
+
+  const activeAcademicYear = useMemo(() => {
+    return academicYears.find(y => y.id === filterAcademicYearId) || academicYears.find(y => y.status === "ACTIVE") || academicYears[0];
+  }, [academicYears, filterAcademicYearId]);
+
   return (
-    <div className="flex flex-col gap-6 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
+    <div className="flex flex-col gap-5 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${toast.type === "success" ? "bg-emerald-600 shadow-emerald-600/30" : toast.type === "error" ? "bg-rose-600 shadow-rose-600/30" : "bg-[#008B82] shadow-teal-700/30"}`}>
@@ -2212,257 +2246,262 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
       )}
 
-      {/* Top Header Hero Bar */}
-      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-[#002D2B] via-[#004D47] to-[#007068] p-6 sm:p-8 text-white shadow-xl shadow-teal-950/10 border border-teal-800/40">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-b from-[#48BFE3]/20 to-transparent rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white/10 backdrop-blur-md border border-white/15 text-emerald-200 shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              <span>SKY-LINE SYSTEM • ĐÁNH GIÁ CHUYÊN MÔN</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-3">
-              {isMamNonTeacher ? "Dự giờ đánh giá Mầm non" : "Dự giờ đánh giá Giáo viên"}
-            </h1>
-            <p className="text-emerald-100/90 text-xs sm:text-sm max-w-2xl font-medium leading-relaxed">
-              {isMamNonTeacher 
-                ? "Phân hệ quản trị tiết dạy, đăng ký dự giờ trực tuyến bậc Mầm non, theo dõi chỉ tiêu chuyên môn và thực hiện phiếu đánh giá chuẩn mực Sky-Line Mầm non."
-                : "Phân hệ quản trị tiết dạy, đăng ký dự giờ trực tuyến, theo dõi chỉ tiêu chuyên môn và thực hiện phiếu đánh giá chuẩn mực Sky-Line."}
-            </p>
-          </div>
-
-          {/* Teacher Profile & Year Selector */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
-            {academicYears && academicYears.length > 0 && (
-              <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/15 shadow-inner">
-                <span className="text-[10px] font-bold uppercase text-emerald-200 block mb-0.5">Năm học:</span>
-                <select
-                  value={filterAcademicYearId}
-                  onChange={e => handleAcademicYearChange(e.target.value)}
-                  className="bg-transparent text-xs font-black text-white outline-none cursor-pointer pr-2"
-                >
-                  {academicYears.map(y => (
-                    <option key={y.id} value={y.id} className="text-slate-800 font-semibold">{y.name} {y.status === "ACTIVE" ? "(Hiện tại)" : ""}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3.5 bg-white/15 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 shadow-lg">
-              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${getAvatarGradient(currentTeacher?.teacherName || "G")} text-white flex items-center justify-center font-black text-xl shadow-md border-2 border-white/40`}>
-                {currentTeacher?.teacherName?.charAt(0) || "G"}
-              </div>
-              <div className="text-left space-y-0.5">
-                <span className="block text-sm font-black tracking-wide text-white">{currentTeacher?.teacherName}</span>
-                {currentTeacher?.position ? (
-                  <span className="inline-block text-[10px] font-black bg-emerald-400/25 text-emerald-100 border border-emerald-300/40 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                    {currentTeacher?.position}
+      {/* TOP APP BAR: Streamlined Enterprise Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#002D2B] via-[#004D47] to-[#007068] p-4 sm:p-5 text-white shadow-lg border border-teal-800/40">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-b from-[#48BFE3]/15 to-transparent rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
+        <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          
+          {/* Left: Branding, Title & Teacher info */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 backdrop-blur-md border border-white/15 text-emerald-200">
+                  SKY-LINE • ĐÁNH GIÁ CHUYÊN MÔN
+                </span>
+                {isMamNonTeacher && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-400 text-amber-950">
+                    BẬC MẦM NON
                   </span>
-                ) : (
-                  <span className="block text-xs font-medium text-emerald-100/80">Giáo viên</span>
                 )}
               </div>
+              <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
+                {isMamNonTeacher ? "Dự giờ & Đánh giá Hoạt động Mầm non" : "Dự giờ & Đánh giá Tiết dạy Giáo viên"}
+              </h1>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* DASHBOARD OVERVIEW: 3 KPI Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Card 1: Observation Target */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md p-6 flex flex-col justify-between gap-4 transition-all duration-300 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-sky-400/15 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
-          
-          <div className="flex items-center justify-between">
+            <div className="hidden sm:block w-px h-10 bg-white/15" />
+
+            {/* Teacher Chip & Year selector */}
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100 shadow-2xs">
-                <Eye className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Chỉ tiêu dự giờ</h4>
-                <p className="text-xs font-bold text-slate-600">Đơn vị: tiết / {selfObservedUnit}</p>
-              </div>
-            </div>
-            <span className="text-xs font-black text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200/60 shadow-2xs">
-              {obsProgress}% Hoàn thành
-            </span>
-          </div>
-
-          <div className="my-1">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{myObservedCount}</span>
-              <span className="text-slate-400 font-bold text-sm">/ {obsTarget} tiết</span>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5">
-              <div 
-                className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full transition-all duration-700 shadow-xs" 
-                style={{ width: `${obsProgress}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span>Đã nộp phiếu chấm</span>
-                {mySurpriseObservedCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black">
-                    ⚡ {mySurpriseObservedCount} đột xuất
-                  </span>
-                )}
-              </span>
-              <span className={obsTarget - myObservedCount > 0 ? "text-amber-600 font-extrabold" : "text-emerald-600 font-extrabold"}>
-                {obsTarget - myObservedCount > 0 ? `Còn thiếu ${obsTarget - myObservedCount} tiết` : "🎉 Đã đạt mục tiêu!"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 2: Taught Target */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md p-6 flex flex-col justify-between gap-4 transition-all duration-300 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#00A99D]/15 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-teal-50 text-[#008B82] flex items-center justify-center border border-teal-100 shadow-2xs">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Chỉ tiêu tiết dạy</h4>
-                <p className="text-xs font-bold text-slate-600">Đơn vị: tiết / {selfTaughtUnit}</p>
-              </div>
-            </div>
-            <span className="text-xs font-black text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200/60 shadow-2xs">
-              {taughtProgress}% Hoàn thành
-            </span>
-          </div>
-
-          <div className="my-1">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{myTaughtCount}</span>
-              <span className="text-slate-400 font-bold text-sm">/ {taughtTarget || 1} tiết</span>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5">
-              <div 
-                className="h-full bg-gradient-to-r from-[#48BFE3] to-[#008B82] rounded-full transition-all duration-700 shadow-xs" 
-                style={{ width: `${taughtProgress}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-              <span className="flex items-center gap-1.5">
-                <span>Được đánh giá đủ</span>
-                {mySurpriseTaughtCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black">
-                    ⚡ {mySurpriseTaughtCount} đột xuất
-                  </span>
-                )}
-              </span>
-              <span className={taughtTarget - myTaughtCount > 0 ? "text-amber-600 font-extrabold" : "text-emerald-600 font-extrabold"}>
-                {taughtTarget - myTaughtCount > 0 ? `Còn thiếu ${taughtTarget - myTaughtCount} tiết` : "🎉 Đã đạt mục tiêu!"}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Card 3: Monthly Breakdown & History */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md p-6 flex flex-col justify-between gap-3 transition-all duration-300 relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-400/15 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
-          
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center border border-violet-100 shadow-2xs">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Hiệu suất tháng gần nhất</h4>
-              <p className="text-xs font-bold text-slate-600">Thống kê số tiết hoàn thành</p>
-            </div>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center gap-2 my-1">
-            {monthlyStats.length === 0 ? (
-              <p className="text-xs text-slate-400 italic text-center py-2">Chưa có số liệu thống kê hoàn thành.</p>
-            ) : (
-              monthlyStats.slice(0, 2).map((stat, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200/60 transition-colors">
-                  <span className="font-extrabold text-xs text-slate-700">{stat.monthStr}</span>
-                  <div className="flex gap-2">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 font-extrabold text-xs border border-teal-200/60">
-                      Dạy: {stat.taughtCount}
-                      {stat.taughtSurpriseCount > 0 && (
-                        <span className="text-[10px] text-amber-800 font-black ml-1">
-                          (⚡{stat.taughtSurpriseCount})
-                        </span>
-                      )}
-                    </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-50 text-violet-800 font-extrabold text-xs border border-violet-200/60">
-                      Dự: {stat.observedCount}
-                      {stat.observedSurpriseCount > 0 && (
-                        <span className="text-[10px] text-amber-800 font-black ml-1">
-                          (⚡{stat.observedSurpriseCount})
-                        </span>
-                      )}
-                    </span>
-                  </div>
+              <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15">
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getAvatarGradient(currentTeacher?.teacherName || "G")} text-white flex items-center justify-center font-black text-sm shadow-xs border border-white/30`}>
+                  {currentTeacher?.teacherName?.charAt(0) || "G"}
                 </div>
-              ))
+                <div className="text-left">
+                  <span className="block text-xs font-black text-white leading-tight">{currentTeacher?.teacherName}</span>
+                  <span className="block text-[10px] text-emerald-200/80 font-medium">
+                    {currentTeacher?.departmentRel?.name || "Giáo viên"} {currentTeacher?.campus?.campusName ? `• ${currentTeacher.campus.campusName}` : ""}
+                  </span>
+                </div>
+              </div>
+
+              {academicYears && academicYears.length > 0 && (
+                <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15 flex items-center gap-1.5">
+                  <span className="text-[10px] font-bold text-emerald-200 uppercase">Năm:</span>
+                  <select
+                    value={filterAcademicYearId}
+                    onChange={e => handleAcademicYearChange(e.target.value)}
+                    className="bg-transparent text-xs font-black text-white outline-none cursor-pointer"
+                  >
+                    {academicYears.map(y => (
+                      <option key={y.id} value={y.id} className="text-slate-800 font-semibold">{y.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Primary Quick Actions */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                setCreationMode("TEACHER_OPEN");
+                setShowCreateModal(true);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs transition-all shadow-md shadow-emerald-950/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Mở tiết dạy</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setCreationMode("OBSERVER_REQUEST");
+                setShowCreateModal(true);
+              }}
+              className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-black text-xs transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>Xin dự giờ</span>
+            </button>
+
+            {canCreateSurprise && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCreationMode("SURPRISE");
+                  setShowCreateModal(true);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-black text-xs transition-all shadow-md shadow-rose-950/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+              >
+                <Zap className="w-4 h-4 text-amber-300 animate-pulse" />
+                <span>Đột xuất ⚡</span>
+              </button>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                startTransition(() => {
+                  router.refresh();
+                  showToast("Đã làm mới dữ liệu mới nhất!", "info");
+                });
+              }}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer border border-white/15"
+              title="Làm mới dữ liệu"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
 
-      {/* MAIN TOP NAVIGATION TABS */}
-      <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 p-2 shadow-sm sticky top-2 z-20">
-        <div className={`grid grid-cols-2 ${(isAdminUser && isTTCM) ? "lg:grid-cols-3 xl:grid-cols-6" : (isAdminUser || isTTCM) ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-4"} gap-2`}>
-          {/* Tab 1: Emerald / Teal */}
-          <button
-            type="button"
-            onClick={() => setActiveMainTab("register_request")}
-            className={`flex items-center justify-center gap-2.5 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
-              activeMainTab === "register_request"
-                ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-[#008B82] text-white shadow-lg shadow-emerald-700/25 scale-[1.02] border border-emerald-400/40"
-                : "text-emerald-950 bg-emerald-50/60 hover:bg-emerald-100/80 border border-emerald-200/70 hover:scale-[1.01]"
-            }`}
-          >
-            <PlusCircle className={`w-4 h-4 shrink-0 ${activeMainTab === "register_request" ? "text-emerald-200" : "text-emerald-600"}`} />
-            <span className="truncate">1. ĐĂNG KÝ & XIN DỰ GIỜ</span>
-          </button>
-
-          {/* Tab 2: Cyan / Blue */}
-          <button
-            type="button"
-            onClick={() => setActiveMainTab("overview_slots")}
-            className={`flex items-center justify-center gap-2.5 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
-              activeMainTab === "overview_slots"
-                ? "bg-gradient-to-r from-[#008B82] via-teal-700 to-[#003B3A] text-white shadow-lg shadow-teal-900/30 scale-[1.02] border border-teal-400/40"
-                : "text-teal-950 bg-teal-50/60 hover:bg-teal-100/80 border border-teal-200/70 hover:scale-[1.01]"
-            }`}
-          >
-            <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
-            <span className="truncate">2. TỔNG HỢP KẾT QUẢ ĐĂNG KÝ</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
-              activeMainTab === "overview_slots" 
-                ? "bg-white/25 text-white border border-white/30" 
-                : "bg-teal-200/80 text-teal-950 border border-teal-300/80"
-            }`}>
-              {slots.length}
+      {/* COMPACT STATS STRIP: 4 Executive KPI Cards in 1 row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* KPI 1: Chỉ tiêu Dự giờ */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-black text-xs">
+                <Eye className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Chỉ tiêu dự giờ</span>
+            </div>
+            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${obsProgress >= 100 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-sky-50 text-sky-700 border border-sky-200"}`}>
+              {obsProgress}%
             </span>
-          </button>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl sm:text-2xl font-black text-slate-900">{myObservedCount}</span>
+              <span className="text-xs font-bold text-slate-400">/ {obsTarget} tiết</span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500">
+              {obsTarget - myObservedCount > 0 ? `Thiếu ${obsTarget - myObservedCount} tiết` : "Đã đạt"}
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full transition-all duration-500" style={{ width: `${obsProgress}%` }} />
+          </div>
+        </div>
 
-          {/* Tab 3: Amber / Orange */}
+        {/* KPI 2: Chỉ tiêu Tiết dạy */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-xs">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Chỉ tiêu tiết dạy</span>
+            </div>
+            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${taughtProgress >= 100 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
+              {taughtProgress}%
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl sm:text-2xl font-black text-slate-900">{myTaughtCount}</span>
+              <span className="text-xs font-bold text-slate-400">/ {taughtTarget || 1} tiết</span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500">
+              {taughtTarget - myTaughtCount > 0 ? `Thiếu ${taughtTarget - myTaughtCount} tiết` : "Đã đạt"}
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-[#48BFE3] to-[#008B82] rounded-full transition-all duration-500" style={{ width: `${taughtProgress}%` }} />
+          </div>
+        </div>
+
+        {/* KPI 3: Phiếu Đánh giá cần nộp */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-black text-xs">
+                <Clock className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Phiếu cần nộp</span>
+            </div>
+            {myPendingEvaluationsCount > 0 ? (
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 animate-pulse">
+                Cần làm ngay
+              </span>
+            ) : (
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Đã hoàn tất
+              </span>
+            )}
+          </div>
+          <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline gap-1">
+              <span className={`text-xl sm:text-2xl font-black ${myPendingEvaluationsCount > 0 ? "text-rose-600" : "text-emerald-700"}`}>
+                {myPendingEvaluationsCount}
+              </span>
+              <span className="text-xs font-bold text-slate-400">tiết chưa chấm</span>
+            </div>
+            <span className="text-[10px] font-bold text-slate-500">
+              Đã dự: {myObservedSlots.length}
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full rounded-full transition-all duration-500 ${myPendingEvaluationsCount > 0 ? "bg-rose-500" : "bg-emerald-500"}`} 
+              style={{ width: `${myObservedSlots.length > 0 ? Math.round(((myObservedSlots.length - myPendingEvaluationsCount) / myObservedSlots.length) * 100) : 100}%` }} 
+            />
+          </div>
+        </div>
+
+        {/* KPI 4: Điểm Đánh giá Trung bình */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center font-black text-xs">
+                <Star className="w-4 h-4 text-amber-500" />
+              </div>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Điểm TB nhận được</span>
+            </div>
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
+              {myReceivedEvaluationsStats.count} lượt chấm
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl sm:text-2xl font-black text-slate-900">
+                {myReceivedEvaluationsStats.avgScore || "—"}
+              </span>
+              <span className="text-xs font-bold text-slate-400">/ {isMamNonTeacher ? "10.00" : "20.00"}đ</span>
+            </div>
+            <span className="text-[10px] font-black text-emerald-700">
+              {myReceivedEvaluationsStats.avgScore ? (Number(myReceivedEvaluationsStats.avgScore) >= (isMamNonTeacher ? 9 : 17) ? "Xuất sắc" : "Tốt") : "Chưa có"}
+            </span>
+          </div>
+          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full transition-all duration-500" 
+              style={{ width: `${myReceivedEvaluationsStats.avgScore ? Math.min(100, Math.round((Number(myReceivedEvaluationsStats.avgScore) / (isMamNonTeacher ? 10 : 20)) * 100)) : 0}%` }} 
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* MODERN TAB NAVIGATION */}
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-1.5 shadow-2xs sticky top-2 z-20">
+        <div className={`grid grid-cols-2 ${(isAdminUser && isTTCM) ? "lg:grid-cols-3 xl:grid-cols-5" : (isAdminUser || isTTCM) ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-3"} gap-1.5`}>
+          
+          {/* Tab 1: My Schedule & Tasks */}
           <button
             type="button"
             onClick={() => setActiveMainTab("my_schedule")}
-            className={`flex items-center justify-center gap-2.5 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
               activeMainTab === "my_schedule"
-                ? "bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shadow-lg shadow-amber-700/30 scale-[1.02] border border-amber-400/40"
-                : "text-amber-950 bg-amber-50/60 hover:bg-amber-100/80 border border-amber-200/70 hover:scale-[1.01]"
+                ? "bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shadow-md shadow-amber-800/25 scale-[1.01] border border-amber-400/40"
+                : "text-amber-950 bg-amber-50/60 hover:bg-amber-100/80 border border-amber-200/70"
             }`}
           >
             <Calendar className={`w-4 h-4 shrink-0 ${activeMainTab === "my_schedule" ? "text-amber-200" : "text-amber-600"}`} />
-            <span className="truncate">3. LỊCH DẠY & DỰ GIỜ CỦA TÔI</span>
+            <span className="truncate">1. Lịch & Việc của tôi</span>
             <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
               activeMainTab === "my_schedule" 
                 ? "bg-white/25 text-white border border-white/30" 
@@ -2472,18 +2511,39 @@ export function ObservationClient(props: ObservationClientProps) {
             </span>
           </button>
 
-          {/* Tab 4: Violet / Purple */}
+          {/* Tab 2: Overview / Explore Open Slots */}
+          <button
+            type="button"
+            onClick={() => setActiveMainTab("overview_slots")}
+            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+              activeMainTab === "overview_slots"
+                ? "bg-gradient-to-r from-[#008B82] via-teal-700 to-[#003B3A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-teal-400/40"
+                : "text-teal-950 bg-teal-50/60 hover:bg-teal-100/80 border border-teal-200/70"
+            }`}
+          >
+            <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
+            <span className="truncate">2. Danh sách tiết dạy</span>
+            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              activeMainTab === "overview_slots" 
+                ? "bg-white/25 text-white border border-white/30" 
+                : "bg-teal-200/80 text-teal-950 border border-teal-300/80"
+            }`}>
+              {slots.length}
+            </span>
+          </button>
+
+          {/* Tab 3: Evaluations Received */}
           <button
             type="button"
             onClick={() => setActiveMainTab("evaluations")}
-            className={`flex items-center justify-center gap-2.5 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
               activeMainTab === "evaluations"
-                ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 text-white shadow-lg shadow-violet-700/30 scale-[1.02] border border-violet-400/40"
-                : "text-violet-950 bg-violet-50/60 hover:bg-violet-100/80 border border-violet-200/70 hover:scale-[1.01]"
+                ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 text-white shadow-md shadow-violet-800/25 scale-[1.01] border border-violet-400/40"
+                : "text-violet-950 bg-violet-50/60 hover:bg-violet-100/80 border border-violet-200/70"
             }`}
           >
             <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
-            <span className="truncate">4. KẾT QUẢ ĐÁNH GIÁ NHẬN ĐƯỢC</span>
+            <span className="truncate">3. Kết quả đánh giá</span>
             <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
               activeMainTab === "evaluations" 
                 ? "bg-white/25 text-white border border-white/30" 
@@ -2493,19 +2553,19 @@ export function ObservationClient(props: ObservationClientProps) {
             </span>
           </button>
 
-          {/* Tab 5: Indigo / Blue - TTCM Summary Monitoring */}
+          {/* Tab 4: TTCM Department Summary (TTCM / Admin only) */}
           {(isTTCM || isAdminUser) && (
             <button
               type="button"
               onClick={() => setActiveMainTab("ttcm_summary")}
-              className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
                 activeMainTab === "ttcm_summary"
-                  ? "bg-gradient-to-r from-blue-700 via-indigo-700 to-[#003B3A] text-white shadow-lg shadow-indigo-900/30 scale-[1.02] border border-indigo-400/40"
-                  : "text-indigo-950 bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200/80 hover:scale-[1.01]"
+                  ? "bg-gradient-to-r from-blue-700 via-indigo-700 to-[#003B3A] text-white shadow-md shadow-indigo-900/25 scale-[1.01] border border-indigo-400/40"
+                  : "text-indigo-950 bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200/80"
               }`}
             >
               <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
-              <span className="truncate">5. THEO DÕI TỔNG HỢP</span>
+              <span className="truncate">4. Báo cáo TTCM</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
                 activeMainTab === "ttcm_summary" 
                   ? "bg-white/25 text-white border border-white/30" 
@@ -2516,19 +2576,19 @@ export function ObservationClient(props: ObservationClientProps) {
             </button>
           )}
 
-          {/* Tab 6: Rose / Red - Admin / BGH Only */}
+          {/* Tab 5: Re-evaluation Approvals (Admin only) */}
           {isAdminUser && (
             <button
               type="button"
               onClick={() => setActiveMainTab("re_evaluations")}
-              className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
                 activeMainTab === "re_evaluations"
-                  ? "bg-gradient-to-r from-rose-600 via-pink-600 to-red-600 text-white shadow-lg shadow-rose-700/30 scale-[1.02] border border-rose-400/40"
-                  : "text-rose-950 bg-rose-50/70 hover:bg-rose-100/90 border border-rose-200/80 hover:scale-[1.01]"
+                  ? "bg-gradient-to-r from-rose-600 via-pink-600 to-red-600 text-white shadow-md shadow-rose-800/25 scale-[1.01] border border-rose-400/40"
+                  : "text-rose-950 bg-rose-50/70 hover:bg-rose-100/90 border border-rose-200/80"
               }`}
             >
               <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
-              <span className="truncate">{isTTCM ? "6. XÉT DUYỆT ĐÁNH GIÁ LẠI" : "5. XÉT DUYỆT ĐÁNH GIÁ LẠI"}</span>
+              <span className="truncate">5. Duyệt chấm lại</span>
               {pendingReEvalCount > 0 && (
                 <span className="px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 bg-red-500 text-white border border-white animate-pulse">
                   {pendingReEvalCount}
@@ -3808,23 +3868,15 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
       )}
 
-      {/* TAB 2: 2. TỔNG HỢP KẾT QUẢ ĐĂNG KÝ */}
+      {/* TAB 2: TỔNG HỢP & DANH SÁCH TIẾT DẠY */}
       {activeMainTab === "overview_slots" && (
-        <div className="w-full space-y-6 animate-in fade-in duration-300">
-          {/* Executive Overview KPI Summary Cards */}
-          <AdminObservationKpiCards
-            slots={slots}
-            isPreschool={isMamNonTeacher}
-            selectedMonth={filterMonth}
-            academicYearName={academicYears.find(y => y.id === filterAcademicYearId)?.name}
-          />
-
+        <div className="w-full space-y-5 animate-in fade-in duration-300">
           {/* Compact Quick Register Bar (Space-saving, Simple & Elegant) */}
-        <div className="w-full bg-gradient-to-r from-teal-50/90 via-white to-amber-50/60 rounded-2xl border border-teal-200/90 p-3 shadow-xs">
+        <div className="w-full bg-gradient-to-r from-teal-50/90 via-white to-amber-50/60 rounded-2xl border border-teal-200/90 p-3 shadow-2xs">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
             {/* Title Tag */}
             <div className="flex items-center gap-2 shrink-0">
-              <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#008B82] to-[#004f4a] text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-xs">
+              <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#008B82] to-[#004f4a] text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-2xs">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                 <span>Đăng ký nhanh</span>
               </span>
@@ -3968,7 +4020,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <SlidersHorizontal className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">3. Danh sách tiết dạy đăng ký dự giờ</h3>
+              <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">Danh sách tiết dạy đăng ký dự giờ</h3>
               <p className="text-xs text-slate-400 font-medium">Tìm kiếm, lọc theo tổ chuyên môn và chọn tiết dự giờ phù hợp</p>
             </div>
             {isSearching && (
@@ -4577,7 +4629,67 @@ export function ObservationClient(props: ObservationClientProps) {
             academicYearName={academicYears.find(y => y.id === filterAcademicYearId)?.name}
           />
           
+          {/* Sub-navigation inside My Workspace */}
+          <div className="flex flex-wrap items-center gap-2 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setMyScheduleSubTab("all")}
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+                myScheduleSubTab === "all"
+                  ? "bg-[#003B3A] text-white shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 bg-white/60"
+              }`}
+            >
+              <span>🌟 Tất cả</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                myScheduleSubTab === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+              }`}>
+                {myTaughtSlots.length + myObservedSlots.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMyScheduleSubTab("taught")}
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+                myScheduleSubTab === "taught"
+                  ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-xs"
+                  : "text-slate-600 hover:text-amber-800 bg-white/60"
+              }`}
+            >
+              <span>🧑‍🏫 Tiết tôi dạy</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                myScheduleSubTab === "taught" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"
+              }`}>
+                {myTaughtSlots.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMyScheduleSubTab("observed")}
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+                myScheduleSubTab === "observed"
+                  ? "bg-gradient-to-r from-[#008B82] to-teal-700 text-white shadow-xs"
+                  : "text-slate-600 hover:text-teal-800 bg-white/60"
+              }`}
+            >
+              <span>👁️ Tiết tôi đi dự</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                myScheduleSubTab === "observed" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-900"
+              }`}>
+                {myObservedSlots.length}
+              </span>
+              {myPendingEvaluationsCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-md bg-rose-500 text-white text-[9px] font-black animate-pulse">
+                  {myPendingEvaluationsCount} chưa chấm
+                </span>
+              )}
+            </button>
+          </div>
+          
           {/* SECTION 1: TIẾT DẠY CỦA TÔI (TÔI DẠY) - DATA TABLE */}
+          {(myScheduleSubTab === "all" || myScheduleSubTab === "taught") && (
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-4 border-t-4 border-t-amber-500">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
@@ -4862,9 +4974,10 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
             )}
           </div>
-
+          )}
 
           {/* SECTION 2: TIẾT TÔI DỰ (ĐÃ ĐĂNG KÝ) - DATA TABLE */}
+          {(myScheduleSubTab === "all" || myScheduleSubTab === "observed") && (
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-4 border-t-4 border-t-[#008B82]">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
@@ -5152,6 +5265,7 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
             )}
           </div>
+          )}
 
         </div>
       )}
@@ -6112,6 +6226,143 @@ export function ObservationClient(props: ObservationClientProps) {
           onClose={() => setPrintModalSlot(null)}
         />
       )}
+
+      {/* ======================================================== */}
+      {/* MODAL 4: TẠO TIẾT DẠY / XIN DỰ GIỜ / DỰ GIỜ ĐỘT XUẤT */}
+      {/* ======================================================== */}
+      <CreateObservationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        creationMode={creationMode}
+        setCreationMode={setCreationMode}
+        isMamNonTeacher={isMamNonTeacher}
+        isAdminUser={isAdminUser}
+        isTTCM={isTTCM}
+        canCreateSurprise={canCreateSurprise}
+        currentTeacher={currentTeacher}
+        monthlyLimitCount={monthlyLimitCount}
+        surpriseDeptId={surpriseDeptId}
+        setSurpriseDeptId={setSurpriseDeptId}
+        surpriseTeacherId={surpriseTeacherId}
+        setSurpriseTeacherId={setSurpriseTeacherId}
+        surpriseCampusId={surpriseCampusId}
+        setSurpriseCampusId={setSurpriseCampusId}
+        surpriseClassId={surpriseClassId}
+        setSurpriseClassId={setSurpriseClassId}
+        surpriseClassName={surpriseClassName}
+        setSurpriseClassName={setSurpriseClassName}
+        surpriseSubjectId={surpriseSubjectId}
+        setSurpriseSubjectId={setSurpriseSubjectId}
+        surpriseSubjectName={surpriseSubjectName}
+        setSurpriseSubjectName={setSurpriseSubjectName}
+        surpriseLevel={surpriseLevel}
+        setSurpriseLevel={setSurpriseLevel}
+        surpriseGrade={surpriseGrade}
+        setSurpriseGrade={setSurpriseGrade}
+        surpriseTopic={surpriseTopic}
+        setSurpriseTopic={setSurpriseTopic}
+        surpriseDate={surpriseDate}
+        setSurpriseDate={setSurpriseDate}
+        surprisePeriod={surprisePeriod}
+        setSurprisePeriod={setSurprisePeriod}
+        surpriseRoom={surpriseRoom}
+        setSurpriseRoom={setSurpriseRoom}
+        surpriseScoresK12={surpriseScoresK12}
+        setSurpriseScoresK12={setSurpriseScoresK12}
+        surpriseScoresMN={surpriseScoresMN}
+        setSurpriseScoresMN={setSurpriseScoresMN}
+        surpriseStrengths={surpriseStrengths}
+        setSurpriseStrengths={setSurpriseStrengths}
+        surpriseImprovements={surpriseImprovements}
+        setSurpriseImprovements={setSurpriseImprovements}
+        surpriseGeneral={surpriseGeneral}
+        setSurpriseGeneral={setSurpriseGeneral}
+        surpriseOverall={surpriseOverall}
+        setSurpriseOverall={setSurpriseOverall}
+        surpriseSubmitting={surpriseSubmitting}
+        handleSurpriseSubmit={handleSurpriseSubmit}
+        ttcmAllowedDepartments={ttcmAllowedDepartments}
+        filteredTeachersForSurprise={filteredTeachersForSurprise}
+        filteredClassesForSurprise={filteredClassesForSurprise}
+        reqCampusId={reqCampusId}
+        setReqCampusId={setReqCampusId}
+        reqDeptId={reqDeptId}
+        setReqDeptId={setReqDeptId}
+        reqTeacherId={reqTeacherId}
+        setReqTeacherId={setReqTeacherId}
+        reqSubjectId={reqSubjectId}
+        setReqSubjectId={setReqSubjectId}
+        reqLevel={reqLevel}
+        setReqLevel={setReqLevel}
+        reqGrade={reqGrade}
+        setReqGrade={setReqGrade}
+        reqClassId={reqClassId}
+        setReqClassId={setReqClassId}
+        reqDate={reqDate}
+        setReqDate={setReqDate}
+        reqPeriod={reqPeriod}
+        setReqPeriod={setReqPeriod}
+        reqTopic={reqTopic}
+        setReqTopic={setReqTopic}
+        reqNotes={reqNotes}
+        setReqNotes={setReqNotes}
+        handleRequestSubmit={handleRequestSubmit}
+        filteredTeachersForRequest={filteredTeachersForRequest}
+        filteredReqClasses={filteredReqClasses}
+        openDeptId={newTargetDeptId}
+        setOpenDeptId={setNewTargetDeptId}
+        openSubjectId={newSubjectId}
+        setOpenSubjectId={setNewSubjectId}
+        openSubjectName={newSubjectName}
+        setOpenSubjectName={setNewSubjectName}
+        openCampusId={newCampusId}
+        setOpenCampusId={setNewCampusId}
+        openClassId={newClassId}
+        setOpenClassId={setNewClassId}
+        openClassName={newClassNameText}
+        setOpenClassName={setNewClassNameText}
+        openLevel={newLevel}
+        setOpenLevel={setNewLevel}
+        openGrade={newGrade}
+        setOpenGrade={setNewGrade}
+        openTopic={newTopic}
+        setOpenTopic={setNewTopic}
+        openDate={newDate}
+        setOpenDate={setNewDate}
+        openPeriod={newStartTime}
+        setOpenPeriod={setNewStartTime}
+        openRoom={newClassNameText}
+        setOpenRoom={setNewClassNameText}
+        openMaxSeats={4}
+        setOpenMaxSeats={() => {}}
+        openLessonPlanUrl={newLessonPlanData}
+        setOpenLessonPlanUrl={setNewLessonPlanData}
+        openLessonPlanFile={null}
+        setOpenLessonPlanFile={() => {}}
+        openNotes={newDescription}
+        setOpenNotes={setNewDescription}
+        sendEmailNotif={sendEmailNotif}
+        setSendEmailNotif={setSendEmailNotif}
+        selectedEmailTeacherIds={selectedEmailTeacherIds}
+        setSelectedEmailTeacherIds={setSelectedEmailTeacherIds}
+        myDeptTeachers={myDeptTeachers}
+        isSubmittingOpen={submitting}
+        handleOpenSlotSubmit={handleSubmit}
+        subjects={subjects}
+        departments={departments}
+        teachers={teachers}
+        campuses={campuses}
+        classes={classes}
+        periodOptions={periodOptions}
+        getGradesForLevel={getGradesForLevel}
+        getKhacChuyenDeSubjectId={getKhacChuyenDeSubjectId}
+        isPreschoolDepartment={isPreschoolDepartment}
+        k12Labels={k12Labels}
+        maxScoresK12={maxScoresK12}
+        getK12RankingDetails={getK12RankingDetails}
+        getMamNonRankingDetails={getMamNonRankingDetails}
+        evaluationCriteriaPreschool={evaluationCriteriaPreschool}
+      />
 
     </div>
   );
