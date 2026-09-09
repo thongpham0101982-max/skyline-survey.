@@ -495,26 +495,88 @@ export async function GET(req: NextRequest) {
             return p.studentId === s.id || p.student.studentCode === s.studentCode || normName(p.student.studentName) === normName(s.studentName)
           })
 
-          return studentP.map((p: any, idx: number) => {
-            const roleCat = categories.find((c: any) => c.id === p.roleId || c.code === p.roleId)
-            const evalCat = categories.find((c: any) => c.id === p.evalLevelId || c.code === p.evalLevelId)
-            const groupCat = categories.find((c: any) => c.id === p.record?.catalog?.groupId || c.code === p.record?.catalog?.groupId)
+          const strandDict: Record<string, string> = {
+            BAN_THAN: "Hướng vào bản thân",
+            XA_HOI: "Hướng đến xã hội",
+            TU_NHIEN: "Hướng đến tự nhiên",
+            HUONG_NGHIEP: "Hướng nghiệp"
+          };
 
-            const resolvedRole = roleCat?.name || (p.roleId ? roleDict[p.roleId] || p.roleId : "Tham gia")
-            const resolvedEval = evalCat?.name || (p.evalLevelId ? evalDict[p.evalLevelId] || p.evalLevelId : "Đạt")
-            const resolvedGroup = groupCat?.name || p.record?.catalog?.group?.name || "Hoạt động trải nghiệm"
-            const resolvedName = p.record?.name || p.record?.catalog?.name || "Hoạt động trải nghiệm"
+          const evalResultDict: Record<string, string> = {
+            DAT_XUAT_SAC: "Xuất sắc",
+            DAT_TOT: "Tốt",
+            DAT: "Đạt",
+            CAN_HO_TRO: "Cần hỗ trợ",
+            CHUA_DAT: "Chưa đạt",
+            THAM_GIA: "Tham gia",
+            CHUA_DANH_GIA: "Đang thực hiện",
+            XS: "Xuất sắc",
+            TO: "Tốt",
+            DA: "Đạt",
+            KDA: "Chưa đạt",
+            EXCELLENT: "Xuất sắc",
+            GOOD: "Tốt",
+            SATISFACTORY: "Đạt"
+          };
+
+          return studentP.map((p: any, idx: number) => {
+            let pNote: any = {};
+            try {
+              if (p?.note && typeof p.note === "string" && p.note.startsWith("{")) {
+                pNote = JSON.parse(p.note);
+              } else if (p?.note && typeof p.note === "object") {
+                pNote = p.note;
+              }
+            } catch {}
+
+            let recMeta: any = {};
+            try {
+              if (p?.record?.locationId && typeof p.record.locationId === "string" && p.record.locationId.startsWith("{")) {
+                recMeta = JSON.parse(p.record.locationId);
+              }
+            } catch {}
+
+            const roleCat = categories.find((c: any) => c.id === p.roleId || c.code === p.roleId);
+            const evalCat = categories.find((c: any) => c.id === p.evalLevelId || c.code === p.evalLevelId);
+            const groupCat = categories.find((c: any) => c.id === p.record?.catalog?.groupId || c.code === p.record?.catalog?.groupId);
+
+            let resolvedRole = "Thành viên";
+            if (Array.isArray(pNote.roles) && pNote.roles.length > 0) {
+              resolvedRole = pNote.roles.join(", ");
+            } else {
+              resolvedRole = roleCat?.name || (p.roleId ? roleDict[p.roleId] || p.roleId : "Thành viên");
+            }
+
+            let resolvedEval = "Đang tham gia";
+            if (pNote.finalResult) {
+              resolvedEval = evalResultDict[pNote.finalResult] || pNote.finalResult;
+            } else {
+              resolvedEval = evalCat?.name || (p.evalLevelId ? evalDict[p.evalLevelId] || evalResultDict[p.evalLevelId] || p.evalLevelId : "Đạt");
+            }
+
+            const resolvedGroup = (recMeta.strand && strandDict[recMeta.strand])
+              || recMeta.activityTypeName
+              || groupCat?.name
+              || p.record?.catalog?.group?.name
+              || "Hoạt động trải nghiệm";
+
+            const resolvedName = p.record?.name || recMeta.activityName || p.record?.catalog?.name || "Hoạt động trải nghiệm";
 
             return {
               id: p.id,
               stt: idx + 1,
-              activityName: resolvedName.trim(),
-              groupName: resolvedGroup.trim(),
-              role: resolvedRole.trim(),
-              evalLevel: resolvedEval.trim(),
-              date: p.record?.date ? p.record.date.toISOString().split('T')[0] : ''
-            }
-          })
+              activityId: p.recordId || p.record?.id,
+              activityName: (resolvedName || "").trim(),
+              groupName: (resolvedGroup || "").trim(),
+              strand: recMeta.strand || undefined,
+              role: (resolvedRole || "").trim(),
+              evalLevel: (resolvedEval || "").trim(),
+              score: pNote.calculatedPercent !== null && pNote.calculatedPercent !== undefined ? pNote.calculatedPercent : undefined,
+              attendance: pNote.attendance || "PRESENT",
+              remarks: [...(pNote.remarksQuick || []), pNote.remarksCustom].filter(Boolean).join("; ") || undefined,
+              date: p.record?.date ? p.record.date.toISOString().split("T")[0] : ""
+            };
+          });
         })(),
         learningSupportTargets: s.learningSupportTargets || [],
         highlightComments: s.highlightComments || [],

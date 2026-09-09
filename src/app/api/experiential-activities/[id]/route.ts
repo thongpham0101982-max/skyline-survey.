@@ -274,7 +274,7 @@ export async function PUT(
       const students = await prisma.student.findMany({
         where: {
           classId: { in: classIds },
-          status: "ACTIVE"
+          NOT: { status: { in: ['INACTIVE', 'DELETED', 'CHUYEN_TRUONG', 'THOI_HOC'] } }
         },
         select: { id: true, classId: true }
       });

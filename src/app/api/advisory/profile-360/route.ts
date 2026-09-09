@@ -158,6 +158,101 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" }
     }).catch(() => null)
 
+    // Query Experiential Activities (HĐTN) for this student
+    const studentParticipants = await prisma.activityParticipant.findMany({
+      where: {
+        OR: [
+          { studentId: student.id },
+          ...(student.studentCode ? [{ student: { studentCode: student.studentCode } }] : [])
+        ]
+      },
+      include: {
+        record: {
+          include: {
+            catalog: {
+              include: { group: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    }).catch(() => []);
+
+    const strandDict: Record<string, string> = {
+      BAN_THAN: "Hướng vào bản thân",
+      XA_HOI: "Hướng đến xã hội",
+      TU_NHIEN: "Hướng đến tự nhiên",
+      HUONG_NGHIEP: "Hướng nghiệp"
+    };
+
+    const evalResultDict: Record<string, string> = {
+      DAT_XUAT_SAC: "Xuất sắc",
+      DAT_TOT: "Tốt",
+      DAT: "Đạt",
+      CAN_HO_TRO: "Cần hỗ trợ",
+      CHUA_DAT: "Chưa đạt",
+      THAM_GIA: "Tham gia",
+      CHUA_DANH_GIA: "Đang thực hiện",
+      XS: "Xuất sắc",
+      TO: "Tốt",
+      DA: "Đạt",
+      KDA: "Chưa đạt"
+    };
+
+    const experientialActivities = (studentParticipants || []).map((p, idx) => {
+      let pNote: any = {};
+      try {
+        if (p?.note && typeof p.note === "string" && p.note.startsWith("{")) {
+          pNote = JSON.parse(p.note);
+        } else if (p?.note && typeof p.note === "object") {
+          pNote = p.note;
+        }
+      } catch {}
+
+      let recMeta: any = {};
+      try {
+        if (p?.record?.locationId && typeof p.record.locationId === "string" && p.record.locationId.startsWith("{")) {
+          recMeta = JSON.parse(p.record.locationId);
+        }
+      } catch {}
+
+      let resolvedRole = "Thành viên";
+      if (Array.isArray(pNote.roles) && pNote.roles.length > 0) {
+        resolvedRole = pNote.roles.join(", ");
+      } else if (p?.roleId) {
+        resolvedRole = p.roleId === "TV" ? "Thành viên" : p.roleId;
+      }
+
+      let resolvedEval = "Đang tham gia";
+      if (pNote.finalResult) {
+        resolvedEval = evalResultDict[pNote.finalResult] || pNote.finalResult;
+      } else if (p?.evalLevelId) {
+        resolvedEval = evalResultDict[p.evalLevelId] || p.evalLevelId;
+      }
+
+      const resolvedGroup = (recMeta.strand && strandDict[recMeta.strand])
+        || recMeta.activityTypeName
+        || p?.record?.catalog?.group?.name
+        || "Hoạt động trải nghiệm";
+
+      const resolvedName = p?.record?.name || recMeta.activityName || p?.record?.catalog?.name || "Hoạt động trải nghiệm";
+
+      return {
+        id: p.id,
+        stt: idx + 1,
+        activityId: p.recordId || p.record?.id,
+        activityName: (resolvedName || "").trim(),
+        groupName: (resolvedGroup || "").trim(),
+        strand: recMeta.strand || undefined,
+        role: (resolvedRole || "").trim(),
+        evalLevel: (resolvedEval || "").trim(),
+        score: pNote.calculatedPercent !== null && pNote.calculatedPercent !== undefined ? pNote.calculatedPercent : undefined,
+        attendance: pNote.attendance || "PRESENT",
+        remarks: [...(pNote.remarksQuick || []), pNote.remarksCustom].filter(Boolean).join("; ") || undefined,
+        date: p.record?.date ? (typeof p.record.date === "string" ? p.record.date.split("T")[0] : new Date(p.record.date).toISOString().split("T")[0]) : ""
+      };
+    });
+
     const currentStatusColor = student.advisoryStatuses?.[0]?.statusColor || "GREEN"
     const currentStatusReason = student.advisoryStatuses?.[0]?.reasonDetail || "Ổn định"
 
@@ -167,6 +262,7 @@ export async function GET(req: Request) {
       currentStatusReason,
       goals,
       inputAssessment,
+      experientialActivities,
       consultationLogs: student.consultationLogs || [],
       reflections: student.reflections || [],
       helpRequests: student.helpRequests || [],
