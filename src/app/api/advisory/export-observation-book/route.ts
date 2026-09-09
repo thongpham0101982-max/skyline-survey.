@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { calculateAdvisoryEvaluation, getGradeCategoryWeights } from "@/lib/advisory/advisoryWeights"
 
 export const dynamic = "force-dynamic"
 
@@ -673,36 +674,75 @@ export async function GET(req: Request) {
     </div>
   </div>
 
-  <!-- ==================== TRANG 6: RUBRIC ĐÁNH GIÁ THANG 1 - 5 ==================== -->
+  <!-- ==================== TRANG 6: RUBRIC ĐÁNH GIÁ THANG 1 - 5 & KẾT QUẢ CÓ TRỌNG SỐ ==================== -->
   <div class="page">
     <div class="sec-header">
-      <span class="sec-title">6. Bảng Đánh Giá Kỳ Theo Rubric (Thang 1 - 5)</span>
-      <span class="sec-subtitle">Đánh giá 3 tiêu chí cốt lõi</span>
+      <span class="sec-title">6. Bảng Đánh Giá Kỳ Theo Rubric & Kết Quả Đo Lường Trọng Số</span>
+      <span class="sec-subtitle">Lớp ${className} • Đo lường theo ma trận trọng số chuẩn Sky-Line K12</span>
+    </div>
+
+    <!-- Weight Matrix Summary Box -->
+    <div style="margin-bottom: 12px; background: #F0FDF4; border: 1.5px solid #86EFAC; border-radius: 8px; padding: 10px; font-size: 8.5pt;">
+      <div style="font-weight: 800; color: #166534; margin-bottom: 4px; text-transform: uppercase;">
+        📊 MA TRẬN TRỌNG SỐ ÁP DỤNG (${(targetClass as any).grade || className}):
+      </div>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; color: #14532D; font-weight: 700;">
+        ${getGradeCategoryWeights((targetClass as any).grade || className, className).map(w => `
+          <span style="background: white; padding: 2px 8px; border-radius: 6px; border: 1px solid #BBF7D0;">
+            ${w.label}: <strong>${w.weight}%</strong>
+          </span>
+        `).join("")}
+      </div>
     </div>
 
     ${termEvals.length > 0 ? `
       <table>
         <thead>
           <tr>
-            <th style="width: 22%;">Học sinh</th>
-            <th style="width: 10%; text-align: center;">Kỳ</th>
-            <th style="width: 18%; text-align: center;">Hoàn thành MT (1-5)</th>
-            <th style="width: 18%; text-align: center;">Chủ động (1-5)</th>
-            <th style="width: 18%; text-align: center;">Thái độ (1-5)</th>
-            <th style="width: 14%;">Ghi chú</th>
+            <th style="width: 20%;">Học sinh</th>
+            <th style="width: 8%; text-align: center;">Kỳ</th>
+            <th style="width: 18%; text-align: center;">Điểm Tổng Kết (%)</th>
+            <th style="width: 14%; text-align: center;">Hoàn thành MT (1-5)</th>
+            <th style="width: 14%; text-align: center;">Chủ động (1-5)</th>
+            <th style="width: 14%; text-align: center;">Thái độ (1-5)</th>
+            <th style="width: 12%;">Ghi chú</th>
           </tr>
         </thead>
         <tbody>
-          ${termEvals.map((ev: any) => `
-            <tr>
-              <td style="font-weight: 800; color: #002060;">${studentMap.get(ev.studentId) || "Học sinh"}</td>
-              <td style="text-align: center; font-weight: 700;">${ev.term}</td>
-              <td style="text-align: center; font-weight: 800; color: #008080;">Mức ${ev.goalCompletionLevel || 0}/5</td>
-              <td style="text-align: center; font-weight: 800; color: #008080;">Mức ${ev.initiativeLevel || 0}/5</td>
-              <td style="text-align: center; font-weight: 800; color: #008080;">Mức ${ev.participationAttitude || 0}/5</td>
-              <td style="font-size: 8.5pt;">${ev.recommendations || "-"}</td>
-            </tr>
-          `).join("")}
+          ${termEvals.map((ev: any) => {
+            const stGoals = goals.filter((g: any) => g.studentId === ev.studentId)
+            const stEval = calculateAdvisoryEvaluation(
+              stGoals.map((g: any) => ({
+                categoryKey: g.categoryKey,
+                category: g.category,
+                targetText: g.targetText,
+                progressStatus: g.achievementLevel || "DAT",
+                goalCompletionLevel: ev.goalCompletionLevel || 4,
+                initiativeLevel: ev.initiativeLevel || 4,
+                participationAttitude: ev.participationAttitude || 4
+              })),
+              (targetClass as any).grade || className,
+              className
+            )
+
+            const scoreDisplay = stEval.overallPercent > 0 ? `${stEval.overallPercent}%` : `${Math.round(((ev.goalCompletionLevel || 4) / 5) * 100)}%`
+            const classLabel = stEval.overallPercent >= 90 ? "Xuất sắc 🌟" : stEval.overallPercent >= 70 ? "Tốt 🟢" : stEval.overallPercent >= 50 ? "Khá 🟡" : "Cần cố gắng 🔴"
+
+            return `
+              <tr>
+                <td style="font-weight: 800; color: #002060;">${studentMap.get(ev.studentId) || "Học sinh"}</td>
+                <td style="text-align: center; font-weight: 700;">${ev.term}</td>
+                <td style="text-align: center;">
+                  <strong style="color: #008080; font-size: 9.5pt;">${scoreDisplay}</strong>
+                  <div style="font-size: 8pt; color: #475569; font-weight: 700;">${classLabel}</div>
+                </td>
+                <td style="text-align: center; font-weight: 800; color: #008080;">Mức ${ev.goalCompletionLevel || 0}/5</td>
+                <td style="text-align: center; font-weight: 800; color: #008080;">Mức ${ev.initiativeLevel || 0}/5</td>
+                <td style="text-align: center; font-weight: 800; color: #008080;">Mức ${ev.participationAttitude || 0}/5</td>
+                <td style="font-size: 8.5pt;">${ev.recommendations || "-"}</td>
+              </tr>
+            `
+          }).join("")}
         </tbody>
       </table>
     ` : `
@@ -710,18 +750,20 @@ export async function GET(req: Request) {
       <table>
         <thead>
           <tr>
-            <th style="width: 25%;">Học sinh</th>
-            <th style="width: 10%; text-align: center;">Kỳ</th>
-            <th style="width: 20%; text-align: center;">Hoàn thành MT (1-5)</th>
-            <th style="width: 20%; text-align: center;">Mức độ chủ động (1-5)</th>
-            <th style="width: 25%; text-align: center;">Thái độ tham gia (1-5)</th>
+            <th style="width: 22%;">Học sinh</th>
+            <th style="width: 8%; text-align: center;">Kỳ</th>
+            <th style="width: 18%; text-align: center;">Điểm Tổng Kết (%)</th>
+            <th style="width: 18%; text-align: center;">Hoàn thành MT (1-5)</th>
+            <th style="width: 17%; text-align: center;">Mức độ chủ động (1-5)</th>
+            <th style="width: 17%; text-align: center;">Thái độ tham gia (1-5)</th>
           </tr>
         </thead>
         <tbody>
-          ${students.slice(0, 10).map(s => `
+          ${students.slice(0, 10).map((s: any) => `
             <tr>
               <td style="font-weight: 700;">${s.studentName}</td>
               <td style="text-align: center;">HK I</td>
+              <td style="text-align: center;">-</td>
               <td style="text-align: center;">-</td>
               <td style="text-align: center;">-</td>
               <td style="text-align: center;">-</td>

@@ -355,16 +355,9 @@ export default function TeacherAdvisoryPage() {
       setSaving(true)
       
       // Calculate overall student rubric scores from rows with weighted calculation
-      const computedGoalLevel = overallEvalResult.overallRubricScore > 0 
-        ? Math.max(1, Math.min(5, Math.round(overallEvalResult.overallRubricScore))) 
-        : (rubricForm.goalCompletionLevel || 4)
-      const validRows = singleStudentTrackingRows.filter(r => r.initiativeLevel || r.participationAttitude)
-      const avgInitiative = validRows.length > 0
-        ? Math.round(validRows.reduce((acc, r) => acc + (Number(r.initiativeLevel) || 4), 0) / validRows.length)
-        : (rubricForm.initiativeLevel || 4)
-      const avgParticipation = validRows.length > 0
-        ? Math.round(validRows.reduce((acc, r) => acc + (Number(r.participationAttitude) || 5), 0) / validRows.length)
-        : (rubricForm.participationAttitude || 5)
+      const computedGoalLevel = Math.max(1, Math.min(5, Math.round(overallEvalResult.overallGoalCompletion || overallEvalResult.overallRubricScore || 3)))
+      const avgInitiative = Math.max(1, Math.min(5, Math.round(overallEvalResult.overallInitiative || 3)))
+      const avgParticipation = Math.max(1, Math.min(5, Math.round(overallEvalResult.overallParticipation || 3)))
 
       const res = await fetch("/api/advisory/term-evaluations", {
         method: "POST",
@@ -380,6 +373,23 @@ export default function TeacherAdvisoryPage() {
         })
       })
 
+      // Sync all row progress statuses cleanly before saving
+      const syncedRows = singleStudentTrackingRows.map(row => {
+        const gL = row.goalCompletionLevel || 0
+        const iL = row.initiativeLevel || 0
+        const pL = row.participationAttitude || 0
+        const scs = [gL, iL, pL].filter(v => v > 0)
+        let status = row.progressStatus || "CHUA_DANH_GIA"
+        if (scs.length > 0) {
+          const avg = scs.reduce((a, b) => a + b, 0) / scs.length
+          status = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
+        }
+        return {
+          ...row,
+          progressStatus: status
+        }
+      })
+
       await fetch("/api/advisory/tracking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -387,12 +397,20 @@ export default function TeacherAdvisoryPage() {
           studentId: selectedStudentId,
           academicYearId,
           checkPoint,
-          items: singleStudentTrackingRows
+          items: syncedRows
         })
       }).catch(console.error)
 
       if (res.ok) {
-        setToastMessage("Đã lưu Đánh giá kỳ theo Rubric & Tiến độ mục tiêu thành công!")
+        setRubricForm(prev => ({
+          ...prev,
+          goalCompletionLevel: computedGoalLevel,
+          initiativeLevel: avgInitiative,
+          participationAttitude: avgParticipation,
+          recommendations: rubricForm.recommendations
+        }))
+        await loadSingleStudentData()
+        setToastMessage(`Đã lưu Đánh giá kỳ theo Rubric (${overallEvalResult.overallPercent}% - ${overallEvalResult.classificationLabel}) thành công!`)
         setTimeout(() => setToastMessage(""), 4000)
       }
     } catch (e) {
@@ -1268,6 +1286,167 @@ export default function TeacherAdvisoryPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* PHÁC HỌA BIỂU ĐỒ NĂNG LỰC & TRỌNG SỐ HỌC SINH (VISUAL 360° PROFILE) */}
+          {/* ========================================================================= */}
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-100 text-[#003B3A] flex items-center justify-center font-black text-sm shadow-2xs">
+                  📊
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                    <span>Phác Họa Biểu Đồ Năng Lực & Trọng Số: {activeStudent?.studentName}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${overallEvalResult.classificationColor}`}>
+                      {overallEvalResult.classificationLabel}
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Trực quan hóa tỷ lệ hoàn thành từng nhóm mục tiêu, 3 trục tiêu chí Rubric và điểm đóng góp vào tổng kết
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-extrabold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                  Khối: <strong>{overallEvalResult.gradeLevel}</strong> • Điểm Tổng Kết: <strong className="text-teal-900 text-xs">{overallEvalResult.overallPercent}% ({overallEvalResult.overallRubricScore}/5.0 ⭐)</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+              
+              {/* CỘT TRÁI (7 Cột): BIỂU ĐỒ CỘT SO SÁNH CÁC NHÓM MỤC TIÊU */}
+              <div className="lg:col-span-7 bg-slate-50/70 p-4 rounded-2xl border border-slate-200 space-y-3 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Target className="w-4 h-4 text-teal-600" />
+                      <span>1. TIẾN ĐỘ TỪNG NHÓM (% ĐẠT VS. % TRỌNG SỐ)</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-500">Mục tiêu nhỏ đã lập</span>
+                  </div>
+
+                  <div className="space-y-3 pt-3">
+                    {overallEvalResult.categories.map((cat, idx) => {
+                      const contribScore = Number(((cat.averagePercent * cat.weight) / 100).toFixed(1))
+                      return (
+                        <div key={idx} className="space-y-1 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-black text-slate-900 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+                              <span>{cat.categoryLabel}</span>
+                            </span>
+                            <div className="flex items-center gap-2 text-[11px]">
+                              <span className="text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-md">
+                                Trọng số: <strong>{cat.weight}%</strong>
+                              </span>
+                              <span className="font-black text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                                Đạt: {cat.averagePercent}%
+                              </span>
+                              <span className="text-emerald-700 font-black text-[10px]">
+                                (+{contribScore}% tổng)
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Progress bar */}
+                          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex p-0.5 border border-slate-200">
+                            <div
+                              className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-teal-500 to-emerald-500"
+                              style={{ width: `${Math.min(100, Math.max(0, cat.averagePercent))}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[11px] text-teal-900 font-medium flex items-center justify-between">
+                  <span>💡 <strong>Điểm Tổng Kết:</strong> Tổng điểm đóng góp của {overallEvalResult.categories.length} nhóm</span>
+                  <span className="text-xs font-black text-[#003B3A]">{overallEvalResult.overallPercent}%</span>
+                </div>
+              </div>
+
+              {/* CỘT PHẢI (5 Cột): THANG ĐO 3 TRỤC TIÊU CHÍ RUBRIC */}
+              <div className="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200 space-y-3 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-amber-500" />
+                      <span>2. THANG ĐO 3 TIÊU CHÍ RUBRIC (1 - 5)</span>
+                    </span>
+                    <span className="text-[10px] font-bold text-teal-700">Có trọng số</span>
+                  </div>
+
+                  <div className="space-y-2.5 pt-3">
+                    {/* Tiêu chí 1 */}
+                    <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-black text-amber-950 flex items-center gap-1">
+                          🎯 1. Hoàn thành mục tiêu:
+                        </span>
+                        <span className="font-black text-amber-900 text-sm">
+                          {overallEvalResult.overallGoalCompletion > 0 ? `${overallEvalResult.overallGoalCompletion} / 5.0` : "-"}
+                        </span>
+                      </div>
+                      <div className="w-full bg-amber-200/50 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-amber-500 rounded-full transition-all duration-700"
+                          style={{ width: `${(overallEvalResult.overallGoalCompletion / 5) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tiêu chí 2 */}
+                    <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-black text-blue-950 flex items-center gap-1">
+                          ⚡ 2. Mức độ chủ động:
+                        </span>
+                        <span className="font-black text-blue-900 text-sm">
+                          {overallEvalResult.overallInitiative > 0 ? `${overallEvalResult.overallInitiative} / 5.0` : "-"}
+                        </span>
+                      </div>
+                      <div className="w-full bg-blue-200/50 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 rounded-full transition-all duration-700"
+                          style={{ width: `${(overallEvalResult.overallInitiative / 5) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tiêu chí 3 */}
+                    <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-black text-emerald-950 flex items-center gap-1">
+                          🤝 3. Thái độ tham gia:
+                        </span>
+                        <span className="font-black text-emerald-900 text-sm">
+                          {overallEvalResult.overallParticipation > 0 ? `${overallEvalResult.overallParticipation} / 5.0` : "-"}
+                        </span>
+                      </div>
+                      <div className="w-full bg-emerald-200/50 h-2 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-emerald-500 rounded-full transition-all duration-700"
+                          style={{ width: `${(overallEvalResult.overallParticipation / 5) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-[11px] text-slate-700 font-medium flex items-center justify-between">
+                  <span>⭐ <strong>Quy đổi Rubric Tổng:</strong></span>
+                  <span className="text-xs font-black text-amber-700">{overallEvalResult.overallRubricScore} / 5.0 sao</span>
+                </div>
+              </div>
+
             </div>
           </div>
 
