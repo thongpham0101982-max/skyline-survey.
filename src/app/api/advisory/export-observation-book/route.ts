@@ -64,7 +64,7 @@ export async function GET(req: Request) {
 
     // Check TeacherClassAssignment
     if (!gvcnName && targetClass.teachers && targetClass.teachers.length > 0) {
-      const gAss = targetClass.teachers.find((t: any) => t.isGVCN || t.role === "GVCN" || t.roleInClass === "GVCN") || targetClass.teachers[0]
+      const gAss: any = targetClass.teachers.find((t: any) => t.isGVCN || t.role === "GVCN" || t.roleInClass === "GVCN") || targetClass.teachers[0]
       if (gAss?.teacher) {
         gvcnName = gAss.teacher.teacherName || gAss.teacher.name || ""
         gvcnEmail = gAss.teacher.email || ""
@@ -109,13 +109,13 @@ export async function GET(req: Request) {
       gvcnEmail = "nhi.ltp@skylineschool.edu.vn"
     }
 
-    const className = targetClass.className || targetClass.classCode || targetClass.name || "Lớp"
+    const className = targetClass.className || targetClass.classCode || (targetClass as any).name || "Lớp"
     const academicYearName = targetClass.academicYear?.name || "2024-2025"
 
     // 1.2 Resolve Campus Name
     let campusName = ""
-    if (targetClass.campus?.campusName || targetClass.campus?.campusCode || targetClass.campus?.name) {
-      const rawCampus = targetClass.campus.campusName || targetClass.campus.campusCode || targetClass.campus.name
+    if (targetClass.campus?.campusName || targetClass.campus?.campusCode || (targetClass.campus as any)?.name) {
+      const rawCampus = targetClass.campus?.campusName || targetClass.campus?.campusCode || (targetClass.campus as any)?.name || ""
       if (rawCampus === "CS1") campusName = "Cơ sở 1 (CS1 - Riverside Campus)"
       else if (rawCampus === "CS2") campusName = "Cơ sở 2 (CS2 - Central Campus)"
       else if (rawCampus === "CS3") campusName = "Cơ sở 3 (CS3 - International Campus)"
@@ -489,15 +489,15 @@ export async function GET(req: Request) {
         </tr>
       </thead>
       <tbody>
-        ${students.map((st, i) => `
+        ${students.map((st: any, i: number) => `
           <tr>
             <td style="text-align: center; font-weight: 700;">${i + 1}</td>
             <td style="font-weight: 800; color: #002060;">${st.studentCode || "N/A"}</td>
             <td style="font-weight: 700;">${st.studentName}</td>
             <td style="text-align: center;">${formatVNDate(st.dateOfBirth)}</td>
             <td style="text-align: center;">${st.gender || "Nam"}</td>
-            <td>${st.parentName || "Chưa cập nhật"}</td>
-            <td>${st.parentPhone || "Chưa cập nhật"}</td>
+            <td>${st.parentName || (st.parents && st.parents[0]?.parent?.parentName) || "Chưa cập nhật"}</td>
+            <td>${st.parentPhone || (st.parents && st.parents[0]?.parent?.phone) || "Chưa cập nhật"}</td>
           </tr>
         `).join("")}
       </tbody>
@@ -562,7 +562,7 @@ export async function GET(req: Request) {
           </tr>
         </thead>
         <tbody>
-          ${consultations.map(c => `
+          ${consultations.map((c: any) => `
             <tr>
               <td style="font-weight: 700; color: #002060;">${formatVNDate(c.meetingDate)}</td>
               <td style="font-weight: 800;">${studentMap.get(c.studentId) || "Học sinh"}</td>
@@ -623,7 +623,7 @@ export async function GET(req: Request) {
           </tr>
         </thead>
         <tbody>
-          ${trackingLogs.slice(0, 15).map(t => {
+          ${trackingLogs.slice(0, 15).map((t: any) => {
             const stName = studentMap.get(t.studentId) || "Học sinh"
             const statusClass = t.progressStatus === "DAT" || t.progressStatus === "HOAN_THANH" ? "badge-dat"
               : t.progressStatus === "CHUA_DAT" ? "badge-chua-dat"
@@ -655,7 +655,7 @@ export async function GET(req: Request) {
           </tr>
         </thead>
         <tbody>
-          ${students.slice(0, 10).map(s => `
+          ${students.slice(0, 10).map((s: any) => `
             <tr>
               <td style="font-weight: 700;">${s.studentName}</td>
               <td style="font-size: 8.5pt;">1. Mục tiêu học tập 📚</td>
@@ -693,7 +693,7 @@ export async function GET(req: Request) {
           </tr>
         </thead>
         <tbody>
-          ${termEvals.map(ev => `
+          ${termEvals.map((ev: any) => `
             <tr>
               <td style="font-weight: 800; color: #002060;">${studentMap.get(ev.studentId) || "Học sinh"}</td>
               <td style="text-align: center; font-weight: 700;">${ev.term}</td>

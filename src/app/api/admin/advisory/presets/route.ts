@@ -11,37 +11,39 @@ function jsonResponse(data: any, status = 200) {
 }
 
 const DEFAULT_PRESETS = [
-  // Khối 1
+  // Khối 1 (Học tập 50%, Sức khỏe 20%, Sở thích 15%, Phẩm chất 15%)
   { gradeGroup: "K1", category: "HOC_TAP", goalText: "Em tập trung lắng nghe Thầy Cô giảng bài và hoàn thành bài tập trên lớp", actionPreset: "Giơ tay phát biểu ý kiến, tự giác chuẩn bị sách vở", sortOrder: 1 },
-  { gradeGroup: "K1", category: "THOI_QUEN", goalText: "Em tự xếp hàng ngay ngắn, giữ gìn vệ sinh cá nhân và lớp học", actionPreset: "Tự cất đồ dùng học tập ngăn nắp sau giờ học", sortOrder: 2 },
-  { gradeGroup: "K1", category: "KY_NANG_CAM_XUC", goalText: "Em lễ phép chào hỏi Thầy Cô, người lớn và hòa đồng với bạn bè", actionPreset: "Nói lời cảm ơn, xin lỗi và chia sẻ đồ chơi cùng bạn", sortOrder: 3 },
-  { gradeGroup: "K1", category: "DINH_HUONG", goalText: "Em thích thú khám phá môi trường học tập mới tại Sky-Line", actionPreset: "Tích cực tham gia các trò chơi và hoạt động trải nghiệm", sortOrder: 4 },
+  { gradeGroup: "K1", category: "SUC_KHOE", goalText: "Em tự xếp hàng ngay ngắn, giữ gìn vệ sinh cá nhân, ăn ngủ đúng giờ và vận động", actionPreset: "Rửa tay trước khi ăn, cất đồ dùng học tập ngăn nắp", sortOrder: 2 },
+  { gradeGroup: "K1", category: "SO_THICH", goalText: "Em yêu thích tham gia vẽ tranh, kể chuyện, ca hát và các trò chơi vận động", actionPreset: "Tích cực tham gia các hoạt động ngoại khóa, câu lạc bộ sở thích", sortOrder: 3 },
+  { gradeGroup: "K1", category: "PHAM_CHAT", goalText: "Em lễ phép chào hỏi Thầy Cô, người lớn, trung thực và biết giúp đỡ bạn bè", actionPreset: "Nói lời cảm ơn, xin lỗi và chia sẻ cùng bạn bè trong lớp", sortOrder: 4 },
         
-  // Khối 2
+  // Khối 2 (Học tập 50%, Kỹ năng 20%, Sức khỏe 10%, Sở thích 10%, Phẩm chất 10%)
   { gradeGroup: "K2", category: "HOC_TAP", goalText: "Em rèn luyện chữ viết đẹp và hoàn thành các bài toán hàng ngày", actionPreset: "Viết nắn nót từng câu chữ, kiểm tra bài trước khi nộp", sortOrder: 1 },
-  { gradeGroup: "K2", category: "THOI_QUEN", goalText: "Em tự dọn dẹp góc học tập sạch sẽ sau khi học xong", actionPreset: "Chuẩn bị sách vở theo thời khóa biểu ngày hôm sau", sortOrder: 2 },
-  { gradeGroup: "K2", category: "KY_NANG_CAM_XUC", goalText: "Em biết kiềm chế cảm xúc giận dỗi và giúp đỡ bạn học yếu hơn", actionPreset: "Hít thở sâu khi tức giận, lắng nghe lời Thầy Cô khuyên bảo", sortOrder: 3 },
-  { gradeGroup: "K2", category: "DINH_HUONG", goalText: "Em rèn luyện sự tự tin khi đứng trước lớp trình bày ý kiến", actionPreset: "Tích cực tham gia các hoạt động văn nghệ, thể thao lớp", sortOrder: 4 },
+  { gradeGroup: "K2", category: "KY_NANG", goalText: "Em rèn luyện sự tự tin khi đứng trước lớp trình bày ý kiến và tự phục vụ cá nhân", actionPreset: "Tích cực phát biểu, tự sắp xếp đồ dùng cá nhân gọn gàng", sortOrder: 2 },
+  { gradeGroup: "K2", category: "SUC_KHOE", goalText: "Em ngủ trước 21h30 và thức dậy đúng giờ, ăn đủ bữa và tập thể dục", actionPreset: "Đặt báo thức cá nhân, hạn chế xem TV và đồ điện tử", sortOrder: 3 },
+  { gradeGroup: "K2", category: "SO_THICH", goalText: "Em phát huy sở trường đọc sách, vẽ tranh và rèn luyện môn thể thao yêu thích", actionPreset: "Dành 20 phút mỗi ngày cho hoạt động năng khiếu", sortOrder: 4 },
+  { gradeGroup: "K2", category: "PHAM_CHAT", goalText: "Em biết kiềm chế cảm xúc giận dỗi, vâng lời Thầy Cô và giúp đỡ bạn học", actionPreset: "Hít thở sâu khi tức giận, lắng nghe lời Thầy Cô khuyên bảo", sortOrder: 5 },
 
-  // Khối 3
-  { gradeGroup: "K3", category: "HOC_TAP", goalText: "Em đạt điểm 9-10 các môn Toán, Tiếng Việt và Tiếng Anh", actionPreset: "Học thuộc từ vựng Tiếng Anh mỗi ngày, làm thêm bài tập tư duy", sortOrder: 1 },
-  { gradeGroup: "K3", category: "THOI_QUEN", goalText: "Em ngủ trước 21h30 và dậy lúc 6h00 không cần Ba Mẹ gọi", actionPreset: "Đặt báo thức cá nhân, hạn chế xem TV và đồ điện tử", sortOrder: 2 },
-  { gradeGroup: "K3", category: "KY_NANG_CAM_XUC", goalText: "Em chủ động kết bạn và tham gia làm việc nhóm hiệu quả", actionPreset: "Tôn trọng ý kiến bạn bè, phân công công việc rõ ràng", sortOrder: 3 },
-  { gradeGroup: "K3", category: "DINH_HUONG", goalText: "Em nuôi dưỡng ước mơ trở thành Nhà Khoa Học / Bác Sĩ / Giáo Viên", actionPreset: "Mỗi tuần đọc 1 cuốn sách khám phá thế giới", sortOrder: 4 },
+  // Khối 3 (Học tập 50%, Kỹ năng 20%, Sức khỏe 10%, Sở thích 10%, Phẩm chất 10%)
+  { gradeGroup: "K3", category: "HOC_TAP", goalText: "Em đạt kết quả tốt các môn Toán, Tiếng Việt và Tiếng Anh", actionPreset: "Học thuộc từ vựng Tiếng Anh mỗi ngày, làm thêm bài tập tư duy", sortOrder: 1 },
+  { gradeGroup: "K3", category: "KY_NANG", goalText: "Em chủ động kết bạn, giao tiếp tự tin và tham gia làm việc nhóm hiệu quả", actionPreset: "Tôn trọng ý kiến bạn bè, phân công công việc rõ ràng", sortOrder: 2 },
+  { gradeGroup: "K3", category: "SUC_KHOE", goalText: "Em rèn luyện thể lực mỗi ngày, giữ gìn vệ sinh thân thể và ăn uống lành mạnh", actionPreset: "Uống đủ nước, tập thể dục buổi sáng và ngủ đúng giờ", sortOrder: 3 },
+  { gradeGroup: "K3", category: "SO_THICH", goalText: "Em nuôi dưỡng đam mê khám phá thế giới qua sách báo và khoa học", actionPreset: "Mỗi tuần đọc 1 cuốn sách khám phá khoa học hoặc kỹ năng", sortOrder: 4 },
+  { gradeGroup: "K3", category: "PHAM_CHAT", goalText: "Em trung thực trong học tập, đoàn kết và có trách nhiệm với tập thể", actionPreset: "Tự giác làm bài, tích cực tham gia các phong trào của lớp", sortOrder: 5 },
 
-  // Khối 4 - 5
-  { gradeGroup: "K4_K5", category: "HOC_TAP", goalText: "Nâng cao năng lực tự học, đạt danh hiệu Học sinh Xuất sắc", actionPreset: "Lập sổ tay ghi chép kiến thức trọng tâm, giải đề ôn tập tuần", sortOrder: 1 },
-  { gradeGroup: "K4_K5", category: "THOI_QUEN", goalText: "Rèn luyện thói quen đọc sách 30 phút/ngày và tập thể dục buổi sáng", actionPreset: "Ghi nhật ký đọc sách, tham gia CLB thể thao nhà trường", sortOrder: 2 },
-  { gradeGroup: "K4_K5", category: "KY_NANG_CAM_XUC", goalText: "Phát triển kỹ năng lắng nghe thấu hiểu và quản lý thời gian", actionPreset: "Lập thời gian biểu cá nhân ngăn nắp, giúp đỡ bạn bè vượt khó", sortOrder: 3 },
-  { gradeGroup: "K4_K5", category: "DINH_HUONG", goalText: "Sẵn sàng tâm thế vững vàng bước vào cấp THCS Sky-Line", actionPreset: "Tìm hiểu phương pháp học tập THCS, luyện giao tiếp Tiếng Anh", sortOrder: 4 },
+  // Khối 4 - 5 (Học tập 50%, Sức khỏe 20%, Sở thích 15%, Phẩm chất 15%)
+  { gradeGroup: "K4_K5", category: "HOC_TAP", goalText: "Nâng cao năng lực tự học, đạt danh hiệu Học sinh Xuất sắc và hoàn thành tốt các kỳ thi", actionPreset: "Lập sổ tay ghi chép kiến thức trọng tâm, giải đề ôn tập tuần", sortOrder: 1 },
+  { gradeGroup: "K4_K5", category: "SUC_KHOE", goalText: "Rèn luyện thể lực, tập thể thao đều đặn và cân bằng thời gian nghỉ ngơi", actionPreset: "Tham gia CLB thể thao nhà trường, chạy bộ hoặc bơi lội", sortOrder: 2 },
+  { gradeGroup: "K4_K5", category: "SO_THICH", goalText: "Phát triển sở trường năng khiếu và kỹ năng sáng tạo cá nhân", actionPreset: "Tham gia dự án nghệ thuật, CLB STEM hoặc ngoại khóa", sortOrder: 3 },
+  { gradeGroup: "K4_K5", category: "PHAM_CHAT", goalText: "Rèn luyện lòng biết ơn, tinh thần trách nhiệm và sẵn sàng chuẩn bị chuyển cấp", actionPreset: "Giúp đỡ gia đình, chủ động chia sẻ và hỗ trợ bạn bè", sortOrder: 4 },
 
-  // Khối 6 - 8
+  // Khối 6 - 8 (Học tập 50%, Thói quen 15%, Kỹ năng cảm xúc 15%, Định hướng 20%)
   { gradeGroup: "K6_K8", category: "HOC_TAP", goalText: "Đạt Điểm Trung Bình Môn từ 8.5 trở lên, chinh phục chứng chỉ Tiếng Anh", actionPreset: "Ôn tập theo phương pháp sơ đồ tư duy Mindmap, luyện đề định kỳ", sortOrder: 1 },
   { gradeGroup: "K6_K8", category: "THOI_QUEN", goalText: "Cân bằng giữa học tập, sinh hoạt cá nhân và sử dụng mạng xã hội", actionPreset: "Giới hạn thời gian dùng điện thoại dưới 1 giờ/ngày", sortOrder: 2 },
-  { gradeGroup: "K6_K8", category: "KY_NANG_CAM_XUC", goalText: "Rèn luyện tư duy phản biện, kỹ năng thuyết trình và làm việc nhóm", actionPreset: "Tích cực tranh luận học thuật, hỗ trợ các thành viên trong nhóm", sortOrder: 3 },
+  { gradeGroup: "K6_K8", category: "KY_NANG_CAM_XUC", goalText: "Rèn luyện tư duy phản biện, kỹ năng thuyết trình và quản trị cảm xúc", actionPreset: "Tích cực tranh luận học thuật, hỗ trợ các thành viên trong nhóm", sortOrder: 3 },
   { gradeGroup: "K6_K8", category: "DINH_HUONG", goalText: "Khám phá thế mạnh bản thân và định hướng ngành nghề yêu thích", actionPreset: "Tham gia các buổi tham vấn hướng nghiệp và trải nghiệm thực tế", sortOrder: 4 },
 
-  // Khối 9 - 12
+  // Khối 9 - 12 (Học tập 50%, Thói quen 15%, Kỹ năng cảm xúc 15%, Định hướng 20%)
   { gradeGroup: "K9_K12", category: "HOC_TAP", goalText: "Thi đậu nguyện vọng 1 Trường THPT Chuyên / Đại học Top đầu", actionPreset: "Lập lộ trình ôn luyện chuyên sâu, làm bài thi thử theo tuần", sortOrder: 1 },
   { gradeGroup: "K9_K12", category: "THOI_QUEN", goalText: "Duy trì năng lượng tích cực, quản lý áp lực thi cử khoa học", actionPreset: "Tập thiền tĩnh tâm 10 phút, đảm bảo giấc ngủ phục hồi", sortOrder: 2 },
   { gradeGroup: "K9_K12", category: "KY_NANG_CAM_XUC", goalText: "Xây dựng tư duy lãnh đạo, tinh thần trách nhiệm và bản lĩnh cá nhân", actionPreset: "Đảm nhận vị trí Trưởng ban/Chủ nhiệm CLB dự án học đường", sortOrder: 3 },

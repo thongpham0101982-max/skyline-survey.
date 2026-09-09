@@ -21,7 +21,7 @@ export async function GET(req: Request) {
         where: { id: targetStudentId },
         select: { studentCode: true }
       }).catch(() => null)
-      codeToLookup = stObj?.studentCode
+      codeToLookup = stObj?.studentCode || null
     }
 
     if (codeToLookup) {

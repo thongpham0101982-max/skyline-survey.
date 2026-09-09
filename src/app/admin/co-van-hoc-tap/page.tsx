@@ -28,8 +28,17 @@ import {
   ChevronRight, 
   X, 
   Loader2,
-  Check
+  Check,
+  Activity,
+  Target,
+  Percent
 } from "lucide-react"
+import {
+  getGradeCategoryWeights,
+  calculateAdvisoryEvaluation,
+  matchCategoryKey,
+  AdvisoryCategoryWeight
+} from "@/lib/advisory/advisoryWeights"
 
 export default function AdminAdvisoryDashboard() {
   const [activeTab, setActiveTab] = useState<"presets" | "dashboard">("presets")
@@ -68,19 +77,48 @@ export default function AdminAdvisoryDashboard() {
   const [classStudentSearch, setClassStudentSearch] = useState<string>("")
 
   const GRADE_GROUPS = [
-    { key: "K2", label: "Khối 2", desc: "Rèn chữ viết, tự giác hoàn thành bài tập" },
-    { key: "K3", label: "Khối 3", desc: "Nâng cao năng lực tự học, tự tin giao tiếp" },
-    { key: "K4_K5", label: "Khối 4 - 5", desc: "Chuẩn bị hành trang chuyển cấp THCS" },
-    { key: "K6_K8", label: "Khối 6 - 8", desc: "Tự chủ phương pháp học & Định hướng bản thân" },
-    { key: "K9_K12", label: "Khối 9 - 12", desc: "Bứt phá thi cử, săn học bổng & Hướng nghiệp" }
+    { key: "K1", label: "Khối 1", desc: "Học tập (50%), Sức khỏe (20%), Sở thích (15%), Phẩm chất (15%)" },
+    { key: "K2", label: "Khối 2", desc: "Học tập (50%), Kỹ năng (20%), Sức khỏe (10%), Sở thích (10%), Phẩm chất (10%)" },
+    { key: "K3", label: "Khối 3", desc: "Học tập (50%), Kỹ năng (20%), Sức khỏe (10%), Sở thích (10%), Phẩm chất (10%)" },
+    { key: "K4_K5", label: "Khối 4 - 5", desc: "Học tập (50%), Sức khỏe (20%), Sở thích (15%), Phẩm chất (15%)" },
+    { key: "K6_K8", label: "Khối 6 - 8", desc: "Học tập (50%), Thói quen (15%), Kỹ năng & Cảm xúc (15%), Định hướng (20%)" },
+    { key: "K9_K12", label: "Khối 9 - 12", desc: "Học tập (50%), Thói quen (15%), Kỹ năng & Cảm xúc (15%), Định hướng (20%)" }
   ]
 
-  const CATEGORIES = [
-    { key: "HOC_TAP", label: "1. Mục tiêu học tập", icon: BookOpen, color: "text-sky-600 bg-sky-50 border-sky-200" },
-    { key: "THOI_QUEN", label: "2. Mục tiêu thói quen", icon: Clock, color: "text-amber-600 bg-amber-50 border-amber-200" },
-    { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc", icon: Heart, color: "text-rose-600 bg-rose-50 border-rose-200" },
-    { key: "DINH_HUONG", label: "4. Mục tiêu định hướng", icon: Rocket, color: "text-purple-600 bg-purple-50 border-purple-200" }
-  ]
+  const activeCategories = useMemo(() => {
+    const list = getGradeCategoryWeights(selectedGradeGroup)
+    return list.map(item => {
+      let icon = BookOpen
+      let color = "text-sky-700 bg-sky-50 border-sky-200"
+      if (item.key === "SUC_KHOE") {
+        icon = Heart
+        color = "text-emerald-700 bg-emerald-50 border-emerald-200"
+      } else if (item.key === "SO_THICH") {
+        icon = Sparkles
+        color = "text-purple-700 bg-purple-50 border-purple-200"
+      } else if (item.key === "PHAM_CHAT") {
+        icon = Award
+        color = "text-amber-700 bg-amber-50 border-amber-200"
+      } else if (item.key === "KY_NANG") {
+        icon = Rocket
+        color = "text-indigo-700 bg-indigo-50 border-indigo-200"
+      } else if (item.key === "THOI_QUEN") {
+        icon = Clock
+        color = "text-amber-700 bg-amber-50 border-amber-200"
+      } else if (item.key === "KY_NANG_CAM_XUC") {
+        icon = Heart
+        color = "text-rose-700 bg-rose-50 border-rose-200"
+      } else if (item.key === "DINH_HUONG") {
+        icon = Rocket
+        color = "text-purple-700 bg-purple-50 border-purple-200"
+      }
+      return {
+        ...item,
+        icon,
+        color
+      }
+    })
+  }, [selectedGradeGroup])
 
   // Load Presets
   useEffect(() => {
@@ -372,7 +410,7 @@ export default function AdminAdvisoryDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {CATEGORIES.map(cat => {
+              {activeCategories.map(cat => {
                 const CategoryIcon = cat.icon
                 const catPresets = presets.filter(p => p.category === cat.key)
 
@@ -383,19 +421,31 @@ export default function AdminAdvisoryDashboard() {
                       <div className={`p-4 border-b flex items-center justify-between ${cat.color}`}>
                         <div className="flex items-center gap-2.5">
                           <CategoryIcon className="w-5 h-5" />
-                          <h3 className="font-black text-sm">{cat.label}</h3>
-                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/60">
-                            {catPresets.length} gợi ý
-                          </span>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-black text-sm">{cat.label}</h3>
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-900 text-white shadow-xs">
+                                Trọng số {cat.weight}%
+                              </span>
+                            </div>
+                            {cat.description && (
+                              <p className="text-[10px] text-slate-600 font-medium mt-0.5">{cat.description}</p>
+                            )}
+                          </div>
                         </div>
 
-                        <button
-                          onClick={() => handleOpenCreateModal(cat.key)}
-                          className="px-3 py-1.5 rounded-xl bg-white text-slate-800 hover:bg-slate-100 text-xs font-black shadow-xs flex items-center gap-1 border border-slate-300"
-                        >
-                          <Plus className="w-3.5 h-3.5 text-teal-600" />
-                          <span>Thêm mới</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/70 text-slate-700">
+                            {catPresets.length} gợi ý
+                          </span>
+                          <button
+                            onClick={() => handleOpenCreateModal(cat.key)}
+                            className="px-3 py-1.5 rounded-xl bg-white text-slate-800 hover:bg-slate-100 text-xs font-black shadow-xs flex items-center gap-1 border border-slate-300"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-teal-600" />
+                            <span>Thêm</span>
+                          </button>
+                        </div>
                       </div>
 
                       {/* Presets List */}
@@ -524,7 +574,7 @@ export default function AdminAdvisoryDashboard() {
                 </div>
 
                 <button
-                  onClick={loadDashboard}
+                  onClick={() => loadDashboard()}
                   className="px-4 py-2 rounded-xl bg-[#003B3A] text-white text-xs font-black hover:bg-[#004D4A] transition-all shadow-xs"
                 >
                   Tìm kiếm
@@ -1004,8 +1054,10 @@ export default function AdminAdvisoryDashboard() {
                     onChange={e => setPresetForm(p => ({ ...p, category: e.target.value }))}
                     className="w-full px-3 py-2 rounded-xl bg-slate-100 border border-slate-300 font-extrabold outline-none"
                   >
-                    {CATEGORIES.map(c => (
-                      <option key={c.key} value={c.key}>{c.label}</option>
+                    {getGradeCategoryWeights(presetForm.gradeGroup).map(c => (
+                      <option key={c.key} value={c.key}>
+                        {c.label} (Trọng số: {c.weight}%)
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -1166,74 +1218,161 @@ export default function AdminAdvisoryDashboard() {
       {/* ========================================================================= */}
       {/* MODAL DRAWER: XEM CHI TIẾT PHIẾU MỤC TIÊU HỌC SINH */}
       {/* ========================================================================= */}
-      {selectedStudentDetail && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-4">
-              <div>
-                <h3 className="text-lg font-black text-[#003B3A]">
-                  Chi Tiết Phiếu Mục Tiêu 360°: {selectedStudentDetail.studentName}
-                </h3>
-                <p className="text-xs text-slate-500 font-bold">
-                  Mã HS: {selectedStudentDetail.studentCode} • Lớp: {selectedStudentDetail.className} • {selectedStudentDetail.campusName}
-                </p>
-              </div>
-              <button onClick={() => setSelectedStudentDetail(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {selectedStudentDetail && (() => {
+        const studentEval = calculateAdvisoryEvaluation(
+          selectedStudentDetail.goals?.map((g: any) => ({
+            categoryKey: g.categoryKey,
+            category: g.category,
+            targetText: g.targetText,
+            progressStatus: g.achievementLevel || g.progressStatus || "CHUA_DANH_GIA",
+            goalCompletionLevel: g.goalCompletionLevel || (g.achievementLevel === "DAT" || g.achievementLevel === "HOAN_THANH" ? 5 : g.achievementLevel === "TIEN_TRIEN" ? 3 : g.achievementLevel === "CAN_CO_GANG" ? 2 : 1),
+            initiativeLevel: g.initiativeLevel || 4,
+            participationAttitude: g.participationAttitude || 4
+          })) || [],
+          selectedStudentDetail.gradeLevel,
+          selectedStudentDetail.className
+        )
 
-            {/* Goals details */}
-            <div className="space-y-4">
-              {selectedStudentDetail.goals.length === 0 ? (
-                <div className="p-8 text-center text-slate-400 text-xs font-bold border-2 border-dashed border-slate-200 rounded-2xl">
-                  Học sinh chưa điền nội dung mục tiêu.
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto font-sans">
+              <div className="flex items-center justify-between border-b pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-[#003B3A] flex items-center gap-2">
+                    <span>Chi Tiết Phiếu Mục Tiêu 360°: {selectedStudentDetail.studentName}</span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-black border ${studentEval.classificationColor}`}>
+                      {studentEval.classificationLabel}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-bold mt-0.5">
+                    Mã HS: {selectedStudentDetail.studentCode} • Lớp: {selectedStudentDetail.className} • {selectedStudentDetail.campusName} • Khối: {studentEval.gradeLevel}
+                  </p>
                 </div>
-              ) : (
-                selectedStudentDetail.goals.map((g: any, idx: number) => (
-                  <div key={g.id || idx} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-900 text-[10px] font-black">
-                        {g.category}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-bold">Mức đạt: {g.achievementLevel}</span>
-                    </div>
-
-                    <p className="text-xs font-extrabold text-slate-900">Mục tiêu: {g.targetText}</p>
-
-                    {g.actions?.length > 0 && (
-                      <p className="text-xs text-teal-800 font-medium bg-teal-50 p-2 rounded-xl border border-teal-100">
-                        ⚡ <strong>Hành động:</strong> {g.actions[0]?.actionText}
-                      </p>
-                    )}
-
-                    {g.teacherSupportRequest && (
-                      <p className="text-[11px] text-slate-600 font-medium">
-                        <strong>Mong muốn Thầy Cô hỗ trợ:</strong> {g.teacherSupportRequest}
-                      </p>
-                    )}
-                  </div>
-                ))
-              )}
-
-              {/* Commitment & Parent info */}
-              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2 text-xs font-bold text-amber-900">
-                <p><strong>Lời cam kết của học sinh:</strong> {selectedStudentDetail.studentCommitment || "Chưa nhập"}</p>
-                <p><strong>Gia đình xác nhận chữ ký:</strong> {selectedStudentDetail.parentSigned ? "Đã ký cam kết đồng hành" : "Chưa ký"}</p>
+                <button onClick={() => setSelectedStudentDetail(null)} className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-            </div>
 
-            <div className="pt-2 border-t flex justify-end">
-              <button
-                onClick={() => setSelectedStudentDetail(null)}
-                className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-800 font-black hover:bg-slate-200"
-              >
-                Đóng
-              </button>
+              {/* KPI Banner: Weighted Score & 3 Rubric Criteria */}
+              <div className="p-4 rounded-3xl bg-gradient-to-r from-teal-950 via-[#003B3A] to-sky-950 text-white shadow-md space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div>
+                    <span className="text-[10px] font-black uppercase text-teal-300 tracking-wider flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5 text-teal-400" />
+                      <span>KẾT QUẢ THEO DÕI CỐ VẤN HỌC TẬP CÓ TRỌNG SỐ</span>
+                    </span>
+                    <p className="text-xs text-teal-100 font-medium">
+                      Đo lường tự động theo ma trận trọng số nhóm và 3 tiêu chí Rubric chuẩn (1 - 5)
+                    </p>
+                  </div>
+                  <div className="flex items-baseline gap-2 bg-white/10 px-4 py-2 rounded-2xl border border-white/15">
+                    <span className="text-2xl font-black text-emerald-400">{studentEval.overallPercent}%</span>
+                    <span className="text-xs font-bold text-teal-200">({studentEval.overallRubricScore} / 5.0 ⭐)</span>
+                  </div>
+                </div>
+
+                {/* 3 Criteria Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div className="p-2.5 rounded-2xl bg-white/10 border border-white/15">
+                    <span className="text-[10px] font-extrabold text-teal-200 uppercase block">1. Hoàn thành mục tiêu</span>
+                    <div className="flex items-baseline justify-between mt-1">
+                      <span className="text-base font-black text-white">{studentEval.overallGoalCompletion} / 5.0</span>
+                      <span className="text-[10px] font-bold text-teal-300">Thang 1 - 5</span>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-2xl bg-white/10 border border-white/15">
+                    <span className="text-[10px] font-extrabold text-teal-200 uppercase block">2. Mức độ chủ động</span>
+                    <div className="flex items-baseline justify-between mt-1">
+                      <span className="text-base font-black text-white">{studentEval.overallInitiative} / 5.0</span>
+                      <span className="text-[10px] font-bold text-teal-300">Thang 1 - 5</span>
+                    </div>
+                  </div>
+                  <div className="p-2.5 rounded-2xl bg-white/10 border border-white/15">
+                    <span className="text-[10px] font-extrabold text-teal-200 uppercase block">3. Thái độ tham gia</span>
+                    <div className="flex items-baseline justify-between mt-1">
+                      <span className="text-base font-black text-white">{studentEval.overallParticipation} / 5.0</span>
+                      <span className="text-[10px] font-bold text-teal-300">Thang 1 - 5</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Category Weight Breakdown */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                  {studentEval.categories.map(cat => (
+                    <div key={cat.categoryKey} className="p-2 rounded-xl bg-black/20 text-xs">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-extrabold text-white truncate">{cat.categoryLabel.replace(/^\d+\.\s*/, '')}</span>
+                        <span className="font-bold text-teal-300 shrink-0 ml-1">{cat.weight}%</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[10px] text-teal-200">{cat.subGoalsCount} mục tiêu nhỏ</span>
+                        <span className="text-xs font-black text-emerald-300">{cat.averagePercent}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Goals details */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    CHI TIẾT CÁC MỤC TIÊU NHỎ ĐÃ THIẾT LẬP ({selectedStudentDetail.goals?.length || 0}):
+                  </span>
+                </div>
+
+                {(!selectedStudentDetail.goals || selectedStudentDetail.goals.length === 0) ? (
+                  <div className="p-8 text-center text-slate-400 text-xs font-bold border-2 border-dashed border-slate-200 rounded-2xl">
+                    Học sinh chưa điền nội dung mục tiêu.
+                  </div>
+                ) : (
+                  selectedStudentDetail.goals.map((g: any, idx: number) => (
+                    <div key={g.id || idx} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-900 text-[10px] font-black">
+                          {g.category}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-bold">
+                          Trạng thái: <strong>{g.achievementLevel || g.progressStatus || "Đang theo dõi"}</strong>
+                        </span>
+                      </div>
+
+                      <p className="text-xs font-extrabold text-slate-900">Mục tiêu: {g.targetText}</p>
+
+                      {g.actions?.length > 0 && (
+                        <p className="text-xs text-teal-800 font-medium bg-teal-50 p-2 rounded-xl border border-teal-100">
+                          ⚡ <strong>Hành động:</strong> {g.actions[0]?.actionText}
+                        </p>
+                      )}
+
+                      {g.teacherSupportRequest && (
+                        <p className="text-[11px] text-slate-600 font-medium">
+                          <strong>Mong muốn Thầy Cô hỗ trợ:</strong> {g.teacherSupportRequest}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                {/* Commitment & Parent info */}
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2 text-xs font-bold text-amber-900">
+                  <p><strong>Lời cam kết của học sinh:</strong> {selectedStudentDetail.studentCommitment || "Chưa nhập"}</p>
+                  <p><strong>Gia đình xác nhận chữ ký:</strong> {selectedStudentDetail.parentSigned ? "Đã ký cam kết đồng hành" : "Chưa ký"}</p>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t flex justify-end">
+                <button
+                  onClick={() => setSelectedStudentDetail(null)}
+                  className="px-6 py-2.5 rounded-xl bg-slate-100 text-slate-800 font-black hover:bg-slate-200"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
     </div>
   )
