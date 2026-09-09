@@ -21,6 +21,11 @@ import {
   Save,
   Check
 } from "lucide-react"
+import {
+  getGradeCategoryWeights,
+  calculateAdvisoryEvaluation,
+  matchCategoryKey
+} from "@/lib/advisory/advisoryWeights"
 
 export default function ParentAdvisoryClient({ initialProfile }: { initialProfile?: any }) {
   const [academicYearId, setAcademicYearId] = useState("")
@@ -214,57 +219,31 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
   const formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI " + gradeNum
   const formSub = "Hiển thị đầy đủ 4 nhóm mục tiêu cá nhân do học sinh " + (student.studentName || selectedStudent.studentName || "con em") + " tự điền."
 
+  const currentChild = childrenList.find(c => c.id === selectedStudentId) || selectedStudent
+  const childGrade = currentChild?.grade || currentChild?.className || "K12"
+  const dynamicWeightCats = getGradeCategoryWeights(childGrade, currentChild?.className)
+
   const getCategoriesForForm = () => {
-    return [
-      {
-        key: "HOC_TAP",
-        label: "1. Mục tiêu học tập 📚",
-        number: "01",
-        altKeys: ["HOC_TAP", "ACADEMIC", "HỌC TẬP", "NHÓM 1"],
-        theme: {
-          border: "border-sky-200 hover:border-sky-300",
-          badgeBg: "bg-sky-50 border-sky-200",
-          badgeText: "text-sky-800",
-          numberBadge: "bg-sky-600 text-white"
-        }
-      },
-      {
-        key: "THOI_QUEN",
-        label: "2. Mục tiêu thói quen ⏰",
-        number: "02",
-        altKeys: ["THOI_QUEN", "HEALTH", "THOI_QUEN_SUC_KHOE", "THÓI QUEN", "NHÓM 2"],
-        theme: {
-          border: "border-emerald-200 hover:border-emerald-300",
-          badgeBg: "bg-emerald-50 border-emerald-200",
-          badgeText: "text-emerald-800",
-          numberBadge: "bg-emerald-600 text-white"
-        }
-      },
-      {
-        key: "KY_NANG_CAM_XUC",
-        label: "3. Mục tiêu kỹ năng, cảm xúc 🎨",
-        number: "03",
-        altKeys: ["KY_NANG_CAM_XUC", "SKILLS", "KY_NANG_SO_THICH", "KỸ NĂNG", "CẢM XÚC", "NHÓM 3"],
-        theme: {
-          border: "border-purple-200 hover:border-purple-300",
-          badgeBg: "bg-purple-50 border-purple-200",
-          badgeText: "text-purple-800",
-          numberBadge: "bg-purple-600 text-white"
-        }
-      },
-      {
-        key: "DINH_HUONG",
-        label: "4. Mục tiêu định hướng 🚀",
-        number: "04",
-        altKeys: ["DINH_HUONG", "ORIENTATION", "PHAM_CHAT", "ĐỊNH HƯỚNG", "PHẨM CHẤT", "NHÓM 4"],
-        theme: {
-          border: "border-amber-200 hover:border-amber-300",
-          badgeBg: "bg-amber-50 border-amber-200",
-          badgeText: "text-amber-950",
-          numberBadge: "bg-amber-600 text-white"
-        }
+    return dynamicWeightCats.map((cat, idx) => {
+      const numberStr = `0${idx + 1}`
+      const theme = idx === 0 
+        ? { border: "border-sky-200 hover:border-sky-300", badgeBg: "bg-sky-50 border-sky-200", badgeText: "text-sky-800", numberBadge: "bg-sky-600 text-white" }
+        : idx === 1
+        ? { border: "border-emerald-200 hover:border-emerald-300", badgeBg: "bg-emerald-50 border-emerald-200", badgeText: "text-emerald-800", numberBadge: "bg-emerald-600 text-white" }
+        : idx === 2
+        ? { border: "border-purple-200 hover:border-purple-300", badgeBg: "bg-purple-50 border-purple-200", badgeText: "text-purple-800", numberBadge: "bg-purple-600 text-white" }
+        : { border: "border-amber-200 hover:border-amber-300", badgeBg: "bg-amber-50 border-amber-200", badgeText: "text-amber-950", numberBadge: "bg-amber-600 text-white" }
+
+      return {
+        key: cat.key,
+        label: cat.label,
+        weight: cat.weight,
+        description: cat.description,
+        number: numberStr,
+        altKeys: [cat.key, cat.label],
+        theme
       }
-    ]
+    })
   }
 
   const currentCategories = getCategoriesForForm()

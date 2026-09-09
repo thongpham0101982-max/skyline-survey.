@@ -2,13 +2,20 @@
 
 export const dynamic = "force-dynamic"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Compass, Plus, Search, Calendar, User, MessageSquare, AlertTriangle,
   CheckCircle2, Clock, Filter, Save, Trash2, Heart, Sparkles, AlertCircle,
   TrendingUp, Award, Table, BookOpen, Layers, Info, ChevronRight, ChevronLeft, FileText, X, Edit3, ShieldCheck,
-  Key, Flame
+  Key, Flame, Star, CheckSquare, Target, Check
 } from "lucide-react"
+import {
+  getGradeCategoryWeights,
+  calculateAdvisoryEvaluation,
+  matchCategoryKey,
+  AdvisoryCategoryWeight,
+  OverallEvaluationResult
+} from "@/lib/advisory/advisoryWeights"
 
 export default function TeacherAdvisoryPage() {
   const [academicYearId, setAcademicYearId] = useState("")
@@ -26,7 +33,6 @@ export default function TeacherAdvisoryPage() {
   const [consultations, setConsultations] = useState<any[]>([])
   const [helpRequests, setHelpRequests] = useState<any[]>([])
   
-  
   // 4. Goal Unlocks Sprint State (Stage 2 - K9-12)
   const [unlocksList, setUnlocksList] = useState<any[]>([])
   const [unlocksLoading, setUnlocksLoading] = useState(false)
@@ -39,6 +45,13 @@ export default function TeacherAdvisoryPage() {
   // 1. Student-Focused Goal Progress Tracking State
   const [checkPoint, setCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
   const [singleStudentTrackingRows, setSingleStudentTrackingRows] = useState<any[]>([]); const [viewMode, setViewMode] = useState<"card" | "table">("card"); const [activeStudentCommitment, setActiveStudentCommitment] = useState<string>("")
+
+  // Dynamic weights & calculation based on student grade
+  const activeStudent = useMemo(() => students.find(s => s.id === selectedStudentId), [students, selectedStudentId])
+  const activeClass = useMemo(() => classes.find(c => c.id === selectedClassId), [classes, selectedClassId])
+  const currentGrade = useMemo(() => activeStudent?.grade || activeClass?.grade || activeClass?.name || "K12", [activeStudent, activeClass])
+  const gradeCategoryWeights = useMemo(() => getGradeCategoryWeights(currentGrade, activeClass?.name), [currentGrade, activeClass])
+  const overallEvalResult = useMemo(() => calculateAdvisoryEvaluation(singleStudentTrackingRows, currentGrade, activeClass?.name), [singleStudentTrackingRows, currentGrade, activeClass])
 
   // 2. Term Evaluation Rubric States
   const [evalTerm, setEvalTerm] = useState<"HK1" | "HK2">("HK1")
@@ -216,12 +229,9 @@ export default function TeacherAdvisoryPage() {
       const st = students.find(s => s.id === selectedStudentId)
       if (!st) return
 
-      const standardCats = [
-        { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚" },
-        { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰" },
-        { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨" },
-        { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀" }
-      ]
+      const activeCl = classes.find(c => c.id === selectedClassId)
+      const stGrade = st.grade || activeCl?.grade || activeCl?.name || "K12"
+      const standardCats = getGradeCategoryWeights(stGrade, activeCl?.name)
 
       const goalRes = await fetch("/api/advisory/goals?studentId=" + st.id + "&studentCode=" + (st.studentCode || "") + "&academicYearId=" + academicYearId + "&_t=" + Date.now(), { cache: "no-store" })
       const goalData = goalRes.ok ? await goalRes.json() : null
@@ -233,18 +243,9 @@ export default function TeacherAdvisoryPage() {
 
       const rows: any[] = []
 
-      function getCategoryKey(cat: string): string {
-        const c = String(cat || "").toUpperCase().trim()
-        if (c.includes("HOC_TAP") || c.includes("HỌC TẬP")) return "HOC_TAP"
-        if (c.includes("THOI_QUEN") || c.includes("THÓI QUEN") || c.includes("SUC_KHOE") || c.includes("SỨC KHỎE")) return "THOI_QUEN"
-        if (c.includes("KY_NANG") || c.includes("KỸ NĂNG") || c.includes("CAM_XUC") || c.includes("CẢM XÚC") || c.includes("SO_THICH")) return "KY_NANG_CAM_XUC"
-        if (c.includes("DINH_HUONG") || c.includes("ĐỊNH HƯỚNG") || c.includes("PHAM_CHAT") || c.includes("PHẨM CHẤT")) return "DINH_HUONG"
-        return "HOC_TAP"
-      }
-
       standardCats.forEach(catObj => {
         const studentGoalsInCat = goalData?.goals?.filter((g: any) => {
-          return getCategoryKey(g.category) === catObj.key
+          return matchCategoryKey(g.category, stGrade) === catObj.key
         }) || []
 
         if (studentGoalsInCat.length > 0) {
@@ -260,6 +261,7 @@ export default function TeacherAdvisoryPage() {
               goalId: g.id,
               categoryKey: catObj.key,
               category: catObj.label,
+              categoryWeight: catObj.weight,
               targetText: g.targetText || "",
               actionText: g.actions?.[0]?.actionText || "",
               teacherSupportRequest: g.teacherSupportRequest || "",
@@ -272,13 +274,14 @@ export default function TeacherAdvisoryPage() {
             })
           })
         } else {
-          const matchedLog = existingLogs.find((l: any) => getCategoryKey(l.category) === catObj.key || l.category === catObj.label)
+          const matchedLog = existingLogs.find((l: any) => matchCategoryKey(l.category, stGrade) === catObj.key || l.category === catObj.label)
           rows.push({
             studentId: st.id,
             studentName: st.studentName,
             studentCode: st.studentCode,
             categoryKey: catObj.key,
             category: catObj.label,
+            categoryWeight: catObj.weight,
             targetText: matchedLog?.targetText || "Em chưa điền nội dung mục tiêu nhóm này",
             actionText: "",
             teacherSupportRequest: "",
@@ -351,17 +354,17 @@ export default function TeacherAdvisoryPage() {
     try {
       setSaving(true)
       
-      // Calculate overall student rubric scores from rows if present
-      const validRows = singleStudentTrackingRows.filter(r => r.goalCompletionLevel)
-      const avgGoalCompletion = validRows.length > 0
-        ? Math.round(validRows.reduce((acc, r) => acc + (Number(r.goalCompletionLevel) || 4), 0) / validRows.length)
-        : rubricForm.goalCompletionLevel
+      // Calculate overall student rubric scores from rows with weighted calculation
+      const computedGoalLevel = overallEvalResult.overallRubricScore > 0 
+        ? Math.max(1, Math.min(5, Math.round(overallEvalResult.overallRubricScore))) 
+        : (rubricForm.goalCompletionLevel || 4)
+      const validRows = singleStudentTrackingRows.filter(r => r.initiativeLevel || r.participationAttitude)
       const avgInitiative = validRows.length > 0
         ? Math.round(validRows.reduce((acc, r) => acc + (Number(r.initiativeLevel) || 4), 0) / validRows.length)
-        : rubricForm.initiativeLevel
+        : (rubricForm.initiativeLevel || 4)
       const avgParticipation = validRows.length > 0
         ? Math.round(validRows.reduce((acc, r) => acc + (Number(r.participationAttitude) || 5), 0) / validRows.length)
-        : rubricForm.participationAttitude
+        : (rubricForm.participationAttitude || 5)
 
       const res = await fetch("/api/advisory/term-evaluations", {
         method: "POST",
@@ -370,7 +373,7 @@ export default function TeacherAdvisoryPage() {
           studentId: selectedStudentId,
           academicYearId,
           term: evalTerm,
-          goalCompletionLevel: avgGoalCompletion,
+          goalCompletionLevel: computedGoalLevel,
           initiativeLevel: avgInitiative,
           participationAttitude: avgParticipation,
           recommendations: rubricForm.recommendations
@@ -479,8 +482,7 @@ export default function TeacherAdvisoryPage() {
 
   // Navigate Previous / Next Student
   const activeStudentIndex = students.findIndex(s => s.id === selectedStudentId)
-  const activeStudent = students[activeStudentIndex] || students[0]
-  const selectedClass = classes.find(c => c.id === selectedClassId)
+  const selectedClass = activeClass
 
   const handlePrevStudent = () => {
     if (activeStudentIndex > 0) {
@@ -854,30 +856,55 @@ export default function TeacherAdvisoryPage() {
                   Đang nạp mục tiêu của học sinh...
                 </div>
               ) : (
-                [
-                  { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚", number: "01", theme: { border: "border-sky-200", badgeBg: "bg-sky-50 border-sky-200", badgeText: "text-sky-800", numberBadge: "bg-sky-600 text-white" } },
-                  { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰", number: "02", theme: { border: "border-emerald-200", badgeBg: "bg-emerald-50 border-emerald-200", badgeText: "text-emerald-800", numberBadge: "bg-emerald-600 text-white" } },
-                  { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨", number: "03", theme: { border: "border-purple-200", badgeBg: "bg-purple-50 border-purple-200", badgeText: "text-purple-800", numberBadge: "bg-purple-600 text-white" } },
-                  { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀", number: "04", theme: { border: "border-amber-200", badgeBg: "bg-amber-50 border-amber-200", badgeText: "text-amber-950", numberBadge: "bg-amber-600 text-white" } }
-                ].map((catObj) => {
+                gradeCategoryWeights.map((catObj, catIdx) => {
                   const catItems = singleStudentTrackingRows.filter(r => r.categoryKey === catObj.key || r.category === catObj.label || (r.category && r.category.includes(catObj.key)))
-                  const theme = catObj.theme
+                  const catEval = overallEvalResult.categories.find(c => c.categoryKey === catObj.key)
+                  const numberStr = `0${catIdx + 1}`
+                  const theme = catIdx === 0 
+                    ? { border: "border-sky-200", badgeBg: "bg-sky-50 border-sky-200", badgeText: "text-sky-800", numberBadge: "bg-sky-600 text-white" }
+                    : catIdx === 1
+                    ? { border: "border-emerald-200", badgeBg: "bg-emerald-50 border-emerald-200", badgeText: "text-emerald-800", numberBadge: "bg-emerald-600 text-white" }
+                    : catIdx === 2
+                    ? { border: "border-purple-200", badgeBg: "bg-purple-50 border-purple-200", badgeText: "text-purple-800", numberBadge: "bg-purple-600 text-white" }
+                    : { border: "border-amber-200", badgeBg: "bg-amber-50 border-amber-200", badgeText: "text-amber-950", numberBadge: "bg-amber-600 text-white" }
 
                   return (
                     <div key={catObj.key} className={`bg-white rounded-3xl border-2 ${theme.border} shadow-xs hover:shadow-md transition-all overflow-hidden space-y-4 p-5 sm:p-6`}>
                       {/* Category Header */}
-                      <div className="border-b border-slate-100 pb-3 flex items-center justify-between gap-3">
+                      <div className="border-b border-slate-100 pb-3 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <span className={`w-8 h-8 rounded-2xl ${theme.numberBadge} flex items-center justify-center font-black text-xs shadow-xs shrink-0`}>
-                            {catObj.number}
+                            {numberStr}
                           </span>
-                          <h4 className="font-black text-base text-slate-900 tracking-tight">
-                            {catObj.label}
-                          </h4>
+                          <div>
+                            <h4 className="font-black text-base text-slate-900 tracking-tight">
+                              {catObj.label}
+                            </h4>
+                            {catObj.description && (
+                              <p className="text-[11px] text-slate-500 font-medium">
+                                {catObj.description}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <span className={`px-3 py-1 ${theme.badgeBg} ${theme.badgeText} border rounded-full text-xs font-black shadow-2xs`}>
-                          {catItems.length} mục tiêu
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-amber-50 text-amber-900 border border-amber-200 rounded-full text-xs font-black shadow-2xs">
+                            Trọng số: {catObj.weight}%
+                          </span>
+                          <span className={`px-3 py-1 ${theme.badgeBg} ${theme.badgeText} border rounded-full text-xs font-black shadow-2xs`}>
+                            {catItems.length} mục tiêu nhỏ
+                          </span>
+                          {catEval && catEval.evaluatedCount > 0 && (
+                            <span className={`px-3 py-1 rounded-full text-xs font-black border ${
+                              catEval.status === "DAT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+                              catEval.status === "TIEN_TRIEN" ? "bg-amber-100 text-amber-900 border-amber-300" :
+                              catEval.status === "CHUA_DAT" ? "bg-rose-100 text-rose-800 border-rose-300" :
+                              "bg-slate-100 text-slate-700 border-slate-300"
+                            }`}>
+                              Đạt {catEval.averagePercent}%
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Goal items under this category */}
@@ -1141,6 +1168,79 @@ export default function TeacherAdvisoryPage() {
       {activeTab === "rubric_eval" && (
         <div className="space-y-6">
 
+          {/* 1. KPI BANNER ĐO LƯỜNG KẾT QUẢ THEO DÕI THEO TRỌNG SỐ */}
+          <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-teal-900 rounded-3xl p-6 text-white shadow-lg space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/15 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-amber-400 text-amber-950 font-black text-[11px] shadow-xs">
+                    Ma trận trọng số {overallEvalResult.gradeLevel}
+                  </span>
+                  <span className="text-teal-200 text-xs font-bold">
+                    Tổng trọng số: {overallEvalResult.totalWeights}%
+                  </span>
+                </div>
+                <h3 className="text-base font-black text-white mt-1 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-teal-300" />
+                  <span>Kết quả Đánh giá Tổng thể theo Trọng số ({activeStudent?.studentName || "Học sinh"})</span>
+                </h3>
+              </div>
+
+              {/* Score and Classification */}
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <div className="text-3xl font-black text-amber-300">
+                    {overallEvalResult.overallPercent}%
+                  </div>
+                  <div className="text-[11px] text-teal-200 font-semibold">
+                    Thang Rubric: {overallEvalResult.overallRubricScore} / 5.0
+                  </div>
+                </div>
+                <div className={`px-4 py-2 rounded-2xl border text-xs font-black shadow-md ${overallEvalResult.classificationColor}`}>
+                  {overallEvalResult.classificationLabel}
+                </div>
+              </div>
+            </div>
+
+            {/* Category Breakdown Bar */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
+              {overallEvalResult.categories.map((cat, cIdx) => (
+                <div key={cat.categoryKey || cIdx} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/15 space-y-1.5">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-teal-100 truncate">{cat.categoryLabel.replace(/^[0-9.]+\s*/, '')}</span>
+                    <span className="px-2 py-0.5 rounded-full bg-teal-400/20 text-teal-200 font-black text-[10px] border border-teal-400/30 shrink-0">
+                      Trọng số {cat.weight}%
+                    </span>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <span className="text-lg font-black text-white">{cat.averagePercent}%</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
+                      cat.status === "DAT" ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/30" :
+                      cat.status === "TIEN_TRIEN" ? "bg-amber-500/30 text-amber-200 border border-amber-400/30" :
+                      cat.status === "CHUA_DAT" ? "bg-rose-500/30 text-rose-200 border border-rose-400/30" :
+                      "bg-white/10 text-white/60"
+                    }`}>
+                      {cat.status === "DAT" ? "🟢 Đạt" : cat.status === "TIEN_TRIEN" ? "🟡 Tiến triển" : cat.status === "CHUA_DAT" ? "🔴 Chưa đạt" : "⚪ Chưa đánh giá"}
+                    </span>
+                  </div>
+                  <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-500 rounded-full ${
+                        cat.status === "DAT" ? "bg-emerald-400" :
+                        cat.status === "TIEN_TRIEN" ? "bg-amber-400" :
+                        cat.status === "CHUA_DAT" ? "bg-rose-400" : "bg-slate-400"
+                      }`}
+                      style={{ width: `${Math.min(100, Math.max(0, cat.averagePercent))}%` }}
+                    />
+                  </div>
+                  <div className="text-[10px] text-teal-300/80 font-medium">
+                    {cat.subGoalsCount} mục tiêu nhỏ ({cat.evaluatedCount} đã đánh giá)
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           {/* Form Đánh Giá Kỳ */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -1150,7 +1250,7 @@ export default function TeacherAdvisoryPage() {
                   <span>Phiếu Đánh Giá Kỳ Cố Vấn Học Tập ({activeStudent?.studentName})</span>
                 </h3>
                 <p className="text-[11px] text-slate-500 font-medium">
-                  Đánh giá 3 tiêu chí theo Thang điểm 1 - 5 dựa trên Rubric chuẩn bên dưới
+                  Đánh giá chi tiết từng mục tiêu nhỏ. Kết quả nhóm và tổng thể được tự động tính theo Trọng số chuẩn hóa
                 </p>
               </div>
 
@@ -1177,8 +1277,8 @@ export default function TeacherAdvisoryPage() {
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3 border-r border-slate-200 min-w-[160px]">Nhóm mục tiêu</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[320px]">Mục tiêu cụ thể</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[200px]">Nhóm mục tiêu (Trọng số)</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[300px]">Mục tiêu cụ thể</th>
                     <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
                     <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức hoàn thành mục tiêu (1-5)</th>
                     <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức độ chủ động (1-5)</th>
@@ -1192,15 +1292,34 @@ export default function TeacherAdvisoryPage() {
                       const sameCatRows = singleStudentTrackingRows.filter(r => r.categoryKey === item.categoryKey || r.category === item.category)
                       const isFirstInCat = singleStudentTrackingRows.findIndex(r => r.categoryKey === item.categoryKey || r.category === item.category) === idx
                       const itemSubIdx = singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length
+                      const catEval = overallEvalResult.categories.find(c => c.categoryKey === item.categoryKey)
 
                       return (
                         <tr key={idx} className="bg-white hover:bg-slate-50/50">
-                          {/* 1. Nhóm mục tiêu */}
+                          {/* 1. Nhóm mục tiêu + Trọng số */}
                           {isFirstInCat && (
-                            <td rowSpan={sameCatRows.length} className="p-3 border-r border-slate-200 align-top bg-slate-50/40">
-                              <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 border border-teal-200">
-                                {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
-                              </span>
+                            <td rowSpan={sameCatRows.length} className="p-3 border-r border-slate-200 align-top bg-slate-50/50">
+                              <div className="space-y-2">
+                                <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 border border-teal-200">
+                                  {item.category}
+                                </span>
+                                <div className="space-y-1">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300">
+                                    Trọng số: {item.categoryWeight || catEval?.weight || 25}%
+                                  </span>
+                                  {catEval && (
+                                    <div className="text-[10px] font-bold text-slate-700">
+                                      Kết quả nhóm: <span className="text-teal-900 font-black">{catEval.averagePercent}%</span>
+                                      <span className="ml-1 text-[10px] font-bold">
+                                        ({catEval.status === "DAT" ? "🟢 Đạt" : catEval.status === "TIEN_TRIEN" ? "🟡 Tiến triển" : catEval.status === "CHUA_DAT" ? "🔴 Chưa đạt" : "⚪ Chưa đánh giá"})
+                                      </span>
+                                    </div>
+                                  )}
+                                  <p className="text-[10px] text-slate-400 font-medium">
+                                    ({sameCatRows.length} mục tiêu nhỏ)
+                                  </p>
+                                </div>
+                              </div>
                             </td>
                           )}
 
@@ -1329,7 +1448,7 @@ export default function TeacherAdvisoryPage() {
                               updated[idx].teacherNotes = e.target.value
                               setSingleStudentTrackingRows(updated)
                             }}
-                            placeholder={"Nhập khuyến nghị / ghi chú chi tiết cho " + (item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "Mục tiêu định hướng" : item.category) + "..."}
+                            placeholder={"Nhập khuyến nghị / ghi chú chi tiết cho " + item.category + "..."}
                             className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
                           />
                         </td>

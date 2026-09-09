@@ -13,6 +13,7 @@ import { GoalMultiSelector } from "@/components/advisory/GoalMultiSelector"
 import { K1GoalForm, K1GoalData } from "@/components/advisory/K1GoalForm"
 import { GoalUnlockWizard } from "@/components/advisory/GoalUnlockWizard"
 import { GoalUnlockCard } from "@/components/advisory/GoalUnlockCard"
+import { getGradeCategoryWeights } from "@/lib/advisory/advisoryWeights"
 
 export default function StudentGoalPortalPage() {
   const [studentId, setStudentId] = useState("")
@@ -317,33 +318,15 @@ export default function StudentGoalPortalPage() {
   const isHighSchool = ["K9", "K10", "K11", "K12", "9", "10", "11", "12"].includes(gradeLevel) || ["K9", "K10", "K11", "K12", "9", "10", "11", "12"].includes(studentGrade) || (className && /(?:^|[\s_])(9|10|11|12)[A-Z._]/i.test(className))
   const isSubmitted = !!submittedAt
 
-  // 4 Target Categories matching official Word/PDF Form Template
-  const secondaryCategories = [
-    {
-      key: "HOC_TAP",
-      number: "1",
-      title: "Mục tiêu học tập",
-      hint: "Môn học, phương pháp học, điểm số...",
-    },
-    {
-      key: "THOI_QUEN",
-      number: "2",
-      title: "Mục tiêu thói quen",
-      hint: "Kỷ luật, tự học, hoàn thành nhiệm vụ đúng thời hạn, thói quen ăn uống, nghỉ ngơi...",
-    },
-    {
-      key: "KY_NANG_CAM_XUC",
-      number: "3",
-      title: "Mục tiêu kỹ năng, cảm xúc",
-      hint: "Giao tiếp, thuyết trình, làm việc nhóm, tư duy phản biện, quản lý cảm xúc...",
-    },
-    {
-      key: "DINH_HUONG",
-      number: "4",
-      title: "Mục tiêu định hướng",
-      hint: "Khám phá bản thân, ngành nghề, lộ trình tương lai...",
-    }
-  ]
+  // Target Categories matching official Word/PDF Form Template and Grade Weights
+  const dynamicWeightCats = getGradeCategoryWeights(gradeLevel, className)
+  const secondaryCategories = dynamicWeightCats.map((cat, idx) => ({
+    key: cat.key,
+    number: String(idx + 1),
+    title: cat.label.replace(/^[0-9.]+\s*/, ''),
+    weight: cat.weight,
+    hint: cat.description || "Điền mục tiêu cụ thể và hành động tương ứng..."
+  }))
 
   if (loading) {
     return (
@@ -592,6 +575,9 @@ export default function StudentGoalPortalPage() {
                           {cat.number}
                         </span>
                         <h3 className="text-sm font-black text-slate-900">{cat.title}</h3>
+                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300">
+                          Trọng số: {cat.weight}%
+                        </span>
                       </div>
                       <span className="text-[11px] text-slate-500 italic hidden sm:inline">{cat.hint}</span>
                     </div>
