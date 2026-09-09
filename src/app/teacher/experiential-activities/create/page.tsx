@@ -215,6 +215,49 @@ export default function CreateActivityWizard() {
   });
   const [customGdcsInput, setCustomGdcsInput] = useState('');
   const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
+
+  const handleSendTestEmail = async () => {
+    if (!testEmail || !testEmail.includes('@')) {
+      toast.error('Vui lòng nhập địa chỉ email hợp lệ để nhận thử nghiệm');
+      return;
+    }
+    setSendingTest(true);
+    try {
+      const res = await fetch('/api/experiential-activities/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testEmail,
+          activityName: formData.name || 'Hoạt động trải nghiệm mẫu',
+          activityCode: formData.code || 'HDTN-TEST',
+          strand: formData.strand,
+          activityTypeName: formData.activityTypeName,
+          subjectName: formData.subjectName,
+          date: formData.date,
+          timeRange: formData.timeRange,
+          location: formData.location,
+          deadline: formData.deadline,
+          senderName: getResolvedSenderName(),
+          senderEmail: emailSettings.senderEmail,
+          replyTo: emailSettings.replyTo,
+          customMessage: emailSettings.customMessage,
+          assignedClasses
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || `Đã gửi email thử nghiệm thành công tới ${testEmail}`);
+      } else {
+        toast.error(data.error || 'Lỗi khi gửi email thử nghiệm');
+      }
+    } catch {
+      toast.error('Lỗi kết nối máy chủ');
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   // Step 2: Evaluation Settings
   const [evalMode, setEvalMode] = useState('CRITERIA'); // 'PARTICIPATION_ONLY' | 'CRITERIA'
@@ -2185,6 +2228,31 @@ export default function CreateActivityWizard() {
                             <span className="inline-block bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white px-5 py-2.5 rounded-xl font-black text-xs shadow-md">
                               TRUY CẬP VÀ ĐÁNH GIÁ VAI TRÒ HỌC SINH &rarr;
                             </span>
+                          </div>
+
+                          {/* TEST EMAIL TOOLBAR */}
+                          <div className="pt-3 border-t border-slate-200 mt-3 flex flex-col sm:flex-row items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl">
+                            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                              <Mail className="w-3.5 h-3.5 text-[#00A99D]" />
+                              <span>Gửi thử nghiệm đến Email của bạn:</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                              <input
+                                type="email"
+                                value={testEmail}
+                                onChange={e => setTestEmail(e.target.value)}
+                                placeholder="Nhập email của bạn..."
+                                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D]/30 w-full sm:w-56"
+                              />
+                              <button
+                                type="button"
+                                disabled={sendingTest}
+                                onClick={handleSendTestEmail}
+                                className="px-3 py-1.5 bg-[#003B3A] hover:bg-[#002B2A] text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1 shrink-0 shadow-2xs"
+                              >
+                                {sendingTest ? 'Đang gửi...' : 'Gửi thử'}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
