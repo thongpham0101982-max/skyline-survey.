@@ -315,7 +315,7 @@ export const DEFAULT_THRESHOLDS: ThresholdConfig = {
   pass: 50
 };
 
-// Nhận xét nhanh (Quick Remarks)
+// Nhận xét nhanh dùng chung (Quick Remarks)
 export const QUICK_REMARKS = [
   'Tích cực, chủ động tham gia hoạt động.',
   'Có tinh thần trách nhiệm cao trong công việc.',
@@ -325,4 +325,167 @@ export const QUICK_REMARKS = [
   'Thể hiện sự sáng tạo và tư duy giải quyết vấn đề linh hoạt.',
   'Cần rèn luyện tính chủ động và tập trung hơn.',
   'Cần tăng cường khả năng hợp tác và lắng nghe ý kiến.'
+];
+
+// Ngân hàng nhận xét chuyên sâu theo 4 Mạch hoạt động
+export const STRAND_QUICK_REMARKS: Record<string, string[]> = {
+  BAN_THAN: [
+    'Tự giác, chủ động thực hiện nhiệm vụ cá nhân.',
+    'Thể hiện sự tự tin và tư duy độc lập.',
+    'Biết lắng nghe góp ý và điều chỉnh cảm xúc tốt.',
+    'Quản lý thời gian và đồ dùng cá nhân ngăn nắp.',
+    'Cần rèn luyện thêm tính kiên trì khi gặp bài toán khó.'
+  ],
+  XA_HOI: [
+    'Tinh thần đồng đội cao, hòa đồng và thân thiện.',
+    'Có năng khiếu điều phối và dẫn dắt nhóm hiệu quả.',
+    'Tích cực lắng nghe và tôn trọng ý kiến khác biệt.',
+    'Sẵn sàng hỗ trợ bạn bè trong các phần việc chung.',
+    'Cần chủ động giao tiếp và tương tác nhiều hơn.'
+  ],
+  TU_NHIEN: [
+    'Say mê tìm tòi, quan sát thiên nhiên nhạy bén.',
+    'Có ý thức bảo vệ môi trường và giữ gìn cảnh quan.',
+    'Kỹ năng thực hành, thí nghiệm khoa học khéo léo.',
+    'Tư duy logic tốt, giải quyết vấn đề sáng tạo.',
+    'Cần chú ý hơn đến quy tắc an toàn khi thực hành.'
+  ],
+  HUONG_NGHIEP: [
+    'Hào hứng tìm hiểu và đặt câu hỏi sâu về ngành nghề.',
+    'Có nhận thức thực tế tốt về yêu cầu công việc.',
+    'Thể hiện tác phong nghiêm túc, chuyên nghiệp.',
+    'Xác định rõ điểm mạnh của bản thân và mục tiêu phấn đấu.',
+    'Cần tìm hiểu thêm về kỹ năng lập kế hoạch tài chính.'
+  ]
+};
+
+// Thư viện Kế hoạch Sự kiện Mẫu (Activity Presets 1-Click)
+export interface ActivityPreset {
+  id: string;
+  name: string;
+  tag: string;
+  strand: 'BAN_THAN' | 'XA_HOI' | 'TU_NHIEN' | 'HUONG_NGHIEP';
+  activityTypeId: string;
+  scale: string;
+  description: string;
+  objectives: string;
+  evalMode: 'CRITERIA' | 'PARTICIPATION_ONLY';
+  formulaType: 'EQUAL_WEIGHT' | 'CUSTOM_WEIGHT';
+  criteria: CriterionConfig[];
+  thresholds: ThresholdConfig;
+}
+
+export const ACTIVITY_PRESETS: ActivityPreset[] = [
+  {
+    id: 'PRESET_TET',
+    name: 'Hội chợ Xuân - Tết Dân gian & Nét đẹp Văn hóa Việt',
+    tag: 'Sự kiện Văn hóa / Lễ hội',
+    strand: 'XA_HOI',
+    activityTypeId: 'SU_KIEN',
+    scale: 'CO_SO',
+    description: 'Hoạt động trải nghiệm không gian văn hóa Tết cổ truyền, giao lưu ẩm thực truyền thống, trò chơi dân gian và gây quỹ từ thiện.',
+    objectives: 'Bồi dưỡng tình yêu quê hương đất nước, nâng cao kỹ năng giao tiếp ứng xử văn minh và tinh thần chia sẻ vì cộng đồng.',
+    evalMode: 'CRITERIA',
+    formulaType: 'EQUAL_WEIGHT',
+    criteria: [
+      { id: 'CRIT_CHUDONG', name: 'Chủ động tham gia', description: 'Nhiệt tình tham gia chuẩn bị gian hàng và các hoạt động văn hóa Tết.', weight: 25, isRequired: false, order: 1 },
+      { id: 'CRIT_HOPTAC', name: 'Hợp tác & Làm việc nhóm', description: 'Phối hợp nhịp nhàng với bạn bè trong trang trí và điều hành gian hàng.', weight: 25, isRequired: false, order: 2 },
+      { id: 'CRIT_GIAOTIEP', name: 'Giao tiếp ứng xử văn minh', description: 'Lịch sự, hiếu khách, ứng xử đúng chuẩn mực với thầy cô, phụ huynh và bạn bè.', weight: 25, isRequired: false, order: 3 },
+      { id: 'CRIT_KYLUAT', name: 'Kỷ luật & Giữ gìn vệ sinh', description: 'Tuân thủ nội quy an toàn, giữ gìn vệ sinh chung của gian hàng và sân trường.', weight: 25, isRequired: true, order: 4 }
+    ],
+    thresholds: { outstanding: 85, good: 70, pass: 50 }
+  },
+  {
+    id: 'PRESET_STEM',
+    name: 'Ngày hội STEM & Sáng tạo Công nghệ Tương lai',
+    tag: 'Khoa học / STEM',
+    strand: 'TU_NHIEN',
+    activityTypeId: 'STEM',
+    scale: 'KHOI',
+    description: 'Thiết kế, chế tạo mô hình khoa học, lập trình robot và trưng bày các sản phẩm sáng tạo giải quyết bài toán môi trường.',
+    objectives: 'Phát triển tư duy logic, năng lực giải quyết vấn đề thực tế, khả năng nghiên cứu khoa học và ứng dụng công nghệ.',
+    evalMode: 'CRITERIA',
+    formulaType: 'EQUAL_WEIGHT',
+    criteria: [
+      { id: 'CRIT_VANDUNG', name: 'Vận dụng kiến thức khoa học', description: 'Ứng dụng kiến thức liên môn (Toán, Lý, Hóa, Tin) vào chế tạo sản phẩm.', weight: 25, isRequired: false, order: 1 },
+      { id: 'CRIT_SANGTAO', name: 'Sáng tạo & Đổi mới', description: 'Ý tưởng độc đáo, giải pháp kỹ thuật có tính đột phá và thẩm mỹ.', weight: 25, isRequired: false, order: 2 },
+      { id: 'CRIT_GIAIQUYET', name: 'Giải quyết vấn đề', description: 'Thử nghiệm, tinh chỉnh và khắc phục lỗi sản phẩm một cách kiên trì.', weight: 25, isRequired: false, order: 3 },
+      { id: 'CRIT_THUYETTRINH', name: 'Thuyết trình sản phẩm', description: 'Tự tin trình bày nguyên lý hoạt động và trả lời phản biện của ban giám khảo.', weight: 25, isRequired: false, order: 4 }
+    ],
+    thresholds: { outstanding: 85, good: 70, pass: 50 }
+  },
+  {
+    id: 'PRESET_DANGOAI',
+    name: 'Dã ngoại Trải nghiệm Sinh thái & Rèn luyện Kỹ năng Sống',
+    tag: 'Dã ngoại / Sinh thái',
+    strand: 'TU_NHIEN',
+    activityTypeId: 'THAM_QUAN',
+    scale: 'KHOI',
+    description: 'Chuyến tham quan học tập thực địa tại khu bảo tồn sinh thái, tìm hiểu đa dạng sinh học và rèn luyện kỹ năng sinh tồn, tự lập.',
+    objectives: 'Nâng cao ý thức bảo vệ môi trường tự nhiên, rèn luyện kỹ năng sinh tồn cơ bản, tính tự lập và kỷ luật an toàn tập thể.',
+    evalMode: 'CRITERIA',
+    formulaType: 'EQUAL_WEIGHT',
+    criteria: [
+      { id: 'CRIT_TULAP', name: 'Tự lập & Tự quản', description: 'Tự chăm sóc bản thân, quản lý quân tư trang và tuân thủ đúng giờ giấc.', weight: 25, isRequired: false, order: 1 },
+      { id: 'CRIT_KYLUAT', name: 'Kỷ luật & An toàn dã ngoại', description: 'Tuyệt đối tuân thủ chỉ dẫn của giáo viên và hướng dẫn viên, không rời đoàn.', weight: 25, isRequired: true, order: 2 },
+      { id: 'CRIT_HOPTAC', name: 'Hợp tác & Tinh thần đồng đội', description: 'Hỗ trợ bạn bè trong các chặng thử thách và hoạt động nhóm thực địa.', weight: 25, isRequired: false, order: 3 },
+      { id: 'CRIT_NHIEMVU', name: 'Thu hoạch kiến thức tự nhiên', description: 'Tích cực quan sát, ghi chép và hoàn thành phiếu học tập dã ngoại.', weight: 25, isRequired: false, order: 4 }
+    ],
+    thresholds: { outstanding: 85, good: 70, pass: 50 }
+  },
+  {
+    id: 'PRESET_HUONGNGHIEP',
+    name: 'Hành trình Hướng nghiệp: Khám phá Thế giới Doanh nghiệp',
+    tag: 'Hướng nghiệp / Thực tế',
+    strand: 'HUONG_NGHIEP',
+    activityTypeId: 'HUONG_NGHIEP_TYPE',
+    scale: 'KHOI',
+    description: 'Tham quan thực tế tại các doanh nghiệp/nhà máy, giao lưu cùng chuyên gia và trải nghiệm các vai trò công việc thực tế.',
+    objectives: 'Hình thành nhận thức nghề nghiệp sớm, hiểu rõ yêu cầu thị trường lao động và nuôi dưỡng định hướng nghề nghiệp tương lai.',
+    evalMode: 'CRITERIA',
+    formulaType: 'EQUAL_WEIGHT',
+    criteria: [
+      { id: 'CRIT_CHUDONG', name: 'Chủ động tìm hiểu & Đặt câu hỏi', description: 'Tích cực tương tác, đặt câu hỏi chuyên sâu với chuyên gia doanh nghiệp.', weight: 25, isRequired: false, order: 1 },
+      { id: 'CRIT_GIAOTIEP', name: 'Tác phong chuyên nghiệp', description: 'Trang phục chỉnh tề, thái độ lắng nghe cầu thị và ghi chép nghiêm túc.', weight: 25, isRequired: false, order: 2 },
+      { id: 'CRIT_NHIEMVU', name: 'Thu hoạch hồ sơ nghề nghiệp', description: 'Hoàn thành bài phân tích ngành nghề và định vị bản thân sau chuyến đi.', weight: 25, isRequired: false, order: 3 },
+      { id: 'CRIT_VANDUNG', name: 'Kế hoạch phát triển cá nhân', description: 'Đề ra mục tiêu học tập và rèn luyện kỹ năng phù hợp với nghề quan tâm.', weight: 25, isRequired: false, order: 4 }
+    ],
+    thresholds: { outstanding: 85, good: 70, pass: 50 }
+  },
+  {
+    id: 'PRESET_DOCSACH',
+    name: 'Ngày hội Văn hóa Đọc - Mỗi Cuốn sách Một Bài học',
+    tag: 'Phát triển Bản thân',
+    strand: 'BAN_THAN',
+    activityTypeId: 'KY_NANG',
+    scale: 'CO_SO',
+    description: 'Giới thiệu sách yêu thích, thi kể chuyện theo sách, quyên góp sách cho tủ sách lớp học và lan tỏa văn hóa đọc.',
+    objectives: 'Bồi dưỡng tình yêu sách, phát triển năng lực ngôn ngữ, tư duy phản biện và khả năng biểu đạt cảm xúc.',
+    evalMode: 'CRITERIA',
+    formulaType: 'EQUAL_WEIGHT',
+    criteria: [
+      { id: 'CRIT_CHUDONG', name: 'Chủ động đọc & Chia sẻ', description: 'Tự giác tham gia đọc sách và tích cực chuẩn bị bài giới thiệu sách.', weight: 30, isRequired: false, order: 1 },
+      { id: 'CRIT_THUYETTRINH', name: 'Biểu đạt & Thuyết trình', description: 'Truyền cảm, tự tin truyền tải thông điệp ý nghĩa của cuốn sách.', weight: 40, isRequired: false, order: 2 },
+      { id: 'CRIT_SANGTAO', name: 'Sáng tạo sản phẩm đọc', description: 'Làm poster tóm tắt, sơ đồ tư duy hoặc vẽ bìa sách độc đáo.', weight: 30, isRequired: false, order: 3 }
+    ],
+    thresholds: { outstanding: 85, good: 70, pass: 50 }
+  },
+  {
+    id: 'PRESET_THIENNGUYEN',
+    name: 'Chiến dịch Thiện nguyện "Vòng tay Yêu thương - Chia sẻ Hơi ấm"',
+    tag: 'Cộng đồng / Thiện nguyện',
+    strand: 'XA_HOI',
+    activityTypeId: 'THIEN_NGUYEN',
+    scale: 'TOAN_HE_THONG',
+    description: 'Quyên góp sách vở, đồ dùng học tập, tổ chức thăm hỏi và giao lưu cùng các bạn học sinh có hoàn cảnh khó khăn.',
+    objectives: 'Nuôi dưỡng lòng trắc ẩn, thấu cảm, tinh thần sẻ chia và trách nhiệm với cộng đồng xã hội.',
+    evalMode: 'CRITERIA',
+    formulaType: 'EQUAL_WEIGHT',
+    criteria: [
+      { id: 'CRIT_TRACHNHIEM', name: 'Trách nhiệm & Tự giác', description: 'Tích cực tham gia gom góp, phân loại và đóng gói quà tặng cẩn thận.', weight: 35, isRequired: false, order: 1 },
+      { id: 'CRIT_GIAOTIEP', name: 'Thân thiện & Tôn trọng', description: 'Giao tiếp ấm áp, hòa đồng, thể hiện sự đồng cảm sâu sắc.', weight: 35, isRequired: false, order: 2 },
+      { id: 'CRIT_KYLUAT', name: 'Kỷ luật & Tác phong', description: 'Tuân thủ tuyệt đối quy định an toàn và hướng dẫn của đoàn thiện nguyện.', weight: 30, isRequired: true, order: 3 }
+    ],
+    thresholds: { outstanding: 85, good: 70, pass: 50 }
+  }
 ];

@@ -7,12 +7,13 @@ import {
   Square, Users, BookOpen, Calendar, Tag, ChevronDown,
   CheckCheck, Sparkles, Award, Filter, ShieldCheck, CheckCircle, 
   Download, Upload, FileSpreadsheet, Send, AlertTriangle,
-  Info, Clock, Lock, Unlock, Check
+  Info, Clock, Lock, Unlock, Check, Printer, FileText, ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import { 
-  ATTENDANCE_OPTIONS, STUDENT_ROLES, EVAL_LEVELS, QUICK_REMARKS 
+  ATTENDANCE_OPTIONS, STUDENT_ROLES, EVAL_LEVELS, QUICK_REMARKS,
+  STRAND_QUICK_REMARKS, ACTIVITY_STRANDS
 } from '@/lib/experiential/constants';
 import { 
   calculateStudentResult, getRatingBadgeProps, getRatingLabel 
@@ -52,6 +53,10 @@ export default function ActivityResultInput() {
 
   // Quick Remark Modal
   const [remarkStudentId, setRemarkStudentId] = useState(null);
+  const [remarkTab, setRemarkTab] = useState<'STRAND' | 'GENERAL' | 'ALL'>('STRAND');
+
+  // Certificate / Student Report Modal
+  const [certificateStudent, setCertificateStudent] = useState<any>(null);
 
   // Pre-submission validation modal
   const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false);
@@ -623,7 +628,7 @@ export default function ActivityResultInput() {
                   {/* SUMMARY & REMARK */}
                   <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">Điểm %</th>
                   <th className="py-3.5 px-3 min-w-[130px] text-center">Xếp loại</th>
-                  <th className="py-3.5 px-4 min-w-[200px]">Nhận xét GVCN</th>
+                  <th className="py-3.5 px-4 min-w-[220px]">Nhận xét & Phiếu cá nhân</th>
                 </tr>
               </thead>
 
@@ -766,10 +771,18 @@ export default function ActivityResultInput() {
                             <button
                               type="button"
                               onClick={() => setRemarkStudentId(st.id)}
-                              className="p-1 rounded-md bg-slate-100 hover:bg-[#00A99D]/10 text-slate-500 hover:text-[#003B3A] shrink-0"
-                              title="Chọn nhận xét nhanh"
+                              className="p-1 rounded-md bg-slate-100 hover:bg-[#00A99D]/10 text-slate-500 hover:text-[#003B3A] shrink-0 transition-colors"
+                              title="Chọn nhận xét nhanh theo mạch"
                             >
                               <Tag className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCertificateStudent(st)}
+                              className="p-1 rounded-md bg-teal-50 hover:bg-[#00A99D] text-[#00A99D] hover:text-white border border-teal-200 shrink-0 transition-colors"
+                              title="Xem & In phiếu ghi nhận kết quả cá nhân (A4)"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -783,37 +796,368 @@ export default function ActivityResultInput() {
         </div>
 
         {/* QUICK REMARK PRESET MODAL */}
-        {remarkStudentId && (
-          <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-sm font-black text-slate-900">Chọn Nhận Xét Nhanh</h3>
-                <button onClick={() => setRemarkStudentId(null)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+        {remarkStudentId && (() => {
+          const st = students.find(s => s.id === remarkStudentId);
+          const actStrand = activity?.strand || 'BAN_THAN';
+          const strandObj = ACTIVITY_STRANDS.find(s => s.id === actStrand);
+          const currentStrandRemarks = STRAND_QUICK_REMARKS[actStrand] || [];
 
-              <div className="space-y-1.5 max-h-60 overflow-y-auto">
-                {QUICK_REMARKS.map((preset, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => {
-                      const st = students.find(s => s.id === remarkStudentId);
-                      const current = st?.remarksCustom ? `${st.remarksCustom}; ${preset}` : preset;
-                      updateStudent(remarkStudentId, { remarksCustom: current });
-                      setRemarkStudentId(null);
-                      toast.success('? thm nhận xét m?u');
-                    }}
-                    className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#00A99D]/10 hover:text-[#003B3A] text-xs font-bold text-slate-700 transition-colors"
-                  >
-                    + {preset}
+          return (
+            <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">Ngân hàng Nhận xét Nhanh</h3>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Học sinh: <span className="font-bold text-slate-800">{st?.fullName}</span> ({st?.studentCode})
+                    </p>
+                  </div>
+                  <button onClick={() => setRemarkStudentId(null)} className="text-slate-400 hover:text-slate-600">
+                    <X className="w-4 h-4" />
                   </button>
-                ))}
+                </div>
+
+                {/* Tabs */}
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setRemarkTab('STRAND')}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all ${
+                      remarkTab === 'STRAND'
+                        ? 'bg-white text-[#00A99D] shadow-xs font-black'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Theo Mạch ({strandObj?.name || actStrand})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRemarkTab('GENERAL')}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all ${
+                      remarkTab === 'GENERAL'
+                        ? 'bg-white text-[#00A99D] shadow-xs font-black'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Dùng chung ({QUICK_REMARKS.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRemarkTab('ALL')}
+                    className={`flex-1 py-1.5 px-2 rounded-lg text-center transition-all ${
+                      remarkTab === 'ALL'
+                        ? 'bg-white text-[#00A99D] shadow-xs font-black'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Tất cả mạch
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                  {remarkTab === 'STRAND' && (
+                    <div className="space-y-1.5">
+                      <div className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-100 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                        Gợi ý chuyên sâu theo mạch "{strandObj?.name}":
+                      </div>
+                      {currentStrandRemarks.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const current = st?.remarksCustom ? `${st.remarksCustom}; ${preset}` : preset;
+                            updateStudent(remarkStudentId, { remarksCustom: current });
+                            setRemarkStudentId(null);
+                            toast.success('Đã thêm nhận xét');
+                          }}
+                          className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#00A99D]/10 hover:text-[#003B3A] text-xs font-bold text-slate-700 transition-colors border border-transparent hover:border-[#00A99D]/30"
+                        >
+                          + {preset}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {remarkTab === 'GENERAL' && (
+                    <div className="space-y-1.5">
+                      {QUICK_REMARKS.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const current = st?.remarksCustom ? `${st.remarksCustom}; ${preset}` : preset;
+                            updateStudent(remarkStudentId, { remarksCustom: current });
+                            setRemarkStudentId(null);
+                            toast.success('Đã thêm nhận xét');
+                          }}
+                          className="w-full text-left p-2.5 rounded-xl bg-slate-50 hover:bg-[#00A99D]/10 hover:text-[#003B3A] text-xs font-bold text-slate-700 transition-colors border border-transparent hover:border-[#00A99D]/30"
+                        >
+                          + {preset}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {remarkTab === 'ALL' && (
+                    <div className="space-y-3">
+                      {Object.entries(STRAND_QUICK_REMARKS).map(([stKey, remarksList]) => {
+                        const sObj = ACTIVITY_STRANDS.find(s => s.id === stKey);
+                        return (
+                          <div key={stKey} className="space-y-1">
+                            <div className="text-[11px] font-black text-slate-500 uppercase tracking-wider px-1">
+                              Mạch {sObj?.name || stKey}
+                            </div>
+                            {remarksList.map((preset, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => {
+                                  const current = st?.remarksCustom ? `${st.remarksCustom}; ${preset}` : preset;
+                                  updateStudent(remarkStudentId, { remarksCustom: current });
+                                  setRemarkStudentId(null);
+                                  toast.success('Đã thêm nhận xét');
+                                }}
+                                className="w-full text-left p-2 rounded-xl bg-slate-50 hover:bg-[#00A99D]/10 hover:text-[#003B3A] text-xs font-bold text-slate-700 transition-colors"
+                              >
+                                + {preset}
+                              </button>
+                            ))}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-400">
+                  <span>* Click vào nhận xét để tự động bổ sung vào học sinh</span>
+                  <button
+                    type="button"
+                    onClick={() => setRemarkStudentId(null)}
+                    className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition-colors"
+                  >
+                    Đóng
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
+
+        {/* STUDENT CERTIFICATE / REPORT CARD MODAL */}
+        {certificateStudent && (() => {
+          const st = certificateStudent;
+          const currentClassObj = (activity?.assignedClasses || []).find(c => c.classId === selectedClassId) || {};
+          const actStrand = activity?.strand || 'BAN_THAN';
+          const strandObj = ACTIVITY_STRANDS.find(s => s.id === actStrand);
+          const ratingBadge = getRatingBadgeProps(st.finalResult);
+          const roleObj = STUDENT_ROLES.find(r => r.id === (st.roles?.[0] || 'THANH_VIEN'));
+          const attendanceObj = ATTENDANCE_OPTIONS.find(a => a.id === (st.attendance || 'PRESENT'));
+
+          return (
+            <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+              <div className="relative w-full max-w-3xl my-8">
+                {/* Modal Actions Bar (Not printed) */}
+                <div className="flex items-center justify-between bg-slate-900 text-white px-6 py-3 rounded-t-2xl shadow-md print:hidden">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-5 h-5 text-amber-400" />
+                    <span className="text-sm font-black">Phiếu Ghi Nhận Kết Quả Hoạt Động Trải Nghiệm Cá Nhân</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#00A99D] hover:bg-[#008F85] text-white text-xs font-black rounded-xl shadow-xs transition-colors"
+                    >
+                      <Printer className="w-4 h-4" />
+                      In Phiếu (A4)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCertificateStudent(null)}
+                      className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Printable Certificate Sheet (A4 Layout) */}
+                <div
+                  id="printable-certificate"
+                  className="bg-white rounded-b-2xl print:rounded-none p-8 sm:p-10 border-4 border-double border-teal-800/80 shadow-2xl text-slate-800 space-y-6"
+                >
+                  {/* Certificate Header */}
+                  <div className="flex items-start justify-between border-b-2 border-teal-700/60 pb-4">
+                    <div>
+                      <div className="text-[11px] font-black uppercase text-teal-800 tracking-wider">
+                        HỆ THỐNG GIÁO DỤC SKY-LINE
+                      </div>
+                      <div className="text-xs font-black text-slate-800">
+                        BAN CÔNG TÁC HỌC SINH - BAN CHUYÊN MÔN
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-medium">
+                        Cơ sở: {currentClassObj.campusName || activity?.campusName || 'Sky-Line Schools'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Mã hồ sơ trải nghiệm</div>
+                      <div className="text-xs font-mono font-black text-teal-800">
+                        EXP-{st.studentCode}-{new Date().getFullYear()}
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-medium">
+                        Ngày in: {new Date().toLocaleDateString('vi-VN')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <div className="text-center space-y-1">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-teal-50 text-teal-800 border border-teal-200">
+                      Sky-Line Experiential Learning Assessment
+                    </div>
+                    <h1 className="text-xl sm:text-2xl font-black text-teal-900 uppercase tracking-tight">
+                      PHIẾU GHI NHẬN KẾT QUẢ TRẢI NGHIỆM
+                    </h1>
+                    <p className="text-xs font-bold text-slate-500">
+                      Chương trình Hoạt động Trải nghiệm, Hướng nghiệp & Kỹ năng Sống
+                    </p>
+                  </div>
+
+                  {/* Student & Activity Meta Grid */}
+                  <div className="grid grid-cols-2 gap-4 bg-slate-50/80 p-4 rounded-xl border border-slate-200 text-xs">
+                    <div className="space-y-1.5">
+                      <div className="text-[10px] font-black uppercase text-slate-400">Thông tin Học sinh</div>
+                      <div>Họ và tên: <span className="font-black text-sm text-slate-900">{st.fullName}</span></div>
+                      <div className="flex gap-4">
+                        <span>Mã HS: <span className="font-mono font-bold text-slate-800">{st.studentCode}</span></span>
+                        <span>Lớp: <span className="font-black text-teal-800">{currentClassObj.className || 'Sky-Line'}</span></span>
+                      </div>
+                      <div>Vai trò tham gia: <span className="font-bold text-slate-800">{roleObj?.name || 'Thành viên'}</span></div>
+                      <div>Trạng thái: <span className="font-bold text-slate-800">{attendanceObj?.name || 'Có mặt'}</span></div>
+                    </div>
+
+                    <div className="space-y-1.5 border-l border-slate-200 pl-4">
+                      <div className="text-[10px] font-black uppercase text-slate-400">Thông tin Hoạt động</div>
+                      <div>Tên hoạt động: <span className="font-black text-slate-900">{activity?.name}</span></div>
+                      <div>Mạch hoạt động: <span className="font-bold text-teal-800">{strandObj?.name || actStrand}</span></div>
+                      <div>Thời gian: <span className="font-bold text-slate-800">{activity?.date} ({activity?.timeRange || 'Cả ngày'})</span></div>
+                      <div>Địa điểm: <span className="font-bold text-slate-800">{activity?.location || 'Trường Sky-Line'}</span></div>
+                    </div>
+                  </div>
+
+                  {/* Criteria Results Table */}
+                  <div className="space-y-2">
+                    <div className="text-xs font-black uppercase text-teal-900 tracking-wider">
+                      Kết quả Đánh giá theo Tiêu chí Chuẩn:
+                    </div>
+                    <table className="w-full border-collapse text-xs border border-slate-200">
+                      <thead>
+                        <tr className="bg-teal-50/80 text-teal-900 font-black border-b border-slate-200 text-[11px]">
+                          <th className="py-2 px-2 text-center w-8 border-r border-slate-200">#</th>
+                          <th className="py-2 px-3 text-left border-r border-slate-200">Tiêu chí đánh giá</th>
+                          <th className="py-2 px-2 text-center w-20 border-r border-slate-200">Trọng số</th>
+                          <th className="py-2 px-2 text-center w-24 border-r border-slate-200">Mức đạt</th>
+                          <th className="py-2 px-3 text-left">Đánh giá / Năng lực thể hiện</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {(activity?.criteria || []).map((crit, idx) => {
+                          const level = st.criteriaScores?.[crit.id];
+                          const lvlInfo = EVAL_LEVELS.find(l => l.level === level);
+                          return (
+                            <tr key={crit.id} className="hover:bg-slate-50/50">
+                              <td className="py-2 px-2 text-center font-bold text-slate-400 border-r border-slate-200">{idx + 1}</td>
+                              <td className="py-2 px-3 border-r border-slate-200">
+                                <div className="font-bold text-slate-900">{crit.name}</div>
+                                <div className="text-[10px] text-slate-500 line-clamp-1">{crit.description}</div>
+                              </td>
+                              <td className="py-2 px-2 text-center font-bold text-slate-600 border-r border-slate-200">
+                                {activity?.formulaType === 'WEIGHTED' ? `${crit.weight}%` : 'Đồng đều'}
+                              </td>
+                              <td className="py-2 px-2 text-center border-r border-slate-200">
+                                {level ? (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                    level === 4 ? 'bg-purple-100 text-purple-800' :
+                                    level === 3 ? 'bg-emerald-100 text-emerald-800' :
+                                    level === 2 ? 'bg-sky-100 text-sky-800' :
+                                    'bg-amber-100 text-amber-800'
+                                  }`}>
+                                    Mức {level}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-300">-</span>
+                                )}
+                              </td>
+                              <td className="py-2 px-3 text-[11px] text-slate-600">
+                                {lvlInfo ? (
+                                  <span className="font-semibold">{lvlInfo.name}</span>
+                                ) : (
+                                  <span className="italic text-slate-400">Chưa ghi nhận</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-teal-50/50 font-black border-t-2 border-teal-700/50">
+                          <td colSpan={3} className="py-2.5 px-3 text-right text-teal-900 uppercase text-[11px]">
+                            Tổng kết kết quả trải nghiệm:
+                          </td>
+                          <td className="py-2.5 px-2 text-center text-sm font-black text-teal-900">
+                            {st.calculatedPercent !== null ? `${st.calculatedPercent}%` : '-'}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black border ${ratingBadge.containerCls}`}>
+                              <span>Xếp loại: {ratingBadge.label}</span>
+                            </span>
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  {/* Teacher's Remarks Box */}
+                  <div className="space-y-1.5 bg-amber-50/40 p-3.5 rounded-xl border border-amber-200/80">
+                    <div className="text-[11px] font-black uppercase text-amber-900 tracking-wider">
+                      Lời Nhận xét & Đánh giá của Giáo viên Hướng dẫn / GVCN:
+                    </div>
+                    <p className="text-xs italic text-slate-800 font-medium leading-relaxed">
+                      "{st.remarksCustom || 'Học sinh tích cực tham gia các nội dung hoạt động, thể hiện tốt tinh thần tập thể, kỷ luật và trách nhiệm cao.'}"
+                    </p>
+                  </div>
+
+                  {/* Signature Section */}
+                  <div className="grid grid-cols-2 pt-4 text-center text-xs">
+                    <div className="space-y-12">
+                      <div>
+                        <div className="font-black text-slate-800 uppercase">GIÁO VIÊN HƯỚNG DẪN / GVCN</div>
+                        <div className="text-[10px] text-slate-400 italic">(Ký và ghi rõ họ tên)</div>
+                      </div>
+                      <div className="font-bold text-slate-700">
+                        {currentClassObj.homeroomTeacher?.teacherName || 'Giáo viên phụ trách'}
+                      </div>
+                    </div>
+
+                    <div className="space-y-12">
+                      <div>
+                        <div className="text-[10px] text-slate-500 italic">Đà Nẵng, ngày ... tháng ... năm 2026</div>
+                        <div className="font-black text-slate-800 uppercase">BAN CÔNG TÁC HỌC SINH / BGH</div>
+                        <div className="text-[10px] text-slate-400 italic">(Ký duyệt và đóng dấu)</div>
+                      </div>
+                      <div className="font-bold text-slate-700">
+                        Ban Giám hiệu Sky-Line
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* BATCH GRADING MODAL */}
         {showBulkModal && (
@@ -939,7 +1283,29 @@ export default function ActivityResultInput() {
             </div>
           </div>
         )}
-
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            body * {
+              visibility: hidden !important;
+            }
+            #printable-certificate,
+            #printable-certificate * {
+              visibility: visible !important;
+            }
+            #printable-certificate {
+              position: fixed !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100vw !important;
+              min-height: 100vh !important;
+              margin: 0 !important;
+              padding: 24px !important;
+              border: 3px double #0f766e !important;
+              box-shadow: none !important;
+              background: white !important;
+            }
+          }
+        ` }} />
       </div>
     </div>
   );

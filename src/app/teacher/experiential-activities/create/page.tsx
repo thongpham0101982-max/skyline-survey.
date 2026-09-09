@@ -10,7 +10,8 @@ import toast from 'react-hot-toast';
 import { 
   ACTIVITY_STRANDS, SKYLINE_ACTIVITY_TYPES, ACTIVITY_SCALES,
   CRITERIA_LIBRARY, DEFAULT_1_CRITERION, DEFAULT_3_CRITERIA,
-  DEFAULT_5_CRITERIA, DEFAULT_THRESHOLDS, EVAL_LEVELS
+  DEFAULT_5_CRITERIA, DEFAULT_THRESHOLDS, EVAL_LEVELS,
+  ACTIVITY_PRESETS, ActivityPreset
 } from '@/lib/experiential/constants';
 
 
@@ -206,6 +207,27 @@ export default function CreateActivityWizard() {
   const [thresholds, setThresholds] = useState(DEFAULT_THRESHOLDS);
   const [mandatoryRules, setMandatoryRules] = useState([]);
   const [criteriaPreset, setCriteriaPreset] = useState('3'); // '1' | '3' | '5' | 'custom'
+  const [showPresets, setShowPresets] = useState(true);
+
+  const handleApplyPreset = (preset: ActivityPreset) => {
+    const typeObj = SKYLINE_ACTIVITY_TYPES.find(t => t.id === preset.activityTypeId);
+    setFormData(prev => ({
+      ...prev,
+      name: preset.name,
+      strand: preset.strand,
+      activityTypeId: preset.activityTypeId,
+      activityTypeName: typeObj ? typeObj.name : 'Hoạt động Trải nghiệm',
+      scale: preset.scale,
+      description: preset.description,
+      objectives: preset.objectives
+    }));
+    setEvalMode(preset.evalMode);
+    setCriteria(preset.criteria);
+    setFormulaType(preset.formulaType === 'CUSTOM_WEIGHT' ? 'WEIGHTED' : 'EQUAL_WEIGHT');
+    setThresholds(preset.thresholds);
+    setCriteriaPreset(String(preset.criteria.length));
+    toast.success(`Đã áp dụng mẫu kế hoạch: "${preset.name}"!`);
+  };
 
 
   // Helper to extract grade name accurately (e.g. 1, 2, ..., 12, Mầm, Chồi, Lá)
@@ -608,6 +630,89 @@ export default function CreateActivityWizard() {
               <p className="text-xs text-slate-500 font-medium mt-0.5">
                 Nhập các thông tin cơ bản, chọn mạch hoạt động, loại hoạt động và quy mô tổ chức
               </p>
+            </div>
+
+            {/* 1-CLICK ACTIVITY PRESETS BANNER */}
+            <div className="bg-gradient-to-br from-teal-50/70 via-emerald-50/40 to-sky-50/50 rounded-2xl p-4 sm:p-5 border border-teal-200/80 shadow-xs">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#00A99D] text-white flex items-center justify-center shadow-xs shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-black text-slate-800">Thư viện Kế hoạch Sự kiện Mẫu (1-Click Presets)</h3>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-200">
+                        Sky-Line Standard
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 font-medium">
+                      Chọn nhanh mẫu sự kiện đã được cấu hình sẵn mục tiêu, mô tả và ma trận tiêu chí đánh giá chuẩn
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPresets(!showPresets)}
+                  className="text-xs font-bold text-teal-700 hover:text-teal-900 px-2.5 py-1 rounded-lg bg-teal-100/70 hover:bg-teal-200/80 transition-colors shrink-0"
+                >
+                  {showPresets ? 'Thu gọn' : 'Xem 6 mẫu sự kiện'}
+                </button>
+              </div>
+
+              {showPresets && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                  {ACTIVITY_PRESETS.map(preset => {
+                    const strandInfo = ACTIVITY_STRANDS.find(s => s.id === preset.strand);
+                    const isSelected = formData.name === preset.name;
+                    return (
+                      <div
+                        key={preset.id}
+                        onClick={() => handleApplyPreset(preset)}
+                        className={`group relative p-3.5 rounded-2xl border transition-all cursor-pointer bg-white hover:shadow-md hover:border-[#00A99D] flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-[#00A99D] ring-2 ring-[#00A99D]/20 bg-teal-50/20'
+                            : 'border-slate-200 hover:border-teal-300'
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                              {preset.tag}
+                            </span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border ${
+                              preset.strand === 'XA_HOI' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                              preset.strand === 'TU_NHIEN' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                              preset.strand === 'HUONG_NGHIEP' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                              'bg-sky-50 text-sky-700 border-sky-200'
+                            }`}>
+                              {strandInfo?.name || preset.strand}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-black text-slate-900 group-hover:text-[#00A99D] transition-colors leading-snug line-clamp-2">
+                              {preset.name}
+                            </h4>
+                            <p className="text-[11px] text-slate-500 font-medium line-clamp-2 mt-1">
+                              {preset.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 mt-2 border-t border-slate-100 text-[11px]">
+                          <span className="text-slate-500 font-bold">
+                            {preset.criteria.length} tiêu chí đánh giá
+                          </span>
+                          <span className="inline-flex items-center gap-1 font-black text-[#00A99D] group-hover:translate-x-0.5 transition-transform">
+                            {isSelected ? 'Đang chọn' : 'Áp dụng mẫu'}
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Basic fields */}
