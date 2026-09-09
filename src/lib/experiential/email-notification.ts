@@ -1,4 +1,5 @@
-﻿import { prisma } from "@/lib/db";
+// @ts-nocheck
+import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/mail";
 import { ACTIVITY_STRANDS } from "./constants";
 

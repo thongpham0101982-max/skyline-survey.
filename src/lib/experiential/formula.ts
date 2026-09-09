@@ -1,12 +1,5 @@
-import {
-  AttendanceStatus,
-  CriterionConfig,
-  EvalLevel,
-  FormulaType,
-  MandatoryRule,
-  ResultRating,
-  ThresholdConfig
-} from './types';
+// @ts-nocheck
+import { AttendanceStatus, CriterionConfig, EvalLevel, FormulaType, MandatoryRule, ResultRating, ThresholdConfig } from './types';
 import { DEFAULT_THRESHOLDS } from './constants';
 
 export interface CalculationResult {

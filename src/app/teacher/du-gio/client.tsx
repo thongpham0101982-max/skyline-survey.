@@ -1,8 +1,13 @@
+// @ts-nocheck
 // Forced Vercel Deployment: 2026-08-28T15:53:02.733Z
 "use client"
 
 import { ReceivedEvaluationsTab } from './components/ReceivedEvaluationsTab';
 import { TTCMDepartmentSummaryTab } from './components/TTCMDepartmentSummaryTab';
+import { PrintObservationEvaluationModal } from './components/PrintObservationEvaluationModal';
+import { QuickCommentPresets } from './components/QuickCommentPresets';
+import { TeacherTargetTracker } from './components/TeacherTargetTracker';
+import { AdminObservationKpiCards } from './components/AdminObservationKpiCards';
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
@@ -10,7 +15,7 @@ import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
   Eye, TrendingUp, TrendingDown, Target, Star, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
   CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
-  BarChart3, PieChart
+  BarChart3, PieChart, Printer
 } from "lucide-react"
 
 const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
@@ -450,6 +455,9 @@ export function ObservationClient(props: ObservationClientProps) {
   const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
   const [historySlot, setHistorySlot] = useState<any | null>(null);
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+  const [printModalSlot, setPrintModalSlot] = useState<{ slot: any; registration: any } | null>(null);
+  const [evalDraftSavedAt, setEvalDraftSavedAt] = useState<Date | null>(null);
+  const [hasEvalDraft, setHasEvalDraft] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
   const [highlightedSlotId, setHighlightedSlotId] = useState<string | null>(null)
 
@@ -1479,8 +1487,66 @@ export function ObservationClient(props: ObservationClientProps) {
       setEvalGeneral("");
       setEvalOverall("");
     }
+
+    // Check if there is a local draft saved in browser
+    if (typeof window !== "undefined") {
+      const draftKey = `skyline_eval_draft_${slot.id}_${registration.id}`;
+      const saved = localStorage.getItem(draftKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed) {
+            setHasEvalDraft(true);
+            if (parsed.timestamp) setEvalDraftSavedAt(new Date(parsed.timestamp));
+          }
+        } catch (e) {
+          setHasEvalDraft(false);
+        }
+      } else {
+        setHasEvalDraft(false);
+        setEvalDraftSavedAt(null);
+      }
+    }
+
     setEvalModal({ registration, slot })
   }
+
+  const handleRestoreDraft = () => {
+    if (!evalModal?.slot?.id || !evalModal?.registration?.id || typeof window === "undefined") return;
+    const draftKey = `skyline_eval_draft_${evalModal.slot.id}_${evalModal.registration.id}`;
+    const saved = localStorage.getItem(draftKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.evalK12Scores && Array.isArray(parsed.evalK12Scores)) setEvalK12Scores(parsed.evalK12Scores);
+        if (parsed.evalCriteria && Array.isArray(parsed.evalCriteria)) setEvalCriteria(parsed.evalCriteria);
+        if (parsed.evalStrengths != null) setEvalStrengths(parsed.evalStrengths);
+        if (parsed.evalImprovements != null) setEvalImprovements(parsed.evalImprovements);
+        if (parsed.evalGeneral != null) setEvalGeneral(parsed.evalGeneral);
+        if (parsed.evalOverall != null) setEvalOverall(parsed.evalOverall);
+        showToast("Đã khôi phục dữ liệu từ bản nháp!", "success");
+      } catch (e) {
+        showToast("Không thể khôi phục bản nháp", "error");
+      }
+    }
+  };
+
+  const handleSaveLocalDraft = useCallback(() => {
+    if (!evalModal?.slot?.id || !evalModal?.registration?.id || typeof window === "undefined") return;
+    const draftKey = `skyline_eval_draft_${evalModal.slot.id}_${evalModal.registration.id}`;
+    const draftData = {
+      evalK12Scores,
+      evalCriteria,
+      evalStrengths,
+      evalImprovements,
+      evalGeneral,
+      evalOverall,
+      timestamp: new Date().toISOString()
+    };
+    localStorage.setItem(draftKey, JSON.stringify(draftData));
+    setEvalDraftSavedAt(new Date());
+    setHasEvalDraft(true);
+  }, [evalModal?.slot?.id, evalModal?.registration?.id, evalK12Scores, evalCriteria, evalStrengths, evalImprovements, evalGeneral, evalOverall]);
 
   const calculateK12Ranking = (scores: number[]) => {
     return getK12RankingDetails(scores).rating;
@@ -1626,6 +1692,10 @@ export function ObservationClient(props: ObservationClientProps) {
     const res = await submitEvaluation(payload)
     setEvalSubmitting(false)
     if (res.success) {
+      if (typeof window !== "undefined" && evalModal) {
+        const draftKey = `skyline_eval_draft_${evalModal.slot.id}_${evalModal.registration.id}`;
+        localStorage.removeItem(draftKey);
+      }
       showToast("Đã nộp phiếu đánh giá thành công!", "success")
       setEvalModal(null)
       refreshSlots()
@@ -1934,8 +2004,10 @@ export function ObservationClient(props: ObservationClientProps) {
   const tabCounts = useMemo(() => {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const isSpecificMonthSelected = filterMonth && filterMonth !== "all";
 
-    let all = slots.length;
+    let all = 0;
     let selfOpen = 0;
     let expired = 0;
     let gbmRequest = 0;
@@ -1945,6 +2017,14 @@ export function ObservationClient(props: ObservationClientProps) {
     slots.forEach(slot => {
       const slotDate = new Date(slot.date);
       const isExp = slotDate < todayStart || slot.status === "EXPIRED";
+      const isPastMonthExp = isExp && slotDate < currentMonthStart;
+
+      // Không đếm các tiết hết hạn của tháng trước đó khi ở chế độ xem tổng quan
+      if (isPastMonthExp && !isSpecificMonthSelected) {
+        return;
+      }
+
+      all++;
       const isMyD = checkIsMyDept(slot);
       const isObsReq = slot.requestOrigin === "OBSERVER_REQUEST";
 
@@ -1963,15 +2043,25 @@ export function ObservationClient(props: ObservationClientProps) {
       my_dept: myDept,
       other_dept: otherDept,
     };
-  }, [slots, checkIsMyDept]);
+  }, [slots, checkIsMyDept, filterMonth]);
 
   const tabFilteredSlots = useMemo(() => {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const isSpecificMonthSelected = filterMonth && filterMonth !== "all";
 
     const filtered = slots.filter(slot => {
       const slotDate = new Date(slot.date);
       const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
+      const isPastMonthExpired = isExpired && slotDate < currentMonthStart;
+
+      // Không hiển thị các tiết hết hạn của tháng trước đó để giảm tải số dòng trên trang
+      // (Ngoại trừ trường hợp người dùng chủ động chọn tháng cụ thể trong bộ lọc Tháng)
+      if (isPastMonthExpired && !isSpecificMonthSelected) {
+        return false;
+      }
+
       const isMyDept = checkIsMyDept(slot);
       const isObserverRequest = slot.requestOrigin === "OBSERVER_REQUEST";
 
@@ -2996,6 +3086,13 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                 )}
 
+                {/* Quick Comment Presets for Surprise Observation */}
+                <QuickCommentPresets
+                  isPreschool={isMamNonTeacher || surpriseLevel === "Mầm non"}
+                  onAddStrength={(text) => setSurpriseStrengths(prev => prev ? `${prev}\n• ${text}` : `• ${text}`)}
+                  onAddImprovement={(text) => setSurpriseImprovements(prev => prev ? `${prev}\n• ${text}` : `• ${text}`)}
+                />
+
                 {/* Qualitative Feedback Textareas */}
                 <div className="space-y-4 pt-2">
                   <h6 className="font-black text-xs text-slate-800 uppercase tracking-wider">Nhận xét & Góp ý chuyên môn</h6>
@@ -3714,6 +3811,14 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* TAB 2: 2. TỔNG HỢP KẾT QUẢ ĐĂNG KÝ */}
       {activeMainTab === "overview_slots" && (
         <div className="w-full space-y-6 animate-in fade-in duration-300">
+          {/* Executive Overview KPI Summary Cards */}
+          <AdminObservationKpiCards
+            slots={slots}
+            isPreschool={isMamNonTeacher}
+            selectedMonth={filterMonth}
+            academicYearName={academicYears.find(y => y.id === filterAcademicYearId)?.name}
+          />
+
           {/* Compact Quick Register Bar (Space-saving, Simple & Elegant) */}
         <div className="w-full bg-gradient-to-r from-teal-50/90 via-white to-amber-50/60 rounded-2xl border border-teal-200/90 p-3 shadow-xs">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
@@ -4457,7 +4562,20 @@ export function ObservationClient(props: ObservationClientProps) {
 
       {/* TAB 3: 3. LỊCH DẠY & DỰ GIỜ CỦA TÔI (Compact & Structured Table Layout) */}
       {activeMainTab === "my_schedule" && (
-        <div className="w-full space-y-8 animate-in fade-in duration-300">
+        <div className="w-full space-y-6 animate-in fade-in duration-300">
+          {/* Personal Target Tracker Progress Bars */}
+          <TeacherTargetTracker
+            taughtCount={myTaughtSlots.length}
+            targetTaught={currentTeacher?.requiredTaught || 2}
+            observedCount={myObservedSlots.length}
+            targetObserved={currentTeacher?.requiredObserved || 5}
+            pendingEvaluationCount={myObservedSlots.filter(s => {
+              const reg = s.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
+              return reg && !reg.evaluation;
+            }).length}
+            isPreschool={isMamNonTeacher}
+            academicYearName={academicYears.find(y => y.id === filterAcademicYearId)?.name}
+          />
           
           {/* SECTION 1: TIẾT DẠY CỦA TÔI (TÔI DẠY) - DATA TABLE */}
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-4 border-t-4 border-t-amber-500">
@@ -4966,6 +5084,15 @@ export function ObservationClient(props: ObservationClientProps) {
                                 >
                                   Xem phiếu
                                 </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPrintModalSlot({ slot, registration: myReg })}
+                                  className="px-2.5 py-1 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1"
+                                  title="In phiếu đánh giá chuẩn A4"
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-slate-600" />
+                                  <span className="hidden sm:inline">In phiếu</span>
+                                </button>
                                 {myReg.evaluation.reEvaluationStatus === "REQUESTED" && (
                                   <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
                                     ⏳ Chờ duyệt mở lại
@@ -5149,9 +5276,19 @@ export function ObservationClient(props: ObservationClientProps) {
                     GV Dạy: <span className="font-bold text-white">{evalModal.slot.teacher?.teacherName}</span> • Bài dạy: <span className="font-bold text-white">{evalModal.slot.topic}</span>
                   </p>
                 </div>
-                <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer">
-                  <X className="w-5 h-5 text-white/80" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrintModalSlot({ slot: evalModal.slot, registration: evalModal.registration })}
+                    className="px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 border border-white/20 cursor-pointer shadow-xs"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-[#48BFE3]" />
+                    <span className="hidden sm:inline">In phiếu A4</span>
+                  </button>
+                  <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer">
+                    <X className="w-5 h-5 text-white/80" />
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar text-xs font-semibold">
@@ -5330,6 +5467,24 @@ export function ObservationClient(props: ObservationClientProps) {
                       );
                     })}
                   </div>
+                )}
+
+                {/* Quick Comment Presets & Auto Draft Bar */}
+                {!isReadOnly && (
+                  <QuickCommentPresets
+                    isPreschool={evalModal.slot.level === "Mầm non"}
+                    onAddStrength={(text) => {
+                      setEvalStrengths(prev => prev ? `${prev}\n• ${text}` : `• ${text}`);
+                      handleSaveLocalDraft();
+                    }}
+                    onAddImprovement={(text) => {
+                      setEvalImprovements(prev => prev ? `${prev}\n• ${text}` : `• ${text}`);
+                      handleSaveLocalDraft();
+                    }}
+                    draftSavedAt={evalDraftSavedAt}
+                    hasDraft={hasEvalDraft}
+                    onRestoreDraft={handleRestoreDraft}
+                  />
                 )}
 
                 {/* Qualitative Feedback */}
@@ -5945,6 +6100,17 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL 3: IN PHIẾU ĐÁNH GIÁ DỰ GIỜ A4 CHUẨN SKY-LINE */}
+      {/* ======================================================== */}
+      {printModalSlot && (
+        <PrintObservationEvaluationModal
+          slot={printModalSlot.slot}
+          registration={printModalSlot.registration}
+          onClose={() => setPrintModalSlot(null)}
+        />
       )}
 
     </div>

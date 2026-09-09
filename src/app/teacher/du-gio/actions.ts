@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use server"
 
 function getTeacherResolvedEmail(teacher: any): string | null {

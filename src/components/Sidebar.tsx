@@ -367,6 +367,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
           )}
 
           {(role === "ADMIN" || (permissionModules && permissionModules.length > 0)) && APP_CATEGORIES.map((cat) => {
+            // Hide the Observation category for CTHS role, as it should not have access to du-gio modules
+            if (actualRole && actualRole.toUpperCase() === "CTHS" && cat.id === "OBSERVATION") {
+              return null;
+            }
             const visibleModules = cat.modules.filter((m: any) => checkPermission(m.code, m.requiresAdmin, m.subModules))
             if (visibleModules.length === 0) return null
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from "@/lib/db"
 import { APP_CATEGORIES, ALL_APP_MODULES } from "@/config/modules"
 

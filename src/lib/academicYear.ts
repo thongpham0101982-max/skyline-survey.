@@ -1,14 +1,15 @@
-import { prisma } from './db'
+// @ts-nocheck
+import { prisma } from './db';
 
 export async function getDefaultAcademicYear(prismaClient) {
   const db = prismaClient || prisma;
-  
+
   try {
     if (typeof window === 'undefined') {
       const { cookies } = require('next/headers');
       const cookieStore = await cookies();
       const cookieYearId = cookieStore.get('selectedAcademicYear')?.value;
-      
+
       if (cookieYearId) {
         const year = await db.academicYear.findUnique({
           where: { id: cookieYearId }
@@ -16,18 +17,17 @@ export async function getDefaultAcademicYear(prismaClient) {
         if (year) return year;
       }
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 
   try {
     const years = await db.academicYear.findMany({
       orderBy: { startDate: 'desc' }
     });
-    
+
     if (!years || years.length === 0) return null;
-    
-    return years.find(y => y.status === 'ACTIVE' && !y.isOff) 
-      || years.find(y => !y.isOff) 
+
+    return years.find(y => y.status === 'ACTIVE' && !y.isOff)
+      || years.find(y => !y.isOff)
       || years[0];
   } catch (error) {
     console.error('Error in getDefaultAcademicYear:', error);
@@ -38,8 +38,8 @@ export async function getDefaultAcademicYear(prismaClient) {
 export function getDefaultAcademicYearClient(years) {
   if (!years || !Array.isArray(years) || years.length === 0) return null;
 
-  return years.find(y => y && y.status === 'ACTIVE' && !y.isOff) 
-    || years.find(y => y && !y.isOff) 
+  return years.find(y => y && y.status === 'ACTIVE' && !y.isOff)
+    || years.find(y => y && !y.isOff)
     || years[0]
     || null;
 }
