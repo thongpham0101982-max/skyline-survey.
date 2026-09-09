@@ -142,7 +142,6 @@ interface CreateObservationModalProps {
   maxScoresK12: number[]
   getK12RankingDetails: (scores: number[]) => { rating: string; reason: string; color: string }
   getMamNonRankingDetails: (scores: number[]) => { rating: string; reason: string; color: string }
-  evaluationCriteriaPreschool: any[]
 }
 
 export function CreateObservationModal(props: CreateObservationModalProps) {
@@ -217,8 +216,7 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
     // Shared
     subjects, departments, teachers, campuses, classes,
     periodOptions, getGradesForLevel, getKhacChuyenDeSubjectId, isPreschoolDepartment,
-    k12Labels, maxScoresK12, getK12RankingDetails, getMamNonRankingDetails,
-    evaluationCriteriaPreschool
+    k12Labels, maxScoresK12, getK12RankingDetails, getMamNonRankingDetails
   } = props
 
   return (

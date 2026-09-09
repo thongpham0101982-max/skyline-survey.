@@ -6361,7 +6361,6 @@ export function ObservationClient(props: ObservationClientProps) {
         maxScoresK12={maxScoresK12}
         getK12RankingDetails={getK12RankingDetails}
         getMamNonRankingDetails={getMamNonRankingDetails}
-        evaluationCriteriaPreschool={evaluationCriteriaPreschool}
       />
 
     </div>
