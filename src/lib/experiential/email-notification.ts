@@ -348,7 +348,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
   <div class="container">
     <!-- HEADER -->
     <div class="header">
-      <h1>HỆ THỐNG HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</h1>
+      <h1>QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</h1>
       <p>${displaySenderName.toUpperCase()}</p>
       <div class="badge">Mã kế hoạch: ${activityCode || "HDTN"}</div>
     </div>

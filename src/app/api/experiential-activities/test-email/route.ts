@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       ⚠️ ĐÂY LÀ EMAIL THỬ NGHIỆM TỪ HỆ THỐNG SKY-LINE
     </div>
     <div class="header">
-      <h1 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">HỆ THỐNG HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</h1>
+      <h1 style="margin: 0; font-size: 19px; font-weight: 900; text-transform: uppercase;">QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</h1>
       <p style="margin: 6px 0 0 0; font-size: 13px; font-weight: 700;">${displaySender.toUpperCase()}</p>
       <div class="badge">Mã kế hoạch: ${activityCode}</div>
     </div>

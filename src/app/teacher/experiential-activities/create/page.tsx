@@ -2200,7 +2200,7 @@ export default function CreateActivityWizard() {
                     {showEmailPreview && (
                       <div className="mt-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-inner space-y-3 font-sans">
                         <div className="p-4 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white rounded-xl text-center">
-                          <div className="text-xs font-black uppercase tracking-wider">HỆ THỐNG HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</div>
+                          <div className="text-xs font-black uppercase tracking-wider">QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</div>
                           <div className="text-[11px] font-bold text-teal-100 mt-0.5">{getResolvedSenderName().toUpperCase()}</div>
                           <div className="inline-block bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black mt-2">
                             Mã HĐ: {formData.code || 'HDTN-AUTO'}
