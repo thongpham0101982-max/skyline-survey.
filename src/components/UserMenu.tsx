@@ -148,7 +148,15 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                   <div className="border-t border-slate-100/60 my-1" />
                   
                   <button
-                    onClick={() => signOut({ callbackUrl: "/login" })}
+                    onClick={async () => {
+                      try {
+                        await signOut({ redirect: false })
+                      } catch (e) {
+                        console.error(e)
+                      } finally {
+                        window.location.href = "/login"
+                      }
+                    }}
                     className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-rose-600 hover:bg-rose-50/50 hover:text-rose-700 transition-all text-left"
                   >
                     <LogOut className="w-4 h-4 text-rose-500 shrink-0" />

@@ -192,6 +192,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return session
     },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return url
+      if (url.includes("0.0.0.0")) return "/login"
+      try {
+        const urlObj = new URL(url)
+        const baseObj = new URL(baseUrl)
+        if (urlObj.origin === baseObj.origin) return url
+      } catch {}
+      return baseUrl.includes("0.0.0.0") ? "/login" : baseUrl
+    },
   },
   pages: { signIn: "/login" },
 })

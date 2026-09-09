@@ -867,7 +867,15 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
           </button>
           <div className="border-t border-white/20 pt-4" />
           <button 
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={async () => {
+              try {
+                await signOut({ redirect: false })
+              } catch (e) {
+                console.error(e)
+              } finally {
+                window.location.href = "/login"
+              }
+            }}
             className={`flex items-center w-full ${isCollapsed ? 'justify-center' : 'px-4'} py-3 text-white/70 hover:text-white hover:bg-red-500/10 rounded-xl transition-all duration-200 text-sm font-semibold group`}
           >
             <LogOut className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} text-white/50 group-hover:text-red-400 transition-colors`} />
