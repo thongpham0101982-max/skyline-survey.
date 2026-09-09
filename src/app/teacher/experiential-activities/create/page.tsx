@@ -409,22 +409,26 @@ export default function CreateActivityWizard() {
       if (Array.isArray(depts)) setDepartments(depts);
       if (Array.isArray(years) && years.length > 0) {
         setAcademicYears(years);
-        const active = years.find(y => y.status === 'ACTIVE' && !y.isOff) || years[0];
-        setFormData(prev => ({ ...prev, academicYearId: active?.id || '' }));
+        if (!editId) {
+          const active = years.find(y => y.status === 'ACTIVE' && !y.isOff) || years[0];
+          setFormData(prev => ({ ...prev, academicYearId: active?.id || '' }));
+        }
       }
       if (Array.isArray(camps) && camps.length > 0) {
         setCampuses(camps);
-        const allCampIds = camps.map(c => c.id);
-        setFormData(prev => ({
-          ...prev,
-          campusId: camps[0].id,
-          campusCode: camps[0].campusCode,
-          campusName: camps[0].campusName,
-          selectedCampusIds: allCampIds
-        }));
+        if (!editId) {
+          const allCampIds = camps.map(c => c.id);
+          setFormData(prev => ({
+            ...prev,
+            campusId: camps[0].id,
+            campusCode: camps[0].campusCode,
+            campusName: camps[0].campusName,
+            selectedCampusIds: allCampIds
+          }));
+        }
       }
     });
-  }, []);
+  }, [editId]);
 
   // Fetch classes when year or campus changes with guaranteed standard fallback
   useEffect(() => {

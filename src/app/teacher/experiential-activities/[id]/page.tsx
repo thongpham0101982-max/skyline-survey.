@@ -8,7 +8,7 @@ import {
   Square, Users, BookOpen, Calendar, Tag, ChevronDown,
   CheckCheck, Sparkles, Award, Filter, ShieldCheck, CheckCircle, 
   Download, Upload, FileSpreadsheet, Send, AlertTriangle,
-  Info, Clock, Lock, Unlock, Check, Printer, FileText, ExternalLink
+  Info, Clock, Lock, Unlock, Check, Printer, FileText, ExternalLink, Mail
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
@@ -19,6 +19,7 @@ import {
 import { 
   calculateStudentResult, getRatingBadgeProps, getRatingLabel 
 } from '@/lib/experiential/formula';
+import { ActivityProgressModal } from '../components/ActivityProgressModal';
 
 export default function ActivityResultInput() {
   const router = useRouter();
@@ -62,6 +63,9 @@ export default function ActivityResultInput() {
   // Pre-submission validation modal
   const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false);
   const [uncompletedStudents, setUncompletedStudents] = useState([]);
+
+  // Progress & Reminder Modal
+  const [showProgressModal, setShowProgressModal] = useState(false);
 
   // Load Activity & Students
   const loadData = useCallback(async () => {
@@ -439,14 +443,25 @@ export default function ActivityResultInput() {
             )}
 
             {activity?.canManage && (
-              <button
-                onClick={() => router.push(`${basePath}/create?editId=${id}`)}
-                className="px-3.5 py-2.5 bg-slate-100 hover:bg-teal-50 hover:text-[#003B3A] border border-slate-200 text-slate-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
-                title="Hiệu chỉnh thông tin, tiêu chí hoặc lớp gán"
-              >
-                <Settings className="w-3.5 h-3.5 text-[#00A99D]" />
-                <span>Hiệu chỉnh kế hoạch</span>
-              </button>
+              <>
+                <button
+                  onClick={() => setShowProgressModal(true)}
+                  className="px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
+                  title="Theo dõi tiến độ nộp và gửi email nhắc nhở GVCN / CC GĐCS"
+                >
+                  <Mail className="w-3.5 h-3.5 text-indigo-600" />
+                  <span>Tiến độ & Nhắc nhở</span>
+                </button>
+
+                <button
+                  onClick={() => router.push(`${basePath}/create?editId=${id}`)}
+                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-teal-50 hover:text-[#003B3A] border border-slate-200 text-slate-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
+                  title="Hiệu chỉnh thông tin, tiêu chí hoặc lớp gán"
+                >
+                  <Settings className="w-3.5 h-3.5 text-[#00A99D]" />
+                  <span>Hiệu chỉnh kế hoạch</span>
+                </button>
+              </>
             )}
 
             <button
@@ -471,6 +486,32 @@ export default function ActivityResultInput() {
       </div>
 
       <div className="max-w-[1700px] mx-auto px-4 sm:px-6 pt-6 space-y-4">
+        
+        {/* PROMINENT MANDATORY INSTRUCTION & CREATOR BANNER */}
+        <div className="bg-gradient-to-r from-teal-50/90 via-emerald-50/80 to-sky-50/90 border border-[#00A99D]/25 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <span className="p-2 bg-[#00A99D] text-white rounded-xl shadow-sm shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </span>
+            <div>
+              <div className="text-xs font-black text-[#003B3A] flex flex-wrap items-center gap-2">
+                <span>YÊU CẦU TRỌNG TÂM:</span>
+                <span className="text-teal-900 font-extrabold bg-[#00A99D]/15 px-2.5 py-0.5 rounded-lg border border-[#00A99D]/25">
+                  "Thầy cô vui lòng thực hiện đánh giá vai trò của Học sinh lớp."
+                </span>
+              </div>
+              <p className="text-[11.5px] text-slate-600 mt-1 leading-relaxed">
+                Kính nhờ Quý Thầy/Cô ghi nhận vai trò tham gia của từng học sinh (<em>Trưởng nhóm, Phó nhóm, Thành viên tích cực, v.v.</em>), chấm điểm các tiêu chí năng lực và nhấn <strong>"Nộp kết quả"</strong> khi hoàn tất.
+              </p>
+            </div>
+          </div>
+          {activity?.creatorName && (
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-white/95 px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs shrink-0 self-start sm:self-auto">
+              <Users className="w-3.5 h-3.5 text-[#00A99D]" />
+              <span>Người tạo: <strong className="text-[#003B3A] font-black">{activity.creatorName}</strong></span>
+            </div>
+          )}
+        </div>
         
         {/* BANNER WITH CLASS STATS */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1284,6 +1325,11 @@ export default function ActivityResultInput() {
             </div>
           </div>
         )}
+        <ActivityProgressModal
+          activity={activity}
+          isOpen={showProgressModal}
+          onClose={() => setShowProgressModal(false)}
+        />
         <style dangerouslySetInnerHTML={{ __html: `
           @media print {
             body * {

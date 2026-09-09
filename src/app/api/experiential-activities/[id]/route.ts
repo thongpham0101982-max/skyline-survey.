@@ -26,6 +26,9 @@ export async function GET(
       include: {
         catalog: true,
         academicYear: true,
+        teacher: {
+          include: { user: true }
+        },
         participants: {
           include: {
             student: {
@@ -116,6 +119,11 @@ export async function GET(
       status: meta.status || activity.status || "ASSIGNED",
       deadline: meta.deadline || "",
       assignedClasses: meta.assignedClasses || [],
+      emailSettings: meta.emailSettings || null,
+      creatorName: meta.creatorName || activity.teacher?.teacherName || activity.teacher?.user?.fullName || null,
+      creatorEmail: meta.creatorEmail || activity.teacher?.email || activity.teacher?.user?.email || null,
+      creatorRole: meta.creatorRole || activity.teacher?.user?.role || null,
+      creatorUserId: meta.creatorUserId || activity.teacher?.userId || null,
       canManage,
       isMyCreated,
       students
