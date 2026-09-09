@@ -8,15 +8,27 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const targetStudentId = searchParams.get("studentId")
   const targetStudentCode = searchParams.get("studentCode")
+  const classId = searchParams.get("classId")
   const academicYearId = searchParams.get("academicYearId")
 
-  if (!targetStudentId && !targetStudentCode) {
-    return NextResponse.json({ error: "Missing studentId or studentCode" }, { status: 400 })
+  if (!targetStudentId && !targetStudentCode && !classId) {
+    return NextResponse.json({ error: "Missing studentId, studentCode or classId" }, { status: 400 })
   }
 
   try {
     let targetStudentIds: string[] = []
-    if (targetStudentId) targetStudentIds.push(targetStudentId)
+
+    if (classId) {
+      const classStudents = await prisma.student.findMany({
+        where: { classId },
+        select: { id: true, studentCode: true }
+      }).catch(() => [])
+      targetStudentIds = classStudents.map(s => s.id)
+    }
+
+    if (targetStudentId && !targetStudentIds.includes(targetStudentId)) {
+      targetStudentIds.push(targetStudentId)
+    }
 
     let codeToLookup = targetStudentCode
     if (!codeToLookup && targetStudentId) {
@@ -47,7 +59,7 @@ export async function GET(req: Request) {
     }).catch(() => [])
 
     // 2. Fallback: query without academicYearId filter if empty
-    if (evals.length === 0 && targetStudentIds.length > 0) {
+    if (evals.length === 0 && targetStudentIds.length > 0 && !classId) {
       evals = await prisma.studentTermEvaluation.findMany({
         where: {
           studentId: { in: targetStudentIds }

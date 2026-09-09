@@ -248,8 +248,7 @@ export async function GET(req: Request) {
         evalLevel: (resolvedEval || "").trim(),
         score: pNote.calculatedPercent !== null && pNote.calculatedPercent !== undefined ? pNote.calculatedPercent : undefined,
         attendance: pNote.attendance || "PRESENT",
-        remarks: [...(pNote.remarksQuick || []), pNote.remarksCustom].filter(Boolean).join("; ") || undefined,
-        date: p.record?.date ? (typeof p.record.date === "string" ? p.record.date.split("T")[0] : new Date(p.record.date).toISOString().split("T")[0]) : ""
+        date: p.record?.date ? (typeof (p.record as any).date === "string" ? (p.record as any).date.split("T")[0] : new Date((p.record as any).date).toISOString().split("T")[0]) : ""
       };
     });
 

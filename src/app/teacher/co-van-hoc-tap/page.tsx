@@ -55,6 +55,9 @@ export default function TeacherAdvisoryPage() {
 
   // 2. Term Evaluation Rubric States
   const [evalTerm, setEvalTerm] = useState<"HK1" | "HK2">("HK1")
+  const [classTermEvaluations, setClassTermEvaluations] = useState<any[]>([])
+  const [evalFilter, setEvalFilter] = useState<"ALL" | "EVALUATED" | "NOT_EVALUATED">("ALL")
+  const [evalSearch, setEvalSearch] = useState("")
   const [rubricForm, setRubricForm] = useState({
     goalCompletionLevel: 0,
     initiativeLevel: 0,
@@ -202,6 +205,7 @@ export default function TeacherAdvisoryPage() {
 
     loadClassConsultations()
     loadClassUnlocks()
+    loadClassTermEvaluations()
   }, [selectedClassId, academicYearId])
 
   // Load Goal Tracking & Rubric Data for currently selected student
@@ -209,8 +213,24 @@ export default function TeacherAdvisoryPage() {
     if (!selectedStudentId) return
     loadStudentTracking()
     loadSingleStudentData()
+    loadClassTermEvaluations()
     setConsultationForm(prev => ({ ...prev, studentId: selectedStudentId }))
   }, [selectedStudentId, checkPoint, evalTerm, academicYearId])
+
+  async function loadClassTermEvaluations() {
+    if (!selectedClassId) return
+    try {
+      const res = await fetch("/api/advisory/term-evaluations?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "") + "&_t=" + Date.now(), { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setClassTermEvaluations(data)
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   async function loadClassConsultations() {
     if (!selectedClassId) return
@@ -410,6 +430,7 @@ export default function TeacherAdvisoryPage() {
           recommendations: rubricForm.recommendations
         }))
         await loadSingleStudentData()
+        await loadClassTermEvaluations()
         setToastMessage(`Đã lưu Đánh giá kỳ theo Rubric (${overallEvalResult.overallPercent}% - ${overallEvalResult.classificationLabel}) thành công!`)
         setTimeout(() => setToastMessage(""), 4000)
       }
@@ -525,6 +546,24 @@ export default function TeacherAdvisoryPage() {
   const notSubmittedCount = students.length - submittedCount
   const submissionPercent = students.length > 0 ? Math.round((submittedCount / students.length) * 100) : 0
 
+  // Class-wide evaluation metrics (Tab 3)
+  const evaluatedCount = students.filter(st => {
+    return classTermEvaluations.some(e => (e.studentId === st.id || e.studentCode === st.studentCode) && e.term === evalTerm)
+  }).length
+  const notEvaluatedCount = students.length - evaluatedCount
+  const evaluatedPercent = students.length > 0 ? Math.round((evaluatedCount / students.length) * 100) : 0
+
+  const filteredClassEvalStudents = students.filter(st => {
+    const hasEval = classTermEvaluations.some(e => (e.studentId === st.id || e.studentCode === st.studentCode) && e.term === evalTerm)
+    if (evalFilter === "EVALUATED") return hasEval
+    if (evalFilter === "NOT_EVALUATED") return !hasEval
+    if (evalSearch.trim()) {
+      const q = evalSearch.toLowerCase().trim()
+      return st.studentName.toLowerCase().includes(q) || (st.studentCode && st.studentCode.toLowerCase().includes(q))
+    }
+    return true
+  })
+
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
       
@@ -586,42 +625,6 @@ export default function TeacherAdvisoryPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab("rubric_eval")}
-            className={
-              activeTab === "rubric_eval"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <Award className="w-4 h-4 text-amber-500" />
-            <span>2. Đánh Giá Kỳ theo Rubric</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("consultations")}
-            className={
-              activeTab === "consultations"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <MessageSquare className="w-4 h-4 text-blue-500" />
-            <span>3. Nhật Ký Tham Vấn ({consultations.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("sos")}
-            className={
-              activeTab === "sos"
-                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
-                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
-            }
-          >
-            <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-            <span>4. Yêu Cầu SOS ({helpRequests.length})</span>
-          </button>
-
-          <button
             onClick={() => {
               setActiveTab("unlocks")
               loadClassUnlocks()
@@ -633,9 +636,47 @@ export default function TeacherAdvisoryPage() {
             }
           >
             <Key className="w-4 h-4 text-amber-300" />
-            <span>5. Mở Khóa Mục Tiêu (K9–12)</span>
+            <span>2. Mở Khóa Mục Tiêu (K9–12)</span>
           </button>
 
+          <button
+            onClick={() => {
+              setActiveTab("rubric_eval")
+              loadClassTermEvaluations()
+            }}
+            className={
+              activeTab === "rubric_eval"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
+          >
+            <Award className="w-4 h-4 text-amber-500" />
+            <span>3. Đánh Giá Kỳ theo Rubric</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("consultations")}
+            className={
+              activeTab === "consultations"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
+          >
+            <MessageSquare className="w-4 h-4 text-blue-500" />
+            <span>4. Nhật Ký Tham Vấn ({consultations.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("sos")}
+            className={
+              activeTab === "sos"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
+          >
+            <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+            <span>5. Yêu Cầu SOS ({helpRequests.length})</span>
+          </button>
         </div>
       </div>
 
@@ -1182,691 +1223,1014 @@ export default function TeacherAdvisoryPage() {
         </div>
       )}
 
-      {/* ----------------- TAB 2: ĐÁNH GIÁ KỲ THEO RUBRIC ----------------- */}
+      {/* ----------------- TAB 3: ĐÁNH GIÁ KỲ THEO RUBRIC (BẢNG CẢ LỚP & CHI TIẾT HỌC SINH) ----------------- */}
       {activeTab === "rubric_eval" && (
         <div className="space-y-6">
 
-          {/* 1. KPI BANNER ĐO LƯỜNG KẾT QUẢ THEO DÕI THEO TRỌNG SỐ */}
-          <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-teal-900 rounded-3xl p-6 text-white shadow-lg space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/15 pb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-amber-400 text-amber-950 font-black text-[11px] shadow-xs">
-                    Ma trận trọng số {overallEvalResult.gradeLevel}
-                  </span>
-                  <span className="text-teal-200 text-xs font-bold">
-                    Tổng trọng số: {overallEvalResult.totalWeights}%
-                  </span>
-                </div>
-                <h3 className="text-base font-black text-white mt-1 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-teal-300" />
-                  <span>Kết quả Đánh giá Tổng thể theo Trọng số ({activeStudent?.studentName || "Học sinh"})</span>
-                </h3>
-              </div>
-
-              {/* Score and Classification */}
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="text-3xl font-black text-amber-300">
-                    {overallEvalResult.overallPercent}%
-                  </div>
-                  <div className="text-[11px] text-teal-200 font-semibold">
-                    Thang Rubric: {overallEvalResult.overallRubricScore} / 5.0
-                  </div>
-                </div>
-                <div className={`px-4 py-2 rounded-2xl border text-xs font-black shadow-md ${overallEvalResult.classificationColor}`}>
-                  {overallEvalResult.classificationLabel}
-                </div>
-              </div>
-            </div>
-
-            {/* 3 TIÊU CHÍ RUBRIC CHUẨN */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/10 p-3 rounded-2xl border border-white/15">
-              <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
-                <span className="text-xs text-amber-200 font-bold flex items-center gap-1.5">
-                  🎯 1. Mức hoàn thành mục tiêu:
-                </span>
-                <span className="text-sm font-black text-white">
-                  {overallEvalResult.overallGoalCompletion > 0 ? `${overallEvalResult.overallGoalCompletion} / 5.0` : "-"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
-                <span className="text-xs text-sky-200 font-bold flex items-center gap-1.5">
-                  ⚡ 2. Mức độ chủ động:
-                </span>
-                <span className="text-sm font-black text-white">
-                  {overallEvalResult.overallInitiative > 0 ? `${overallEvalResult.overallInitiative} / 5.0` : "-"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
-                <span className="text-xs text-emerald-200 font-bold flex items-center gap-1.5">
-                  🤝 3. Thái độ tham gia:
-                </span>
-                <span className="text-sm font-black text-white">
-                  {overallEvalResult.overallParticipation > 0 ? `${overallEvalResult.overallParticipation} / 5.0` : "-"}
-                </span>
-              </div>
-            </div>
-
-            {/* Category Breakdown Bar */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
-              {overallEvalResult.categories.map((cat, cIdx) => (
-                <div key={cat.categoryKey || cIdx} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/15 space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-teal-100 truncate">{cat.categoryLabel.replace(/^[0-9.]+\s*/, '')}</span>
-                    <span className="px-2 py-0.5 rounded-full bg-teal-400/20 text-teal-200 font-black text-[10px] border border-teal-400/30 shrink-0">
-                      Trọng số {cat.weight}%
-                    </span>
-                  </div>
-                  <div className="flex items-end justify-between">
-                    <span className="text-lg font-black text-white">{cat.averagePercent}%</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
-                      cat.status === "DAT" ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/30" :
-                      cat.status === "TIEN_TRIEN" ? "bg-amber-500/30 text-amber-200 border border-amber-400/30" :
-                      cat.status === "CAN_CO_GANG" ? "bg-orange-500/30 text-orange-200 border border-orange-400/30" :
-                      cat.status === "CHUA_DAT" ? "bg-rose-500/30 text-rose-200 border border-rose-400/30" :
-                      "bg-white/10 text-white/60"
-                    }`}>
-                      {cat.status === "DAT" ? "🟢 Đạt" : cat.status === "TIEN_TRIEN" ? "🟡 Tiến triển" : cat.status === "CAN_CO_GANG" ? "🟠 Cần cố gắng" : cat.status === "CHUA_DAT" ? "🔴 Chưa đạt" : "⚪ Chưa đánh giá"}
-                    </span>
-                  </div>
-                  <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-500 rounded-full ${
-                        cat.status === "DAT" ? "bg-emerald-400" :
-                        cat.status === "TIEN_TRIEN" ? "bg-amber-400" :
-                        cat.status === "CAN_CO_GANG" ? "bg-orange-400" :
-                        cat.status === "CHUA_DAT" ? "bg-rose-400" : "bg-slate-400"
-                      }`}
-                      style={{ width: `${Math.min(100, Math.max(0, cat.averagePercent))}%` }}
-                    />
-                  </div>
-                  <div className="text-[10px] text-teal-300/80 font-medium">
-                    {cat.subGoalsCount} mục tiêu nhỏ ({cat.evaluatedCount} đã đánh giá)
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* ========================================================================= */}
-          {/* PHÁC HỌA BIỂU ĐỒ NĂNG LỰC & TRỌNG SỐ HỌC SINH (VISUAL 360° PROFILE) */}
+          {/* PHẦN 1: BẢNG TỔNG HỢP KẾT QUẢ ĐÁNH GIÁ TOÀN LỚP (HIỂN THỊ THEO HỌC SINH LỚP) */}
           {/* ========================================================================= */}
-          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-teal-100 text-[#003B3A] flex items-center justify-center font-black text-sm shadow-2xs">
-                  📊
-                </div>
-                <div>
-                  <h4 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
-                    <span>Phác Họa Biểu Đồ Năng Lực & Trọng Số: {activeStudent?.studentName}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${overallEvalResult.classificationColor}`}>
-                      {overallEvalResult.classificationLabel}
-                    </span>
-                  </h4>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Trực quan hóa tỷ lệ hoàn thành từng nhóm mục tiêu, 3 trục tiêu chí Rubric và điểm đóng góp vào tổng kết
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-extrabold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                  Khối: <strong>{overallEvalResult.gradeLevel}</strong> • Điểm Tổng Kết: <strong className="text-teal-900 text-xs">{overallEvalResult.overallPercent}% ({overallEvalResult.overallRubricScore}/5.0 ⭐)</strong>
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-              
-              {/* CỘT TRÁI (7 Cột): BIỂU ĐỒ CỘT SO SÁNH CÁC NHÓM MỤC TIÊU */}
-              <div className="lg:col-span-7 bg-slate-50/70 p-4 rounded-2xl border border-slate-200 space-y-3 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <Target className="w-4 h-4 text-teal-600" />
-                      <span>1. TIẾN ĐỘ TỪNG NHÓM (% ĐẠT VS. % TRỌNG SỐ)</span>
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-500">Mục tiêu nhỏ đã lập</span>
-                  </div>
-
-                  <div className="space-y-3 pt-3">
-                    {overallEvalResult.categories.map((cat, idx) => {
-                      const contribScore = Number(((cat.averagePercent * cat.weight) / 100).toFixed(1))
-                      return (
-                        <div key={idx} className="space-y-1 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-black text-slate-900 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-teal-600"></span>
-                              <span>{cat.categoryLabel}</span>
-                            </span>
-                            <div className="flex items-center gap-2 text-[11px]">
-                              <span className="text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-md">
-                                Trọng số: <strong>{cat.weight}%</strong>
-                              </span>
-                              <span className="font-black text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
-                                Đạt: {cat.averagePercent}%
-                              </span>
-                              <span className="text-emerald-700 font-black text-[10px]">
-                                (+{contribScore}% tổng)
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Progress bar */}
-                          <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex p-0.5 border border-slate-200">
-                            <div
-                              className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-teal-500 to-emerald-500"
-                              style={{ width: `${Math.min(100, Math.max(0, cat.averagePercent))}%` }}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[11px] text-teal-900 font-medium flex items-center justify-between">
-                  <span>💡 <strong>Điểm Tổng Kết:</strong> Tổng điểm đóng góp của {overallEvalResult.categories.length} nhóm</span>
-                  <span className="text-xs font-black text-[#003B3A]">{overallEvalResult.overallPercent}%</span>
-                </div>
-              </div>
-
-              {/* CỘT PHẢI (5 Cột): THANG ĐO 3 TRỤC TIÊU CHÍ RUBRIC */}
-              <div className="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200 space-y-3 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <Award className="w-4 h-4 text-amber-500" />
-                      <span>2. THANG ĐO 3 TIÊU CHÍ RUBRIC (1 - 5)</span>
-                    </span>
-                    <span className="text-[10px] font-bold text-teal-700">Có trọng số</span>
-                  </div>
-
-                  <div className="space-y-2.5 pt-3">
-                    {/* Tiêu chí 1 */}
-                    <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 space-y-1.5 shadow-2xs">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-amber-950 flex items-center gap-1">
-                          🎯 1. Hoàn thành mục tiêu:
-                        </span>
-                        <span className="font-black text-amber-900 text-sm">
-                          {overallEvalResult.overallGoalCompletion > 0 ? `${overallEvalResult.overallGoalCompletion} / 5.0` : "-"}
-                        </span>
-                      </div>
-                      <div className="w-full bg-amber-200/50 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-amber-500 rounded-full transition-all duration-700"
-                          style={{ width: `${(overallEvalResult.overallGoalCompletion / 5) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Tiêu chí 2 */}
-                    <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200 space-y-1.5 shadow-2xs">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-blue-950 flex items-center gap-1">
-                          ⚡ 2. Mức độ chủ động:
-                        </span>
-                        <span className="font-black text-blue-900 text-sm">
-                          {overallEvalResult.overallInitiative > 0 ? `${overallEvalResult.overallInitiative} / 5.0` : "-"}
-                        </span>
-                      </div>
-                      <div className="w-full bg-blue-200/50 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full transition-all duration-700"
-                          style={{ width: `${(overallEvalResult.overallInitiative / 5) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Tiêu chí 3 */}
-                    <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-1.5 shadow-2xs">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-emerald-950 flex items-center gap-1">
-                          🤝 3. Thái độ tham gia:
-                        </span>
-                        <span className="font-black text-emerald-900 text-sm">
-                          {overallEvalResult.overallParticipation > 0 ? `${overallEvalResult.overallParticipation} / 5.0` : "-"}
-                        </span>
-                      </div>
-                      <div className="w-full bg-emerald-200/50 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 rounded-full transition-all duration-700"
-                          style={{ width: `${(overallEvalResult.overallParticipation / 5) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-[11px] text-slate-700 font-medium flex items-center justify-between">
-                  <span>⭐ <strong>Quy đổi Rubric Tổng:</strong></span>
-                  <span className="text-xs font-black text-amber-700">{overallEvalResult.overallRubricScore} / 5.0 sao</span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Form Đánh Giá Kỳ */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-sm space-y-4">
+            
+            {/* Header & Term Selector */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
-                <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-teal-50 text-teal-900 border border-teal-200 uppercase tracking-wider mb-1.5">
                   <Award className="w-4 h-4 text-amber-500" />
-                  <span>Phiếu Đánh Giá Kỳ Cố Vấn Học Tập ({activeStudent?.studentName})</span>
+                  <span>KẾT QUẢ ĐÁNH GIÁ TỔNG THỂ THEO TRỌNG SỐ — LỚP {selectedClass?.className}</span>
+                </div>
+                <h3 className="text-lg font-black text-[#003B3A]">
+                  Bảng Tổng Hợp Đánh Giá Kỳ Cố Vấn Học Tập ({evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"})
                 </h3>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Đánh giá chi tiết từng mục tiêu nhỏ. Kết quả nhóm và tổng thể được tự động tính theo Trọng số chuẩn hóa
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Theo dõi kết quả đo lường theo ma trận trọng số chuẩn ({overallEvalResult.gradeLevel}) và thang Rubric cho toàn bộ {students.length} học sinh.
                 </p>
               </div>
 
-              {/* Term selector */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-600">Kỳ đánh giá:</span>
-                <select
-                  value={evalTerm}
-                  onChange={(e) => {
-                    const newTerm = e.target.value as "HK1" | "HK2"
-                    setEvalTerm(newTerm)
-                    setCheckPoint(newTerm === "HK1" ? "CUOI_KY_1" : "CUOI_KY_2")
-                  }}
-                  className="px-3 py-1.5 rounded-xl bg-teal-50 text-teal-900 font-black text-xs border border-teal-200"
+              {/* Term Selector & Export Button */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl border border-slate-200">
+                  <span className="text-xs font-bold text-slate-600 pl-2">Kỳ:</span>
+                  <select
+                    value={evalTerm}
+                    onChange={(e) => {
+                      const newTerm = e.target.value as "HK1" | "HK2"
+                      setEvalTerm(newTerm)
+                      setCheckPoint(newTerm === "HK1" ? "CUOI_KY_1" : "CUOI_KY_2")
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-white text-[#003B3A] font-black text-xs border border-slate-200 shadow-xs cursor-pointer focus:outline-none"
+                  >
+                    <option value="HK1">Học kỳ I</option>
+                    <option value="HK2">Học kỳ II</option>
+                  </select>
+                </div>
+
+                <a
+                  href={`/api/advisory/export-observation-book?classId=${selectedClassId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#003B3A] hover:bg-[#004D4A] text-white font-extrabold text-xs shadow-sm transition-all"
                 >
-                  <option value="HK1">Học kỳ I</option>
-                  <option value="HK2">Học kỳ II</option>
-                </select>
+                  <span>📖</span> Xuất Sổ Quan Sát (PDF)
+                </a>
               </div>
             </div>
 
-            {/* Excel Evaluation Table Format */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse border border-slate-200">
+            {/* Executive Progress & Stats Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3.5 rounded-2xl bg-teal-50/80 border border-teal-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-teal-800 block">Đã Đánh Giá Kỳ</span>
+                  <span className="text-lg font-black text-[#003B3A]">
+                    {evaluatedCount} / {students.length} HS
+                  </span>
+                </div>
+                <span className="px-2.5 py-1 rounded-xl bg-teal-600 text-white font-black text-xs shadow-2xs">
+                  {evaluatedPercent}%
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-amber-800 block">Chưa Hoàn Tất Đánh Giá</span>
+                  <span className="text-lg font-black text-amber-950">
+                    {notEvaluatedCount} HS
+                  </span>
+                </div>
+                <span className="px-2.5 py-1 rounded-xl bg-amber-200 text-amber-950 font-black text-xs">
+                  {students.length > 0 ? Math.round((notEvaluatedCount / students.length) * 100) : 0}%
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase text-slate-600 block">Ma Trận Trọng Số</span>
+                  <span className="text-xs font-black text-slate-900 block mt-0.5">
+                    Khối {overallEvalResult.gradeLevel} (Tổng: {overallEvalResult.totalWeights}%)
+                  </span>
+                </div>
+                <span className="text-lg font-black text-teal-700">
+                  {gradeCategoryWeights.length} nhóm
+                </span>
+              </div>
+            </div>
+
+            {/* Search & Filter Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="relative flex-1 min-w-[240px] max-w-md">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={evalSearch}
+                  onChange={(e) => setEvalSearch(e.target.value)}
+                  placeholder="Tìm theo tên học sinh hoặc mã số..."
+                  className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold focus:outline-none focus:border-teal-500 focus:bg-white"
+                />
+              </div>
+
+              <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-black">
+                <button
+                  type="button"
+                  onClick={() => setEvalFilter("ALL")}
+                  className={`px-3 py-1 rounded-lg transition-all ${
+                    evalFilter === "ALL" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Tất cả ({students.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEvalFilter("EVALUATED")}
+                  className={`px-3 py-1 rounded-lg transition-all ${
+                    evalFilter === "EVALUATED" ? "bg-emerald-600 text-white shadow-xs" : "text-emerald-800 hover:text-emerald-950"
+                  }`}
+                >
+                  🟢 Đã đánh giá ({evaluatedCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEvalFilter("NOT_EVALUATED")}
+                  className={`px-3 py-1 rounded-lg transition-all ${
+                    evalFilter === "NOT_EVALUATED" ? "bg-slate-700 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  ⚪ Chưa đánh giá ({notEvaluatedCount})
+                </button>
+              </div>
+            </div>
+
+            {/* Class-Wide Evaluation Table */}
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+              <table className="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3 border-r border-slate-200 min-w-[200px]">Nhóm mục tiêu (Trọng số)</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[300px]">Mục tiêu cụ thể</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức hoàn thành mục tiêu (1-5)</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức độ chủ động (1-5)</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[140px]">Thái độ tham gia (1-5)</th>
-                    <th className="p-3 min-w-[220px]">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
+                    <th className="p-3 border-r border-slate-200 w-12 text-center">STT</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[180px]">Học sinh</th>
+                    <th className="p-3 border-r border-slate-200 w-28 text-center">Nộp MT</th>
+                    <th className="p-3 border-r border-slate-200 w-32 text-center">Điểm Tổng Kết (%)</th>
+                    <th className="p-3 border-r border-slate-200 w-28 text-center">Thang Rubric</th>
+                    <th className="p-3 border-r border-slate-200 w-32 text-center">Xếp loại</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[220px]">3 Tiêu chí Rubric (1-5)</th>
+                    <th className="p-3 text-center w-28">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {singleStudentTrackingRows.length > 0 ? (
-                    singleStudentTrackingRows.map((item, idx) => {
-                      const sameCatRows = singleStudentTrackingRows.filter(r => r.categoryKey === item.categoryKey || r.category === item.category)
-                      const isFirstInCat = singleStudentTrackingRows.findIndex(r => r.categoryKey === item.categoryKey || r.category === item.category) === idx
-                      const itemSubIdx = singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length
-                      const catEval = overallEvalResult.categories.find(c => c.categoryKey === item.categoryKey)
-
-                      return (
-                        <tr key={idx} className="bg-white hover:bg-slate-50/50">
-                          {/* 1. Nhóm mục tiêu + Trọng số */}
-                          {isFirstInCat && (
-                            <td rowSpan={sameCatRows.length} className="p-3 border-r border-slate-200 align-top bg-slate-50/50">
-                              <div className="space-y-2">
-                                <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 border border-teal-200">
-                                  {item.category}
-                                </span>
-                                <div className="space-y-1">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300">
-                                    Trọng số: {item.categoryWeight || catEval?.weight || 25}%
-                                  </span>
-                                  <p className="text-[10px] text-slate-400 font-medium">
-                                    ({sameCatRows.length} mục tiêu nhỏ)
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                          )}
-
-                          {/* 2. Mục tiêu cụ thể */}
-                          <td className="p-3 border-r border-slate-200 align-top">
-                            <div className="space-y-1.5">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
-                                #{itemSubIdx} MỤC TIÊU CỤ THỂ #{itemSubIdx}
-                              </span>
-                              <p className="text-xs font-bold text-slate-900 leading-snug p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                                {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? item.targetText : "Em chưa điền nội dung mục tiêu nhóm này"}
-                              </p>
-                              {item.actionText && (
-                                <p className="text-[11px] font-semibold text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200">
-                                  ⚡ Việc làm: {item.actionText}
-                                </p>
-                              )}
-                            </div>
-                          </td>
-
-                        {/* 3. Kết quả theo dõi: TỰ ĐỘNG HIỆN KẾT QUẢ TỪ 3 TIÊU CHÍ */}
-                        <td className="p-3 border-r border-slate-200 align-top">
-                          {(() => {
-                            const gLevel = item.goalCompletionLevel || 0
-                            const iLevel = item.initiativeLevel || 0
-                            const pLevel = item.participationAttitude || 0
-                            const scores = [gLevel, iLevel, pLevel].filter(v => v > 0)
-
-                            if (scores.length > 0) {
-                              const avg = scores.reduce((a, b) => a + b, 0) / scores.length
-                              if (avg >= 4.5) {
-                                return (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    <span>🟢 Đạt (100%)</span>
-                                  </span>
-                                )
-                              }
-                              if (avg >= 3.5) {
-                                return (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                                    <span>🟢 Đạt (75%)</span>
-                                  </span>
-                                )
-                              }
-                              if (avg >= 2.5) {
-                                return (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
-                                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                                    <span>🟡 Tiến triển (50%)</span>
-                                  </span>
-                                )
-                              }
-                              if (avg >= 1.5) {
-                                return (
-                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-100 text-orange-900 border border-orange-300 shadow-2xs">
-                                    <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                                    <span>🟠 Cần cố gắng (25%)</span>
-                                  </span>
-                                )
-                              }
-                              return (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-rose-100 text-rose-900 border border-rose-300 shadow-2xs">
-                                  <span className="w-2 h-2 rounded-full bg-rose-500"></span>
-                                  <span>🔴 Chưa đạt (10%)</span>
-                                </span>
-                              )
-                            }
-
-                            if (item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH") {
-                              return (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
-                                  <span>🟢 Đạt (100%)</span>
-                                </span>
-                              )
-                            }
-                            if (item.progressStatus === "TIEN_TRIEN") {
-                              return (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
-                                  <span>🟡 Tiến triển (50%)</span>
-                                </span>
-                              )
-                            }
-                            if (item.progressStatus === "CAN_CO_GANG") {
-                              return (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-100 text-orange-900 border border-orange-300">
-                                  <span>🟠 Cần cố gắng (25%)</span>
-                                </span>
-                              )
-                            }
-                            if (item.progressStatus === "CHUA_DAT") {
-                              return (
-                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-rose-100 text-rose-900 border border-rose-300">
-                                  <span>🔴 Chưa đạt (0%)</span>
-                                </span>
-                              )
-                            }
-
-                            return (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                <span>⚪ Chưa đánh giá</span>
-                              </span>
-                            )
-                          })()}
-                        </td>
-
-                        {/* Mức hoàn thành mục tiêu (1-5) cho TỪNG mục tiêu */}
-                        <td className="p-3 border-r border-slate-200 align-top">
-                          <select
-                            value={item.goalCompletionLevel !== undefined ? item.goalCompletionLevel : (rubricForm.goalCompletionLevel || 0)}
-                            onChange={(e) => {
-                              const val = Number(e.target.value)
-                              const updated = [...singleStudentTrackingRows]
-                              updated[idx].goalCompletionLevel = val
-                              // Auto sync progress status
-                              const iL = updated[idx].initiativeLevel || 0
-                              const pL = updated[idx].participationAttitude || 0
-                              const scs = [val, iL, pL].filter(v => v > 0)
-                              if (scs.length > 0) {
-                                const avg = scs.reduce((a, b) => a + b, 0) / scs.length
-                                updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
-                              }
-                              setSingleStudentTrackingRows(updated)
-                              if (idx === 0) setRubricForm(prev => ({ ...prev, goalCompletionLevel: val }))
-                            }}
-                            className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-amber-400 ${
-                              item.goalCompletionLevel
-                                ? "bg-amber-50 text-amber-950 border-amber-300"
-                                : "bg-slate-100 text-slate-700 border-slate-300"
-                            }`}
-                          >
-                            <option value={0}>- Chưa đánh giá</option>
-                            {[1, 2, 3, 4, 5].map(v => (
-                              <option key={v} value={v}>Mức {v}</option>
-                            ))}
-                          </select>
-                        </td>
-
-                        {/* Mức độ chủ động (1-5) cho TỪNG mục tiêu */}
-                        <td className="p-3 border-r border-slate-200 align-top">
-                          <select
-                            value={item.initiativeLevel !== undefined ? item.initiativeLevel : (rubricForm.initiativeLevel || 0)}
-                            onChange={(e) => {
-                              const val = Number(e.target.value)
-                              const updated = [...singleStudentTrackingRows]
-                              updated[idx].initiativeLevel = val
-                              // Auto sync progress status
-                              const gL = updated[idx].goalCompletionLevel || 0
-                              const pL = updated[idx].participationAttitude || 0
-                              const scs = [gL, val, pL].filter(v => v > 0)
-                              if (scs.length > 0) {
-                                const avg = scs.reduce((a, b) => a + b, 0) / scs.length
-                                updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
-                              }
-                              setSingleStudentTrackingRows(updated)
-                              if (idx === 0) setRubricForm(prev => ({ ...prev, initiativeLevel: val }))
-                            }}
-                            className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-blue-400 ${
-                              item.initiativeLevel
-                                ? "bg-blue-50 text-blue-950 border-blue-300"
-                                : "bg-slate-100 text-slate-700 border-slate-300"
-                            }`}
-                          >
-                            <option value={0}>- Chưa đánh giá</option>
-                            {[1, 2, 3, 4, 5].map(v => (
-                              <option key={v} value={v}>Mức {v}</option>
-                            ))}
-                          </select>
-                        </td>
-
-                        {/* Thái độ tham gia (1-5) cho TỪNG mục tiêu */}
-                        <td className="p-3 border-r border-slate-200 align-top">
-                          <select
-                            value={item.participationAttitude !== undefined ? item.participationAttitude : (rubricForm.participationAttitude || 0)}
-                            onChange={(e) => {
-                              const val = Number(e.target.value)
-                              const updated = [...singleStudentTrackingRows]
-                              updated[idx].participationAttitude = val
-                              // Auto sync progress status
-                              const gL = updated[idx].goalCompletionLevel || 0
-                              const iL = updated[idx].initiativeLevel || 0
-                              const scs = [gL, iL, val].filter(v => v > 0)
-                              if (scs.length > 0) {
-                                const avg = scs.reduce((a, b) => a + b, 0) / scs.length
-                                updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
-                              }
-                              setSingleStudentTrackingRows(updated)
-                              if (idx === 0) setRubricForm(prev => ({ ...prev, participationAttitude: val }))
-                            }}
-                            className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-emerald-400 ${
-                              item.participationAttitude
-                                ? "bg-emerald-50 text-emerald-950 border-emerald-300"
-                                : "bg-slate-100 text-slate-700 border-slate-300"
-                            }`}
-                          >
-                            <option value={0}>- Chưa đánh giá</option>
-                            {[1, 2, 3, 4, 5].map(v => (
-                              <option key={v} value={v}>Mức {v}</option>
-                            ))}
-                          </select>
-                        </td>
-
-                        {/* Khuyến nghị / Nhận xét chi tiết cho TỪNG nhóm mục tiêu */}
-                        <td className="p-3 align-top">
-                          <textarea
-                            rows={3}
-                            value={item.teacherNotes || ""}
-                            onChange={(e) => {
-                              const updated = [...singleStudentTrackingRows]
-                              updated[idx].teacherNotes = e.target.value
-                              setSingleStudentTrackingRows(updated)
-                            }}
-                            placeholder={"Nhập khuyến nghị / ghi chú chi tiết cho " + item.category + "..."}
-                            className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
-                          />
-                        </td>
-                      </tr>
-                    )
-                  })
-                ) : (
-                    <tr className="bg-white">
-                      <td className="p-3 border-r border-slate-200 font-black text-slate-900">
-                        {activeStudent?.studentName || "N/A"}
-                      </td>
-                      <td className="p-3 border-r border-slate-200 font-bold text-slate-700">
-                        {evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
-                      </td>
-                      <td className="p-3 border-r border-slate-200 font-semibold text-slate-400 italic">
-                        Chưa có dữ liệu mục tiêu
-                      </td>
-                      <td className="p-3 border-r border-slate-200 font-semibold text-slate-400 italic">
-                        -
-                      </td>
-                      <td className="p-3 border-r border-slate-200">
-                        <select
-                          value={rubricForm.goalCompletionLevel}
-                          onChange={(e) => setRubricForm({ ...rubricForm, goalCompletionLevel: Number(e.target.value) })}
-                          className="w-full p-2 rounded-xl border border-amber-300 font-black text-xs bg-amber-50 text-amber-950"
-                        >
-                          {[1, 2, 3, 4, 5].map(v => (
-                            <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 28)}...</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="p-3 border-r border-slate-200">
-                        <select
-                          value={rubricForm.initiativeLevel}
-                          onChange={(e) => setRubricForm({ ...rubricForm, initiativeLevel: Number(e.target.value) })}
-                          className="w-full p-2 rounded-xl border border-blue-300 font-black text-xs bg-blue-50 text-blue-950"
-                        >
-                          {[1, 2, 3, 4, 5].map(v => (
-                            <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 28)}...</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="p-3 border-r border-slate-200">
-                        <select
-                          value={rubricForm.participationAttitude}
-                          onChange={(e) => setRubricForm({ ...rubricForm, participationAttitude: Number(e.target.value) })}
-                          className="w-full p-2 rounded-xl border border-emerald-300 font-black text-xs bg-emerald-50 text-emerald-950"
-                        >
-                          {[1, 2, 3, 4, 5].map(v => (
-                            <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 28)}...</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="p-3">
-                        <textarea
-                          rows={4}
-                          value={rubricForm.recommendations}
-                          onChange={(e) => setRubricForm({ ...rubricForm, recommendations: e.target.value })}
-                          placeholder="Nhập khuyến nghị chi tiết cho Phụ huynh và GVBM..."
-                          className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold"
-                        />
+                <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+                  {filteredClassEvalStudents.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="p-8 text-center text-slate-400 font-bold">
+                        Không tìm thấy học sinh nào phù hợp với bộ lọc.
                       </td>
                     </tr>
+                  ) : (
+                    filteredClassEvalStudents.map((st, idx) => {
+                      const isSubmitted = submittedStudentCodes.includes(st.studentCode)
+                      const isSelected = st.id === selectedStudentId
+                      const stEval = classTermEvaluations.find((e: any) => (e.studentId === st.id || e.studentCode === st.studentCode) && e.term === evalTerm)
+
+                      // Calculate display metrics
+                      const goalL = stEval?.goalCompletionLevel || 0
+                      const initL = stEval?.initiativeLevel || 0
+                      const partL = stEval?.participationAttitude || 0
+                      const hasEvalData = goalL > 0 || initL > 0 || partL > 0
+
+                      const avgRubric = hasEvalData
+                        ? Number(([goalL, initL, partL].filter(v => v > 0).reduce((a, b) => a + b, 0) / [goalL, initL, partL].filter(v => v > 0).length).toFixed(1))
+                        : 0
+
+                      // If this is currently selected active student, use computed overallEvalResult for highest real-time accuracy
+                      const percentDisplay = isSelected && overallEvalResult.overallPercent > 0
+                        ? overallEvalResult.overallPercent
+                        : hasEvalData
+                        ? Math.round((avgRubric / 5) * 100)
+                        : 0
+
+                      const classLabel = percentDisplay >= 90
+                        ? { label: "Xuất sắc 🌟", color: "bg-emerald-100 text-emerald-900 border-emerald-300" }
+                        : percentDisplay >= 70
+                        ? { label: "Tốt 🟢", color: "bg-teal-100 text-teal-900 border-teal-300" }
+                        : percentDisplay >= 50
+                        ? { label: "Khá 🟡", color: "bg-amber-100 text-amber-900 border-amber-300" }
+                        : percentDisplay > 0
+                        ? { label: "Cần cố gắng 🟠", color: "bg-orange-100 text-orange-900 border-orange-300" }
+                        : { label: "Chưa đánh giá ⚪", color: "bg-slate-100 text-slate-600 border-slate-200" }
+
+                      return (
+                        <tr
+                          key={st.id}
+                          onClick={() => setSelectedStudentId(st.id)}
+                          className={`transition-colors cursor-pointer ${
+                            isSelected
+                              ? "bg-teal-50/90 font-bold"
+                              : "hover:bg-slate-50"
+                          }`}
+                        >
+                          <td className="p-3 border-r border-slate-200 text-center font-bold text-slate-500">
+                            {idx + 1}
+                          </td>
+                          <td className="p-3 border-r border-slate-200">
+                            <div className="flex items-center gap-2">
+                              <span className="font-black text-slate-900 text-xs">{st.studentName}</span>
+                              {isSelected && (
+                                <span className="px-2 py-0.2 rounded-full bg-[#003B3A] text-white text-[10px] font-black shrink-0">
+                                  Đang chọn
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-slate-500 block font-normal">{st.studentCode}</span>
+                          </td>
+                          <td className="p-3 border-r border-slate-200 text-center">
+                            {isSubmitted ? (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 inline-block">
+                                🟢 Đã nộp
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-100 text-slate-500 border border-slate-200 inline-block">
+                                ⚪ Chưa nộp
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 border-r border-slate-200 text-center font-black">
+                            {percentDisplay > 0 ? (
+                              <span className="text-sm text-[#003B3A]">{percentDisplay}%</span>
+                            ) : (
+                              <span className="text-slate-400 font-normal italic">—</span>
+                            )}
+                          </td>
+                          <td className="p-3 border-r border-slate-200 text-center">
+                            {avgRubric > 0 ? (
+                              <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-950 border border-amber-200 font-black text-xs inline-block">
+                                {avgRubric} / 5.0 ⭐
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-normal italic">—</span>
+                            )}
+                          </td>
+                          <td className="p-3 border-r border-slate-200 text-center">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-black border inline-block ${classLabel.color}`}>
+                              {classLabel.label}
+                            </span>
+                          </td>
+                          <td className="p-3 border-r border-slate-200">
+                            {hasEvalData ? (
+                              <div className="flex items-center gap-1.5 text-[11px] font-black">
+                                <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-200" title="1. Hoàn thành mục tiêu">
+                                  🎯 {goalL > 0 ? `M${goalL}` : "-"}
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200" title="2. Mức độ chủ động">
+                                  ⚡ {initL > 0 ? `M${initL}` : "-"}
+                                </span>
+                                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-900 border border-emerald-200" title="3. Thái độ tham gia">
+                                  🤝 {partL > 0 ? `M${partL}` : "-"}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-[11px] italic font-normal">Chưa chấm điểm Rubric</span>
+                            )}
+                          </td>
+                          <td className="p-3 text-center">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedStudentId(st.id)
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all border ${
+                                isSelected
+                                  ? "bg-[#003B3A] text-white border-[#003B3A] shadow-xs"
+                                  : "bg-white text-teal-800 border-teal-300 hover:bg-teal-50"
+                              }`}
+                            >
+                              {isSelected ? "Đang chọn ✓" : "📝 Đánh giá"}
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>
             </div>
 
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={handleSaveRubricEval}
-                disabled={saving}
-                className="px-6 py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md"
-              >
-                <Save className="w-4 h-4" />
-                <span>{saving ? "Đang lưu..." : "Lưu Đánh Giá Kỳ theo Rubric"}</span>
-              </button>
-            </div>
           </div>
 
-          {/* Bảng Tra Cứu Rubric Đánh Giá */}
-          <div className="bg-amber-50/70 rounded-3xl p-6 border border-amber-200 space-y-4">
-            <div>
-              <h3 className="text-sm font-black text-amber-900 flex items-center gap-2">
-                <Info className="w-4 h-4 text-amber-600" />
-                <span>RUBRIC ĐÁNH GIÁ (Thang đo dùng chung cho 3 tiêu chí, điểm 1 - 5)</span>
-              </h3>
-              <p className="text-[11px] text-amber-800 font-medium mt-0.5">
-                Giáo viên đối chiếu mô tả dưới đây để chọn điểm 1 - 5 cho từng học sinh
-              </p>
+          {/* ========================================================================= */}
+          {/* PHẦN 2: KHỐI CHI TIẾT ĐÁNH GIÁ CỦA HỌC SINH ĐANG CHỌN */}
+          {/* ========================================================================= */}
+          <div className="space-y-6 pt-2">
+            
+            {/* Active Student Bar & Navigation */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#003B3A] text-white flex items-center justify-center font-black text-sm shadow-xs">
+                  {activeStudentIndex + 1}
+                </div>
+                <div>
+                  <h4 className="font-black text-sm text-slate-900 flex items-center gap-2">
+                    <span>Đánh Giá Chi Tiết: {activeStudent?.studentName || "Chọn học sinh"}</span>
+                    <span className="text-xs text-slate-500 font-semibold">({activeStudent?.studentCode || ""})</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Kỳ: <strong>{evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}</strong> • Mốc kiểm tra: <strong>{checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "CUOI_KY_2" ? "Cuối kỳ 2" : checkPoint}</strong>
+                  </p>
+                </div>
+              </div>
+
+              {/* Prev / Next Student Buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrevStudent}
+                  disabled={activeStudentIndex <= 0}
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-40 text-xs font-bold text-slate-700 flex items-center gap-1"
+                >
+                  <ChevronLeft className="w-4 h-4" /> HS Trước
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextStudent}
+                  disabled={activeStudentIndex >= students.length - 1}
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-40 text-xs font-bold text-slate-700 flex items-center gap-1"
+                >
+                  HS Tiếp <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse border border-amber-300 bg-white">
-                <thead>
-                  <tr className="bg-amber-100 text-amber-950 font-black border-b border-amber-300">
-                    <th className="p-3 border-r border-amber-300 w-1/6">Tiêu chí</th>
-                    <th className="p-3 border-r border-amber-300">Mức 1</th>
-                    <th className="p-3 border-r border-amber-300">Mức 2</th>
-                    <th className="p-3 border-r border-amber-300">Mức 3</th>
-                    <th className="p-3 border-r border-amber-300">Mức 4</th>
-                    <th className="p-3">Mức 5</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-amber-200 font-semibold text-slate-800">
-                  <tr>
-                    <td className="p-3 font-black text-amber-900 bg-amber-50 border-r border-amber-300">
-                      1. Mức hoàn thành mục tiêu
-                    </td>
-                    {RUBRICS.goalCompletion.map(r => (
-                      <td key={r.level} className="p-3 border-r border-amber-200">{r.text}</td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-black text-amber-900 bg-amber-50 border-r border-amber-300">
-                      2. Mức độ chủ động
-                    </td>
-                    {RUBRICS.initiative.map(r => (
-                      <td key={r.level} className="p-3 border-r border-amber-200">{r.text}</td>
-                    ))}
-                  </tr>
-                  <tr>
-                    <td className="p-3 font-black text-amber-900 bg-amber-50 border-r border-amber-300">
-                      3. Thái độ tham gia
-                    </td>
-                    {RUBRICS.participation.map(r => (
-                      <td key={r.level} className="p-3 border-r border-amber-200">{r.text}</td>
-                    ))}
-                  </tr>
-                </tbody>
-              </table>
+            {/* 1. KPI BANNER ĐO LƯỜNG KẾT QUẢ THEO DÕI THEO TRỌNG SỐ */}
+            <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-teal-900 rounded-3xl p-6 text-white shadow-lg space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/15 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-amber-400 text-amber-950 font-black text-[11px] shadow-xs">
+                      Ma trận trọng số {overallEvalResult.gradeLevel}
+                    </span>
+                    <span className="text-teal-200 text-xs font-bold">
+                      Tổng trọng số: {overallEvalResult.totalWeights}%
+                    </span>
+                  </div>
+                  <h3 className="text-base font-black text-white mt-1 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-teal-300" />
+                    <span>Kết quả Đánh giá Tổng thể theo Trọng số ({activeStudent?.studentName || "Học sinh"})</span>
+                  </h3>
+                </div>
+
+                {/* Score and Classification */}
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-3xl font-black text-amber-300">
+                      {overallEvalResult.overallPercent}%
+                    </div>
+                    <div className="text-[11px] text-teal-200 font-semibold">
+                      Thang Rubric: {overallEvalResult.overallRubricScore} / 5.0
+                    </div>
+                  </div>
+                  <div className={`px-4 py-2 rounded-2xl border text-xs font-black shadow-md ${overallEvalResult.classificationColor}`}>
+                    {overallEvalResult.classificationLabel}
+                  </div>
+                </div>
+              </div>
+
+              {/* 3 TIÊU CHÍ RUBRIC CHUẨN */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white/10 p-3 rounded-2xl border border-white/15">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
+                  <span className="text-xs text-amber-200 font-bold flex items-center gap-1.5">
+                    🎯 1. Mức hoàn thành mục tiêu:
+                  </span>
+                  <span className="text-sm font-black text-white">
+                    {overallEvalResult.overallGoalCompletion > 0 ? `${overallEvalResult.overallGoalCompletion} / 5.0` : "-"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
+                  <span className="text-xs text-sky-200 font-bold flex items-center gap-1.5">
+                    ⚡ 2. Mức độ chủ động:
+                  </span>
+                  <span className="text-sm font-black text-white">
+                    {overallEvalResult.overallInitiative > 0 ? `${overallEvalResult.overallInitiative} / 5.0` : "-"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-3 py-1.5 bg-black/20 rounded-xl">
+                  <span className="text-xs text-emerald-200 font-bold flex items-center gap-1.5">
+                    🤝 3. Thái độ tham gia:
+                  </span>
+                  <span className="text-sm font-black text-white">
+                    {overallEvalResult.overallParticipation > 0 ? `${overallEvalResult.overallParticipation} / 5.0` : "-"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Category Breakdown Bar */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1">
+                {overallEvalResult.categories.map((cat, cIdx) => (
+                  <div key={cat.categoryKey || cIdx} className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/15 space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-teal-100 truncate">{cat.categoryLabel.replace(/^[0-9.]+\s*/, '')}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-teal-400/20 text-teal-200 font-black text-[10px] border border-teal-400/30 shrink-0">
+                        Trọng số {cat.weight}%
+                      </span>
+                    </div>
+                    <div className="flex items-end justify-between">
+                      <span className="text-lg font-black text-white">{cat.averagePercent}%</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${
+                        cat.status === "DAT" ? "bg-emerald-500/30 text-emerald-200 border border-emerald-400/30" :
+                        cat.status === "TIEN_TRIEN" ? "bg-amber-500/30 text-amber-200 border border-amber-400/30" :
+                        cat.status === "CAN_CO_GANG" ? "bg-orange-500/30 text-orange-200 border border-orange-400/30" :
+                        cat.status === "CHUA_DAT" ? "bg-rose-500/30 text-rose-200 border border-rose-400/30" :
+                        "bg-white/10 text-white/60"
+                      }`}>
+                        {cat.status === "DAT" ? "🟢 Đạt" : cat.status === "TIEN_TRIEN" ? "🟡 Tiến triển" : cat.status === "CAN_CO_GANG" ? "🟠 Cần cố gắng" : cat.status === "CHUA_DAT" ? "🔴 Chưa đạt" : "⚪ Chưa đánh giá"}
+                      </span>
+                    </div>
+                    <div className="w-full bg-white/20 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-500 rounded-full ${
+                          cat.status === "DAT" ? "bg-emerald-400" :
+                          cat.status === "TIEN_TRIEN" ? "bg-amber-400" :
+                          cat.status === "CAN_CO_GANG" ? "bg-orange-400" :
+                          cat.status === "CHUA_DAT" ? "bg-rose-400" : "bg-slate-400"
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(0, cat.averagePercent))}%` }}
+                      />
+                    </div>
+                    <div className="text-[10px] text-teal-300/80 font-medium">
+                      {cat.subGoalsCount} mục tiêu nhỏ ({cat.evaluatedCount} đã đánh giá)
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* 2. PHÁC HỌA BIỂU ĐỒ NĂNG LỰC & TRỌNG SỐ HỌC SINH (VISUAL 360° PROFILE) */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-teal-100 text-[#003B3A] flex items-center justify-center font-black text-sm shadow-2xs">
+                    📊
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-2">
+                      <span>Phác Họa Biểu Đồ Năng Lực & Trọng Số: {activeStudent?.studentName}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${overallEvalResult.classificationColor}`}>
+                        {overallEvalResult.classificationLabel}
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Trực quan hóa tỷ lệ hoàn thành từng nhóm mục tiêu, 3 trục tiêu chí Rubric và điểm đóng góp vào tổng kết
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-extrabold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                    Khối: <strong>{overallEvalResult.gradeLevel}</strong> • Điểm Tổng Kết: <strong className="text-teal-900 text-xs">{overallEvalResult.overallPercent}% ({overallEvalResult.overallRubricScore}/5.0 ⭐)</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+                
+                {/* CỘT TRÁI (7 Cột): BIỂU ĐỒ CỘT SO SÁNH CÁC NHÓM MỤC TIÊU */}
+                <div className="lg:col-span-7 bg-slate-50/70 p-4 rounded-2xl border border-slate-200 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Target className="w-4 h-4 text-teal-600" />
+                        <span>1. TIẾN ĐỘ TỪNG NHÓM (% ĐẠT VS. % TRỌNG SỐ)</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500">Mục tiêu nhỏ đã lập</span>
+                    </div>
+
+                    <div className="space-y-3 pt-3">
+                      {overallEvalResult.categories.map((cat, idx) => {
+                        const contribScore = Number(((cat.averagePercent * cat.weight) / 100).toFixed(1))
+                        return (
+                          <div key={idx} className="space-y-1 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-black text-slate-900 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-teal-600"></span>
+                                <span>{cat.categoryLabel}</span>
+                              </span>
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <span className="text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded-md">
+                                  Trọng số: <strong>{cat.weight}%</strong>
+                                </span>
+                                <span className="font-black text-teal-900 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                                  Đạt: {cat.averagePercent}%
+                                </span>
+                                <span className="text-emerald-700 font-black text-[10px]">
+                                  (+{contribScore}% tổng)
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden flex p-0.5 border border-slate-200">
+                              <div
+                                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-teal-500 to-emerald-500"
+                                style={{ width: `${Math.min(100, Math.max(0, cat.averagePercent))}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[11px] text-teal-900 font-medium flex items-center justify-between">
+                    <span>💡 <strong>Điểm Tổng Kết:</strong> Tổng điểm đóng góp của {overallEvalResult.categories.length} nhóm</span>
+                    <span className="text-xs font-black text-[#003B3A]">{overallEvalResult.overallPercent}%</span>
+                  </div>
+                </div>
+
+                {/* CỘT PHẢI (5 Cột): THANG ĐO 3 TRỤC TIÊU CHÍ RUBRIC */}
+                <div className="lg:col-span-5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200 space-y-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <Award className="w-4 h-4 text-amber-500" />
+                        <span>2. THANG ĐO 3 TIÊU CHÍ RUBRIC (1 - 5)</span>
+                      </span>
+                      <span className="text-[10px] font-bold text-teal-700">Có trọng số</span>
+                    </div>
+
+                    <div className="space-y-2.5 pt-3">
+                      {/* Tiêu chí 1 */}
+                      <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200 space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-black text-amber-950 flex items-center gap-1">
+                            🎯 1. Hoàn thành mục tiêu:
+                          </span>
+                          <span className="font-black text-amber-900 text-sm">
+                            {overallEvalResult.overallGoalCompletion > 0 ? `${overallEvalResult.overallGoalCompletion} / 5.0` : "-"}
+                          </span>
+                        </div>
+                        <div className="w-full bg-amber-200/50 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-amber-500 rounded-full transition-all duration-700"
+                            style={{ width: `${(overallEvalResult.overallGoalCompletion / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Tiêu chí 2 */}
+                      <div className="p-3 rounded-xl bg-blue-50/80 border border-blue-200 space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-black text-blue-950 flex items-center gap-1">
+                            ⚡ 2. Mức độ chủ động:
+                          </span>
+                          <span className="font-black text-blue-900 text-sm">
+                            {overallEvalResult.overallInitiative > 0 ? `${overallEvalResult.overallInitiative} / 5.0` : "-"}
+                          </span>
+                        </div>
+                        <div className="w-full bg-blue-200/50 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 rounded-full transition-all duration-700"
+                            style={{ width: `${(overallEvalResult.overallInitiative / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Tiêu chí 3 */}
+                      <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 space-y-1.5 shadow-2xs">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-black text-emerald-950 flex items-center gap-1">
+                            🤝 3. Thái độ tham gia:
+                          </span>
+                          <span className="font-black text-emerald-900 text-sm">
+                            {overallEvalResult.overallParticipation > 0 ? `${overallEvalResult.overallParticipation} / 5.0` : "-"}
+                          </span>
+                        </div>
+                        <div className="w-full bg-emerald-200/50 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-500 rounded-full transition-all duration-700"
+                            style={{ width: `${(overallEvalResult.overallParticipation / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-white border border-slate-200 text-[11px] text-slate-700 font-medium flex items-center justify-between">
+                    <span>⭐ <strong>Quy đổi Rubric Tổng:</strong></span>
+                    <span className="text-xs font-black text-amber-700">{overallEvalResult.overallRubricScore} / 5.0 sao</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            {/* 3. PHIẾU ĐÁNH GIÁ KỲ CỐ VẤN HỌC TẬP (BẢNG CHẤM ĐIỂM CHI TIẾT) */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
+                    <Award className="w-4 h-4 text-amber-500" />
+                    <span>Phiếu Đánh Giá Kỳ Cố Vấn Học Tập ({activeStudent?.studentName})</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Đánh giá chi tiết từng mục tiêu nhỏ. Kết quả nhóm và tổng thể được tự động tính theo Trọng số chuẩn hóa
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600">Kỳ đánh giá:</span>
+                  <span className="px-3 py-1 rounded-xl bg-teal-100 text-teal-900 font-black text-xs border border-teal-300">
+                    {evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Excel Evaluation Table Format */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse border border-slate-200">
+                  <thead>
+                    <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
+                      <th className="p-3 border-r border-slate-200 min-w-[200px]">Nhóm mục tiêu (Trọng số)</th>
+                      <th className="p-3 border-r border-slate-200 min-w-[300px]">Mục tiêu cụ thể</th>
+                      <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
+                      <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức hoàn thành MT (1-5)</th>
+                      <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức độ chủ động (1-5)</th>
+                      <th className="p-3 border-r border-slate-200 min-w-[140px]">Thái độ tham gia (1-5)</th>
+                      <th className="p-3 min-w-[220px]">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {singleStudentTrackingRows.length > 0 ? (
+                      singleStudentTrackingRows.map((item, idx) => {
+                        const sameCatRows = singleStudentTrackingRows.filter(r => r.categoryKey === item.categoryKey || r.category === item.category)
+                        const isFirstInCat = singleStudentTrackingRows.findIndex(r => r.categoryKey === item.categoryKey || r.category === item.category) === idx
+                        const itemSubIdx = singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length
+                        const catEval = overallEvalResult.categories.find(c => c.categoryKey === item.categoryKey)
+
+                        return (
+                          <tr key={idx} className="bg-white hover:bg-slate-50/50">
+                            {/* 1. Nhóm mục tiêu + Trọng số */}
+                            {isFirstInCat && (
+                              <td rowSpan={sameCatRows.length} className="p-3 border-r border-slate-200 align-top bg-slate-50/50">
+                                <div className="space-y-2">
+                                  <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 border border-teal-200">
+                                    {item.category}
+                                  </span>
+                                  <div className="space-y-1">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300">
+                                      Trọng số: {item.categoryWeight || catEval?.weight || 25}%
+                                    </span>
+                                    <p className="text-[10px] text-slate-400 font-medium">
+                                      ({sameCatRows.length} mục tiêu nhỏ)
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                            )}
+
+                            {/* 2. Mục tiêu cụ thể */}
+                            <td className="p-3 border-r border-slate-200 align-top">
+                              <div className="space-y-1.5">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
+                                  #{itemSubIdx} MỤC TIÊU CỤ THỂ #{itemSubIdx}
+                                </span>
+                                <p className="text-xs font-bold text-slate-900 leading-snug p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                                  {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? item.targetText : "Em chưa điền nội dung mục tiêu nhóm này"}
+                                </p>
+                                {item.actionText && (
+                                  <p className="text-[11px] font-semibold text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200">
+                                    ⚡ Việc làm: {item.actionText}
+                                  </p>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* 3. Kết quả theo dõi: TỰ ĐỘNG HIỆN KẾT QUẢ TỪ 3 TIÊU CHÍ */}
+                            <td className="p-3 border-r border-slate-200 align-top">
+                              {(() => {
+                                const gLevel = item.goalCompletionLevel || 0
+                                const iLevel = item.initiativeLevel || 0
+                                const pLevel = item.participationAttitude || 0
+                                const scores = [gLevel, iLevel, pLevel].filter(v => v > 0)
+
+                                if (scores.length > 0) {
+                                  const avg = scores.reduce((a, b) => a + b, 0) / scores.length
+                                  if (avg >= 4.5) {
+                                    return (
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span>🟢 Đạt (100%)</span>
+                                      </span>
+                                    )
+                                  }
+                                  if (avg >= 3.5) {
+                                    return (
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                                        <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                        <span>🟢 Đạt (75%)</span>
+                                      </span>
+                                    )
+                                  }
+                                  if (avg >= 2.5) {
+                                    return (
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs">
+                                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                        <span>🟡 Tiến triển (50%)</span>
+                                      </span>
+                                    )
+                                  }
+                                  if (avg >= 1.5) {
+                                    return (
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-100 text-orange-900 border border-orange-300 shadow-2xs">
+                                        <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                                        <span>🟠 Cần cố gắng (25%)</span>
+                                      </span>
+                                    )
+                                  }
+                                  return (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-rose-100 text-rose-900 border border-rose-300 shadow-2xs">
+                                      <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                                      <span>🔴 Chưa đạt (10%)</span>
+                                    </span>
+                                  )
+                                }
+
+                                if (item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH") {
+                                  return (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                      <span>🟢 Đạt (100%)</span>
+                                    </span>
+                                  )
+                                }
+                                if (item.progressStatus === "TIEN_TRIEN") {
+                                  return (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-100 text-amber-900 border border-amber-300">
+                                      <span>🟡 Tiến triển (50%)</span>
+                                    </span>
+                                  )
+                                }
+                                if (item.progressStatus === "CAN_CO_GANG") {
+                                  return (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-100 text-orange-900 border border-orange-300">
+                                      <span>🟠 Cần cố gắng (25%)</span>
+                                    </span>
+                                  )
+                                }
+                                if (item.progressStatus === "CHUA_DAT") {
+                                  return (
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-rose-100 text-rose-900 border border-rose-300">
+                                      <span>🔴 Chưa đạt (0%)</span>
+                                    </span>
+                                  )
+                                }
+
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                    <span>⚪ Chưa đánh giá</span>
+                                  </span>
+                                )
+                              })()}
+                            </td>
+
+                            {/* Mức hoàn thành mục tiêu (1-5) cho TỪNG mục tiêu */}
+                            <td className="p-3 border-r border-slate-200 align-top">
+                              <select
+                                value={item.goalCompletionLevel !== undefined ? item.goalCompletionLevel : (rubricForm.goalCompletionLevel || 0)}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value)
+                                  const updated = [...singleStudentTrackingRows]
+                                  updated[idx].goalCompletionLevel = val
+                                  // Auto sync progress status
+                                  const iL = updated[idx].initiativeLevel || 0
+                                  const pL = updated[idx].participationAttitude || 0
+                                  const scs = [val, iL, pL].filter(v => v > 0)
+                                  if (scs.length > 0) {
+                                    const avg = scs.reduce((a, b) => a + b, 0) / scs.length
+                                    updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
+                                  }
+                                  setSingleStudentTrackingRows(updated)
+                                  if (idx === 0) setRubricForm(prev => ({ ...prev, goalCompletionLevel: val }))
+                                }}
+                                className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-amber-400 ${
+                                  item.goalCompletionLevel
+                                    ? "bg-amber-50 text-amber-950 border-amber-300"
+                                    : "bg-slate-100 text-slate-700 border-slate-300"
+                                }`}
+                              >
+                                <option value={0}>- Chưa đánh giá</option>
+                                {[1, 2, 3, 4, 5].map(v => (
+                                  <option key={v} value={v}>Mức {v}</option>
+                                ))}
+                              </select>
+                            </td>
+
+                            {/* Mức độ chủ động (1-5) cho TỪNG mục tiêu */}
+                            <td className="p-3 border-r border-slate-200 align-top">
+                              <select
+                                value={item.initiativeLevel !== undefined ? item.initiativeLevel : (rubricForm.initiativeLevel || 0)}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value)
+                                  const updated = [...singleStudentTrackingRows]
+                                  updated[idx].initiativeLevel = val
+                                  // Auto sync progress status
+                                  const gL = updated[idx].goalCompletionLevel || 0
+                                  const pL = updated[idx].participationAttitude || 0
+                                  const scs = [gL, val, pL].filter(v => v > 0)
+                                  if (scs.length > 0) {
+                                    const avg = scs.reduce((a, b) => a + b, 0) / scs.length
+                                    updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
+                                  }
+                                  setSingleStudentTrackingRows(updated)
+                                  if (idx === 0) setRubricForm(prev => ({ ...prev, initiativeLevel: val }))
+                                }}
+                                className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-blue-400 ${
+                                  item.initiativeLevel
+                                    ? "bg-blue-50 text-blue-950 border-blue-300"
+                                    : "bg-slate-100 text-slate-700 border-slate-300"
+                                }`}
+                              >
+                                <option value={0}>- Chưa đánh giá</option>
+                                {[1, 2, 3, 4, 5].map(v => (
+                                  <option key={v} value={v}>Mức {v}</option>
+                                ))}
+                              </select>
+                            </td>
+
+                            {/* Thái độ tham gia (1-5) cho TỪNG mục tiêu */}
+                            <td className="p-3 border-r border-slate-200 align-top">
+                              <select
+                                value={item.participationAttitude !== undefined ? item.participationAttitude : (rubricForm.participationAttitude || 0)}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value)
+                                  const updated = [...singleStudentTrackingRows]
+                                  updated[idx].participationAttitude = val
+                                  // Auto sync progress status
+                                  const gL = updated[idx].goalCompletionLevel || 0
+                                  const iL = updated[idx].initiativeLevel || 0
+                                  const scs = [gL, iL, val].filter(v => v > 0)
+                                  if (scs.length > 0) {
+                                    const avg = scs.reduce((a, b) => a + b, 0) / scs.length
+                                    updated[idx].progressStatus = avg >= 3.5 ? "DAT" : avg >= 2.5 ? "TIEN_TRIEN" : avg >= 1.5 ? "CAN_CO_GANG" : "CHUA_DAT"
+                                  }
+                                  setSingleStudentTrackingRows(updated)
+                                  if (idx === 0) setRubricForm(prev => ({ ...prev, participationAttitude: val }))
+                                }}
+                                className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-emerald-400 ${
+                                  item.participationAttitude
+                                    ? "bg-emerald-50 text-emerald-950 border-emerald-300"
+                                    : "bg-slate-100 text-slate-700 border-slate-300"
+                                }`}
+                              >
+                                <option value={0}>- Chưa đánh giá</option>
+                                {[1, 2, 3, 4, 5].map(v => (
+                                  <option key={v} value={v}>Mức {v}</option>
+                                ))}
+                              </select>
+                            </td>
+
+                            {/* Khuyến nghị / Nhận xét chi tiết cho TỪNG nhóm mục tiêu */}
+                            <td className="p-3 align-top">
+                              <textarea
+                                rows={3}
+                                value={item.teacherNotes || ""}
+                                onChange={(e) => {
+                                  const updated = [...singleStudentTrackingRows]
+                                  updated[idx].teacherNotes = e.target.value
+                                  setSingleStudentTrackingRows(updated)
+                                }}
+                                placeholder={"Nhập khuyến nghị / ghi chú chi tiết cho " + item.category + "..."}
+                                className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
+                              />
+                            </td>
+                          </tr>
+                        )
+                      })
+                    ) : (
+                      <tr className="bg-white">
+                        <td className="p-3 border-r border-slate-200 font-black text-slate-900">
+                          {activeStudent?.studentName || "N/A"}
+                        </td>
+                        <td className="p-3 border-r border-slate-200 font-bold text-slate-700">
+                          {evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
+                        </td>
+                        <td className="p-3 border-r border-slate-200 font-semibold text-slate-400 italic">
+                          Chưa có dữ liệu mục tiêu
+                        </td>
+                        <td className="p-3 border-r border-slate-200 font-semibold text-slate-400 italic">
+                          -
+                        </td>
+                        <td className="p-3 border-r border-slate-200">
+                          <select
+                            value={rubricForm.goalCompletionLevel}
+                            onChange={(e) => setRubricForm({ ...rubricForm, goalCompletionLevel: Number(e.target.value) })}
+                            className="w-full p-2 rounded-xl border border-amber-300 font-black text-xs bg-amber-50 text-amber-950"
+                          >
+                            {[1, 2, 3, 4, 5].map(v => (
+                              <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 28)}...</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-3 border-r border-slate-200">
+                          <select
+                            value={rubricForm.initiativeLevel}
+                            onChange={(e) => setRubricForm({ ...rubricForm, initiativeLevel: Number(e.target.value) })}
+                            className="w-full p-2 rounded-xl border border-blue-300 font-black text-xs bg-blue-50 text-blue-950"
+                          >
+                            {[1, 2, 3, 4, 5].map(v => (
+                              <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 28)}...</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-3 border-r border-slate-200">
+                          <select
+                            value={rubricForm.participationAttitude}
+                            onChange={(e) => setRubricForm({ ...rubricForm, participationAttitude: Number(e.target.value) })}
+                            className="w-full p-2 rounded-xl border border-emerald-300 font-black text-xs bg-emerald-50 text-emerald-950"
+                          >
+                            {[1, 2, 3, 4, 5].map(v => (
+                              <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 28)}...</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-3">
+                          <textarea
+                            rows={4}
+                            value={rubricForm.recommendations}
+                            onChange={(e) => setRubricForm({ ...rubricForm, recommendations: e.target.value })}
+                            placeholder="Nhập khuyến nghị chi tiết cho Phụ huynh và GVBM..."
+                            className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold"
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <span className="text-xs text-slate-500 font-medium">
+                  💡 Điểm đánh giá sẽ tự động được lưu vào sổ theo dõi và đồng bộ với Sổ quan sát GVCN.
+                </span>
+
+                <button
+                  onClick={handleSaveRubricEval}
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md transition-all"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{saving ? "Đang lưu..." : `Lưu Đánh Giá Kỳ Em ${activeStudent?.studentName || ""}`}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 4. BẢNG TRA CỨU RUBRIC ĐÁNH GIÁ */}
+            <div className="bg-amber-50/70 rounded-3xl p-6 border border-amber-200 space-y-4">
+              <div>
+                <h3 className="text-sm font-black text-amber-900 flex items-center gap-2">
+                  <Info className="w-4 h-4 text-amber-600" />
+                  <span>RUBRIC ĐÁNH GIÁ (Thang đo dùng chung cho 3 tiêu chí, điểm 1 - 5)</span>
+                </h3>
+                <p className="text-[11px] text-amber-800 font-medium mt-0.5">
+                  Giáo viên đối chiếu mô tả dưới đây để chọn điểm 1 - 5 cho từng học sinh
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left border-collapse border border-amber-300 bg-white">
+                  <thead>
+                    <tr className="bg-amber-100 text-amber-950 font-black border-b border-amber-300">
+                      <th className="p-3 border-r border-amber-300 w-1/6">Tiêu chí</th>
+                      <th className="p-3 border-r border-amber-300">Mức 1</th>
+                      <th className="p-3 border-r border-amber-300">Mức 2</th>
+                      <th className="p-3 border-r border-amber-300">Mức 3</th>
+                      <th className="p-3 border-r border-amber-300">Mức 4</th>
+                      <th className="p-3">Mức 5</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-amber-200 font-semibold text-slate-800">
+                    <tr>
+                      <td className="p-3 font-black text-amber-900 bg-amber-50 border-r border-amber-300">
+                        1. Mức hoàn thành mục tiêu
+                      </td>
+                      {RUBRICS.goalCompletion.map(r => (
+                        <td key={r.level} className="p-3 border-r border-amber-200">{r.text}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-black text-amber-900 bg-amber-50 border-r border-amber-300">
+                        2. Mức độ chủ động
+                      </td>
+                      {RUBRICS.initiative.map(r => (
+                        <td key={r.level} className="p-3 border-r border-amber-200">{r.text}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td className="p-3 font-black text-amber-900 bg-amber-50 border-r border-amber-300">
+                        3. Thái độ tham gia
+                      </td>
+                      {RUBRICS.participation.map(r => (
+                        <td key={r.level} className="p-3 border-r border-amber-200">{r.text}</td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
 
         </div>
