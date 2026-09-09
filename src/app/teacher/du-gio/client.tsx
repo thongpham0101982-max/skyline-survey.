@@ -6347,7 +6347,7 @@ export function ObservationClient(props: ObservationClientProps) {
         setSelectedEmailTeacherIds={setSelectedEmailTeacherIds}
         myDeptTeachers={myDeptTeachers}
         isSubmittingOpen={submitting}
-        handleOpenSlotSubmit={handleSubmit}
+        handleOpenSlotSubmit={handleCreateSubmit}
         subjects={subjects}
         departments={departments}
         teachers={teachers}
