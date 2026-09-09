@@ -109,10 +109,11 @@ export function LoginClient() {
           } else if (permRes?.defaultRoute) {
             window.location.href = permRes.defaultRoute
           } else {
-            window.location.href = '/admin'
+            window.location.href = role === 'TEACHER' ? '/teacher' : '/admin'
           }
 
         } catch (err: any) {
+          console.error("Login authentication error:", err)
           const errStr = String(err?.message || err?.type || err?.code || err || '')
           if (errStr.includes('TAI_KHOAN_BI_KHOA')) {
             setError('Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.')
@@ -120,18 +121,21 @@ export function LoginClient() {
             errStr.includes('CredentialsSignin') ||
             errStr.includes('CallbackRouteError') ||
             errStr.includes('credentials') ||
-            errStr.includes('Configuration')
+            errStr.includes('Configuration') ||
+            errStr.includes('invalid') ||
+            errStr.includes('401')
           ) {
             setError('Sai tên đăng nhập hoặc mật khẩu.')
           } else {
-            setError('Lỗi kết nối hệ thống. Vui lòng thử lại.')
+            setError('Sai tên đăng nhập hoặc mật khẩu, hoặc lỗi kết nối. Vui lòng kiểm tra lại.')
           }
           setLoading(false)
           setLoadingSteps([])
         }
       }
-    } catch {
-      setError('Lỗi kết nối hệ thống. Vui lòng thử lại.')
+    } catch (outerErr: any) {
+      console.error("Outer login error:", outerErr)
+      setError('Sai tên đăng nhập hoặc mật khẩu, hoặc lỗi kết nối. Vui lòng kiểm tra lại.')
       setLoading(false); setLoadingSteps([])
     }
   }

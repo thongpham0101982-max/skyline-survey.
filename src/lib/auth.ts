@@ -193,14 +193,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return session
     },
     async redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return url
-      if (url.includes("0.0.0.0")) return "/login"
+      let safeBase = baseUrl || "https://ssm.skylineschool.edu.vn"
+      if (safeBase.includes("0.0.0.0")) {
+        safeBase = safeBase.replace("0.0.0.0", "localhost")
+      }
+      if (url.startsWith("/")) return `${safeBase}${url}`
       try {
         const urlObj = new URL(url)
-        const baseObj = new URL(baseUrl)
+        const baseObj = new URL(safeBase)
         if (urlObj.origin === baseObj.origin) return url
       } catch {}
-      return baseUrl.includes("0.0.0.0") ? "/login" : baseUrl
+      return safeBase
     },
   },
   pages: { signIn: "/login" },
