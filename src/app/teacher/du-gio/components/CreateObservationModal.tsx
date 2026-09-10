@@ -85,6 +85,7 @@ const MAMNON_SECTIONS = [
 
 const calculateMamNonRanking = (scores: number[]) => {
   const sum = scores.reduce((a: number, b: number) => a + b, 0);
+  if (sum === 0) return "Chưa xếp loại";
   if (sum >= 9.0) return "Tốt";
   if (sum >= 8.0) return "Khá";
   if (sum >= 7.0) return "Đạt";
@@ -93,9 +94,10 @@ const calculateMamNonRanking = (scores: number[]) => {
 
 const calculateK12Ranking = (scores: number[]) => {
   const sum = scores.reduce((a: number, b: number) => a + b, 0);
-  if (sum >= 18.0) return "Giỏi";
+  if (sum === 0) return "Chưa xếp loại";
+  if (sum >= 17.0) return "Giỏi";
   if (sum >= 14.0) return "Khá";
-  if (sum >= 10.0) return "Trung bình";
+  if (sum >= 12.0) return "Trung bình";
   return "Không xếp loại";
 };
 
@@ -1169,9 +1171,11 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                               ? "bg-sky-50 text-sky-700 border-sky-300"
                               : currentRank === "Trung bình" || currentRank === "Đạt"
                               ? "bg-amber-50 text-amber-700 border-amber-300"
+                              : currentRank === "Chưa xếp loại"
+                              ? "bg-slate-100 text-slate-700 border-slate-300"
                               : "bg-rose-50 text-rose-700 border-rose-300"
                           }`}>
-                            {currentRank}
+                            {currentRank || "Chưa xếp loại"}
                           </span>
                         </div>
                       </div>
@@ -1184,6 +1188,8 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                           ? "bg-sky-50/80 border-sky-200/80 text-sky-950"
                           : rankInfo.color === "amber"
                           ? "bg-amber-50/80 border-amber-200/80 text-amber-950"
+                          : rankInfo.color === "slate"
+                          ? "bg-slate-50/90 border-slate-200 text-slate-700"
                           : "bg-rose-50/80 border-rose-200/80 text-rose-950"
                       }`}>
                         <Info className="w-4 h-4 shrink-0 mt-0.5" />

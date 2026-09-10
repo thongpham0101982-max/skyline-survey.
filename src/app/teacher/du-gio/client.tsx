@@ -45,6 +45,14 @@ const preschoolLabels = [
 
 export const getK12RankingDetails = (scores: number[]) => {
   const sum = Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100;
+  if (sum === 0) {
+    return {
+      rating: "Chưa xếp loại",
+      reason: "Vui lòng chọn điểm các tiêu chí để hệ thống tự động tính điểm và xếp loại tiết dạy.",
+      color: "slate"
+    };
+  }
+
   const yq1 = scores[0] || 0;
   const yq3 = scores[2] || 0;
   const yq6 = scores[5] || 0;
@@ -113,6 +121,13 @@ export const getK12RankingDetails = (scores: number[]) => {
 
 export const getMamNonRankingDetails = (scores: number[]) => {
   const sum = Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100;
+  if (sum === 0) {
+    return {
+      rating: "Chưa xếp loại",
+      reason: "Vui lòng chọn điểm các tiêu chí để hệ thống tự động tính điểm và xếp loại tiết dạy.",
+      color: "slate"
+    };
+  }
   if (sum >= 9.0) {
     return {
       rating: "Tốt",
@@ -433,12 +448,12 @@ export function ObservationClient(props: ObservationClientProps) {
   const [surpriseDate, setSurpriseDate] = useState<string>(() => new Date().toISOString().split("T")[0])
   const [surprisePeriod, setSurprisePeriod] = useState<string>("Tiết 1")
   const [surpriseRoom, setSurpriseRoom] = useState<string>("Phòng học")
-  const [surpriseScoresK12, setSurpriseScoresK12] = useState<number[]>([1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0])
-  const [surpriseScoresMN, setSurpriseScoresMN] = useState<number[]>(() => Array(18).fill(0.5))
+  const [surpriseScoresK12, setSurpriseScoresK12] = useState<number[]>(() => Array(11).fill(0))
+  const [surpriseScoresMN, setSurpriseScoresMN] = useState<number[]>(() => Array(18).fill(0))
   const [surpriseStrengths, setSurpriseStrengths] = useState<string>("")
   const [surpriseImprovements, setSurpriseImprovements] = useState<string>("")
   const [surpriseGeneral, setSurpriseGeneral] = useState<string>("")
-  const [surpriseOverall, setSurpriseOverall] = useState<string>(() => isMamNonTeacher ? "Tốt" : "Giỏi")
+  const [surpriseOverall, setSurpriseOverall] = useState<string>("")
   const [surpriseSubmitting, setSurpriseSubmitting] = useState<boolean>(false)
 
   // Request Observation Form States
@@ -852,6 +867,14 @@ export function ObservationClient(props: ObservationClientProps) {
     setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId(""); setNewNotifMode("ALL"); setSelectedMemberIds([]); setSendEmailNotif(false);
     setNewLessonPlanName(""); setNewLessonPlanData("");
     setNewChuDe(""); setNewHoatDong(""); setNewDeTai("");
+    setSurpriseTopic("");
+    setSurpriseTeacherId("");
+    setSurpriseScoresK12(Array(11).fill(0));
+    setSurpriseScoresMN(Array(18).fill(0));
+    setSurpriseStrengths("");
+    setSurpriseImprovements("");
+    setSurpriseGeneral("");
+    setSurpriseOverall("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -1668,9 +1691,13 @@ export function ObservationClient(props: ObservationClientProps) {
       refreshSlots();
       // Reset form
       setSurpriseTopic("");
+      setSurpriseTeacherId("");
+      setSurpriseScoresK12(Array(11).fill(0));
+      setSurpriseScoresMN(Array(18).fill(0));
       setSurpriseStrengths("");
       setSurpriseImprovements("");
       setSurpriseGeneral("");
+      setSurpriseOverall("");
       // Switch to overview or evaluations tab
       setActiveMainTab("overview_slots");
     } else {
@@ -5791,9 +5818,11 @@ export function ObservationClient(props: ObservationClientProps) {
                               ? "bg-sky-50 text-sky-700 border-sky-300"
                               : currentRank === "Trung bình" || currentRank === "Đạt"
                               ? "bg-amber-50 text-amber-700 border-amber-300"
+                              : currentRank === "Chưa xếp loại"
+                              ? "bg-slate-100 text-slate-700 border-slate-300"
                               : "bg-rose-50 text-rose-700 border-rose-300"
                           }`}>
-                            {currentRank}
+                            {currentRank || "Chưa xếp loại"}
                           </span>
                         </div>
                       </div>
@@ -5806,6 +5835,8 @@ export function ObservationClient(props: ObservationClientProps) {
                           ? "bg-sky-50/80 border-sky-200/80 text-sky-950"
                           : rankInfo.color === "amber"
                           ? "bg-amber-50/80 border-amber-200/80 text-amber-950"
+                          : rankInfo.color === "slate"
+                          ? "bg-slate-50/90 border-slate-200 text-slate-700"
                           : "bg-rose-50/80 border-rose-200/80 text-rose-950"
                       }`}>
                         <Info className="w-4 h-4 shrink-0 mt-0.5" />
