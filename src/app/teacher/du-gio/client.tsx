@@ -156,6 +156,35 @@ export const getMamNonRankingDetails = (scores: number[]) => {
   };
 };
 
+export function getTeacherAllDeptNames(t: any, departments?: any[]): string {
+  if (!t) return "";
+  const names = new Set<string>();
+  if (t.departmentRel?.name) names.add(t.departmentRel.name);
+  else if (t.departmentId && departments) {
+    const d = departments.find((dept: any) => dept.id === t.departmentId);
+    if (d?.name) names.add(d.name);
+  }
+  if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+    t.departmentAssignments.forEach((da: any) => {
+      if (da.department?.name) names.add(da.department.name);
+      else if (da.departmentId && departments) {
+        const d = departments.find((dept: any) => dept.id === da.departmentId);
+        if (d?.name) names.add(d.name);
+      }
+    });
+  }
+  return Array.from(names).join(", ");
+}
+
+export function isTeacherInDepartment(t: any, deptId: string): boolean {
+  if (!t || !deptId || deptId === "all") return true;
+  if (t.departmentId === deptId) return true;
+  if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+    return t.departmentAssignments.some((da: any) => da.departmentId === deptId);
+  }
+  return false;
+}
+
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,
   requestObservationSlot, respondToObservationRequest,
@@ -712,35 +741,6 @@ export function ObservationClient(props: ObservationClientProps) {
       return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
     });
   }, [classes, reqLevel, reqGrade, reqCampusId]);
-
-export function getTeacherAllDeptNames(t: any, departments?: any[]): string {
-  if (!t) return "";
-  const names = new Set<string>();
-  if (t.departmentRel?.name) names.add(t.departmentRel.name);
-  else if (t.departmentId && departments) {
-    const d = departments.find((dept: any) => dept.id === t.departmentId);
-    if (d?.name) names.add(d.name);
-  }
-  if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
-    t.departmentAssignments.forEach((da: any) => {
-      if (da.department?.name) names.add(da.department.name);
-      else if (da.departmentId && departments) {
-        const d = departments.find((dept: any) => dept.id === da.departmentId);
-        if (d?.name) names.add(d.name);
-      }
-    });
-  }
-  return Array.from(names).join(", ");
-}
-
-export function isTeacherInDepartment(t: any, deptId: string): boolean {
-  if (!t || !deptId || deptId === "all") return true;
-  if (t.departmentId === deptId) return true;
-  if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
-    return t.departmentAssignments.some((da: any) => da.departmentId === deptId);
-  }
-  return false;
-}
 
   const filteredTeachersForRequest = useMemo(() => {
     if (!reqDeptId) return teachers;
