@@ -1301,6 +1301,20 @@ export async function submitEvaluation(data: {
     if (new Date(registration.slot.date) > new Date()) {
       return { success: false, error: "Tiết học chưa diễn ra. Không thể nộp phiếu đánh giá trước thời gian học." }
     }
+    // Chỉ cho phép đánh giá các tiết dạy trong tháng hiện tại (dựa vào ngày dạy slot.date)
+    const slotDate = new Date(registration.slot.date);
+    const now = new Date();
+    const isSameMonth = !isNaN(slotDate.getTime()) && slotDate.getFullYear() === now.getFullYear() && slotDate.getMonth() === now.getMonth();
+    const roleCode = (session.user as any)?.role || "";
+    const isAdmin = ["ADMIN", "ADMINISTRATOR"].includes(roleCode);
+
+    if (!registration.evaluation && !isAdmin && !isSameMonth) {
+      return {
+        success: false,
+        error: `Chỉ được phép đánh giá các tiết dạy diễn ra trong tháng hiện tại (Tháng ${now.getMonth() + 1}/${now.getFullYear()}). Tiết dạy này thuộc tháng ${slotDate.getMonth() + 1}/${slotDate.getFullYear()}!`
+      };
+    }
+
     if (registration.teacherId !== currentTeacher.id) return { success: false, error: "Không có quyền nộp phiếu này" }
     if (!registration.isApproved) return { success: false, error: "Cần được xác nhận dự giờ trước khi nộp phiếu đánh giá" }
     // Bắt buộc nhập "Nội dung cần cải thiện / Góp ý phát triển"

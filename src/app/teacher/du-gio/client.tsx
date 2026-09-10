@@ -398,6 +398,47 @@ const isSurpriseSlot = (slot: any) => {
   );
 };
 
+const formatEvalDateTimeVi = (dateVal: string | Date | undefined | null) => {
+  if (!dateVal) return "";
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return "";
+  const time = d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  const date = d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return `${time} ngày ${date}`;
+};
+
+const getSlotMonthStatus = (dateValue: string | Date | undefined | null): "CURRENT" | "PAST" | "FUTURE" => {
+  if (!dateValue) return "CURRENT";
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  let slotYear = currentYear;
+  let slotMonth = currentMonth;
+  
+  if (typeof dateValue === "string" && dateValue.includes("-")) {
+    const parts = dateValue.split("T")[0].split("-");
+    if (parts.length >= 2) {
+      slotYear = parseInt(parts[0], 10);
+      slotMonth = parseInt(parts[1], 10) - 1;
+    }
+  } else {
+    const d = new Date(dateValue);
+    if (!isNaN(d.getTime())) {
+      slotYear = d.getFullYear();
+      slotMonth = d.getMonth();
+    }
+  }
+  
+  if (slotYear < currentYear || (slotYear === currentYear && slotMonth < currentMonth)) {
+    return "PAST";
+  }
+  if (slotYear > currentYear || (slotYear === currentYear && slotMonth > currentMonth)) {
+    return "FUTURE";
+  }
+  return "CURRENT";
+};
+
 export function ObservationClient(props: ObservationClientProps) {
   const {
     initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
@@ -1491,6 +1532,22 @@ export function ObservationClient(props: ObservationClientProps) {
   };
 
   const openEvalModal = (registration: any, slot: any) => {
+    // Nếu là đánh giá mới (chưa có phiếu) và không phải Admin, chỉ cho phép đánh giá trong tháng hiện tại
+    if (!registration?.evaluation && !isAdminUser && slot?.date) {
+      const monthStatus = getSlotMonthStatus(slot.date);
+      if (monthStatus !== "CURRENT") {
+        const slotD = new Date(slot.date);
+        const now = new Date();
+        const slotMonthStr = !isNaN(slotD.getTime()) ? `${slotD.getMonth() + 1}/${slotD.getFullYear()}` : "";
+        const curMonthStr = `${now.getMonth() + 1}/${now.getFullYear()}`;
+        showToast(
+          `Chỉ được phép đánh giá các tiết dạy diễn ra trong tháng hiện tại (Tháng ${curMonthStr}). Tiết dạy này thuộc thời gian tháng ${slotMonthStr} nên không thể đánh giá!`,
+          "error"
+        );
+        return;
+      }
+    }
+
     const isMN = slot.level === "Mầm non";
     if (registration.evaluation) {
       let parsedScores = Array(18).fill(0);
@@ -5171,51 +5228,99 @@ export function ObservationClient(props: ObservationClientProps) {
                           {/* Đánh giá kết quả */}
                           <td className="p-3.5">
                             {myReg?.evaluation ? (
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-950 font-black text-xs border border-emerald-300 shadow-2xs">
-                                  ⭐ {myReg.evaluation.rating || "Đã đánh giá"} {myReg.evaluation.totalScore ? `(${myReg.evaluation.totalScore}đ)` : ""}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => openEvalModal(myReg, slot)}
-                                  className="px-3 py-1 text-xs font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-xl transition-all shadow-2xs cursor-pointer"
-                                >
-                                  Xem phiếu
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setPrintModalSlot({ slot, registration: myReg })}
-                                  className="px-2.5 py-1 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1"
-                                  title="In phiếu đánh giá chuẩn A4"
-                                >
-                                  <Printer className="w-3.5 h-3.5 text-slate-600" />
-                                  <span className="hidden sm:inline">In phiếu</span>
-                                </button>
-                                {myReg.evaluation.reEvaluationStatus === "REQUESTED" && (
-                                  <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
-                                    ⏳ Chờ duyệt mở lại
+                              <div className="flex flex-col gap-1.5 py-0.5">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-950 font-black text-xs border border-emerald-300 shadow-2xs">
+                                    ⭐ {myReg.evaluation.overallRating || myReg.evaluation.rating || "Đã đánh giá"} {myReg.evaluation.totalScore != null && Number(myReg.evaluation.totalScore) > 0 ? `(${Number(myReg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
                                   </span>
-                                )}
-                                {myReg.evaluation.reEvaluationStatus === "APPROVED" && (
                                   <button
                                     type="button"
                                     onClick={() => openEvalModal(myReg, slot)}
-                                    className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs animate-pulse flex items-center gap-1 cursor-pointer"
+                                    className="px-3 py-1 text-xs font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-xl transition-all shadow-2xs cursor-pointer"
                                   >
-                                    <RotateCcw className="w-3 h-3" />
-                                    <span>Đánh giá lại</span>
+                                    Xem phiếu
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setPrintModalSlot({ slot, registration: myReg })}
+                                    className="px-2.5 py-1 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1"
+                                    title="In phiếu đánh giá chuẩn A4"
+                                  >
+                                    <Printer className="w-3.5 h-3.5 text-slate-600" />
+                                    <span className="hidden sm:inline">In phiếu</span>
+                                  </button>
+                                  {myReg.evaluation.reEvaluationStatus === "REQUESTED" && (
+                                    <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
+                                      ⏳ Chờ duyệt mở lại
+                                    </span>
+                                  )}
+                                  {myReg.evaluation.reEvaluationStatus === "APPROVED" && (
+                                    <button
+                                      type="button"
+                                      onClick={() => openEvalModal(myReg, slot)}
+                                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs animate-pulse flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <RotateCcw className="w-3 h-3" />
+                                      <span>Đánh giá lại</span>
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Thời gian đánh giá: hiển thị thời gian, ngày giờ GV hoàn thành */}
+                                {(myReg.evaluation.submittedAt || myReg.evaluation.updatedAt || myReg.evaluation.createdAt) && (
+                                  <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
+                                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    <span>
+                                      Thời gian đánh giá: <strong className="text-slate-800 font-bold">{formatEvalDateTimeVi(myReg.evaluation.submittedAt || myReg.evaluation.updatedAt || myReg.evaluation.createdAt)}</strong>
+                                    </span>
+                                  </div>
                                 )}
                               </div>
                             ) : myReg?.isApproved ? (
-                              <button
-                                type="button"
-                                onClick={() => openEvalModal(myReg, slot)}
-                                className="px-4 py-2 bg-gradient-to-r from-[#008B82] to-teal-700 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5"
-                              >
-                                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                                <span>✍️ Nhập đánh giá</span>
-                              </button>
+                              (() => {
+                                const monthStatus = getSlotMonthStatus(slot.date);
+                                const now = new Date();
+                                const slotD = new Date(slot.date);
+
+                                if (monthStatus === "PAST") {
+                                  return (
+                                    <div className="flex flex-col gap-1 items-start">
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-2xs" title="Tiết dạy đã qua tháng, đã hết hạn đánh giá">
+                                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                        <span>Hết hạn đánh giá</span>
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 italic">
+                                        Chỉ đánh giá trong tháng {now.getMonth() + 1}/{now.getFullYear()}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+
+                                if (monthStatus === "FUTURE") {
+                                  return (
+                                    <div className="flex flex-col gap-1 items-start">
+                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold shadow-2xs" title="Chưa đến tháng diễn ra tiết dạy">
+                                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                        <span>Chưa đến hạn</span>
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 italic">
+                                        Đánh giá vào tháng {!isNaN(slotD.getTime()) ? `${slotD.getMonth() + 1}/${slotD.getFullYear()}` : "tới"}
+                                      </span>
+                                    </div>
+                                  );
+                                }
+
+                                return (
+                                  <button
+                                    type="button"
+                                    onClick={() => openEvalModal(myReg, slot)}
+                                    className="px-4 py-2 bg-gradient-to-r from-[#008B82] to-teal-700 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                                    <span>✍️ Nhập đánh giá</span>
+                                  </button>
+                                );
+                              })()
                             ) : (
                               <span className="text-xs text-slate-400 italic">Chờ duyệt xong</span>
                             )}
