@@ -194,6 +194,8 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
       cyan: "bg-cyan-50 text-cyan-700 border-cyan-200",
       violet: "bg-violet-50 text-violet-700 border-violet-200",
       rose: "bg-rose-50 text-rose-700 border-rose-200",
+      teal: "bg-teal-50 text-teal-700 border-teal-200",
+      purple: "bg-purple-50 text-purple-700 border-purple-200",
     };
     const style = colorStyles[div.color] || "bg-slate-50 text-slate-700 border-slate-200";
 
@@ -219,10 +221,10 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
             <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
               <Layers className="w-6 h-6" />
             </div>
-            Quản Lý Tổ & 6 Bộ Phận Chuyên Môn
+            Quản Lý Tổ & Bộ Phận Chuyên Môn
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
-            Quản lý cơ cấu các Tổ chuyên môn trực thuộc 6 Bộ Phận (Ban ĐHCM). Hỗ trợ gán nhiều Tổ vào Bộ Phận linh động.
+            Quản lý cơ cấu các Tổ chuyên môn trực thuộc các Ban & Bộ Phận (Ban GĐ, Ban KT&ĐBCL, Ban ĐHCM, BP Trung học, BP Tiểu học...).
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -243,8 +245,8 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
         </div>
       </div>
 
-      {/* 6 Divisions Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      {/* 9 Divisions Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-5 gap-3.5">
         {ACADEMIC_DIVISIONS.map((div) => {
           const deptCount = departments.filter(d => d.divisionCode === div.code).length;
           const tbpName = getTBPForDivision(div.code);
@@ -257,6 +259,8 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
             cyan: { border: "border-cyan-200", bg: "bg-cyan-50/50", text: "text-cyan-800", countBg: "bg-cyan-100 text-cyan-800" },
             violet: { border: "border-violet-200", bg: "bg-violet-50/50", text: "text-violet-800", countBg: "bg-violet-100 text-violet-800" },
             rose: { border: "border-rose-200", bg: "bg-rose-50/50", text: "text-rose-800", countBg: "bg-rose-100 text-rose-800" },
+            teal: { border: "border-teal-200", bg: "bg-teal-50/50", text: "text-teal-800", countBg: "bg-teal-100 text-teal-800" },
+            purple: { border: "border-purple-200", bg: "bg-purple-50/50", text: "text-purple-800", countBg: "bg-purple-100 text-purple-800" },
           };
           const style = cardColors[div.color] || cardColors.blue;
 

@@ -7,6 +7,13 @@ const client = createClient({
 });
 
 const mappings = [
+  // Ban GĐ
+  { code: 'GĐ_CS', divisionCode: 'BAN_GD' },
+  { code: 'GVU_CS1', divisionCode: 'BAN_GD' },
+
+  // Ban KT&ĐBCL
+  { code: 'KT-ĐBCL', divisionCode: 'BAN_KT_DBCL' },
+
   // BP Tiểu học
   { code: 'TO_1', divisionCode: 'BP_TIEU_HOC' },
   { code: 'TO_2', divisionCode: 'BP_TIEU_HOC' },
@@ -47,15 +54,16 @@ const mappings = [
 ];
 
 async function run() {
-  console.log('Seeding divisionCode for departments...');
+  console.log('Seeding all 9 divisions / departments...');
   for (const m of mappings) {
-    const res = await client.execute({
+    await client.execute({
       sql: 'UPDATE Department SET divisionCode = ? WHERE code = ?',
       args: [m.divisionCode, m.code]
     });
-    console.log(`Updated ${m.code} -> ${m.divisionCode} (${res.rowsAffected} rows affected)`);
   }
-  console.log('Done seeding divisionCode!');
+  console.log('Done mapping departments!');
+  const res = await client.execute('SELECT divisionCode, count(*) as count FROM Department GROUP BY divisionCode');
+  console.log('Division breakdown:', res.rows);
 }
 
 run().catch(console.error);

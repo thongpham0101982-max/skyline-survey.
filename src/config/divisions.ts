@@ -9,6 +9,30 @@ export interface AcademicDivision {
 
 export const ACADEMIC_DIVISIONS: AcademicDivision[] = [
   {
+    code: "BAN_GD",
+    name: "Ban GĐ",
+    shortName: "Ban GĐ",
+    description: "Ban Giám Đốc, Ban Lãnh Đạo & Điều Hành Cơ Sở (GĐCS, Ban Giám Hiệu...)",
+    color: "rose",
+    defaultBlockCM: "Điều hành"
+  },
+  {
+    code: "BAN_KT_DBCL",
+    name: "Ban KT&ĐBCL",
+    shortName: "KT&ĐBCL",
+    description: "Ban Khảo thí & Đảm bảo chất lượng giáo dục, Kiểm định, Thanh tra chuyên môn...",
+    color: "teal",
+    defaultBlockCM: "Hỗ trợ người học"
+  },
+  {
+    code: "BAN_DHCM",
+    name: "Ban ĐHCM",
+    shortName: "Ban ĐHCM",
+    description: "Ban Điều Hành Chuyên Môn cấp Hệ thống, Trưởng Ban ĐHCM, Quản lý Chuyên môn...",
+    color: "purple",
+    defaultBlockCM: "Điều hành"
+  },
+  {
     code: "BP_TRUNG_HOC",
     name: "BP Trung học",
     shortName: "Trung học",
@@ -73,9 +97,9 @@ export interface AcademicPosition {
 
 export const ACADEMIC_POSITIONS: AcademicPosition[] = [
   { code: "GĐCS", label: "GĐCS (Giám đốc Cơ sở)", shortLabel: "GĐCS", color: "rose", level: 1 },
-  { code: "TB_DHCM", label: "Trưởng Ban ĐHCM (Toàn quyền 6 BP)", shortLabel: "Trưởng Ban ĐHCM", color: "purple", level: 2 },
+  { code: "TB_DHCM", label: "Trưởng Ban ĐHCM (Toàn quyền các BP)", shortLabel: "Trưởng Ban ĐHCM", color: "purple", level: 2 },
   { code: "Ban ĐHCM", label: "Ban Điều Hành Chuyên Môn", shortLabel: "Ban ĐHCM", color: "purple", level: 2 },
-  { code: "TBP", label: "Trưởng Bộ Phận (TBP)", shortLabel: "TBP", color: "indigo", level: 3 },
+  { code: "TBP", label: "Trưởng Bộ Phận / Trưởng Ban (TBP)", shortLabel: "TBP", color: "indigo", level: 3 },
   { code: "TTCM", label: "Tổ trưởng Chuyên môn (TTCM)", shortLabel: "TTCM", color: "amber", level: 4 },
   { code: "TPTCM", label: "Tổ phó Chuyên môn (TPTCM)", shortLabel: "TPTCM", color: "teal", level: 4 },
   { code: "GV", label: "Giáo viên (GV)", shortLabel: "GV", color: "slate", level: 5 },
@@ -90,6 +114,9 @@ export function getDivisionByCode(code?: string | null): AcademicDivision | unde
 export function normalizeDivisionCode(code?: string | null): string {
   if (!code) return "";
   const upper = code.toUpperCase().trim();
+  if (upper === "BAN_GD" || upper.includes("BAN_GD") || upper.includes("GIAM_DOC") || upper.includes("GDCS")) return "BAN_GD";
+  if (upper === "BAN_KT_DBCL" || upper.includes("KT_DBCL") || upper.includes("KTDBCL") || upper.includes("KHAO_THI")) return "BAN_KT_DBCL";
+  if (upper === "BAN_DHCM" || upper.includes("BAN_DHCM") || upper.includes("DIEU_HANH_CHUYEN_MON")) return "BAN_DHCM";
   if (upper === "BP_TRUNG_HOC" || upper.includes("TRUNG_HOC") || upper.includes("TRUNG HOC") || upper === "THCS" || upper === "THPT") return "BP_TRUNG_HOC";
   if (upper === "BP_TIEU_HOC" || upper.includes("TIEU_HOC") || upper.includes("TIEU HOC") || upper === "TIH") return "BP_TIEU_HOC";
   if (upper === "BP_MAM_NON" || upper.includes("MAM_NON") || upper.includes("MAM NON") || upper === "MN") return "BP_MAM_NON";
