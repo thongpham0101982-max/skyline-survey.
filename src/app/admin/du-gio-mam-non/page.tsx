@@ -53,6 +53,7 @@ export default async function AdminPreschoolObservationPage(props: {
       currentTeacher={refDataResult.currentTeacher}
       subjects={refDataResult.subjects || []}
       departments={refDataResult.departments || []}
+      divisions={refDataResult.divisions || []}
       teachers={refDataResult.teachers || []}
       campuses={refDataResult.campuses || []}
       classes={refDataResult.classes || []}
