@@ -11,12 +11,13 @@ interface AdminObservationKpiCardsProps {
 }
 
 export function AdminObservationKpiCards({
-  slots,
+  slots = [],
   isPreschool = false,
   selectedMonth = "all",
   academicYearName = ""
 }: AdminObservationKpiCardsProps) {
-  const totalSlots = slots.length
+  const safeSlots = Array.isArray(slots) ? slots : []
+  const totalSlots = safeSlots.length
 
   // Calculate registrations & evaluations
   let totalRegistrations = 0
@@ -32,12 +33,12 @@ export function AdminObservationKpiCards({
     Poor: 0 // Chưa đạt / Không đạt / Không xếp loại
   }
 
-  slots.forEach((s: any) => {
-    const regs = s.registrations || []
+  safeSlots.forEach((s: any) => {
+    const regs = s?.registrations || []
     totalRegistrations += regs.length
 
     regs.forEach((r: any) => {
-      const ev = r.evaluation
+      const ev = r?.evaluation
       if (ev && (ev.totalScore != null || (ev.criteriaScores && ev.criteriaScores.length > 0))) {
         evaluatedCount++
         const score = Number(ev.totalScore || 0)

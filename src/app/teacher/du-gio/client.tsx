@@ -472,7 +472,18 @@ const getSlotMonthStatus = (dateValue: string | Date | undefined | null): "CURRE
 
 export function ObservationClient(props: ObservationClientProps) {
   const {
-    initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
+    initialSlots = [],
+    currentTeacher = null,
+    subjects = [],
+    departments = [],
+    divisions = [],
+    teachers = [],
+    campuses = [],
+    classes = [],
+    initialFilters = {} as any,
+    academicYears = [],
+    selectedYearId,
+    initialReceivedEvaluations = []
   } = props;
 
   const isMamNonTeacher = typeof props.isPreschoolPage === "boolean"
@@ -629,7 +640,8 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
-    const activeYearObj = academicYears.find((y: any) => y.id === filterAcademicYearId) || academicYears.find((y: any) => y.status === "ACTIVE");
+    const safeYears = Array.isArray(academicYears) ? academicYears : [];
+    const activeYearObj = safeYears.find((y: any) => y.id === filterAcademicYearId) || safeYears.find((y: any) => y.status === "ACTIVE");
     const now = new Date();
     const currentMonthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}`;
     
@@ -644,7 +656,7 @@ export function ObservationClient(props: ObservationClientProps) {
       monthsSet.add(currentMonthKey);
     }
 
-    slots.forEach((slot: any) => {
+    (slots || []).forEach((slot: any) => {
       if (slot.date) {
         const d = new Date(slot.date);
         if (!isNaN(d.getTime())) {
@@ -2102,7 +2114,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const monthlyStats = useMemo(() => {
     const stats: Record<string, { monthStr: string; year: number; month: number; taughtCount: number; taughtSurpriseCount: number; observedCount: number; observedSurpriseCount: number }> = {};
-    slots.forEach(slot => {
+    (slots || []).forEach(slot => {
       const slotDate = new Date(slot.date);
       if (isNaN(slotDate.getTime())) return;
       const year = slotDate.getFullYear();
@@ -2110,7 +2122,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const key = `${year}-${month.toString().padStart(2, "0")}`;
       
       const isHost = slot.teacherId === currentTeacher?.id;
-      const isObserverApproved = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
+      const isObserverApproved = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
       const isSurprise = isSurpriseSlot(slot);
       
       if (!stats[key]) {
@@ -2127,7 +2139,7 @@ export function ObservationClient(props: ObservationClientProps) {
       
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       if (isHost) {
-        const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
+        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved);
         const allEvaluated = approvedRegs.length > 0 && approvedRegs.some((r: any) => !!r.evaluation);
         if (allEvaluated) {
           stats[key].taughtCount += countWeight;
@@ -2135,7 +2147,7 @@ export function ObservationClient(props: ObservationClientProps) {
         }
       }
       if (isObserverApproved) {
-        const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
+        const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
         if (myReg && myReg.evaluation) {
           stats[key].observedCount += countWeight;
           if (isSurprise) stats[key].observedSurpriseCount += countWeight;
@@ -2161,7 +2173,8 @@ export function ObservationClient(props: ObservationClientProps) {
       receivedEvalCount: number;
     }> = {};
 
-    availableMonths.forEach(mKey => {
+    (availableMonths || []).forEach(mKey => {
+      if (!mKey || typeof mKey !== "string" || !mKey.includes("-")) return;
       const [y, m] = mKey.split("-");
       const year = parseInt(y, 10);
       const month = parseInt(m, 10);
@@ -2180,7 +2193,7 @@ export function ObservationClient(props: ObservationClientProps) {
       };
     });
 
-    slots.forEach(slot => {
+    (slots || []).forEach(slot => {
       const slotDate = new Date(slot.date);
       if (isNaN(slotDate.getTime())) return;
       const year = slotDate.getFullYear();
@@ -2205,11 +2218,11 @@ export function ObservationClient(props: ObservationClientProps) {
 
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       const isHost = slot.teacherId === currentTeacher?.id;
-      const myReg = slot.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
+      const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
 
       if (isHost) {
         stats[key].totalTaughtSlots += 1;
-        const approvedRegs = slot.registrations?.filter((r: any) => r.isApproved || isSurpriseSlot(slot)) || [];
+        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurpriseSlot(slot));
         const hasEval = approvedRegs.some((r: any) => !!r.evaluation);
         if (hasEval) {
           stats[key].taughtCount += countWeight;
@@ -2229,12 +2242,12 @@ export function ObservationClient(props: ObservationClientProps) {
     Object.values(stats).forEach(st => {
       let sum = 0;
       let cnt = 0;
-      slots.forEach(slot => {
+      (slots || []).forEach(slot => {
         const slotDate = new Date(slot.date);
         if (isNaN(slotDate.getTime())) return;
         const key = `${slotDate.getFullYear()}-${(slotDate.getMonth() + 1).toString().padStart(2, "0")}`;
         if (key === st.monthKey && slot.teacherId === currentTeacher?.id) {
-          slot.registrations?.forEach((r: any) => {
+          (slot.registrations || []).forEach((r: any) => {
             if (r.evaluation && Number(r.evaluation.totalScore) > 0) {
               sum += Number(r.evaluation.totalScore);
               cnt++;
@@ -2254,16 +2267,16 @@ export function ObservationClient(props: ObservationClientProps) {
     
     // 1. Populate from initialReceivedEvaluations (full academic year)
     (props.initialReceivedEvaluations || []).forEach((item: any) => {
-      const evalId = item.evaluation?.id || item.registration?.id;
+      const evalId = item?.evaluation?.id || item?.registration?.id;
       if (evalId) {
         map.set(evalId, item);
       }
     });
 
     // 2. Merge/update with any evaluations from current slots state
-    slots.forEach(slot => {
+    (slots || []).forEach(slot => {
       if (slot.teacherId === currentTeacher?.id) {
-        slot.registrations?.forEach((reg: any) => {
+        (slot.registrations || []).forEach((reg: any) => {
           if (reg.evaluation) {
             const evalId = reg.evaluation.id || reg.id;
             map.set(evalId, {
@@ -2277,13 +2290,17 @@ export function ObservationClient(props: ObservationClientProps) {
     });
 
     const list = Array.from(map.values());
-    return list.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
+    return list.sort((a, b) => {
+      const bTime = b.slot?.date ? new Date(b.slot.date).getTime() : 0;
+      const aTime = a.slot?.date ? new Date(a.slot.date).getTime() : 0;
+      return bTime - aTime;
+    });
   }, [slots, currentTeacher?.id, props.initialReceivedEvaluations]);
 
   const isPreschoolEvaluations = useMemo(() => {
     if (isMamNonTeacher) return true;
     if (receivedEvaluations.length === 0) return false;
-    return receivedEvaluations.every(e => e.slot.level === "Mầm non");
+    return receivedEvaluations.every(e => e.slot?.level === "Mầm non");
   }, [isMamNonTeacher, receivedEvaluations]);
 
     const teacherCompetencyResult = useMemo(() => {
@@ -2295,12 +2312,12 @@ export function ObservationClient(props: ObservationClientProps) {
       for (let i = 1; i <= 11; i++) {
         const scoreKey = "score" + i;
         const maxVal = maxScoresK12[i - 1];
-        const sum = hasEvals ? receivedEvaluations.reduce((acc, curr) => acc + (curr.evaluation[scoreKey] || 0), 0) : 0;
+        const sum = hasEvals ? receivedEvaluations.reduce((acc, curr) => acc + (Number(curr.evaluation?.[scoreKey]) || 0), 0) : 0;
         const avg = hasEvals ? (sum / receivedEvaluations.length) : 0;
         const pct = Math.round((avg / maxVal) * 100);
 
         const lowCount = hasEvals ? receivedEvaluations.filter(curr => {
-          const val = curr.evaluation[scoreKey] !== null ? Number(curr.evaluation[scoreKey]) : 0;
+          const val = curr.evaluation?.[scoreKey] != null ? Number(curr.evaluation[scoreKey]) : 0;
           return val < maxVal * 0.70;
         }).length : 0;
         const lowPct = hasEvals ? Math.round((lowCount / receivedEvaluations.length) * 100) : 0;
@@ -2327,11 +2344,11 @@ export function ObservationClient(props: ObservationClientProps) {
     } else {
       for (let i = 1; i <= 5; i++) {
         const critKey = "criterion" + i;
-        const sum = hasEvals ? receivedEvaluations.reduce((acc, curr) => acc + (curr.evaluation[critKey] || 0), 0) : 0;
+        const sum = hasEvals ? receivedEvaluations.reduce((acc, curr) => acc + (Number(curr.evaluation?.[critKey]) || 0), 0) : 0;
         const avg = hasEvals ? (sum / receivedEvaluations.length) : 0;
         const pct = Math.round((avg / 4) * 100);
 
-        const lowCount = hasEvals ? receivedEvaluations.filter(curr => (curr.evaluation[critKey] || 0) <= 2).length : 0;
+        const lowCount = hasEvals ? receivedEvaluations.filter(curr => (Number(curr.evaluation?.[critKey]) || 0) <= 2).length : 0;
         const lowPct = hasEvals ? Math.round((lowCount / receivedEvaluations.length) * 100) : 0;
 
         competencyData.push({
@@ -2373,9 +2390,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const tabCounts = useMemo(() => {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const isSpecificMonthSelected = filterMonth && filterMonth !== "all";
-
+    
     let all = 0;
     let selfOpen = 0;
     let expired = 0;
@@ -2383,98 +2398,76 @@ export function ObservationClient(props: ObservationClientProps) {
     let myDept = 0;
     let otherDept = 0;
 
-    slots.forEach(slot => {
-      const slotDate = new Date(slot.date);
-      const isExp = slotDate < todayStart || slot.status === "EXPIRED";
-      const isPastMonthExp = isExp && slotDate < currentMonthStart;
+    (slots || []).forEach(slot => {
+      const isSurprise = isSurpriseSlot(slot);
+      const isReq = slot.requestOrigin === "OBSERVER_REQUEST";
+      const isExpired = isSlotExpired(slot, todayStart);
+      const isMyDeptSlot = checkIsMyDept(slot);
 
-      // Không đếm các tiết hết hạn của tháng trước đó khi ở chế độ xem tổng quan
-      if (isPastMonthExp && !isSpecificMonthSelected) {
-        return;
+      // 1. All tab: count all non-expired valid slots
+      if (!isExpired) {
+        all++;
+      } else {
+        expired++;
       }
 
-      all++;
-      const isMyD = checkIsMyDept(slot);
-      const isObsReq = slot.requestOrigin === "OBSERVER_REQUEST";
+      // 2. Self Open: GV tu mo tiet day
+      if (!isReq && !isExpired) {
+        selfOpen++;
+      }
 
-      if (!isObsReq && !isExp) selfOpen++;
-      if (isExp) expired++;
-      if (isObsReq) gbmRequest++;
-      if (isMyD) myDept++;
-      else otherDept++;
+      // 3. GBM Request: Ban chuyen mon / BGH yeu cau
+      if (isReq && !isExpired) {
+        gbmRequest++;
+      }
+
+      // 4. My Dept: Cung to chuyen mon
+      if (isMyDeptSlot && !isExpired) {
+        myDept++;
+      }
+
+      // 5. Other Dept: Ngoai to chuyen mon
+      if (!isMyDeptSlot && !isExpired) {
+        otherDept++;
+      }
     });
 
-    return {
-      all,
-      self_open: selfOpen,
-      expired,
-      gbm_request: gbmRequest,
-      my_dept: myDept,
-      other_dept: otherDept,
-    };
-  }, [slots, checkIsMyDept, filterMonth]);
+    return { all, selfOpen, expired, gbmRequest, myDept, otherDept };
+  }, [slots, filterMonth, checkIsMyDept]);
 
   const tabFilteredSlots = useMemo(() => {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const isSpecificMonthSelected = filterMonth && filterMonth !== "all";
 
-    const filtered = slots.filter(slot => {
-      const slotDate = new Date(slot.date);
-      const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
-      const isPastMonthExpired = isExpired && slotDate < currentMonthStart;
+    return (slots || []).filter(slot => {
+      const isSurprise = isSurpriseSlot(slot);
+      const isReq = slot.requestOrigin === "OBSERVER_REQUEST";
+      const isExpired = isSlotExpired(slot, todayStart);
+      const isMyDeptSlot = checkIsMyDept(slot);
 
-      // Không hiển thị các tiết hết hạn của tháng trước đó để giảm tải số dòng trên trang
-      // (Ngoại trừ trường hợp người dùng chủ động chọn tháng cụ thể trong bộ lọc Tháng)
-      if (isPastMonthExpired && !isSpecificMonthSelected) {
-        return false;
-      }
+      if (activeFilterTab === "expired") return isExpired;
+      if (isExpired) return false;
 
-      const isMyDept = checkIsMyDept(slot);
-      const isObserverRequest = slot.requestOrigin === "OBSERVER_REQUEST";
-
-      if (activeFilterTab === "all") {
-        return true;
-      }
-      if (activeFilterTab === "self_open") {
-        return !isObserverRequest && !isExpired;
-      }
-      if (activeFilterTab === "expired") {
-        return isExpired;
-      }
-      if (activeFilterTab === "gbm_request") {
-        return isObserverRequest;
-      }
-      if (activeFilterTab === "my_dept") {
-        return isMyDept;
-      }
-      if (activeFilterTab === "other_dept") {
-        return !isMyDept;
-      }
+      if (activeFilterTab === "all") return true;
+      if (activeFilterTab === "self_open") return !isReq;
+      if (activeFilterTab === "gbm_request") return isReq;
+      if (activeFilterTab === "my_dept") return isMyDeptSlot;
+      if (activeFilterTab === "other_dept") return !isMyDeptSlot;
       return true;
-    });
-
-    // Thuật toán sắp xếp ưu tiên:
-    // 1. Tiết còn hạn (hôm nay và tương lai) lên trước. Tiết hết hạn đẩy xuống dưới cùng.
-    // 2. Nhóm còn hạn: Sắp xếp theo ngày tăng dần (gần hôm nay nhất xếp đầu).
-    // 3. Nhóm hết hạn: Sắp xếp theo ngày giảm dần (tiết mới hết hạn gần đây nhất xếp trên, tiết cũ hơn xếp dưới).
-    // 4. Cùng ngày: Sắp xếp theo thứ tự tiết dạy.
-    return filtered.sort((slotA, slotB) => {
+    }).sort((slotA, slotB) => {
       const dateA = new Date(slotA.date);
       const dateB = new Date(slotB.date);
+      const isExpiredA = isSlotExpired(slotA, todayStart);
+      const isExpiredB = isSlotExpired(slotB, todayStart);
 
-      const isExpiredA = dateA < todayStart || slotA.status === "EXPIRED";
-      const isExpiredB = dateB < todayStart || slotB.status === "EXPIRED";
+      // 1. Phân cấp nhóm hết hạn và chưa hết hạn
+      if (isExpiredA && !isExpiredB) return 1;
+      if (!isExpiredA && isExpiredB) return -1;
 
-      // 1. Phân cấp độ ưu tiên hiệu lực
-      if (isExpiredA !== isExpiredB) {
-        return isExpiredA ? 1 : -1;
-      }
-
-      const getPeriodOrder = (startTimeStr: string) => {
-        const m = (startTimeStr || "").match(/\d+/);
-        return m ? parseInt(m[0], 10) : 99;
+      const getPeriodOrder = (pStr: string) => {
+        if (!pStr) return 99;
+        const m = pStr.match(/(\d+)/);
+        return m ? parseInt(m[1], 10) : 99;
       };
 
       // 2. Nhóm còn hạn: Sắp xếp tăng dần theo ngày (gần hôm nay nhất xếp trước)
@@ -2492,7 +2485,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [slots, activeFilterTab, checkIsMyDept]);
 
   const myTaughtSlots = useMemo(() => {
-    return slots.filter(slot => slot.teacherId === currentTeacher?.id)
+    return (slots || []).filter(slot => slot.teacherId === currentTeacher?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [slots, currentTeacher?.id]);
 
@@ -2505,7 +2498,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [myTaughtSlots, taughtOriginFilter]);
 
   const myObservedSlots = useMemo(() => {
-    return slots.filter(slot => slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
+    return (slots || []).filter(slot => (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [slots, currentTeacher?.id]);
 
@@ -2520,7 +2513,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Các tiết dự hợp lệ (bản thân GV đã có phiếu đánh giá / nhận xét)
   const myValidObservedSlots = useMemo(() => {
     return myObservedSlots.filter(slot => {
-      const reg = slot.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
+      const reg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
       return reg && (reg.isApproved || isSurpriseSlot(slot)) && !!reg.evaluation;
     });
   }, [myObservedSlots, currentTeacher?.id]);
@@ -2617,7 +2610,9 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [slots, currentTeacher?.id]);
 
   const activeAcademicYear = useMemo(() => {
-    return academicYears.find(y => y.id === filterAcademicYearId) || academicYears.find(y => y.status === "ACTIVE") || academicYears[0];
+    const safeYears = Array.isArray(academicYears) ? academicYears : [];
+    if (safeYears.length === 0) return null;
+    return safeYears.find(y => y.id === filterAcademicYearId) || safeYears.find(y => y.status === "ACTIVE") || safeYears[0];
   }, [academicYears, filterAcademicYearId]);
 
   return (
@@ -4321,18 +4316,20 @@ export function ObservationClient(props: ObservationClientProps) {
                     const today = new Date();
                     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-                    const suggested = slots
+                    const suggested = (slots || [])
                       .filter(s => {
                         if (s.teacherId === currentTeacher?.id) return false;
-                        if (s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)) return false;
+                        if ((s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)) return false;
                         if (s.requestOrigin === "OBSERVER_REQUEST") return false;
                         return true;
                       })
                       .sort((a, b) => {
                         const aDate = new Date(a.date);
                         const bDate = new Date(b.date);
-                        const aIsExpired = aDate < todayStart || a.status === "EXPIRED" || a.registrations.length >= a.maxSeats;
-                        const bIsExpired = bDate < todayStart || b.status === "EXPIRED" || b.registrations.length >= b.maxSeats;
+                        const aRegs = a.registrations || [];
+                        const bRegs = b.registrations || [];
+                        const aIsExpired = aDate < todayStart || a.status === "EXPIRED" || aRegs.length >= (a.maxSeats || 4);
+                        const bIsExpired = bDate < todayStart || b.status === "EXPIRED" || bRegs.length >= (b.maxSeats || 4);
 
                         if (!aIsExpired && bIsExpired) return -1;
                         if (aIsExpired && !bIsExpired) return 1;
@@ -4385,9 +4382,11 @@ export function ObservationClient(props: ObservationClientProps) {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
                         {suggested.map(slot => {
                           const slotDate = new Date(slot.date);
-                          const isPastSlot = slotDate < todayStart || slot.status === "EXPIRED" || slot.registrations.length >= slot.maxSeats;
+                          const sRegs = slot.registrations || [];
+                          const isPastSlot = slotDate < todayStart || slot.status === "EXPIRED" || sRegs.length >= (slot.maxSeats || 4);
                           const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
-                          const remainingSeats = Math.max(0, slot.maxSeats - slot.registrations.length);
+                          const remainingSeats = Math.max(0, (slot.maxSeats || 4) - sRegs.length);
+                          const tName = slot.teacher?.teacherName || slot.teacherName || "GV";
 
                           return (
                             <div 
@@ -4413,7 +4412,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium truncate">
-                                  <span className="font-bold text-slate-700 truncate max-w-[100px]">{slot.teacher.teacherName}</span>
+                                  <span className="font-bold text-slate-700 truncate max-w-[100px]">{tName}</span>
                                   <span>•</span>
                                   <span>{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })} ({slot.startTime})</span>
                                   <span>•</span>
@@ -4775,9 +4774,9 @@ export function ObservationClient(props: ObservationClientProps) {
               <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
                 {tabFilteredSlots.map((slot, index) => {
                   const isHost = slot.teacherId === currentTeacher?.id;
-                  const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+                  const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
                   const isRegistered = !!myReg;
-                  const observerCount = slot.registrations.length;
+                  const observerCount = (slot.registrations || []).length;
                   const slotDate = new Date(slot.date);
                   
                   const today = new Date();
@@ -5152,7 +5151,7 @@ export function ObservationClient(props: ObservationClientProps) {
             avgScore={myReceivedEvaluationsStats.avgScore}
             receivedEvaluationCount={myReceivedEvaluationsStats.count}
             isPreschool={isMamNonTeacher}
-            academicYearName={academicYears.find(y => y.id === filterAcademicYearId)?.name}
+            academicYearName={activeAcademicYear?.name || ""}
             selectedMonth={filterMonth}
             onSelectMonth={handleMonthChange}
             availableMonths={availableMonths}
@@ -5397,14 +5396,14 @@ export function ObservationClient(props: ObservationClientProps) {
                               <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-500">
                                 <span>Người dự:</span>
                                 <span className="text-teal-800 bg-teal-50 px-2 py-0.2 rounded-md border border-teal-200">
-                                  {slot.registrations.length} / {slot.maxSeats} chỗ
+                                  {(slot.registrations || []).length} / {slot.maxSeats || 4} chỗ
                                 </span>
                               </div>
-                              {slot.registrations.length === 0 ? (
+                              {(slot.registrations || []).length === 0 ? (
                                 <span className="text-xs text-slate-400 italic">Chưa có người đăng ký</span>
                               ) : (
                                 <div className="space-y-1">
-                                  {slot.registrations.map((reg: any) => {
+                                  {(slot.registrations || []).map((reg: any) => {
                                     const regName = reg.teacher?.teacherName || reg.teacherName || "Giáo viên";
                                     return (
                                       <div key={reg.id} className="flex items-center justify-between gap-2 p-1.5 bg-slate-50 rounded-xl border border-slate-200/80 shadow-2xs">
@@ -5619,7 +5618,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
                     {displayedMyObservedSlots.map((slot, index) => {
                       const slotDate = new Date(slot.date);
-                      const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+                      const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
                       const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "Sky-Line";
 
                       return (

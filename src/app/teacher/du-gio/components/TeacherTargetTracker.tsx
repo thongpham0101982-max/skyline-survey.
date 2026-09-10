@@ -36,10 +36,10 @@ interface TeacherTargetTrackerProps {
 }
 
 export function TeacherTargetTracker({
-  taughtCount,
-  targetTaught,
-  observedCount,
-  targetObserved,
+  taughtCount = 0,
+  targetTaught = 0,
+  observedCount = 0,
+  targetObserved = 0,
   totalTaughtSlots = 0,
   totalObservedSlots = 0,
   pendingEvaluationCount = 0,
@@ -55,15 +55,15 @@ export function TeacherTargetTracker({
   const isSpecificMonth = selectedMonth && selectedMonth !== "all"
   
   // Safe targets
-  const safeTargetTaught = targetTaught > 0 ? targetTaught : (isPreschool ? 4 : 2)
-  const safeTargetObserved = targetObserved > 0 ? targetObserved : (isPreschool ? 8 : 10)
+  const safeTargetTaught = (targetTaught && targetTaught > 0) ? targetTaught : (isPreschool ? 4 : 2)
+  const safeTargetObserved = (targetObserved && targetObserved > 0) ? targetObserved : (isPreschool ? 8 : 10)
   const maxScore = isPreschool ? 10 : 20
 
-  const taughtPercent = Math.min(100, Math.round((taughtCount / safeTargetTaught) * 100))
-  const observedPercent = Math.min(100, Math.round((observedCount / safeTargetObserved) * 100))
+  const taughtPercent = Math.min(100, Math.round(((taughtCount || 0) / safeTargetTaught) * 100))
+  const observedPercent = Math.min(100, Math.round(((observedCount || 0) / safeTargetObserved) * 100))
 
-  const taughtRemaining = Math.max(0, safeTargetTaught - taughtCount)
-  const observedRemaining = Math.max(0, safeTargetObserved - observedCount)
+  const taughtRemaining = Math.max(0, safeTargetTaught - (taughtCount || 0))
+  const observedRemaining = Math.max(0, safeTargetObserved - (observedCount || 0))
 
   const numAvgScore = avgScore ? Number(avgScore) : null
   const scorePercent = numAvgScore ? Math.min(100, Math.round((numAvgScore / maxScore) * 100)) : 0
@@ -81,8 +81,10 @@ export function TeacherTargetTracker({
   const isAllCompleted = taughtRemaining === 0 && observedRemaining === 0
 
   const selectedMonthDisplay = React.useMemo(() => {
-    if (!isSpecificMonth) return null
-    const [y, m] = selectedMonth.split("-")
+    if (!isSpecificMonth || !selectedMonth || selectedMonth === "all") return null
+    const parts = (selectedMonth || "").split("-")
+    if (parts.length < 2) return selectedMonth
+    const [y, m] = parts
     return `Tháng ${m}/${y}`
   }, [isSpecificMonth, selectedMonth])
 
@@ -149,10 +151,12 @@ export function TeacherTargetTracker({
                     🌟 Cả năm học ({academicYearName || "Toàn khóa"})
                   </option>
                   {availableMonths.map(m => {
-                    const [y, mon] = m.split("-")
+                    if (!m || typeof m !== "string") return null
+                    const parts = m.split("-")
+                    const [y, mon] = parts.length >= 2 ? parts : ["", m]
                     return (
                       <option key={m} value={m} className="text-slate-900 bg-white font-bold">
-                        📅 Tháng {mon}/{y}
+                        📅 {mon && y ? `Tháng ${mon}/${y}` : m}
                       </option>
                     )
                   })}
