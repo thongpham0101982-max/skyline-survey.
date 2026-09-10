@@ -44,8 +44,9 @@ async function checkIsObservationAdmin(roleCode: string, userId?: string): Promi
           teacher: {
             select: {
               position: true,
-              departmentRel: { select: { code: true, name: true } },
-              departmentAssignments: { select: { position: true, department: { select: { code: true, name: true } } } }
+              departmentRel: { select: { code: true, name: true, divisionCode: true } },
+              departmentAssignments: { select: { position: true, department: { select: { code: true, name: true, divisionCode: true } } } },
+              divisionAssignments: { select: { divisionCode: true } }
             }
           }
         }
@@ -55,11 +56,13 @@ async function checkIsObservationAdmin(roleCode: string, userId?: string): Promi
       const deptCode = teacher?.departmentRel?.code || "";
       const deptName = teacher?.departmentRel?.name || "";
       const pos = teacher?.position || "";
+      const hasDivs = (teacher?.divisionAssignments?.length || 0) > 0;
       if (
         deptCode.includes("KT") || deptCode.includes("DBCL") ||
         deptName.includes("KT&ĐBCL") || deptName.includes("ĐBCL") || deptName.includes("Khảo thí") ||
         ["KT_DBCL", "BAN_DHCM", "BGH", "ADMIN"].includes(deptCode) ||
-        ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"].includes(pos)
+        ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS", "TBP", "TB_DHCM"].includes(pos) ||
+        hasDivs
       ) {
         return true;
       }
@@ -68,7 +71,7 @@ async function checkIsObservationAdmin(roleCode: string, userId?: string): Promi
 
   const directRoles = [
     "ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS",
-    "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"
+    "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS", "TBP", "TB_DHCM"
   ];
   if (directRoles.includes(activeRole.toUpperCase()) || directRoles.includes(activeRole)) {
     return true;
@@ -149,6 +152,7 @@ export async function getObservationData(academicYearId?: string) {
         departmentAssignments: {
           include: { department: true }
         },
+        divisionAssignments: true,
         campus: true,
         user: {
           select: {
@@ -2891,6 +2895,7 @@ export async function createSurpriseObservation(data: {
         departmentAssignments: {
           include: { department: true }
         },
+        divisionAssignments: true,
         campus: true,
         user: { select: { role: true } }
       }
@@ -2908,7 +2913,7 @@ export async function createSurpriseObservation(data: {
             { position: { in: ["ADMIN", "BGH", "GDCS", "KT_DBCL"] } }
           ]
         },
-        include: { departmentRel: true, departmentAssignments: { include: { department: true } }, campus: true, user: { select: { role: true } } }
+        include: { departmentRel: true, departmentAssignments: { include: { department: true } }, divisionAssignments: true, campus: true, user: { select: { role: true } } }
       })
       if (adminTeacher) currentTeacher = adminTeacher
     }
@@ -2921,6 +2926,10 @@ export async function createSurpriseObservation(data: {
                    ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(currentTeacher?.position || "") ||
                    currentTeacher?.departmentAssignments?.some((da: any) => ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position));
 
+    const isTBP = ["TBP", "TB_DHCM", "BAN_DHCM"].includes(currentTeacher?.position || "") ||
+                  ["TBP", "TB_DHCM", "BAN_DHCM"].includes(roleCode) ||
+                  (currentTeacher?.divisionAssignments?.length || 0) > 0;
+
     const isQLCM = ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(currentTeacher?.position || "") ||
                    ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(roleCode) ||
                    currentTeacher?.departmentAssignments?.some((da: any) => ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(da.position));
@@ -2928,17 +2937,44 @@ export async function createSurpriseObservation(data: {
     const isBGHMN = ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(currentTeacher?.position || "") ||
                     ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(roleCode);
 
-    if (!isAdminOrLeader && !isTTCM && !isQLCM && !isBGHMN) {
+    if (!isAdminOrLeader && !isTTCM && !isQLCM && !isBGHMN && !isTBP) {
       return { success: false, error: "Bạn không có quyền thực hiện chức năng Dự giờ đột xuất." }
     }
 
     const hostTeacher = await prisma.teacher.findUnique({
       where: { id: data.teacherId },
-      include: { campus: true, departmentRel: true, departmentAssignments: true }
+      include: {
+        campus: true,
+        departmentRel: true,
+        departmentAssignments: { include: { department: true } },
+        divisionAssignments: true
+      }
     })
     if (!hostTeacher) return { success: false, error: "Không tìm thấy giáo viên được dự giờ." }
 
-    if (!isAdminOrLeader && isTTCM) {
+    // Kiểm tra phạm vi nếu là TBP
+    if (isTBP && !isAdminOrLeader) {
+      const myDivCodes = new Set<string>();
+      currentTeacher.divisionAssignments?.forEach((da: any) => myDivCodes.add(da.divisionCode));
+      if (["BAN_DHCM", "TB_DHCM"].includes(currentTeacher.position || "")) {
+        myDivCodes.add("BAN_DHCM");
+      }
+      const isSuperDiv = Array.from(myDivCodes).some(dc => ["BAN_GD", "BAN_KT_DBCL", "BAN_DHCM", "BAN_TT"].includes(dc));
+      if (!isSuperDiv) {
+        const hostDivCodes = new Set<string>();
+        if (hostTeacher.departmentRel?.divisionCode) hostDivCodes.add(hostTeacher.departmentRel.divisionCode);
+        hostTeacher.departmentAssignments?.forEach((da: any) => {
+          if (da.department?.divisionCode) hostDivCodes.add(da.department.divisionCode);
+        });
+        hostTeacher.divisionAssignments?.forEach((da: any) => hostDivCodes.add(da.divisionCode));
+        const hasMatchingDiv = Array.from(myDivCodes).some(dc => hostDivCodes.has(dc));
+        if (!hasMatchingDiv && !isTTCM) {
+          return { success: false, error: "Trưởng Bộ Phận chỉ có quyền dự giờ giáo viên thuộc Bộ Phận mình phụ trách." }
+        }
+      }
+    }
+
+    if (!isAdminOrLeader && isTTCM && !isTBP) {
       const ttcmDeptIds = new Set<string>()
       if (currentTeacher.departmentId) ttcmDeptIds.add(currentTeacher.departmentId)
       if (currentTeacher.departmentAssignments) {

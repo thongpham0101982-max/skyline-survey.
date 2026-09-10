@@ -872,7 +872,7 @@ export function TTCMDepartmentSummaryTab({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-lg sm:text-xl font-black text-[#003B3A]">
-                  Theo Dõi Tổng Hợp Tổ Chuyên Môn
+                  Theo Dõi Tổng Hợp Tổ Chuyên Môn {ttcmAllowedDepartments.length > 1 ? "& Bộ Phận" : ""}
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-100 text-[#008B82] border border-teal-200">
                   {department?.name || "Tổ chuyên môn"}

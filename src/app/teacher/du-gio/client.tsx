@@ -1200,8 +1200,15 @@ export function ObservationClient(props: ObservationClientProps) {
         da.department?.code?.includes("KT") || da.department?.name?.includes("KT&ĐBCL") || da.department?.name?.includes("ĐBCL")
       );
 
-    return isKTDBCL || ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "QLCM", "QUAN_LY_CM", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN"].includes(roleCode) || ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS"].includes(currentTeacher?.position || "") || (typeof pathname === "string" && pathname.startsWith("/admin"));
+    return isKTDBCL || ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "QLCM", "QUAN_LY_CM", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "TBP", "TB_DHCM"].includes(roleCode) || ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS", "TBP", "TB_DHCM"].includes(currentTeacher?.position || "") || (typeof pathname === "string" && pathname.startsWith("/admin"));
   }, [currentTeacher, pathname]);
+
+  const isTBP = useMemo(() => {
+    const pos = currentTeacher?.position || "";
+    const role = currentTeacher?.user?.role || "";
+    const hasDivs = (currentTeacher?.divisionAssignments?.length || 0) > 0 || (currentTeacher?.divisionCodes?.length || 0) > 0;
+    return ["TBP", "TB_DHCM", "BAN_DHCM"].includes(pos) || ["TBP", "TB_DHCM", "BAN_DHCM"].includes(role) || hasDivs;
+  }, [currentTeacher]);
 
   const isQLCM = useMemo(() => {
     const pos = currentTeacher?.position || "";
@@ -1227,8 +1234,8 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [currentTeacher]);
 
   const canCreateSurprise = useMemo(() => {
-    return isAdminUser || isTTCM || isQLCM || isBGHMN;
-  }, [isAdminUser, isTTCM, isQLCM, isBGHMN]);
+    return isAdminUser || isTTCM || isQLCM || isBGHMN || isTBP;
+  }, [isAdminUser, isTTCM, isQLCM, isBGHMN, isTBP]);
 
   const ttcmAllowedDepartments = useMemo(() => {
     let depts = departments;
@@ -1243,6 +1250,17 @@ export function ObservationClient(props: ObservationClientProps) {
       return depts;
     }
     if (isAdminUser || isQLCM || isBGHMN) return depts;
+    if (isTBP) {
+      const myDivCodes = new Set<string>();
+      currentTeacher?.divisionAssignments?.forEach((da: any) => myDivCodes.add(da.divisionCode));
+      currentTeacher?.divisionCodes?.forEach((dc: string) => myDivCodes.add(dc));
+      if (["BAN_DHCM", "TB_DHCM"].includes(currentTeacher?.position || "")) {
+        myDivCodes.add("BAN_DHCM");
+      }
+      const isSuperDiv = Array.from(myDivCodes).some(dc => ["BAN_GD", "BAN_KT_DBCL", "BAN_DHCM", "BAN_TT"].includes(dc));
+      if (isSuperDiv) return depts;
+      return depts.filter(d => (d.divisionCode && myDivCodes.has(d.divisionCode)) || (currentTeacher?.departmentId && d.id === currentTeacher.departmentId));
+    }
     if (!isTTCM) return depts;
     const deptIds = new Set<string>();
     if (currentTeacher?.departmentId) deptIds.add(currentTeacher.departmentId);
@@ -1254,7 +1272,7 @@ export function ObservationClient(props: ObservationClientProps) {
       });
     }
     return depts.filter(d => deptIds.has(d.id));
-  }, [departments, currentTeacher, isTTCM, isAdminUser, isMamNonTeacher]);
+  }, [departments, currentTeacher, isTTCM, isAdminUser, isMamNonTeacher, isTBP, isQLCM, isBGHMN]);
 
   // Set default surprise department for TTCM or Preschool
   useEffect(() => {
@@ -2581,8 +2599,8 @@ export function ObservationClient(props: ObservationClientProps) {
             </span>
           </button>
 
-          {/* Tab 4: TTCM Department Summary (TTCM / Admin only) */}
-          {(isTTCM || isAdminUser) && (
+          {/* Tab 4: TTCM / TBP Department Summary (TTCM / TBP / Admin only) */}
+          {(isTTCM || isTBP || isAdminUser) && (
             <button
               type="button"
               onClick={() => setActiveMainTab("ttcm_summary")}
@@ -2593,13 +2611,13 @@ export function ObservationClient(props: ObservationClientProps) {
               }`}
             >
               <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
-              <span className="truncate">4. Báo cáo TTCM</span>
+              <span className="truncate">{isTBP ? "4. Báo cáo TBP & Tổ CM" : "4. Báo cáo TTCM"}</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
                 activeMainTab === "ttcm_summary" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-indigo-200/80 text-indigo-950 border border-indigo-300/80"
               }`}>
-                TTCM
+                {isTBP ? "TBP" : "TTCM"}
               </span>
             </button>
           )}
@@ -5333,8 +5351,8 @@ export function ObservationClient(props: ObservationClientProps) {
         />
       )}
 
-      {/* TAB 5: THEO DÕI TỔNG HỢP TỔ CHUYÊN MÔN (DÀNH CHO TTCM / ADMIN) */}
-      {activeMainTab === 'ttcm_summary' && (isTTCM || isAdminUser) && (
+      {/* TAB 5: THEO DÕI TỔNG HỢP TỔ CHUYÊN MÔN (DÀNH CHO TTCM / TBP / ADMIN) */}
+      {activeMainTab === 'ttcm_summary' && (isTTCM || isTBP || isAdminUser) && (
         <TTCMDepartmentSummaryTab
           currentTeacher={currentTeacher}
           departments={departments}
