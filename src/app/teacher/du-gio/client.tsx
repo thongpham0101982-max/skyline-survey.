@@ -1660,6 +1660,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
     if (res.success) {
       showToast(res.message || (isDraft ? "Đã lưu nháp phiếu đánh giá!" : "Đã hoàn thành đánh giá dự giờ đột xuất!"), "success");
+      setShowCreateModal(false);
       refreshSlots();
       // Reset form
       setSurpriseTopic("");
