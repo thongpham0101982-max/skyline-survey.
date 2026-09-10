@@ -1113,13 +1113,18 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-bold text-amber-800">2. Nội dung cần cải thiện / Góp ý phát triển</label>
+                    <label className="text-[11px] font-black text-amber-900 flex items-center gap-1">
+                      <span>2. Nội dung cần cải thiện / Góp ý phát triển</span>
+                      <span className="text-rose-600 text-xs font-black">* (Bắt buộc)</span>
+                    </label>
                     <textarea
                       placeholder="Các gợi ý phương pháp, phân bổ thời gian hoặc điều chỉnh hoạt động học sinh tốt hơn..."
                       rows={3}
                       value={surpriseImprovements}
                       onChange={e => setSurpriseImprovements(e.target.value)}
-                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none resize-none bg-slate-50/50"
+                      className={`w-full text-xs font-medium p-3 rounded-xl border focus:ring-2 outline-none resize-none bg-slate-50/50 ${
+                        !surpriseImprovements.trim() ? "border-amber-300 focus:ring-amber-500" : "border-slate-200 focus:ring-rose-500"
+                      }`}
                     />
                   </div>
 

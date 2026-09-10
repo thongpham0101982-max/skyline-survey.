@@ -1602,6 +1602,10 @@ export function ObservationClient(props: ObservationClientProps) {
       showToast("Vui lòng chọn Ngày dự giờ!", "error");
       return;
     }
+    if (!isDraft && !surpriseImprovements.trim()) {
+      showToast("Vui lòng nhập 'Nội dung cần cải thiện / Góp ý phát triển' trước khi hoàn tất biên bản!", "error");
+      return;
+    }
 
     const isK12 = surpriseLevel !== "Mầm non";
     const totalScore = isK12 
@@ -1677,13 +1681,18 @@ export function ObservationClient(props: ObservationClientProps) {
   const handleSubmitEval = async () => {
     if (!evalModal) return
     const isK12 = evalModal.slot.level !== "Mầm non"
+
+    if (!evalImprovements || !evalImprovements.trim()) {
+      showToast("Vui lòng nhập 'Nội dung cần cải thiện / Góp ý phát triển' trước khi nộp phiếu đánh giá!", "error");
+      return;
+    }
     
     const payload: any = {
       registrationId: evalModal.registration.id,
       slotId: evalModal.slot.id,
-      strengths: evalStrengths,
-      improvements: evalImprovements,
-      generalComment: evalGeneral,
+      strengths: evalStrengths.trim(),
+      improvements: evalImprovements.trim(),
+      generalComment: evalGeneral.trim(),
       overallRating: evalOverall
     }
 
@@ -1710,7 +1719,7 @@ export function ObservationClient(props: ObservationClientProps) {
       payload.totalScore = sum;
       payload.generalComment = JSON.stringify({
         scores: evalCriteria,
-        text: evalGeneral
+        text: evalGeneral.trim()
       });
       payload.criterion1 = Math.round(evalCriteria[0]);
       payload.criterion2 = Math.round(evalCriteria[1]);
@@ -5736,14 +5745,19 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[11px] font-bold text-slate-600">Góp ý cải thiện / phát triển</label>
+                    <label className="text-[11px] font-black text-amber-900 flex items-center gap-1">
+                      <span>Góp ý cải thiện / phát triển</span>
+                      <span className="text-rose-600 text-xs font-black">* (Bắt buộc)</span>
+                    </label>
                     <textarea
                       placeholder="Các gợi ý phương pháp, phân bổ thời gian hoặc tổ chức hoạt động tốt hơn..."
                       rows={2}
                       value={evalImprovements}
                       onChange={e => setEvalImprovements(e.target.value)}
                       disabled={isReadOnly}
-                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100"
+                      className={`w-full text-xs font-medium p-3 rounded-xl border focus:ring-2 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 ${
+                        !evalImprovements.trim() && !isReadOnly ? "border-amber-300 focus:ring-amber-500" : "border-slate-200 focus:ring-teal-500"
+                      }`}
                     />
                   </div>
                 </div>
