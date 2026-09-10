@@ -1302,7 +1302,10 @@ export async function submitEvaluation(data: {
   try {
     const session = await auth()
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
-    const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+    const currentTeacher = await prisma.teacher.findUnique({ 
+      where: { userId: session.user.id },
+      include: { user: true, campus: true }
+    })
     if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
     const registration = await prisma.observationRegistration.findUnique({ 
       where: { id: data.registrationId }, 
@@ -1368,7 +1371,7 @@ export async function submitEvaluation(data: {
       })
     }
 
-    // Gửi Email thông báo kết quả đánh giá cho Giáo viên được dự (Host Teacher)
+    // Gửi Email thông báo kết quả đánh giá cho Giáo viên được dự (Host Teacher) & Người dự giờ (Observer)
     try {
       const slotFull = await prisma.observationSlot.findUnique({
         where: { id: data.slotId },
@@ -1379,18 +1382,19 @@ export async function submitEvaluation(data: {
       });
       const hostTeacher = slotFull?.teacher;
       const hostEmail = getTeacherResolvedEmail(hostTeacher);
+      const observerEmail = getTeacherResolvedEmail(currentTeacher);
 
+      const isMN = slotFull?.level === "Mầm non";
+      const formattedDateVi = slotFull?.date 
+        ? new Date(slotFull.date).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
+        : "";
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
+      const totalDisplay = data.totalScore != null ? (isMN ? `${Number(data.totalScore).toFixed(2)} / 10.00đ` : `${Number(data.totalScore).toFixed(2)} / 20.00đ`) : "Đã hoàn thành";
+      const ratingDisplay = data.overallRating || "Đạt";
+
+      // 1. Gửi Email thông báo cho Giáo viên được dự (Host Teacher)
       if (hostTeacher && hostEmail && hostEmail.includes("@")) {
-        const isMN = slotFull?.level === "Mầm non";
-        const formattedDateVi = slotFull?.date 
-          ? new Date(slotFull.date).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
-          : "";
-        const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
         const linkUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`;
-        
-        const totalDisplay = data.totalScore != null ? (isMN ? `${Number(data.totalScore).toFixed(2)} / 10.00đ` : `${Number(data.totalScore).toFixed(2)} / 20.00đ`) : "Đã hoàn thành";
-        const ratingDisplay = data.overallRating || "Đạt";
-
         const emailSubject = `[Skyline Dự Giờ] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`;
         const emailHtml = `
           <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
@@ -1506,8 +1510,126 @@ export async function submitEvaluation(data: {
           }).catch(e => console.error("Notif error:", e));
         }
       }
+
+      // 2. Gửi Email xác nhận & bản lưu cho Người dự giờ (Observer / Evaluator)
+      if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+        const observerLinkUrl = `${baseUrl}/teacher/du-gio?tab=my-registrations`;
+        const observerSubject = `[Skyline Dự Giờ] Xác nhận hoàn tất đánh giá tiết dạy: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`;
+        const observerHtml = `
+          <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+            <div style="background: linear-gradient(135deg, #003B3A 0%, #008B82 100%); padding: 24px 20px; text-align: center; color: white;">
+              <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">XÁC NHẬN HOÀN TẤT ĐÁNH GIÁ TIẾT DỰ GIỜ</h2>
+              <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
+            </div>
+
+            <div style="padding: 24px 28px; background: white;">
+              <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
+                Kính gửi Thầy/Cô <strong>${currentTeacher.teacherName}</strong> (Người dự giờ),
+              </p>
+              <p style="font-size: 14px; color: #334155; line-height: 1.6;">
+                Thầy/Cô đã hoàn tất và nộp thành công <strong>Phiếu đánh giá dự giờ</strong> cho tiết dạy của Thầy/Cô <strong>${hostTeacher?.teacherName || "Giáo viên"}</strong>. Dưới đây là biên bản và điểm số Thầy/Cô đã ghi nhận:
+              </p>
+
+              <!-- Lesson Summary Box -->
+              <div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                  <tr>
+                    <td style="padding: 5px 0; color: #64748b; width: 140px; font-weight: 600;">📖 Tên bài dạy / Chủ đề:</td>
+                    <td style="padding: 5px 0; color: #007068; font-weight: 800;">${slotFull?.topic || "Tiết dạy"}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">👨‍🏫 Giáo viên dạy:</td>
+                    <td style="padding: 5px 0; color: #0f172a; font-weight: 700;">${hostTeacher?.teacherName || "Giáo viên"} (${hostTeacher?.teacherCode || ""})</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">📚 Môn học:</td>
+                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${slotFull?.subjectName || "Môn học"} (${slotFull?.grade || ""} - ${slotFull?.className || ""})</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">📅 Thời gian & Tiết:</td>
+                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">Tiết ${slotFull?.startTime || "1"} • ${formattedDateVi}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">🏫 Cơ sở & Địa điểm:</td>
+                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${slotFull?.campusName || hostTeacher?.campus?.campusName || "Sky-Line"} - Phòng ${slotFull?.room || "học"}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Score & Ranking Badge -->
+              <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 14px 18px; margin: 18px 0;">
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr>
+                    <td style="vertical-align: middle;">
+                      <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Tổng điểm Thầy/Cô đã chấm:</div>
+                      <div style="font-size: 18px; font-weight: 900; color: #581c87;">${totalDisplay}</div>
+                    </td>
+                    <td style="text-align: right; vertical-align: middle;">
+                      <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase; margin-bottom: 2px;">Xếp loại:</div>
+                      <span style="font-size: 15px; font-weight: 900; color: #047857; background: #d1fae5; border: 1px solid #a7f3d0; padding: 4px 12px; border-radius: 8px; display: inline-block;">
+                        ${ratingDisplay}
+                      </span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Qualitative Comments -->
+              <div style="margin: 20px 0;">
+                ${data.strengths ? `
+                <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+                  <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 4px;">🌟 1. Ưu điểm nổi bật:</div>
+                  <div style="font-size: 13px; color: #166534; line-height: 1.6; white-space: pre-line;">${data.strengths}</div>
+                </div>
+                ` : ""}
+
+                <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+                  <div style="font-size: 12px; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">💡 2. Nội dung cần cải thiện / Góp ý phát triển:</div>
+                  <div style="font-size: 13px; color: #92400e; line-height: 1.6; white-space: pre-line;">${data.improvements}</div>
+                </div>
+
+                ${data.generalComment ? `
+                <div style="background: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+                  <div style="font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 4px;">📝 3. Đề xuất & Kiến nghị chuyên môn:</div>
+                  <div style="font-size: 13px; color: #475569; line-height: 1.6; white-space: pre-line;">${data.generalComment}</div>
+                </div>
+                ` : ""}
+              </div>
+
+              <!-- Action Link -->
+              <div style="text-align: center; margin: 26px 0 16px 0;">
+                <a href="${observerLinkUrl}" 
+                   style="display: inline-block; background: linear-gradient(135deg, #008B82 0%, #007068 100%); color: white; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 139, 130, 0.3);">
+                  👉 Xem Danh Sách Tiết Tôi Dự Trên Skyline
+                </a>
+              </div>
+              
+              <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px;">
+                Tiết dự giờ này đã được tự động cộng vào tiến độ hoàn thành chỉ tiêu dự giờ cá nhân của Thầy/Cô.
+              </p>
+            </div>
+
+            <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+              Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
+            </div>
+          </div>
+        `;
+        await sendEmail({ to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer evaluation confirmation email error:", e));
+
+        if (currentTeacher.user?.id) {
+          await prisma.notification.create({
+            data: {
+              userId: currentTeacher.user.id,
+              title: "Đã hoàn tất đánh giá tiết dự giờ",
+              message: `Thầy/Cô đã hoàn tất nộp phiếu đánh giá tiết dạy "${slotFull?.topic}" của GV ${hostTeacher?.teacherName || ""}.`,
+              link: `/teacher/du-gio?tab=my-registrations`,
+              isRead: false
+            }
+          }).catch(e => console.error("Observer notif error:", e));
+        }
+      }
     } catch (mailErr) {
-      console.error("Error sending evaluation completed email to host teacher:", mailErr);
+      console.error("Error sending evaluation completed email:", mailErr);
     }
 
     revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
@@ -3109,7 +3231,7 @@ export async function createSurpriseObservation(data: {
         },
         divisionAssignments: true,
         campus: true,
-        user: { select: { role: true } }
+        user: true
       }
     })
 
@@ -3125,7 +3247,7 @@ export async function createSurpriseObservation(data: {
             { position: { in: ["ADMIN", "BGH", "GDCS", "KT_DBCL"] } }
           ]
         },
-        include: { departmentRel: true, departmentAssignments: { include: { department: true } }, divisionAssignments: true, campus: true, user: { select: { role: true } } }
+        include: { departmentRel: true, departmentAssignments: { include: { department: true } }, divisionAssignments: true, campus: true, user: true }
       })
       if (adminTeacher) currentTeacher = adminTeacher
     }
@@ -3159,7 +3281,8 @@ export async function createSurpriseObservation(data: {
         campus: true,
         departmentRel: true,
         departmentAssignments: { include: { department: true } },
-        divisionAssignments: true
+        divisionAssignments: true,
+        user: true
       }
     })
     if (!hostTeacher) return { success: false, error: "Không tìm thấy giáo viên được dự giờ." }
@@ -3358,19 +3481,20 @@ export async function createSurpriseObservation(data: {
       data: evalData
     })
 
-    // Gửi Email thông báo kết quả đánh giá cho Giáo viên được dự (Host Teacher) khi hoàn tất (không phải lưu nháp)
+    // Gửi Email thông báo kết quả đánh giá cho Giáo viên được dự & Người dự giờ (Observer) khi hoàn tất (không phải lưu nháp)
     if (!data.isDraft) {
       try {
         const hostEmail = getTeacherResolvedEmail(hostTeacher);
-        if (hostEmail && hostEmail.includes("@")) {
-          const isMN = data.level === "Mầm non";
-          const formattedDateVi = new Date(data.date).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
-          const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
-          const linkUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`;
-          
-          const totalDisplay = data.totalScore != null ? (isMN ? `${Number(data.totalScore).toFixed(2)} / 10.00đ` : `${Number(data.totalScore).toFixed(2)} / 20.00đ`) : "Đã hoàn thành";
-          const ratingDisplay = data.overallRating || "Đạt";
+        const observerEmail = getTeacherResolvedEmail(currentTeacher);
+        const isMN = data.level === "Mầm non";
+        const formattedDateVi = new Date(data.date).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" });
+        const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
+        const totalDisplay = data.totalScore != null ? (isMN ? `${Number(data.totalScore).toFixed(2)} / 10.00đ` : `${Number(data.totalScore).toFixed(2)} / 20.00đ`) : "Đã hoàn thành";
+        const ratingDisplay = data.overallRating || "Đạt";
 
+        // 1. Email thông báo cho Giáo viên được dự (Host Teacher)
+        if (hostEmail && hostEmail.includes("@")) {
+          const linkUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`;
           const emailSubject = `[Skyline Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${data.topic}" - Người dự: ${currentTeacher.teacherName}`;
           const emailHtml = `
             <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
@@ -3486,8 +3610,126 @@ export async function createSurpriseObservation(data: {
             }).catch(e => console.error("Notif error:", e));
           }
         }
+
+        // 2. Email xác nhận & bản lưu cho Người dự giờ (Observer / TTCM / Ban ĐHCM)
+        if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+          const observerLinkUrl = `${baseUrl}/teacher/du-gio?tab=my-registrations`;
+          const observerSubject = `[Skyline Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${data.topic}" - GV dạy: ${hostTeacher.teacherName}`;
+          const observerHtml = `
+            <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+              <div style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); padding: 24px 20px; text-align: center; color: white;">
+                <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">XÁC NHẬN BIÊN BẢN DỰ GIỜ ĐỘT XUẤT ⚡</h2>
+                <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
+              </div>
+
+              <div style="padding: 24px 28px; background: white;">
+                <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
+                  Kính gửi Thầy/Cô <strong>${currentTeacher.teacherName}</strong> (Người dự giờ),
+                </p>
+                <p style="font-size: 14px; color: #334155; line-height: 1.6;">
+                  Thầy/Cô đã hoàn tất lập <strong>Biên bản & Phiếu đánh giá dự giờ đột xuất</strong> cho tiết dạy của Thầy/Cô <strong>${hostTeacher.teacherName}</strong>. Dưới đây là thông tin chi tiết:
+                </p>
+
+                <!-- Lesson Summary Box -->
+                <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
+                  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                    <tr>
+                      <td style="padding: 5px 0; color: #9f1239; width: 140px; font-weight: 600;">📖 Tên bài dạy / Chủ đề:</td>
+                      <td style="padding: 5px 0; color: #881337; font-weight: 800;">${data.topic || "Dự giờ đột xuất"}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">👨‍🏫 Giáo viên dạy:</td>
+                      <td style="padding: 5px 0; color: #0f172a; font-weight: 700;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">📚 Môn học:</td>
+                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${data.subjectName || "Môn học"} (${data.grade || ""} - ${data.className || ""})</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">📅 Thời gian & Tiết:</td>
+                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${data.period || "Tiết dạy"} • ${formattedDateVi}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">🏫 Cơ sở & Địa điểm:</td>
+                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${hostTeacher.campus?.campusName || "Sky-Line"} - Phòng ${data.room || "học"}</td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Score & Ranking Badge -->
+                <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 14px 18px; margin: 18px 0;">
+                  <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                      <td style="vertical-align: middle;">
+                        <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Tổng điểm đã đánh giá:</div>
+                        <div style="font-size: 18px; font-weight: 900; color: #581c87;">${totalDisplay}</div>
+                      </td>
+                      <td style="text-align: right; vertical-align: middle;">
+                        <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase; margin-bottom: 2px;">Xếp loại tiết dạy:</div>
+                        <span style="font-size: 15px; font-weight: 900; color: #047857; background: #d1fae5; border: 1px solid #a7f3d0; padding: 4px 12px; border-radius: 8px; display: inline-block;">
+                          ${ratingDisplay}
+                        </span>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <!-- Qualitative Comments -->
+                <div style="margin: 20px 0;">
+                  ${data.strengths ? `
+                  <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 4px;">🌟 1. Ưu điểm nổi bật:</div>
+                    <div style="font-size: 13px; color: #166534; line-height: 1.6; white-space: pre-line;">${data.strengths}</div>
+                  </div>
+                  ` : ""}
+
+                  <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">💡 2. Nội dung cần cải thiện / Góp ý phát triển:</div>
+                    <div style="font-size: 13px; color: #92400e; line-height: 1.6; white-space: pre-line;">${data.improvements}</div>
+                  </div>
+
+                  ${data.generalComment ? `
+                  <div style="background: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 4px;">📝 3. Đề xuất & Kiến nghị chuyên môn:</div>
+                    <div style="font-size: 13px; color: #475569; line-height: 1.6; white-space: pre-line;">${data.generalComment}</div>
+                  </div>
+                  ` : ""}
+                </div>
+
+                <!-- Action Link -->
+                <div style="text-align: center; margin: 26px 0 16px 0;">
+                  <a href="${observerLinkUrl}" 
+                     style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); color: white; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);">
+                    👉 Xem Danh Sách Tiết Tôi Dự Trên Skyline
+                  </a>
+                </div>
+                
+                <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px;">
+                  Biên bản và điểm số đã được tự động cộng vào chỉ tiêu dự giờ của Thầy/Cô và ghi nhận vào hệ thống.
+                </p>
+              </div>
+
+              <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+                Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
+              </div>
+            </div>
+          `;
+          await sendEmail({ to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer surprise eval email error:", e));
+
+          if (currentTeacher.user?.id) {
+            await prisma.notification.create({
+              data: {
+                userId: currentTeacher.user.id,
+                title: "Đã hoàn tất dự giờ đột xuất ⚡",
+                message: `Thầy/Cô đã hoàn tất biên bản và phiếu đánh giá dự giờ đột xuất tiết "${data.topic}" của GV ${hostTeacher.teacherName}.`,
+                link: `/teacher/du-gio?tab=my-registrations`,
+                isRead: false
+              }
+            }).catch(e => console.error("Observer notif error:", e));
+          }
+        }
       } catch (mailErr) {
-        console.error("Error sending surprise evaluation email to host teacher:", mailErr);
+        console.error("Error sending surprise evaluation email:", mailErr);
       }
     }
 
