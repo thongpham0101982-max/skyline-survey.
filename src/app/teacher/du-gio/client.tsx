@@ -713,9 +713,38 @@ export function ObservationClient(props: ObservationClientProps) {
     });
   }, [classes, reqLevel, reqGrade, reqCampusId]);
 
+export function getTeacherAllDeptNames(t: any, departments?: any[]): string {
+  if (!t) return "";
+  const names = new Set<string>();
+  if (t.departmentRel?.name) names.add(t.departmentRel.name);
+  else if (t.departmentId && departments) {
+    const d = departments.find((dept: any) => dept.id === t.departmentId);
+    if (d?.name) names.add(d.name);
+  }
+  if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+    t.departmentAssignments.forEach((da: any) => {
+      if (da.department?.name) names.add(da.department.name);
+      else if (da.departmentId && departments) {
+        const d = departments.find((dept: any) => dept.id === da.departmentId);
+        if (d?.name) names.add(d.name);
+      }
+    });
+  }
+  return Array.from(names).join(", ");
+}
+
+export function isTeacherInDepartment(t: any, deptId: string): boolean {
+  if (!t || !deptId || deptId === "all") return true;
+  if (t.departmentId === deptId) return true;
+  if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+    return t.departmentAssignments.some((da: any) => da.departmentId === deptId);
+  }
+  return false;
+}
+
   const filteredTeachersForRequest = useMemo(() => {
     if (!reqDeptId) return teachers;
-    return teachers.filter((t: any) => t.departmentId === reqDeptId);
+    return teachers.filter((t: any) => isTeacherInDepartment(t, reqDeptId));
   }, [teachers, reqDeptId]);
 
   const autoSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -1406,7 +1435,13 @@ export function ObservationClient(props: ObservationClientProps) {
 
     if (!isAdminUser && !isQLCM && !isBGHMN && isTTCM) {
       const allowedIds = new Set(ttcmAllowedDepartments.map(d => d.id));
-      return list.filter((t: any) => allowedIds.has(t.departmentId));
+      return list.filter((t: any) => {
+        if (allowedIds.has(t.departmentId)) return true;
+        if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+          return t.departmentAssignments.some((da: any) => allowedIds.has(da.departmentId));
+        }
+        return false;
+      });
     }
 
     if (surpriseCampusId) {
@@ -2910,9 +2945,10 @@ export function ObservationClient(props: ObservationClientProps) {
                       {filteredTeachersForSurprise.map((t: any) => {
                         const campusObj = campuses.find((c: any) => c.id === t.campusId);
                         const campusShort = campusObj?.campusCode || campusObj?.campusName?.replace("Sky-Line ", "") || "";
+                        const depts = getTeacherAllDeptNames(t, departments);
                         return (
                           <option key={t.id} value={t.id}>
-                            {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {t.departmentRel?.name ? `• ${t.departmentRel.name}` : ""} {campusShort ? `[${campusShort}]` : ""}
+                            {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {depts ? `• ${depts}` : ""} {campusShort ? `[${campusShort}]` : ""}
                           </option>
                         );
                       })}
@@ -3502,11 +3538,14 @@ export function ObservationClient(props: ObservationClientProps) {
                     className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn Giáo viên dạy --</option>
-                    {filteredTeachersForRequest.map((t: any) => (
-                      <option key={t.id} value={t.id}>
-                        {t.teacherName} {t.departmentRel?.name ? `(${t.departmentRel.name})` : ""}
-                      </option>
-                    ))}
+                    {filteredTeachersForRequest.map((t: any) => {
+                      const depts = getTeacherAllDeptNames(t, departments);
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {depts ? `(${depts})` : ""}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>

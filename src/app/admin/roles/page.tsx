@@ -17,13 +17,25 @@ export default async function RolesPage() {
     }
   })
 
+  const ROLE_ORDER = [
+    "ADMIN", "TB_DHCM", "GDCS", "TBP", "TTCM", "KHAO_THI", "BGH_MN",
+    "GIAO_VU", "CTHS", "TVAN", "NS", "TEACHER", "GV_MN", "GVNN", "PARENT", "STUDENT"
+  ];
+
   const rolesWithCounts = roles.map(r => {
     const countObj = userCounts.find(uc => uc.role === r.code)
     return {
       ...r,
       userCount: countObj?._count?.role || 0
     }
-  })
+  }).sort((a, b) => {
+    const idxA = ROLE_ORDER.indexOf(a.code);
+    const idxB = ROLE_ORDER.indexOf(b.code);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.name.localeCompare(b.name, 'vi');
+  });
 
   return (
     <div className="space-y-6">

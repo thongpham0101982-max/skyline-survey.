@@ -259,6 +259,9 @@ export async function getObservationData(academicYearId?: string) {
           teacherCode: true,
           email: true,
           departmentId: true,
+          departmentRel: {
+            select: { id: true, name: true, code: true }
+          },
           campusId: true,
           campus: {
             select: {
@@ -269,7 +272,11 @@ export async function getObservationData(academicYearId?: string) {
           },
           position: true,
           departmentAssignments: {
-            select: { departmentId: true, position: true }
+            select: {
+              departmentId: true,
+              position: true,
+              department: { select: { id: true, name: true, code: true } }
+            }
           }
         },
         orderBy: { teacherName: "asc" }
@@ -1641,14 +1648,15 @@ export async function updateTeacherObservationTargets(
     const isSuperAdmin = roleCode === "ADMIN" || isAdmin
     const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
-    // Also allow TTCM or the teacher themselves to update their own targets
+    // Also allow TBP, TTCM, or the teacher themselves to update their own targets
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
       select: { 
         id: true, 
         position: true, 
         departmentId: true,
-        departmentAssignments: { select: { departmentId: true, position: true } }
+        departmentAssignments: { select: { departmentId: true, position: true } },
+        divisionAssignments: true
       }
     })
 
@@ -1656,14 +1664,47 @@ export async function updateTeacherObservationTargets(
       currentTeacher?.departmentAssignments?.some((da: any) => 
         ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position)
       );
+
+    const isTBP = ["TBP", "TB_DHCM", "BAN_DHCM"].includes(currentTeacher?.position || "") ||
+      ["TBP", "TB_DHCM", "BAN_DHCM"].includes(roleCode) ||
+      (currentTeacher?.divisionAssignments?.length || 0) > 0;
+
     const isSelf = currentTeacher && currentTeacher.id === teacherId
 
-    if (!isSuperAdmin && !isTTCM && !isSelf && !isGDCS) {
+    if (!isSuperAdmin && !isTBP && !isTTCM && !isSelf && !isGDCS) {
       return { success: false, error: "Bạn không có quyền cấu hình chỉ tiêu" }
     }
 
-    // If they are TTCM, make sure the target teacher is in their department (unless editing themselves or admin)
-    if (isTTCM && !isSuperAdmin && !isSelf) {
+    // If they are TBP, verify that the teacher belongs to their division
+    if (isTBP && !isSuperAdmin && !isSelf) {
+      const myDivCodes = new Set<string>();
+      currentTeacher?.divisionAssignments?.forEach((da: any) => myDivCodes.add(da.divisionCode));
+      if (["BAN_DHCM", "TB_DHCM"].includes(currentTeacher?.position || "") || ["BAN_DHCM", "TB_DHCM"].includes(roleCode)) {
+        myDivCodes.add("BAN_DHCM");
+      }
+      const isSuperDiv = Array.from(myDivCodes).some(dc => ["BAN_GD", "BAN_KT_DBCL", "BAN_DHCM", "BAN_TT"].includes(dc));
+      if (!isSuperDiv) {
+        const targetTeacher = await prisma.teacher.findUnique({
+          where: { id: teacherId },
+          include: {
+            departmentRel: true,
+            departmentAssignments: { include: { department: true } },
+            divisionAssignments: true
+          }
+        });
+        const targetDivCodes = new Set<string>();
+        if (targetTeacher?.departmentRel?.divisionCode) targetDivCodes.add(targetTeacher.departmentRel.divisionCode);
+        targetTeacher?.departmentAssignments?.forEach((da: any) => {
+          if (da.department?.divisionCode) targetDivCodes.add(da.department.divisionCode);
+        });
+        targetTeacher?.divisionAssignments?.forEach((da: any) => targetDivCodes.add(da.divisionCode));
+        const hasMatchingDiv = Array.from(myDivCodes).some(dc => targetDivCodes.has(dc));
+        if (!hasMatchingDiv && !isTTCM) {
+          return { success: false, error: "Trưởng Bộ Phận chỉ có quyền cấu hình chỉ tiêu cho GV/TTCM thuộc Bộ phận mình phụ trách" };
+        }
+      }
+    } else if (isTTCM && !isSuperAdmin && !isSelf) {
+      // If they are TTCM, make sure the target teacher is in their department
       const targetTeacher = await prisma.teacher.findUnique({
         where: { id: teacherId },
         select: { departmentId: true, departmentAssignments: { select: { departmentId: true } } }

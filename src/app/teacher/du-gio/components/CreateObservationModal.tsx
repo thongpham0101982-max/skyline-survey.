@@ -83,6 +83,26 @@ const MAMNON_SECTIONS = [
   }
 ];
 
+function getAllDeptNames(t: any, departments?: any[]): string {
+  if (!t) return "";
+  const names = new Set<string>();
+  if (t.departmentRel?.name) names.add(t.departmentRel.name);
+  else if (t.departmentId && departments) {
+    const d = departments.find((dept: any) => dept.id === t.departmentId);
+    if (d?.name) names.add(d.name);
+  }
+  if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+    t.departmentAssignments.forEach((da: any) => {
+      if (da.department?.name) names.add(da.department.name);
+      else if (da.departmentId && departments) {
+        const d = departments.find((dept: any) => dept.id === da.departmentId);
+        if (d?.name) names.add(d.name);
+      }
+    });
+  }
+  return Array.from(names).join(", ");
+}
+
 const calculateMamNonRanking = (scores: number[]) => {
   const sum = scores.reduce((a: number, b: number) => a + b, 0);
   if (sum === 0) return "Chưa xếp loại";
@@ -647,11 +667,14 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                     className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 text-slate-800"
                   >
                     <option value="">-- Chọn Giáo viên dạy --</option>
-                    {filteredTeachersForRequest.map((t: any) => (
-                      <option key={t.id} value={t.id}>
-                        {t.teacherName} {t.departmentRel?.name ? `(${t.departmentRel.name})` : ""}
-                      </option>
-                    ))}
+                    {filteredTeachersForRequest.map((t: any) => {
+                      const depts = getAllDeptNames(t, departments);
+                      return (
+                        <option key={t.id} value={t.id}>
+                          {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {depts ? `(${depts})` : ""}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
@@ -857,9 +880,14 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none bg-slate-50 text-slate-800 cursor-pointer"
                     >
                       <option value="">-- Chọn giáo viên --</option>
-                      {filteredTeachersForSurprise.map((t: any) => (
-                        <option key={t.id} value={t.id}>{t.teacherName} ({t.campus?.campusName || "Cơ sở"})</option>
-                      ))}
+                      {filteredTeachersForSurprise.map((t: any) => {
+                        const depts = getAllDeptNames(t, departments);
+                        return (
+                          <option key={t.id} value={t.id}>
+                            {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} {depts ? `• ${depts}` : ""} ({t.campus?.campusName || "Cơ sở"})
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
