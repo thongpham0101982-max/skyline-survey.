@@ -528,6 +528,31 @@ export function TeacherManagerClient({
               </select>
             </div>
           </div>
+          <div className="mt-4">
+            <label className="block text-xs font-black text-indigo-600 mb-2 uppercase tracking-wider">🏢 Bộ Phận Phụ Trách (TBP)</label>
+            <div className="flex flex-wrap gap-2 p-3.5 bg-indigo-50/20 border border-indigo-100 rounded-2xl">
+              {ACADEMIC_DIVISIONS.map((div) => {
+                const isChecked = (newForm.divisionCodes || []).includes(div.code);
+                return (
+                  <label key={div.code} className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-xl border text-xs font-bold transition-all select-none ${isChecked ? "bg-indigo-600 text-white border-indigo-600 shadow-xs" : "bg-white border-slate-200 text-slate-700 hover:bg-indigo-50"}`}>
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        const cur = newForm.divisionCodes || [];
+                        const next = e.target.checked ? [...cur, div.code] : cur.filter((x: string) => x !== div.code);
+                        const autoPos = next.length > 0 && newForm.position === "GV" ? "TBP" : newForm.position;
+                        setNewForm({ ...newForm, divisionCodes: next, position: autoPos });
+                      }}
+                      className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                    />
+                    {div.name}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           {(campuses || []).length > 1 && (
             <div className="mt-4">
               <label className="block text-xs font-black text-slate-550 mb-2 uppercase tracking-wider">Cơ sở làm việc thêm</label>
@@ -744,65 +769,111 @@ export function TeacherManagerClient({
 
                       <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
-                          <div className="flex flex-col gap-1.5 min-w-[220px]">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Tổ CM & Chức vụ:</p>
-                            <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto p-1.5 border border-[#48BFE3] rounded-xl bg-white text-xs">
-                              {(departments || []).map((d: any) => {
-                                const assigned = (editForm.departmentAssignments || []).find((a: any) => a.departmentId === d.id);
-                                const isChecked = !!assigned;
-                                return (
-                                  <div key={d.id} className="flex items-center justify-between p-1 rounded-lg hover:bg-slate-50 border border-slate-100">
-                                    <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-[11px]">
-                                      <input type="checkbox" checked={isChecked} onChange={(e) => {
-                                        const cur = editForm.departmentAssignments || [];
-                                        if (e.target.checked) {
-                                          const next = [...cur, { departmentId: d.id, position: "GV" }];
-                                          setEditForm({ ...editForm, departmentAssignments: next, department: d.name });
-                                        } else {
-                                          const next = cur.filter((x: any) => x.departmentId !== d.id);
-                                          setEditForm({ ...editForm, departmentAssignments: next, department: next[0] ? ((departments || []).find((dx: any) => dx.id === next[0].departmentId)?.name || "") : "" });
-                                        }
-                                      }} className="w-3.5 h-3.5 rounded accent-[#48BFE3] cursor-pointer" />
-                                      {d.name}
+                          <div className="flex flex-col gap-2 min-w-[240px]">
+                            <div>
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Tổ CM & Chức vụ:</p>
+                              <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto p-1.5 border border-[#48BFE3] rounded-xl bg-white text-xs">
+                                {(departments || []).map((d: any) => {
+                                  const assigned = (editForm.departmentAssignments || []).find((a: any) => a.departmentId === d.id);
+                                  const isChecked = !!assigned;
+                                  return (
+                                    <div key={d.id} className="flex items-center justify-between p-1 rounded-lg hover:bg-slate-50 border border-slate-100">
+                                      <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-[11px]">
+                                        <input type="checkbox" checked={isChecked} onChange={(e) => {
+                                          const cur = editForm.departmentAssignments || [];
+                                          if (e.target.checked) {
+                                            const next = [...cur, { departmentId: d.id, position: "GV" }];
+                                            setEditForm({ ...editForm, departmentAssignments: next, department: d.name });
+                                          } else {
+                                            const next = cur.filter((x: any) => x.departmentId !== d.id);
+                                            setEditForm({ ...editForm, departmentAssignments: next, department: next[0] ? ((departments || []).find((dx: any) => dx.id === next[0].departmentId)?.name || "") : "" });
+                                          }
+                                        }} className="w-3.5 h-3.5 rounded accent-[#48BFE3] cursor-pointer" />
+                                        {d.name}
+                                      </label>
+                                      {isChecked && (
+                                        <select value={assigned.position || "GV"} onChange={(e) => {
+                                          const cur = editForm.departmentAssignments || [];
+                                          const next = cur.map((x: any) => x.departmentId === d.id ? { ...x, position: e.target.value } : x);
+                                          const hasTTCM = next.some((x: any) => x.position === "TTCM");
+                                          setEditForm({ ...editForm, departmentAssignments: next, position: hasTTCM ? "TTCM" : (editForm.position || "GV") });
+                                        }} className="text-[10px] font-extrabold px-1.5 py-0.5 border border-amber-300 rounded-md outline-none bg-amber-50 text-amber-800 cursor-pointer">
+                                          <option value="GV">GV</option>
+                                          <option value="NV">NV</option>
+                                          <option value="TTCM">TTCM</option>
+                                          <option value="TPTCM">TPTCM</option>
+                                          <option value="QLCM">QLCM</option>
+                                          <option value="Ban ĐHCM">Ban ĐHCM</option>
+                                          <option value="GĐCS">GĐCS</option>
+                                        </select>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Multi-select Bộ Phận Phụ Trách (TBP / Ban) */}
+                            <div className="pt-2 border-t border-slate-200">
+                              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                <span>🏢 Bộ Phận Phụ Trách (TBP):</span>
+                              </p>
+                              <div className="flex flex-col gap-1 max-h-32 overflow-y-auto p-1.5 border border-indigo-200 rounded-xl bg-indigo-50/20 text-xs">
+                                {ACADEMIC_DIVISIONS.map((div: any) => {
+                                  const isChecked = (editForm.divisionCodes || []).includes(div.code);
+                                  return (
+                                    <label key={div.code} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-[11px] hover:bg-indigo-50/50 p-1 rounded-md select-none">
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={(e) => {
+                                          const cur = editForm.divisionCodes || [];
+                                          const next = e.target.checked
+                                            ? [...cur, div.code]
+                                            : cur.filter((x: string) => x !== div.code);
+                                          const autoPos = next.length > 0 && editForm.position === "GV" ? "TBP" : editForm.position;
+                                          setEditForm({ ...editForm, divisionCodes: next, position: autoPos });
+                                        }}
+                                        className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                                      />
+                                      <span className="truncate">{div.name}</span>
                                     </label>
-                                    {isChecked && (
-                                      <select value={assigned.position || "GV"} onChange={(e) => {
-                                        const cur = editForm.departmentAssignments || [];
-                                        const next = cur.map((x: any) => x.departmentId === d.id ? { ...x, position: e.target.value } : x);
-                                        const hasTTCM = next.some((x: any) => x.position === "TTCM");
-                                        setEditForm({ ...editForm, departmentAssignments: next, position: hasTTCM ? "TTCM" : (editForm.position || "GV") });
-                                      }} className="text-[10px] font-extrabold px-1.5 py-0.5 border border-amber-300 rounded-md outline-none bg-amber-50 text-amber-800 cursor-pointer">
-                                        <option value="GV">GV</option>
-                                 <option value="NV">NV</option>
-                                        <option value="TTCM">TTCM</option>
-                                        <option value="TPTCM">TPTCM</option>
-                                        <option value="QLCM">QLCM</option>
-                                        <option value="Ban ĐHCM">Ban ĐHCM</option>
-                                        <option value="GĐCS">GĐCS</option>
-                                      </select>
-                                    )}
-                                  </div>
-                                );
-                              })}
+                                  );
+                                })}
+                              </div>
                             </div>
                           </div>
                         ) : (
-                          <div className="flex flex-wrap gap-1 items-center">
-                            {t.departmentAssignments && t.departmentAssignments.length > 0 ? (
-                              t.departmentAssignments.map((da: any) => (
-                                <span key={da.departmentId || da.departmentName} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-extrabold bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20">
-                                  {da.departmentName || da.departmentCode}
-                                  {da.position && da.position !== "GV" && (
-                                    <span className="bg-amber-100 text-amber-800 text-[10px] px-1 py-0.2 rounded-md font-black">{da.position}</span>
-                                  )}
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex flex-wrap gap-1 items-center">
+                              {t.departmentAssignments && t.departmentAssignments.length > 0 ? (
+                                t.departmentAssignments.map((da: any) => (
+                                  <span key={da.departmentId || da.departmentName} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-extrabold bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20">
+                                    {da.departmentName || da.departmentCode}
+                                    {da.position && da.position !== "GV" && (
+                                      <span className="bg-amber-100 text-amber-800 text-[10px] px-1 py-0.2 rounded-md font-black">{da.position}</span>
+                                    )}
+                                  </span>
+                                ))
+                              ) : t.department ? (
+                                <span className={"inline-block px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide self-start " + getDeptColor(t.department)}>
+                                  {t.department}
                                 </span>
-                              ))
-                            ) : t.department ? (
-                              <span className={"inline-block px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide self-start " + getDeptColor(t.department)}>
-                                {t.department}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400 text-xs font-semibold italic">Không thuộc Tổ CM</span>
+                              ) : (
+                                <span className="text-slate-400 text-xs font-semibold italic">Không thuộc Tổ CM</span>
+                              )}
+                            </div>
+                            {t.divisionCodes && t.divisionCodes.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-0.5">
+                                {t.divisionCodes.map((dCode: string) => {
+                                  const div = ACADEMIC_DIVISIONS.find((x: any) => x.code === dCode);
+                                  return (
+                                    <span key={dCode} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs">
+                                      🏢 TBP: {div?.shortName || div?.name || dCode}
+                                    </span>
+                                  );
+                                })}
+                              </div>
                             )}
                           </div>
                         )}
