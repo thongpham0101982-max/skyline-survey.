@@ -244,16 +244,55 @@ export async function createForeignObservationWithEvaluation(data: {
       return { success: false, error: "Unauthorized" };
     }
 
-    const currentTeacher = await prisma.teacher.findFirst({
+    const hostTeacher = await prisma.teacher.findUnique({
+      where: { id: data.teacherId },
+      include: {
+        campus: true,
+        departmentRel: true
+      }
+    });
+
+    if (!hostTeacher) {
+      return { success: false, error: "Teacher to be observed not found" };
+    }
+
+    let evaluatorTeacher = await prisma.teacher.findFirst({
       where: {
         OR: [
+          { id: data.observerId || "" },
           { email: session.user.email || "" },
           { id: session.user.id }
         ]
       }
     });
 
-    const evaluatorId = data.observerId || currentTeacher?.id || session.user.id;
+    if (!evaluatorTeacher) {
+      evaluatorTeacher = await prisma.teacher.findFirst({
+        where: { email: session.user.email || "" }
+      });
+      if (!evaluatorTeacher && session.user.id) {
+        evaluatorTeacher = await prisma.teacher.findFirst({
+          where: { id: session.user.id }
+        });
+      }
+      if (!evaluatorTeacher && session.user.email) {
+        try {
+          evaluatorTeacher = await prisma.teacher.create({
+            data: {
+              teacherCode: "ADMIN_" + (session.user.name || "GV").substring(0, 3).toUpperCase(),
+              teacherName: session.user.name || "Administrator",
+              email: session.user.email,
+              position: "QLCM",
+              status: "ACTIVE"
+            }
+          });
+        } catch (e) {
+          evaluatorTeacher = await prisma.teacher.findFirst();
+        }
+      }
+    }
+
+    const evaluatorId = evaluatorTeacher?.id || hostTeacher.id;
 
     let academicYear = await prisma.academicYear.findFirst({
       where: { status: "ACTIVE" }
@@ -285,36 +324,60 @@ export async function createForeignObservationWithEvaluation(data: {
       });
     }
 
+    let classObj = null;
+    if (data.classId) {
+      classObj = await prisma.class.findUnique({
+        where: { id: data.classId }
+      });
+    }
+
+    const periodMap: Record<string, { start: string, end: string }> = {
+      "Tiết 1": { start: "07:30", end: "08:15" },
+      "Tiết 2": { start: "08:20", end: "09:05" },
+      "Tiết 3": { start: "09:20", end: "10:05" },
+      "Tiết 4": { start: "10:10", end: "10:55" },
+      "Tiết 5": { start: "13:30", end: "14:15" },
+      "Tiết 6": { start: "14:20", end: "15:05" },
+      "Tiết 7": { start: "15:10", end: "15:55" },
+      "Tiết 8": { start: "15:55", end: "16:40" }
+    };
+    const timeRange = periodMap[data.period || "Tiết 1"] || { start: "07:30", end: "08:15" };
     const observationDate = new Date(data.date);
 
     const slot = await prisma.observationSlot.create({
       data: {
-        teacherId: data.teacherId,
-        subjectId: subject.id,
-        campusId: data.campusId,
+        teacherId: hostTeacher.id,
+        targetDeptId: hostTeacher.departmentId || null,
         classId: data.classId || null,
-        className: data.className || "ESL Class",
-        academicYearId: academicYear?.id,
+        className: data.className || classObj?.className || "ESL Class",
+        level: classObj?.level || hostTeacher.departmentRel?.blockCM || "Tiểu học",
+        grade: classObj?.grade ? `Khối ${classObj.grade}` : (data.className || "Khối 1"),
+        subjectId: subject?.id || null,
+        subjectName: subject?.subjectName || "Tiếng Anh (ESL)",
+        topic: data.topic || "Foreign English Lesson Walkthrough",
+        lessonPlanName: data.topic || "Foreign English Lesson Walkthrough",
         date: observationDate,
-        startTime: data.period || "Tiết 1",
-        endTime: "",
+        startTime: data.period || timeRange.start,
+        endTime: timeRange.end,
         room: data.room || "Phòng học",
-        lessonPlan: data.topic || "Foreign English Lesson Walkthrough",
+        description: "Dự giờ GVNN / Tổ Tiếng Anh",
+        visibilityType: "PUBLIC",
+        maxSeats: 4,
         status: data.isDraft ? "DRAFT" : "COMPLETED",
-        createdById: session.user.id,
-        observations: {
-          create: {
-            observerId: evaluatorId,
-            status: data.isDraft ? "DRAFT" : "COMPLETED"
-          }
-        }
-      },
-      include: {
-        observations: true
+        academicYearId: academicYear?.id || null,
+        campusId: data.campusId || hostTeacher.campusId || null,
+        campusName: hostTeacher.campus?.campusName || null
       }
     });
 
-    const observation = slot.observations[0];
+    const registration = await prisma.observationRegistration.create({
+      data: {
+        slotId: slot.id,
+        teacherId: evaluatorId,
+        isApproved: true,
+        approvedAt: new Date()
+      }
+    });
 
     const evaluationCriteria = [
       { id: 14, standardId: 1, name: "Content appropriate for student level", weight: 1 },
@@ -355,24 +418,32 @@ export async function createForeignObservationWithEvaluation(data: {
       overallRatingText: data.overallRating || "Effective Practice",
       period: data.period || "Tiết 1",
       room: data.room || "Phòng học",
-      topic: data.topic || ""
+      topic: data.topic || "",
+      criterionScores
     });
 
-    await prisma.evaluation.create({
+    await prisma.observationEvaluation.create({
       data: {
-        observationId: observation.id,
-        evaluatorId,
-        evaluateeId: data.teacherId,
+        registrationId: registration.id,
+        slotId: slot.id,
+        evaluatorId: evaluatorId,
+        score1: criterionScores[0]?.score ?? null,
+        score2: criterionScores[1]?.score ?? null,
+        score3: criterionScores[2]?.score ?? null,
+        score4: criterionScores[3]?.score ?? null,
+        score5: criterionScores[4]?.score ?? null,
+        score6: criterionScores[5]?.score ?? null,
+        score7: criterionScores[6]?.score ?? null,
+        score8: criterionScores[7]?.score ?? null,
+        score9: criterionScores[8]?.score ?? null,
+        score10: criterionScores[9]?.score ?? null,
         totalScore: data.totalScore || 3.0,
-        resultLevel: data.overallRating || "Effective Practice",
-        generalComment,
         strengths: data.summary?.keyStrengths || "",
-        limitations: data.summary?.keyChallenges || "",
-        suggestions: data.summary?.agreedActions || "",
-        status: data.isDraft ? "DRAFT" : "COMPLETED",
-        evaluationCriteria: {
-          create: criterionScores
-        }
+        improvements: data.summary?.keyChallenges || "",
+        generalComment,
+        overallRating: data.overallRating || "Effective Practice",
+        reEvaluationStatus: data.isDraft ? "DRAFT" : null,
+        submittedAt: new Date()
       }
     });
 
@@ -449,23 +520,56 @@ export async function getForeignObservationSlots(params?: string | { academicYea
       where.academicYearId = academicYearId;
     }
 
+    if (typeof params === "object" && params) {
+      if (params.campusId && params.campusId !== "all") {
+        where.campusId = params.campusId;
+      }
+      if (params.grade && params.grade !== "all") {
+        where.grade = params.grade;
+      }
+      if (params.deptId && params.deptId !== "all") {
+        where.targetDeptId = params.deptId;
+      }
+      if (params.date) {
+        const start = new Date(params.date);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(params.date);
+        end.setHours(23, 59, 59, 999);
+        where.date = { gte: start, lte: end };
+      }
+    }
+
     const slots = await prisma.observationSlot.findMany({
       where,
       include: {
         teacher: {
-          select: { id: true, teacherName: true, teacherCode: true, position: true }
-        },
-        campus: {
-          select: { id: true, campusName: true }
-        },
-        subject: {
-          select: { id: true, subjectName: true }
-        },
-        observations: {
-          include: {
-            evaluations: true
+          select: {
+            id: true,
+            teacherName: true,
+            teacherCode: true,
+            position: true,
+            departmentId: true,
+            departmentRel: true,
+            campusId: true,
+            campus: {
+              select: { id: true, campusName: true }
+            }
           }
-        }
+        },
+        registrations: {
+          include: {
+            teacher: {
+              select: {
+                id: true,
+                teacherName: true,
+                teacherCode: true,
+                position: true
+              }
+            },
+            evaluation: true
+          }
+        },
+        academicYear: true
       },
       orderBy: { date: "desc" }
     });
