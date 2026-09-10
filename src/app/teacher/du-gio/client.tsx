@@ -429,6 +429,15 @@ const isSurpriseSlot = (slot: any) => {
   );
 };
 
+const isSlotExpired = (slot: any, todayStart: Date) => {
+  if (!slot) return true;
+  if (slot.status === "EXPIRED") return true;
+  if (!slot.date) return false;
+  const slotDate = new Date(slot.date);
+  if (isNaN(slotDate.getTime())) return false;
+  return slotDate < todayStart;
+};
+
 const formatEvalDateTimeVi = (dateVal: string | Date | undefined | null) => {
   if (!dateVal) return "";
   const d = new Date(dateVal);
@@ -494,6 +503,7 @@ export function ObservationClient(props: ObservationClientProps) {
         (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non")
       );
 
+  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeTabParam = searchParams.get("tab") || "dang-ky"
