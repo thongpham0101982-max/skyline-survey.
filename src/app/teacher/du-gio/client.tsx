@@ -2025,6 +2025,109 @@ export function ObservationClient(props: ObservationClientProps) {
     return Object.values(stats).sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
   }, [slots, currentTeacher?.id]);
 
+  const teacherMonthlyStatsList = useMemo(() => {
+    const stats: Record<string, {
+      monthKey: string;
+      monthStr: string;
+      year: number;
+      month: number;
+      taughtCount: number;
+      totalTaughtSlots: number;
+      observedCount: number;
+      totalObservedSlots: number;
+      pendingObservedCount: number;
+      avgScore: string | null;
+      receivedEvalCount: number;
+    }> = {};
+
+    availableMonths.forEach(mKey => {
+      const [y, m] = mKey.split("-");
+      const year = parseInt(y, 10);
+      const month = parseInt(m, 10);
+      stats[mKey] = {
+        monthKey: mKey,
+        monthStr: `Tháng ${m}/${y}`,
+        year,
+        month,
+        taughtCount: 0,
+        totalTaughtSlots: 0,
+        observedCount: 0,
+        totalObservedSlots: 0,
+        pendingObservedCount: 0,
+        avgScore: null,
+        receivedEvalCount: 0
+      };
+    });
+
+    slots.forEach(slot => {
+      const slotDate = new Date(slot.date);
+      if (isNaN(slotDate.getTime())) return;
+      const year = slotDate.getFullYear();
+      const month = slotDate.getMonth() + 1;
+      const key = `${year}-${month.toString().padStart(2, "0")}`;
+
+      if (!stats[key]) {
+        stats[key] = {
+          monthKey: key,
+          monthStr: `Tháng ${month.toString().padStart(2, "0")}/${year}`,
+          year,
+          month,
+          taughtCount: 0,
+          totalTaughtSlots: 0,
+          observedCount: 0,
+          totalObservedSlots: 0,
+          pendingObservedCount: 0,
+          avgScore: null,
+          receivedEvalCount: 0
+        };
+      }
+
+      const countWeight = slot.isDoublePeriod ? 2 : 1;
+      const isHost = slot.teacherId === currentTeacher?.id;
+      const myReg = slot.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
+
+      if (isHost) {
+        stats[key].totalTaughtSlots += 1;
+        const approvedRegs = slot.registrations?.filter((r: any) => r.isApproved || isSurpriseSlot(slot)) || [];
+        const hasEval = approvedRegs.some((r: any) => !!r.evaluation);
+        if (hasEval) {
+          stats[key].taughtCount += countWeight;
+        }
+      }
+
+      if (myReg && (myReg.isApproved || isSurpriseSlot(slot))) {
+        stats[key].totalObservedSlots += 1;
+        if (myReg.evaluation) {
+          stats[key].observedCount += countWeight;
+        } else {
+          stats[key].pendingObservedCount += 1;
+        }
+      }
+    });
+
+    Object.values(stats).forEach(st => {
+      let sum = 0;
+      let cnt = 0;
+      slots.forEach(slot => {
+        const slotDate = new Date(slot.date);
+        if (isNaN(slotDate.getTime())) return;
+        const key = `${slotDate.getFullYear()}-${(slotDate.getMonth() + 1).toString().padStart(2, "0")}`;
+        if (key === st.monthKey && slot.teacherId === currentTeacher?.id) {
+          slot.registrations?.forEach((r: any) => {
+            if (r.evaluation && Number(r.evaluation.totalScore) > 0) {
+              sum += Number(r.evaluation.totalScore);
+              cnt++;
+            }
+          });
+        }
+      });
+      st.avgScore = cnt > 0 ? (sum / cnt).toFixed(2) : null;
+      st.receivedEvalCount = cnt;
+    });
+
+    return Object.values(stats).sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
+  }, [slots, availableMonths, currentTeacher?.id]);
+
   const receivedEvaluations = useMemo(() => {
     const map = new Map<string, any>();
     
@@ -4692,6 +4795,10 @@ export function ObservationClient(props: ObservationClientProps) {
             receivedEvaluationCount={myReceivedEvaluationsStats.count}
             isPreschool={isMamNonTeacher}
             academicYearName={academicYears.find(y => y.id === filterAcademicYearId)?.name}
+            selectedMonth={filterMonth}
+            onSelectMonth={handleMonthChange}
+            availableMonths={availableMonths}
+            monthlyStatsList={teacherMonthlyStatsList}
           />
           
           {/* Sub-navigation inside My Workspace */}
