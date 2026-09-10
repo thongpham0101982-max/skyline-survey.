@@ -31,6 +31,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { sendEmail } from "@/lib/mail"
+import { ACADEMIC_DIVISIONS } from "@/config/divisions"
 
 async function checkIsObservationAdmin(roleCode: string, userId?: string): Promise<boolean> {
   let activeRole = (roleCode || "").trim();
@@ -357,8 +358,6 @@ export async function getObservationData(academicYearId?: string) {
       },
       evaluation: e
     })).filter((item: any) => item.slot != null);
-
-import { ACADEMIC_DIVISIONS } from "@/config/divisions";
 
     return {
       success: true,
