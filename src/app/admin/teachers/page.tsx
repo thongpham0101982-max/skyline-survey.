@@ -58,9 +58,10 @@ export default async function TeacherManagerPage() {
       departmentRel: { select: { name: true, blockCM: true } },
       departmentAssignments: {
         include: {
-          department: { select: { id: true, name: true, blockCM: true, code: true } }
+          department: { select: { id: true, name: true, blockCM: true, divisionCode: true, code: true } }
         }
       },
+      divisionAssignments: true,
       mainSubjectRel: { select: { subjectName: true } },
       campus: { select: { campusName: true } }
     }
@@ -90,41 +91,59 @@ export default async function TeacherManagerPage() {
     }
   })
 
-  const teachers = rawTeachers.map(t => ({
-    id: t.id,
-    teacherCode: t.teacherCode,
-    teacherName: t.teacherName,
-    dateOfBirth: t.dateOfBirth || null,
-    department: t.departmentRel?.name || null,
-    departmentId: t.departmentId || null,
-    departmentBlockCM: t.departmentRel?.blockCM || null,
-    departmentAssignments: (t.departmentAssignments || []).map(da => ({
-      id: da.id,
-      departmentId: da.departmentId,
-      departmentName: da.department?.name || "",
-      departmentCode: da.department?.code || "",
-      blockCM: da.department?.blockCM || null,
-      position: da.position || "GV",
-      isPrimary: da.isPrimary
-    })),
-    departmentIds: (t.departmentAssignments || []).map(da => da.departmentId),
-    mainSubject: t.mainSubjectRel?.subjectName || null,
-    mainSubjectId: t.mainSubjectId || null,
-    campus: t.campus?.campusName || null,
-    campusId: t.campusId || null,
-    additionalCampuses: t.user?.campusAssignments?.map(ca => ({
-      id: ca.campus?.id || "",
-      campusName: ca.campus?.campusName || ""
-    })).filter(ac => ac.id && ac.id !== t.campusId) || [],
-    additionalCampusIds: t.user?.campusAssignments?.map(ca => ca.campusId).filter(cid => cid && cid !== t.campusId) || [],
-    homeroomClass: t.homeroomClass || null,
-    homeroomClassId: classHomeroomMap.get(t.id)?.classId || null,
-    email: t.email || null,
-    phone: t.phone || null,
-    status: t.status,
-    position: t.position || "GV",
-    user: { email: t.user?.email || t.teacherCode, status: t.user?.status || "ACTIVE" }
-  }))
+  const teachers = rawTeachers.map(t => {
+    let parsedPositions: string[] = [];
+    if (t.positions) {
+      try {
+        parsedPositions = typeof t.positions === "string" ? JSON.parse(t.positions) : t.positions;
+      } catch {}
+    }
+    const divisionCodes = (t.divisionAssignments || []).map((da: any) => da.divisionCode);
+
+    return {
+      id: t.id,
+      teacherCode: t.teacherCode,
+      teacherName: t.teacherName,
+      dateOfBirth: t.dateOfBirth || null,
+      department: t.departmentRel?.name || null,
+      departmentId: t.departmentId || null,
+      departmentBlockCM: (t.departmentRel as any)?.blockCM || null,
+      departmentAssignments: (t.departmentAssignments || []).map(da => ({
+        id: da.id,
+        departmentId: da.departmentId,
+        departmentName: da.department?.name || "",
+        departmentCode: da.department?.code || "",
+        blockCM: da.department?.blockCM || null,
+        divisionCode: (da.department as any)?.divisionCode || null,
+        position: da.position || "GV",
+        isPrimary: da.isPrimary
+      })),
+      departmentIds: (t.departmentAssignments || []).map(da => da.departmentId),
+      divisionAssignments: (t.divisionAssignments || []).map((da: any) => ({
+        id: da.id,
+        divisionCode: da.divisionCode,
+        roleInDivision: da.roleInDivision
+      })),
+      divisionCodes,
+      mainSubject: t.mainSubjectRel?.subjectName || null,
+      mainSubjectId: t.mainSubjectId || null,
+      campus: t.campus?.campusName || null,
+      campusId: t.campusId || null,
+      additionalCampuses: t.user?.campusAssignments?.map(ca => ({
+        id: ca.campus?.id || "",
+        campusName: ca.campus?.campusName || ""
+      })).filter(ac => ac.id && ac.id !== t.campusId) || [],
+      additionalCampusIds: t.user?.campusAssignments?.map(ca => ca.campusId).filter(cid => cid && cid !== t.campusId) || [],
+      homeroomClass: t.homeroomClass || null,
+      homeroomClassId: classHomeroomMap.get(t.id)?.classId || null,
+      email: t.email || null,
+      phone: t.phone || null,
+      status: t.status,
+      position: t.position || "GV",
+      positions: parsedPositions,
+      user: { email: t.user?.email || t.teacherCode, status: t.user?.status || "ACTIVE" }
+    };
+  })
 
   const roles = await prisma.role.findMany({
     orderBy: { name: "asc" }

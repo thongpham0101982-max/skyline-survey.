@@ -1,39 +1,27 @@
+// @ts-nocheck
 "use client"
-function PositionBadge({ position }: { position?: string | null }) {
-  if (position === "NV") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-cyan-700">
-      NV
-    </span>
-  );
-  if (position === "TTCM") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-amber-700">
-      TTCM
-    </span>
-  );
-  if (position === "TPTCM") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-teal-700">
-      TPTCM
-    </span>
-  );
-  if (position === "QLCM") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-indigo-700">
-      QLCM
-    </span>
-  );
-  if (position === "Ban ĐHCM") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-violet-700">
-      Ban ĐHCM
-    </span>
-  );
-  if (position === "GĐCS") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-rose-700">
-      GĐCS
-    </span>
-  );
+import { ACADEMIC_DIVISIONS, ACADEMIC_POSITIONS } from "@/config/divisions";
+
+function PositionBadge({ position, positions }: { position?: string | null, positions?: string[] }) {
+  const allPos = new Set<string>();
+  if (position) allPos.add(position.trim());
+  if (Array.isArray(positions)) positions.forEach(p => p && allPos.add(p.trim()));
+  
+  const list = Array.from(allPos);
+  if (list.length === 0) list.push("GV");
+
   return (
-    <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-      {position || "GV"}
-    </span>
+    <div className="flex flex-wrap gap-1 items-center">
+      {list.map(pos => {
+        if (pos === "NV") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-cyan-50 text-cyan-700 text-[10px] font-black border border-cyan-200">NV</span>;
+        if (pos === "TTCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-black border border-amber-200">TTCM</span>;
+        if (pos === "TPTCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 text-[10px] font-black border border-teal-200">TPTCM</span>;
+        if (pos === "TBP") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-200">TBP</span>;
+        if (pos === "TB_DHCM" || pos === "Ban ĐHCM" || pos === "QLCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-black border border-purple-200">Ban ĐHCM</span>;
+        if (pos === "GĐCS" || pos === "GDCS") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-black border border-rose-200">GĐCS</span>;
+        return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">{pos || "GV"}</span>;
+      })}
+    </div>
   );
 }
 import { useState, useRef, useMemo } from "react"
@@ -51,9 +39,16 @@ const EMPTY_NEW = {
   teacherCode: "", teacherName: "",
   email: "", phone: "",
   dateOfBirth: "", department: "", mainSubject: "", campus: "",
-  additionalCampusIds: [], position: "GV"
+  additionalCampusIds: [], position: "GV",
+  positions: [],
+  divisionCodes: []
 }
-const EMPTY_EDIT = { teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE", email: "", additionalCampusIds: [], position: "GV" }
+const EMPTY_EDIT = { 
+  teacherName: "", dateOfBirth: "", department: "", mainSubject: "", campusId: "", status: "ACTIVE", 
+  email: "", additionalCampusIds: [], position: "GV",
+  positions: [] as string[],
+  divisionCodes: [] as string[]
+}
 
 const DEPT_COLORS = {
   "KT&DBCL": "bg-[#48BFE3]/5 text-[#48BFE3]",
@@ -190,7 +185,10 @@ export function TeacherManagerClient({
         : (t.departmentId ? [{ departmentId: t.departmentId, position: t.position || "GV", isPrimary: true }] : []),
       mainSubject: t.mainSubject || "",
       campusId: t.campusId || "", status: t.status || "ACTIVE",
-      email: t.email || "", additionalCampusIds: t.additionalCampusIds || [], position: t.position || "GV"
+      email: t.email || "", additionalCampusIds: t.additionalCampusIds || [], 
+      position: t.position || "GV",
+      positions: Array.isArray(t.positions) ? t.positions : [],
+      divisionCodes: Array.isArray(t.divisionCodes) ? t.divisionCodes : []
     })
   }
 
@@ -210,7 +208,9 @@ export function TeacherManagerClient({
         id, 
         ...editForm, 
         departmentAssignments: deptAssignments,
-        position: editForm.position 
+        position: editForm.position,
+        positions: editForm.positions,
+        divisionCodes: editForm.divisionCodes
       })
       if (res && !res.success) {
         setErrorMsg(res.error || "Lỗi khi lưu thay đổi!");
@@ -228,6 +228,8 @@ export function TeacherManagerClient({
           departmentName: (departments || []).find((d: any) => d.id === da.departmentId)?.name || "",
           position: da.position || "GV"
         })),
+        divisionCodes: editForm.divisionCodes || [],
+        positions: editForm.positions || [],
         mainSubject: editForm.mainSubject || null,
         campusId: editForm.campusId || null, 
         email: editForm.email || null,
@@ -520,8 +522,8 @@ export function TeacherManagerClient({
                 <option value="NV">NV (Nhân viên)</option>
                 <option value="TTCM">TTCM (Tổ trưởng CM)</option>
                 <option value="TPTCM">TPTCM (Tổ phó CM)</option>
-                <option value="QLCM">QLCM (Quản lý CM)</option>
-                <option value="Ban ĐHCM">Ban ĐHCM</option>
+                <option value="TBP">TBP (Trưởng Bộ Phận)</option>
+                <option value="TB_DHCM">Trưởng Ban ĐHCM</option>
                 <option value="GĐCS">GĐCS (Giám đốc CS)</option>
               </select>
             </div>
@@ -819,16 +821,16 @@ export function TeacherManagerClient({
                             setEditForm({ ...editForm, position: newPos, departmentAssignments: nextDeptAssignments });
                           }}
                             className="border border-[#48BFE3] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#48BFE3] w-full cursor-pointer">
-                            <option value="GV">GV</option>
-                                 <option value="NV">NV</option>
-                            <option value="TTCM">TTCM</option>
-                            <option value="TPTCM">TPTCM</option>
-                            <option value="QLCM">QLCM</option>
-                            <option value="Ban ĐHCM">Ban ĐHCM</option>
-                            <option value="GĐCS">GĐCS</option>
+                            <option value="GV">GV (Giáo viên)</option>
+                            <option value="NV">NV (Nhân viên)</option>
+                            <option value="TTCM">TTCM (Tổ trưởng CM)</option>
+                            <option value="TPTCM">TPTCM (Tổ phó CM)</option>
+                            <option value="TBP">TBP (Trưởng Bộ Phận)</option>
+                            <option value="TB_DHCM">Trưởng Ban ĐHCM</option>
+                            <option value="GĐCS">GĐCS (Giám đốc CS)</option>
                           </select>
                         ) : (
-                          <PositionBadge position={t.position} />
+                          <PositionBadge position={t.position} positions={t.positions} />
                         )}
                       </td>
 

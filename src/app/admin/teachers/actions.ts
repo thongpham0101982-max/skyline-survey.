@@ -122,7 +122,8 @@ export async function createTeacherAction(data: any) {
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         departmentId: departmentId,
         mainSubjectId: mainSubjectId,
-        campusId, status: "ACTIVE", position: data.position || "GV"
+        campusId, status: "ACTIVE", position: data.position || "GV",
+        positions: Array.isArray(data.positions) ? JSON.stringify(data.positions) : (data.positions || null)
       }
     })
 
@@ -148,6 +149,11 @@ export async function createTeacherAction(data: any) {
     }
     await syncTeacherDepartments(teacher.id, deptAssignments, data.position || "GV");
 
+    // Sync division assignments (TBP)
+    if (Array.isArray(data.divisionCodes)) {
+      await syncTeacherDivisions(teacher.id, data.divisionCodes);
+    }
+
     if (data.homeroomClassId) {
       await assignHomeroomClass(teacher.id, data.homeroomClassId)
     }
@@ -168,6 +174,16 @@ export async function createTeacherAction(data: any) {
 export async function updateTeacherAction(data: any) {
   try {
     const { id, teacherName, dateOfBirth, campusId } = data
+    const updateData: any = {}
+    if (teacherName) updateData.teacherName = teacherName
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
+    if (campusId !== undefined) updateData.campusId = campusId
+    if (data.status !== undefined) updateData.status = data.status
+    if (data.email !== undefined) updateData.email = data.email || null
+    if (data.position !== undefined) updateData.position = data.position
+    if (data.positions !== undefined) {
+      updateData.positions = Array.isArray(data.positions) ? JSON.stringify(data.positions) : (data.positions || null)
+    }
 
     if (data.teacherCode) {
       const cleanCode = String(data.teacherCode).replace(/-/g, '').trim().toUpperCase()
@@ -179,14 +195,6 @@ export async function updateTeacherAction(data: any) {
         updateData.teacherCode = cleanCode
       }
     }
-
-    const updateData: any = {}
-    if (teacherName) updateData.teacherName = teacherName
-    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
-    if (campusId !== undefined) updateData.campusId = campusId
-    if (data.status !== undefined) updateData.status = data.status
-    if (data.email !== undefined) updateData.email = data.email || null
-    if (data.position !== undefined) updateData.position = data.position
 
     if (data.department !== undefined) {
       updateData.departmentId = await resolveDepartmentId(data.department)
@@ -219,26 +227,16 @@ export async function updateTeacherAction(data: any) {
       }
     }
 
-    // Sync additional campuses (UserCampusAssignment)
-    if (Array.isArray(data.additionalCampusIds)) {
-      const teacher = await prisma.teacher.findUnique({ where: { id }, select: { userId: true, campusId: true } });
-      if (teacher) {
-        const finalCampusId = campusId !== undefined ? campusId : teacher.campusId;
-        const allCampuses = Array.from(new Set([finalCampusId, ...data.additionalCampusIds])).filter(Boolean);
-        await syncAdditionalCampuses(teacher.userId, allCampuses);
-      }
-    } else if (campusId !== undefined) {
-      // Primary campus changed, but additional campuses was not sent/modified.
-      // We should make sure the new primary campus is in UserCampusAssignment!
-      const teacher = await prisma.teacher.findUnique({ 
-        where: { id }, 
-        select: { userId: true, campusId: true, user: { include: { campusAssignments: true } } } 
-      });
-      if (teacher) {
-        const currentAdditional = teacher.user.campusAssignments
+    // Sync additional campuses if campusId or additionalCampusIds is modified
+    if (data.additionalCampusIds !== undefined || campusId !== undefined) {
+      const teacher = await prisma.teacher.findUnique({ where: { id } });
+      if (teacher && teacher.userId) {
+        const currentAdditional = data.additionalCampusIds !== undefined
+          ? data.additionalCampusIds
+          : (await prisma.userCampusAssignment.findMany({ where: { userId: teacher.userId } }))
           .map(a => a.campusId)
           .filter(cid => cid !== teacher.campusId); // remove old primary
-        const allCampuses = Array.from(new Set([campusId, ...currentAdditional])).filter(Boolean);
+        const allCampuses = Array.from(new Set([campusId !== undefined ? campusId : teacher.campusId, ...currentAdditional])).filter(Boolean);
         await syncAdditionalCampuses(teacher.userId, allCampuses);
       }
     }
@@ -254,6 +252,11 @@ export async function updateTeacherAction(data: any) {
         if (resolvedId) deptAssignments = [{ departmentId: resolvedId, position: data.position || "GV", isPrimary: true }];
       }
       await syncTeacherDepartments(id, deptAssignments, data.position);
+    }
+
+    // Sync division assignments (TBP)
+    if (data.divisionCodes !== undefined) {
+      await syncTeacherDivisions(id, Array.isArray(data.divisionCodes) ? data.divisionCodes : []);
     }
 
     revalidatePath("/admin/teachers")
@@ -373,7 +376,7 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
 
       if (row.campus) {
         const campusParts = typeof row.campus === "string"
-          ? row.campus.split(/[,;|]/).map(s => s.trim())
+          ? row.campus.split(/[,;|]/).map((s: string) => s.trim())
           : [row.campus];
         
         const primaryResolved = campusMap.get(campusParts[0]);
@@ -483,7 +486,7 @@ export async function assignTeachersToRoleAction(teacherIds: string[], roleCode:
     revalidatePath("/admin/teachers");
     revalidatePath("/admin/users");
     return { success: true };
-  } catch (e) {
+  } catch (e: any) {
     return { success: false, error: e.message };
   }
 }
@@ -549,3 +552,23 @@ export async function syncTeacherDepartments(
     });
   }
 }
+
+/** Đồng bộ TeacherDivisionAssignment cho teacherId (TBP) */
+export async function syncTeacherDivisions(teacherId: string, divisionCodes: string[]) {
+  const pAny = prisma as any;
+  if (!pAny.teacherDivisionAssignment) return;
+  await pAny.teacherDivisionAssignment.deleteMany({ where: { teacherId } });
+  if (Array.isArray(divisionCodes) && divisionCodes.length > 0) {
+    const validCodes = Array.from(new Set(divisionCodes.filter(Boolean)));
+    if (validCodes.length > 0) {
+      await pAny.teacherDivisionAssignment.createMany({
+        data: validCodes.map(code => ({
+          teacherId,
+          divisionCode: code,
+          roleInDivision: "TBP"
+        }))
+      });
+    }
+  }
+}
+

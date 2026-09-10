@@ -65,12 +65,14 @@ model Teacher {
   campusId               String
   status                 String                    @default("ACTIVE")
   position               String                    @default("GV")
+  positions              String?
   dateOfBirth            DateTime?
   departmentId           String?
   mainSubjectId          String?
   mainSubjectRel         Subject?                  @relation("teacherMainSubject", fields: [mainSubjectId], references: [id])
   departmentRel          Department?               @relation(fields: [departmentId], references: [id])
   departmentAssignments  TeacherDepartmentAssignment[]
+  divisionAssignments    TeacherDivisionAssignment[]
   user                   User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   campus                 Campus                    @relation(fields: [campusId], references: [id])
   classes                TeacherClassAssignment[]
@@ -823,6 +825,7 @@ model Department {
   name        String
   description String?
   blockCM     String?
+  divisionCode String?
   teamsWebhookUrl String?
   status      String    @default("ACTIVE")
   createdAt   DateTime  @default(now())
@@ -1688,6 +1691,21 @@ model TeacherDepartmentAssignment {
   @@unique([teacherId, departmentId])
   @@index([teacherId])
   @@index([departmentId])
+}
+
+model TeacherDivisionAssignment {
+  id           String   @id @default(cuid())
+  teacherId    String
+  divisionCode String
+  roleInDivision String @default("TBP") // "TBP", "PHU_TRACH"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  teacher      Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, divisionCode])
+  @@index([teacherId])
+  @@index([divisionCode])
 }
 
 

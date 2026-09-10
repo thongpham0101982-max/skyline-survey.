@@ -22,6 +22,7 @@ export default async function AdminObservationPage(props: {
   const grade = searchParams.grade || "all"
   const period = searchParams.period || "all"
   const date = searchParams.date || ""
+  const divisionCode = searchParams.divisionCode || "all"
   const campusId = searchParams.campusId || "all"
   const deptId = searchParams.deptId || "all"
   const classId = searchParams.classId || "all"
@@ -43,6 +44,7 @@ export default async function AdminObservationPage(props: {
     period,
     date,
     campusId,
+    divisionCode,
     deptId
   })
 
@@ -53,10 +55,11 @@ export default async function AdminObservationPage(props: {
       currentTeacher={refDataResult.currentTeacher}
       subjects={refDataResult.subjects || []}
       departments={refDataResult.departments || []}
+      divisions={refDataResult.divisions || []}
       teachers={refDataResult.teachers || []}
       campuses={refDataResult.campuses || []}
       classes={refDataResult.classes || []}
-      initialFilters={{ level, grade, classId, period, date, campusId, deptId, academicYearId }}
+      initialFilters={{ level, grade, classId, period, date, campusId, divisionCode, deptId, academicYearId }}
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
       initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}

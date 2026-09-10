@@ -40,12 +40,15 @@ interface AdminTongHopClientProps {
   currentTeacher: TeacherInfo | null
   subjects: SubjectInfo[]
   departments: DeptInfo[]
+  divisions?: any[]
   teachers: any[]
   campuses: CampusInfo[]
   classes: ClassInfo[]
-  initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; deptId: string; academicYearId?: string }
+  initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; divisionCode?: string; deptId: string; academicYearId?: string }
   isTTCM: boolean
   isSuperAdmin: boolean
+  isHeadOfAcademic?: boolean
+  isTBP?: boolean
   isGDCS?: boolean
   academicYears?: { id: string; name: string; status: string }[]
   selectedYearId?: string

@@ -358,11 +358,14 @@ export async function getObservationData(academicYearId?: string) {
       evaluation: e
     })).filter((item: any) => item.slot != null);
 
+import { ACADEMIC_DIVISIONS } from "@/config/divisions";
+
     return {
       success: true,
       currentTeacher,
       subjects,
       departments,
+      divisions: ACADEMIC_DIVISIONS,
       teachers,
       campuses,
       classes,
@@ -379,6 +382,7 @@ export async function getObservationSlots(filters: {
     schoolBlock?: string
     campusId?: string
     deptId?: string
+    divisionCode?: string
     level?: string
     grade?: string
     classId?: string
@@ -495,6 +499,23 @@ export async function getObservationSlots(filters: {
         }
       }
       andConditions.push({ OR: campusOrs });
+    }
+    if (filters.divisionCode && filters.divisionCode !== "all") {
+      andConditions.push({
+        OR: [
+          {
+            teacher: {
+              OR: [
+                { departmentRel: { divisionCode: filters.divisionCode } },
+                { departmentAssignments: { some: { department: { divisionCode: filters.divisionCode } } } }
+              ]
+            }
+          },
+          {
+            targetDept: { divisionCode: filters.divisionCode }
+          }
+        ]
+      });
     }
     if (filters.deptId && filters.deptId !== "all") {
       andConditions.push({

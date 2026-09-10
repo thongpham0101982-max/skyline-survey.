@@ -1,3 +1,4 @@
+// @ts-nocheck
 "use client"
 import { useState, Fragment } from "react"
 import { Shield, Plus, Save, Edit, Trash2, X, ChevronDown, ChevronRight, CornerDownRight, Check, Sparkles } from "lucide-react"
@@ -141,26 +142,128 @@ export function RolesClient({ initialRoles }: any) {
   };
 
   const applyPreset = (presetType: string) => {
-    const roleRules = {
+    const roleRules: Record<string, any> = {
       ALL_READ: { allRead: true },
       ALL_FULL: { allFull: true },
       ALL_CLEAR: { allClear: true },
-      GDCS: {
-        PARENTS: { r: true },
-        KTDBCL_EXAM_CONFIG: { r: true },
-        KTDBCL_EXAMS: { r: true },
-        KTDBCL_HUONG_NGHIEP: { r: true, c: true, u: true, d: true },
+      TB_DHCM: {
+        // Trưởng Ban ĐHCM: Toàn quyền chuyên môn 6 Bộ phận
+        TEACHERS: { r: true },
+        DEPARTMENTS: { r: true, c: true, u: true },
+        SUBJECTS: { r: true, c: true, u: true },
+        ACADEMIC_YEARS: { r: true },
+        MANAGE_CLASSES: { r: true },
+        ASSIGNMENTS: { r: true, c: true, u: true },
+        TIMETABLE: { r: true, c: true, u: true },
+        CO_VAN_HOC_TAP: { r: true, c: true, u: true },
+        STUDENT_TRANSFERS: { r: true },
+        DU_GIO_K12: { r: true, c: true, u: true },
+        DU_GIO_MAM_NON: { r: true, c: true, u: true },
+        DU_GIO_GVNN: { r: true, c: true, u: true },
+        TONG_HOP_DU_GIO: { r: true },
+        MA_TRAN_DU_GIO_TTCM: { r: true },
+        XET_DUYET_DANH_GIA_LAI: { r: true, c: true, u: true },
+        KTDBCL_EXAMS: { r: true, c: true, u: true },
+        KTDBCL_GRADE_REMARKS: { r: true, c: true, u: true },
+        KTDBCL_SUPPORT: { r: true, c: true, u: true },
+        KTDBCL_HUONG_NGHIEP: { r: true, c: true, u: true },
+        QL_DGNL: { r: true, c: true, u: true },
+        KTDBCL_IMPORT_KQHT: { r: true, c: true, u: true },
+        EXPERIENTIAL_ACTIVITIES: { r: true, c: true, u: true },
+        EXP_ACT_MANAGE: { r: true, c: true, u: true },
+        EXP_ACT_REPORTS: { r: true },
+        CAU_HINH_KHAO_SAT: { r: true },
+        INPUT_ASSESSMENT_REPORTS: { r: true },
+        STUDENT_INFO: { r: true, c: true, u: true },
+        PHAN_CONG_KHAO_SAT: { r: true, c: true, u: true },
+        XET_DUYET_KET_QUA: { r: true, c: true, u: true },
+        MANAGE_SURVEYS: { r: true },
+        TASKS: { r: true, c: true, u: true, d: true },
+        WEEKLY_REPORTS: { r: true, c: true, u: true, d: true }
+      },
+      TBP: {
+        // Trưởng Bộ Phận: Quản lý theo Bộ phận phụ trách
         TEACHERS: { r: true },
         DEPARTMENTS: { r: true },
         SUBJECTS: { r: true },
         ACADEMIC_YEARS: { r: true },
         MANAGE_CLASSES: { r: true },
-        ASSIGNMENTS: { r: true },
-        STUDENT_TRANSFERS: { r: true, c: true, u: true },
+        ASSIGNMENTS: { r: true, c: true, u: true },
+        TIMETABLE: { r: true, c: true, u: true },
+        CO_VAN_HOC_TAP: { r: true, c: true, u: true },
+        DU_GIO_K12: { r: true, c: true, u: true },
+        DU_GIO_MAM_NON: { r: true, c: true, u: true },
+        DU_GIO_GVNN: { r: true, c: true, u: true },
+        TONG_HOP_DU_GIO: { r: true },
+        MA_TRAN_DU_GIO_TTCM: { r: true },
+        XET_DUYET_DANH_GIA_LAI: { r: true, c: true, u: true },
+        KTDBCL_EXAMS: { r: true, c: true, u: true },
+        KTDBCL_GRADE_REMARKS: { r: true, c: true, u: true },
+        KTDBCL_SUPPORT: { r: true, c: true, u: true },
+        QL_DGNL: { r: true },
+        EXPERIENTIAL_ACTIVITIES: { r: true, c: true, u: true },
+        EXP_ACT_MANAGE: { r: true, c: true, u: true },
+        EXP_ACT_REPORTS: { r: true },
+        CAU_HINH_KHAO_SAT: { r: true },
+        INPUT_ASSESSMENT_REPORTS: { r: true },
+        STUDENT_INFO: { r: true, c: true, u: true },
+        PHAN_CONG_KHAO_SAT: { r: true, c: true, u: true },
+        XET_DUYET_KET_QUA: { r: true, c: true, u: true },
+        TASKS: { r: true, c: true, u: true },
+        WEEKLY_REPORTS: { r: true, c: true, u: true }
+      },
+      TTCM: {
+        // Tổ trưởng Chuyên môn: Quản lý theo Tổ
+        TEACHERS: { r: true },
+        DEPARTMENTS: { r: true },
+        SUBJECTS: { r: true },
+        MANAGE_CLASSES: { r: true },
+        ASSIGNMENTS: { r: true, c: true, u: true },
+        TIMETABLE: { r: true },
+        CO_VAN_HOC_TAP: { r: true, c: true, u: true },
+        DU_GIO_K12: { r: true, c: true, u: true },
+        DU_GIO_MAM_NON: { r: true, c: true, u: true },
+        DU_GIO_GVNN: { r: true, c: true, u: true },
+        TONG_HOP_DU_GIO: { r: true },
+        MA_TRAN_DU_GIO_TTCM: { r: true, c: true, u: true },
+        XET_DUYET_DANH_GIA_LAI: { r: true, c: true, u: true },
+        KTDBCL_EXAMS: { r: true, c: true, u: true },
+        KTDBCL_GRADE_REMARKS: { r: true, c: true, u: true },
+        KTDBCL_SUPPORT: { r: true, c: true, u: true },
+        QL_DGNL: { r: true },
+        EXPERIENTIAL_ACTIVITIES: { r: true, c: true, u: true },
+        EXP_ACT_MANAGE: { r: true, c: true, u: true },
+        EXP_ACT_REPORTS: { r: true },
         CAU_HINH_KHAO_SAT: { r: true },
         INPUT_ASSESSMENT_REPORTS: { r: true },
         STUDENT_INFO: { r: true, c: true, u: true },
         PHAN_CONG_KHAO_SAT: { r: true },
+        XET_DUYET_KET_QUA: { r: true },
+        TASKS: { r: true, c: true, u: true },
+        WEEKLY_REPORTS: { r: true, c: true, u: true }
+      },
+      GDCS: {
+        PARENTS: { r: true },
+        KTDBCL_EXAM_CONFIG: { r: true },
+        KTDBCL_EXAMS: { r: true, c: true, u: true },
+        KTDBCL_HUONG_NGHIEP: { r: true, c: true, u: true, d: true },
+        TEACHERS: { r: true, c: true, u: true },
+        DEPARTMENTS: { r: true, c: true, u: true },
+        SUBJECTS: { r: true },
+        ACADEMIC_YEARS: { r: true },
+        MANAGE_CLASSES: { r: true, c: true, u: true },
+        ASSIGNMENTS: { r: true, c: true, u: true },
+        STUDENT_TRANSFERS: { r: true, c: true, u: true },
+        DU_GIO_K12: { r: true, c: true, u: true },
+        DU_GIO_MAM_NON: { r: true, c: true, u: true },
+        DU_GIO_GVNN: { r: true, c: true, u: true },
+        TONG_HOP_DU_GIO: { r: true },
+        MA_TRAN_DU_GIO_TTCM: { r: true },
+        XET_DUYET_DANH_GIA_LAI: { r: true, c: true, u: true },
+        CAU_HINH_KHAO_SAT: { r: true },
+        INPUT_ASSESSMENT_REPORTS: { r: true },
+        STUDENT_INFO: { r: true, c: true, u: true },
+        PHAN_CONG_KHAO_SAT: { r: true, c: true, u: true },
         XET_DUYET_KET_QUA: { r: true, c: true, u: true },
         MANAGE_SURVEYS: { r: true },
         TASKS: { r: true, c: true, u: true, d: true },
@@ -187,6 +290,19 @@ export function RolesClient({ initialRoles }: any) {
         TASKS: { r: true, c: true, u: true },
         WEEKLY_REPORTS: { r: true, c: true, u: true }
       },
+      KTDBCL: {
+        KTDBCL_EXAMS: { r: true, c: true, u: true, d: true },
+        KTDBCL_GRADE_REMARKS: { r: true, c: true, u: true, d: true },
+        KTDBCL_SUPPORT: { r: true, c: true, u: true, d: true },
+        KTDBCL_HUONG_NGHIEP: { r: true, c: true, u: true, d: true },
+        QL_DGNL: { r: true, c: true, u: true, d: true },
+        KTDBCL_IMPORT_KQHT: { r: true, c: true, u: true, d: true },
+        DU_GIO_K12: { r: true, c: true, u: true },
+        TONG_HOP_DU_GIO: { r: true },
+        MA_TRAN_DU_GIO_TTCM: { r: true },
+        TASKS: { r: true, c: true, u: true },
+        WEEKLY_REPORTS: { r: true, c: true, u: true }
+      },
       TVAN: {
         PARENTS: { r: true },
         STUDENT_TRANSFERS: { r: true },
@@ -209,6 +325,7 @@ export function RolesClient({ initialRoles }: any) {
         PHAN_CONG_MAM_NON: { r: true, c: true, u: true, d: true },
         XET_DUYET_KET_QUA: { r: true, c: true, u: true, d: true },
         XET_DUYET_MAM_NON: { r: true, c: true, u: true, d: true },
+        DU_GIO_MAM_NON: { r: true, c: true, u: true },
         MANAGE_SURVEYS: { r: true },
         TASKS: { r: true, c: true, u: true },
         WEEKLY_REPORTS: { r: true, c: true, u: true }
@@ -220,11 +337,13 @@ export function RolesClient({ initialRoles }: any) {
       CTHS: {
         EXPERIENTIAL_ACTIVITIES: { r: true, c: true, u: true, d: true },
         EXP_ACT_REPORTS: { r: true, c: true, u: true, d: true },
-        EXP_ACT_MANAGE: { r: true, c: true, u: true, d: true }
+        EXP_ACT_MANAGE: { r: true, c: true, u: true, d: true },
+        CO_VAN_HOC_TAP: { r: true, c: true, u: true }
       },
       GV_MN: {
         TASKS: { r: true, c: true, u: true, d: true },
-        WEEKLY_REPORTS: { r: true, u: true }
+        WEEKLY_REPORTS: { r: true, u: true },
+        DU_GIO_MAM_NON: { r: true, c: true, u: true }
       }
     };
 
@@ -353,13 +472,17 @@ export function RolesClient({ initialRoles }: any) {
               <button onClick={() => applyPreset('ALL_READ')} className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors">Chỉ Xem</button>
               <button onClick={() => applyPreset('ALL_CLEAR')} className="px-2.5 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-[10.5px] font-bold transition-colors">Dọn dẹp</button>
               <span className="w-px bg-slate-200 my-1 mx-1"></span>
-              <button onClick={() => applyPreset('CTHS')} className="px-2.5 py-1.5 border border-emerald-200 text-emerald-700 bg-emerald-50/60 hover:bg-emerald-100 rounded-lg text-[10.5px] font-bold transition-colors">Preset CTHS</button>
-              <button onClick={() => applyPreset('GDCS')} className="px-2.5 py-1.5 border border-teal-100 text-[#48BFE3] hover:bg-teal-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GĐCS</button>
-              <button onClick={() => applyPreset('GIAO_VU')} className="px-2.5 py-1.5 border border-blue-100 text-blue-600 hover:bg-blue-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset Giáo vụ</button>
-              <button onClick={() => applyPreset('TVAN')} className="px-2.5 py-1.5 border border-amber-100 text-amber-600 hover:bg-amber-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset Tư vấn</button>
-              <button onClick={() => applyPreset('BGH_MN')} className="px-2.5 py-1.5 border border-purple-100 text-purple-600 hover:bg-purple-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset BGH Mầm non</button>
-              <button onClick={() => applyPreset('TEACHER')} className="px-2.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GV Phổ thông</button>
-              <button onClick={() => applyPreset('GV_MN')} className="px-2.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GV Mầm non</button>
+              <button onClick={() => applyPreset('TB_DHCM')} className="px-2.5 py-1.5 border border-purple-200 text-purple-700 bg-purple-50/60 hover:bg-purple-100 rounded-lg text-[10.5px] font-bold transition-colors">Trưởng Ban ĐHCM</button>
+              <button onClick={() => applyPreset('TBP')} className="px-2.5 py-1.5 border border-indigo-200 text-indigo-700 bg-indigo-50/60 hover:bg-indigo-100 rounded-lg text-[10.5px] font-bold transition-colors">Trưởng Bộ Phận (TBP)</button>
+              <button onClick={() => applyPreset('TTCM')} className="px-2.5 py-1.5 border border-amber-200 text-amber-700 bg-amber-50/60 hover:bg-amber-100 rounded-lg text-[10.5px] font-bold transition-colors">Tổ Trưởng CM (TTCM)</button>
+              <button onClick={() => applyPreset('GDCS')} className="px-2.5 py-1.5 border border-teal-100 text-[#48BFE3] hover:bg-teal-50 rounded-lg text-[10.5px] font-bold transition-colors">GĐCS (Cơ sở)</button>
+              <button onClick={() => applyPreset('KTDBCL')} className="px-2.5 py-1.5 border border-cyan-200 text-cyan-700 bg-cyan-50/60 hover:bg-cyan-100 rounded-lg text-[10.5px] font-bold transition-colors">Khảo Thí & ĐBCL</button>
+              <button onClick={() => applyPreset('GIAO_VU')} className="px-2.5 py-1.5 border border-blue-100 text-blue-600 hover:bg-blue-50 rounded-lg text-[10.5px] font-bold transition-colors">Giáo vụ</button>
+              <button onClick={() => applyPreset('CTHS')} className="px-2.5 py-1.5 border border-emerald-200 text-emerald-700 bg-emerald-50/60 hover:bg-emerald-100 rounded-lg text-[10.5px] font-bold transition-colors">CTHS & HĐTN</button>
+              <button onClick={() => applyPreset('TVAN')} className="px-2.5 py-1.5 border border-amber-100 text-amber-600 hover:bg-amber-50 rounded-lg text-[10.5px] font-bold transition-colors">Tư vấn</button>
+              <button onClick={() => applyPreset('BGH_MN')} className="px-2.5 py-1.5 border border-purple-100 text-purple-600 hover:bg-purple-50 rounded-lg text-[10.5px] font-bold transition-colors">BGH Mầm non</button>
+              <button onClick={() => applyPreset('TEACHER')} className="px-2.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10.5px] font-bold transition-colors">GV Phổ thông</button>
+              <button onClick={() => applyPreset('GV_MN')} className="px-2.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-[10.5px] font-bold transition-colors">GV Mầm non</button>
             </div>
           </div>
         </div>

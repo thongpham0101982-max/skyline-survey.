@@ -18,6 +18,7 @@ import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen,
   CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
   BarChart3, PieChart, Printer
 } from "lucide-react"
+import { ACADEMIC_DIVISIONS } from "@/config/divisions";
 
 const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
 const k12Labels = [
@@ -178,10 +179,11 @@ interface ObservationClientProps {
   currentTeacher?: TeacherInfo | null
   subjects: SubjectInfo[]
   departments: DeptInfo[]
+  divisions?: any[]
   teachers: any[]
   campuses: CampusInfo[]
   classes: ClassInfo[]
-  initialFilters: { level: string; period: string; grade: string; classId?: string; date: string; month?: string; campusId: string; deptId: string; academicYearId?: string }
+  initialFilters: { level: string; period: string; grade: string; classId?: string; date: string; month?: string; campusId: string; deptId: string; divisionCode?: string; academicYearId?: string }
   academicYears?: { id: string; name: string; status: string }[]
   selectedYearId?: string
   initialReceivedEvaluations?: any[]
@@ -492,6 +494,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [filterDate, setFilterDate] = useState(initialFilters.date || "")
   const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId || "all")
   const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId || "all")
+  const [filterDivisionCode, setFilterDivisionCode] = useState(initialFilters.divisionCode || "all")
   const [filterClassId, setFilterClassId] = useState(initialFilters.classId || "all")
   const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
 
@@ -995,6 +998,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const params = new URLSearchParams(window.location.search)
     if (filterSchoolBlock && filterSchoolBlock !== "all") params.set("schoolBlock", filterSchoolBlock); else params.delete("schoolBlock")
     if (filterCampusId && filterCampusId !== "all") params.set("campusId", filterCampusId); else params.delete("campusId")
+    if (filterDivisionCode && filterDivisionCode !== "all") params.set("divisionCode", filterDivisionCode); else params.delete("divisionCode")
     if (filterDeptId && filterDeptId !== "all") params.set("deptId", filterDeptId); else params.delete("deptId")
     if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
     if (filterGrade && filterGrade !== "all") params.set("grade", filterGrade); else params.delete("grade")
@@ -1009,6 +1013,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const res = await getObservationSlots({ 
         schoolBlock: filterSchoolBlock, 
         campusId: filterCampusId, 
+        divisionCode: filterDivisionCode,
         deptId: filterDeptId, 
         level: filterLevel, 
         grade: filterGrade, 
@@ -1024,7 +1029,7 @@ export function ObservationClient(props: ObservationClientProps) {
     } finally {
       setIsSearching(false)
     }
-  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, filterAcademicYearId, router, pathname])
+  }, [filterSchoolBlock, filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, filterAcademicYearId, router, pathname])
 
   useEffect(() => {
     if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current)
@@ -1032,7 +1037,7 @@ export function ObservationClient(props: ObservationClientProps) {
       handleSearch()
     }, 400)
     return () => { if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current) }
-  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, handleSearch])
+  }, [filterSchoolBlock, filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, handleSearch])
 
   const filterAvailableClasses = useMemo(() => {
     return classes.filter(c => {
@@ -1063,6 +1068,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (filterCampusId && filterCampusId !== "all") count++
+    if (filterDivisionCode && filterDivisionCode !== "all") count++
     if (filterDeptId && filterDeptId !== "all") count++
     if (filterLevel && filterLevel !== "all") count++
     if (filterGrade && filterGrade !== "all") count++
@@ -1071,13 +1077,17 @@ export function ObservationClient(props: ObservationClientProps) {
     if (filterMonth && filterMonth !== "all") count++
     if (filterPeriod && filterPeriod !== "all") count++
     return count
-  }, [filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod])
+  }, [filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod])
 
   const activeFilterTags = useMemo(() => {
     const tags: { key: string; label: string; value: string; onRemove: () => void }[] = []
     if (filterCampusId && filterCampusId !== "all") {
       const campus = campuses.find(c => c.id === filterCampusId)
       tags.push({ key: "campus", label: "Cơ sở", value: campus?.campusName || filterCampusId, onRemove: () => { setFilterCampusId("all"); setFilterClassId("all"); } })
+    }
+    if (filterDivisionCode && filterDivisionCode !== "all") {
+      const div = (props.divisions || ACADEMIC_DIVISIONS).find((d: any) => d.code === filterDivisionCode)
+      tags.push({ key: "division", label: "Bộ phận", value: div?.name || filterDivisionCode, onRemove: () => { setFilterDivisionCode("all"); setFilterDeptId("all"); } })
     }
     if (filterDeptId && filterDeptId !== "all") {
       const dept = departments.find(d => d.id === filterDeptId)
@@ -1106,10 +1116,11 @@ export function ObservationClient(props: ObservationClientProps) {
       tags.push({ key: "period", label: "Tiết", value: filterPeriod, onRemove: () => setFilterPeriod("all") })
     }
     return tags
-  }, [filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod, campuses, departments, classes])
+  }, [filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod, campuses, departments, classes, props.divisions])
 
   const clearAllFilters = () => {
     setFilterCampusId("all")
+    setFilterDivisionCode("all")
     setFilterDeptId("all")
     setFilterLevel("all")
     setFilterGrade("all")
@@ -1124,6 +1135,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const res = await getObservationSlots({ 
       schoolBlock: filterSchoolBlock, 
       campusId: filterCampusId, 
+      divisionCode: filterDivisionCode,
       deptId: filterDeptId, 
       level: filterLevel, 
       grade: filterGrade, 
@@ -4159,8 +4171,8 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
         
-        {/* Compact Advanced Filter Bar (7 Filters) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+        {/* Compact Advanced Filter Bar (8 Filters) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
           {/* 1. Tháng */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tháng</span>
@@ -4178,7 +4190,7 @@ export function ObservationClient(props: ObservationClientProps) {
               })}
             </select>
           </div>
-          {/* 1. Cơ sở */}
+          {/* 2. Cơ sở */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Cơ sở</span>
             <select value={filterCampusId} onChange={e => { setFilterCampusId(e.target.value); setFilterClassId("all"); }}
@@ -4188,20 +4200,45 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
-          {/* 2. Tổ chuyên môn */}
+          {/* 3. Bộ phận (Ban ĐHCM) */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-indigo-500 uppercase flex items-center gap-1">
+              <span>🏢 Bộ phận</span>
+            </span>
+            <select 
+              value={filterDivisionCode} 
+              onChange={e => { setFilterDivisionCode(e.target.value); setFilterDeptId("all"); }}
+              className="w-full text-xs font-bold rounded-xl border border-indigo-200 p-2 bg-indigo-50/30 text-indigo-950 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="all">Tất cả 6 Bộ phận</option>
+              {(props.divisions || ACADEMIC_DIVISIONS).map(div => (
+                <option key={div.code} value={div.code}>{div.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Tổ chuyên môn */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tổ chuyên môn</span>
             <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
               className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">{isMamNonTeacher ? "Tất cả Tổ Mầm non & TA" : "Tất cả TCM"}</option>
-              {(isMamNonTeacher
-                ? departments.filter(d => isPreschoolDepartment(d.name || d.code || "") || ((d as any).blockCM || "").toLowerCase().includes("mam non") || (d.code && ["TO_TACTQ_MN.S", "TO_TACTQ_PT.G"].includes(d.code)))
-                : departments
+              {(
+                departments
+                  .filter(d => {
+                    if (filterDivisionCode && filterDivisionCode !== "all") {
+                      return (d as any).divisionCode === filterDivisionCode;
+                    }
+                    if (isMamNonTeacher) {
+                      return isPreschoolDepartment(d.name || d.code || "") || ((d as any).blockCM || "").toLowerCase().includes("mam non") || (d.code && ["TO_TACTQ_MN.S", "TO_TACTQ_PT.G"].includes(d.code));
+                    }
+                    return true;
+                  })
               ).map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
           </div>
 
-          {/* 3. Bậc học */}
+          {/* 5. Bậc học */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Bậc học</span>
             <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); setFilterClassId("all"); }}

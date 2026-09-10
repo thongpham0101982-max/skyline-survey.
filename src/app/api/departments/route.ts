@@ -1,12 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getDivisionByCode } from "@/config/divisions";
 
 export async function GET() {
   try {
-    const departments = await prisma.department.findMany({
-      orderBy: { name: "asc" }
+    const [departments, divisionAssignments] = await Promise.all([
+      prisma.department.findMany({
+        orderBy: { name: "asc" },
+        include: {
+          _count: {
+            select: {
+              teachers: true,
+              teacherAssignments: true
+            }
+          }
+        }
+      }),
+      (prisma as any).teacherDivisionAssignment?.findMany({
+        include: {
+          teacher: {
+            select: {
+              id: true,
+              teacherCode: true,
+              teacherName: true,
+              email: true,
+              phone: true,
+              campus: { select: { campusName: true } }
+            }
+          }
+        }
+      }).catch(() => [])
+    ]);
+
+    return NextResponse.json({
+      departments,
+      divisionAssignments: divisionAssignments || []
     });
-    return NextResponse.json(departments);
   } catch (error: any) {
     console.error("Error fetching departments:", error);
     return NextResponse.json({ error: "Failed to fetch departments" }, { status: 500 });
@@ -16,8 +45,71 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { code, name, description, blockCM, teamsWebhookUrl } = body;
+    const { action, code, name, description, blockCM, divisionCode, teamsWebhookUrl, departmentIds, teacherId, targetDivisionCode } = body;
 
+    // Batch Assign Departments to Division
+    if (action === "batchAssignDivision" || action === "batchAssign") {
+      if (!targetDivisionCode || !Array.isArray(departmentIds) || departmentIds.length === 0) {
+        return NextResponse.json({ error: "Vui lòng chọn Bộ Phận và ít nhất 1 Tổ chuyên môn" }, { status: 400 });
+      }
+      const divMeta = getDivisionByCode(targetDivisionCode);
+      const autoBlockCM = divMeta?.defaultBlockCM || null;
+
+      await prisma.department.updateMany({
+        where: { id: { in: departmentIds } },
+        data: {
+          divisionCode: targetDivisionCode,
+          ...(autoBlockCM ? { blockCM: autoBlockCM } : {})
+        }
+      });
+
+      return NextResponse.json({ success: true, count: departmentIds.length });
+    }
+
+    // Assign Head of Division (TBP)
+    if (action === "assignDivisionHead" || action === "assignTBP") {
+      if (!targetDivisionCode || !teacherId) {
+        return NextResponse.json({ error: "Thiếu mã Bộ phận hoặc ID Giáo viên" }, { status: 400 });
+      }
+
+      const pAny = prisma as any;
+      if (pAny.teacherDivisionAssignment) {
+        await pAny.teacherDivisionAssignment.upsert({
+          where: {
+            teacherId_divisionCode: {
+              teacherId,
+              divisionCode: targetDivisionCode
+            }
+          },
+          create: {
+            teacherId,
+            divisionCode: targetDivisionCode,
+            roleInDivision: "TBP"
+          },
+          update: {
+            roleInDivision: "TBP"
+          }
+        });
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
+    // Remove Head of Division
+    if (action === "removeDivisionHead" || action === "removeTBP") {
+      const pAny = prisma as any;
+      if (pAny.teacherDivisionAssignment) {
+        await pAny.teacherDivisionAssignment.deleteMany({
+          where: {
+            divisionCode: targetDivisionCode,
+            ...(teacherId ? { teacherId } : {})
+          }
+        });
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    // Standard Create Department
     if (!code || !name) {
       return NextResponse.json({ error: "Mã Tổ và Tên Tổ là bắt buộc" }, { status: 400 });
     }
@@ -41,12 +133,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Tên Tổ "${trimmedName}" đã tồn tại.` }, { status: 400 });
     }
 
+    const divMeta = divisionCode ? getDivisionByCode(divisionCode) : undefined;
+    const finalBlockCM = blockCM ? String(blockCM).trim() : (divMeta?.defaultBlockCM || null);
+
     const department = await prisma.department.create({
       data: {
         code: trimmedCode,
         name: trimmedName,
         description: description ? String(description).trim() : null,
-        blockCM: blockCM ? String(blockCM).trim() : null,
+        divisionCode: divisionCode ? String(divisionCode).trim() : null,
+        blockCM: finalBlockCM,
         teamsWebhookUrl: teamsWebhookUrl ? String(teamsWebhookUrl).trim() : null,
         status: "ACTIVE"
       }
@@ -62,7 +158,7 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, code, name, description, blockCM, teamsWebhookUrl } = body;
+    const { id, code, name, description, blockCM, divisionCode, teamsWebhookUrl } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Thiếu ID Tổ chuyên môn" }, { status: 400 });
@@ -92,13 +188,17 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: `Tên Tổ "${trimmedName}" đã được sử dụng ở tổ khác.` }, { status: 400 });
     }
 
+    const divMeta = divisionCode ? getDivisionByCode(divisionCode) : undefined;
+    const finalBlockCM = blockCM ? String(blockCM).trim() : (divMeta?.defaultBlockCM || null);
+
     const department = await prisma.department.update({
       where: { id },
       data: {
         code: trimmedCode,
         name: trimmedName,
         description: description ? String(description).trim() : null,
-        blockCM: blockCM ? String(blockCM).trim() : null,
+        divisionCode: divisionCode ? String(divisionCode).trim() : null,
+        blockCM: finalBlockCM,
         teamsWebhookUrl: teamsWebhookUrl ? String(teamsWebhookUrl).trim() : null
       }
     });
@@ -116,7 +216,7 @@ export async function DELETE(req: NextRequest) {
     const id = searchParams.get("id");
     const ids = searchParams.get("ids");
 
-    let idList = [];
+    let idList: string[] = [];
     if (ids) {
       idList = ids.split(",").map(i => i.trim()).filter(Boolean);
     } else if (id) {
