@@ -2180,51 +2180,68 @@ export function ObservationClient(props: ObservationClientProps) {
     });
   }, [myObservedSlots, observedOriginFilter]);
 
+  // Các tiết dự hợp lệ (bản thân GV đã có phiếu đánh giá / nhận xét)
+  const myValidObservedSlots = useMemo(() => {
+    return myObservedSlots.filter(slot => {
+      const reg = slot.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
+      return reg && (reg.isApproved || isSurpriseSlot(slot)) && !!reg.evaluation;
+    });
+  }, [myObservedSlots, currentTeacher?.id]);
+
   const myObservedCount = useMemo(() => {
     let count = 0;
-    slots.forEach(slot => {
-      const reg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved && r.evaluation);
-      if (reg) count += (slot.isDoublePeriod ? 2 : 1);
+    myValidObservedSlots.forEach(slot => {
+      count += (slot.isDoublePeriod ? 2 : 1);
     });
     return count;
-  }, [slots, currentTeacher?.id]);
+  }, [myValidObservedSlots]);
 
   const mySurpriseObservedCount = useMemo(() => {
     let count = 0;
-    slots.forEach(slot => {
+    myValidObservedSlots.forEach(slot => {
       if (isSurpriseSlot(slot)) {
-        const reg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved && r.evaluation);
-        if (reg) count += (slot.isDoublePeriod ? 2 : 1);
+        count += (slot.isDoublePeriod ? 2 : 1);
       }
     });
     return count;
-  }, [slots, currentTeacher?.id]);
+  }, [myValidObservedSlots]);
 
-  const mySurpriseTaughtCount = useMemo(() => {
-    let count = 0;
-    slots.forEach(slot => {
-      if (slot.teacherId === currentTeacher?.id && isSurpriseSlot(slot)) {
-        const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
-        if (approvedRegs.length > 0 && approvedRegs.some((r: any) => !!r.evaluation)) {
-          count += (slot.isDoublePeriod ? 2 : 1);
-        }
-      }
+  // Tiết dạy hợp lệ: Tiết dạy ít nhất có 1 phiếu đánh giá từ người dự (1-4 phiếu)
+  const myValidTaughtSlots = useMemo(() => {
+    return myTaughtSlots.filter(slot => {
+      const approvedRegs = slot.registrations?.filter((r: any) => r.isApproved || isSurpriseSlot(slot)) || [];
+      return approvedRegs.some((r: any) => !!r.evaluation);
     });
-    return count;
-  }, [slots, currentTeacher?.id]);
+  }, [myTaughtSlots]);
 
   const myTaughtCount = useMemo(() => {
     let count = 0;
-    slots.forEach(slot => {
-      if (slot.teacherId === currentTeacher?.id) {
-        const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
-        if (approvedRegs.length > 0 && approvedRegs.some((r: any) => !!r.evaluation)) {
-          count += (slot.isDoublePeriod ? 2 : 1);
-        }
+    myValidTaughtSlots.forEach(slot => {
+      count += (slot.isDoublePeriod ? 2 : 1);
+    });
+    return count;
+  }, [myValidTaughtSlots]);
+
+  const mySurpriseTaughtCount = useMemo(() => {
+    let count = 0;
+    myValidTaughtSlots.forEach(slot => {
+      if (isSurpriseSlot(slot)) {
+        count += (slot.isDoublePeriod ? 2 : 1);
       }
     });
     return count;
-  }, [slots, currentTeacher?.id]);
+  }, [myValidTaughtSlots]);
+
+  // Tổng số phiếu đánh giá nhận được từ tất cả các tiết dạy
+  const totalReceivedEvalCount = useMemo(() => {
+    let count = 0;
+    myTaughtSlots.forEach(slot => {
+      slot.registrations?.forEach((r: any) => {
+        if (r.evaluation) count++;
+      });
+    });
+    return count;
+  }, [myTaughtSlots]);
 
   const defaultObsTarget = isMamNonTeacher ? 8 : (currentTeacher?.requiredObserved || 10);
   const defaultTaughtTarget = isMamNonTeacher ? 4 : (currentTeacher?.requiredTaught || 2);
@@ -2237,7 +2254,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const myPendingEvaluationsCount = useMemo(() => {
     return myObservedSlots.filter(s => {
       const reg = s.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
-      return reg && reg.isApproved && !reg.evaluation;
+      return reg && (reg.isApproved || isSurpriseSlot(s)) && !reg.evaluation;
     }).length;
   }, [myObservedSlots, currentTeacher?.id]);
 
@@ -2392,83 +2409,95 @@ export function ObservationClient(props: ObservationClientProps) {
       </div>
 
       {/* COMPACT STATS STRIP: 4 Executive KPI Cards in 1 row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
         {/* KPI 1: Chỉ tiêu Dự giờ */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center font-black text-xs">
-                <Eye className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-black">
+                <Eye className="w-3.5 h-3.5" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Chỉ tiêu dự giờ</span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">Chỉ tiêu dự giờ</span>
             </div>
             <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${obsProgress >= 100 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-sky-50 text-sky-700 border border-sky-200"}`}>
               {obsProgress}%
             </span>
           </div>
+
           <div className="flex items-baseline justify-between">
             <div className="flex items-baseline gap-1">
               <span className="text-xl sm:text-2xl font-black text-slate-900">{myObservedCount}</span>
               <span className="text-xs font-bold text-slate-400">/ {obsTarget} tiết</span>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold text-slate-500">
-                {obsTarget - myObservedCount > 0 ? `Thiếu ${obsTarget - myObservedCount} tiết` : "Đã đạt"}
-              </span>
-              {myObservedSlots.length > myObservedCount && (
-                <span className="text-[9px] text-amber-600 font-bold">
-                  ({myObservedSlots.length - myObservedCount} chưa nộp phiếu)
-                </span>
+            <div className="text-right">
+              {obsTarget - myObservedCount > 0 ? (
+                <span className="text-[10px] font-extrabold text-amber-600">Thiếu {obsTarget - myObservedCount} tiết</span>
+              ) : (
+                <span className="text-[10px] font-extrabold text-emerald-600">✅ Đã đạt</span>
               )}
             </div>
           </div>
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full transition-all duration-500" style={{ width: `${obsProgress}%` }} />
+
+          <div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
+              <div className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full transition-all duration-500" style={{ width: `${obsProgress}%` }} />
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span>Đã nộp: <strong className="text-slate-700 font-bold">{myValidObservedSlots.length} phiếu</strong></span>
+              {myPendingEvaluationsCount > 0 && (
+                <span className="text-amber-600 font-bold">({myPendingEvaluationsCount} chưa nộp)</span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* KPI 2: Chỉ tiêu Tiết dạy */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-xs">
-                <BookOpen className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center font-black">
+                <BookOpen className="w-3.5 h-3.5" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Chỉ tiêu tiết dạy</span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">Chỉ tiêu tiết dạy</span>
             </div>
             <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${taughtProgress >= 100 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
               {taughtProgress}%
             </span>
           </div>
+
           <div className="flex items-baseline justify-between">
             <div className="flex items-baseline gap-1">
               <span className="text-xl sm:text-2xl font-black text-slate-900">{myTaughtCount}</span>
               <span className="text-xs font-bold text-slate-400">/ {taughtTarget || 1} tiết</span>
             </div>
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold text-slate-500">
-                {taughtTarget - myTaughtCount > 0 ? `Thiếu ${taughtTarget - myTaughtCount} tiết` : "Đã đạt"}
-              </span>
-              {myTaughtSlots.length > myTaughtCount && (
-                <span className="text-[9px] text-teal-700 font-bold">
-                  ({myTaughtSlots.length - myTaughtCount} chờ chấm)
-                </span>
+            <div className="text-right">
+              {taughtTarget - myTaughtCount > 0 ? (
+                <span className="text-[10px] font-extrabold text-amber-600">Thiếu {taughtTarget - myTaughtCount} tiết</span>
+              ) : (
+                <span className="text-[10px] font-extrabold text-emerald-600">✅ Đã đạt</span>
               )}
             </div>
           </div>
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-[#48BFE3] to-[#008B82] rounded-full transition-all duration-500" style={{ width: `${taughtProgress}%` }} />
+
+          <div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
+              <div className="h-full bg-gradient-to-r from-[#48BFE3] to-[#008B82] rounded-full transition-all duration-500" style={{ width: `${taughtProgress}%` }} />
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span>Có phiếu: <strong className="text-slate-700 font-bold">{myValidTaughtSlots.length}/{myTaughtSlots.length} tiết</strong></span>
+              <span className="text-teal-700 font-bold">({totalReceivedEvalCount} phiếu nhận)</span>
+            </div>
           </div>
         </div>
 
         {/* KPI 3: Phiếu Đánh giá cần nộp */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-black text-xs">
-                <Clock className="w-4 h-4" />
+              <div className="w-7 h-7 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-black">
+                <Clock className="w-3.5 h-3.5" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Phiếu cần nộp</span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">Phiếu cần nộp</span>
             </div>
             {myPendingEvaluationsCount > 0 ? (
               <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 animate-pulse">
@@ -2480,54 +2509,72 @@ export function ObservationClient(props: ObservationClientProps) {
               </span>
             )}
           </div>
+
           <div className="flex items-baseline justify-between">
             <div className="flex items-baseline gap-1">
               <span className={`text-xl sm:text-2xl font-black ${myPendingEvaluationsCount > 0 ? "text-rose-600" : "text-emerald-700"}`}>
                 {myPendingEvaluationsCount}
               </span>
-              <span className="text-xs font-bold text-slate-400">tiết chưa chấm</span>
+              <span className="text-xs font-bold text-slate-400">tiết chưa nộp</span>
             </div>
             <span className="text-[10px] font-bold text-slate-500">
-              Đã dự: {myObservedSlots.length}
+              Tổng tiết dự: {myObservedSlots.length}
             </span>
           </div>
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div 
-              className={`h-full rounded-full transition-all duration-500 ${myPendingEvaluationsCount > 0 ? "bg-rose-500" : "bg-emerald-500"}`} 
-              style={{ width: `${myObservedSlots.length > 0 ? Math.round(((myObservedSlots.length - myPendingEvaluationsCount) / myObservedSlots.length) * 100) : 100}%` }} 
-            />
+
+          <div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
+              <div 
+                className={`h-full rounded-full transition-all duration-500 ${myPendingEvaluationsCount > 0 ? "bg-gradient-to-r from-amber-500 to-rose-500" : "bg-emerald-500"}`} 
+                style={{ width: `${myObservedSlots.length > 0 ? Math.round(((myObservedSlots.length - myPendingEvaluationsCount) / myObservedSlots.length) * 100) : 100}%` }} 
+              />
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span>Đã hoàn thành: <strong className="text-slate-700 font-bold">{myValidObservedSlots.length}/{myObservedSlots.length}</strong></span>
+              <span className={myPendingEvaluationsCount === 0 ? "text-emerald-600 font-bold" : "text-rose-600 font-bold"}>
+                {myPendingEvaluationsCount === 0 ? "100%" : `${Math.round(((myObservedSlots.length - myPendingEvaluationsCount) / (myObservedSlots.length || 1)) * 100)}%`}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* KPI 4: Điểm Đánh giá Trung bình */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 sm:p-4 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-3.5 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between gap-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center font-black text-xs">
-                <Star className="w-4 h-4 text-amber-500" />
+              <div className="w-7 h-7 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-black">
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400" />
               </div>
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">Điểm TB nhận được</span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-600">Điểm TB nhận được</span>
             </div>
             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200">
-              {myReceivedEvaluationsStats.count} lượt chấm
+              {myReceivedEvaluationsStats.count} phiếu chấm
             </span>
           </div>
+
           <div className="flex items-baseline justify-between">
             <div className="flex items-baseline gap-1">
               <span className="text-xl sm:text-2xl font-black text-slate-900">
                 {myReceivedEvaluationsStats.avgScore || "—"}
               </span>
-              <span className="text-xs font-bold text-slate-400">/ {isMamNonTeacher ? "10.00" : "20.00"}đ</span>
+              <span className="text-xs font-bold text-slate-400">/ {isMamNonTeacher ? "10.0" : "20.0"}đ</span>
             </div>
-            <span className="text-[10px] font-black text-emerald-700">
-              {myReceivedEvaluationsStats.avgScore ? (Number(myReceivedEvaluationsStats.avgScore) >= (isMamNonTeacher ? 9 : 17) ? "Xuất sắc" : "Tốt") : "Chưa có"}
+            <span className="text-[10px] font-black text-violet-700">
+              {myReceivedEvaluationsStats.avgScore ? (Number(myReceivedEvaluationsStats.avgScore) >= (isMamNonTeacher ? 9 : 17) ? "🌟 Xuất sắc" : (Number(myReceivedEvaluationsStats.avgScore) >= (isMamNonTeacher ? 8 : 14) ? "✨ Tốt" : "Đạt")) : "Chưa có"}
             </span>
           </div>
-          <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full transition-all duration-500" 
-              style={{ width: `${myReceivedEvaluationsStats.avgScore ? Math.min(100, Math.round((Number(myReceivedEvaluationsStats.avgScore) / (isMamNonTeacher ? 10 : 20)) * 100)) : 0}%` }} 
-            />
+
+          <div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
+              <div 
+                className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full transition-all duration-500" 
+                style={{ width: `${myReceivedEvaluationsStats.avgScore ? Math.min(100, Math.round((Number(myReceivedEvaluationsStats.avgScore) / (isMamNonTeacher ? 10 : 20)) * 100)) : 0}%` }} 
+              />
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-slate-500 font-medium">
+              <span>Đánh giá từ <strong className="text-slate-700 font-bold">{myValidTaughtSlots.length} tiết dạy</strong></span>
+              <span className="text-violet-700 font-bold">{myReceivedEvaluationsStats.avgScore ? `${((Number(myReceivedEvaluationsStats.avgScore) / (isMamNonTeacher ? 10 : 20)) * 100).toFixed(0)}%` : "0%"}</span>
+            </div>
           </div>
         </div>
       </div>
