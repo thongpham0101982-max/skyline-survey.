@@ -651,31 +651,51 @@ export function ObservationClient(props: ObservationClientProps) {
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
     const safeYears = Array.isArray(academicYears) ? academicYears : [];
-    const activeYearObj = safeYears.find((y: any) => y.id === filterAcademicYearId) || safeYears.find((y: any) => y.status === "ACTIVE");
-    const now = new Date();
-    const currentMonthKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, "0")}`;
+    const activeYearObj = safeYears.find((y: any) => y.id === filterAcademicYearId) || safeYears.find((y: any) => y.status === "ACTIVE") || safeYears[0];
     
-    // Check if current month belongs to the active year date range
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
+
     if (activeYearObj?.startDate && activeYearObj?.endDate) {
-      const start = new Date(activeYearObj.startDate);
-      const end = new Date(activeYearObj.endDate);
-      if (now >= start && now <= end) {
-        monthsSet.add(currentMonthKey);
+      startDate = new Date(activeYearObj.startDate);
+      endDate = new Date(activeYearObj.endDate);
+      // Extend end date to the end of that day/month
+      endDate.setHours(23, 59, 59, 999);
+    } else if (typeof activeYearObj?.name === "string" && activeYearObj.name.includes("-")) {
+      const parts = activeYearObj.name.split("-");
+      const startYear = parseInt(parts[0], 10);
+      const endYear = parseInt(parts[1], 10);
+      if (!isNaN(startYear) && !isNaN(endYear)) {
+        startDate = new Date(`${startYear}-08-01T00:00:00.000Z`);
+        endDate = new Date(`${endYear}-07-31T23:59:59.999Z`);
       }
-    } else {
-      monthsSet.add(currentMonthKey);
+    }
+
+    const isMonthInAcademicYear = (y: number, m: number) => {
+      if (startDate && endDate) {
+        const checkStart = new Date(y, m - 1, 1);
+        const checkEnd = new Date(y, m, 0, 23, 59, 59, 999);
+        return checkEnd >= startDate && checkStart <= endDate;
+      }
+      return true;
+    };
+
+    const now = new Date();
+    const curY = now.getFullYear();
+    const curM = now.getMonth() + 1;
+    if (isMonthInAcademicYear(curY, curM)) {
+      monthsSet.add(`${curY}-${curM.toString().padStart(2, "0")}`);
     }
 
     (slots || []).forEach((slot: any) => {
       if (slot.date) {
         const d = new Date(slot.date);
         if (!isNaN(d.getTime())) {
-          if (activeYearObj?.startDate && activeYearObj?.endDate) {
-            const start = new Date(activeYearObj.startDate);
-            const end = new Date(activeYearObj.endDate);
-            if (d < start || d > end) return;
+          const sy = d.getFullYear();
+          const sm = d.getMonth() + 1;
+          if (isMonthInAcademicYear(sy, sm)) {
+            monthsSet.add(`${sy}-${sm.toString().padStart(2, "0")}`);
           }
-          monthsSet.add(`${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`);
         }
       }
     });
@@ -2210,21 +2230,8 @@ export function ObservationClient(props: ObservationClientProps) {
       const month = slotDate.getMonth() + 1;
       const key = `${year}-${month.toString().padStart(2, "0")}`;
 
-      if (!stats[key]) {
-        stats[key] = {
-          monthKey: key,
-          monthStr: `Tháng ${month.toString().padStart(2, "0")}/${year}`,
-          year,
-          month,
-          taughtCount: 0,
-          totalTaughtSlots: 0,
-          observedCount: 0,
-          totalObservedSlots: 0,
-          pendingObservedCount: 0,
-          avgScore: null,
-          receivedEvalCount: 0
-        };
-      }
+      // Only accumulate stats for months belonging to the active academic year
+      if (!stats[key]) return;
 
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       const isHost = slot.teacherId === currentTeacher?.id;
