@@ -705,6 +705,12 @@ export async function createObservationSlot(data: {
 
     // 1. Verify monthly limit and create slot inside transaction
     const slotDate = new Date(data.date)
+    const now = new Date()
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    if (!isNaN(slotDate.getTime()) && slotDate < currentMonthStart) {
+      return { success: false, error: "Không thể mở tiết dạy thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" }
+    }
+
     const startOfMonth = new Date(slotDate.getFullYear(), slotDate.getMonth(), 1)
     const endOfMonth = new Date(slotDate.getFullYear(), slotDate.getMonth() + 1, 1)
 
@@ -1833,9 +1839,12 @@ export async function requestObservationSlot(data: {
       "Tiết 8": { start: "15:55", end: "16:40" }
     }
 
-    const timeRange = periodMap[data.period || "Tiết 1"] || { start: "07:30", end: "08:15" }
-
     const slotDate = new Date(data.date)
+    const now = new Date()
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    if (!isNaN(slotDate.getTime()) && slotDate < currentMonthStart) {
+      return { success: false, error: "Không thể xin dự giờ các tiết dạy thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" }
+    }
 
     let newSlot: any;
     try {
@@ -3194,6 +3203,11 @@ export async function createSurpriseObservation(data: {
 
     const timeRange = periodMap[data.period || "Tiết 1"] || { start: "07:30", end: "08:15" }
     const slotDate = new Date(data.date)
+    const now = new Date()
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    if (!isNaN(slotDate.getTime()) && slotDate < currentMonthStart) {
+      return { success: false, error: "Không thể tạo tiết dự giờ đột xuất thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" }
+    }
 
     // 1. Create ObservationSlot
     let newSlot: any;

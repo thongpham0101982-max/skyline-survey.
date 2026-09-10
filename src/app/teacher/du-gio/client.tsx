@@ -475,6 +475,13 @@ export function ObservationClient(props: ObservationClientProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE">("TEACHER_OPEN")
 
+  const minAllowedDate = useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}-01`;
+  }, []);
+
   // Surprise Observation States
   const [surpriseDeptId, setSurpriseDeptId] = useState<string>("")
   const [surpriseTeacherId, setSurpriseTeacherId] = useState<string>("")
@@ -1682,6 +1689,10 @@ export function ObservationClient(props: ObservationClientProps) {
       showToast("Vui lòng chọn Ngày dự giờ!", "error");
       return;
     }
+    if (surpriseDate < minAllowedDate) {
+      showToast("Không thể chọn ngày thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!", "error");
+      return;
+    }
     if (!isDraft && !surpriseImprovements.trim()) {
       showToast("Vui lòng nhập 'Nội dung cần cải thiện / Góp ý phát triển' trước khi hoàn tất biên bản!", "error");
       return;
@@ -1840,6 +1851,10 @@ export function ObservationClient(props: ObservationClientProps) {
       showToast("Vui lòng chọn ngày dạy!", "error")
       return
     }
+    if (reqDate < minAllowedDate) {
+      showToast("Không thể chọn ngày thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!", "error")
+      return
+    }
 
     const selectedClass = classes.find(c => c.id === reqClassId)
     const selectedSub = subjects.find(s => s.id === reqSubjectId)
@@ -1897,6 +1912,10 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (newDate && newDate < minAllowedDate) {
+      showToast("Không thể chọn ngày thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!", "error");
+      return;
+    }
     const isMN = isMamNonTeacher || newLevel === "Mầm non";
     if (isMN) {
       if (!newGrade || !newChuDe.trim() || !newHoatDong.trim() || !newDeTai.trim() || !newDate || !newStartTime || !newEndTime || !newCampusId) {
@@ -2818,6 +2837,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <input
                       type="date"
                       value={surpriseDate}
+                      min={minAllowedDate}
                       onChange={e => setSurpriseDate(e.target.value)}
                       required
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
@@ -3528,6 +3548,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <input
                     type="date"
                     value={reqDate}
+                    min={minAllowedDate}
                     onChange={e => setReqDate(e.target.value)}
                     required
                     className="w-full text-xs font-bold p-2.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
@@ -3642,6 +3663,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <input
                       type="date"
                       value={newDate}
+                      min={minAllowedDate}
                       onChange={e => setNewDate(e.target.value)}
                       required
                       className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 outline-none bg-white text-slate-800"
@@ -3728,6 +3750,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <input
                       type="date"
                       value={newDate}
+                      min={minAllowedDate}
                       onChange={e => setNewDate(e.target.value)}
                       required
                       className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800"

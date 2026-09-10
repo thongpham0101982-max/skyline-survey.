@@ -241,6 +241,13 @@ interface CreateObservationModalProps {
 export function CreateObservationModal(props: CreateObservationModalProps) {
   if (!props.isOpen) return null
 
+  const minAllowedDate = React.useMemo(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    return `${y}-${m}-01`;
+  }, []);
+
   const {
     onClose,
     creationMode,
@@ -525,6 +532,7 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                   <input
                     type="date"
                     value={openDate}
+                    min={minAllowedDate}
                     onChange={e => setOpenDate(e.target.value)}
                     required
                     className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none bg-slate-50 text-slate-800"
@@ -763,6 +771,7 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                   <input
                     type="date"
                     value={reqDate}
+                    min={minAllowedDate}
                     onChange={e => setReqDate(e.target.value)}
                     required
                     className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-slate-50 text-slate-800"
@@ -911,6 +920,7 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                       <input
                         type="date"
                         value={surpriseDate}
+                        min={minAllowedDate}
                         onChange={e => setSurpriseDate(e.target.value)}
                         className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800"
                       />
