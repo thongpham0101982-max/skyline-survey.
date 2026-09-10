@@ -33,6 +33,14 @@ export const ACADEMIC_DIVISIONS: AcademicDivision[] = [
     defaultBlockCM: "Điều hành"
   },
   {
+    code: "BAN_TT",
+    name: "Ban TT",
+    shortName: "Ban TT",
+    description: "Ban Truyền thông & Sự kiện, Thông tin giáo dục, Ban Thanh tra...",
+    color: "orange",
+    defaultBlockCM: "Hỗ trợ người học"
+  },
+  {
     code: "BP_TRUNG_HOC",
     name: "BP Trung học",
     shortName: "Trung học",
@@ -117,6 +125,7 @@ export function normalizeDivisionCode(code?: string | null): string {
   if (upper === "BAN_GD" || upper.includes("BAN_GD") || upper.includes("GIAM_DOC") || upper.includes("GDCS")) return "BAN_GD";
   if (upper === "BAN_KT_DBCL" || upper.includes("KT_DBCL") || upper.includes("KTDBCL") || upper.includes("KHAO_THI")) return "BAN_KT_DBCL";
   if (upper === "BAN_DHCM" || upper.includes("BAN_DHCM") || upper.includes("DIEU_HANH_CHUYEN_MON")) return "BAN_DHCM";
+  if (upper === "BAN_TT" || upper.includes("BAN_TT") || upper.includes("TRUYEN_THONG") || upper.includes("THANH_TRA")) return "BAN_TT";
   if (upper === "BP_TRUNG_HOC" || upper.includes("TRUNG_HOC") || upper.includes("TRUNG HOC") || upper === "THCS" || upper === "THPT") return "BP_TRUNG_HOC";
   if (upper === "BP_TIEU_HOC" || upper.includes("TIEU_HOC") || upper.includes("TIEU HOC") || upper === "TIH") return "BP_TIEU_HOC";
   if (upper === "BP_MAM_NON" || upper.includes("MAM_NON") || upper.includes("MAM NON") || upper === "MN") return "BP_MAM_NON";

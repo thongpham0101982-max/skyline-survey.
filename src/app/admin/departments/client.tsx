@@ -196,6 +196,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
       rose: "bg-rose-50 text-rose-700 border-rose-200",
       teal: "bg-teal-50 text-teal-700 border-teal-200",
       purple: "bg-purple-50 text-purple-700 border-purple-200",
+      orange: "bg-orange-50 text-orange-700 border-orange-200",
     };
     const style = colorStyles[div.color] || "bg-slate-50 text-slate-700 border-slate-200";
 
@@ -224,7 +225,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
             Quản Lý Tổ & Bộ Phận Chuyên Môn
           </h1>
           <p className="text-slate-500 mt-1 text-sm">
-            Quản lý cơ cấu các Tổ chuyên môn trực thuộc các Ban & Bộ Phận (Ban GĐ, Ban KT&ĐBCL, Ban ĐHCM, BP Trung học, BP Tiểu học...).
+            Quản lý cơ cấu các Tổ chuyên môn trực thuộc các Ban & Bộ Phận (Ban GĐ, Ban KT&ĐBCL, Ban ĐHCM, Ban TT, BP Trung học, BP Tiểu học...).
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -245,8 +246,8 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
         </div>
       </div>
 
-      {/* 9 Divisions Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-5 gap-3.5">
+      {/* 10 Divisions Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
         {ACADEMIC_DIVISIONS.map((div) => {
           const deptCount = departments.filter(d => d.divisionCode === div.code).length;
           const tbpName = getTBPForDivision(div.code);
@@ -261,6 +262,7 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
             rose: { border: "border-rose-200", bg: "bg-rose-50/50", text: "text-rose-800", countBg: "bg-rose-100 text-rose-800" },
             teal: { border: "border-teal-200", bg: "bg-teal-50/50", text: "text-teal-800", countBg: "bg-teal-100 text-teal-800" },
             purple: { border: "border-purple-200", bg: "bg-purple-50/50", text: "text-purple-800", countBg: "bg-purple-100 text-purple-800" },
+            orange: { border: "border-orange-200", bg: "bg-orange-50/50", text: "text-orange-800", countBg: "bg-orange-100 text-orange-800" },
           };
           const style = cardColors[div.color] || cardColors.blue;
 
