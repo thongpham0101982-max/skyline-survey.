@@ -2309,12 +2309,23 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
 
     const slot = await prisma.observationSlot.findUnique({
       where: { id: slotId },
-      include: { registrations: true }
+      include: {
+        teacher: { include: { user: true, campus: true } },
+        registrations: {
+          include: {
+            teacher: { include: { user: true } }
+          }
+        }
+      }
     })
 
     if (!slot) {
       return { success: false, error: "Không tìm thấy thông tin tiết dự giờ." }
     }
+
+    const hostTeacher = slot.teacher;
+    const formattedDateVi = new Date(slot.date).toLocaleDateString("vi-VN");
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
 
     if (accept) {
       await prisma.observationSlot.update({
@@ -2332,6 +2343,46 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
           approvedAt: new Date()
         }
       })
+
+      // Send email to observer teachers confirming approval
+      try {
+        for (const reg of slot.registrations) {
+          const obsTeacher = reg.teacher;
+          const obsEmail = getTeacherResolvedEmail(obsTeacher);
+          if (obsEmail && obsEmail.includes("@")) {
+            const emailSubject = `[Skyline Dự Giờ] Tiết dạy đã được chấp thuận: "${slot.topic}" - GV: ${hostTeacher?.teacherName}`;
+            const linkUrl = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
+            const emailHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+                <div style="background-color: #008B82; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                  <h2 style="color: #ffffff; margin: 0; font-size: 18px;">ĐỀ XUẤT DỰ GIỜ ĐÃ ĐƯỢC PHÊ DUYỆT ✅</h2>
+                </div>
+                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${obsTeacher?.teacherName}</strong>,</p>
+                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${hostTeacher?.teacherName}</strong> đã xác nhận đồng ý cho Thầy/Cô tham gia dự giờ tiết dạy chuyên môn.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #008B82; font-weight: bold;">${hostTeacher?.teacherName} (${hostTeacher?.teacherCode || ""})</td></tr>
+                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${slot.topic}</td></tr>
+                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp"})</td></tr>
+                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
+                  <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.startTime}</td></tr>
+                </table>
+
+                <div style="text-align: center; margin: 25px 0;">
+                  <a href="${linkUrl}" style="background-color: #008B82; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem Lịch & Đánh Giá Tiết Dạy Trên Skyline</a>
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                  Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
+                </div>
+              </div>
+            `;
+            await sendEmail({ to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Accept observation request email error:", e));
+          }
+        }
+      } catch (mailErr) {
+        console.error("Failed sending acceptance emails:", mailErr);
+      }
     } else {
       try {
         await prisma.observationSlot.update({
@@ -2352,6 +2403,41 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
         } else {
           throw err;
         }
+      }
+
+      // Send decline email to observer teachers
+      try {
+        for (const reg of slot.registrations) {
+          const obsTeacher = reg.teacher;
+          const obsEmail = getTeacherResolvedEmail(obsTeacher);
+          if (obsEmail && obsEmail.includes("@")) {
+            const emailSubject = `[Skyline Dự Giờ] Phản hồi đề xuất dự giờ: "${slot.topic}" - GV: ${hostTeacher?.teacherName}`;
+            const emailHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+                <div style="background-color: #ef4444; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                  <h2 style="color: #ffffff; margin: 0; font-size: 18px;">PHẢN HỒI ĐỀ XUẤT DỰ GIỜ</h2>
+                </div>
+                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${obsTeacher?.teacherName}</strong>,</p>
+                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${hostTeacher?.teacherName}</strong> chưa thể tiếp nhận đề xuất dự giờ cho tiết dạy <strong>"${slot.topic}"</strong> vào ngày <strong>${formattedDateVi}</strong>.</p>
+                
+                ${reason ? `
+                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
+                  <p style="margin: 0; color: #991b1b; font-size: 13px;"><strong>Lý do:</strong> ${reason}</p>
+                </div>
+                ` : ""}
+
+                <p style="color: #64748b; font-size: 13px; line-height: 1.5;">Thầy/Cô có thể lựa chọn các tiết dạy khác hoặc gửi đề xuất vào thời gian phù hợp hơn.</p>
+                
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                  Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
+                </div>
+              </div>
+            `;
+            await sendEmail({ to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Decline observation request email error:", e));
+          }
+        }
+      } catch (mailErr) {
+        console.error("Failed sending decline emails:", mailErr);
       }
     }
 
