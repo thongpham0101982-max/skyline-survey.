@@ -2129,9 +2129,37 @@ export async function requestObservationSlot(data: {
           const emailSubject = `[Skyline Dự Giờ] Đề xuất xin dự giờ mới từ ${observerTeacher.teacherName}`;
           try {
             await sendEmail({ to: hostEmail, subject: emailSubject, html: emailHtml });
-            console.log("[Skyline Tag 2 Email] Sent request email ONLY to host teacher:", hostEmail);
+            console.log("[Skyline Tag 2 Email] Sent request email to host teacher:", hostEmail);
           } catch (mailErr) {
             console.error("[Skyline Tag 2 Email Error] Failed sending to host teacher " + hostEmail + ":", mailErr);
+          }
+
+          // Also send confirmation email to observer teacher
+          const observerEmail = getTeacherResolvedEmail(observerTeacher);
+          if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+            const observerSubject = `[Skyline Dự Giờ] Xác nhận đã gửi đề xuất xin dự giờ tới Thầy/Cô ${hostTeacher.teacherName}`;
+            const observerHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+                <div style="background-color: #48BFE3; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                  <h2 style="color: #ffffff; margin: 0; font-size: 18px;">XÁC NHẬN ĐÃ GỬI ĐỀ XUẤT XIN DỰ GIỜ</h2>
+                </div>
+                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${observerTeacher.teacherName}</strong>,</p>
+                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô đã gửi thành công đề xuất xin dự giờ tới Thầy/Cô <strong>${hostTeacher.teacherName}</strong>. Hệ thống sẽ thông báo cho bạn ngay khi Giáo viên dạy xác nhận.</p>
+                
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #008B82; font-weight: bold;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td></tr>
+                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${data.topic || "Đề xuất xin dự giờ tiết học"}</td></tr>
+                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Khối lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${data.subjectName || "Môn học"} (${data.level || ""} ${data.grade || ""} - ${data.className || "Lớp"})</td></tr>
+                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDate}</td></tr>
+                  <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${data.period || "Tiết 1"}</td></tr>
+                </table>
+
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                  Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
+                </div>
+              </div>
+            `;
+            await sendEmail({ to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer request confirmation email error:", e));
           }
         }
 

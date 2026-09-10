@@ -4,7 +4,7 @@
 import React from "react"
 import {
   X, Plus, Sparkles, Zap, ShieldCheck, Info, BookOpen, Calendar, Clock,
-  MapPin, User, Users, CheckCircle2, AlertCircle, FileText, Award, Check, Save
+  MapPin, User, Users, CheckCircle2, AlertCircle, FileText, Award, Check, Save, Mail
 } from "lucide-react"
 import { QuickCommentPresets } from "./QuickCommentPresets"
 
@@ -607,8 +607,19 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                 />
               </div>
 
+              {/* Email Notification Notice */}
+              <div className="bg-teal-50 border border-teal-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-teal-950">
+                <div className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center shrink-0 text-teal-700">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div className="text-xs">
+                  <p className="font-bold text-teal-900">📧 Tự động gửi Email thông báo khi mở tiết dạy</p>
+                  <p className="text-[11px] text-teal-700 font-medium">Khi Thầy/Cô bấm <strong>"Xác nhận mở tiết dạy"</strong>, hệ thống sẽ tự động gửi Email thông báo tới các Giáo viên trong Tổ chuyên môn để đăng ký tham dự.</p>
+                </div>
+              </div>
+
               {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={onClose}
@@ -802,8 +813,19 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                 </div>
               </div>
 
+              {/* Email Notification Notice */}
+              <div className="bg-indigo-50 border border-indigo-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-indigo-950">
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 text-indigo-700">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div className="text-xs">
+                  <p className="font-bold text-indigo-900">📧 Tự động gửi Email thông báo tới Giáo viên dạy</p>
+                  <p className="text-[11px] text-indigo-700 font-medium">Khi Thầy/Cô bấm <strong>"Gửi đề xuất xin dự giờ"</strong>, hệ thống sẽ tự động gửi Email thông báo trực tiếp tới Giáo viên dạy để xem xét và phê duyệt tiết dự.</p>
+                </div>
+              </div>
+
               {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={onClose}
@@ -1265,6 +1287,17 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                     </div>
                   );
                 })()}
+              </div>
+
+              {/* Email Notification Notice for Surprise Observation */}
+              <div className="bg-rose-50 border border-rose-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-rose-950">
+                <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center shrink-0 text-rose-700">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <div className="text-xs">
+                  <p className="font-bold text-rose-900">📧 Tự động gửi Email kết quả & biên bản đánh giá</p>
+                  <p className="text-[11px] text-rose-700 font-medium">Khi Thầy/Cô bấm <strong>"Lưu & Hoàn thành biên bản"</strong>, hệ thống sẽ tự động gửi Email chứa đầy đủ bảng điểm, xếp loại và góp ý phát triển tới Giáo viên dạy & lưu bản sao vào hòm thư của Thầy/Cô.</p>
+                </div>
               </div>
 
               {/* Action Buttons: Lưu nháp / Hoàn thành */}

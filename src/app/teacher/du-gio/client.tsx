@@ -594,7 +594,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
   const [taughtOriginFilter, setTaughtOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
   const [observedOriginFilter, setObservedOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
-  const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
+  const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(true);
   const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
 
   // Filter teachers belonging ONLY to current logged-in teacher's department
@@ -991,7 +991,7 @@ export function ObservationClient(props: ObservationClientProps) {
     setNewCampusId(currentTeacher?.campusId || "");
     setNewSubjectId(""); setNewSubjectName(""); setNewLevel(isMamNonTeacher ? "Mầm non" : ""); setNewGrade(""); setNewClassId("");
     setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1");
-    setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId(""); setNewNotifMode("ALL"); setSelectedMemberIds([]); setSendEmailNotif(false);
+    setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId(""); setNewNotifMode("ALL"); setSelectedMemberIds([]); setSendEmailNotif(true);
     setNewLessonPlanName(""); setNewLessonPlanData("");
     setNewChuDe(""); setNewHoatDong(""); setNewDeTai("");
     setSurpriseTopic("");
@@ -1996,7 +1996,7 @@ export function ObservationClient(props: ObservationClientProps) {
         const draftKey = `skyline_eval_draft_${evalModal.slot.id}_${evalModal.registration.id}`;
         localStorage.removeItem(draftKey);
       }
-      showToast("Đã nộp phiếu đánh giá thành công!", "success")
+      showToast("Đã lưu và hoàn thành biên bản! Hệ thống đã tự động gửi Email thông báo kết quả tới Giáo viên dạy & Người dự.", "success")
       setEvalModal(null)
       refreshSlots()
     } else {
@@ -2045,7 +2045,7 @@ export function ObservationClient(props: ObservationClientProps) {
       })
       setSubmitting(false)
       if (res.success) {
-        showToast("Đã gửi yêu cầu xin dự giờ thành công! Chờ GV dạy xác nhận.", "success")
+        showToast("Đã gửi đề xuất xin dự giờ và gửi Email thông báo tới Giáo viên dạy thành công!", "success")
         setReqTeacherId("")
         setReqTopic("")
         setReqNotes("")
@@ -2133,7 +2133,7 @@ export function ObservationClient(props: ObservationClientProps) {
     }
     setSubmitting(false)
     if (res.success) {
-      showToast(editSlotId ? "Cập nhật tiết dạy thành công!" : "Tạo tiết dạy dự giờ mới thành công!", "success")
+      showToast(editSlotId ? "Cập nhật tiết dạy thành công!" : "Tạo tiết dạy thành công và đã tự động gửi Email thông báo tới các GV trong Tổ chuyên môn!", "success")
       setShowCreateModal(false)
       resetCreateForm()
       refreshSlots()
@@ -6326,6 +6326,17 @@ export function ObservationClient(props: ObservationClientProps) {
                     </div>
                   );
                 })()}
+                {!isReadOnly && (
+                  <div className="bg-teal-50 border border-teal-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-teal-950 mt-4">
+                    <div className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center shrink-0 text-teal-700">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <div className="text-xs">
+                      <p className="font-bold text-teal-900">📧 Tự động gửi Email kết quả đánh giá</p>
+                      <p className="text-[11px] text-teal-700 font-medium">Khi Thầy/Cô bấm <strong>"Lưu và hoàn thành biên bản"</strong>, hệ thống sẽ tự động gửi Email thông báo kết quả đánh giá chi tiết tới Giáo viên dạy và gửi bản sao về hòm thư của Thầy/Cô.</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Modal Footer */}
@@ -6367,9 +6378,10 @@ export function ObservationClient(props: ObservationClientProps) {
                       type="button"
                       onClick={handleSubmitEval}
                       disabled={evalSubmitting}
-                      className="px-6 py-2 bg-[#008B82] hover:bg-[#007068] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer flex items-center gap-1.5"
+                      className="px-6 py-2.5 bg-gradient-to-r from-[#008B82] to-[#006059] hover:from-[#007068] hover:to-[#004f4a] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer flex items-center gap-2"
                     >
-                      {evalSubmitting ? "Đang lưu..." : isApprovedForReEval ? "💾 Lưu & Cập nhật phiếu đánh giá" : "Nộp phiếu đánh giá"}
+                      <CheckCircle2 className="w-4 h-4 text-teal-200" />
+                      {evalSubmitting ? "Đang lưu..." : isApprovedForReEval ? "💾 Lưu & Cập nhật biên bản" : "💾 Lưu và hoàn thành biên bản"}
                     </button>
                   )}
                 </div>
