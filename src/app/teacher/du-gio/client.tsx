@@ -16,7 +16,7 @@ import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
   Eye, TrendingUp, TrendingDown, Target, Star, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
   CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
-  BarChart3, PieChart, Printer
+  BarChart3, PieChart, Printer, Download, FileSpreadsheet, Edit, LayoutDashboard
 } from "lucide-react"
 import { ACADEMIC_DIVISIONS } from "@/config/divisions";
 
@@ -218,6 +218,8 @@ interface CampusInfo { id: string; campusCode: string; campusName: string }
 interface ClassInfo { id: string; classCode: string; className: string; level: string; grade: string; campusId: string; academicYearId?: string }
 
 interface ObservationClientProps {
+  isAdminPage?: boolean
+  initialViewMode?: "ADMIN" | "TEACHER"
   isPreschoolPage?: boolean
   initialSlots: any[]
   currentTeacher?: TeacherInfo | null
@@ -355,14 +357,14 @@ const getAvatarGradient = (name: string) => {
 };
 
 
-const mapTabToMainTab = (tab: string | null | undefined): "my_schedule" | "overview_slots" | "evaluations" | "ttcm_summary" | "re_evaluations" => {
-  if (!tab) return "my_schedule";
+const mapTabToMainTab = (tab: string | null | undefined, isDefaultAdmin = false): "my_schedule" | "overview_slots" | "evaluations" | "ttcm_summary" | "re_evaluations" => {
+  if (!tab) return isDefaultAdmin ? "overview_slots" : "my_schedule";
   if (tab === "my_schedule" || tab === "my-schedule" || tab === "lich-day" || tab === "schedule") return "my_schedule";
   if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview" || tab === "slots" || tab === "danh-sach" || tab === "dang-ky-du-gio" || tab === "dang-ky" || tab === "register_request") return "overview_slots";
   if (tab === "evaluations" || tab === "evaluation" || tab === "danh-gia") return "evaluations";
   if (tab === "ttcm_summary" || tab === "ttcm" || tab === "theo-doi-tong-hop" || tab === "tong-hop-ttcm" || tab === "to-chuyen-mon") return "ttcm_summary";
   if (tab === "re_evaluations" || tab === "re-evaluations" || tab === "xet-duyet" || tab === "xet-duyet-danh-gia-lai") return "re_evaluations";
-  return "my_schedule";
+  return isDefaultAdmin ? "overview_slots" : "my_schedule";
 };
 
 const isPreschoolDepartment = (deptNameOrCode: string) => {
@@ -481,11 +483,17 @@ export function ObservationClient(props: ObservationClientProps) {
         (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non")
       );
 
-  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeTabParam = searchParams.get("tab") || "dang-ky"
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const isAdminRoute = (typeof pathname === "string" && pathname.startsWith("/admin")) || props.isAdminPage || false;
+  const [viewMode, setViewMode] = useState<"ADMIN" | "TEACHER">(() => {
+    if (props.initialViewMode) return props.initialViewMode;
+    if (isAdminRoute || props.isAdminPage) return "ADMIN";
+    return "TEACHER";
+  });
 
   const [slots, setSlots] = useState(initialSlots)
   const [activeTab, setActiveTab] = useState(activeTabParam)
@@ -559,7 +567,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [selectedEvalMonth, setSelectedEvalMonth] = useState('ALL');
-  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab")));
+  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab"), (props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))));
   const [myScheduleSubTab, setMyScheduleSubTab] = useState<"all" | "taught" | "observed" | "requests">("all");
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
@@ -1248,6 +1256,80 @@ export function ObservationClient(props: ObservationClientProps) {
     if (res.success && res.slots) setSlots(res.slots)
   }
 
+  const exportSlotsToExcel = () => {
+    if (!slots || slots.length === 0) {
+      showToast("Không có dữ liệu để xuất file!", "error");
+      return;
+    }
+    const headers = [
+      "STT",
+      "Mã tiết",
+      "Giáo viên dạy",
+      "Mã GV",
+      "Cơ sở",
+      "Tổ chuyên môn",
+      "Bậc học",
+      "Khối",
+      "Lớp",
+      "Môn học / Hoạt động",
+      "Tên bài dạy / Chủ đề",
+      "Ngày dạy",
+      "Tiết dạy",
+      "Phòng học",
+      "Hình thức",
+      "Số người đăng ký",
+      "Danh sách người dự",
+      "Trạng thái",
+      "Điểm TB",
+      "Xếp loại"
+    ];
+
+    const rows = tabFilteredSlots.map((slot: any, idx: number) => {
+      const isSurprise = isSurpriseSlot(slot);
+      const regs = slot.registrations || [];
+      const observerNames = regs.map((r: any) => `${r.teacher?.teacherName || "GV"} (${r.teacher?.teacherCode || ""}) - ${r.evaluation ? `Đã chấm (${r.evaluation.totalScore != null ? Number(r.evaluation.totalScore).toFixed(1) + "đ - " + (r.evaluation.overallRating || "") : "Đạt"})` : "Chưa chấm"}`).join("; ");
+      
+      const evalScores = regs.map((r: any) => r.evaluation?.totalScore).filter((s: any) => s != null && !isNaN(s));
+      const avgScore = evalScores.length > 0 ? (evalScores.reduce((a: number, b: number) => a + Number(b), 0) / evalScores.length).toFixed(2) : "";
+      const ratings = regs.map((r: any) => r.evaluation?.overallRating).filter(Boolean);
+      const ratingStr = ratings.join(", ");
+
+      return [
+        idx + 1,
+        slot.id,
+        `"${(slot.teacher?.teacherName || "").replace(/"/g, '""')}"`,
+        slot.teacher?.teacherCode || "",
+        `"${(slot.campusName || slot.teacher?.campus?.campusName || "").replace(/"/g, '""')}"`,
+        `"${(slot.deptName || slot.teacher?.departmentRel?.name || "").replace(/"/g, '""')}"`,
+        slot.level || "",
+        slot.grade || "",
+        slot.className || "",
+        `"${(slot.subjectName || "").replace(/"/g, '""')}"`,
+        `"${(slot.topic || "").replace(/"/g, '""')}"`,
+        slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "",
+        slot.startTime || "",
+        `"${(slot.room || "").replace(/"/g, '""')}"`,
+        isSurprise ? "Đột xuất ⚡" : "Theo kế hoạch",
+        `${regs.length}/${slot.maxSeats || 4}`,
+        `"${observerNames.replace(/"/g, '""')}"`,
+        slot.status || "OPEN",
+        avgScore,
+        `"${ratingStr.replace(/"/g, '""')}"`
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `DS_Tiet_Du_Gio_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Đã xuất danh sách tiết dự giờ thành công!", "success");
+  };
+
   const handleRegister = async (slotId: string) => {
     setRegisterDetailSlot(null)
     startTransition(async () => {
@@ -1336,6 +1418,10 @@ export function ObservationClient(props: ObservationClientProps) {
   const canCreateSurprise = useMemo(() => {
     return isAdminUser || isTTCM || isQLCM || isBGHMN || isTBP;
   }, [isAdminUser, isTTCM, isQLCM, isBGHMN, isTBP]);
+
+  const isManagerRole = useMemo(() => {
+    return isAdminUser || isTTCM || isTBP || isQLCM || isBGHMN || isAdminRoute;
+  }, [isAdminUser, isTTCM, isTBP, isQLCM, isBGHMN, isAdminRoute]);
 
   const ttcmAllowedDepartments = useMemo(() => {
     let depts = departments;
@@ -2556,16 +2642,23 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 backdrop-blur-md border border-white/15 text-emerald-200">
-                  SKY-LINE • ĐÁNH GIÁ CHUYÊN MÔN
+                  {viewMode === "ADMIN" ? "SKY-LINE • TRUNG TÂM ĐIỀU HÀNH DỰ GIỜ" : "SKY-LINE • ĐÁNH GIÁ CHUYÊN MÔN"}
                 </span>
                 {isMamNonTeacher && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-400 text-amber-950">
                     BẬC MẦM NON
                   </span>
                 )}
+                {viewMode === "ADMIN" && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-indigo-500 text-white border border-indigo-400/30">
+                    👔 QUẢN TRỊ
+                  </span>
+                )}
               </div>
               <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
-                {isMamNonTeacher ? "Dự giờ & Đánh giá Hoạt động Mầm non" : "Dự giờ & Đánh giá Tiết dạy Giáo viên"}
+                {viewMode === "ADMIN" 
+                  ? (isMamNonTeacher ? "Quản trị & Điều hành Dự giờ Mầm non" : "Quản trị & Điều hành Tiết dạy Dự giờ Toàn trường")
+                  : (isMamNonTeacher ? "Dự giờ & Đánh giá Hoạt động Mầm non" : "Dự giờ & Đánh giá Tiết dạy Giáo viên")}
               </h1>
             </div>
 
@@ -2602,8 +2695,51 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
           </div>
 
-          {/* Right: Primary Quick Actions */}
+          {/* Right: Mode Switcher & Primary Quick Actions */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Mode Switcher for Management Roles */}
+            {isManagerRole && (
+              <div className="bg-black/25 backdrop-blur-md p-1 rounded-xl border border-white/20 flex items-center gap-1 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("ADMIN");
+                    if (activeMainTab === "my_schedule" || activeMainTab === "register_request") {
+                      setActiveMainTab("overview_slots");
+                    }
+                  }}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                    viewMode === "ADMIN"
+                      ? "bg-white text-[#003B3A] shadow-sm scale-105"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                  title="Chuyển sang Chế độ Quản trị & Điều hành"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-teal-700" />
+                  <span>Chế độ Quản lý</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setViewMode("TEACHER");
+                    if (activeMainTab === "ttcm_summary") {
+                      setActiveMainTab("my_schedule");
+                    }
+                  }}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer ${
+                    viewMode === "TEACHER"
+                      ? "bg-white text-teal-900 shadow-sm scale-105"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
+                  }`}
+                  title="Chuyển sang Chế độ Cá nhân (Giáo viên)"
+                >
+                  <User className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Chế độ Cá nhân</span>
+                </button>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={() => {
@@ -2616,17 +2752,19 @@ export function ObservationClient(props: ObservationClientProps) {
               <span>Mở tiết dạy</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                setCreationMode("OBSERVER_REQUEST");
-                setShowCreateModal(true);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-black text-xs transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
-            >
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Xin dự giờ</span>
-            </button>
+            {viewMode === "TEACHER" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCreationMode("OBSERVER_REQUEST");
+                  setShowCreateModal(true);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-black text-xs transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <span>Xin dự giờ</span>
+              </button>
+            )}
 
             {canCreateSurprise && (
               <button
@@ -2639,6 +2777,18 @@ export function ObservationClient(props: ObservationClientProps) {
               >
                 <Zap className="w-4 h-4 text-amber-300 animate-pulse" />
                 <span>Đột xuất ⚡</span>
+              </button>
+            )}
+
+            {viewMode === "ADMIN" && (
+              <button
+                type="button"
+                onClick={exportSlotsToExcel}
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition-all shadow-md border border-emerald-400/40 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+                title="Xuất file Excel danh sách tiết dạy và kết quả"
+              >
+                <Download className="w-4 h-4" />
+                <span>Xuất Excel</span>
               </button>
             )}
 
@@ -2661,73 +2811,10 @@ export function ObservationClient(props: ObservationClientProps) {
 
       {/* MODERN TAB NAVIGATION */}
       <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200/90 p-1.5 shadow-2xs sticky top-2 z-20">
-        <div className={`grid grid-cols-2 ${(isAdminUser && isTTCM) ? "lg:grid-cols-3 xl:grid-cols-5" : (isAdminUser || isTTCM) ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-3"} gap-1.5`}>
-          
-          {/* Tab 1: My Schedule & Tasks */}
-          <button
-            type="button"
-            onClick={() => setActiveMainTab("my_schedule")}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
-              activeMainTab === "my_schedule"
-                ? "bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shadow-md shadow-amber-800/25 scale-[1.01] border border-amber-400/40"
-                : "text-amber-950 bg-amber-50/60 hover:bg-amber-100/80 border border-amber-200/70"
-            }`}
-          >
-            <Calendar className={`w-4 h-4 shrink-0 ${activeMainTab === "my_schedule" ? "text-amber-200" : "text-amber-600"}`} />
-            <span className="truncate">1. Lịch & Việc của tôi</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
-              activeMainTab === "my_schedule" 
-                ? "bg-white/25 text-white border border-white/30" 
-                : "bg-amber-200/80 text-amber-950 border border-amber-300/80"
-            }`}>
-              {myTaughtSlots.length + myObservedSlots.length}
-            </span>
-          </button>
-
-          {/* Tab 2: Overview / Explore Open Slots */}
-          <button
-            type="button"
-            onClick={() => setActiveMainTab("overview_slots")}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
-              activeMainTab === "overview_slots"
-                ? "bg-gradient-to-r from-[#008B82] via-teal-700 to-[#003B3A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-teal-400/40"
-                : "text-teal-950 bg-teal-50/60 hover:bg-teal-100/80 border border-teal-200/70"
-            }`}
-          >
-            <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
-            <span className="truncate">2. Danh sách tiết dạy</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
-              activeMainTab === "overview_slots" 
-                ? "bg-white/25 text-white border border-white/30" 
-                : "bg-teal-200/80 text-teal-950 border border-teal-300/80"
-            }`}>
-              {slots.length}
-            </span>
-          </button>
-
-          {/* Tab 3: Evaluations Received */}
-          <button
-            type="button"
-            onClick={() => setActiveMainTab("evaluations")}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
-              activeMainTab === "evaluations"
-                ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 text-white shadow-md shadow-violet-800/25 scale-[1.01] border border-violet-400/40"
-                : "text-violet-950 bg-violet-50/60 hover:bg-violet-100/80 border border-violet-200/70"
-            }`}
-          >
-            <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
-            <span className="truncate">3. Kết quả đánh giá</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
-              activeMainTab === "evaluations" 
-                ? "bg-white/25 text-white border border-white/30" 
-                : "bg-violet-200/80 text-violet-950 border border-violet-300/80"
-            }`}>
-              {receivedEvaluations.length}
-            </span>
-          </button>
-
-          {/* Tab 4: TTCM / TBP Department Summary (TTCM / TBP / Admin only) */}
-          {(isTTCM || isTBP || isAdminUser) && (
+        {viewMode === "ADMIN" ? (
+          /* ADMIN MODE TAB BAR (4 TABS) */
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+            {/* Admin Tab 1: Báo cáo & Thống kê TCM */}
             <button
               type="button"
               onClick={() => setActiveMainTab("ttcm_summary")}
@@ -2738,19 +2825,59 @@ export function ObservationClient(props: ObservationClientProps) {
               }`}
             >
               <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
-              <span className="truncate">{isTBP ? "4. Báo cáo TBP & Tổ CM" : "4. Báo cáo TTCM"}</span>
+              <span className="truncate">1. Báo cáo & Thống kê TCM</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
                 activeMainTab === "ttcm_summary" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-indigo-200/80 text-indigo-950 border border-indigo-300/80"
               }`}>
-                {isTBP ? "TBP" : "TTCM"}
+                TCM
               </span>
             </button>
-          )}
 
-          {/* Tab 5: Re-evaluation Approvals (Admin only) */}
-          {isAdminUser && (
+            {/* Admin Tab 2: Quản lý Tiết dạy toàn trường */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("overview_slots")}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeMainTab === "overview_slots"
+                  ? "bg-gradient-to-r from-[#008B82] via-teal-700 to-[#003B3A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-teal-400/40"
+                  : "text-teal-950 bg-teal-50/60 hover:bg-teal-100/80 border border-teal-200/70"
+              }`}
+            >
+              <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
+              <span className="truncate">2. Quản lý Tiết dạy toàn trường</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                activeMainTab === "overview_slots" 
+                  ? "bg-white/25 text-white border border-white/30" 
+                  : "bg-teal-200/80 text-teal-950 border border-teal-300/80"
+              }`}>
+                {slots.length}
+              </span>
+            </button>
+
+            {/* Admin Tab 3: Kết quả đánh giá */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("evaluations")}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeMainTab === "evaluations"
+                  ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 text-white shadow-md shadow-violet-800/25 scale-[1.01] border border-violet-400/40"
+                  : "text-violet-950 bg-violet-50/60 hover:bg-violet-100/80 border border-violet-200/70"
+              }`}
+            >
+              <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
+              <span className="truncate">3. Kết quả đánh giá</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                activeMainTab === "evaluations" 
+                  ? "bg-white/25 text-white border border-white/30" 
+                  : "bg-violet-200/80 text-violet-950 border border-violet-300/80"
+              }`}>
+                {receivedEvaluations.length}
+              </span>
+            </button>
+
+            {/* Admin Tab 4: Duyệt chấm lại */}
             <button
               type="button"
               onClick={() => setActiveMainTab("re_evaluations")}
@@ -2761,15 +2888,126 @@ export function ObservationClient(props: ObservationClientProps) {
               }`}
             >
               <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
-              <span className="truncate">5. Duyệt chấm lại</span>
+              <span className="truncate">4. Duyệt chấm lại</span>
               {pendingReEvalCount > 0 && (
                 <span className="px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 bg-red-500 text-white border border-white animate-pulse">
                   {pendingReEvalCount}
                 </span>
               )}
             </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          /* TEACHER MODE TAB BAR (UP TO 5 TABS) */
+          <div className={`grid grid-cols-2 ${(isAdminUser && isTTCM) ? "lg:grid-cols-3 xl:grid-cols-5" : (isAdminUser || isTTCM || isTBP) ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-3"} gap-1.5`}>
+            
+            {/* Tab 1: My Schedule & Tasks */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("my_schedule")}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeMainTab === "my_schedule"
+                  ? "bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shadow-md shadow-amber-800/25 scale-[1.01] border border-amber-400/40"
+                  : "text-amber-950 bg-amber-50/60 hover:bg-amber-100/80 border border-amber-200/70"
+              }`}
+            >
+              <Calendar className={`w-4 h-4 shrink-0 ${activeMainTab === "my_schedule" ? "text-amber-200" : "text-amber-600"}`} />
+              <span className="truncate">1. Lịch & Việc của tôi</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                activeMainTab === "my_schedule" 
+                  ? "bg-white/25 text-white border border-white/30" 
+                  : "bg-amber-200/80 text-amber-950 border border-amber-300/80"
+              }`}>
+                {myTaughtSlots.length + myObservedSlots.length}
+              </span>
+            </button>
+
+            {/* Tab 2: Overview / Explore Open Slots */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("overview_slots")}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeMainTab === "overview_slots"
+                  ? "bg-gradient-to-r from-[#008B82] via-teal-700 to-[#003B3A] text-white shadow-md shadow-teal-900/25 scale-[1.01] border border-teal-400/40"
+                  : "text-teal-950 bg-teal-50/60 hover:bg-teal-100/80 border border-teal-200/70"
+              }`}
+            >
+              <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
+              <span className="truncate">2. Danh sách tiết dạy</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                activeMainTab === "overview_slots" 
+                  ? "bg-white/25 text-white border border-white/30" 
+                  : "bg-teal-200/80 text-teal-950 border border-teal-300/80"
+              }`}>
+                {slots.length}
+              </span>
+            </button>
+
+            {/* Tab 3: Evaluations Received */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("evaluations")}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeMainTab === "evaluations"
+                  ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 text-white shadow-md shadow-violet-800/25 scale-[1.01] border border-violet-400/40"
+                  : "text-violet-950 bg-violet-50/60 hover:bg-violet-100/80 border border-violet-200/70"
+              }`}
+            >
+              <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
+              <span className="truncate">3. Kết quả đánh giá</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                activeMainTab === "evaluations" 
+                  ? "bg-white/25 text-white border border-white/30" 
+                  : "bg-violet-200/80 text-violet-950 border border-violet-300/80"
+              }`}>
+                {receivedEvaluations.length}
+              </span>
+            </button>
+
+            {/* Tab 4: TTCM / TBP Department Summary (TTCM / TBP / Admin only) */}
+            {(isTTCM || isTBP || isAdminUser) && (
+              <button
+                type="button"
+                onClick={() => setActiveMainTab("ttcm_summary")}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                  activeMainTab === "ttcm_summary"
+                    ? "bg-gradient-to-r from-blue-700 via-indigo-700 to-[#003B3A] text-white shadow-md shadow-indigo-900/25 scale-[1.01] border border-indigo-400/40"
+                    : "text-indigo-950 bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200/80"
+                }`}
+              >
+                <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
+                <span className="truncate">{isTBP ? "4. Báo cáo TBP & Tổ CM" : "4. Báo cáo TTCM"}</span>
+                <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                  activeMainTab === "ttcm_summary" 
+                    ? "bg-white/25 text-white border border-white/30" 
+                    : "bg-indigo-200/80 text-indigo-950 border border-indigo-300/80"
+                }`}>
+                  {isTBP ? "TBP" : "TTCM"}
+                </span>
+              </button>
+            )}
+
+            {/* Tab 5: Re-evaluation Approvals (Admin only) */}
+            {isAdminUser && (
+              <button
+                type="button"
+                onClick={() => setActiveMainTab("re_evaluations")}
+                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                  activeMainTab === "re_evaluations"
+                    ? "bg-gradient-to-r from-rose-600 via-pink-600 to-red-600 text-white shadow-md shadow-rose-800/25 scale-[1.01] border border-rose-400/40"
+                    : "text-rose-950 bg-rose-50/70 hover:bg-rose-100/90 border border-rose-200/80"
+                }`}
+              >
+                <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
+                <span className="truncate">5. Duyệt chấm lại</span>
+                {pendingReEvalCount > 0 && (
+                  <span className="px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 bg-red-500 text-white border border-white animate-pulse">
+                    {pendingReEvalCount}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* TAB 1: 1. ĐĂNG KÝ & XIN DỰ GIỜ */}
@@ -4052,157 +4290,173 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* TAB 2: TỔNG HỢP & DANH SÁCH TIẾT DẠY */}
       {activeMainTab === "overview_slots" && (
         <div className="w-full space-y-5 animate-in fade-in duration-300">
-          {/* Compact Quick Register Bar (Space-saving, Simple & Elegant) */}
-        <div className="w-full bg-gradient-to-r from-teal-50/90 via-white to-amber-50/60 rounded-2xl border border-teal-200/90 p-3 shadow-2xs">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
-            {/* Title Tag */}
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#008B82] to-[#004f4a] text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-2xs">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Đăng ký nhanh</span>
-              </span>
-              <span className="hidden sm:inline-block text-xs font-bold text-slate-500">
-                Gợi ý tiết mới nhất:
-              </span>
-            </div>
+          {/* Admin Mode KPI Dashboard Cards */}
+          {viewMode === "ADMIN" && (
+            <AdminObservationKpiCards
+              slots={slots}
+              isPreschool={isMamNonTeacher}
+              selectedMonth={filterMonth}
+              academicYearName={activeAcademicYear?.name}
+            />
+          )}
 
-            {/* Suggested 3 Compact Slim Cards */}
-            <div className="flex-1">
-              {(() => {
-                const today = new Date();
-                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          {/* Teacher Mode: Compact Quick Register Bar (Space-saving, Simple & Elegant) */}
+          {viewMode === "TEACHER" && (
+            <div className="w-full bg-gradient-to-r from-teal-50/90 via-white to-amber-50/60 rounded-2xl border border-teal-200/90 p-3 shadow-2xs">
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
+                {/* Title Tag */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#008B82] to-[#004f4a] text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-2xs">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Đăng ký nhanh</span>
+                  </span>
+                  <span className="hidden sm:inline-block text-xs font-bold text-slate-500">
+                    Gợi ý tiết mới nhất:
+                  </span>
+                </div>
 
-                const suggested = slots
-                  .filter(s => {
-                    if (s.teacherId === currentTeacher?.id) return false;
-                    if (s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)) return false;
-                    if (s.requestOrigin === "OBSERVER_REQUEST") return false;
-                    return true;
-                  })
-                  .sort((a, b) => {
-                    const aDate = new Date(a.date);
-                    const bDate = new Date(b.date);
-                    const aIsExpired = aDate < todayStart || a.status === "EXPIRED" || a.registrations.length >= a.maxSeats;
-                    const bIsExpired = bDate < todayStart || b.status === "EXPIRED" || b.registrations.length >= b.maxSeats;
+                {/* Suggested 3 Compact Slim Cards */}
+                <div className="flex-1">
+                  {(() => {
+                    const today = new Date();
+                    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-                    if (!aIsExpired && bIsExpired) return -1;
-                    if (aIsExpired && !bIsExpired) return 1;
+                    const suggested = slots
+                      .filter(s => {
+                        if (s.teacherId === currentTeacher?.id) return false;
+                        if (s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)) return false;
+                        if (s.requestOrigin === "OBSERVER_REQUEST") return false;
+                        return true;
+                      })
+                      .sort((a, b) => {
+                        const aDate = new Date(a.date);
+                        const bDate = new Date(b.date);
+                        const aIsExpired = aDate < todayStart || a.status === "EXPIRED" || a.registrations.length >= a.maxSeats;
+                        const bIsExpired = bDate < todayStart || b.status === "EXPIRED" || b.registrations.length >= b.maxSeats;
 
-                    const getScore = (slot: any) => {
-                      let score = 0;
-                      const isSlotMamNon = slot.level === "Mầm non" ||
-                        (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-                      
-                      if (isMamNonTeacher) {
-                        if (isSlotMamNon) {
-                          score += 500;
-                          const isSameDept = checkIsMyDept(slot);
-                          const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                          if (isSameCampus && isSameDept) score += 300;
-                          else if (isSameCampus) score += 200;
-                          else if (isSameDept) score += 100;
-                        }
-                      } else {
-                        if (!isSlotMamNon) {
-                          score += 500;
-                          const isSameDept = checkIsMyDept(slot);
-                          const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                          if (isSameCampus && isSameDept) score += 300;
-                          else if (isSameCampus) score += 200;
-                          else if (isSameDept) score += 100;
-                        }
-                      }
-                      return score;
-                    };
+                        if (!aIsExpired && bIsExpired) return -1;
+                        if (aIsExpired && !bIsExpired) return 1;
 
-                    const scoreDiff = getScore(b) - getScore(a);
-                    if (scoreDiff !== 0) return scoreDiff;
+                        const getScore = (slot: any) => {
+                          let score = 0;
+                          const isSlotMamNon = slot.level === "Mầm non" ||
+                            (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+                          
+                          if (isMamNonTeacher) {
+                            if (isSlotMamNon) {
+                              score += 500;
+                              const isSameDept = checkIsMyDept(slot);
+                              const isSameCampus = slot.campusId === currentTeacher?.campusId;
+                              if (isSameCampus && isSameDept) score += 300;
+                              else if (isSameCampus) score += 200;
+                              else if (isSameDept) score += 100;
+                            }
+                          } else {
+                            if (!isSlotMamNon) {
+                              score += 500;
+                              const isSameDept = checkIsMyDept(slot);
+                              const isSameCampus = slot.campusId === currentTeacher?.campusId;
+                              if (isSameCampus && isSameDept) score += 300;
+                              else if (isSameCampus) score += 200;
+                              else if (isSameDept) score += 100;
+                            }
+                          }
+                          return score;
+                        };
 
-                    const aTime = new Date(a.createdAt || a.date).getTime();
-                    const bTime = new Date(b.createdAt || b.date).getTime();
-                    return bTime - aTime;
-                  })
-                  .slice(0, 3);
-                
-                if (suggested.length === 0) {
-                  return (
-                    <div className="py-2 text-xs font-bold text-slate-400 italic text-center">
-                      Chưa có tiết dạy dự giờ nào khả dụng.
-                    </div>
-                  );
-                }
+                        const scoreDiff = getScore(b) - getScore(a);
+                        if (scoreDiff !== 0) return scoreDiff;
 
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-                    {suggested.map(slot => {
-                      const slotDate = new Date(slot.date);
-                      const isPastSlot = slotDate < todayStart || slot.status === "EXPIRED" || slot.registrations.length >= slot.maxSeats;
-                      const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
-                      const remainingSeats = Math.max(0, slot.maxSeats - slot.registrations.length);
-
+                        const aTime = new Date(a.createdAt || a.date).getTime();
+                        const bTime = new Date(b.createdAt || b.date).getTime();
+                        return bTime - aTime;
+                      })
+                      .slice(0, 3);
+                    
+                    if (suggested.length === 0) {
                       return (
-                        <div 
-                          key={slot.id} 
-                          className="flex items-center justify-between gap-2.5 p-2.5 px-3 bg-white hover:bg-teal-50/50 border border-slate-200/90 hover:border-teal-400 rounded-xl transition-all shadow-2xs hover:shadow-xs text-xs"
-                        >
-                          <div className="min-w-0 flex-1 space-y-0.5">
-                            <div className="flex items-center gap-1.5">
-                              {campusDisplay && (
-                                <span className="px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900 font-extrabold text-[10px] shrink-0 border border-amber-200">
-                                  {campusDisplay}
-                                </span>
-                              )}
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="font-black text-slate-900 truncate text-xs" title={slot.topic}>
-                                  {slot.topic}
-                                </span>
-                                {isSurpriseSlot(slot) && (
-                                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
-                                    ⚡ Đột xuất
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium truncate">
-                              <span className="font-bold text-slate-700 truncate max-w-[100px]">{slot.teacher.teacherName}</span>
-                              <span>•</span>
-                              <span>{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })} ({slot.startTime})</span>
-                              <span>•</span>
-                              <span className="text-emerald-700 font-extrabold shrink-0">Còn {remainingSeats} chỗ</span>
-                            </div>
-                          </div>
-
-                          <button 
-                            disabled={isPastSlot}
-                            onClick={() => setRegisterDetailSlot(slot)}
-                            className={`px-3 py-1.5 text-[11px] font-black uppercase rounded-lg transition-all shrink-0 cursor-pointer shadow-2xs ${
-                              isPastSlot
-                                ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                                : "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white hover:scale-105 active:scale-95"
-                            }`}
-                          >
-                            {isPastSlot ? "Hết" : "Đăng ký"}
-                          </button>
+                        <div className="py-2 text-xs font-bold text-slate-400 italic text-center">
+                          Chưa có tiết dạy dự giờ nào khả dụng.
                         </div>
                       );
-                    })}
-                  </div>
-                );
-              })()}
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                        {suggested.map(slot => {
+                          const slotDate = new Date(slot.date);
+                          const isPastSlot = slotDate < todayStart || slot.status === "EXPIRED" || slot.registrations.length >= slot.maxSeats;
+                          const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
+                          const remainingSeats = Math.max(0, slot.maxSeats - slot.registrations.length);
+
+                          return (
+                            <div 
+                              key={slot.id} 
+                              className="flex items-center justify-between gap-2.5 p-2.5 px-3 bg-white hover:bg-teal-50/50 border border-slate-200/90 hover:border-teal-400 rounded-xl transition-all shadow-2xs hover:shadow-xs text-xs"
+                            >
+                              <div className="min-w-0 flex-1 space-y-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  {campusDisplay && (
+                                    <span className="px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900 font-extrabold text-[10px] shrink-0 border border-amber-200">
+                                      {campusDisplay}
+                                    </span>
+                                  )}
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="font-black text-slate-900 truncate text-xs" title={slot.topic}>
+                                      {slot.topic}
+                                    </span>
+                                    {isSurpriseSlot(slot) && (
+                                      <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
+                                        ⚡ Đột xuất
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium truncate">
+                                  <span className="font-bold text-slate-700 truncate max-w-[100px]">{slot.teacher.teacherName}</span>
+                                  <span>•</span>
+                                  <span>{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })} ({slot.startTime})</span>
+                                  <span>•</span>
+                                  <span className="text-emerald-700 font-extrabold shrink-0">Còn {remainingSeats} chỗ</span>
+                                </div>
+                              </div>
+
+                              <button 
+                                disabled={isPastSlot}
+                                onClick={() => setRegisterDetailSlot(slot)}
+                                className={`px-3 py-1.5 text-[11px] font-black uppercase rounded-lg transition-all shrink-0 cursor-pointer shadow-2xs ${
+                                  isPastSlot
+                                    ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                                    : "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white hover:scale-105 active:scale-95"
+                                }`}
+                              >
+                                {isPastSlot ? "Hết" : "Đăng ký"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          )}
 
         {/* ROW 2: Danh sách tiết dạy đăng ký dự giờ (Full-width Data Table) */}
       <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center">
-              <SlidersHorizontal className="w-5 h-5" />
+              {viewMode === "ADMIN" ? <LayoutDashboard className="w-5 h-5 text-teal-700" /> : <SlidersHorizontal className="w-5 h-5" />}
             </div>
             <div>
-              <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">Danh sách tiết dạy đăng ký dự giờ</h3>
-              <p className="text-xs text-slate-400 font-medium">Tìm kiếm, lọc theo tổ chuyên môn và chọn tiết dự giờ phù hợp</p>
+              <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
+                {viewMode === "ADMIN" ? "Bảng Điều hành Tiết dạy Dự giờ Toàn trường" : "Danh sách tiết dạy đăng ký dự giờ"}
+              </h3>
+              <p className="text-xs text-slate-400 font-medium">
+                {viewMode === "ADMIN" ? "Quản lý, điều phối, phê duyệt và theo dõi tiến độ dự giờ toàn trường" : "Tìm kiếm, lọc theo tổ chuyên môn và chọn tiết dự giờ phù hợp"}
+              </p>
             </div>
             {isSearching && (
               <div className="flex items-center gap-1.5 ml-2 text-xs font-bold text-teal-600 animate-pulse">
@@ -4514,7 +4768,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <th className="p-4 text-center">Số chỗ</th>
                     <th className="p-4">GV Đăng ký</th>
                     <th className="p-4">Trạng thái</th>
-                    <th className="p-4 text-right">Đăng ký</th>
+                    <th className="p-4 text-right">{viewMode === "ADMIN" ? "Thao tác Quản trị" : "Đăng ký"}</th>
                   </tr>
                 )}
               </thead>
@@ -4773,36 +5027,101 @@ export function ObservationClient(props: ObservationClientProps) {
 
                       {/* Cột THAO TÁC / ĐĂNG KÝ */}
                       <td className="p-4 text-right">
-                        {isHost ? (
-                          <span className="px-3.5 py-1.5 text-xs font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-200 inline-block shadow-2xs">
-                            Tôi dạy
-                          </span>
-                        ) : isExpired ? (
-                          <button disabled className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
-                            Hết hạn
-                          </button>
-                        ) : isRegistered ? (
-                          myReg?.isApproved ? (
-                            <span className="px-3 py-1.5 text-xs font-black rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 inline-block shadow-2xs">
-                              Đã đăng ký (Đã duyệt)
-                            </span>
-                          ) : (
-                            <button onClick={() => handleCancelRegistration(myReg.id)}
-                              className="px-3.5 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer shadow-2xs">
-                              Hủy dự
+                        {viewMode === "ADMIN" ? (
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {/* Chi tiết / In phiếu */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const reg = slot.registrations?.[0] || null;
+                                setPrintModalSlot({ slot, registration: reg });
+                              }}
+                              className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#008B82] border border-teal-200/80 transition-all cursor-pointer shadow-2xs"
+                              title="Xem chi tiết & In phiếu đánh giá"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
                             </button>
-                          )
-                        ) : observerCount >= (slot.maxSeats || 4) ? (
-                          <button disabled className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
-                            Khóa
-                          </button>
+
+                            {/* Sửa tiết dạy */}
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(slot)}
+                              className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 transition-all cursor-pointer shadow-2xs"
+                              title="Chỉnh sửa thông tin tiết dạy"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* Gửi email nhắc nhở */}
+                            {slot.registrations && slot.registrations.length > 0 && slot.registrations.some((r: any) => !r.evaluation) && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  startTransition(async () => {
+                                    const res = await triggerSlotReminder(slot.id);
+                                    if (res.success) {
+                                      showToast("Đã gửi email nhắc nhở giáo viên tham gia dự giờ / nộp phiếu!", "success");
+                                    } else {
+                                      showToast(res.error || "Gửi email nhắc nhở thất bại", "error");
+                                    }
+                                  });
+                                }}
+                                className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 transition-all cursor-pointer shadow-2xs"
+                                title="Gửi email nhắc nhở nộp phiếu đánh giá"
+                              >
+                                <Mail className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+
+                            {/* Xóa tiết dạy */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSlot(slot.id)}
+                              disabled={slot.registrations && slot.registrations.length > 0}
+                              className={`p-1.5 rounded-lg transition-all shadow-2xs ${
+                                slot.registrations && slot.registrations.length > 0
+                                  ? "bg-slate-100 text-slate-300 border border-slate-200 cursor-not-allowed"
+                                  : "bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 cursor-pointer"
+                              }`}
+                              title={slot.registrations && slot.registrations.length > 0 ? "Không thể xóa tiết đã có GV đăng ký" : "Xóa tiết dạy này"}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         ) : (
-                          <button 
-                            onClick={() => setRegisterDetailSlot(slot)}
-                            className="px-4 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-md shadow-teal-800/15 bg-gradient-to-r from-[#008B82] to-[#007068] hover:from-[#007068] hover:to-[#005c56] text-white cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
-                          >
-                            Đăng ký
-                          </button>
+                          <>
+                            {isHost ? (
+                              <span className="px-3.5 py-1.5 text-xs font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-200 inline-block shadow-2xs">
+                                Tôi dạy
+                              </span>
+                            ) : isExpired ? (
+                              <button disabled className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
+                                Hết hạn
+                              </button>
+                            ) : isRegistered ? (
+                              myReg?.isApproved ? (
+                                <span className="px-3 py-1.5 text-xs font-black rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 inline-block shadow-2xs">
+                                  Đã đăng ký (Đã duyệt)
+                                </span>
+                              ) : (
+                                <button onClick={() => handleCancelRegistration(myReg.id)}
+                                  className="px-3.5 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer shadow-2xs">
+                                  Hủy dự
+                                </button>
+                              )
+                            ) : observerCount >= (slot.maxSeats || 4) ? (
+                              <button disabled className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
+                                Khóa
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => setRegisterDetailSlot(slot)}
+                                className="px-4 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-md shadow-teal-800/15 bg-gradient-to-r from-[#008B82] to-[#007068] hover:from-[#007068] hover:to-[#005c56] text-white cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                              >
+                                Đăng ký
+                              </button>
+                            )}
+                          </>
                         )}
                       </td>
                     </tr>

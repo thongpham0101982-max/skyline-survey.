@@ -50,6 +50,8 @@ export default async function AdminObservationPage(props: {
 
   return (
     <ObservationClient
+      isAdminPage={true}
+      initialViewMode="ADMIN"
       isPreschoolPage={false}
       initialSlots={slotsResult.success ? (slotsResult.slots || []) : []}
       currentTeacher={refDataResult.currentTeacher}
