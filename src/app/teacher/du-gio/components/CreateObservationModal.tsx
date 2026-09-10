@@ -1203,26 +1203,26 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                         </div>
                       </div>
 
-                      {/* Rating selection buttons */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-                        {(isMN
-                          ? [["Tốt","bg-emerald-600"],["Khá","bg-sky-600"],["Đạt","bg-teal-600"],["Không đạt","bg-rose-600"]]
-                          : [["Giỏi","bg-emerald-600"],["Khá","bg-sky-600"],["Trung bình","bg-amber-500"],["Không xếp loại","bg-rose-600"]]
-                        ).map(([r, color]) => (
-                          <button
-                            key={r}
-                            type="button"
-                            onClick={() => setSurpriseOverall(r)}
-                            className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                              currentRank === r
-                                ? `${color} text-white shadow-md ring-2 ring-offset-1 ring-slate-400/40`
-                                : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                            }`}
-                          >
-                            {currentRank === r && <Check className="w-3.5 h-3.5" />}
-                            <span>{r}</span>
-                          </button>
-                        ))}
+                      {/* Evaluation History & Timestamp Info */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 bg-slate-50 rounded-xl border border-slate-200/90 text-xs text-slate-600 font-medium">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-rose-600 shrink-0" />
+                          <span>
+                            Thời gian lập biên bản:{" "}
+                            <strong className="text-slate-900 font-bold">
+                              {surpriseDate ? new Date(surpriseDate).toLocaleDateString("vi-VN") : new Date().toLocaleDateString("vi-VN")} ({surprisePeriod || "Tiết 1"})
+                            </strong>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-teal-600 shrink-0" />
+                          <span>
+                            Người đánh giá:{" "}
+                            <strong className="text-slate-900 font-bold">
+                              {currentTeacher?.teacherName || "Giáo viên dự giờ"}
+                            </strong>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );

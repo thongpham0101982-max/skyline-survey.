@@ -5850,27 +5850,38 @@ export function ObservationClient(props: ObservationClientProps) {
                         </div>
                       </div>
 
-                      {/* Rating selection buttons */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-                        {(isMN
-                          ? [["Tốt","bg-emerald-600"],["Khá","bg-sky-600"],["Đạt","bg-teal-600"],["Không đạt","bg-rose-600"]]
-                          : [["Giỏi","bg-emerald-600"],["Khá","bg-sky-600"],["Trung bình","bg-amber-500"],["Không xếp loại","bg-rose-600"]]
-                        ).map(([r, color]) => (
-                          <button
-                            key={r}
-                            type="button"
-                            onClick={() => { if (!isReadOnly) setEvalOverall(r); }}
-                            disabled={isReadOnly}
-                            className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                              currentRank === r
-                                ? `${color} text-white shadow-md ring-2 ring-offset-1 ring-slate-400/40`
-                                : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
-                            }`}
-                          >
-                            {currentRank === r && <Check className="w-3.5 h-3.5" />}
-                            <span>{r}</span>
-                          </button>
-                        ))}
+                      {/* Evaluation History & Timestamp Info */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3.5 bg-slate-50 rounded-xl border border-slate-200/90 text-xs text-slate-600 font-medium">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-[#008B82] shrink-0" />
+                          <span>
+                            {evalModal.registration.evaluation?.submittedAt ? (
+                              <>
+                                Thời gian nộp đánh giá:{" "}
+                                <strong className="text-slate-900 font-bold">
+                                  {new Date(evalModal.registration.evaluation.submittedAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} • {new Date(evalModal.registration.evaluation.submittedAt).toLocaleDateString("vi-VN")}
+                                </strong>
+                              </>
+                            ) : (
+                              <>
+                                Thời gian thực hiện:{" "}
+                                <strong className="text-slate-900 font-bold">
+                                  {evalModal.slot?.date ? new Date(evalModal.slot.date).toLocaleDateString("vi-VN") : new Date().toLocaleDateString("vi-VN")} ({evalModal.slot.startTime || "Tiết dạy"})
+                                </strong>{" "}
+                                <span className="text-amber-600 font-semibold">(Đang nhập đánh giá)</span>
+                              </>
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-slate-500 shrink-0" />
+                          <span>
+                            Người đánh giá:{" "}
+                            <strong className="text-slate-900 font-bold">
+                              {evalModal.registration.teacher?.teacherName || currentTeacher?.teacherName}
+                            </strong>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   );
