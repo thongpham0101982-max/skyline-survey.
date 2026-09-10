@@ -43,16 +43,9 @@ interface ActionItem {
 
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
-  const [metrics, setMetrics] = useState<MetricData | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("sqms_teacher_dashboard_metrics");
-        if (cached) return JSON.parse(cached);
-      } catch (e) {}
-    }
-    return null;
-  })
-  const [loading, setLoading] = useState(!metrics)
+  const [mounted, setMounted] = useState(false)
+  const [metrics, setMetrics] = useState<MetricData | null>(null)
+  const [loading, setLoading] = useState(true)
   const [currentDateStr, setCurrentDateStr] = useState("")
   const [currentTimeStr, setCurrentTimeStr] = useState("")
   const [searchQuery, setSearchQuery] = useState("")
@@ -62,6 +55,17 @@ export default function TeacherDashboard() {
   const userName = session?.user?.name || "Thầy/Cô"
 
   useEffect(() => {
+    setMounted(true)
+
+    // Safely load cached metrics on client mount
+    try {
+      const cached = sessionStorage.getItem("sqms_teacher_dashboard_metrics")
+      if (cached) {
+        setMetrics(JSON.parse(cached))
+        setLoading(false)
+      }
+    } catch (e) {}
+
     const updateDateTime = () => {
       const now = new Date()
       const dateOptions: Intl.DateTimeFormatOptions = {
@@ -86,11 +90,9 @@ export default function TeacherDashboard() {
         if (r.ok) {
           const data = await r.json()
           setMetrics(data)
-          if (typeof window !== "undefined") {
-            try {
-              sessionStorage.setItem("sqms_teacher_dashboard_metrics", JSON.stringify(data));
-            } catch (e) {}
-          }
+          try {
+            sessionStorage.setItem("sqms_teacher_dashboard_metrics", JSON.stringify(data))
+          } catch (e) {}
         }
       } catch (e) {
         console.error("Failed to load dashboard metrics:", e)
@@ -479,9 +481,9 @@ export default function TeacherDashboard() {
     })
   }, [actionItems, activeTab, searchQuery])
 
-  if (status === "loading" && !metrics) {
+  if (!mounted || (status === "loading" && !metrics)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 font-sans">
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4 font-sans" suppressHydrationWarning>
         <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-tr from-[#003B3A] to-[#48BFE3] shadow-lg text-white animate-pulse">
           <Loader2 className="w-6 h-6 animate-spin text-[#80FFDB]" />
         </div>
@@ -491,7 +493,7 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="space-y-6 pb-16 font-sans text-slate-800 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-16 font-sans text-slate-800 max-w-7xl mx-auto" suppressHydrationWarning>
       {/* 1. Ultra-Premium Vibrant Hero Greeting Header */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#0D5C58] to-[#123E67] text-white shadow-xl p-5 sm:p-7 border border-teal-400/20">
         {/* Colorful Animated Ambient Glows */}
@@ -527,11 +529,11 @@ export default function TeacherDashboard() {
 
           {/* Right: Date/Time + Academic Year Chip + Quick Actions */}
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto justify-start lg:justify-end">
-            <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/12 backdrop-blur-md border border-white/20 text-xs text-white shadow-xs">
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/12 backdrop-blur-md border border-white/20 text-xs text-white shadow-xs" suppressHydrationWarning>
               <CalendarIcon className="w-4 h-4 text-[#80FFDB]" />
-              <span className="font-semibold capitalize">{currentDateStr}</span>
+              <span className="font-semibold capitalize" suppressHydrationWarning>{currentDateStr}</span>
               {currentTimeStr && (
-                <span className="text-[#80FFDB] border-l border-white/20 pl-2 font-mono text-[11px] font-bold">
+                <span className="text-[#80FFDB] border-l border-white/20 pl-2 font-mono text-[11px] font-bold" suppressHydrationWarning>
                   {currentTimeStr}
                 </span>
               )}
