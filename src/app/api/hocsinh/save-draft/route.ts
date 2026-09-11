@@ -46,19 +46,12 @@ export async function POST(req: NextRequest) {
 
     await prisma.$transaction([
       prisma.surveyResponse.deleteMany({ where: { formId: form.id } }),
-      prisma.surveyResponse.createMany({ data: responseData }),
-      prisma.surveyForm.update({ 
-        where: { id: formId }, 
-        data: { 
-          status: 'SUBMITTED', 
-          submissionDateTime: new Date() 
-        } 
-      })
+      prisma.surveyResponse.createMany({ data: responseData })
     ])
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, message: 'Đã lưu tạm thành công' })
   } catch (e: any) {
-    console.error('Submit error:', e)
-    return NextResponse.json({ error: e.message || 'Lỗi xử lý gửi bài' }, { status: 500 })
+    console.error('Save draft error:', e)
+    return NextResponse.json({ error: e.message || 'Lỗi lưu dữ liệu' }, { status: 500 })
   }
 }

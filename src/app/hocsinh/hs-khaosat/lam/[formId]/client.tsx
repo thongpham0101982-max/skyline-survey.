@@ -1,44 +1,74 @@
 // @ts-nocheck
-﻿'use client'
+'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Send, CheckCircle2, AlertCircle, GraduationCap } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Send, CheckCircle2, AlertCircle, GraduationCap, Save, Check } from 'lucide-react'
 import Link from 'next/link'
 
-interface Q { id:string; questionText:string; questionType:string; ratingMin:number; ratingMax:number; options:string|null; isRequired:boolean; weight:number }
-interface Props { formId:string; periodName:string; studentName:string; className:string; questions:Q[] }
+interface Q { 
+  id: string; 
+  questionText: string; 
+  questionType: string; 
+  ratingMin: number; 
+  ratingMax: number; 
+  options: string | null; 
+  isRequired: boolean; 
+  weight: number 
+}
 
-export default function HsFormClient({ formId, periodName, studentName, className, questions }: Props) {
+interface Props { 
+  formId: string; 
+  periodName: string; 
+  studentName: string; 
+  className: string; 
+  questions: Q[];
+  initialAnswers?: Record<string, any>;
+}
+
+export default function HsFormClient({ 
+  formId, 
+  periodName, 
+  studentName, 
+  className, 
+  questions,
+  initialAnswers = {}
+}: Props) {
   const router = useRouter()
-  const [answers, setAnswers] = useState<Record<string,any>>({})
+  const [answers, setAnswers] = useState<Record<string, any>>(initialAnswers)
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState('')
   const [done, setDone] = useState(false)
   const [err, setErr] = useState('')
+
   const SZ = 5
-  const total = Math.ceil(questions.length / SZ)
+  const total = Math.max(1, Math.ceil(questions.length / SZ))
   const stepQs = questions.slice(step * SZ, (step + 1) * SZ)
-  const progress = Math.min(100, Math.round(((step * SZ + stepQs.length) / questions.length) * 100))
-  const ans = (id:string, v:any) => setAnswers(p => ({ ...p, [id]: v }))
+  const progress = Math.min(100, Math.round(((step * SZ + stepQs.length) / Math.max(1, questions.length)) * 100))
+  
+  const ans = (id: string, v: any) => {
+    setAnswers(p => ({ ...p, [id]: v }))
+    setErr('')
+  }
 
   const validate = (qs: Q[]) => {
     for (const q of qs) {
       if (q.isRequired) {
         const value = answers[q.id]
         if (value === undefined || value === "" || value === null) return q
-        if (["MC_GRID", "CB_GRID", "GRID"].includes(q.questionType?.toUpperCase())) {
-          let gridOpts = { rows: [] };
-          try { 
-            const p = JSON.parse(q.options || "{}");
-            gridOpts = (p && typeof p === "object") ? p : { rows: [] };
-          } catch {}
-          const rows = gridOpts.rows || [];
-          if (rows.length > 0) {
-            const currentGrid = value || {};
-            for (let ri = 0; ri < rows.length; ri++) {
-              if (currentGrid[ri] === undefined || (Array.isArray(currentGrid[ri]) && currentGrid[ri].length === 0)) return q;
-            }
-          }
+        
+        const type = q.questionType?.toUpperCase() || ''
+        if (["MC_GRID", "CB_GRID", "GRID"].includes(type)) {
+          if (typeof value !== "object" || !value) return q
+          const hasSelection = Object.values(value).some(v => {
+            if (v === undefined || v === null || v === "") return false
+            if (Array.isArray(v) && v.length === 0) return false
+            return true
+          })
+          if (!hasSelection) return q
+        } else if (["CHECKBOX", "MULTI_SELECT"].includes(type)) {
+          if (!Array.isArray(value) || value.length === 0) return q
         }
       }
     }
@@ -46,41 +76,93 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
   }
 
   const next = () => {
-    const m = validate(stepQs); if (m) { setErr('Vui lòng hoàn thành: ' + m.questionText.substring(0,60)); return }
-    setErr(''); setStep(s => s + 1); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-  const prev = () => { setErr(''); setStep(s => s - 1); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }
-
-  const submit = async () => {
-    const m = validate(stepQs); if (m) { setErr('Vui lòng hoàn thành: ' + m.questionText.substring(0,60)); return }
-    for (const q of questions) {
-      if (q.isRequired && (answers[q.id] === undefined || answers[q.id] === '')) {
-        setStep(Math.floor(questions.indexOf(q) / SZ))
-        setErr('Còn câu hỏi chưa trả lời: ' + q.questionText.substring(0,60)); return
-      }
+    const m = validate(stepQs)
+    if (m) { 
+      setErr('Vui lòng hoàn thành câu hỏi: ' + (m.questionText.length > 60 ? m.questionText.substring(0, 60) + '...' : m.questionText))
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+      return 
     }
-    setSubmitting(true); setErr('')
+    setErr('')
+    setStep(s => s + 1)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const prev = () => { 
+    setErr('')
+    setStep(s => s - 1)
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) 
+  }
+
+  const saveDraft = async () => {
+    setSavingDraft(true)
+    setErr('')
+    setSaveSuccessMsg('')
     try {
-      const res = await fetch('/api/hocsinh/submit', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const res = await fetch('/api/hocsinh/save-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ formId, answers })
       })
-      if (!res.ok) { const d = await res.json(); setErr(d.error || 'Lỗi gửi bài'); setSubmitting(false); return }
+      const d = await res.json()
+      if (!res.ok) {
+        setErr(d.error || 'Không thể lưu tạm phiếu khảo sát')
+      } else {
+        setSaveSuccessMsg('Đã lưu dữ liệu thành công!')
+        setTimeout(() => setSaveSuccessMsg(''), 3000)
+      }
+    } catch (e: any) {
+      setErr('Lỗi kết nối khi lưu: ' + (e?.message || ''))
+    } finally {
+      setSavingDraft(false)
+    }
+  }
+
+  const submit = async () => {
+    const m = validate(questions)
+    if (m) {
+      const qIndex = questions.findIndex(x => x.id === m.id)
+      if (qIndex >= 0) {
+        setStep(Math.floor(qIndex / SZ))
+      }
+      setErr('Vui lòng hoàn thành câu hỏi: ' + (m.questionText.length > 80 ? m.questionText.substring(0, 80) + '...' : m.questionText))
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    setSubmitting(true)
+    setErr('')
+    try {
+      const res = await fetch('/api/hocsinh/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ formId, answers })
+      })
+      const d = await res.json()
+      if (!res.ok) { 
+        setErr(d.error || 'Lỗi gửi bài khảo sát')
+        setSubmitting(false)
+        if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
+        return 
+      }
       setDone(true)
-      setTimeout(() => router.push('/hocsinh/hs-khaosat/danh-sach'), 3000)
-    } catch (e) {
-      setErr('Lỗi kết nối mạng'); setSubmitting(false)
+      setTimeout(() => router.push('/hocsinh/hs-khaosat/danh-sach'), 2500)
+    } catch (e: any) {
+      setErr('Lỗi kết nối mạng: ' + (e?.message || ''))
+      setSubmitting(false)
+      if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 
   if (done) return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#f0fdf4]">
-      <div className="bg-white rounded-[3rem] p-12 max-w-sm w-full text-center shadow-2xl border border-emerald-100">
-        <div className="w-24 h-24 flex items-center justify-center mx-auto mb-8 text-xs font-semibold">
+      <div className="bg-white rounded-[3rem] p-12 max-w-sm w-full text-center shadow-2xl border border-emerald-100 animate-in zoom-in-95">
+        <div className="w-24 h-24 flex items-center justify-center mx-auto mb-8 bg-emerald-50 rounded-full">
           <CheckCircle2 className="w-12 h-12 text-emerald-500" />
         </div>
         <h2 className="text-3xl font-black text-slate-800 mb-4">Hoàn tất!</h2>
-        <p className="text-slate-500 font-medium mb-8 leading-relaxed text-sm">Cảm ơn bạn đã hoàn thành khảo sát. Ý kiến của bạn rất quan trọng với Skyline.</p>
+        <p className="text-slate-500 font-medium mb-8 leading-relaxed text-sm">
+          Cảm ơn bạn đã hoàn thành khảo sát. Ý kiến của bạn rất quan trọng với Skyline.
+        </p>
         <div className="flex items-center justify-center gap-3 text-emerald-600 font-bold text-xs">
           <div className="w-4 h-4 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin" />
           Đang chuyển hướng...
@@ -91,7 +173,8 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
 
   return (
     <div className="min-h-screen font-outfit" style={{ background: '#f8fafc' }}>
-      <div className="text-white sticky top-0 z-50 shadow-xl" style={{ background: 'linear-gradient(135deg,#48BFE3,#8b0000)' }}>
+      {/* Top Header */}
+      <div className="text-white sticky top-0 z-50 shadow-xl" style={{ background: 'linear-gradient(135deg,#0284c7,#8b0000)' }}>
         <div className="max-w-2xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-4">
             <Link href="/hocsinh/hs-khaosat/danh-sach" className="flex items-center gap-2 text-white/80 hover:text-white text-xs font-black uppercase tracking-widest transition-all">
@@ -103,82 +186,117 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
             </div>
           </div>
           <h1 className="text-lg font-black leading-tight truncate drop-shadow-sm">{periodName}</h1>
-          <p className="text-white/60 text-xs mt-1 font-bold">{studentName}</p>
+          <p className="text-white/80 text-xs mt-1 font-bold">{studentName}</p>
           <div className="mt-5 rounded-full overflow-hidden bg-white/20" style={{ height: '8px' }}>
             <div className="h-full rounded-full transition-all duration-1000 ease-out bg-white shadow-[0_0_15px_rgba(255,255,255,0.5)]" style={{ width: progress + '%' }} />
           </div>
-          <div className="flex justify-between mt-2 text-[10px] text-white/50 font-black uppercase tracking-wider">
+          <div className="flex justify-between mt-2 text-[10px] text-white/70 font-black uppercase tracking-wider">
             <span>Bước {step + 1} / {total}</span>
             <span>{progress}% Hoàn thành</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 py-10 pb-40">
+      <div className="max-w-2xl mx-auto px-6 py-8 pb-48">
+        {/* Error Notification */}
         {err && (
-          <div className="mb-8 p-5 flex items-start gap-4 text-[#48BFE3] animate-in slide-in-from-top-4 shadow-sm text-xs font-semibold">
-            <AlertCircle className="w-5 h-5 shrink-0" />
-            <p className="text-sm font-black">{err}</p>
+          <div className="mb-6 p-4.5 flex items-start gap-3 bg-rose-50 border-2 border-rose-200 text-rose-800 rounded-2xl animate-in slide-in-from-top-4 shadow-sm">
+            <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+            <div>
+              <p className="text-sm font-black text-rose-900">Thông báo</p>
+              <p className="text-xs font-bold text-rose-700 mt-0.5">{err}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Success Draft Saved Notification */}
+        {saveSuccessMsg && (
+          <div className="mb-6 p-4 flex items-center gap-3 bg-emerald-50 border-2 border-emerald-200 text-emerald-800 rounded-2xl animate-in slide-in-from-top-4 shadow-sm">
+            <Check className="w-5 h-5 shrink-0 text-emerald-600" />
+            <p className="text-xs font-bold text-emerald-800">{saveSuccessMsg}</p>
           </div>
         )}
         
+        {/* Questions List */}
         <div className="space-y-8">
           {stepQs.map((q, i) => {
             const n = step * SZ + i + 1
-            const type = q.questionType?.trim()?.toUpperCase()
+            const type = q.questionType?.trim()?.toUpperCase() || ''
             const value = answers[q.id]
-            const answered = value !== undefined && value !== '' && value !== null
+            const answered = (() => {
+              if (value === undefined || value === '' || value === null) return false
+              if (['MC_GRID', 'CB_GRID', 'GRID'].includes(type)) {
+                return typeof value === 'object' && Object.values(value).some(v => v !== undefined && v !== null && v !== '' && (!Array.isArray(v) || v.length > 0))
+              }
+              if (['CHECKBOX', 'MULTI_SELECT'].includes(type)) {
+                return Array.isArray(value) && value.length > 0
+              }
+              return true
+            })()
             
             return (
-              <div key={q.id} className="bg-white rounded-[2.5rem] border-2 p-8 shadow-xl shadow-slate-200/50 transition-all duration-500 hover:shadow-2xl hover:shadow-slate-200/60"
-                style={{ borderColor: answered ? '#d1fae5' : '#f1f5f9' }}>
-                <div className="flex items-start gap-4 mb-8">
-                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 transition-all duration-500 shadow-sm ${answered ? 'bg-emerald-500 text-white rotate-[360deg]' : 'bg-slate-50 text-slate-400'}`}>
+              <div 
+                key={q.id} 
+                className="bg-white rounded-[2rem] border-2 p-6 sm:p-8 shadow-xl shadow-slate-200/50 transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/60"
+                style={{ borderColor: answered ? '#a7f3d0' : '#e2e8f0' }}
+              >
+                <div className="flex items-start gap-4 mb-6">
+                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center text-sm font-black shrink-0 transition-all duration-300 shadow-sm ${answered ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500'}`}>
                     {answered ? <CheckCircle2 className="w-5 h-5" /> : n}
                   </div>
-                  <p className="font-black text-slate-800 text-base leading-relaxed pt-1">
-                    {q.questionText} {q.isRequired && <span className="text-[#48BFE3] ml-1">*</span>}
-                    <span className="block text-[8px] text-slate-300 font-mono mt-1 uppercase">Type: {type}</span>
-                  </p>
+                  <div className="pt-0.5 flex-1">
+                    <p className="font-black text-slate-800 text-base leading-snug">
+                      {q.questionText} {q.isRequired && <span className="text-rose-500 ml-1">*</span>}
+                    </p>
+                    <span className="inline-block text-[9px] text-slate-400 font-mono mt-1 uppercase tracking-wider bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">
+                      Loại: {type}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="mt-4 transition-all duration-500">
+                <div className="mt-4">
+                  {/* Rating / NPS / Likert */}
                   {['RATING', 'NPS', 'LIKERT', 'SATISFACTION', 'SCALE_0_4'].includes(type) && (
                     <div className="space-y-4">
                       <div className="flex gap-2.5 flex-wrap justify-center sm:justify-start">
                         {Array.from({ length: (q.ratingMax || 10) - (q.ratingMin || 0) + 1 }, (_, k) => k + (q.ratingMin || 0)).map(v => (
-                          <button key={v} onClick={() => ans(q.id, v)}
-                            className="w-12 h-12 rounded-2xl font-black text-base border-2 transition-all hover:scale-110 active:scale-90 flex items-center justify-center shadow-sm"
+                          <button 
+                            key={v} 
+                            type="button"
+                            onClick={() => ans(q.id, v)}
+                            className="w-12 h-12 rounded-2xl font-black text-base border-2 transition-all hover:scale-105 active:scale-95 flex items-center justify-center shadow-sm"
                             style={{
-                              background: value === v ? '#48BFE3' : '#f8fafc',
+                              background: value === v ? '#0284c7' : '#f8fafc',
                               color: value === v ? 'white' : '#475569',
-                              borderColor: value === v ? '#48BFE3' : '#e2e8f0',
-                              boxShadow: value === v ? '0 8px 20px rgba(190,30,46,0.3)' : ''
-                            }}>
+                              borderColor: value === v ? '#0284c7' : '#e2e8f0',
+                              boxShadow: value === v ? '0 6px 16px rgba(2,132,199,0.3)' : ''
+                            }}
+                          >
                             {v}
                           </button>
                         ))}
                       </div>
-                      <div className="flex justify-between px-2">
-                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Thấp nhất</span>
-                        <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Cao nhất</span>
+                      <div className="flex justify-between px-2 text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                        <span>Thấp nhất ({q.ratingMin || 0})</span>
+                        <span>Cao nhất ({q.ratingMax || 10})</span>
                       </div>
                     </div>
                   )}
 
+                  {/* Text / Comment / Essay */}
                   {['TEXT', 'OPEN_ENDED', 'COMMENT', 'ESSAY'].includes(type) && (
                     <textarea 
                       value={value || ''} 
                       onChange={e => ans(q.id, e.target.value)} 
                       rows={4}
-                      placeholder="Chia sẻ ý kiến của bạn tại đây..."
-                      className="w-full rounded-3xl px-6 py-5 text-sm font-bold text-slate-700 outline-none resize-none transition-all border-2 border-slate-50 focus:border-[#48BFE3]/30 focus:bg-white shadow-inner"
-                      style={{ background: '#f8fafc' }} 
+                      placeholder="Nhập câu trả lời của bạn tại đây..."
+                      className="w-full rounded-2xl px-5 py-4 text-sm font-bold text-slate-700 outline-none resize-none transition-all border-2 border-slate-200 focus:border-sky-500 focus:bg-white shadow-inner bg-slate-50"
                     />
                   )}
 
+                  {/* Single Choice / Radio / Dropdown */}
                   {['CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN', 'RADIO', 'SINGLE_CHOICE'].includes(type) && (() => {
-                    let opts = []
+                    let opts: any[] = []
                     try {
                       if (!q.options) { opts = [] }
                       else {
@@ -189,10 +307,10 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                       }
                     } catch { 
                       try {
-                        const fixed = q.options?.replace(/'/g, '"') || "";
-                        const parsed = JSON.parse(fixed);
-                        if (Array.isArray(parsed)) opts = parsed;
-                        else if (parsed && typeof parsed === 'object') opts = parsed.choices || [];
+                        const fixed = q.options?.replace(/'/g, '"') || ""
+                        const parsed = JSON.parse(fixed)
+                        if (Array.isArray(parsed)) opts = parsed
+                        else if (parsed && typeof parsed === 'object') opts = parsed.choices || []
                       } catch {
                         opts = q.options ? String(q.options).split(',').map(s => s.trim()) : [] 
                       }
@@ -200,27 +318,34 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                     
                     return (
                       <div className="grid grid-cols-1 gap-3">
-                        {opts.map((opt: any) => (
-                          <button key={opt} onClick={() => ans(q.id, opt)}
-                            className="w-full px-6 py-4.5 rounded-2xl border-2 text-left text-sm font-black transition-all flex items-center justify-between group"
-                            style={{
-                              background: value === opt ? 'rgba(190,30,46,0.03)' : '#f8fafc',
-                              borderColor: value === opt ? '#48BFE3' : '#f1f5f9',
-                              color: value === opt ? '#48BFE3' : '#475569',
-                              boxShadow: value === opt ? '0 4px 15px rgba(190,30,46,0.05)' : ''
-                            }}>
-                            {opt}
-                            <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${value === opt ? 'border-[#48BFE3] bg-[#48BFE3]' : 'border-slate-200 bg-white group-hover:border-[#48BFE3]/40'}`}>
-                              {value === opt && <div className="w-2 h-2 bg-white rounded-full" />}
-                            </div>
-                          </button>
-                        ))}
+                        {opts.map((opt: any) => {
+                          const isSel = value === opt
+                          return (
+                            <button 
+                              key={opt} 
+                              type="button"
+                              onClick={() => ans(q.id, opt)}
+                              className="w-full px-5 py-3.5 rounded-2xl border-2 text-left text-sm font-bold transition-all flex items-center justify-between group"
+                              style={{
+                                background: isSel ? '#f0f9ff' : '#f8fafc',
+                                borderColor: isSel ? '#0284c7' : '#e2e8f0',
+                                color: isSel ? '#0369a1' : '#334155'
+                              }}
+                            >
+                              <span>{opt}</span>
+                              <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${isSel ? 'border-sky-600 bg-sky-600' : 'border-slate-300 bg-white group-hover:border-sky-400'}`}>
+                                {isSel && <div className="w-2 h-2 bg-white rounded-full" />}
+                              </div>
+                            </button>
+                          )
+                        })}
                       </div>
                     )
                   })()}
 
+                  {/* Checkbox / Multi-Select */}
                   {['CHECKBOX', 'MULTI_SELECT'].includes(type) && (() => {
-                    let opts = []
+                    let opts: any[] = []
                     try {
                       if (!q.options) { opts = [] }
                       else {
@@ -231,10 +356,10 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                       }
                     } catch { 
                       try {
-                        const fixed = q.options?.replace(/'/g, '"') || "";
-                        const parsed = JSON.parse(fixed);
-                        if (Array.isArray(parsed)) opts = parsed;
-                        else if (parsed && typeof parsed === 'object') opts = parsed.choices || [];
+                        const fixed = q.options?.replace(/'/g, '"') || ""
+                        const parsed = JSON.parse(fixed)
+                        if (Array.isArray(parsed)) opts = parsed
+                        else if (parsed && typeof parsed === 'object') opts = parsed.choices || []
                       } catch {
                         opts = q.options ? String(q.options).split(',').map(s => s.trim()) : [] 
                       }
@@ -248,24 +373,32 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
 
                     return (
                       <div className="grid grid-cols-1 gap-3">
-                        {opts.map((opt) => (
-                          <button key={opt} onClick={() => toggle(opt)}
-                            className="w-full px-6 py-4.5 rounded-2xl border-2 text-left text-sm font-black transition-all flex items-center justify-between group"
-                            style={{
-                              background: currentVals.includes(opt) ? 'rgba(190,30,46,0.03)' : '#f8fafc',
-                              borderColor: currentVals.includes(opt) ? '#48BFE3' : '#f1f5f9',
-                              color: currentVals.includes(opt) ? '#48BFE3' : '#475569'
-                            }}>
-                            {opt}
-                            <div className={`w-6 h-6 rounded-lg border-2 transition-all flex items-center justify-center ${currentVals.includes(opt) ? 'border-[#48BFE3] bg-[#48BFE3]' : 'border-slate-200 bg-white group-hover:border-[#48BFE3]/40'}`}>
-                              {currentVals.includes(opt) && <div className="w-2.5 h-2.5 bg-white rounded-[3px]" />}
-                            </div>
-                          </button>
-                        ))}
+                        {opts.map((opt) => {
+                          const isSel = currentVals.includes(opt)
+                          return (
+                            <button 
+                              key={opt} 
+                              type="button"
+                              onClick={() => toggle(opt)}
+                              className="w-full px-5 py-3.5 rounded-2xl border-2 text-left text-sm font-bold transition-all flex items-center justify-between group"
+                              style={{
+                                background: isSel ? '#f0f9ff' : '#f8fafc',
+                                borderColor: isSel ? '#0284c7' : '#e2e8f0',
+                                color: isSel ? '#0369a1' : '#334155'
+                              }}
+                            >
+                              <span>{opt}</span>
+                              <div className={`w-5 h-5 rounded-lg border-2 transition-all flex items-center justify-center ${isSel ? 'border-sky-600 bg-sky-600' : 'border-slate-300 bg-white group-hover:border-sky-400'}`}>
+                                {isSel && <div className="w-2.5 h-2.5 bg-white rounded-[2px]" />}
+                              </div>
+                            </button>
+                          )
+                        })}
                       </div>
                     )
                   })()}
 
+                  {/* Matrix / Grid (MC_GRID, CB_GRID, GRID) */}
                   {['MC_GRID', 'CB_GRID', 'GRID'].includes(type) && (() => {
                     const gridOpts = { rows: [], columns: [] }
                     try {
@@ -276,8 +409,8 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                       }
                     } catch {
                       try {
-                        const fixed = q.options?.replace(/'/g, '"') || "";
-                        const parsed = JSON.parse(fixed);
+                        const fixed = q.options?.replace(/'/g, '"') || ""
+                        const parsed = JSON.parse(fixed)
                         if (parsed && typeof parsed === 'object') {
                           gridOpts.rows = parsed.rows || []
                           gridOpts.columns = parsed.columns || []
@@ -289,20 +422,26 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                     const currentGrid = value || {}
                     
                     return (
-                      <div className="overflow-x-auto -mx-4 px-4 scrollbar-hide">
+                      <div className="overflow-x-auto -mx-2 sm:-mx-4 px-2 sm:px-4 rounded-xl border border-slate-200">
                         <table className="w-full border-collapse">
                           <thead>
-                            <tr>
-                              <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest pb-6 border border-slate-200">Tiêu chí</th>
+                            <tr className="bg-slate-50">
+                              <th className="p-3 text-left text-[11px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
+                                Tiêu chí / Môn học
+                              </th>
                               {gridOpts.columns.map((col, ci) => (
-                                <th key={ci} className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest pb-6 min-w-[70px] border border-slate-200">{col}</th>
+                                <th key={ci} className="p-3 text-center text-[11px] font-black text-slate-600 uppercase tracking-wider min-w-[80px] border-b border-l border-slate-200">
+                                  {col}
+                                </th>
                               ))}
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-50">
+                          <tbody className="divide-y divide-slate-100 bg-white">
                             {gridOpts.rows.map((row, ri) => (
-                              <tr key={ri} className="group/row hover:bg-slate-50/50 transition-colors text-xs font-semibold">
-                                <td className="p-2 p-2 text-sm font-bold text-slate-700 leading-tight pr-4 border border-slate-200">{row}</td>
+                              <tr key={ri} className="hover:bg-sky-50/40 transition-colors">
+                                <td className="p-3 text-xs sm:text-sm font-bold text-slate-800 leading-snug pr-3">
+                                  {row}
+                                </td>
                                 {gridOpts.columns.map((_, ci) => {
                                   const rowVal = currentGrid[ri]
                                   const isSelected = isCheckGrid 
@@ -310,21 +449,23 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                                     : rowVal === ci
                                   
                                   return (
-                                    <td key={ci} className="p-2 text-center border border-slate-200">
+                                    <td key={ci} className="p-2 text-center border-l border-slate-100">
                                       <button
+                                        type="button"
                                         onClick={() => {
                                           const nextGrid = { ...currentGrid }
                                           if (isCheckGrid) {
                                             const prev = Array.isArray(nextGrid[ri]) ? nextGrid[ri] : []
                                             nextGrid[ri] = prev.includes(ci) ? prev.filter(x => x !== ci) : [...prev, ci]
                                           } else {
-                                            nextGrid[ri] = ci
+                                            // Toggle selection
+                                            nextGrid[ri] = nextGrid[ri] === ci ? undefined : ci
                                           }
                                           ans(q.id, nextGrid)
                                         }}
-                                        className={`w-8 h-8 mx-auto flex items-center justify-center border-2 transition-all hover:scale-110 active:scale-90 ${isSelected ? 'border-[#48BFE3] bg-[#48BFE3] shadow-lg shadow-teal-100' : 'border-slate-200 bg-white group-hover/row:border-red-200'} ${isCheckGrid ? 'rounded-xl' : 'rounded-full'}`}
+                                        className={`w-7 h-7 sm:w-8 sm:h-8 mx-auto flex items-center justify-center border-2 transition-all hover:scale-110 active:scale-90 ${isSelected ? 'border-sky-600 bg-sky-600 shadow-md shadow-sky-200' : 'border-slate-300 bg-white hover:border-sky-400'} ${isCheckGrid ? 'rounded-lg' : 'rounded-full'}`}
                                       >
-                                        {isSelected && <div className={`bg-white ${isCheckGrid ? 'w-2.5 h-2.5 rounded-[3px]' : 'w-2.5 h-2.5 rounded-full'}`} />}
+                                        {isSelected && <div className={`bg-white ${isCheckGrid ? 'w-2.5 h-2.5 rounded-[2px]' : 'w-2.5 h-2.5 rounded-full'}`} />}
                                       </button>
                                     </td>
                                   )
@@ -337,8 +478,8 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                     )
                   })()}
 
-                  {!['RATING', 'NPS', 'LIKERT', 'SATISFACTION', 'TEXT', 'OPEN_ENDED', 'COMMENT', 'ESSAY', 'CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN', 'RADIO', 'SINGLE_CHOICE', 'CHECKBOX', 'MULTI_SELECT', 'MC_GRID', 'CB_GRID', 'GRID'].includes(type) && (
-                    <div className="p-4 text-xs font-bold text-slate-400 text-center text-xs font-semibold">
+                  {!['RATING', 'NPS', 'LIKERT', 'SATISFACTION', 'SCALE_0_4', 'TEXT', 'OPEN_ENDED', 'COMMENT', 'ESSAY', 'CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN', 'RADIO', 'SINGLE_CHOICE', 'CHECKBOX', 'MULTI_SELECT', 'MC_GRID', 'CB_GRID', 'GRID'].includes(type) && (
+                    <div className="p-4 text-xs font-bold text-slate-400 text-center bg-slate-50 rounded-xl">
                       Giao diện cho loại câu hỏi "{type}" đang được cập nhật...
                     </div>
                   )}
@@ -349,23 +490,61 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-2xl border-t border-slate-100 p-6 z-40 shadow-[0_-15px_40px_rgba(0,0,0,0.04)]">
-        <div className="max-w-2xl mx-auto flex gap-4">
+      {/* Floating Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-2xl border-t border-slate-200 p-4 sm:p-5 z-40 shadow-[0_-15px_40px_rgba(0,0,0,0.08)]">
+        <div className="max-w-2xl mx-auto flex items-center gap-3">
           {step > 0 && (
-            <button onClick={prev} className="flex items-center gap-2 font-black text-sm transition-all text-slate-400 hover:bg-slate-100 active:scale-95 text-xs font-semibold">
-              <ArrowLeft className="w-5 h-5" /> Lùi
+            <button 
+              type="button" 
+              onClick={prev} 
+              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-600 bg-slate-100 hover:bg-slate-200 active:scale-95"
+            >
+              <ArrowLeft className="w-4 h-4" /> Lùi
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={saveDraft}
+            disabled={savingDraft || submitting}
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-black text-xs sm:text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-all active:scale-95 disabled:opacity-50"
+            title="Lưu tiến độ làm bài"
+          >
+            {savingDraft ? (
+              <div className="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 text-slate-600" />
+            )}
+            <span>{savingDraft ? 'Đang lưu...' : 'Lưu tạm'}</span>
+          </button>
+
           {step < total - 1 ? (
-            <button onClick={next} className="flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.75rem] font-black text-sm text-white transition-all hover:opacity-90 active:scale-95 shadow-xl shadow-slate-200" style={{ background: '#0f172a' }}>
-              Tiếp theo <ArrowRight className="w-5 h-5" />
+            <button 
+              type="button" 
+              onClick={next} 
+              className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-2xl font-black text-xs sm:text-sm text-white transition-all hover:opacity-95 active:scale-95 shadow-xl shadow-slate-200" 
+              style={{ background: '#0f172a' }}
+            >
+              Tiếp theo <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
-            <button onClick={submit} disabled={submitting} className="flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.75rem] font-black text-sm text-white transition-all active:scale-95 disabled:opacity-50 shadow-2xl shadow-red-200"
-              style={{ background: 'linear-gradient(135deg,#48BFE3,#a01927)' }}>
-              {submitting
-                ? <><div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin" /> Đang gửi bài...</>
-                : <><Send className="w-5 h-5" /> Nộp bài khảo sát</>}
+            <button 
+              type="button" 
+              onClick={submit} 
+              disabled={submitting || savingDraft} 
+              className="flex-1 flex items-center justify-center gap-2 py-3 sm:py-3.5 rounded-2xl font-black text-xs sm:text-sm text-white transition-all hover:opacity-95 active:scale-95 disabled:opacity-50 shadow-xl shadow-sky-500/20 cursor-pointer"
+              style={{ background: 'linear-gradient(135deg,#0284c7,#0369a1)' }}
+            >
+              {submitting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Đang gửi bài...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" /> <span>Nộp bài khảo sát</span>
+                </>
+              )}
             </button>
           )}
         </div>
