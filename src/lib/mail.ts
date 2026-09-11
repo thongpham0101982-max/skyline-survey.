@@ -60,14 +60,27 @@ export async function sendEmail({
   }
 
   // Ensure From header uses authenticated account email address in brackets to prevent SendAsDenied
-  let resolvedFrom = `"HỆ THỐNG SKY-LINE" <${user}>`;
+  let resolvedFrom = `"BAN KHẢO THÍ & ĐBCL SKY-LINE" <${user}>`;
   if (from) {
     if (from.includes('<') && from.includes('>')) {
       const nameMatch = from.match(/^"?(.*?)"?\s*<.*?>$/);
-      const displayName = nameMatch ? nameMatch[1] : "HỆ THỐNG SKY-LINE";
+      const displayName = nameMatch ? nameMatch[1] : "BAN KHẢO THÍ & ĐBCL SKY-LINE";
       resolvedFrom = `"${displayName}" <${user}>`;
     } else {
       resolvedFrom = `"${from}" <${user}>`;
+    }
+  }
+
+  // Ensure Ban Khảo thí always gets a BCC copy to track all outgoing emails in their inbox
+  const rawBcc = cleanEmails(bcc);
+  let resolvedBcc: string | string[] | undefined = rawBcc;
+  if (user && user.includes('@')) {
+    if (Array.isArray(rawBcc)) {
+      if (!rawBcc.includes(user)) resolvedBcc = [...rawBcc, user];
+    } else if (rawBcc) {
+      if (rawBcc !== user) resolvedBcc = [rawBcc, user];
+    } else {
+      resolvedBcc = user;
     }
   }
 
@@ -75,7 +88,7 @@ export async function sendEmail({
     from: resolvedFrom,
     to: validTo,
     cc: cleanEmails(cc),
-    bcc: cleanEmails(bcc),
+    bcc: resolvedBcc,
     subject,
     html,
     attachments,
