@@ -2646,6 +2646,7 @@ export function ObservationClient(props: ObservationClientProps) {
       "STT",
       "Mã tiết",
       "Giáo viên dạy",
+      "Thời gian đăng ký",
       "Mã GV",
       "Cơ sở",
       "Tổ chuyên môn",
@@ -2675,10 +2676,15 @@ export function ObservationClient(props: ObservationClientProps) {
       const ratings = regs.map((r: any) => r.evaluation?.overallRating).filter(Boolean);
       const ratingStr = ratings.join(", ");
 
+      const regTimeStr = slot.createdAt
+        ? `${new Date(slot.createdAt).toLocaleDateString("vi-VN")} ${new Date(slot.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`
+        : "";
+
       return [
         idx + 1,
         slot.id,
         `"${(slot.teacher?.teacherName || "").replace(/"/g, '""')}"`,
+        `"${regTimeStr}"`,
         slot.teacher?.teacherCode || "",
         `"${(slot.campusName || slot.teacher?.campus?.campusName || "").replace(/"/g, '""')}"`,
         `"${(slot.deptName || slot.teacher?.departmentRel?.name || "").replace(/"/g, '""')}"`,
@@ -4840,8 +4846,8 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
         
-        {/* Compact Advanced Filter Bar (8 Filters) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+        {/* Compact Advanced Filter Bar (6 Filters) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
           {/* 1. Tháng */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tháng</span>
@@ -4921,50 +4927,6 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
-          {/* 6. Khối lớp */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Khối</span>
-            <select value={filterGrade} onChange={e => { setFilterGrade(e.target.value); setFilterClassId("all"); }}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
-              <option value="all">Tất cả khối</option>
-              {filterLevel !== "all" ? (
-                getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)
-              ) : (
-                <>
-                  <optgroup label="Tiểu học">
-                    {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"].map(g => <option key={g} value={g}>{g}</option>)}
-                  </optgroup>
-                  <optgroup label="THCS">
-                    {["Khối 6", "Khối 7", "Khối 8", "Khối 9"].map(g => <option key={g} value={g}>{g}</option>)}
-                  </optgroup>
-                  <optgroup label="THPT">
-                    {["Khối 10", "Khối 11", "Khối 12"].map(g => <option key={g} value={g}>{g}</option>)}
-                  </optgroup>
-                  <optgroup label="Mầm non">
-                    {(mamNonGrades.length > 0 ? mamNonGrades : ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]).map(g => <option key={g} value={g}>{g}</option>)}
-                  </optgroup>
-                </>
-              )}
-            </select>
-          </div>
-
-          {/* 7. Lớp */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Lớp</span>
-            <select value={filterClassId} onChange={e => setFilterClassId(e.target.value)}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
-              <option value="all">Tất cả lớp</option>
-              {filterAvailableClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-            </select>
-          </div>
-
-          {/* 8. Ngày dạy */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Ngày dạy</span>
-            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]" />
-          </div>
-
           {/* 9. Tiết dạy */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tiết dạy</span>
@@ -5022,6 +4984,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <th className="p-4 text-center w-12">TT</th>
                     <th className="p-4">GV Xin dự giờ</th>
                     <th className="p-4">GV Dạy</th>
+                    <th className="p-4">Thời gian đăng ký</th>
                     <th className="p-4">Môn học</th>
                     <th className="p-4">Tên bài dạy / Chủ đề</th>
                     <th className="p-4">Lớp</th>
@@ -5045,6 +5008,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     )}
                     <th className="p-4 text-center w-12">TT</th>
                     <th className="p-4">Giáo viên</th>
+                    <th className="p-4">Thời gian đăng ký</th>
                     <th className="p-4">Cơ sở</th>
                     <th className="p-4">Tổ chuyên môn</th>
                     <th className="p-4">Môn học & Chủ đề</th>
@@ -5109,6 +5073,29 @@ export function ObservationClient(props: ObservationClientProps) {
                             </div>
                             <span className="font-black text-slate-800">{slot.teacher?.teacherName}</span>
                           </div>
+                        </td>
+                        {/* Thời gian đăng ký */}
+                        <td className="p-4 whitespace-nowrap">
+                          {slot.createdAt ? (() => {
+                            const createdDate = new Date(slot.createdAt);
+                            if (isNaN(createdDate.getTime())) {
+                              return <span className="text-slate-400 italic text-xs">—</span>;
+                            }
+                            return (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
+                                  <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                                  <span>{createdDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-semibold">
+                                  <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  <span>{createdDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
+                                </div>
+                              </div>
+                            );
+                          })() : (
+                            <span className="text-slate-400 italic text-xs">—</span>
+                          )}
                         </td>
                         <td className="p-4">
                           <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded-lg text-xs">
@@ -5212,6 +5199,30 @@ export function ObservationClient(props: ObservationClientProps) {
                             {slot.teacher.teacherName}
                           </span>
                         </div>
+                      </td>
+
+                      {/* Cột THỜI GIAN ĐĂNG KÝ */}
+                      <td className="p-4 whitespace-nowrap">
+                        {slot.createdAt ? (() => {
+                          const createdDate = new Date(slot.createdAt);
+                          if (isNaN(createdDate.getTime())) {
+                            return <span className="text-slate-400 italic text-xs">—</span>;
+                          }
+                          return (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 font-bold text-slate-800 text-xs">
+                                <Calendar className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                                <span>{createdDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-semibold">
+                                <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span>{createdDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</span>
+                              </div>
+                            </div>
+                          );
+                        })() : (
+                          <span className="text-slate-400 italic text-xs">—</span>
+                        )}
                       </td>
 
                       {/* Cột CƠ SỞ */}
