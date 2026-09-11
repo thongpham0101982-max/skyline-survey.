@@ -19,29 +19,26 @@ export async function sendEmail({
   replyTo?: string;
   from?: string;
 }) {
-  const envUser = (process.env.SMTP_USER || "").trim();
-  const isGmail = envUser.toLowerCase().includes("@gmail.com") || (process.env.SMTP_HOST || "").toLowerCase().includes("gmail");
-  
-  // Default to Gmail if configured, else Office 365 fallback
-  const host = process.env.SMTP_HOST || (isGmail ? "smtp.gmail.com" : "smtp.office365.com");
-  const port = parseInt(process.env.SMTP_PORT || (isGmail ? "465" : "587"), 10);
-  const secure = process.env.SMTP_SECURE !== undefined
-    ? process.env.SMTP_SECURE === "true"
-    : (port === 465);
+  const rawUser = (process.env.SMTP_USER || "").trim();
+  const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
 
-  const user = envUser || (isGmail ? "dbclskl@gmail.com" : "bankhaothi@skylineschool.edu.vn");
+  // If SMTP_USER is empty or bankhaothi (which is geoblocked by Microsoft on Vercel), default to Gmail dbclskl@gmail.com
+  const isGmail = !rawUser || rawUser.toLowerCase().includes("@gmail.com") || rawUser.toLowerCase().includes("bankhaothi") || (process.env.SMTP_HOST || "").toLowerCase().includes("gmail");
   
-  // Clean password (strips whitespace e.g. from 4x4 Google app passwords)
-  let pass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
+  const host = isGmail ? "smtp.gmail.com" : (process.env.SMTP_HOST || "smtp.office365.com");
+  const port = isGmail ? 465 : parseInt(process.env.SMTP_PORT || "587", 10);
+  const secure = isGmail ? true : (process.env.SMTP_SECURE === "true" || port === 465);
+
+  const user = isGmail ? "dbclskl@gmail.com" : rawUser;
   
-  // Fallback for Office 365 if using bankhaothi and no valid password provided
-  if (!isGmail && (!pass || pass !== "txhrphxggpnlbhsk")) {
+  // App password for dbclskl@gmail.com (or env var if configured)
+  let pass = rawPass;
+  if (isGmail) {
+    if (!pass || pass.length !== 16 || rawUser.toLowerCase().includes("bankhaothi")) {
+      pass = "xhzihnqyiqqmdhat";
+    }
+  } else if (!pass) {
     pass = "txhrphxggpnlbhsk";
-  }
-
-  if (!user || !pass) {
-    console.warn(`[mail.ts] Missing SMTP credentials for ${user}. Skipping email send.`);
-    return { skipped: true, reason: `Missing credentials for ${user}` };
   }
 
   const transporter = nodemailer.createTransport({
