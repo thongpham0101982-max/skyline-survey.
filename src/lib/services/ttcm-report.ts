@@ -617,7 +617,7 @@ export async function sendReportForDepartment(
     // 7. Send Email
     await sendEmail({
       to: ttcmEmail,
-      cc: customCc || undefined,
+      // cc removed per policy
       subject: emailSubject,
       html: emailHtml
     });

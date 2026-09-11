@@ -429,7 +429,7 @@ export async function POST(req: Request) {
     // 7. Send Email
     await sendEmail({
       to: toEmail,
-      cc: ccEmails || undefined,
+      // cc removed per policy
       subject: emailSubject,
       html: emailHtml
     });

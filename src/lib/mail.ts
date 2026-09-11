@@ -1,9 +1,9 @@
-import nodemailer from "nodemailer";
+﻿import nodemailer from "nodemailer";
 
 export async function sendEmail({
   to,
-  cc,
-  bcc,
+  cc, // Deprecated / Ignored per policy (No CC/BCC)
+  bcc, // Deprecated / Ignored per policy (No CC/BCC)
   subject,
   html,
   text,
@@ -39,22 +39,26 @@ export async function sendEmail({
     pass = !isGmail ? "grtxdfbqfjnsfvvf" : "xhzihnqyiqqmdhat";
   }
 
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: {
-      user,
-      pass,
-    },
-    tls: {
-      ciphers: "SSLv3",
-      rejectUnauthorized: false,
-    },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
-  });
+  const createTransporter = (h: string, p: number, s: boolean, u: string, pwd: string) => {
+    return nodemailer.createTransport({
+      host: h,
+      port: p,
+      secure: s,
+      auth: {
+        user: u,
+        pass: pwd,
+      },
+      tls: {
+        ciphers: "SSLv3",
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
+  };
+
+  const transporter = createTransporter(host, port, secure, user, pass);
 
   // Helper to split and filter valid unique email strings
   const cleanEmails = (input?: string | string[]): string | string[] | undefined => {
@@ -88,24 +92,9 @@ export async function sendEmail({
     }
   }
 
-  // Determine existing primary recipients to avoid sending duplicate BCC copies
-  const toList = Array.isArray(validTo) ? validTo : [validTo];
-  const validCc = cleanEmails(cc);
-  const ccList = validCc ? (Array.isArray(validCc) ? validCc : [validCc]) : [];
-  const existingRecipients = new Set([...toList, ...ccList].map(e => e.toLowerCase()));
-
-  // Ensure Ban Khảo thí always gets a BCC copy to track outgoing emails, except when they are already the primary recipient
-  const rawBcc = cleanEmails(bcc);
-  const bccList = rawBcc ? (Array.isArray(rawBcc) ? rawBcc : [rawBcc]) : [];
-  const defaultBccTargets = ["bankhaothi@skylineschool.edu.vn"];
-  
-  const allBccCandidates = Array.from(new Set([...bccList, ...defaultBccTargets]));
-  // Filter out any address already present in TO or CC to prevent duplicate emails
-  const resolvedBcc = allBccCandidates.filter(b => !existingRecipients.has(b.toLowerCase()));
-
   const resolvedReplyTo = cleanEmails(replyTo);
 
-  // Auto-generate plain-text fallback from HTML if not provided to maximize email deliverability and avoid spam classification
+  // Auto-generate plain-text fallback from HTML if not provided to maximize deliverability
   const resolvedText = text || (html
     ? html
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -123,6 +112,7 @@ export async function sendEmail({
         .trim()
     : undefined);
 
+  // POLICY ENFORCED: CC and BCC are completely eliminated to prevent mailbox overload and preserve quota.
   const mailOptions: any = {
     from: resolvedFrom,
     to: validTo,
@@ -131,20 +121,36 @@ export async function sendEmail({
   };
 
   if (resolvedText) mailOptions.text = resolvedText;
-  if (validCc) mailOptions.cc = validCc;
-  if (resolvedBcc && resolvedBcc.length > 0) mailOptions.bcc = resolvedBcc;
   if (resolvedReplyTo) mailOptions.replyTo = resolvedReplyTo;
   if (attachments && attachments.length > 0) mailOptions.attachments = attachments;
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("[mail.ts] Email sent successfully to:", validTo, "BCC:", resolvedBcc, "MessageId:", info.messageId);
+    console.log("[mail.ts] Email sent successfully to:", validTo, "MessageId:", info.messageId);
     if (info.rejected && info.rejected.length > 0) {
       console.warn("[mail.ts] Some recipients were rejected:", info.rejected);
     }
     return { success: true, ...info };
   } catch (error: any) {
-    console.error("[mail.ts] Error sending email via SMTP:", error?.message || error);
+    console.error("[mail.ts] Primary SMTP error:", error?.message || error);
+    
+    // Auto-failover to backup Gmail if primary Office 365 fails
+    if (!isGmail) {
+      try {
+        console.log("[mail.ts] Attempting auto-failover to Backup Gmail SMTP (dbclskl@gmail.com)...");
+        const backupTransporter = createTransporter("smtp.gmail.com", 465, true, "dbclskl@gmail.com", "xhzihnqyiqqmdhat");
+        const backupMailOptions = {
+          ...mailOptions,
+          from: `"BAN KHẢO THÍ & ĐBCL SKY-LINE" <dbclskl@gmail.com>`,
+        };
+        const backupInfo = await backupTransporter.sendMail(backupMailOptions);
+        console.log("[mail.ts] Auto-failover SUCCESS via Gmail to:", validTo, "MessageId:", backupInfo.messageId);
+        return { success: true, failover: true, provider: "GMAIL_BACKUP", ...backupInfo };
+      } catch (backupError: any) {
+        console.error("[mail.ts] Backup Gmail SMTP also failed:", backupError?.message || backupError);
+      }
+    }
+
     return { success: false, error: error?.message || "Failed to send email", skipped: false };
   }
 }

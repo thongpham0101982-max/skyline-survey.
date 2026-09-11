@@ -520,7 +520,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
         await sendEmail({
           from: fromAddress,
           to: recipient.email,
-          cc: ccArray.length > 0 ? ccArray : undefined,
+          // cc removed per policy
           replyTo: resolvedReplyTo,
           subject: emailSubject,
           html: emailHtml

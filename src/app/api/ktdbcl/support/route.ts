@@ -1223,7 +1223,7 @@ export async function POST(req: Request) {
         try {
           await sendEmail({
             to: rec.email,
-            cc: additionalCc || undefined,
+            // cc removed per policy
             subject: `[Sky-Line Survey] Danh sách Học sinh diện Cam kết & Theo dõi đầu vào - ${targetCampusTitle} (${yearName})`,
             html: emailHtml
           })
@@ -2143,7 +2143,7 @@ export async function POST(req: Request) {
         try {
           await sendEmail({
             to: rec.email,
-            cc: additionalCc || undefined,
+            // cc removed per policy
             subject: `[Sky-Line Survey] Danh sách Học sinh diện Cam kết & Theo dõi đầu vào - ${subTitle} (${yearName})`,
             html: emailHtml
           })
