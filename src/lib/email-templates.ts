@@ -282,7 +282,7 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
               </div>
               <div>Hệ thống Quản lý Hoạt động & Dự giờ Chuyên môn Skyline</div>
               <div style="margin-top: 6px; color: #94A3B8;">
-                Email gửi tự động từ <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #008B82; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a>
+                Email thông báo tự động từ Ban Khảo thí & ĐBCL Sky-Line (<a href="mailto:dbclskl@gmail.com" style="color: #008B82; text-decoration: none; font-weight: 600;">dbclskl@gmail.com</a> | <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #008B82; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a>)
               </div>
               <div style="margin-top: 6px; font-size: 10px; color: #CBD5E1;">
                 © ${currentYear} Sky-Line Education System. All rights reserved.

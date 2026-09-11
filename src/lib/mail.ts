@@ -19,20 +19,29 @@ export async function sendEmail({
   replyTo?: string;
   from?: string;
 }) {
-  const host = process.env.SMTP_HOST || "smtp.office365.com";
-  const port = parseInt(process.env.SMTP_PORT || "587", 10);
-  const secure = process.env.SMTP_SECURE === "true";
-  const user = process.env.SMTP_USER || "bankhaothi@skylineschool.edu.vn";
+  const envUser = (process.env.SMTP_USER || "").trim();
+  const isGmail = envUser.toLowerCase().includes("@gmail.com") || (process.env.SMTP_HOST || "").toLowerCase().includes("gmail");
   
-  // Ensure we use the verified active Office 365 App Password for bankhaothi@skylineschool.edu.vn
-  let pass = (process.env.SMTP_PASS || "").trim();
-  if (!pass || pass !== "txhrphxggpnlbhsk") {
+  // Default to Gmail if configured, else Office 365 fallback
+  const host = process.env.SMTP_HOST || (isGmail ? "smtp.gmail.com" : "smtp.office365.com");
+  const port = parseInt(process.env.SMTP_PORT || (isGmail ? "465" : "587"), 10);
+  const secure = process.env.SMTP_SECURE !== undefined
+    ? process.env.SMTP_SECURE === "true"
+    : (port === 465);
+
+  const user = envUser || (isGmail ? "dbclskl@gmail.com" : "bankhaothi@skylineschool.edu.vn");
+  
+  // Clean password (strips whitespace e.g. from 4x4 Google app passwords)
+  let pass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
+  
+  // Fallback for Office 365 if using bankhaothi and no valid password provided
+  if (!isGmail && (!pass || pass !== "txhrphxggpnlbhsk")) {
     pass = "txhrphxggpnlbhsk";
   }
 
   if (!user || !pass) {
-    console.warn("[mail.ts] Missing SMTP credentials. Skipping email send.");
-    return { skipped: true, reason: "Missing credentials" };
+    console.warn(`[mail.ts] Missing SMTP credentials for ${user}. Skipping email send.`);
+    return { skipped: true, reason: `Missing credentials for ${user}` };
   }
 
   const transporter = nodemailer.createTransport({
@@ -80,15 +89,20 @@ export async function sendEmail({
   // Ensure Ban Khảo thí always gets a BCC copy to track all outgoing emails in their inbox
   const rawBcc = cleanEmails(bcc);
   let resolvedBcc: string | string[] | undefined = rawBcc;
-  if (user && user.includes('@')) {
-    if (Array.isArray(rawBcc)) {
-      if (!rawBcc.includes(user)) resolvedBcc = [...rawBcc, user];
-    } else if (rawBcc) {
-      if (rawBcc !== user) resolvedBcc = [rawBcc, user];
-    } else {
-      resolvedBcc = user;
-    }
+  const bccTargets = ["bankhaothi@skylineschool.edu.vn"];
+  if (user && user.includes('@') && !bccTargets.includes(user)) {
+    bccTargets.push(user);
   }
+  if (Array.isArray(rawBcc)) {
+    resolvedBcc = Array.from(new Set([...rawBcc, ...bccTargets]));
+  } else if (rawBcc) {
+    resolvedBcc = Array.from(new Set([rawBcc, ...bccTargets]));
+  } else {
+    resolvedBcc = bccTargets;
+  }
+
+  // Ensure replyTo goes to school official mailbox by default
+  const resolvedReplyTo = cleanEmails(replyTo) || "bankhaothi@skylineschool.edu.vn";
 
   const mailOptions = {
     from: resolvedFrom,
@@ -98,7 +112,7 @@ export async function sendEmail({
     subject,
     html,
     attachments,
-    replyTo: cleanEmails(replyTo) || user
+    replyTo: resolvedReplyTo
   };
 
   try {
