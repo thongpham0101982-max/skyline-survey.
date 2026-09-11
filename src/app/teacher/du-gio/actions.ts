@@ -2018,8 +2018,12 @@ export async function requestObservationSlot(data: {
           });
 
           try {
-            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml });
-            console.log("[Skyline Tag 2 Email] Successfully sent observation request email to host teacher:", hostEmail);
+            const sendResult = await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml });
+            if (!sendResult?.success) {
+              console.error("[Skyline Tag 2 Email Error] Failed sending to host teacher " + hostEmail + ":", sendResult?.error);
+            } else {
+              console.log("[Skyline Tag 2 Email] Successfully sent observation request email to host teacher:", hostEmail, sendResult);
+            }
           } catch (mailErr) {
             console.error("[Skyline Tag 2 Email Error] Failed sending to host teacher " + hostEmail + ":", mailErr);
           }

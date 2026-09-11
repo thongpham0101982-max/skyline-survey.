@@ -24,9 +24,9 @@ export async function sendEmail({
   const secure = process.env.SMTP_SECURE === "true";
   const user = process.env.SMTP_USER || "bankhaothi@skylineschool.edu.vn";
   
-  // Protect against old/stale env variables still on Vercel
+  // Ensure we use the verified active Office 365 App Password for bankhaothi@skylineschool.edu.vn
   let pass = (process.env.SMTP_PASS || "").trim();
-  if (!pass || pass === "vpxgjprlqkwvdgmq") {
+  if (!pass || pass !== "txhrphxggpnlbhsk") {
     pass = "txhrphxggpnlbhsk";
   }
 
