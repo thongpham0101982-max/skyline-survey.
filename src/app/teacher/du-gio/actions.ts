@@ -7,8 +7,13 @@ function getTeacherResolvedEmail(teacher: any): string | null {
   if (teacher.teacherCode === "0201000094" || teacher.teacherCode === "020100094" || teacher.teacherName?.includes("Phạm Nguyên Thông")) {
     return "thongpn@skylineschool.edu.vn";
   }
-  const email = (teacher.email || "").trim();
-  const userEmail = (teacher.user?.email || "").trim();
+  let email = (teacher.email || "").trim();
+  let userEmail = (teacher.user?.email || "").trim();
+
+  // Auto-complete domain if username only was stored
+  if (email && !email.includes("@")) email = `${email}@skylineschool.edu.vn`;
+  if (userEmail && !userEmail.includes("@")) userEmail = `${userEmail}@skylineschool.edu.vn`;
+
   const systemEmails = [
     "bankhaothi@skylineschool.edu.vn",
     "admin@skylineschool.edu.vn",
@@ -919,16 +924,14 @@ export async function createObservationSlot(data: {
           directLink: linkUrl
         });
 
-        await Promise.all(
-          memberEmails.map(async (targetEmail) => {
-            try {
-              await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: targetEmail, subject: emailSubject, html: emailHtml });
-              console.log("[Skyline Email] Successfully sent slot creation email to:", targetEmail);
-            } catch (err) {
-              console.error("[Skyline Email Error] Failed sending to " + targetEmail + ":", err);
-            }
-          })
-        );
+        for (const targetEmail of memberEmails) {
+          try {
+            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: targetEmail, subject: emailSubject, html: emailHtml });
+            console.log("[Skyline Email] Successfully sent slot creation email to:", targetEmail);
+          } catch (err) {
+            console.error("[Skyline Email Error] Failed sending to " + targetEmail + ":", err);
+          }
+        }
       }
     } catch (deptNotifErr) {
       console.error("Error sending department member notifications:", deptNotifErr);
