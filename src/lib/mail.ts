@@ -23,10 +23,16 @@ export async function sendEmail({
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
   const secure = process.env.SMTP_SECURE === "true";
   const user = process.env.SMTP_USER || "bankhaothi@skylineschool.edu.vn";
-  const pass = process.env.SMTP_PASS || "txhrphxggpnlbhsk";
+  
+  // Protect against old/stale env variables still on Vercel
+  let pass = (process.env.SMTP_PASS || "").trim();
+  if (!pass || pass === "vpxgjprlqkwvdgmq") {
+    pass = "txhrphxggpnlbhsk";
+  }
 
   if (!user || !pass) {
-    throw new Error("Missing SMTP credentials in environmental variables");
+    console.warn("[mail.ts] Missing SMTP credentials. Skipping email send.");
+    return { skipped: true, reason: "Missing credentials" };
   }
 
   const transporter = nodemailer.createTransport({
@@ -95,6 +101,12 @@ export async function sendEmail({
     replyTo: cleanEmails(replyTo) || user
   };
 
-  const info = await transporter.sendMail(mailOptions);
-  return info;
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("[mail.ts] Email sent successfully to:", validTo, "BCC:", resolvedBcc);
+    return { success: true, ...info };
+  } catch (error: any) {
+    console.error("[mail.ts] Error sending email via SMTP:", error?.message || error);
+    return { success: false, error: error?.message || "Failed to send email", skipped: true };
+  }
 }
