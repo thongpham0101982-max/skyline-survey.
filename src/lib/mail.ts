@@ -35,7 +35,7 @@ export async function sendEmail({
   
   // App password for bankhaothi@skylineschool.edu.vn or dbclskl@gmail.com
   let pass = rawPass;
-  if (!pass) {
+  if (!pass || pass === "txhrphxggpnlbhsk" || pass === "vpxgjprlqkwvdgmq") {
     pass = !isGmail ? "grtxdfbqfjnsfvvf" : "xhzihnqyiqqmdhat";
   }
 
