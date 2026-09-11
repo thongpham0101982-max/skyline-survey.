@@ -884,8 +884,6 @@ export function ObservationClient(props: ObservationClientProps) {
   const [monthlyLimitCount, setMonthlyLimitCount] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [editSlotId, setEditSlotId] = useState<string | null>(null)
-  const [showRequestConfirmDialog, setShowRequestConfirmDialog] = useState(false)
-  const [requestConfirmData, setRequestConfirmData] = useState<any>(null)
 
   // Targets
   const [selfRequiredObserved, setSelfRequiredObserved] = useState(currentTeacher?.requiredObserved || 0)
@@ -2078,64 +2076,40 @@ export function ObservationClient(props: ObservationClientProps) {
       ? selectedSub.subjectName
       : (reqSubjectId === "Khác/Chuyên đề" || reqSubjectId === "other" ? "Khác/Chuyên đề" : reqSubjectId || "Khác/Chuyên đề")
     const resolvedSubjectId = selectedSub ? selectedSub.id : null
-    const selectedTeacher = teachers.find((t: any) => t.id === reqTeacherId)
-    const selectedDept = departments.find((d: any) => d.id === reqDeptId)
-    const selectedCampus = campuses.find((c: any) => c.id === reqCampusId)
 
-    // Show confirmation popup instead of directly submitting
-    setRequestConfirmData({
-      targetTeacherId: reqTeacherId,
-      targetDeptId: reqDeptId,
-      classId: reqClassId,
-      className: selectedClass ? selectedClass.className : "",
-      level: reqLevel || (selectedClass ? selectedClass.level : "ALL"),
-      grade: reqGrade || (selectedClass ? selectedClass.grade : "Khối"),
-      subjectId: resolvedSubjectId || undefined,
-      subjectName: resolvedSubjectName,
-      topic: reqTopic || "Yêu cầu dự giờ",
-      date: reqDate,
-      period: reqPeriod,
-      notes: reqNotes,
-      academicYearId: filterAcademicYearId,
-      // Display info
-      teacherName: selectedTeacher ? selectedTeacher.teacherName : "",
-      deptName: selectedDept ? selectedDept.name : "",
-      campusName: selectedCampus ? selectedCampus.campusName : "",
-    })
-    setShowRequestConfirmDialog(true)
-  }
-
-  const handleRequestConfirmed = async () => {
-    if (!requestConfirmData) return
-    setShowRequestConfirmDialog(false)
     setSubmitting(true)
     startTransition(async () => {
-      const res = await requestObservationSlot({
-        targetTeacherId: requestConfirmData.targetTeacherId,
-        targetDeptId: requestConfirmData.targetDeptId,
-        classId: requestConfirmData.classId,
-        className: requestConfirmData.className,
-        level: requestConfirmData.level,
-        grade: requestConfirmData.grade,
-        subjectId: requestConfirmData.subjectId,
-        subjectName: requestConfirmData.subjectName,
-        topic: requestConfirmData.topic,
-        date: requestConfirmData.date,
-        period: requestConfirmData.period,
-        notes: requestConfirmData.notes,
-        academicYearId: requestConfirmData.academicYearId,
-      })
-      setSubmitting(false)
-      setRequestConfirmData(null)
-      if (res.success) {
-        showToast("Đã gửi đề xuất xin dự giờ và gửi Email thông báo tới Giáo viên dạy thành công!", "success")
-        setReqTeacherId("")
-        setReqTopic("")
-        setReqNotes("")
-        setReqDate("")
-        refreshSlots()
-      } else {
-        showToast(res.error || "Không thể gửi yêu cầu!", "error")
+      try {
+        const res = await requestObservationSlot({
+          targetTeacherId: reqTeacherId,
+          targetDeptId: reqDeptId || undefined,
+          classId: reqClassId || undefined,
+          className: selectedClass ? selectedClass.className : undefined,
+          level: reqLevel || (selectedClass ? selectedClass.level : "ALL"),
+          grade: reqGrade || (selectedClass ? selectedClass.grade : "Khối"),
+          subjectId: resolvedSubjectId || undefined,
+          subjectName: resolvedSubjectName,
+          topic: reqTopic || "Yêu cầu dự giờ",
+          date: reqDate,
+          period: reqPeriod,
+          notes: reqNotes,
+          academicYearId: filterAcademicYearId,
+        })
+        setSubmitting(false)
+        if (res.success) {
+          showToast("Đã gửi đề xuất xin dự giờ và gửi Email thông báo tới Giáo viên dạy thành công!", "success")
+          setReqTeacherId("")
+          setReqTopic("")
+          setReqNotes("")
+          setReqDate("")
+          setShowCreateModal(false)
+          refreshSlots()
+        } else {
+          showToast(res.error || "Không thể gửi yêu cầu!", "error")
+        }
+      } catch (err: any) {
+        setSubmitting(false)
+        showToast(err?.message || "Đã xảy ra lỗi khi gửi yêu cầu!", "error")
       }
     })
   }
@@ -2380,23 +2354,43 @@ export function ObservationClient(props: ObservationClientProps) {
     (props.initialReceivedEvaluations || []).forEach((item: any) => {
       const evalId = item?.evaluation?.id || item?.registration?.id;
       if (evalId) {
-        map.set(evalId, item);
+        const isHost = item.slot?.teacherId === currentTeacher?.id;
+        const role = item.role || (isHost ? "TEACHER" : "OBSERVER");
+        map.set(evalId, { ...item, role });
       }
     });
 
     // 2. Merge/update with any evaluations from current slots state
     (slots || []).forEach(slot => {
-      if (slot.teacherId === currentTeacher?.id) {
+      const isHost = slot.teacherId === currentTeacher?.id;
+      const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
+
+      // GV Dạy: Các phiếu nhận xét từ người dự
+      if (isHost) {
         (slot.registrations || []).forEach((reg: any) => {
           if (reg.evaluation) {
             const evalId = reg.evaluation.id || reg.id;
             map.set(evalId, {
               slot,
               registration: reg,
-              evaluation: reg.evaluation
+              evaluation: reg.evaluation,
+              role: "TEACHER"
             });
           }
         });
+      }
+
+      // GV Dự: Phiếu tôi đã chấm cho GV dạy
+      if (myReg && myReg.evaluation) {
+        const evalId = myReg.evaluation.id || myReg.id;
+        if (!map.has(evalId) || !isHost) {
+          map.set(evalId, {
+            slot,
+            registration: myReg,
+            evaluation: myReg.evaluation,
+            role: isHost ? "TEACHER" : "OBSERVER"
+          });
+        }
       }
     });
 
@@ -5796,27 +5790,42 @@ export function ObservationClient(props: ObservationClientProps) {
                                         <div className="flex items-center gap-1 shrink-0">
                                           {reg.isApproved ? (
                                             <>
-                                              <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                                                <Check className="w-2.5 h-2.5 text-emerald-600" />
-                                                Đã duyệt
-                                              </span>
-                                              {!reg.evaluation && (
-                                                <button
-                                                  type="button"
-                                                  title="Gửi email nhắc nhở nhập đánh giá tới GV"
-                                                  onClick={async () => {
-                                                    const res = await sendPendingEvaluationReminder(reg.id);
-                                                    if (res.success) {
-                                                      alert(`Đã gửi email nhắc nhở nhập đánh giá tới Thầy/Cô ${regName}!`);
-                                                    } else {
-                                                      alert(res.error || "Gửi email thất bại");
-                                                    }
-                                                  }}
-                                                  className="px-2 py-0.5 text-[10px] font-black rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                                                >
-                                                  <Mail className="w-2.5 h-2.5 text-amber-600" />
-                                                  Nhắc mail
-                                                </button>
+                                              {reg.evaluation ? (
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                  <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-2xs">
+                                                    ⭐ {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                                  </span>
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => openEvalModal(reg, slot)}
+                                                    className="px-2 py-0.5 text-[10px] font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-md transition-all shadow-2xs cursor-pointer"
+                                                  >
+                                                    Xem phiếu
+                                                  </button>
+                                                </div>
+                                              ) : (
+                                                <>
+                                                  <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                                    <Check className="w-2.5 h-2.5 text-emerald-600" />
+                                                    Đã duyệt
+                                                  </span>
+                                                  <button
+                                                    type="button"
+                                                    title="Gửi email nhắc nhở nhập đánh giá tới GV"
+                                                    onClick={async () => {
+                                                      const res = await sendPendingEvaluationReminder(reg.id);
+                                                      if (res.success) {
+                                                        alert(`Đã gửi email nhắc nhở nhập đánh giá tới Thầy/Cô ${regName}!`);
+                                                      } else {
+                                                        alert(res.error || "Gửi email thất bại");
+                                                      }
+                                                    }}
+                                                    className="px-2 py-0.5 text-[10px] font-black rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                                  >
+                                                    <Mail className="w-2.5 h-2.5 text-amber-600" />
+                                                    Nhắc mail
+                                                  </button>
+                                                </>
                                               )}
                                             </>
                                           ) : (
@@ -6233,6 +6242,8 @@ export function ObservationClient(props: ObservationClientProps) {
           openEvalModal={openEvalModal}
           getAvatarGradient={getAvatarGradient}
           RATING_COLORS={RATING_COLORS}
+          currentTeacher={currentTeacher}
+          setPrintModalSlot={setPrintModalSlot}
         />
       )}
 
@@ -7410,6 +7421,7 @@ export function ObservationClient(props: ObservationClientProps) {
         reqNotes={reqNotes}
         setReqNotes={setReqNotes}
         handleRequestSubmit={handleRequestSubmit}
+        isSubmittingRequest={submitting}
         filteredTeachersForRequest={filteredTeachersForRequest}
         filteredReqClasses={filteredReqClasses}
         openDeptId={newTargetDeptId}

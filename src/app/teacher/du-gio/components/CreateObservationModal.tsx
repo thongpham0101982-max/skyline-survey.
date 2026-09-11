@@ -4,7 +4,7 @@
 import React from "react"
 import {
   X, Plus, Sparkles, Zap, ShieldCheck, Info, BookOpen, Calendar, Clock,
-  MapPin, User, Users, CheckCircle2, AlertCircle, FileText, Award, Check, Save, Mail
+  MapPin, User, Users, CheckCircle2, AlertCircle, FileText, Award, Check, Save, Mail, Loader2
 } from "lucide-react"
 import { QuickCommentPresets } from "./QuickCommentPresets"
 
@@ -250,6 +250,7 @@ interface CreateObservationModalProps {
   reqNotes: string
   setReqNotes: (v: string) => void
   handleRequestSubmit: (e: React.FormEvent) => void
+  isSubmittingRequest?: boolean
   filteredTeachersForRequest: any[]
   filteredReqClasses: any[]
   // Teacher open form props
@@ -363,6 +364,7 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
     reqTopic, setReqTopic,
     reqNotes, setReqNotes,
     handleRequestSubmit,
+    isSubmittingRequest,
     filteredTeachersForRequest, filteredReqClasses,
     // Open slot
     openDeptId, setOpenDeptId,
@@ -879,16 +881,27 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-bold text-xs hover:bg-slate-100 transition-all cursor-pointer"
+                  disabled={isSubmittingRequest}
+                  className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-bold text-xs hover:bg-slate-100 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
-                  className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-black text-xs transition-all shadow-md shadow-indigo-700/25 flex items-center gap-2 cursor-pointer"
+                  disabled={isSubmittingRequest}
+                  className="px-7 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:from-slate-400 disabled:to-slate-400 text-white font-black text-xs transition-all shadow-md shadow-indigo-700/25 flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                 >
-                  <Sparkles className="w-4 h-4 text-indigo-200" />
-                  Gửi đề xuất xin dự giờ
+                  {isSubmittingRequest ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Đang gửi đề xuất & Email...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 text-indigo-200" />
+                      <span>Gửi đề xuất xin dự giờ</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

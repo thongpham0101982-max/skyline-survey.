@@ -332,12 +332,24 @@ export async function getObservationData(academicYearId?: string) {
       currentTeacher?.id && !currentTeacher.id.startsWith("admin-")
         ? prisma.observationEvaluation.findMany({
             where: {
-              registration: {
-                slot: {
-                  teacherId: currentTeacher.id,
-                  ...(activeYearId ? { academicYearId: activeYearId } : {})
+              OR: [
+                {
+                  registration: {
+                    slot: {
+                      teacherId: currentTeacher.id,
+                      ...(activeYearId ? { academicYearId: activeYearId } : {})
+                    }
+                  }
+                },
+                {
+                  registration: {
+                    teacherId: currentTeacher.id,
+                    slot: {
+                      ...(activeYearId ? { academicYearId: activeYearId } : {})
+                    }
+                  }
                 }
-              }
+              ]
             },
             include: {
               registration: {
@@ -360,7 +372,10 @@ export async function getObservationData(academicYearId?: string) {
                           id: true,
                           teacherName: true,
                           teacherCode: true,
-                          email: true
+                          email: true,
+                          departmentId: true,
+                          campusId: true,
+                          position: true
                         }
                       }
                     }
@@ -399,7 +414,8 @@ export async function getObservationData(academicYearId?: string) {
         ...(e.registration || {}),
         evaluation: e
       },
-      evaluation: e
+      evaluation: e,
+      role: e.registration?.slot?.teacherId === currentTeacher?.id ? "TEACHER" : "OBSERVER"
     })).filter((item: any) => item.slot != null);
 
     return {
@@ -1833,7 +1849,8 @@ export async function requestObservationSlot(data: {
     const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
     let observerTeacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
+      include: { user: true, campus: true, departmentRel: true }
     })
 
     if (!observerTeacher && isAdmin) {
@@ -2006,6 +2023,8 @@ export async function requestObservationSlot(data: {
           } catch (mailErr) {
             console.error("[Skyline Tag 2 Email Error] Failed sending to host teacher " + hostEmail + ":", mailErr);
           }
+        } else {
+          console.warn("[Skyline Tag 2 Email Warning] Host teacher does not have a resolved email address:", hostTeacher.teacherName, hostTeacher.teacherCode);
         }
 
         // 3. Email confirmation sent to Observer Teacher (Người gửi đề xuất)
