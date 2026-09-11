@@ -22,23 +22,23 @@ export async function sendEmail({
   const rawUser = (process.env.SMTP_USER || "").trim();
   const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
 
-  // If SMTP_USER is empty or bankhaothi (which is geoblocked by Microsoft on Vercel), default to Gmail dbclskl@gmail.com
-  const isGmail = !rawUser || rawUser.toLowerCase().includes("@gmail.com") || rawUser.toLowerCase().includes("bankhaothi") || (process.env.SMTP_HOST || "").toLowerCase().includes("gmail");
+  // Detect whether Gmail is explicitly configured
+  const isGmail = rawUser.toLowerCase().includes("@gmail.com") || (process.env.SMTP_HOST || "").toLowerCase().includes("gmail");
   
   const host = isGmail ? "smtp.gmail.com" : (process.env.SMTP_HOST || "smtp.office365.com");
   const port = isGmail ? 465 : parseInt(process.env.SMTP_PORT || "587", 10);
   const secure = isGmail ? true : (process.env.SMTP_SECURE === "true" || port === 465);
 
-  const user = isGmail ? "dbclskl@gmail.com" : rawUser;
+  const user = rawUser || (isGmail ? "dbclskl@gmail.com" : "bankhaothi@skylineschool.edu.vn");
   
-  // App password for dbclskl@gmail.com (or env var if configured)
+  // App password for bankhaothi@skylineschool.edu.vn or dbclskl@gmail.com
   let pass = rawPass;
-  if (isGmail) {
-    if (!pass || pass.length !== 16 || rawUser.toLowerCase().includes("bankhaothi")) {
-      pass = "xhzihnqyiqqmdhat";
+  if (!isGmail) {
+    if (!pass || pass.length !== 16) {
+      pass = "txhrphxggpnlbhsk";
     }
   } else if (!pass) {
-    pass = "txhrphxggpnlbhsk";
+    pass = "xhzihnqyiqqmdhat";
   }
 
   const transporter = nodemailer.createTransport({
@@ -50,6 +50,7 @@ export async function sendEmail({
       pass,
     },
     tls: {
+      ciphers: "SSLv3",
       rejectUnauthorized: false,
     },
   });
