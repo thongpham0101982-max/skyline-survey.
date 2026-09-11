@@ -147,18 +147,14 @@ export async function GET(request: Request) {
     const students = await prisma.student.findMany({
       where: {
         classId,
-        OR: [
-          { status: "ACTIVE" },
-          { status: "active" },
-          { status: null }
-        ]
+        status: "ACTIVE"
       },
       orderBy: { studentName: "asc" },
       select: { id: true, studentCode: true, studentName: true, gender: true }
     })
 
     // Get existing grade entries
-    const entries = await prisma.gradeEntry.findMany({
+    const entries = await prisma.subjectGradeEntry.findMany({
       where: {
         academicYearId: targetAcademicYearId,
         classId,
@@ -204,7 +200,7 @@ export async function POST(request: Request) {
 
       const parsedComposite = compositeScore !== "" && compositeScore !== null && compositeScore !== undefined ? parseFloat(compositeScore) : null
 
-      const existing = await prisma.gradeEntry.findFirst({
+      const existing = await prisma.subjectGradeEntry.findFirst({
         where: {
           academicYearId,
           classId,
@@ -215,7 +211,7 @@ export async function POST(request: Request) {
       })
 
       if (existing) {
-        await prisma.gradeEntry.update({
+        await prisma.subjectGradeEntry.update({
           where: { id: existing.id },
           data: {
             componentScores: JSON.stringify(componentScores || {}),
@@ -225,7 +221,7 @@ export async function POST(request: Request) {
           }
         })
       } else {
-        await prisma.gradeEntry.create({
+        await prisma.subjectGradeEntry.create({
           data: {
             academicYearId,
             classId,

@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   Award,
   ClipboardList,
-  Clock
+  Clock,
+  Printer
 } from "lucide-react";
 
 const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
@@ -55,6 +56,8 @@ interface ReceivedEvaluationsTabProps {
   openEvalModal: (registration: any, slot: any) => void;
   getAvatarGradient: (name: string) => string;
   RATING_COLORS: Record<string, string>;
+  currentTeacher?: any;
+  setPrintModalSlot?: (obj: any) => void;
 }
 
 export function ReceivedEvaluationsTab({
@@ -62,13 +65,43 @@ export function ReceivedEvaluationsTab({
   isPreschoolEvaluations,
   openEvalModal,
   getAvatarGradient,
-  RATING_COLORS
+  RATING_COLORS,
+  currentTeacher,
+  setPrintModalSlot
 }: ReceivedEvaluationsTabProps) {
+  const [selectedEvalRole, setSelectedEvalRole] = useState<"ALL" | "TEACHER" | "OBSERVER">("ALL");
   const [selectedEvalMonth, setSelectedEvalMonth] = useState<string>("ALL");
   const [selectedOriginType, setSelectedOriginType] = useState<"ALL" | "PLAN" | "SURPRISE">("ALL");
   const [trendViewMode, setTrendViewMode] = useState<"SESSION" | "MONTH">("SESSION");
 
-  const surpriseReceivedCount = useMemo(() => {
+  // Đếm theo vai trò
+  const taughtCount = useMemo(() => {
+    return receivedEvaluations.filter(e => {
+      return e.role === "TEACHER" || e.slot?.teacherId === currentTeacher?.id;
+    }).length;
+  }, [receivedEvaluations, currentTeacher?.id]);
+
+  const observedCount = useMemo(() => {
+    return receivedEvaluations.filter(e => {
+      return e.role === "OBSERVER" || e.registration?.teacherId === currentTeacher?.id;
+    }).length;
+  }, [receivedEvaluations, currentTeacher?.id]);
+
+  const surpriseTaughtCount = useMemo(() => {
+    return receivedEvaluations.filter(e => {
+      const isHost = e.role === "TEACHER" || e.slot?.teacherId === currentTeacher?.id;
+      return isHost && isSurpriseSlot(e.slot);
+    }).length;
+  }, [receivedEvaluations, currentTeacher?.id]);
+
+  const surpriseObservedCount = useMemo(() => {
+    return receivedEvaluations.filter(e => {
+      const isObserver = e.role === "OBSERVER" || e.registration?.teacherId === currentTeacher?.id;
+      return isObserver && isSurpriseSlot(e.slot);
+    }).length;
+  }, [receivedEvaluations, currentTeacher?.id]);
+
+  const surpriseTotalCount = useMemo(() => {
     return receivedEvaluations.filter(e => isSurpriseSlot(e.slot)).length;
   }, [receivedEvaluations]);
 
@@ -76,8 +109,17 @@ export function ReceivedEvaluationsTab({
     const competencyData: any[] = [];
     const weaknessData: any[] = [];
 
-    // Filter by origin type first (ALL / PLAN / SURPRISE)
-    const originFilteredEvals = receivedEvaluations.filter(item => {
+    // 1. Filter by role (ALL / TEACHER / OBSERVER)
+    const roleFilteredEvals = receivedEvaluations.filter(item => {
+      if (selectedEvalRole === "ALL") return true;
+      const isHost = item.role === "TEACHER" || item.slot?.teacherId === currentTeacher?.id;
+      if (selectedEvalRole === "TEACHER") return isHost;
+      if (selectedEvalRole === "OBSERVER") return !isHost;
+      return true;
+    });
+
+    // 2. Filter by origin type first (ALL / PLAN / SURPRISE)
+    const originFilteredEvals = roleFilteredEvals.filter(item => {
       if (selectedOriginType === "ALL") return true;
       const isSurprise = isSurpriseSlot(item.slot);
       return selectedOriginType === "SURPRISE" ? isSurprise : !isSurprise;
@@ -355,7 +397,7 @@ export function ReceivedEvaluationsTab({
         ? (isPreschoolEvaluations ? currentStats.avgScore.toFixed(2) : currentStats.avgScore.toFixed(1))
         : null
     };
-  }, [receivedEvaluations, isPreschoolEvaluations, selectedEvalMonth, selectedOriginType]);
+  }, [receivedEvaluations, isPreschoolEvaluations, selectedEvalMonth, selectedOriginType, selectedEvalRole, currentTeacher?.id]);
 
   const {
     competencyData,
@@ -1038,7 +1080,7 @@ export function ReceivedEvaluationsTab({
         </div>
       </div>
 
-      {/* DETAILED LIST OF RECEIVED EVALUATION FORMS */}
+      {/* DETAILED LIST OF EVALUATION FORMS & HISTORY */}
       <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#008B82]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2.5">
@@ -1047,13 +1089,14 @@ export function ReceivedEvaluationsTab({
             </div>
             <div>
               <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
-                Danh sách phiếu đánh giá tiết dạy nhận được
+                Lược sử & Kết quả đánh giá tiết dự giờ (Kế hoạch & Đột xuất)
               </h3>
               <p className="text-xs text-slate-400 font-medium">
-                {selectedEvalMonth === "ALL" 
-                  ? `Toàn bộ ${receivedEvaluations.length} phiếu đánh giá trong năm học`
-                  : `Các phiếu đánh giá trong ${availableMonths.find(m => m.key === selectedEvalMonth)?.label || selectedEvalMonth}`
-                }
+                {selectedEvalRole === "TEACHER"
+                  ? `Lược sử ${filteredList.length} tiết bạn trực tiếp giảng dạy`
+                  : selectedEvalRole === "OBSERVER"
+                  ? `Lược sử ${filteredList.length} tiết bạn tham gia dự giờ & đánh giá đồng nghiệp`
+                  : `Hiển thị tổng hợp ${filteredList.length} phiếu đánh giá liên quan đến GV dạy và GV dự`}
               </p>
             </div>
           </div>
@@ -1071,87 +1114,177 @@ export function ReceivedEvaluationsTab({
         {filteredList.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
             <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
-            <p className="text-xs font-bold text-center">Chưa có phiếu đánh giá nào trong khoảng thời gian đã chọn.</p>
+            <p className="text-xs font-bold text-center">Chưa có phiếu đánh giá nào phù hợp với bộ lọc đã chọn.</p>
           </div>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
-                  <th className="p-4">Người đánh giá</th>
-                  <th className="p-4">Môn học & Chủ đề</th>
-                  <th className="p-4">Thời gian / Phòng</th>
-                  <th className="p-4 text-center">Xếp loại</th>
-                  <th className="p-4 text-center">Phản hồi 2 chiều</th>
-                  <th className="p-4 text-right">Chi tiết</th>
+                  <th className="p-3.5 text-center w-12">TT</th>
+                  <th className="p-3.5">Vai trò & Hình thức</th>
+                  <th className="p-3.5">Giáo viên dạy</th>
+                  <th className="p-3.5">Giáo viên dự (Đánh giá)</th>
+                  <th className="p-3.5">Môn học & Chủ đề / Lớp</th>
+                  <th className="p-3.5">Thời gian / Phòng</th>
+                  <th className="p-3.5 text-center">Kết quả đánh giá</th>
+                  <th className="p-3.5 text-center">Trạng thái</th>
+                  <th className="p-3.5 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
-                {filteredList.map(evalItem => {
+                {filteredList.map((evalItem, idx) => {
                   const rating = evalItem.evaluation?.overallRating || "Đạt";
-                  const slotDate = new Date(evalItem.slot.date);
-                  const evaluatorName = evalItem.registration?.teacher?.teacherName || evalItem.registration?.observerTeacher?.teacherName || "Giáo viên";
+                  const totalScore = evalItem.evaluation?.totalScore;
+                  const maxScoreVal = isPreschoolEvaluations ? "4.0" : "20";
+                  const slotDate = new Date(evalItem.slot?.date || evalItem.evaluation?.createdAt || new Date());
+                  
+                  const isHost = evalItem.role === "TEACHER" || evalItem.slot?.teacherId === currentTeacher?.id;
+                  const teacherName = evalItem.slot?.teacher?.teacherName || (isHost ? currentTeacher?.teacherName : "Giáo viên dạy");
+                  const evaluatorName = evalItem.registration?.teacher?.teacherName || evalItem.registration?.observerTeacher?.teacherName || (!isHost ? currentTeacher?.teacherName : "Giáo viên dự");
+                  const isSurprise = isSurpriseSlot(evalItem.slot);
                   const isAcknowledged = !!evalItem.evaluation?.teacherAcknowledgedAt;
 
                   return (
-                    <tr key={evalItem.evaluation?.id || evalItem.registration?.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-4 font-bold text-slate-800">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(evaluatorName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
+                    <tr key={evalItem.evaluation?.id || evalItem.registration?.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                      {/* TT */}
+                      <td className="p-3.5 text-center font-black text-slate-400">{idx + 1}</td>
+
+                      {/* Vai trò & Hình thức */}
+                      <td className="p-3.5">
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+                            isHost
+                              ? "bg-amber-100 text-amber-950 border border-amber-300"
+                              : "bg-teal-100 text-teal-950 border border-teal-300"
+                          }`}>
+                            {isHost ? "🧑‍🏫 GV Dạy" : "👁️ GV Dự"}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-md text-[9px] font-black ${
+                            isSurprise
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
+                              : "bg-slate-100 text-slate-700 border border-slate-200"
+                          }`}>
+                            {isSurprise ? "⚡ Đột xuất" : "📋 Kế hoạch"}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Giáo viên dạy */}
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${getAvatarGradient(teacherName)} text-white flex items-center justify-center font-black text-[10px] shrink-0 shadow-2xs`}>
+                            {teacherName.charAt(0)}
+                          </div>
+                          <div>
+                            <span className="font-extrabold text-slate-900 text-xs block">
+                              {teacherName}
+                              {isHost && <span className="ml-1 text-[10px] text-amber-600 font-black">(Bạn)</span>}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              {evalItem.slot?.teacher?.departmentRel?.name || "Giảng dạy"}
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Giáo viên dự */}
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${getAvatarGradient(evaluatorName)} text-white flex items-center justify-center font-black text-[10px] shrink-0 shadow-2xs`}>
                             {evaluatorName.charAt(0)}
                           </div>
-                          <span className="font-extrabold text-slate-900 text-xs">{evaluatorName}</span>
+                          <div>
+                            <span className="font-extrabold text-slate-900 text-xs block">
+                              {evaluatorName}
+                              {!isHost && <span className="ml-1 text-[10px] text-teal-600 font-black">(Bạn)</span>}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              {evalItem.registration?.teacher?.position || "Người dự"}
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-black text-[#003B3A]">{evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
-                          {isSurpriseSlot(evalItem.slot) && (
-                            <span className="px-2 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded-md shadow-2xs">
-                              ⚡ Dự giờ đột xuất
-                            </span>
-                          )}
-                          {evalItem.slot.isDoublePeriod && (
-                            <span className="px-2 py-0.5 text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-300 rounded-md shadow-2xs">
-                              Tiết đôi (x2)
-                            </span>
-                          )}
+
+                      {/* Môn học & Chủ đề / Lớp */}
+                      <td className="p-3.5">
+                        <div className="space-y-0.5 max-w-[240px]">
+                          <p className="font-black text-[#003B3A] text-xs truncate" title={evalItem.slot?.topic}>
+                            {evalItem.slot?.topic || "Đánh giá tiết dạy"}
+                          </p>
+                          <p className="text-[11px] text-slate-500 font-medium">
+                            {evalItem.slot?.subjectName} • Lớp {evalItem.slot?.className || "—"}
+                          </p>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"}
+                      </td>
+
+                      {/* Thời gian / Phòng */}
+                      <td className="p-3.5">
+                        <p className="font-bold text-slate-800">
+                          {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        </p>
+                        <p className="text-[11px] font-bold text-teal-700 mt-0.5">
+                          {evalItem.slot?.startTime} • {evalItem.slot?.room || "Phòng học"}
                         </p>
                       </td>
-                      <td className="p-4">
-                        <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
-                        <p className="text-xs font-bold text-teal-700 mt-0.5">
-                          {evalItem.slot.startTime} • Phòng: {evalItem.slot.room || "Phòng học"}
-                        </p>
-                      </td>
-                      <td className="p-4 text-center">
-                        <span className={`px-3 py-1 text-xs font-black uppercase rounded-lg border ${RATING_COLORS[rating] || "bg-teal-50 text-teal-700 border-teal-200"}`}>
-                          {rating}
-                        </span>
-                      </td>
-                      <td className="p-4 text-center">
-                        {isAcknowledged ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            Đã tiếp thu
+
+                      {/* Kết quả đánh giá */}
+                      <td className="p-3.5 text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`px-2.5 py-0.5 text-xs font-black uppercase rounded-lg border ${RATING_COLORS[rating] || "bg-teal-50 text-teal-700 border-teal-200"}`}>
+                            {rating}
                           </span>
+                          {totalScore != null && Number(totalScore) > 0 && (
+                            <span className="text-xs font-black text-slate-800">
+                              {Number(totalScore).toFixed(2).replace(/\.00$/, "")}/{maxScoreVal}đ
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Trạng thái */}
+                      <td className="p-3.5 text-center">
+                        {isHost ? (
+                          isAcknowledged ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Đã tiếp thu
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
+                              <Clock className="w-3 h-3 text-amber-600" />
+                              Chờ phản hồi
+                            </span>
+                          )
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
-                            <Clock className="w-3 h-3 text-amber-600" />
-                            Chờ phản hồi
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-lg bg-teal-50 text-teal-800 border border-teal-300 shadow-2xs">
+                            <CheckCircle2 className="w-3 h-3 text-teal-600" />
+                            Đã nộp phiếu
                           </span>
                         )}
                       </td>
-                      <td className="p-4 text-right">
-                        <button 
-                          onClick={() => openEvalModal({ ...(evalItem.registration || {}), evaluation: evalItem.evaluation }, evalItem.slot)}
-                          className="px-3.5 py-1.5 text-xs font-black rounded-xl transition-all shadow-xs bg-[#008B82] hover:bg-[#007068] text-white cursor-pointer"
-                        >
-                          Xem phiếu
-                        </button>
+
+                      {/* Thao tác */}
+                      <td className="p-3.5 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button 
+                            type="button"
+                            onClick={() => openEvalModal({ ...(evalItem.registration || {}), evaluation: evalItem.evaluation }, evalItem.slot)}
+                            className="px-3 py-1.5 text-xs font-black rounded-xl transition-all shadow-xs bg-[#008B82] hover:bg-[#007068] text-white cursor-pointer hover:scale-105 active:scale-95"
+                          >
+                            Xem phiếu
+                          </button>
+                          {setPrintModalSlot && (
+                            <button
+                              type="button"
+                              onClick={() => setPrintModalSlot({ slot: evalItem.slot, registration: { ...(evalItem.registration || {}), evaluation: evalItem.evaluation } })}
+                              className="p-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                              title="In phiếu đánh giá"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
