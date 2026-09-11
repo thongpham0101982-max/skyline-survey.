@@ -3,8 +3,8 @@
 
 function getTeacherResolvedEmail(teacher: any): string | null {
   if (!teacher) return null;
-  // Special lookup for teacher 020100094 / Phạm Nguyên Thông
-  if (teacher.teacherCode === "020100094" || teacher.teacherName?.includes("Phạm Nguyên Thông")) {
+  // Special lookup for teacher 0201000094 / 020100094 / Phạm Nguyên Thông
+  if (teacher.teacherCode === "0201000094" || teacher.teacherCode === "020100094" || teacher.teacherName?.includes("Phạm Nguyên Thông")) {
     return "thongpn@skylineschool.edu.vn";
   }
   const email = (teacher.email || "").trim();
