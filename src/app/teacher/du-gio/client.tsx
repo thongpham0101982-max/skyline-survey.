@@ -5254,7 +5254,7 @@ export function ObservationClient(props: ObservationClientProps) {
                               </div>
                               <p className="font-black text-amber-950 text-xs leading-snug">Đề tài: {deTai}</p>
                               <p className="text-[11px] text-slate-500 font-medium">
-                                Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
+                                Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"}
                               </p>
                             </div>
                           );
@@ -5267,12 +5267,6 @@ export function ObservationClient(props: ObservationClientProps) {
                               </span>
                               <span>•</span>
                               <span>Lớp {slot.className || "Chưa xếp"}</span>
-                              {slot.campusName && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-slate-400">({slot.campusName})</span>
-                                </>
-                              )}
                             </div>
                           </div>
                         )}
@@ -5340,8 +5334,8 @@ export function ObservationClient(props: ObservationClientProps) {
                             Hết hạn
                           </span>
                         ) : observerCount >= (slot.maxSeats || 4) ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-rose-50 text-rose-700 border border-rose-200">
-                            Hết chỗ
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            Xin dự
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
