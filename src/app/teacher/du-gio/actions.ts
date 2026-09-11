@@ -43,6 +43,7 @@ import { cookies } from "next/headers"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 import { sendEmail } from "@/lib/mail"
 import {
   renderObservationRequestSubmittedForObserver,
@@ -1848,39 +1849,41 @@ export async function requestObservationSlot(data: {
       return { success: false, error: "Unauthorized" }
     }
 
-    const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
+    const roleCode = (session.user as any)?.role || "TEACHER";
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode);
 
-    let observerTeacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id },
-      include: { user: true, campus: true, departmentRel: true }
-    })
+    // Parallelize initial lookups for maximum database speed
+    const [observerTeacherResult, hostTeacher, activeYear] = await Promise.all([
+      prisma.teacher.findUnique({
+        where: { userId: session.user.id },
+        include: { user: true, campus: true, departmentRel: true }
+      }),
+      prisma.teacher.findUnique({
+        where: { id: data.targetTeacherId },
+        include: { campus: true, departmentRel: true, user: true }
+      }),
+      data.academicYearId
+        ? prisma.academicYear.findUnique({ where: { id: data.academicYearId } })
+        : prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
+    ]);
 
+    let observerTeacher = observerTeacherResult;
     if (!observerTeacher && isAdmin) {
       observerTeacher = {
         id: "admin-" + session.user.id,
         teacherName: session.user.name || "Administrator",
         teacherCode: "ADMIN",
         email: session.user.email || null
-      } as any
+      } as any;
     }
 
     if (!observerTeacher) {
-      return { success: false, error: "Tài khoản của bạn chưa được gắn với hồ sơ Nhân sự/Giáo viên." }
+      return { success: false, error: "Tài khoản của bạn chưa được gắn với hồ sơ Nhân sự/Giáo viên." };
     }
-
-    const hostTeacher = await prisma.teacher.findUnique({
-      where: { id: data.targetTeacherId },
-      include: { campus: true, departmentRel: true, user: true }
-    })
 
     if (!hostTeacher) {
-      return { success: false, error: "Không tìm thấy thông tin Giáo viên dạy." }
+      return { success: false, error: "Không tìm thấy thông tin Giáo viên dạy." };
     }
-
-    const activeYear = data.academicYearId
-      ? await prisma.academicYear.findUnique({ where: { id: data.academicYearId } })
-      : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
 
     const periodMap: Record<string, { start: string; end: string }> = {
       "Tiết 1": { start: "07:30", end: "08:15" },
@@ -1891,75 +1894,61 @@ export async function requestObservationSlot(data: {
       "Tiết 6": { start: "13:55", end: "14:40" },
       "Tiết 7": { start: "15:00", end: "15:45" },
       "Tiết 8": { start: "15:55", end: "16:40" }
-    }
-    const timeRange = periodMap[data.period || "Tiết 1"] || { start: "07:30", end: "08:15" }
+    };
+    const timeRange = periodMap[data.period || "Tiết 1"] || { start: "07:30", end: "08:15" };
 
-    const slotDate = new Date(data.date)
-    const now = new Date()
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    // Standardize date parsing to prevent UTC-7 timezone offsets
+    const rawDateStr = String(data.date || "").trim();
+    const slotDate = new Date(rawDateStr.includes("T") ? rawDateStr : `${rawDateStr}T07:00:00+07:00`);
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     if (!isNaN(slotDate.getTime()) && slotDate < currentMonthStart) {
-      return { success: false, error: "Không thể xin dự giờ các tiết dạy thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" }
+      return { success: false, error: "Không thể xin dự giờ các tiết dạy thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" };
     }
 
+    // Atomic database creation: ObservationSlot with initial Registration
     let newSlot: any;
+    const slotCreateData: any = {
+      teacherId: hostTeacher.id,
+      targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+      classId: data.classId || null,
+      className: data.className || "Lớp chọn",
+      level: data.level || "ALL",
+      grade: data.grade || "Khối",
+      subjectId: data.subjectId || null,
+      subjectName: data.subjectName || "Môn học",
+      topic: data.topic || "Đề xuất xin dự giờ tiết học",
+      date: slotDate,
+      startTime: data.period || timeRange.start,
+      endTime: timeRange.end,
+      room: data.room || "Phòng học",
+      description: data.notes || "Yêu cầu xin dự giờ từ GVBM",
+      visibilityType: "PUBLIC",
+      maxSeats: 4,
+      status: "PENDING_TEACHER_APPROVAL",
+      requestOrigin: "OBSERVER_REQUEST",
+      academicYearId: activeYear?.id || null,
+      campusId: hostTeacher.campusId || null,
+      campusName: hostTeacher.campus?.campusName || null
+    };
+
     try {
       newSlot = await prisma.observationSlot.create({
-        data: {
-          teacherId: hostTeacher.id,
-          targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
-          classId: data.classId || null,
-          className: data.className || "Lớp chọn",
-          level: data.level || "ALL",
-          grade: data.grade || "Khối",
-          subjectId: data.subjectId || null,
-          subjectName: data.subjectName || "Môn học",
-          topic: data.topic || "Đề xuất xin dự giờ tiết học",
-          date: slotDate,
-          startTime: data.period || timeRange.start,
-          endTime: timeRange.end,
-          room: data.room || "Phòng học",
-          description: data.notes || "Yêu cầu xin dự giờ từ GVBM",
-          visibilityType: "PUBLIC",
-          maxSeats: 4,
-          status: "PENDING_TEACHER_APPROVAL",
-          requestOrigin: "OBSERVER_REQUEST",
-          academicYearId: activeYear?.id || null,
-          campusId: hostTeacher.campusId || null,
-          campusName: hostTeacher.campus?.campusName || null
-        }
+        data: slotCreateData
       });
     } catch (createErr: any) {
       if (createErr?.message?.includes("requestOrigin") || createErr?.message?.includes("no column named")) {
+        delete slotCreateData.requestOrigin;
+        slotCreateData.description = (data.notes ? data.notes + " | " : "") + "[GVBM_XIN_DU_GIO]";
         newSlot = await prisma.observationSlot.create({
-          data: {
-            teacherId: hostTeacher.id,
-            targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
-            classId: data.classId || null,
-            className: data.className || "Lớp chọn",
-            level: data.level || "ALL",
-            grade: data.grade || "Khối",
-            subjectId: data.subjectId || null,
-            subjectName: data.subjectName || "Môn học",
-            topic: data.topic || "Đề xuất xin dự giờ tiết học",
-            date: slotDate,
-            startTime: data.period || timeRange.start,
-            endTime: timeRange.end,
-            room: data.room || "Phòng học",
-            description: (data.notes ? data.notes + " | " : "") + "[GVBM_XIN_DU_GIO]",
-            visibilityType: "PUBLIC",
-            maxSeats: 4,
-            status: "PENDING_TEACHER_APPROVAL",
-            academicYearId: activeYear?.id || null,
-            campusId: hostTeacher.campusId || null,
-            campusName: hostTeacher.campus?.campusName || null
-          }
+          data: slotCreateData
         });
       } else {
         throw createErr;
       }
     }
 
-    // Automatically register observer
+    // Register observer
     if (observerTeacher && observerTeacher.id && !observerTeacher.id.startsWith("admin-")) {
       await prisma.observationRegistration.create({
         data: {
@@ -1967,12 +1956,19 @@ export async function requestObservationSlot(data: {
           teacherId: observerTeacher.id,
           isApproved: false
         }
-      })
+      });
     }
 
-    // Notify host teacher (Chosen Teaching Teacher) about observation request from GVBM in Tag 2
-    try {
-      if (hostTeacher) {
+    // Instant purge for active cache paths
+    revalidatePath("/teacher/du-gio");
+    revalidatePath("/admin/du-gio");
+
+    // Asynchronous background dispatch of In-App Notification and Email via Next.js after()
+    // This returns the success response to the client immediately (~300ms) without waiting for SMTP handshakes
+    after(async () => {
+      try {
+        if (!hostTeacher) return;
+
         const slotDateObj = new Date(data.date);
         const formattedDate = slotDateObj.toLocaleDateString("vi-VN", {
           weekday: "long",
@@ -2002,7 +1998,11 @@ export async function requestObservationSlot(data: {
         }
 
         const hostEmail = getTeacherResolvedEmail(hostTeacher);
-        
+        const observerEmail = getTeacherResolvedEmail(observerTeacher);
+
+        const emailTasks: Promise<any>[] = [];
+
+        // 2. Email Notification to Host Teacher
         if (hostEmail && hostEmail.includes("@")) {
           const emailSubject = `[Skyline - Dự Giờ] Thầy/Cô ${observerTeacher.teacherName} gửi đề xuất xin dự giờ tiết dạy: "${data.topic || "Tiết học"}"`;
           const emailHtml = renderObservationRequestForHost({
@@ -2020,22 +2020,16 @@ export async function requestObservationSlot(data: {
             directLink: hostDirectLink
           });
 
-          try {
-            const sendResult = await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml });
-            if (!sendResult?.success) {
-              console.error("[Skyline Tag 2 Email Error] Failed sending to host teacher " + hostEmail + ":", sendResult?.error);
-            } else {
-              console.log("[Skyline Tag 2 Email] Successfully sent observation request email to host teacher:", hostEmail, sendResult);
-            }
-          } catch (mailErr) {
-            console.error("[Skyline Tag 2 Email Error] Failed sending to host teacher " + hostEmail + ":", mailErr);
-          }
+          emailTasks.push(
+            sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml })
+              .then(res => console.log("[Observation Request] Email successfully sent to host:", hostEmail, res?.success))
+              .catch(err => console.error("[Observation Request] Email failed sending to host:", hostEmail, err))
+          );
         } else {
-          console.warn("[Skyline Tag 2 Email Warning] Host teacher does not have a resolved email address:", hostTeacher.teacherName, hostTeacher.teacherCode);
+          console.warn("[Observation Request] Host teacher does not have a resolved email address:", hostTeacher.teacherName);
         }
 
-        // 3. Email confirmation sent to Observer Teacher (Người gửi đề xuất)
-        const observerEmail = getTeacherResolvedEmail(observerTeacher);
+        // 3. Email Confirmation to Observer Teacher (Skipped if self-observation)
         if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
           const observerSubject = `[Skyline - Dự Giờ] Đã gửi thành công đề xuất xin dự giờ tới Thầy/Cô ${hostTeacher.teacherName}`;
           const observerHtml = renderObservationRequestSubmittedForObserver({
@@ -2053,17 +2047,19 @@ export async function requestObservationSlot(data: {
             room: data.room || undefined,
             directLink: observerDirectLink
           });
-          await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer request confirmation email error:", e));
-        }
-      }
-    } catch (notifErr) {
-      console.error("Error sending requestObservationSlot notification:", notifErr);
-    }
 
-    revalidatePath("/teacher/du-gio");
-    revalidatePath("/teacher/du-gio-mam-non");
-    revalidatePath("/admin/du-gio-mam-non");
-    revalidatePath("/admin/du-gio");
+          emailTasks.push(
+            sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: observerSubject, html: observerHtml })
+              .then(res => console.log("[Observation Request] Email successfully sent to observer:", observerEmail, res?.success))
+              .catch(err => console.error("[Observation Request] Email failed sending to observer:", observerEmail, err))
+          );
+        }
+
+        await Promise.allSettled(emailTasks);
+      } catch (bgErr) {
+        console.error("Error in background requestObservationSlot task:", bgErr);
+      }
+    });
 
     return { success: true, slot: newSlot };
   } catch (e: any) {
