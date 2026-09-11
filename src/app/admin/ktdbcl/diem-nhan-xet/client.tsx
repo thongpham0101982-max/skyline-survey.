@@ -406,7 +406,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     try {
       setLoadingSheet(true)
       const res = await fetch(
-        `api/teacher/grade-entries?academicYearId=${selectedYearId}&classId=${selectedClassId}&subjectId=${selectedSubjectId}&evaluationPeriod=${selectedPeriod}`.replace('api/', '/api/')
+        `/api/teacher/grade-entries?academicYearId=${selectedYearId}&classId=${selectedClassId}&subjectId=${selectedSubjectId}&evaluationPeriod=${selectedPeriod}&isManage=true`
       )
       const data = await res.json()
       if (data.success) {

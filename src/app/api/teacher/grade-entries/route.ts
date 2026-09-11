@@ -19,6 +19,10 @@ export async function GET(request: Request) {
       teacher = await prisma.teacher.findUnique({ where: { userId } })
     }
 
+    const isManage = searchParams.get("isManage") === "true" || searchParams.get("role") === "admin"
+    const userRole = ((session?.user as any)?.role || "").toUpperCase().trim()
+    const isPrivileged = isManage || ["ADMIN", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "BAN_GIAM_HIEU", "BGH", "CM", "TO_TRUONG"].includes(userRole) || (userRole && userRole !== "TEACHER")
+
     // Action 1: Get list of assigned classes & subjects for teacher
     if (action === "getAssignments") {
       let teachingAssignments: any[] = []
@@ -42,7 +46,18 @@ export async function GET(request: Request) {
         availableClasses = Array.from(classMap.values())
         availableSubjects = Array.from(subjectMap.values())
       }
-      // Strictly enforce Teaching Assignments: Return empty if teacher has no assignments
+
+      // If privileged user has no personal teaching assignments, load all active classes and subjects
+      if (isPrivileged && availableClasses.length === 0) {
+        availableClasses = await prisma.class.findMany({
+          where: academicYearId ? { academicYearId, status: "ACTIVE" } : { status: "ACTIVE" },
+          orderBy: { className: "asc" }
+        })
+        availableSubjects = await prisma.subject.findMany({
+          where: { status: "ACTIVE" },
+          orderBy: { subjectName: "asc" }
+        })
+      }
 
       return NextResponse.json({
         success: true,
@@ -57,8 +72,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, students: [], config: null, entries: [] })
     }
 
-    // Verify teacher assignment for this class & subject if teacher exists
-    if (teacher) {
+    // Verify teacher assignment for this class & subject ONLY IF user is strictly a regular teacher and NOT in management mode
+    if (teacher && !isPrivileged && userRole === "TEACHER") {
       const isAssigned = await prisma.teachingAssignment.findFirst({
         where: {
           teacherId: teacher.id,
@@ -130,7 +145,14 @@ export async function GET(request: Request) {
 
     // Get students in this class
     const students = await prisma.student.findMany({
-      where: { classId, status: "ACTIVE" },
+      where: {
+        classId,
+        OR: [
+          { status: "ACTIVE" },
+          { status: "active" },
+          { status: null }
+        ]
+      },
       orderBy: { studentName: "asc" },
       select: { id: true, studentCode: true, studentName: true, gender: true }
     })
