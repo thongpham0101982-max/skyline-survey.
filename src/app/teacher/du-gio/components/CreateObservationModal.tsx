@@ -926,7 +926,9 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                       }}
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none bg-slate-50 text-slate-800 cursor-pointer"
                     >
-                      {(isAdminUser || isMamNonTeacher) && <option value="">-- Tất cả Tổ --</option>}
+                      {(isAdminUser || (ttcmAllowedDepartments && ttcmAllowedDepartments.length > 1)) && (
+                        <option value="">{isAdminUser ? "-- Tất cả các Tổ chuyên môn --" : "-- Tất cả Tổ thuộc Bộ phận --"}</option>
+                      )}
                       {ttcmAllowedDepartments.map((d: any) => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                       ))}

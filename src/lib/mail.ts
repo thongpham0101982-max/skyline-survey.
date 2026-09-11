@@ -23,7 +23,7 @@ export async function sendEmail({
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
   const secure = process.env.SMTP_SECURE === "true";
   const user = process.env.SMTP_USER || "bankhaothi@skylineschool.edu.vn";
-  const pass = process.env.SMTP_PASS || "Khaothi@2024";
+  const pass = process.env.SMTP_PASS || "txhrphxggpnlbhsk";
 
   if (!user || !pass) {
     throw new Error("Missing SMTP credentials in environmental variables");

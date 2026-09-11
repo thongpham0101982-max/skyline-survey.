@@ -18,7 +18,7 @@ import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen,
   CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
   BarChart3, PieChart, Printer, Download, FileSpreadsheet, Edit, LayoutDashboard
 } from "lucide-react"
-import { ACADEMIC_DIVISIONS } from "@/config/divisions";
+import { ACADEMIC_DIVISIONS, normalizeDivisionCode } from "@/config/divisions";
 
 const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
 const k12Labels = [
@@ -1516,46 +1516,57 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [isManagerRole, viewMode, isAdminRoute]);
 
   const ttcmAllowedDepartments = useMemo(() => {
-    let depts = departments;
-    if (isMamNonTeacher) {
-      depts = depts.filter(d => 
-        isPreschoolDepartment(d.name || d.code || "") || 
-        ((d as any).blockCM || "").toLowerCase().includes("mam non") ||
-        (d.code && ["TO_TACTQ_MN.S", "TO_TACTQ_PT.G"].includes(d.code)) ||
-        (d.name && (d.name.includes("Mầm non") || d.name.includes("Mầm Non") || d.name.includes("TA Quốc tế")))
-      );
-      // Với Mầm non: TTCM, QLCM, BGH MN đều được quyền xem và chọn bất kỳ tổ Mầm non & Tổ TA Quốc tế nào
-      return depts;
-    }
-    if (isAdminUser || isQLCM || isBGHMN) return depts;
+    const allDepts = departments;
+    // 1. Toàn quyền (Ban ĐHCM, Ban KT&ĐBCL, Ban GĐ, Ban TT, Admin, GĐCS, Quản lý CM)
+    if (isAdminUser || isBanDHCM || isQLCM) return allDepts;
+
+    // 2. Trưởng / Phó Bộ Phận (TBP)
     if (isTBP) {
       const myDivCodes = new Set<string>();
-      currentTeacher?.divisionAssignments?.forEach((da: any) => myDivCodes.add(da.divisionCode));
-      currentTeacher?.divisionCodes?.forEach((dc: string) => myDivCodes.add(dc));
+      currentTeacher?.divisionAssignments?.forEach((da: any) => {
+        if (da.divisionCode) myDivCodes.add(normalizeDivisionCode(da.divisionCode));
+      });
+      currentTeacher?.divisionCodes?.forEach((dc: string) => {
+        if (dc) myDivCodes.add(normalizeDivisionCode(dc));
+      });
       if (["BAN_DHCM", "TB_DHCM"].includes(currentTeacher?.position || "")) {
         myDivCodes.add("BAN_DHCM");
       }
       const isSuperDiv = Array.from(myDivCodes).some(dc => ["BAN_GD", "BAN_KT_DBCL", "BAN_DHCM", "BAN_TT"].includes(dc));
-      if (isSuperDiv) return depts;
-      return depts.filter(d => (d.divisionCode && myDivCodes.has(d.divisionCode)) || (currentTeacher?.departmentId && d.id === currentTeacher.departmentId));
-    }
-    if (!isTTCM) return depts;
-    const deptIds = new Set<string>();
-    if (currentTeacher?.departmentId) deptIds.add(currentTeacher.departmentId);
-    if (currentTeacher?.departmentAssignments) {
-      currentTeacher.departmentAssignments.forEach((da: any) => {
-        if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position) && da.departmentId) {
-          deptIds.add(da.departmentId);
-        }
+      if (isSuperDiv) return allDepts;
+
+      return allDepts.filter(d => {
+        const dDivNorm = normalizeDivisionCode(d.divisionCode);
+        if (dDivNorm && myDivCodes.has(dDivNorm)) return true;
+        if (currentTeacher?.departmentId && d.id === currentTeacher.departmentId) return true;
+        return false;
       });
     }
-    return depts.filter(d => deptIds.has(d.id));
-  }, [departments, currentTeacher, isTTCM, isAdminUser, isMamNonTeacher, isTBP, isQLCM, isBGHMN]);
 
-  // Set default surprise department for TTCM or Preschool
+    // 3. Tổ Trưởng / Tổ Phó Chuyên Môn (TTCM)
+    if (isTTCM) {
+      const deptIds = new Set<string>();
+      if (currentTeacher?.departmentId) deptIds.add(currentTeacher.departmentId);
+      if (currentTeacher?.departmentAssignments) {
+        currentTeacher.departmentAssignments.forEach((da: any) => {
+          if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM", "TPTCM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
+            deptIds.add(da.departmentId);
+          }
+        });
+      }
+      return allDepts.filter(d => deptIds.has(d.id));
+    }
+
+    // 4. Giáo viên bình thường (GV) - Không có quyền quản lý
+    if (currentTeacher?.departmentId) {
+      return allDepts.filter(d => d.id === currentTeacher.departmentId);
+    }
+    return [];
+  }, [departments, currentTeacher, isTTCM, isTBP, isBanDHCM, isQLCM, isAdminUser]);
+
+  // Set default surprise department for TTCM or TBP
   useEffect(() => {
     if (ttcmAllowedDepartments.length > 0 && !surpriseDeptId) {
-      // Ưu tiên tổ của cô Hân nếu có
       const myDept = currentTeacher?.departmentId && ttcmAllowedDepartments.find(d => d.id === currentTeacher.departmentId);
       setSurpriseDeptId(myDept ? myDept.id : ttcmAllowedDepartments[0].id);
     }
@@ -1564,70 +1575,36 @@ export function ObservationClient(props: ObservationClientProps) {
   const filteredTeachersForSurprise = useMemo(() => {
     let list = teachers;
 
-    // 1. Nếu có chọn Tổ chuyên môn cụ thể (surpriseDeptId)
+    // Giới hạn phạm vi giáo viên theo danh sách tổ được phép quản lý (TBP/TTCM)
+    if (!isAdminUser && !isBanDHCM && !isQLCM) {
+      const allowedDeptIds = new Set(ttcmAllowedDepartments.map(d => d.id));
+      list = list.filter((t: any) => {
+        if (t.departmentId && allowedDeptIds.has(t.departmentId)) return true;
+        if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+          return t.departmentAssignments.some((da: any) => allowedDeptIds.has(da.departmentId));
+        }
+        return false;
+      });
+    }
+
+    // Lọc theo tổ được chọn cụ thể nếu có
     if (surpriseDeptId && surpriseDeptId !== "all") {
-      const byDept = list.filter((t: any) => {
+      list = list.filter((t: any) => {
         if (t.departmentId === surpriseDeptId) return true;
         if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
           return t.departmentAssignments.some((da: any) => da.departmentId === surpriseDeptId);
         }
         return false;
       });
-
-      // Nếu là Mầm non và tổ được chọn hiện tại chỉ có 1 mình (như Tổ TA Mầm non hiện tại chỉ có cô Hân):
-      if (isMamNonTeacher && byDept.length <= 1) {
-        // Nạp thêm các giáo viên Tiếng Anh / GV Quốc tế / GV Mầm non tại cùng cơ sở để người dùng luôn có GV để chọn
-        const extra = list.filter((t: any) => {
-          if (currentTeacher && t.id === currentTeacher.id) return false;
-          const dName = t.departmentRel?.name || t.departmentRel?.code || "";
-          const block = t.departmentRel?.blockCM || "";
-          const isMN = isPreschoolDepartment(dName) || block.toLowerCase().includes("mam non") || (t.position || "").includes("MN") || (t.user?.role || "").includes("MN");
-          const isTA = (t.departmentRel?.code && ["TO_TACTQ_PT.G", "TO_TACTQ_TH.S", "TO_TACTQ_MN.S"].includes(t.departmentRel.code)) || dName.includes("TA");
-          if (surpriseCampusId && t.campusId && t.campusId !== surpriseCampusId) return false;
-          return isMN || isTA;
-        });
-        const combined = [...byDept, ...extra.filter(e => !byDept.some(b => b.id === e.id))];
-        return combined;
-      }
-
-      // Lọc theo campus nếu đã chọn campus
-      if (surpriseCampusId) {
-        const atCampus = byDept.filter((t: any) => !t.campusId || t.campusId === surpriseCampusId);
-        if (atCampus.length > 0) return atCampus;
-      }
-      return byDept;
     }
 
-    // 2. Nếu không chọn surpriseDeptId (Tất cả tổ)
-    if (isMamNonTeacher) {
-      list = list.filter((t: any) => {
-        const dName = t.departmentRel?.name || t.departmentRel?.code || "";
-        const block = t.departmentRel?.blockCM || "";
-        const isMN = isPreschoolDepartment(dName) || block.toLowerCase().includes("mam non") || (t.position || "").includes("MN") || (t.user?.role || "").includes("MN");
-        const isTA = (t.departmentRel?.code && ["TO_TACTQ_PT.G", "TO_TACTQ_TH.S", "TO_TACTQ_MN.S"].includes(t.departmentRel.code)) || dName.includes("TA");
-        if (surpriseCampusId && t.campusId && t.campusId !== surpriseCampusId) return false;
-        return isMN || isTA;
-      });
-      return list;
-    }
-
-    if (!isAdminUser && !isQLCM && !isBGHMN && isTTCM) {
-      const allowedIds = new Set(ttcmAllowedDepartments.map(d => d.id));
-      return list.filter((t: any) => {
-        if (allowedIds.has(t.departmentId)) return true;
-        if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
-          return t.departmentAssignments.some((da: any) => allowedIds.has(da.departmentId));
-        }
-        return false;
-      });
-    }
-
+    // Lọc theo campus nếu đã chọn campus
     if (surpriseCampusId) {
-      return list.filter((t: any) => !t.campusId || t.campusId === surpriseCampusId);
+      list = list.filter((t: any) => !t.campusId || t.campusId === surpriseCampusId);
     }
 
     return list;
-  }, [teachers, surpriseDeptId, surpriseCampusId, isAdminUser, isTTCM, isQLCM, isBGHMN, ttcmAllowedDepartments, isMamNonTeacher, currentTeacher]);
+  }, [teachers, surpriseDeptId, surpriseCampusId, isAdminUser, isBanDHCM, isQLCM, ttcmAllowedDepartments]);
 
   const filteredClassesForSurprise = useMemo(() => {
     if (!classes || classes.length === 0) return [];
