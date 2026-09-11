@@ -506,6 +506,11 @@ export function ReceivedEvaluationsTab({
 
   const filteredList = useMemo(() => {
     return receivedEvaluations.filter(item => {
+      if (selectedEvalRole !== "ALL") {
+        const isHost = item.role === "TEACHER" || item.slot?.teacherId === currentTeacher?.id;
+        if (selectedEvalRole === "TEACHER" && !isHost) return false;
+        if (selectedEvalRole === "OBSERVER" && isHost) return false;
+      }
       if (selectedEvalMonth !== "ALL") {
         const d = new Date(item.slot?.date || item.evaluation?.createdAt || new Date());
         const m = d.getMonth() + 1;
@@ -518,48 +523,120 @@ export function ReceivedEvaluationsTab({
       }
       return true;
     });
-  }, [receivedEvaluations, selectedEvalMonth, selectedOriginType]);
+  }, [receivedEvaluations, selectedEvalRole, selectedEvalMonth, selectedOriginType, currentTeacher?.id]);
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-300">
-      {/* TOP TOOLBAR: MONTH & ORIGIN FILTER */}
-      <div className="bg-white/95 backdrop-blur-md rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Tháng:</span>
-            <select
-              value={selectedEvalMonth}
-              onChange={e => setSelectedEvalMonth(e.target.value)}
-              className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
-            >
-              <option value="ALL">Toàn bộ năm học ({receivedEvaluations.length} phiếu)</option>
-              {availableMonths.map(m => (
-                <option key={m.key} value={m.key}>{m.label} ({m.count} phiếu)</option>
-              ))}
-            </select>
+      {/* TOP TOOLBAR: ROLE, MONTH & ORIGIN FILTER */}
+      <div className="bg-white/95 backdrop-blur-md rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col gap-3">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Bộ lọc vai trò */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Vai trò:</span>
+              <select
+                value={selectedEvalRole}
+                onChange={e => setSelectedEvalRole(e.target.value as any)}
+                className="py-2 px-3.5 bg-teal-50/80 border border-teal-200 rounded-xl text-xs font-black text-teal-900 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
+              >
+                <option value="ALL">🌟 Tất cả vai trò ({receivedEvaluations.length} phiếu)</option>
+                <option value="TEACHER">🧑‍🏫 Tiết tôi dạy (GV dạy) ({taughtCount} phiếu)</option>
+                <option value="OBSERVER">👁️ Tiết tôi đi dự (GV dự) ({observedCount} phiếu)</option>
+              </select>
+            </div>
+
+            {/* Bộ lọc tháng */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Tháng:</span>
+              <select
+                value={selectedEvalMonth}
+                onChange={e => setSelectedEvalMonth(e.target.value)}
+                className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
+              >
+                <option value="ALL">Toàn bộ năm học ({filteredList.length} phiếu)</option>
+                {availableMonths.map(m => (
+                  <option key={m.key} value={m.key}>{m.label} ({m.count} phiếu)</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Bộ lọc hình thức */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Hình thức:</span>
+              <select
+                value={selectedOriginType}
+                onChange={e => setSelectedOriginType(e.target.value as any)}
+                className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
+              >
+                <option value="ALL">Mọi hình thức (Tất cả)</option>
+                <option value="PLAN">📋 Tiết theo kế hoạch</option>
+                <option value="SURPRISE">⚡ Tiết đột xuất ({selectedEvalRole === "TEACHER" ? surpriseTaughtCount : selectedEvalRole === "OBSERVER" ? surpriseObservedCount : surpriseTotalCount})</option>
+              </select>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Hình thức:</span>
-            <select
-              value={selectedOriginType}
-              onChange={e => setSelectedOriginType(e.target.value as any)}
-              className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
-            >
-              <option value="ALL">Mọi hình thức (Tất cả)</option>
-              <option value="PLAN">📋 Tiết theo kế hoạch</option>
-              <option value="SURPRISE">⚡ Được dự đột xuất ({surpriseReceivedCount})</option>
-            </select>
+          {/* Status text */}
+          <div className="text-[11px] font-bold text-slate-400">
+            {selectedEvalRole === "TEACHER"
+              ? "Đang hiển thị đánh giá nhận được khi trực tiếp giảng dạy (GV dạy)"
+              : selectedEvalRole === "OBSERVER"
+              ? "Đang hiển thị đánh giá bạn đã chấm khi đi dự giờ đồng nghiệp (GV dự)"
+              : "Đang hiển thị toàn bộ lược sử đánh giá (Cả GV dạy và GV dự)"}
           </div>
         </div>
-        <div className="text-[11px] font-bold text-slate-400">
-          {selectedOriginType === "SURPRISE"
-            ? "Đang lọc các tiết bạn được dự giờ đột xuất"
-            : selectedOriginType === "PLAN"
-            ? "Đang lọc các tiết dự giờ theo kế hoạch"
-            : selectedEvalMonth === "ALL"
-            ? "Hiển thị dữ liệu tổng hợp toàn năm học"
-            : "Đang lọc dữ liệu theo tháng đã chọn"}
+
+        {/* Quick-switch pills */}
+        <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => { setSelectedEvalRole("ALL"); setSelectedOriginType("ALL"); }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              selectedEvalRole === "ALL" && selectedOriginType === "ALL"
+                ? "bg-[#003B3A] text-white shadow-xs"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+            }`}
+          >
+            🌟 Tất cả ({receivedEvaluations.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedEvalRole("TEACHER")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+              selectedEvalRole === "TEACHER"
+                ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-xs"
+                : "bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200"
+            }`}
+          >
+            <span>🧑‍🏫 Tiết tôi dạy ({taughtCount})</span>
+            {surpriseTaughtCount > 0 && <span className="text-[10px] opacity-80">(⚡{surpriseTaughtCount} đ.xuất)</span>}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedEvalRole("OBSERVER")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+              selectedEvalRole === "OBSERVER"
+                ? "bg-gradient-to-r from-[#008B82] to-teal-700 text-white shadow-xs"
+                : "bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200"
+            }`}
+          >
+            <span>👁️ Tiết tôi đi dự ({observedCount})</span>
+            {surpriseObservedCount > 0 && <span className="text-[10px] opacity-80">(⚡{surpriseObservedCount} đ.xuất)</span>}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedOriginType(selectedOriginType === "SURPRISE" ? "ALL" : "SURPRISE")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+              selectedOriginType === "SURPRISE"
+                ? "bg-gradient-to-r from-rose-600 to-pink-600 text-white shadow-xs"
+                : "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
+            }`}
+          >
+            <span>⚡ Tiết đột xuất</span>
+            <span className="text-[10px] font-black opacity-90">({surpriseTotalCount})</span>
+          </button>
         </div>
       </div>
 
@@ -671,9 +748,9 @@ export function ReceivedEvaluationsTab({
             </div>
             <div className="flex items-baseline gap-2 flex-wrap">
               <p className="text-3xl font-black text-indigo-700 tracking-tight">{activeEvalsCount}</p>
-              {surpriseReceivedCount > 0 && selectedOriginType === "ALL" && (
+              {surpriseTotalCount > 0 && selectedOriginType === "ALL" && (
                 <span className="text-[11px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full shadow-2xs">
-                  ⚡ {surpriseReceivedCount} đột xuất
+                  ⚡ {surpriseTotalCount} đột xuất
                 </span>
               )}
             </div>
