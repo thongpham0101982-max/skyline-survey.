@@ -37,15 +37,16 @@ export default async function UsersPage() {
 
   // Map users and filter list for restricted admins
   const mappedUsers = users.map((u: any) => {
-    const campusIds: string[] = u.campusAssignments.map((a: any) => a.campusId);
-    if (u.teacher && u.teacher.campusId) campusIds.push(u.teacher.campusId);
+    const rawCampusIds: string[] = u.campusAssignments.map((a: any) => a.campusId);
+    if (u.teacher && u.teacher.campusId) rawCampusIds.push(u.teacher.campusId);
     if (u.parent) {
       u.parent.students.forEach((link: any) => {
-        if (link.student?.campusId && !campusIds.includes(link.student.campusId)) {
-          campusIds.push(link.student.campusId);
+        if (link.student?.campusId && !rawCampusIds.includes(link.student.campusId)) {
+          rawCampusIds.push(link.student.campusId);
         }
       })
     }
+    const campusIds = Array.from(new Set(rawCampusIds.filter(Boolean)));
     return {
       id: u.id,
       email: u.email,

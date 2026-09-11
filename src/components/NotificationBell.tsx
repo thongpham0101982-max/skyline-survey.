@@ -189,6 +189,8 @@ export function NotificationBell() {
               notifs.map(n => {
                 const targetLink = resolveNotificationLink(n)
 
+                const cleanMessage = (n.message || "").replace(/\[Dự giờ\s*#[^\]]+\]\s*/gi, "")
+
                 return (
                   <Link 
                     key={n.id} 
@@ -210,7 +212,7 @@ export function NotificationBell() {
                         {new Date(n.createdAt).toLocaleDateString("vi-VN")}
                       </span>
                     </div>
-                    <p className="text-slate-600 text-xs leading-relaxed pl-5 font-normal">{n.message}</p>
+                    <p className="text-slate-600 text-xs leading-relaxed pl-5 font-normal">{cleanMessage}</p>
                     <div className="mt-1.5 pl-5 flex items-center text-[10px] text-[#48BFE3] group-hover:text-[#008B82] font-semibold gap-1">
                       Xem chi tiết <ExternalLink className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>

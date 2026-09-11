@@ -40,8 +40,12 @@ export async function POST(request: Request) {
       columnNames = [],
       columnTypes = [],
       hasCompositeColumn = true,
+      compositeColumnName = "Điểm thành phần",
       hasRemarkColumn = true,
-      formula = "AVERAGE"
+      formula = "AVERAGE",
+      formulaCustom = null,
+      weights = null,
+      roundingRule = "ROUND_1"
     } = body
 
     if (!academicYearId) {
@@ -50,6 +54,7 @@ export async function POST(request: Request) {
 
     const columnNamesStr = JSON.stringify(columnNames)
     const columnTypesStr = typeof columnTypes === "string" ? columnTypes : JSON.stringify(columnTypes)
+    const weightsStr = weights ? (typeof weights === "string" ? weights : JSON.stringify(weights)) : null
     const targetSubjectId = subjectId && subjectId !== "ALL" ? subjectId : null
 
     const existing = await prisma.subjectGradeConfig.findFirst({
@@ -70,8 +75,12 @@ export async function POST(request: Request) {
           columnNames: columnNamesStr,
           columnTypes: columnTypesStr,
           hasCompositeColumn: Boolean(hasCompositeColumn),
+          compositeColumnName: compositeColumnName || "Điểm thành phần",
           hasRemarkColumn: Boolean(hasRemarkColumn),
-          formula
+          formula,
+          formulaCustom: formulaCustom || null,
+          weights: weightsStr,
+          roundingRule: roundingRule || "ROUND_1"
         }
       })
     } else {
@@ -85,8 +94,12 @@ export async function POST(request: Request) {
           columnNames: columnNamesStr,
           columnTypes: columnTypesStr,
           hasCompositeColumn: Boolean(hasCompositeColumn),
+          compositeColumnName: compositeColumnName || "Điểm thành phần",
           hasRemarkColumn: Boolean(hasRemarkColumn),
-          formula
+          formula,
+          formulaCustom: formulaCustom || null,
+          weights: weightsStr,
+          roundingRule: roundingRule || "ROUND_1"
         }
       })
     }

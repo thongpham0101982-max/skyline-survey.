@@ -67,20 +67,42 @@ export const getK12RankingDetails = (scores: number[]) => {
     .map((s, idx) => (s === 0 ? `Y${idx + 1}` : null))
     .filter(Boolean);
 
-  // 1. Giỏi: sum >= 17, Y1=1.5, Y3=2.0, Y6=2.0, Y7=3.0, others >= 50%
-  if (sum >= 17.0 && yq1 === 1.5 && yq3 === 2.0 && yq6 === 2.0 && yq7 === 3.0 && failed50.length === 0) {
+  // Danh sách các tiêu chí chưa đạt Max cho từng mức
+  const missingMaxGioi = [
+    yq1 < 1.5 ? "Y1 (1.5đ)" : null,
+    yq3 < 2.0 ? "Y3 (2.0đ)" : null,
+    yq6 < 2.0 ? "Y6 (2.0đ)" : null,
+    yq7 < 3.0 ? "Y7 (3.0đ)" : null,
+  ].filter(Boolean);
+
+  const missingMaxKha = [
+    yq1 < 1.5 ? "Y1 (1.5đ)" : null,
+    yq3 < 2.0 ? "Y3 (2.0đ)" : null,
+    yq6 < 2.0 ? "Y6 (2.0đ)" : null,
+  ].filter(Boolean);
+
+  const missingMaxTB = [
+    yq1 < 1.5 ? "Y1 (1.5đ)" : null,
+    yq3 < 2.0 ? "Y3 (2.0đ)" : null,
+  ].filter(Boolean);
+
+  // 1. Giỏi: sum >= 17, Y1=1.5, Y3=2.0, Y6=2.0, Y7=3.0, không có tiêu chí < 50%
+  if (sum >= 17.0 && missingMaxGioi.length === 0 && failed50.length === 0) {
     return {
       rating: "Giỏi",
-      reason: `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 17.0đ); đạt điểm tối đa ở cả 4 yêu cầu trọng tâm Y1(1.5đ), Y3(2.0đ), Y6(2.0đ), Y7(3.0đ); tất cả các yêu cầu còn lại đều đạt từ 50% điểm tối đa trở lên.`,
+      reason: `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 17.0đ); đạt điểm tối đa (Max) ở cả 4 tiêu chí bắt buộc: Y1 (1.5đ), Y3 (2.0đ), Y6 (2.0đ), Y7 (3.0đ); tất cả các yêu cầu còn lại đều đạt từ 50% điểm tối đa trở lên.`,
       color: "emerald"
     };
   }
 
-  // 2. Khá: sum >= 14, Y3>=2.0, Y6>=2.0, Y7>=2.0, others >= 50%
-  if (sum >= 14.0 && yq3 >= 2.0 && yq6 >= 2.0 && yq7 >= 2.0 && failed50.length === 0) {
-    let note = `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 14.0đ); các yêu cầu trọng tâm Y3(≥2.0đ), Y6(≥2.0đ), Y7(≥2.0đ) đạt chuẩn; các yêu cầu khác đều đạt từ 50% trở lên.`;
+  // 2. Khá: sum >= 14, Y1=1.5, Y3=2.0, Y6=2.0, không có tiêu chí < 50%
+  if (sum >= 14.0 && missingMaxKha.length === 0 && failed50.length === 0) {
+    let note = `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 14.0đ); đạt điểm tối đa (Max) ở 3 tiêu chí bắt buộc: Y1 (1.5đ), Y3 (2.0đ), Y6 (2.0đ); các yêu cầu khác đều đạt từ 50% trở lên.`;
     if (sum >= 17.0) {
-      note += ` (Chưa đạt loại Giỏi do: ${yq1 < 1.5 ? "Y1 chưa đạt tối đa 1.5đ; " : ""}${yq3 < 2.0 ? "Y3 chưa đạt tối đa 2.0đ; " : ""}${yq6 < 2.0 ? "Y6 chưa đạt tối đa 2.0đ; " : ""}${yq7 < 3.0 ? "Y7 chưa đạt tối đa 3.0đ" : ""})`;
+      const reasons = [];
+      if (missingMaxGioi.length > 0) reasons.push(`chưa đạt Max ở ${missingMaxGioi.join(", ")}`);
+      if (failed50.length > 0) reasons.push(`có yêu cầu dưới 50%: ${failed50.join(", ")}`);
+      note += ` (Hạ từ loại Giỏi xuống Khá do: ${reasons.join("; ")})`;
     }
     return {
       rating: "Khá",
@@ -89,11 +111,14 @@ export const getK12RankingDetails = (scores: number[]) => {
     };
   }
 
-  // 3. Trung bình: sum >= 12, Y3>=1.0, Y6>=1.0, Y7>=1.0, no zeros
-  if (sum >= 12.0 && yq3 >= 1.0 && yq6 >= 1.0 && yq7 >= 1.0 && zeroScores.length === 0) {
-    let note = `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 12.0đ); các yêu cầu trọng tâm Y3(≥1.0đ), Y6(≥1.0đ), Y7(≥1.0đ) đạt chuẩn và không có yêu cầu nào bị điểm 0.`;
-    if (sum >= 14.0 && failed50.length > 0) {
-      note += ` (Chưa đạt loại Khá do các yêu cầu sau dưới 50% điểm: ${failed50.join(", ")})`;
+  // 3. Trung bình: sum >= 12, Y1=1.5, Y3=2.0, không có tiêu chí 0đ
+  if (sum >= 12.0 && missingMaxTB.length === 0 && zeroScores.length === 0) {
+    let note = `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ (≥ 12.0đ); đạt điểm tối đa (Max) ở 2 tiêu chí bắt buộc: Y1 (1.5đ), Y3 (2.0đ) và không có yêu cầu nào bị điểm 0.`;
+    if (sum >= 14.0) {
+      const reasons = [];
+      if (missingMaxKha.length > 0) reasons.push(`chưa đạt Max ở ${missingMaxKha.join(", ")}`);
+      if (failed50.length > 0) reasons.push(`có yêu cầu dưới 50%: ${failed50.join(", ")}`);
+      note += ` (Hạ xuống loại Trung bình do: ${reasons.join("; ")})`;
     }
     return {
       rating: "Trung bình",
@@ -105,11 +130,13 @@ export const getK12RankingDetails = (scores: number[]) => {
   // 4. Không xếp loại
   let unratedReason = `Tổng điểm đạt ${sum.toFixed(2)}/20.00đ.`;
   if (sum < 12.0) {
-    unratedReason += " Điểm tổng kết dưới 12.00 điểm (chưa đạt chuẩn tối thiểu Trung bình).";
+    unratedReason += " Điểm tổng kết dưới 12.00 điểm (chưa đạt chuẩn tối thiểu loại Trung bình).";
   } else if (zeroScores.length > 0) {
     unratedReason += ` Có yêu cầu bị điểm 0: ${zeroScores.join(", ")} (theo quy định không được xếp loại khi có tiêu chí 0 điểm).`;
+  } else if (missingMaxTB.length > 0) {
+    unratedReason += ` Chưa đạt điểm tối đa (Max) ở tiêu chí bắt buộc tối thiểu: ${missingMaxTB.join(", ")} (yêu cầu bắt buộc để đạt loại Trung bình).`;
   } else {
-    unratedReason += " Các yêu cầu trọng tâm Y3, Y6, Y7 chưa đạt mức điểm tối thiểu (≥1.0đ).";
+    unratedReason += " Không thỏa mãn điều kiện xếp loại tối thiểu.";
   }
 
   return {
@@ -188,7 +215,7 @@ export function isTeacherInDepartment(t: any, deptId: string): boolean {
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,
   requestObservationSlot, respondToObservationRequest,
-  deleteObservationSlot, getCreatedCountInMonth, getObservationSlots, triggerSlotReminder,
+  deleteObservationSlot, deleteMultipleObservationSlots, getCreatedCountInMonth, getObservationSlots, triggerSlotReminder,
   approveRegistration, submitEvaluation, updateTeacherObservationTargets, sendPendingEvaluationReminder,
   requestReEvaluation, approveReEvaluation, rejectReEvaluation, getReEvaluationRequests,
   createSurpriseObservation
@@ -249,14 +276,28 @@ const K12_SECTIONS = [
   {
     name: "Tiêu chuẩn 1: Phương tiện (3 điểm)",
     requirements: [
-      { id: 1, label: "Yêu cầu 1", max: 1.5, text: "Chuẩn bị giáo án tốt, giáo án phải chỉ rõ các hoạt động của trò và thầy, bám sát chuẩn kiến thức, kỹ năng, thể hiện mức độ phù hợp của các hoạt động học với mục tiêu, nội dung và phương pháp dạy học được sử dụng. KH bài dạy thể hiện mức độ rõ ràng, chính xác của mục tiêu, nội dung, sản phẩm, cách thức tổ chức thực hiện mỗi hoạt động học của học sinh." },
+      { 
+        id: 1, 
+        label: "Yêu cầu 1", 
+        max: 1.5, 
+        mandatoryFor: ["Giỏi", "Khá", "Trung bình"],
+        mandatoryText: "Buộc đạt điểm Max (1.5đ) cho loại Giỏi, Khá, TB",
+        text: "Chuẩn bị giáo án tốt, giáo án phải chỉ rõ các hoạt động của trò và thầy, bám sát chuẩn kiến thức, kỹ năng, thể hiện mức độ phù hợp của các hoạt động học với mục tiêu, nội dung và phương pháp dạy học được sử dụng. KH bài dạy thể hiện mức độ rõ ràng, chính xác của mục tiêu, nội dung, sản phẩm, cách thức tổ chức thực hiện mỗi hoạt động học của học sinh." 
+      },
       { id: 2, label: "Yêu cầu 2", max: 1.5, text: "Tích cực sử dụng đồ dùng, thiết bị dạy học. Thiết bị, đồ dùng dạy học phải phù hợp với nội dung, phương pháp của kiểu bài lên lớp." }
     ]
   },
   {
     name: "Tiêu chuẩn 2: Nội dung (5 điểm)",
     requirements: [
-      { id: 3, label: "Yêu cầu 3", max: 2.0, text: "Nội dung bài dạy chính xác, khoa học (bao gồm khoa học bộ môn và phù hợp với quan điểm tư tưởng, lập trường chính trị của Đảng); Hấp dẫn (bao gồm hấp dẫn của nội dung, phương pháp và hình thức giao nhiệm vụ học tập cho học sinh)." },
+      { 
+        id: 3, 
+        label: "Yêu cầu 3", 
+        max: 2.0, 
+        mandatoryFor: ["Giỏi", "Khá", "Trung bình"],
+        mandatoryText: "Buộc đạt điểm Max (2.0đ) cho loại Giỏi, Khá, TB",
+        text: "Nội dung bài dạy chính xác, khoa học (bao gồm khoa học bộ môn và phù hợp với quan điểm tư tưởng, lập trường chính trị của Đảng); Hấp dẫn (bao gồm hấp dẫn của nội dung, phương pháp và hình thức giao nhiệm vụ học tập cho học sinh)." 
+      },
       { id: 4, label: "Yêu cầu 4", max: 2.0, text: "Bảo đảm tính hệ thống, đủ nội dung theo chuẩn kiến thức, kỹ năng và làm rõ trọng tâm của bài học." },
       { id: 5, label: "Yêu cầu 5", max: 1.0, text: "Liên hệ với thực tế đời sống và sản xuất (nếu có). Nội dung liên hệ thực tế có tính giáo dục và gắn với nội dung bài dạy." }
     ]
@@ -264,8 +305,22 @@ const K12_SECTIONS = [
   {
     name: "Tiêu chuẩn 3: Phương pháp (9 điểm)",
     requirements: [
-      { id: 6, label: "Yêu cầu 6", max: 2.0, text: "Không dạy học theo lối 'đọc chép', áp đặt đối với học sinh. Thể hiện khả năng quan sát, theo dõi, phát hiện kịp thời những khó khăn của học sinh." },
-      { id: 7, label: "Yêu cầu 7", max: 3.0, text: "Tổ chức học sinh học tập tích cực, chủ động, phù hợp với từng đối tượng trong lớp. Khuyến khích học sinh hợp tác, giúp đỡ nhau khi thực hiện nhiệm vụ học tập. Học sinh được tham gia xây dựng bài và phát huy trí lực tốt, hứng thú học tập, không khí lớp học thân thiện." },
+      { 
+        id: 6, 
+        label: "Yêu cầu 6", 
+        max: 2.0, 
+        mandatoryFor: ["Giỏi", "Khá"],
+        mandatoryText: "Buộc đạt điểm Max (2.0đ) cho loại Giỏi, Khá",
+        text: "Không dạy học theo lối 'đọc chép', áp đặt đối với học sinh. Thể hiện khả năng quan sát, theo dõi, phát hiện kịp thời những khó khăn của học sinh." 
+      },
+      { 
+        id: 7, 
+        label: "Yêu cầu 7", 
+        max: 3.0, 
+        mandatoryFor: ["Giỏi"],
+        mandatoryText: "Buộc đạt điểm Max (3.0đ) cho loại Giỏi",
+        text: "Tổ chức học sinh học tập tích cực, chủ động, phù hợp với từng đối tượng trong lớp. Khuyến khích học sinh hợp tác, giúp đỡ nhau khi thực hiện nhiệm vụ học tập. Học sinh được tham gia xây dựng bài và phát huy trí lực tốt, hứng thú học tập, không khí lớp học thân thiện." 
+      },
       { id: 8, label: "Yêu cầu 8", max: 2.0, text: "Thực hiện linh hoạt các khâu lên lớp, phân phối thời gian hợp lý (đúng quy trình theo YCCD của CT2018). Dành thời gian thích hợp để củng cố, luyện tập nhằm khắc sâu trọng tâm bài học." },
       { id: 9, label: "Yêu cầu 9", max: 2.0, text: "Kết hợp tốt các phương pháp trong hoạt động dạy và học. Học sinh tiếp nhận, sẵn sàng, chủ động, sáng tạo, hợp tác thực hiện các nhiệm vụ, tích cực trong trình bày, thảo luận về kết quả thực hiện nhiệm vụ." }
     ]
@@ -584,6 +639,8 @@ export function ObservationClient(props: ObservationClientProps) {
   const [hasEvalDraft, setHasEvalDraft] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
   const [highlightedSlotId, setHighlightedSlotId] = useState<string | null>(null)
+  const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([])
+  const [isDeletingBulk, setIsDeletingBulk] = useState<boolean>(false)
 
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
@@ -626,16 +683,16 @@ export function ObservationClient(props: ObservationClientProps) {
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const [filterMonth, setFilterMonth] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const sp = new URLSearchParams(window.location.search);
-      const urlM = sp.get("month");
-      if (urlM) return urlM;
+  const [filterMonth, setFilterMonth] = useState<string>(initialFilters.month || "all");
+
+  useEffect(() => {
+    if (!initialFilters.month && typeof window !== "undefined") {
       const stored = localStorage.getItem("skyline_du_gio_filter_month");
-      if (stored) return stored;
+      if (stored && stored !== "all") {
+        setFilterMonth(stored);
+      }
     }
-    return initialFilters.month || "all";
-  });
+  }, [initialFilters.month]);
 
   const handleMonthChange = (newMonth: string) => {
     setFilterMonth(newMonth);
@@ -843,6 +900,8 @@ export function ObservationClient(props: ObservationClientProps) {
   const [evalGeneral, setEvalGeneral] = useState("")
   const [evalOverall, setEvalOverall] = useState("")
   const [evalSubmitting, setEvalSubmitting] = useState(false)
+  const [teacherFeedbackText, setTeacherFeedbackText] = useState("")
+  const [teacherFeedbackSubmitting, setTeacherFeedbackSubmitting] = useState(false)
 
   useEffect(() => { 
     setActiveTab(activeTabParam);
@@ -850,7 +909,7 @@ export function ObservationClient(props: ObservationClientProps) {
     if (tab) {
       setActiveMainTab(mapTabToMainTab(tab));
     }
-  }, [activeTabParam, searchParams])
+  }, [activeTabParam, searchParams]);
 
   useEffect(() => {
     const evalSlotIdParam = searchParams.get("evalSlotId");
@@ -1298,79 +1357,7 @@ export function ObservationClient(props: ObservationClientProps) {
     if (res.success && res.slots) setSlots(res.slots)
   }
 
-  const exportSlotsToExcel = () => {
-    if (!slots || slots.length === 0) {
-      showToast("Không có dữ liệu để xuất file!", "error");
-      return;
-    }
-    const headers = [
-      "STT",
-      "Mã tiết",
-      "Giáo viên dạy",
-      "Mã GV",
-      "Cơ sở",
-      "Tổ chuyên môn",
-      "Bậc học",
-      "Khối",
-      "Lớp",
-      "Môn học / Hoạt động",
-      "Tên bài dạy / Chủ đề",
-      "Ngày dạy",
-      "Tiết dạy",
-      "Phòng học",
-      "Hình thức",
-      "Số người đăng ký",
-      "Danh sách người dự",
-      "Trạng thái",
-      "Điểm TB",
-      "Xếp loại"
-    ];
 
-    const rows = tabFilteredSlots.map((slot: any, idx: number) => {
-      const isSurprise = isSurpriseSlot(slot);
-      const regs = slot.registrations || [];
-      const observerNames = regs.map((r: any) => `${r.teacher?.teacherName || "GV"} (${r.teacher?.teacherCode || ""}) - ${r.evaluation ? `Đã chấm (${r.evaluation.totalScore != null ? Number(r.evaluation.totalScore).toFixed(1) + "đ - " + (r.evaluation.overallRating || "") : "Đạt"})` : "Chưa chấm"}`).join("; ");
-      
-      const evalScores = regs.map((r: any) => r.evaluation?.totalScore).filter((s: any) => s != null && !isNaN(s));
-      const avgScore = evalScores.length > 0 ? (evalScores.reduce((a: number, b: number) => a + Number(b), 0) / evalScores.length).toFixed(2) : "";
-      const ratings = regs.map((r: any) => r.evaluation?.overallRating).filter(Boolean);
-      const ratingStr = ratings.join(", ");
-
-      return [
-        idx + 1,
-        slot.id,
-        `"${(slot.teacher?.teacherName || "").replace(/"/g, '""')}"`,
-        slot.teacher?.teacherCode || "",
-        `"${(slot.campusName || slot.teacher?.campus?.campusName || "").replace(/"/g, '""')}"`,
-        `"${(slot.deptName || slot.teacher?.departmentRel?.name || "").replace(/"/g, '""')}"`,
-        slot.level || "",
-        slot.grade || "",
-        slot.className || "",
-        `"${(slot.subjectName || "").replace(/"/g, '""')}"`,
-        `"${(slot.topic || "").replace(/"/g, '""')}"`,
-        slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "",
-        slot.startTime || "",
-        `"${(slot.room || "").replace(/"/g, '""')}"`,
-        isSurprise ? "Đột xuất ⚡" : "Theo kế hoạch",
-        `${regs.length}/${slot.maxSeats || 4}`,
-        `"${observerNames.replace(/"/g, '""')}"`,
-        slot.status || "OPEN",
-        avgScore,
-        `"${ratingStr.replace(/"/g, '""')}"`
-      ].join(",");
-    });
-
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `DS_Tiet_Du_Gio_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast("Đã xuất danh sách tiết dự giờ thành công!", "success");
-  };
 
   const handleRegister = async (slotId: string) => {
     setRegisterDetailSlot(null)
@@ -1392,17 +1379,32 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const handleDeleteSlot = async (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot && slot.registrations && slot.registrations.length > 0) {
+    if (!slot) return;
+    const hasRegs = slot.registrations && slot.registrations.length > 0;
+    
+    if (hasRegs && !canDeleteAnySlot) {
       showToast("Không thể xóa tiết dạy đã có giáo viên đăng ký!", "error");
       return;
     }
-    if (!confirm("Thầy/Cô có chắc chắn muốn xóa tiết dạy dự giờ này?")) return
+    
+    const confirmMsg = hasRegs
+      ? `Tiết dạy này đã có ${slot.registrations.length} giáo viên đăng ký.\n\nThầy/Cô có chắc chắn muốn xóa tiết dạy này không? Toàn bộ đăng ký dự giờ và phiếu đánh giá liên quan sẽ bị xóa theo.`
+      : "Thầy/Cô có chắc chắn muốn xóa tiết dạy dự giờ này?";
+
+    if (!confirm(confirmMsg)) return;
     startTransition(async () => {
-      const res = await deleteObservationSlot(slotId)
-      if (res.success) { showToast("Đã xóa tiết dạy thành công!", "info"); refreshSlots() }
-      else showToast(res.error || "Không thể xóa!", "error")
-    })
-  }
+      const res = await deleteObservationSlot(slotId);
+      if (res.success) {
+        showToast("Đã xóa tiết dạy thành công!", "info");
+        setSelectedSlotIds(prev => prev.filter(id => id !== slotId));
+        refreshSlots();
+      } else {
+        showToast(res.error || "Không thể xóa!", "error");
+      }
+    });
+  };
+
+
 
   const handleApprove = async (registrationId: string) => {
     startTransition(async () => {
@@ -1413,57 +1415,105 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   
-  const isAdminUser = useMemo(() => {
-    const roleCode = currentTeacher?.user?.role || currentTeacher?.position || "";
-    const deptCode = currentTeacher?.departmentRel?.code || "";
-    const deptName = currentTeacher?.departmentRel?.name || "";
-    const isKTDBCL = deptCode.includes("KT") || deptCode.includes("DBCL") ||
-      deptName.includes("KT&ĐBCL") || deptName.includes("ĐBCL") || deptName.includes("Khảo thí") ||
-      ["KT_DBCL", "BAN_DHCM", "BGH", "ADMIN"].includes(deptCode) ||
-      currentTeacher?.departmentAssignments?.some((da: any) => 
-        da.department?.code?.includes("KT") || da.department?.name?.includes("KT&ĐBCL") || da.department?.name?.includes("ĐBCL")
-      );
-
-    return isKTDBCL || ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "QLCM", "QUAN_LY_CM", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "TBP", "TB_DHCM"].includes(roleCode) || ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BAN_DHCM", "DHCM", "BGH", "BGH_MN", "BGHMN", "BGMMN", "QLCM", "QUAN_LY_CM", "GIAO_VU_CS", "TBP", "TB_DHCM"].includes(currentTeacher?.position || "") || (typeof pathname === "string" && pathname.startsWith("/admin"));
-  }, [currentTeacher, pathname]);
-
-  const isTBP = useMemo(() => {
-    const pos = currentTeacher?.position || "";
-    const role = currentTeacher?.user?.role || "";
-    const hasDivs = (currentTeacher?.divisionAssignments?.length || 0) > 0 || (currentTeacher?.divisionCodes?.length || 0) > 0;
-    return ["TBP", "TB_DHCM", "BAN_DHCM"].includes(pos) || ["TBP", "TB_DHCM", "BAN_DHCM"].includes(role) || hasDivs;
+  // Parse all assigned and concurrent positions of current teacher
+  const teacherPositions = useMemo(() => {
+    const set = new Set<string>();
+    if (currentTeacher?.position) set.add(currentTeacher.position.trim());
+    if (currentTeacher?.positions) {
+      try {
+        const parsed = typeof currentTeacher.positions === "string" ? JSON.parse(currentTeacher.positions) : currentTeacher.positions;
+        if (Array.isArray(parsed)) parsed.forEach((p: string) => set.add(p.trim()));
+      } catch {}
+    }
+    if (currentTeacher?.departmentAssignments && Array.isArray(currentTeacher.departmentAssignments)) {
+      currentTeacher.departmentAssignments.forEach((da: any) => {
+        if (da.position) set.add(da.position.trim());
+      });
+    }
+    if (currentTeacher?.divisionAssignments && Array.isArray(currentTeacher.divisionAssignments)) {
+      currentTeacher.divisionAssignments.forEach((da: any) => {
+        if (da.position) set.add(da.position.trim());
+      });
+    }
+    return Array.from(set);
   }, [currentTeacher]);
+
+  // 1. Chức vụ TTCM (Tổ trưởng Chuyên môn)
+  const isTTCM = useMemo(() => {
+    const TTCM_KEYS = ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "TT", "TO_TRUONG_CM", "TỔ TRƯỞNG", "Tổ trưởng Chuyên môn", "Tổ phó", "TO_PHO", "TPCM"];
+    const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
+    if (["TTCM", "TO_TRUONG", "TO_PHO", "TPCM"].includes(role)) return true;
+    return teacherPositions.some(p => TTCM_KEYS.some(k => p.toUpperCase() === k.toUpperCase() || p.toLowerCase().includes("tổ trưởng") || p.toLowerCase().includes("to truong") || p.toLowerCase().includes("tổ phó")));
+  }, [teacherPositions, currentTeacher?.user?.role]);
+
+  // 2. Chức vụ TBP (Trưởng Bộ Phận)
+  const isTBP = useMemo(() => {
+    const TBP_KEYS = ["TBP", "TRUONG_BO_PHAN", "TRUONG_BOPHAN", "Trưởng bộ phận", "TB_DHCM", "TRƯỞNG BỘ PHẬN", "Phó bộ phận", "PHO_BO_PHAN"];
+    const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
+    if (["TBP", "TRUONG_BO_PHAN", "PHO_BO_PHAN"].includes(role)) return true;
+    return teacherPositions.some(p => TBP_KEYS.some(k => p.toUpperCase() === k.toUpperCase() || p.toLowerCase().includes("trưởng bộ phận") || p.toLowerCase().includes("truong bo phan") || p.toLowerCase().includes("phó bộ phận")));
+  }, [teacherPositions, currentTeacher?.user?.role]);
+
+  // 3. Chức vụ GĐCS (Giám đốc Cơ sở)
+  const isGDCS = useMemo(() => {
+    const GDCS_KEYS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "Giám đốc cơ sở", "Giam doc co so", "GIÁM ĐỐC CƠ SỞ", "Phó Giám đốc cơ sở", "PGDCS", "PGĐCS", "PHO_GIAM_DOC_CO_SO"];
+    const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
+    if (["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "PGDCS", "PGĐCS"].includes(role)) return true;
+    return teacherPositions.some(p => GDCS_KEYS.some(k => p.toUpperCase() === k.toUpperCase() || p.toLowerCase().includes("giám đốc cơ sở") || p.toLowerCase().includes("giam doc co so") || p.toLowerCase().includes("phó giám đốc cơ sở")));
+  }, [teacherPositions, currentTeacher?.user?.role]);
+
+  // 4. Ban ĐHCM / BGH
+  const isBanDHCM = useMemo(() => {
+    const DHCM_KEYS = [
+      "BAN_DHCM", "TB_DHCM", "TRUONG_BAN_DHCM", "PHO_BAN_DHCM", 
+      "Ban ĐHCM", "Ban DHCM", "BAN ĐHCM", "BAN DHCM",
+      "QLCM", "QUAN_LY_CM", "Quản lý CM", "QUẢN LÝ CM", 
+      "BGH", "BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non", "Ban Giám hiệu", "BAN GIAM HIEU",
+      "Trưởng ban ĐHCM", "Phó ban ĐHCM", "Trưởng ban Điều hành chuyên môn", "Phó ban Điều hành chuyên môn",
+      "Trưởng ban KT&ĐBCL", "Phó ban KT&ĐBCL", "Trưởng ban KT-ĐBCL", "Phó ban KT-ĐBCL"
+    ];
+    const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
+    if (["BAN_DHCM", "TB_DHCM", "TRUONG_BAN_DHCM", "PHO_BAN_DHCM", "QLCM", "QUAN_LY_CM", "BGH", "BGH_MN", "BGHMN", "ADMIN", "SUPER_ADMIN", "ADMINISTRATOR"].includes(role)) return true;
+    
+    // Check positions ONLY - do NOT grant management rights just because of department affiliation!
+    return teacherPositions.some(p => DHCM_KEYS.some(k => p.toUpperCase() === k.toUpperCase() || p.toLowerCase().includes("ban đhcm") || p.toLowerCase().includes("ban dhcm") || p.toLowerCase().includes("quản lý cm") || p.toLowerCase().includes("quan ly cm") || p.toLowerCase().includes("ban giám hiệu") || p.toLowerCase().includes("trưởng ban") || p.toLowerCase().includes("phó ban")));
+  }, [teacherPositions, currentTeacher?.user?.role]);
+
+  const isAdminUser = useMemo(() => {
+    const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
+    const isSuper = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "SUPERADMIN", "KT_DBCL", "BAN_DHCM", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(role);
+    return isSuper || isBanDHCM || isGDCS || isAdminRoute;
+  }, [currentTeacher?.user?.role, isBanDHCM, isGDCS, isAdminRoute]);
 
   const isQLCM = useMemo(() => {
-    const pos = currentTeacher?.position || "";
-    const role = currentTeacher?.user?.role || "";
-    const hasDeptPos = currentTeacher?.departmentAssignments?.some((da: any) => 
-      ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(da.position)
-    );
-    return ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(pos) || ["QLCM", "Quản lý CM", "QUAN_LY_CM"].includes(role) || !!hasDeptPos;
-  }, [currentTeacher]);
+    return isBanDHCM;
+  }, [isBanDHCM]);
 
   const isBGHMN = useMemo(() => {
-    const pos = currentTeacher?.position || "";
-    const role = currentTeacher?.user?.role || "";
-    return ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(pos) || ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(role);
-  }, [currentTeacher]);
-
-  const isTTCM = useMemo(() => {
-    const pos = currentTeacher?.position || "";
-    const hasDeptPos = currentTeacher?.departmentAssignments?.some((da: any) => 
-      ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(da.position)
-    );
-    return ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].includes(pos) || !!hasDeptPos;
-  }, [currentTeacher]);
+    const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
+    return ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(role) || teacherPositions.some(p => ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(p));
+  }, [currentTeacher?.user?.role, teacherPositions]);
 
   const canCreateSurprise = useMemo(() => {
-    return isAdminUser || isTTCM || isQLCM || isBGHMN || isTBP;
-  }, [isAdminUser, isTTCM, isQLCM, isBGHMN, isTBP]);
+    return isAdminUser || isTTCM || isQLCM || isBGHMN || isTBP || isGDCS || isBanDHCM;
+  }, [isAdminUser, isTTCM, isQLCM, isBGHMN, isTBP, isGDCS, isBanDHCM]);
 
+  // Chỉ có tài khoản GV có chức vụ TTCM, TBP, GĐCS, Ban ĐHCM (hoặc Quản trị viên) thì mới có tag Chế độ quản lý
   const isManagerRole = useMemo(() => {
-    return isAdminUser || isTTCM || isTBP || isQLCM || isBGHMN || isAdminRoute;
-  }, [isAdminUser, isTTCM, isTBP, isQLCM, isBGHMN, isAdminRoute]);
+    return isTTCM || isTBP || isGDCS || isBanDHCM || isAdminUser || isAdminRoute;
+  }, [isTTCM, isTBP, isGDCS, isBanDHCM, isAdminUser, isAdminRoute]);
+
+  const canDeleteAnySlot = useMemo(() => {
+    return isAdminUser || isManagerRole || viewMode === "ADMIN";
+  }, [isAdminUser, isManagerRole, viewMode]);
+
+  useEffect(() => {
+    if (!isManagerRole && !isAdminRoute) {
+      if (viewMode === "ADMIN") {
+        setViewMode("TEACHER");
+      }
+    }
+  }, [isManagerRole, viewMode, isAdminRoute]);
 
   const ttcmAllowedDepartments = useMemo(() => {
     let depts = departments;
@@ -1761,6 +1811,7 @@ export function ObservationClient(props: ObservationClientProps) {
       setEvalImprovements(registration.evaluation.improvements || "");
       setEvalGeneral(actualGeneralComment);
       setEvalOverall(registration.evaluation.overallRating || "");
+      setTeacherFeedbackText(registration.evaluation.teacherFeedback || "");
     } else {
       setEvalCriteria(isMN ? Array(18).fill(0) : [0, 0, 0, 0, 0]);
       setEvalK12Scores([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -1768,6 +1819,7 @@ export function ObservationClient(props: ObservationClientProps) {
       setEvalImprovements("");
       setEvalGeneral("");
       setEvalOverall("");
+      setTeacherFeedbackText("");
     }
 
     // Check if there is a local draft saved in browser
@@ -2003,6 +2055,28 @@ export function ObservationClient(props: ObservationClientProps) {
       showToast(res.error || "Lỗi nộp phiếu!", "error")
     }
   }
+
+  const handleAcknowledgeAndFeedback = async () => {
+    if (!evalModal?.registration?.evaluation?.id && !evalModal?.registration?.id) return;
+    setTeacherFeedbackSubmitting(true);
+    const res = await acknowledgeAndFeedbackEvaluation({
+      evaluationId: evalModal.registration.evaluation?.id,
+      registrationId: evalModal.registration.id,
+      feedback: teacherFeedbackText
+    });
+    setTeacherFeedbackSubmitting(false);
+    if (res.success) {
+      showToast(res.message || "Đã xác nhận tiếp thu góp ý thành công!", "success");
+      if (evalModal.registration.evaluation) {
+        evalModal.registration.evaluation.teacherAcknowledgedAt = new Date();
+        evalModal.registration.evaluation.teacherFeedback = teacherFeedbackText.trim() || "Đã tiếp thu toàn bộ góp ý chuyên môn.";
+        evalModal.registration.evaluation.teacherFeedbackAt = new Date();
+      }
+      refreshSlots();
+    } else {
+      showToast(res.error || "Không thể gửi phản hồi", "error");
+    }
+  };
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -2500,6 +2574,128 @@ export function ObservationClient(props: ObservationClientProps) {
       return getPeriodOrder(slotA.startTime) - getPeriodOrder(slotB.startTime);
     });
   }, [slots, activeFilterTab, checkIsMyDept]);
+
+  const isAllCurrentSelected = useMemo(() => {
+    if (!tabFilteredSlots || tabFilteredSlots.length === 0) return false;
+    return tabFilteredSlots.every((s: any) => selectedSlotIds.includes(s.id));
+  }, [tabFilteredSlots, selectedSlotIds]);
+
+  const handleToggleSelectAll = useCallback(() => {
+    if (isAllCurrentSelected) {
+      const currentIds = new Set(tabFilteredSlots.map((s: any) => s.id));
+      setSelectedSlotIds(prev => prev.filter(id => !currentIds.has(id)));
+    } else {
+      const currentIds = tabFilteredSlots.map((s: any) => s.id);
+      setSelectedSlotIds(prev => Array.from(new Set([...prev, ...currentIds])));
+    }
+  }, [isAllCurrentSelected, tabFilteredSlots]);
+
+  const handleToggleSelectSlot = useCallback((slotId: string) => {
+    setSelectedSlotIds(prev => prev.includes(slotId) ? prev.filter(id => id !== slotId) : [...prev, slotId]);
+  }, []);
+
+  const handleClearSelection = useCallback(() => {
+    setSelectedSlotIds([]);
+  }, []);
+
+  const handleDeleteMultipleSlots = async () => {
+    if (selectedSlotIds.length === 0) return;
+    const count = selectedSlotIds.length;
+    const confirmMsg = `Thầy/Cô có chắc chắn muốn xóa ${count} tiết dạy đã chọn không?\n\nToàn bộ dữ liệu đăng ký dự giờ và phiếu đánh giá liên quan đến các tiết này sẽ bị xóa vĩnh viễn khỏi hệ thống.`;
+    if (!confirm(confirmMsg)) return;
+
+    setIsDeletingBulk(true);
+    startTransition(async () => {
+      try {
+        const res = await deleteMultipleObservationSlots(selectedSlotIds);
+        if (res.success) {
+          showToast(`Đã xóa thành công ${res.count || count} tiết dạy!`, "success");
+          setSelectedSlotIds([]);
+          refreshSlots();
+        } else {
+          showToast(res.error || "Không thể xóa các tiết dạy đã chọn!", "error");
+        }
+      } catch (err: any) {
+        showToast(err?.message || "Có lỗi xảy ra khi xóa tiết dạy!", "error");
+      } finally {
+        setIsDeletingBulk(false);
+      }
+    });
+  };
+
+  const exportSlotsToExcel = () => {
+    if (!slots || slots.length === 0) {
+      showToast("Không có dữ liệu để xuất file!", "error");
+      return;
+    }
+    const headers = [
+      "STT",
+      "Mã tiết",
+      "Giáo viên dạy",
+      "Mã GV",
+      "Cơ sở",
+      "Tổ chuyên môn",
+      "Bậc học",
+      "Khối",
+      "Lớp",
+      "Môn học / Hoạt động",
+      "Tên bài dạy / Chủ đề",
+      "Ngày dạy",
+      "Tiết dạy",
+      "Phòng học",
+      "Hình thức",
+      "Số người đăng ký",
+      "Danh sách người dự",
+      "Trạng thái",
+      "Điểm TB",
+      "Xếp loại"
+    ];
+
+    const rows = (tabFilteredSlots || []).map((slot: any, idx: number) => {
+      const isSurprise = isSurpriseSlot(slot);
+      const regs = slot.registrations || [];
+      const observerNames = regs.map((r: any) => `${r.teacher?.teacherName || "GV"} (${r.teacher?.teacherCode || ""}) - ${r.evaluation ? `Đã chấm (${r.evaluation.totalScore != null ? Number(r.evaluation.totalScore).toFixed(1) + "đ - " + (r.evaluation.overallRating || "") : "Đạt"})` : "Chưa chấm"}`).join("; ");
+      
+      const evalScores = regs.map((r: any) => r.evaluation?.totalScore).filter((s: any) => s != null && !isNaN(s));
+      const avgScore = evalScores.length > 0 ? (evalScores.reduce((a: number, b: number) => a + Number(b), 0) / evalScores.length).toFixed(2) : "";
+      const ratings = regs.map((r: any) => r.evaluation?.overallRating).filter(Boolean);
+      const ratingStr = ratings.join(", ");
+
+      return [
+        idx + 1,
+        slot.id,
+        `"${(slot.teacher?.teacherName || "").replace(/"/g, '""')}"`,
+        slot.teacher?.teacherCode || "",
+        `"${(slot.campusName || slot.teacher?.campus?.campusName || "").replace(/"/g, '""')}"`,
+        `"${(slot.deptName || slot.teacher?.departmentRel?.name || "").replace(/"/g, '""')}"`,
+        slot.level || "",
+        slot.grade || "",
+        slot.className || "",
+        `"${(slot.subjectName || "").replace(/"/g, '""')}"`,
+        `"${(slot.topic || "").replace(/"/g, '""')}"`,
+        slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "",
+        slot.startTime || "",
+        `"${(slot.room || "").replace(/"/g, '""')}"`,
+        isSurprise ? "Đột xuất ⚡" : "Theo kế hoạch",
+        `${regs.length}/${slot.maxSeats || 4}`,
+        `"${observerNames.replace(/"/g, '""')}"`,
+        slot.status || "OPEN",
+        avgScore,
+        `"${ratingStr.replace(/"/g, '""')}"`
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `DS_Tiet_Du_Gio_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast("Đã xuất danh sách tiết dự giờ thành công!", "success");
+  };
 
   const myTaughtSlots = useMemo(() => {
     return (slots || []).filter(slot => slot.teacherId === currentTeacher?.id)
@@ -3478,12 +3674,28 @@ export function ObservationClient(props: ObservationClientProps) {
                                 options.push(Math.round(v * 100) / 100);
                               }
 
+                              const currentScore = surpriseScoresK12[globalIdx] || 0;
+                              const isMaxReached = currentScore === req.max;
+
                               return (
                                 <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
-                                  <div className="space-y-1 min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
+                                  <div className="space-y-1.5 min-w-0 flex-1">
+                                    <div className="flex items-center flex-wrap gap-2">
                                       <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
                                       <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                      {req.mandatoryText && (
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md border ${
+                                          isMaxReached
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                            : "bg-amber-50 text-amber-700 border-amber-300"
+                                        }`}>
+                                          <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                                          {req.mandatoryText}
+                                          {isMaxReached && (
+                                            <span className="ml-0.5 font-black text-emerald-600">✓ Đạt Max</span>
+                                          )}
+                                        </span>
+                                      )}
                                     </div>
                                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
                                   </div>
@@ -4675,7 +4887,7 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
-          {/* 4. Khối lớp */}
+          {/* 6. Khối lớp */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Khối</span>
             <select value={filterGrade} onChange={e => { setFilterGrade(e.target.value); setFilterClassId("all"); }}
@@ -4702,7 +4914,7 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
-          {/* 5. Lớp */}
+          {/* 7. Lớp */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Lớp</span>
             <select value={filterClassId} onChange={e => setFilterClassId(e.target.value)}
@@ -4712,14 +4924,14 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
-          {/* 6. Ngày dạy */}
+          {/* 8. Ngày dạy */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Ngày dạy</span>
             <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
               className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]" />
           </div>
 
-          {/* 7. Tiết dạy */}
+          {/* 9. Tiết dạy */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tiết dạy</span>
             <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
@@ -4762,6 +4974,17 @@ export function ObservationClient(props: ObservationClientProps) {
               <thead>
                 {activeFilterTab === "gbm_request" ? (
                   <tr className="bg-indigo-50/80 border-b border-indigo-100 text-indigo-900 font-black uppercase text-[11px] tracking-wider">
+                    {canDeleteAnySlot && (
+                      <th className="p-4 text-center w-10">
+                        <input
+                          type="checkbox"
+                          checked={isAllCurrentSelected}
+                          onChange={handleToggleSelectAll}
+                          className="w-4 h-4 rounded text-indigo-600 border-indigo-300 focus:ring-indigo-500 cursor-pointer"
+                          title="Chọn / Bỏ chọn tất cả tiết hiển thị"
+                        />
+                      </th>
+                    )}
                     <th className="p-4 text-center w-12">TT</th>
                     <th className="p-4">GV Xin dự giờ</th>
                     <th className="p-4">GV Dạy</th>
@@ -4775,6 +4998,17 @@ export function ObservationClient(props: ObservationClientProps) {
                   </tr>
                 ) : (
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
+                    {canDeleteAnySlot && (
+                      <th className="p-4 text-center w-10">
+                        <input
+                          type="checkbox"
+                          checked={isAllCurrentSelected}
+                          onChange={handleToggleSelectAll}
+                          className="w-4 h-4 rounded text-teal-600 border-slate-300 focus:ring-teal-500 cursor-pointer"
+                          title="Chọn / Bỏ chọn tất cả tiết hiển thị"
+                        />
+                      </th>
+                    )}
                     <th className="p-4 text-center w-12">TT</th>
                     <th className="p-4">Giáo viên</th>
                     <th className="p-4">Cơ sở</th>
@@ -4784,7 +5018,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <th className="p-4 text-center">Số chỗ</th>
                     <th className="p-4">GV Đăng ký</th>
                     <th className="p-4">Trạng thái</th>
-                    <th className="p-4 text-right">{viewMode === "ADMIN" ? "Thao tác Quản trị" : "Đăng ký"}</th>
+                    <th className="p-4 text-right">{canDeleteAnySlot ? "Thao tác Quản trị" : "Đăng ký"}</th>
                   </tr>
                 )}
               </thead>
@@ -4799,6 +5033,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   const today = new Date();
                   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                   const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
+                  const isSelected = selectedSlotIds.includes(slot.id);
 
                   if (activeFilterTab === "gbm_request") {
                     const observerReg = slot.registrations?.[0];
@@ -4809,9 +5044,21 @@ export function ObservationClient(props: ObservationClientProps) {
                         key={slot.id} 
                         id={`slot-row-${slot.id}`}
                         className={`hover:bg-indigo-50/30 transition-all duration-500 ${
+                          isSelected ? "bg-indigo-50/70" : ""
+                        } ${
                           highlightedSlotId === slot.id ? "bg-amber-100/90 ring-4 ring-amber-400 ring-offset-2 rounded-xl shadow-lg scale-[1.01]" : ""
                         }`}
                       >
+                        {canDeleteAnySlot && (
+                          <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectSlot(slot.id)}
+                              className="w-4 h-4 rounded text-indigo-600 border-indigo-300 focus:ring-indigo-500 cursor-pointer"
+                            />
+                          </td>
+                        )}
                         <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
                         <td className="p-4 font-bold text-slate-800">
                           <div className="flex items-center gap-2.5">
@@ -4859,28 +5106,41 @@ export function ObservationClient(props: ObservationClientProps) {
                           )}
                         </td>
                         <td className="p-4 text-right">
-                          {isHost && slot.status === "PENDING_TEACHER_APPROVAL" ? (
-                            <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {isHost && slot.status === "PENDING_TEACHER_APPROVAL" && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRespondRequest(slot.id, true)}
+                                  className="px-3 py-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-xs cursor-pointer"
+                                >
+                                  Đồng ý
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRespondRequest(slot.id, false, "Giáo viên bận")}
+                                  className="px-3 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer"
+                                >
+                                  Từ chối
+                                </button>
+                              </>
+                            )}
+                            {canDeleteAnySlot && (
                               <button
                                 type="button"
-                                onClick={() => handleRespondRequest(slot.id, true)}
-                                className="px-3 py-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-xs cursor-pointer"
+                                onClick={() => handleDeleteSlot(slot.id)}
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer shadow-2xs hover:scale-105"
+                                title="Xóa tiết yêu cầu dự giờ này"
                               >
-                                Đồng ý
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => handleRespondRequest(slot.id, false, "Giáo viên bận")}
-                                className="px-3 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer"
-                              >
-                                Từ chối
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-slate-400 italic font-medium">
-                              {isHost ? "Đã phản hồi" : "Đã gửi yêu cầu"}
-                            </span>
-                          )}
+                            )}
+                            {!isHost && slot.status !== "PENDING_TEACHER_APPROVAL" && !canDeleteAnySlot && (
+                              <span className="text-xs text-slate-400 italic font-medium">
+                                Đã gửi yêu cầu
+                              </span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -4891,9 +5151,21 @@ export function ObservationClient(props: ObservationClientProps) {
                       key={slot.id} 
                       id={`slot-row-${slot.id}`}
                       className={`hover:bg-slate-50/80 transition-all duration-500 ${
+                        isSelected ? "bg-teal-50/60" : ""
+                      } ${
                         highlightedSlotId === slot.id ? "bg-amber-100/90 ring-4 ring-amber-400 ring-offset-2 rounded-xl shadow-lg scale-[1.01]" : ""
                       }`}
                     >
+                      {canDeleteAnySlot && (
+                        <td className="p-4 text-center" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelectSlot(slot.id)}
+                            className="w-4 h-4 rounded text-teal-600 border-slate-300 focus:ring-teal-500 cursor-pointer"
+                          />
+                        </td>
+                      )}
                       <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
                       
                       {/* Cột GIÁO VIÊN */}
@@ -4962,76 +5234,69 @@ export function ObservationClient(props: ObservationClientProps) {
                       </td>
 
                       {/* Cột THỜI GIAN / PHÒNG */}
-                      <td className="p-4">
-                        <div className="space-y-0.5">
-                          <p className="font-extrabold text-slate-800 flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      <td className="p-4 whitespace-nowrap">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 font-black text-slate-800 text-xs">
+                            <Calendar className="w-3.5 h-3.5 text-teal-600 shrink-0" />
                             {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                          </p>
-                          <p className="text-xs font-bold text-teal-700">
-                            {slot.startTime} • Phòng: {slot.room || "Phòng học"}
-                          </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-semibold">
+                            <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>{slot.startTime || `Tiết ${slot.period || 1}`}</span>
+                            <span>•</span>
+                            <span className="truncate max-w-[100px]">Phòng: {slot.room || "Phòng học"}</span>
+                          </div>
                         </div>
                       </td>
 
                       {/* Cột SỐ CHỖ */}
-                      <td className="p-4 text-center">
-                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-xs font-black border ${
-                          observerCount >= slot.maxSeats 
-                            ? "bg-slate-100 text-slate-500 border-slate-200" 
-                            : "bg-sky-50 text-sky-700 border-sky-200/70"
+                      <td className="p-4 text-center whitespace-nowrap">
+                        <span className={`px-2.5 py-1 text-xs font-black rounded-xl border inline-block shadow-2xs ${
+                          observerCount >= (slot.maxSeats || 4)
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : observerCount > 0
+                            ? "bg-amber-50 text-amber-700 border-amber-200"
+                            : "bg-teal-50 text-teal-700 border-teal-200"
                         }`}>
-                          {observerCount} / {slot.maxSeats}
+                          {observerCount}/{slot.maxSeats || 4}
                         </span>
                       </td>
 
-                      {/* Cột GV ĐĂNG KÝ: Hiện avatar + tên (KHÔNG hiện mã NV) */}
+                      {/* Cột GV ĐĂNG KÝ */}
                       <td className="p-4">
                         {slot.registrations && slot.registrations.length > 0 ? (
-                          <div className="flex flex-col gap-1.5 max-w-[260px]">
+                          <div className="flex flex-col gap-1 max-w-[200px]">
                             {slot.registrations.map((reg: any) => {
-                              const regName = reg.teacher?.teacherName || reg.teacherName || "Giáo viên";
+                              const regTeacherName = reg.teacher?.teacherName || reg.teacherName || "GV";
                               return (
-                                <div key={reg.id} className="flex items-center justify-between gap-2 text-xs p-1.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
-                                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${getAvatarGradient(regName)} text-white flex items-center justify-center font-black text-[10px] shrink-0`}>
-                                      {regName.charAt(0)}
-                                    </div>
-                                    <span className="font-bold text-slate-800 truncate" title={regName}>
-                                      {regName}
-                                    </span>
+                                <div key={reg.id} className="flex items-center gap-1.5 text-[11px] truncate">
+                                  <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${getAvatarGradient(regTeacherName)} text-white flex items-center justify-center font-black text-[9px] shrink-0`}>
+                                    {regTeacherName.charAt(0)}
                                   </div>
+                                  <span className="font-bold text-slate-700 truncate">{regTeacherName}</span>
                                   {reg.isApproved ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-black text-[10px] uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                                      <Check className="w-2.5 h-2.5 text-emerald-600" />
-                                      ĐÃ XÁC NHẬN
-                                    </span>
+                                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-100 text-emerald-800 shrink-0">Đã duyệt</span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-black text-[10px] uppercase bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-                                      <Clock className="w-2.5 h-2.5 text-amber-600" />
-                                      CHỜ DUYỆT
-                                    </span>
+                                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800 shrink-0">Chờ duyệt</span>
                                   )}
                                 </div>
                               );
                             })}
                           </div>
                         ) : (
-                          <span className="text-xs text-slate-400 italic">Chưa có</span>
+                          <span className="text-xs text-slate-400 italic font-medium">Chưa có</span>
                         )}
                       </td>
 
                       {/* Cột TRẠNG THÁI */}
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap">
                         {isExpired ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-rose-50 border border-rose-200 text-rose-600">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-slate-100 text-slate-500 border border-slate-200">
                             Hết hạn
                           </span>
                         ) : observerCount >= (slot.maxSeats || 4) ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-slate-100 border border-slate-200 text-slate-600">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                            Đóng ĐK
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-rose-50 text-rose-700 border border-rose-200">
+                            Hết chỗ
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
@@ -5043,7 +5308,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
                       {/* Cột THAO TÁC / ĐĂNG KÝ */}
                       <td className="p-4 text-right">
-                        {viewMode === "ADMIN" ? (
+                        {canDeleteAnySlot || viewMode === "ADMIN" ? (
                           <div className="flex items-center justify-end gap-1.5 flex-wrap">
                             {/* Chi tiết / In phiếu */}
                             <button
@@ -5093,23 +5358,28 @@ export function ObservationClient(props: ObservationClientProps) {
                             <button
                               type="button"
                               onClick={() => handleDeleteSlot(slot.id)}
-                              disabled={slot.registrations && slot.registrations.length > 0}
-                              className={`p-1.5 rounded-lg transition-all shadow-2xs ${
-                                slot.registrations && slot.registrations.length > 0
-                                  ? "bg-slate-100 text-slate-300 border border-slate-200 cursor-not-allowed"
-                                  : "bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 cursor-pointer"
-                              }`}
-                              title={slot.registrations && slot.registrations.length > 0 ? "Không thể xóa tiết đã có GV đăng ký" : "Xóa tiết dạy này"}
+                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 transition-all cursor-pointer shadow-2xs hover:scale-105"
+                              title={slot.registrations && slot.registrations.length > 0 ? `Xóa tiết dạy (${slot.registrations.length} GV đã đăng ký)` : "Xóa tiết dạy này"}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         ) : (
-                          <>
+                          <div className="flex items-center justify-end gap-1.5">
                             {isHost ? (
-                              <span className="px-3.5 py-1.5 text-xs font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-200 inline-block shadow-2xs">
-                                Tôi dạy
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="px-3.5 py-1.5 text-xs font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-200 inline-block shadow-2xs">
+                                  Tôi dạy
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteSlot(slot.id)}
+                                  className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer shadow-2xs"
+                                  title="Xóa tiết dạy của tôi"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
                             ) : isExpired ? (
                               <button disabled className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
                                 Hết hạn
@@ -5137,7 +5407,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                 Đăng ký
                               </button>
                             )}
-                          </>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -5147,11 +5417,58 @@ export function ObservationClient(props: ObservationClientProps) {
             </table>
           </div>
         )}
-      </div>
 
-      
-        </div>
-      )}
+        {/* Sticky / Floating Bulk Action Toolbar for Admin */}
+        {canDeleteAnySlot && selectedSlotIds.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700/80 animate-in fade-in slide-in-from-bottom-4 duration-200 max-w-[90vw]">
+            <div className="flex items-center gap-2 pr-3 border-r border-slate-700">
+              <CheckSquare className="w-5 h-5 text-teal-400" />
+              <span className="text-xs font-black tracking-wide">
+                Đã chọn <span className="text-teal-300 text-sm font-black">{selectedSlotIds.length}</span> / {tabFilteredSlots.length} tiết
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleToggleSelectAll}
+                className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600/80 transition-all cursor-pointer"
+              >
+                {isAllCurrentSelected ? "Bỏ chọn trang này" : "Chọn tất cả đang hiện"}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600/80 transition-all cursor-pointer"
+              >
+                Bỏ chọn
+              </button>
+
+              <button
+                type="button"
+                disabled={isDeletingBulk}
+                onClick={handleDeleteMultipleSlots}
+                className="px-4 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-700 hover:to-red-700 text-white shadow-lg shadow-rose-600/30 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
+              >
+                {isDeletingBulk ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang xóa...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Xóa {selectedSlotIds.length} tiết đã chọn</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )}
 
       {/* TAB 3: 3. LỊCH DẠY & DỰ GIỜ CỦA TÔI (Compact & Structured Table Layout) */}
       {activeMainTab === "my_schedule" && (
@@ -6076,12 +6393,28 @@ export function ObservationClient(props: ObservationClientProps) {
                                 options.push(Math.round(v * 100) / 100);
                               }
 
+                              const currentScore = evalK12Scores[globalIdx] || 0;
+                              const isMaxReached = currentScore === req.max;
+
                               return (
                                 <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
-                                  <div className="space-y-1 min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
+                                  <div className="space-y-1.5 min-w-0 flex-1">
+                                    <div className="flex items-center flex-wrap gap-2">
                                       <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
                                       <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                      {req.mandatoryText && (
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md border ${
+                                          isMaxReached
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                            : "bg-amber-50 text-amber-700 border-amber-300"
+                                        }`}>
+                                          <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                                          {req.mandatoryText}
+                                          {isMaxReached && (
+                                            <span className="ml-0.5 font-black text-emerald-600">✓ Đạt Max</span>
+                                          )}
+                                        </span>
+                                      )}
                                     </div>
                                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
                                   </div>
@@ -6335,6 +6668,106 @@ export function ObservationClient(props: ObservationClientProps) {
                       <p className="font-bold text-teal-900">📧 Tự động gửi Email kết quả đánh giá</p>
                       <p className="text-[11px] text-teal-700 font-medium">Khi Thầy/Cô bấm <strong>"Lưu và hoàn thành biên bản"</strong>, hệ thống sẽ tự động gửi Email thông báo kết quả đánh giá chi tiết tới Giáo viên dạy và gửi bản sao về hòm thư của Thầy/Cô.</p>
                     </div>
+                  </div>
+                )}
+
+                {/* Two-way Feedback & Acknowledgment Section */}
+                {evalModal.registration.evaluation && (
+                  <div className="mt-4 p-5 rounded-2xl border border-slate-200/90 transition-all bg-gradient-to-b from-slate-50/80 to-white shadow-xs">
+                    {/* Header */}
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-150 gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center text-xs font-black">💬</span>
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                          Phản hồi 2 chiều & Kế hoạch khắc phục của Giáo viên dạy
+                        </h4>
+                      </div>
+                      {evalModal.registration.evaluation.teacherAcknowledgedAt ? (
+                        <span className="px-3 py-1 text-[11px] font-black rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          Đã tiếp thu góp ý ({new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")})
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 text-[11px] font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1.5 shadow-2xs">
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          Chưa xác nhận tiếp thu
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Content for Host Teacher (Giáo viên dạy) */}
+                    {evalModal.slot.teacherId === currentTeacher?.id || evalModal.slot.teacher?.id === currentTeacher?.id ? (
+                      <div className="space-y-3 pt-3">
+                        {!evalModal.registration.evaluation.teacherAcknowledgedAt ? (
+                          <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 text-amber-950 text-xs">
+                            <p className="font-bold flex items-center gap-1.5">
+                              <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                              Xác nhận đã đọc biên bản & Tiếp thu ý kiến chuyên môn
+                            </p>
+                            <p className="text-[11px] text-amber-900 mt-1 leading-relaxed">
+                              Thầy/Cô vui lòng nhập ngắn gọn kế hoạch khắc phục điểm tồn tại (nếu có) hoặc ý kiến trao đổi và bấm <strong>"Xác nhận đã tiếp thu góp ý"</strong> để hoàn tất quy trình phản hồi 2 chiều.
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200 text-emerald-950 text-xs">
+                            <p className="font-bold flex items-center gap-1.5 text-emerald-900">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              Thầy/Cô đã xác nhận tiếp thu góp ý của tiết dạy này
+                            </p>
+                            <p className="text-[11px] text-emerald-800 mt-0.5">
+                              Thời gian xác nhận: {new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleString("vi-VN")}
+                            </p>
+                          </div>
+                        )}
+
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[11px] font-bold text-slate-700">
+                            Kế hoạch khắc phục / Ý kiến phản hồi của Thầy/Cô:
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={teacherFeedbackText}
+                            onChange={(e) => setTeacherFeedbackText(e.target.value)}
+                            placeholder="Nhập kế hoạch điều chỉnh phương pháp, quản lý thời gian hoặc ý kiến chuyên môn phản hồi lại người dự giờ..."
+                            className="w-full text-xs font-medium p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 outline-none resize-none bg-white text-slate-800"
+                          />
+                        </div>
+
+                        <div className="flex justify-end pt-1">
+                          <button
+                            type="button"
+                            disabled={teacherFeedbackSubmitting}
+                            onClick={handleAcknowledgeAndFeedback}
+                            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-900/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                          >
+                            <CheckCheck className="w-4 h-4 text-emerald-200" />
+                            {teacherFeedbackSubmitting ? "Đang xử lý..." : evalModal.registration.evaluation.teacherAcknowledgedAt ? "Cập nhật phản hồi" : "✅ Xác nhận Đã Tiếp Thu Góp Ý & Gửi Phản Hồi"}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Content for Observer / TTCM / Ban DHCM / Admin */
+                      <div className="pt-3 text-xs">
+                        {evalModal.registration.evaluation.teacherAcknowledgedAt ? (
+                          <div className="p-3.5 bg-emerald-50/50 rounded-xl border border-emerald-200 text-slate-800 space-y-1.5">
+                            <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900">
+                              <span>👨‍🏫 Phản hồi từ Giáo viên dạy ({evalModal.slot.teacher?.teacherName}):</span>
+                              <span className="text-slate-500 font-medium">
+                                {new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleString("vi-VN")}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-700 font-medium leading-relaxed italic bg-white p-2.5 rounded-lg border border-emerald-100 whitespace-pre-line">
+                              "{evalModal.registration.evaluation.teacherFeedback || "Đã tiếp thu toàn bộ góp ý chuyên môn."}"
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-xs italic flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-slate-400" />
+                            <span>Giáo viên dạy chưa gửi phản hồi xác nhận tiếp thu biên bản này.</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

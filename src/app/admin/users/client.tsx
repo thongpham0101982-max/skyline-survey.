@@ -339,9 +339,9 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                       </span>
                       {u.campusIds && u.campusIds.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-1">
-                          {u.campusIds.map((cid: string) => {
+                          {Array.from(new Set(u.campusIds)).map((cid: any, cIdx: number) => {
                             const c = campuses.find((cx: any) => cx.id === cid);
-                            return c ? <span key={cid} className="text-[9px] text-emerald-600 font-bold uppercase text-xs font-semibold">{c.campusName}</span> : null;
+                            return c ? <span key={`${cid}-${cIdx}`} className="text-[9px] text-emerald-600 font-bold uppercase text-xs font-semibold">{c.campusName}</span> : null;
                           })}
                         </div>
                       )}
@@ -377,7 +377,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                 const pNum = idx + 1;
                 if (totalPages > 6 && Math.abs(pNum - currentPage) > 2 && pNum !== 1 && pNum !== totalPages) {
                   if (pNum === 2 || pNum === totalPages - 1) {
-                    return <span key={pNum} className="px-1 text-slate-400 self-center">...</span>;
+                    return <span key={`ellipsis-${pNum}`} className="px-1 text-slate-400 self-center">...</span>;
                   }
                   return null;
                 }

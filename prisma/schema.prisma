@@ -1174,6 +1174,10 @@ model ObservationEvaluation {
   reEvaluationApprovedBy  String?
   reEvaluationNote        String?
 
+  teacherAcknowledgedAt DateTime?
+  teacherFeedback       String?
+  teacherFeedbackAt     DateTime?
+
   registration ObservationRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
   @@index([slotId])
@@ -1719,9 +1723,12 @@ model SubjectGradeConfig {
   columnNames      String   @default("[\"Điểm 1\"]")
   columnTypes      String?  @default("[]")
   hasCompositeColumn Boolean @default(true)
+  compositeColumnName String? @default("Điểm thành phần")
   hasRemarkColumn    Boolean @default(true)
   formula          String?  @default("AVERAGE")
+  formulaCustom    String?
   weights          String?
+  roundingRule     String?  @default("ROUND_1")
   status           String   @default("ACTIVE")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

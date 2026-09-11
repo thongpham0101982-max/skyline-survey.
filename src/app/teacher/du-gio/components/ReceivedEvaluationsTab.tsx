@@ -13,7 +13,8 @@ import {
   Sparkles,
   CheckCircle2,
   Award,
-  ClipboardList
+  ClipboardList,
+  Clock
 } from "lucide-react";
 
 const maxScoresK12 = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
@@ -1081,6 +1082,7 @@ export function ReceivedEvaluationsTab({
                   <th className="p-4">Môn học & Chủ đề</th>
                   <th className="p-4">Thời gian / Phòng</th>
                   <th className="p-4 text-center">Xếp loại</th>
+                  <th className="p-4 text-center">Phản hồi 2 chiều</th>
                   <th className="p-4 text-right">Chi tiết</th>
                 </tr>
               </thead>
@@ -1089,6 +1091,7 @@ export function ReceivedEvaluationsTab({
                   const rating = evalItem.evaluation?.overallRating || "Đạt";
                   const slotDate = new Date(evalItem.slot.date);
                   const evaluatorName = evalItem.registration?.teacher?.teacherName || evalItem.registration?.observerTeacher?.teacherName || "Giáo viên";
+                  const isAcknowledged = !!evalItem.evaluation?.teacherAcknowledgedAt;
 
                   return (
                     <tr key={evalItem.evaluation?.id || evalItem.registration?.id} className="hover:bg-slate-50/80 transition-colors">
@@ -1128,6 +1131,19 @@ export function ReceivedEvaluationsTab({
                         <span className={`px-3 py-1 text-xs font-black uppercase rounded-lg border ${RATING_COLORS[rating] || "bg-teal-50 text-teal-700 border-teal-200"}`}>
                           {rating}
                         </span>
+                      </td>
+                      <td className="p-4 text-center">
+                        {isAcknowledged ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            Đã tiếp thu
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            Chờ phản hồi
+                          </span>
+                        )}
                       </td>
                       <td className="p-4 text-right">
                         <button 

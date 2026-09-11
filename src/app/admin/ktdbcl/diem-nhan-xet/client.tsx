@@ -22,8 +22,6 @@ const INTL_OPTIONS = [
   { code: "U", label: "U - Unsatisfactory (Chưa đạt)" }
 ]
 
-
-
 import { useState, useEffect, useMemo, useRef } from "react"
 import * as XLSX from "xlsx"
 import { 
@@ -43,8 +41,23 @@ import {
   Edit2,
   Trash2,
   Sliders,
-  FileText
+  FileText,
+  Calculator,
+  Sparkles,
+  HelpCircle,
+  Play,
+  Check,
+  Info
 } from "lucide-react"
+import {
+  calculateCompositeScore,
+  generateExcelFormula,
+  getFormulaDescription,
+  parseWeights,
+  roundScore,
+  FormulaType,
+  RoundingRule
+} from "@/lib/grading/formula-calculator"
 
 interface Props {
   academicYears: any[]
@@ -80,13 +93,25 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   const [columnCount, setColumnCount] = useState(3)
   const [columnNames, setColumnNames] = useState<string[]>(["Điểm Miệng", "Điểm 15 Phút", "Điểm 1 Tiết"])
   const [columnTypes, setColumnTypes] = useState<string[]>(["SCORE_10", "SCORE_10", "SCORE_10"])
+  
+  // Composite Column & Flexible Formula states
   const [hasComposite, setHasComposite] = useState(true)
+  const [compositeColumnName, setCompositeColumnName] = useState("Điểm thành phần")
+  const [formulaType, setFormulaType] = useState<FormulaType>("AVERAGE")
+  const [weights, setWeights] = useState<number[]>([1, 1, 1])
+  const [formulaCustom, setFormulaCustom] = useState<string>("")
+  const [roundingRule, setRoundingRule] = useState<RoundingRule>("ROUND_1")
+  const [weightedMode, setWeightedMode] = useState<"COEFF" | "PERCENT">("COEFF")
+
+  // Interactive Live Formula Simulator state
+  const [simScores, setSimScores] = useState<Record<number, string>>({ 0: "8.0", 1: "7.5", 2: "9.0" })
+
   const [hasRemark, setHasRemark] = useState(true)
   const [savingConfig, setSavingConfig] = useState(false)
   const [savedConfigs, setSavedConfigs] = useState<any[]>([])
   const [loadingConfigs, setLoadingConfigs] = useState(false)
 
-  // Sync columnNames length when columnCount changes
+  // Sync columnNames, columnTypes & weights length when columnCount changes
   useEffect(() => {
     setColumnNames(prev => {
       const next = [...prev]
@@ -104,6 +129,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       if (next.length < columnCount) {
         for (let i = next.length; i < columnCount; i++) {
           next.push("SCORE_10")
+        }
+      } else if (next.length > columnCount) {
+        return next.slice(0, columnCount)
+      }
+      return next
+    })
+    setWeights(prev => {
+      const next = [...prev]
+      if (next.length < columnCount) {
+        for (let i = next.length; i < columnCount; i++) {
+          next.push(1)
         }
       } else if (next.length > columnCount) {
         return next.slice(0, columnCount)
@@ -154,11 +190,19 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         if (types.length > 0) setColumnTypes(types)
       }
       setHasComposite(match.hasCompositeColumn !== false)
+      setCompositeColumnName(match.compositeColumnName || "Điểm thành phần")
+      setFormulaType((match.formula || "AVERAGE").toUpperCase() as FormulaType)
+      setFormulaCustom(match.formulaCustom || "")
+      setRoundingRule((match.roundingRule || "ROUND_1") as RoundingRule)
+      if (match.weights) {
+        const parsedW = parseWeights(match.weights, cols.length || columnCount)
+        setWeights(parsedW)
+      }
       setHasRemark(match.hasRemarkColumn !== false)
     }
   }, [configGrade, configSubjectId, configPeriod, savedConfigs])
 
-    const handleSelectConfig = (cfg: any) => {
+  const handleSelectConfig = (cfg: any) => {
     setConfigGrade(cfg.grade || "ALL")
     setConfigSubjectId(cfg.subjectId || "ALL")
     setConfigPeriod(cfg.evaluationPeriod || "ALL")
@@ -174,6 +218,14 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       if (types.length > 0) setColumnTypes(types)
     }
     setHasComposite(cfg.hasCompositeColumn !== false)
+    setCompositeColumnName(cfg.compositeColumnName || "Điểm thành phần")
+    setFormulaType((cfg.formula || "AVERAGE").toUpperCase() as FormulaType)
+    setFormulaCustom(cfg.formulaCustom || "")
+    setRoundingRule((cfg.roundingRule || "ROUND_1") as RoundingRule)
+    if (cfg.weights) {
+      const parsedW = parseWeights(cfg.weights, cols.length || columnCount)
+      setWeights(parsedW)
+    }
     setHasRemark(cfg.hasRemarkColumn !== false)
   }
 
@@ -206,14 +258,19 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           evaluationPeriod: configPeriod,
           columnCount,
           columnNames,
+          columnTypes,
           hasCompositeColumn: hasComposite,
+          compositeColumnName,
           hasRemarkColumn: hasRemark,
-          formula: "AVERAGE"
+          formula: formulaType,
+          formulaCustom,
+          weights,
+          roundingRule
         })
       })
       const data = await res.json()
       if (data.success) {
-        alert("Đã lưu cấu hình cột điểm thành công!")
+        alert("Đã lưu cấu hình cột điểm và công thức thành công!")
         fetchConfigs()
       } else {
         alert("Lỗi: " + (data.error || "Không thể lưu cấu hình"))
@@ -383,18 +440,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
       let computedComposite = studentEntry.compositeScore
       if (prev.config?.hasCompositeColumn !== false) {
-        const validScores: number[] = []
-        Object.values(newCompScores).forEach(s => {
-          if (s !== "" && !isNaN(Number(s))) {
-            validScores.push(Number(s))
-          }
-        })
-        if (validScores.length > 0) {
-          const avg = validScores.reduce((a, b) => a + b, 0) / validScores.length
-          computedComposite = (Math.round(avg * 10) / 10).toFixed(1)
-        } else {
-          computedComposite = ""
-        }
+        computedComposite = calculateCompositeScore(newCompScores, prev.config, activeColNames.length)
       }
 
       return {
@@ -464,10 +510,11 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   const handleExportExcel = () => {
     const currentClass = classes.find(c => c.id === selectedClassId)
     const currentSubject = subjects.find(s => s.id === selectedSubjectId)
+    const compColTitle = gradeSheetData.config?.compositeColumnName || "Điểm thành phần"
 
     const headers = ["STT", "Mã HS", "Họ tên", "Môn học"]
     activeColNames.forEach((colName: string) => headers.push(colName))
-    if (gradeSheetData.config?.hasCompositeColumn !== false) headers.push("Điểm thành phần")
+    if (gradeSheetData.config?.hasCompositeColumn !== false) headers.push(compColTitle)
     if (gradeSheetData.config?.hasRemarkColumn !== false) headers.push("Nhận xét")
 
     const rows = gradeSheetData.students.map((st, idx) => {
@@ -522,6 +569,8 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         const newEntries = { ...gradeSheetData.entries }
         let countImported = 0
 
+        const customCompTitle = (gradeSheetData.config?.compositeColumnName || "").trim().toLowerCase()
+
         for (let r = 1; r < data.length; r++) {
           const row = data[r]
           if (!row || !row[codeIdx]) continue
@@ -537,10 +586,16 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
             }
           })
 
-          const compScoreIdx = headers.findIndex(h => h.toLowerCase().includes("thành phần") || h.toLowerCase().includes("tổng hợp"))
+          const compScoreIdx = headers.findIndex(h => {
+            const lower = h.toLowerCase()
+            return (customCompTitle && lower === customCompTitle) || lower.includes("thành phần") || lower.includes("tổng hợp") || lower.includes("tb môn")
+          })
+
           let compVal = ""
-          if (compScoreIdx !== -1 && row[compScoreIdx] !== undefined) {
+          if (compScoreIdx !== -1 && row[compScoreIdx] !== undefined && String(row[compScoreIdx]).trim() !== "") {
             compVal = String(row[compScoreIdx])
+          } else if (gradeSheetData.config?.hasCompositeColumn !== false) {
+            compVal = calculateCompositeScore(compScores, gradeSheetData.config, activeColNames.length)
           }
 
           const remIdx = headers.findIndex(h => h.toLowerCase().includes("nhận xét") || h.toLowerCase().includes("nhan xet"))
@@ -769,22 +824,299 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
               </div>
             </div>
 
-            {/* Checkbox Options */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
-                <input
-                  type="checkbox"
-                  checked={hasComposite}
-                  onChange={(e) => setHasComposite(e.target.checked)}
-                  className="w-4 h-4 text-[#48BFE3] rounded border-slate-300 focus:ring-[#48BFE3]"
-                />
-                <div>
-                  <div className="text-xs font-bold text-slate-800">Cột Điểm thành phần (Tổng hợp)</div>
-                  <div className="text-[11px] text-slate-500 font-normal">Tự động tính điểm tổng hợp từ các cột điểm thành phần</div>
-                </div>
-              </label>
+            {/* Composite Column & Flexible Formula Configuration */}
+            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200/80 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={hasComposite}
+                    onChange={(e) => setHasComposite(e.target.checked)}
+                    className="w-4 h-4 text-[#48BFE3] rounded border-slate-300 focus:ring-[#48BFE3]"
+                  />
+                  <div>
+                    <div className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                      <Calculator className="w-4 h-4 text-[#48BFE3]" />
+                      Cột Điểm thành phần (Tổng hợp)
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-normal">
+                      Tự động tính điểm tổng hợp theo công thức linh hoạt
+                    </div>
+                  </div>
+                </label>
 
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors">
+                {hasComposite && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-600 shrink-0">Tên cột hiển thị:</span>
+                    <input
+                      type="text"
+                      value={compositeColumnName}
+                      onChange={(e) => setCompositeColumnName(e.target.value)}
+                      placeholder="Điểm thành phần"
+                      className="px-3 py-1 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none shadow-sm min-w-[170px]"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {hasComposite && (
+                <div className="space-y-4 pt-1">
+                  {/* Formula Selection Cards */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-2">
+                      Chọn Phương thức Tính Điểm Tổng hợp:
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                      {[
+                        {
+                          type: "AVERAGE",
+                          title: "Trung bình cộng đều",
+                          desc: "(C₁ + C₂ + ... + Cₙ) / n",
+                          tag: "Phổ biến"
+                        },
+                        {
+                          type: "WEIGHTED",
+                          title: "Hệ số / Trọng số",
+                          desc: "Tính theo hệ số (x1, x2) hoặc %",
+                          tag: "THCS - THPT & QT"
+                        },
+                        {
+                          type: "SUM",
+                          title: "Tổng điểm các cột",
+                          desc: "C₁ + C₂ + ... + Cₙ",
+                          tag: "Tiểu học / Đọc-Viết"
+                        },
+                        {
+                          type: "CUSTOM",
+                          title: "Biểu thức tự do",
+                          desc: "Công thức toán tùy biến",
+                          tag: "Nâng cao"
+                        }
+                      ].map((item) => (
+                        <button
+                          key={item.type}
+                          type="button"
+                          onClick={() => setFormulaType(item.type as FormulaType)}
+                          className={`p-3 rounded-xl border text-left transition-all relative ${
+                            formulaType === item.type
+                              ? "bg-teal-50/80 border-teal-500 ring-2 ring-teal-500/20 shadow-sm"
+                              : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-slate-800">{item.title}</span>
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                              {item.tag}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-mono">{item.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* WEIGHTED Configuration */}
+                  {formulaType === "WEIGHTED" && (
+                    <div className="p-4 bg-white rounded-xl border border-teal-200/80 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                          <Sliders className="w-3.5 h-3.5 text-teal-600" />
+                          Thiết lập Hệ số / Trọng số cho từng cột điểm:
+                        </span>
+                        <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[11px]">
+                          <button
+                            type="button"
+                            onClick={() => setWeightedMode("COEFF")}
+                            className={`px-2.5 py-1 rounded-md font-bold transition-all ${
+                              weightedMode === "COEFF" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                            }`}
+                          >
+                            Hệ số (x1, x2, x3...)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setWeightedMode("PERCENT")}
+                            className={`px-2.5 py-1 rounded-md font-bold transition-all ${
+                              weightedMode === "PERCENT" ? "bg-white text-teal-800 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                            }`}
+                          >
+                            Trọng số % (Tổng = 100%)
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 pt-1">
+                        {columnNames.map((colName, idx) => (
+                          <div key={idx} className="p-2 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-slate-700 truncate" title={colName}>
+                              {colName || `Cột ${idx + 1}`}:
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="text-[11px] font-bold text-slate-400">
+                                {weightedMode === "COEFF" ? "Hệ số" : "%"}:
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                step={weightedMode === "PERCENT" ? "5" : "1"}
+                                value={weights[idx] !== undefined ? weights[idx] : 1}
+                                onChange={(e) => {
+                                  const val = Number(e.target.value) || 0
+                                  setWeights(prev => {
+                                    const next = [...prev]
+                                    next[idx] = val
+                                    return next
+                                  })
+                                }}
+                                className="w-16 text-center border border-slate-300 rounded-md py-1 text-xs font-bold text-teal-900 bg-white focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {weightedMode === "PERCENT" && (
+                        <div className="text-[11px] font-medium flex items-center justify-between pt-1">
+                          <span className="text-slate-500">Tổng phần trăm các cột:</span>
+                          <span className={`font-bold ${
+                            weights.slice(0, columnCount).reduce((a, b) => a + (Number(b) || 0), 0) === 100
+                              ? "text-emerald-600"
+                              : "text-amber-600"
+                          }`}>
+                            {weights.slice(0, columnCount).reduce((a, b) => a + (Number(b) || 0), 0)}%
+                            {weights.slice(0, columnCount).reduce((a, b) => a + (Number(b) || 0), 0) !== 100 && " (Khuyến nghị tổng = 100%)"}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* CUSTOM Formula Editor */}
+                  {formulaType === "CUSTOM" && (
+                    <div className="p-4 bg-white rounded-xl border border-indigo-200/80 shadow-sm space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
+                          <Code className="w-3.5 h-3.5 text-indigo-600" />
+                          Trình soạn thảo Công thức Toán học Tùy biến:
+                        </span>
+                        <span className="text-[11px] text-slate-500">Bấm thẻ bên dưới để chèn nhanh</span>
+                      </div>
+
+                      {/* Quick Insertion Tokens */}
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        {columnNames.map((name, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setFormulaCustom(prev => (prev ? `${prev} + ` : "") + `[col${idx}]`)}
+                            className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 rounded-md text-[11px] font-bold transition-all"
+                          >
+                            + [{name || `Cột ${idx + 1}`}]
+                          </button>
+                        ))}
+                        {["+", "-", "*", "/", "(", ")"].map(op => (
+                          <button
+                            key={op}
+                            type="button"
+                            onClick={() => setFormulaCustom(prev => `${prev} ${op} `)}
+                            className="w-7 h-7 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-md text-xs font-bold transition-all"
+                          >
+                            {op}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div>
+                        <input
+                          type="text"
+                          value={formulaCustom}
+                          onChange={(e) => setFormulaCustom(e.target.value)}
+                          placeholder="Ví dụ: ([col0] * 1 + [col1] * 2) / 3 hoặc [col0] * 0.4 + [col1] * 0.6"
+                          className="w-full font-mono border border-indigo-200 rounded-lg px-3 py-2 text-xs font-bold text-indigo-950 bg-indigo-50/20 focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                        <div className="text-[11px] text-slate-500 mt-1">
+                          Quy ước: <code className="text-indigo-700 bg-indigo-50 px-1 rounded">[col0]</code> là Cột 1, <code className="text-indigo-700 bg-indigo-50 px-1 rounded">[col1]</code> là Cột 2...
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rounding Rule Selector */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-white rounded-xl border border-slate-200">
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">Quy tắc làm tròn số:</div>
+                      <div className="text-[11px] text-slate-500">Áp dụng cho điểm tổng hợp khi lưu và hiển thị</div>
+                    </div>
+                    <select
+                      value={roundingRule}
+                      onChange={(e) => setRoundingRule(e.target.value as RoundingRule)}
+                      className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                    >
+                      <option value="ROUND_1">1 chữ số thập phân (Ví dụ: 8.67 → 8.7) - Chuẩn MOET</option>
+                      <option value="ROUND_2">2 chữ số thập phân (Ví dụ: 8.667 → 8.67) - Chuẩn Quốc tế</option>
+                      <option value="ROUND_HALF">Làm tròn đến 0.5 (Ví dụ: 8.3 → 8.5, 8.2 → 8.0)</option>
+                      <option value="NONE">Giữ nguyên (Không làm tròn)</option>
+                    </select>
+                  </div>
+
+                  {/* Interactive Formula Simulator / Live Tester */}
+                  <div className="bg-gradient-to-br from-teal-900 to-[#003B3A] text-white rounded-xl p-4 shadow-md space-y-3">
+                    <div className="flex items-center justify-between border-b border-teal-700/60 pb-2">
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-teal-200">
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        Thử nghiệm Công thức Trực tiếp (Live Simulator)
+                      </div>
+                      <span className="text-[10px] text-teal-300 font-medium">Nhập điểm thử bên dưới để xem kết quả tính tức thì</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2 items-center">
+                      {columnNames.map((name, idx) => (
+                        <div key={idx} className="bg-white/10 rounded-lg p-2 border border-white/10">
+                          <div className="text-[10px] font-semibold text-teal-200 truncate mb-1" title={name}>
+                            {name || `Cột ${idx + 1}`}
+                          </div>
+                          <input
+                            type="text"
+                            value={simScores[idx] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              setSimScores(prev => ({ ...prev, [idx]: val }))
+                            }}
+                            placeholder="Điểm..."
+                            className="w-full text-center bg-white text-slate-900 font-black text-xs py-1 rounded border border-white/30 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          />
+                        </div>
+                      ))}
+
+                      {/* Computed Result Box */}
+                      <div className="col-span-2 sm:col-span-1 bg-amber-400 text-slate-900 rounded-lg p-2 text-center shadow-lg">
+                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-950">
+                          {compositeColumnName || "Tổng hợp"}
+                        </div>
+                        <div className="text-lg font-black tracking-tight">
+                          {calculateCompositeScore(
+                            Object.fromEntries(Object.entries(simScores).map(([k, v]) => [`col${k}`, v])),
+                            {
+                              hasCompositeColumn: true,
+                              formula: formulaType,
+                              weights,
+                              formulaCustom,
+                              roundingRule,
+                              columnCount
+                            },
+                            columnCount
+                          ) || "---"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Checkbox Remark Option */}
+            <div className="grid grid-cols-1 gap-4">
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors bg-white">
                 <input
                   type="checkbox"
                   checked={hasRemark}
@@ -800,12 +1132,19 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
             {/* Live Excel Preview */}
             <div className="bg-emerald-50/50 rounded-xl p-4 border border-emerald-200/60 space-y-2">
-              <div className="text-xs font-bold text-emerald-900 flex items-center gap-2">
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-                Xem trước Cấu trúc Cột File nhập điểm Excel:
+              <div className="text-xs font-bold text-emerald-900 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  Xem trước Cấu trúc Cột File nhập điểm Excel:
+                </div>
+                {hasComposite && (
+                  <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                    Công thức: {getFormulaDescription({ formula: formulaType, weights, formulaCustom }, columnNames)}
+                  </span>
+                )}
               </div>
               <div className="overflow-x-auto">
-                <div className="inline-flex gap-1">
+                <div className="inline-flex gap-1 py-1">
                   {["STT", "Mã HS", "Họ tên", "Môn học"].map(f => (
                     <span key={f} className="px-2.5 py-1 bg-slate-200 text-slate-700 text-[11px] font-bold rounded-md border border-slate-300">
                       {f}
@@ -818,12 +1157,18 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                       <span key={i} className="px-2.5 py-1 bg-teal-100 text-teal-900 text-[11px] font-bold rounded-md border border-teal-300 flex items-center gap-1">
                         {name || `Cột ${i + 1}`}
                         <span className="text-[9px] px-1 py-0.5 rounded bg-teal-800 text-white font-normal">{typeLabel}</span>
+                        {formulaType === "WEIGHTED" && (
+                          <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500 text-white font-black">
+                            {weightedMode === "COEFF" ? `x${weights[i] || 1}` : `${weights[i] || 0}%`}
+                          </span>
+                        )}
                       </span>
                     )
                   })}
                   {hasComposite && (
-                    <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 text-[11px] font-bold rounded-md border border-indigo-300">
-                      Điểm thành phần
+                    <span className="px-2.5 py-1 bg-indigo-100 text-indigo-900 text-[11px] font-extrabold rounded-md border border-indigo-300 flex items-center gap-1 shadow-sm">
+                      <Calculator className="w-3 h-3 text-indigo-600" />
+                      {compositeColumnName || "Điểm thành phần"}
                     </span>
                   )}
                   {hasRemark && (
@@ -891,8 +1236,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                         ))}
                       </div>
 
+                      {cfg.hasCompositeColumn && (
+                        <div className="text-[10px] text-indigo-700 bg-indigo-50/70 p-1.5 rounded-lg border border-indigo-100 flex items-center gap-1.5 font-medium">
+                          <Calculator className="w-3 h-3 shrink-0" />
+                          <span>
+                            Cột: <strong>{cfg.compositeColumnName || "Điểm thành phần"}</strong> ({getFormulaDescription(cfg, cols)})
+                          </span>
+                        </div>
+                      )}
+
                       <div className="text-[10px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-100">
-                        <span>Cột tổng hợp: {cfg.hasCompositeColumn ? "Có" : "Không"} | Nhận xét: {cfg.hasRemarkColumn ? "Có" : "Không"}</span>
+                        <span>Nhận xét: {cfg.hasRemarkColumn ? "Có" : "Không"}</span>
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
@@ -1095,7 +1449,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                     {/* Composite Score Column */}
                     {gradeSheetData.config?.hasCompositeColumn !== false && (
                       <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[110px]">
-                        Điểm thành phần
+                        {gradeSheetData.config?.compositeColumnName || "Điểm thành phần"}
                       </th>
                     )}
 

@@ -12,14 +12,28 @@ const K12_SECTIONS = [
   {
     name: "Tiêu chuẩn 1: Phương tiện (3 điểm)",
     requirements: [
-      { id: 1, label: "Yêu cầu 1", max: 1.5, text: "Chuẩn bị giáo án tốt, giáo án phải chỉ rõ các hoạt động của trò và thầy, bám sát chuẩn kiến thức, kỹ năng, thể hiện mức độ phù hợp của các hoạt động học với mục tiêu, nội dung và phương pháp dạy học được sử dụng. KH bài dạy thể hiện mức độ rõ ràng, chính xác của mục tiêu, nội dung, sản phẩm, cách thức tổ chức thực hiện mỗi hoạt động học của học sinh." },
+      { 
+        id: 1, 
+        label: "Yêu cầu 1", 
+        max: 1.5, 
+        mandatoryFor: ["Giỏi", "Khá", "Trung bình"],
+        mandatoryText: "Buộc đạt điểm Max (1.5đ) cho loại Giỏi, Khá, TB",
+        text: "Chuẩn bị giáo án tốt, giáo án phải chỉ rõ các hoạt động của trò và thầy, bám sát chuẩn kiến thức, kỹ năng, thể hiện mức độ phù hợp của các hoạt động học với mục tiêu, nội dung và phương pháp dạy học được sử dụng. KH bài dạy thể hiện mức độ rõ ràng, chính xác của mục tiêu, nội dung, sản phẩm, cách thức tổ chức thực hiện mỗi hoạt động học của học sinh." 
+      },
       { id: 2, label: "Yêu cầu 2", max: 1.5, text: "Tích cực sử dụng đồ dùng, thiết bị dạy học. Thiết bị, đồ dùng dạy học phải phù hợp với nội dung, phương pháp của kiểu bài lên lớp." }
     ]
   },
   {
     name: "Tiêu chuẩn 2: Nội dung (5 điểm)",
     requirements: [
-      { id: 3, label: "Yêu cầu 3", max: 2.0, text: "Nội dung bài dạy chính xác, khoa học (bao gồm khoa học bộ môn và phù hợp với quan điểm tư tưởng, lập trường chính trị của Đảng); Hấp dẫn (bao gồm hấp dẫn của nội dung, phương pháp và hình thức giao nhiệm vụ học tập cho học sinh)." },
+      { 
+        id: 3, 
+        label: "Yêu cầu 3", 
+        max: 2.0, 
+        mandatoryFor: ["Giỏi", "Khá", "Trung bình"],
+        mandatoryText: "Buộc đạt điểm Max (2.0đ) cho loại Giỏi, Khá, TB",
+        text: "Nội dung bài dạy chính xác, khoa học (bao gồm khoa học bộ môn và phù hợp với quan điểm tư tưởng, lập trường chính trị của Đảng); Hấp dẫn (bao gồm hấp dẫn của nội dung, phương pháp và hình thức giao nhiệm vụ học tập cho học sinh)." 
+      },
       { id: 4, label: "Yêu cầu 4", max: 2.0, text: "Bảo đảm tính hệ thống, đủ nội dung theo chuẩn kiến thức, kỹ năng và làm rõ trọng tâm của bài học." },
       { id: 5, label: "Yêu cầu 5", max: 1.0, text: "Liên hệ với thực tế đời sống và sản xuất (nếu có). Nội dung liên hệ thực tế có tính giáo dục và gắn với nội dung bài dạy." }
     ]
@@ -27,8 +41,22 @@ const K12_SECTIONS = [
   {
     name: "Tiêu chuẩn 3: Phương pháp (9 điểm)",
     requirements: [
-      { id: 6, label: "Yêu cầu 6", max: 2.0, text: "Không dạy học theo lối 'đọc chép', áp đặt đối với học sinh. Thể hiện khả năng quan sát, theo dõi, phát hiện kịp thời những khó khăn của học sinh." },
-      { id: 7, label: "Yêu cầu 7", max: 3.0, text: "Tổ chức học sinh học tập tích cực, chủ động, phù hợp với từng đối tượng trong lớp. Khuyến khích học sinh hợp tác, giúp đỡ nhau khi thực hiện nhiệm vụ học tập. Học sinh được tham gia xây dựng bài và phát huy trí lực tốt, hứng thú học tập, không khí lớp học thân thiện." },
+      { 
+        id: 6, 
+        label: "Yêu cầu 6", 
+        max: 2.0, 
+        mandatoryFor: ["Giỏi", "Khá"],
+        mandatoryText: "Buộc đạt điểm Max (2.0đ) cho loại Giỏi, Khá",
+        text: "Không dạy học theo lối 'đọc chép', áp đặt đối với học sinh. Thể hiện khả năng quan sát, theo dõi, phát hiện kịp thời những khó khăn của học sinh." 
+      },
+      { 
+        id: 7, 
+        label: "Yêu cầu 7", 
+        max: 3.0, 
+        mandatoryFor: ["Giỏi"],
+        mandatoryText: "Buộc đạt điểm Max (3.0đ) cho loại Giỏi",
+        text: "Tổ chức học sinh học tập tích cực, chủ động, phù hợp với từng đối tượng trong lớp. Khuyến khích học sinh hợp tác, giúp đỡ nhau khi thực hiện nhiệm vụ học tập. Học sinh được tham gia xây dựng bài và phát huy trí lực tốt, hứng thú học tập, không khí lớp học thân thiện." 
+      },
       { id: 8, label: "Yêu cầu 8", max: 2.0, text: "Thực hiện linh hoạt các khâu lên lớp, phân phối thời gian hợp lý (đúng quy trình theo YCCD của CT2018). Dành thời gian thích hợp để củng cố, luyện tập nhằm khắc sâu trọng tâm bài học." },
       { id: 9, label: "Yêu cầu 9", max: 2.0, text: "Kết hợp tốt các phương pháp trong hoạt động dạy và học. Học sinh tiếp nhận, sẵn sàng, chủ động, sáng tạo, hợp tác thực hiện các nhiệm vụ, tích cực trong trình bày, thảo luận về kết quả thực hiện nhiệm vụ." }
     ]
@@ -113,11 +141,33 @@ const calculateMamNonRanking = (scores: number[]) => {
 };
 
 const calculateK12Ranking = (scores: number[]) => {
-  const sum = scores.reduce((a: number, b: number) => a + b, 0);
+  const sum = Math.round(scores.reduce((a: number, b: number) => a + b, 0) * 100) / 100;
   if (sum === 0) return "Chưa xếp loại";
-  if (sum >= 17.0) return "Giỏi";
-  if (sum >= 14.0) return "Khá";
-  if (sum >= 12.0) return "Trung bình";
+
+  const yq1 = scores[0] || 0;
+  const yq3 = scores[2] || 0;
+  const yq6 = scores[5] || 0;
+  const yq7 = scores[6] || 0;
+
+  const maxScores = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0];
+  const hasSub50 = scores.some((s, idx) => s < maxScores[idx] * 0.5);
+  const hasZero = scores.some((s) => s === 0);
+
+  // 1. Giỏi: sum >= 17, Y1=1.5, Y3=2.0, Y6=2.0, Y7=3.0, không có tiêu chí < 50%
+  if (sum >= 17.0 && yq1 === 1.5 && yq3 === 2.0 && yq6 === 2.0 && yq7 === 3.0 && !hasSub50) {
+    return "Giỏi";
+  }
+
+  // 2. Khá: sum >= 14, Y1=1.5, Y3=2.0, Y6=2.0, không có tiêu chí < 50%
+  if (sum >= 14.0 && yq1 === 1.5 && yq3 === 2.0 && yq6 === 2.0 && !hasSub50) {
+    return "Khá";
+  }
+
+  // 3. Trung bình: sum >= 12, Y1=1.5, Y3=2.0, không có tiêu chí 0đ
+  if (sum >= 12.0 && yq1 === 1.5 && yq3 === 2.0 && !hasZero) {
+    return "Trung bình";
+  }
+
   return "Không xếp loại";
 };
 
@@ -1059,12 +1109,28 @@ export function CreateObservationModal(props: CreateObservationModalProps) {
                                 options.push(Math.round(v * 100) / 100);
                               }
 
+                              const currentScore = surpriseScoresK12[globalIdx] || 0;
+                              const isMaxReached = currentScore === req.max;
+
                               return (
                                 <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
-                                  <div className="space-y-1 min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
+                                  <div className="space-y-1.5 min-w-0 flex-1">
+                                    <div className="flex items-center flex-wrap gap-2">
                                       <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
                                       <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                      {req.mandatoryText && (
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md border ${
+                                          isMaxReached
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                                            : "bg-amber-50 text-amber-700 border-amber-300"
+                                        }`}>
+                                          <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+                                          {req.mandatoryText}
+                                          {isMaxReached && (
+                                            <span className="ml-0.5 font-black text-emerald-600">✓ Đạt Max</span>
+                                          )}
+                                        </span>
+                                      )}
                                     </div>
                                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
                                   </div>

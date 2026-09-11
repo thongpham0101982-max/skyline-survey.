@@ -60,11 +60,11 @@ export async function sendEmail({
   }
 
   // Ensure From header uses authenticated account email address in brackets to prevent SendAsDenied
-  let resolvedFrom = `"QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE" <${user}>`;
+  let resolvedFrom = `"HỆ THỐNG SKY-LINE" <${user}>`;
   if (from) {
     if (from.includes('<') && from.includes('>')) {
       const nameMatch = from.match(/^"?(.*?)"?\s*<.*?>$/);
-      const displayName = nameMatch ? nameMatch[1] : "QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE";
+      const displayName = nameMatch ? nameMatch[1] : "HỆ THỐNG SKY-LINE";
       resolvedFrom = `"${displayName}" <${user}>`;
     } else {
       resolvedFrom = `"${from}" <${user}>`;

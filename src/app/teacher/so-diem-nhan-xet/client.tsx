@@ -40,6 +40,7 @@ import {
   AlertCircle,
   Clock
 } from "lucide-react"
+import { calculateCompositeScore } from "@/lib/grading/formula-calculator"
 
 interface Props {
   academicYears: any[]
@@ -301,18 +302,7 @@ export function DiemNhanXetTeacherClient({
 
       let computedComposite = studentEntry.compositeScore
       if (prev.config?.hasCompositeColumn !== false) {
-        const validScores: number[] = []
-        Object.values(newCompScores).forEach(s => {
-          if (s !== "" && !isNaN(Number(s))) {
-            validScores.push(Number(s))
-          }
-        })
-        if (validScores.length > 0) {
-          const avg = validScores.reduce((a, b) => a + b, 0) / validScores.length
-          computedComposite = (Math.round(avg * 10) / 10).toFixed(1)
-        } else {
-          computedComposite = ""
-        }
+        computedComposite = calculateCompositeScore(newCompScores, prev.config, activeColNames.length)
       }
 
       return {
@@ -386,10 +376,11 @@ export function DiemNhanXetTeacherClient({
   const handleExportExcel = () => {
     const currentClass = filteredClasses.find(c => c.id === selectedClassId)
     const currentSubject = assignedSubjects.find(s => s.id === selectedSubjectId)
+    const compColTitle = gradeSheetData.config?.compositeColumnName || "Điểm thành phần"
 
     const headers = ["STT", "Mã HS", "Họ tên", "Môn học"]
     activeColNames.forEach((colName: string) => headers.push(colName))
-    if (gradeSheetData.config?.hasCompositeColumn !== false) headers.push("Điểm thành phần")
+    if (gradeSheetData.config?.hasCompositeColumn !== false) headers.push(compColTitle)
     if (gradeSheetData.config?.hasRemarkColumn !== false) headers.push("Nhận xét")
 
     const rows = gradeSheetData.students.map((st, idx) => {
@@ -443,6 +434,7 @@ export function DiemNhanXetTeacherClient({
 
         const newEntries = { ...gradeSheetData.entries }
         let countImported = 0
+        const customCompTitle = (gradeSheetData.config?.compositeColumnName || "").trim().toLowerCase()
 
         for (let r = 1; r < data.length; r++) {
           const row = data[r]
@@ -459,10 +451,16 @@ export function DiemNhanXetTeacherClient({
             }
           })
 
-          const compScoreIdx = headers.findIndex(h => h.toLowerCase().includes("thành phần") || h.toLowerCase().includes("tổng hợp"))
+          const compScoreIdx = headers.findIndex(h => {
+            const lower = h.toLowerCase()
+            return (customCompTitle && lower === customCompTitle) || lower.includes("thành phần") || lower.includes("tổng hợp") || lower.includes("tb môn")
+          })
+
           let compVal = ""
-          if (compScoreIdx !== -1 && row[compScoreIdx] !== undefined) {
+          if (compScoreIdx !== -1 && row[compScoreIdx] !== undefined && String(row[compScoreIdx]).trim() !== "") {
             compVal = String(row[compScoreIdx])
+          } else if (gradeSheetData.config?.hasCompositeColumn !== false) {
+            compVal = calculateCompositeScore(compScores, gradeSheetData.config, activeColNames.length)
           }
 
           const remIdx = headers.findIndex(h => h.toLowerCase().includes("nhận xét") || h.toLowerCase().includes("nhan xet"))
@@ -738,7 +736,7 @@ export function DiemNhanXetTeacherClient({
 
                     {gradeSheetData.config?.hasCompositeColumn !== false && (
                       <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[110px]">
-                        Điểm thành phần
+                        {gradeSheetData.config?.compositeColumnName || "Điểm thành phần"}
                       </th>
                     )}
 

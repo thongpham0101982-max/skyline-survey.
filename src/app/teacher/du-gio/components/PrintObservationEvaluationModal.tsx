@@ -13,14 +13,28 @@ const K12_SECTIONS = [
   {
     name: "Tiêu chuẩn 1: Phương tiện (3 điểm)",
     requirements: [
-      { id: 1, label: "Yêu cầu 1", max: 1.5, text: "Chuẩn bị giáo án tốt, giáo án phải chỉ rõ các hoạt động của trò và thầy, bám sát chuẩn kiến thức, kỹ năng, thể hiện mức độ phù hợp của các hoạt động học với mục tiêu, nội dung và phương pháp dạy học được sử dụng." },
+      { 
+        id: 1, 
+        label: "Yêu cầu 1", 
+        max: 1.5, 
+        mandatoryFor: ["Giỏi", "Khá", "Trung bình"],
+        mandatoryText: "Buộc đạt điểm Max (1.5đ) cho loại Giỏi, Khá, TB",
+        text: "Chuẩn bị giáo án tốt, giáo án phải chỉ rõ các hoạt động của trò và thầy, bám sát chuẩn kiến thức, kỹ năng, thể hiện mức độ phù hợp của các hoạt động học với mục tiêu, nội dung và phương pháp dạy học được sử dụng." 
+      },
       { id: 2, label: "Yêu cầu 2", max: 1.5, text: "Tích cực sử dụng đồ dùng, thiết bị dạy học. Thiết bị, đồ dùng dạy học phải phù hợp với nội dung, phương pháp của kiểu bài lên lớp." }
     ]
   },
   {
     name: "Tiêu chuẩn 2: Nội dung (5 điểm)",
     requirements: [
-      { id: 3, label: "Yêu cầu 3", max: 2.0, text: "Nội dung bài dạy chính xác, khoa học; Hấp dẫn về nội dung, phương pháp và hình thức giao nhiệm vụ học tập cho học sinh." },
+      { 
+        id: 3, 
+        label: "Yêu cầu 3", 
+        max: 2.0, 
+        mandatoryFor: ["Giỏi", "Khá", "Trung bình"],
+        mandatoryText: "Buộc đạt điểm Max (2.0đ) cho loại Giỏi, Khá, TB",
+        text: "Nội dung bài dạy chính xác, khoa học; Hấp dẫn về nội dung, phương pháp và hình thức giao nhiệm vụ học tập cho học sinh." 
+      },
       { id: 4, label: "Yêu cầu 4", max: 2.0, text: "Bảo đảm tính hệ thống, đủ nội dung theo chuẩn kiến thức, kỹ năng và làm rõ trọng tâm của bài học." },
       { id: 5, label: "Yêu cầu 5", max: 1.0, text: "Liên hệ với thực tế đời sống và sản xuất (nếu có). Nội dung liên hệ thực tế có tính giáo dục và gắn với nội dung bài dạy." }
     ]
@@ -28,8 +42,22 @@ const K12_SECTIONS = [
   {
     name: "Tiêu chuẩn 3: Phương pháp (9 điểm)",
     requirements: [
-      { id: 6, label: "Yêu cầu 6", max: 2.0, text: "Không dạy học theo lối 'đọc chép', áp đặt đối với học sinh. Thể hiện khả năng quan sát, theo dõi, phát hiện kịp thời những khó khăn của học sinh." },
-      { id: 7, label: "Yêu cầu 7", max: 3.0, text: "Tổ chức học sinh học tập tích cực, chủ động, phù hợp với từng đối tượng trong lớp. Khuyến khích học sinh hợp tác, giúp đỡ nhau khi thực hiện nhiệm vụ học tập." },
+      { 
+        id: 6, 
+        label: "Yêu cầu 6", 
+        max: 2.0, 
+        mandatoryFor: ["Giỏi", "Khá"],
+        mandatoryText: "Buộc đạt điểm Max (2.0đ) cho loại Giỏi, Khá",
+        text: "Không dạy học theo lối 'đọc chép', áp đặt đối với học sinh. Thể hiện khả năng quan sát, theo dõi, phát hiện kịp thời những khó khăn của học sinh." 
+      },
+      { 
+        id: 7, 
+        label: "Yêu cầu 7", 
+        max: 3.0, 
+        mandatoryFor: ["Giỏi"],
+        mandatoryText: "Buộc đạt điểm Max (3.0đ) cho loại Giỏi",
+        text: "Tổ chức học sinh học tập tích cực, chủ động, phù hợp với từng đối tượng trong lớp. Khuyến khích học sinh hợp tác, giúp đỡ nhau khi thực hiện nhiệm vụ học tập." 
+      },
       { id: 8, label: "Yêu cầu 8", max: 2.0, text: "Thực hiện linh hoạt các khâu lên lớp, phân phối thời gian hợp lý (đúng quy trình theo YCCD của CT2018). Dành thời gian thích hợp để củng cố, luyện tập nhằm khắc sâu trọng tâm bài học." },
       { id: 9, label: "Yêu cầu 9", max: 2.0, text: "Kết hợp tốt các phương pháp trong hoạt động dạy và học. Học sinh tiếp nhận, sẵn sàng, chủ động, sáng tạo, hợp tác thực hiện các nhiệm vụ." }
     ]
@@ -282,6 +310,11 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                               <td className="border border-slate-800 p-2">
                                 <span className="font-bold text-slate-900">{req.label}: </span>
                                 <span className="text-slate-700">{req.text}</span>
+                                {!isPreschool && (req as any).mandatoryText && (
+                                  <span className="ml-2 inline-block text-[10px] font-bold text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded border border-amber-300">
+                                    ★ {(req as any).mandatoryText}
+                                  </span>
+                                )}
                               </td>
                               <td className="border border-slate-800 p-2 text-center font-bold">{req.max.toFixed(2)}</td>
                               <td className="border border-slate-800 p-2 text-center font-black text-slate-900">
@@ -316,6 +349,17 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                   </tr>
                 </tbody>
               </table>
+              {!isPreschool && (
+                <div className="mt-2 text-[10px] text-slate-600 italic bg-slate-50 p-2 rounded border border-slate-200">
+                  <p className="font-bold text-slate-800 not-italic mb-0.5">(*) Ghi chú quy định ràng buộc xếp loại K-12:</p>
+                  <ul className="list-disc list-inside space-y-0.5">
+                    <li><strong className="text-slate-700 font-bold">Loại Giỏi (≥ 17.0đ):</strong> Buộc đạt điểm Max ở Yêu cầu 1, 3, 6, 7 và không có yêu cầu nào dưới 50% điểm tối đa.</li>
+                    <li><strong className="text-slate-700 font-bold">Loại Khá (≥ 14.0đ):</strong> Buộc đạt điểm Max ở Yêu cầu 1, 3, 6 và không có yêu cầu nào dưới 50% điểm tối đa.</li>
+                    <li><strong className="text-slate-700 font-bold">Loại Trung bình (≥ 12.0đ):</strong> Buộc đạt điểm Max ở Yêu cầu 1, 3 và không có yêu cầu nào bị điểm 0.</li>
+                    <li><strong className="text-slate-700 font-bold">Không xếp loại:</strong> Tổng điểm &lt; 12.0đ hoặc không thỏa mãn các tiêu chí buộc đạt điểm Max tương ứng.</li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Qualitative Feedback */}
@@ -338,10 +382,26 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
                 </p>
               </div>
 
+              {evaluation?.teacherFeedback && (
+                <div className="p-3.5 rounded-xl border border-emerald-300 bg-emerald-50/30">
+                  <h4 className="font-bold text-emerald-950 uppercase text-[11px] mb-1 flex items-center justify-between">
+                    <span>3. Kế hoạch khắc phục & Ý kiến phản hồi của Giáo viên dạy:</span>
+                    {evaluation.teacherAcknowledgedAt && (
+                      <span className="text-[10px] text-emerald-800 font-normal normal-case">
+                        (Xác nhận ngày {new Date(evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")})
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-emerald-900 italic min-h-[30px] whitespace-pre-wrap">
+                    {evaluation.teacherFeedback}
+                  </p>
+                </div>
+              )}
+
               {evaluation?.generalFeedback && (
                 <div className="p-3.5 rounded-xl border border-slate-300">
                   <h4 className="font-bold text-slate-900 uppercase text-[11px] mb-1">
-                    3. Đánh giá chung:
+                    {evaluation?.teacherFeedback ? "4. Đánh giá chung:" : "3. Đánh giá chung:"}
                   </h4>
                   <p className="text-slate-700 italic whitespace-pre-wrap">
                     {evaluation.generalFeedback}
@@ -355,8 +415,13 @@ export function PrintObservationEvaluationModal({ slot, registration, onClose }:
               <div>
                 <p className="font-bold uppercase text-slate-900">GIÁO VIÊN ĐƯỢC DỰ</p>
                 <p className="text-[10px] italic text-slate-500">(Ký và ghi rõ họ tên)</p>
-                <div className="h-20 flex items-end justify-center font-black text-slate-800">
-                  {hostTeacherName}
+                <div className="h-20 flex flex-col items-center justify-end font-black text-slate-800">
+                  {evaluation?.teacherAcknowledgedAt && (
+                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 mb-1">
+                      ✓ Đã tiếp thu {new Date(evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")}
+                    </span>
+                  )}
+                  <span>{hostTeacherName}</span>
                 </div>
               </div>
 
