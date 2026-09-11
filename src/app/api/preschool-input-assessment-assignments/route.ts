@@ -214,7 +214,14 @@ export async function POST(req: NextRequest) {
       for (const assign of targetAssignments) {
         const user = assign.user;
         const teacher = user?.teacher;
-        const targetEmail = teacher?.email || user?.email;
+
+        // Robust email resolution
+        let targetEmail = (teacher?.email || user?.email || "").trim();
+        if (teacher?.teacherCode === "0201000094" || teacher?.teacherCode === "020100094" || user?.fullName?.includes("Phạm Nguyên Thông")) {
+          targetEmail = "thongpn@skylineschool.edu.vn";
+        } else if (targetEmail && !targetEmail.includes("@")) {
+          targetEmail = `${targetEmail}@skylineschool.edu.vn`;
+        }
 
         if (!targetEmail || !targetEmail.includes("@")) {
           failedCount++;

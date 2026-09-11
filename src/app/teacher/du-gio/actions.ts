@@ -466,7 +466,8 @@ export async function getObservationSlots(filters: {
     const isAdmin = await checkIsObservationAdmin(roleCode, session.user.id)
 
     const currentTeacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
+      include: { departmentAssignments: true, departmentRel: true }
     })
 
     if (!currentTeacher && !isAdmin) {
@@ -847,96 +848,126 @@ export async function createObservationSlot(data: {
     revalidatePath("/admin/du-gio")
 
     
-    // Guaranteed Email, Teams & In-App Notification Dispatch for Tag 1 (New Slot)
-    try {
-      // 1. Collect all department IDs for the current teacher's TCM
-      const allMyDeptIds = new Set<string>();
-      if (newSlot.targetDeptId) allMyDeptIds.add(newSlot.targetDeptId);
-      if (currentTeacher.departmentId) allMyDeptIds.add(currentTeacher.departmentId);
-      if (currentTeacher.departmentAssignments && Array.isArray(currentTeacher.departmentAssignments)) {
-        currentTeacher.departmentAssignments.forEach((da: any) => {
-          if (da.departmentId) allMyDeptIds.add(da.departmentId);
-        });
-      }
-
-      const targetDeptIds = Array.from(allMyDeptIds);
-
-      // 2. Query all teachers in the TCM
-      let deptMembers: any[] = [];
-      if (targetDeptIds.length > 0) {
-        deptMembers = await prisma.teacher.findMany({
-          where: {
-            OR: [
-              { departmentId: { in: targetDeptIds } },
-              { departmentAssignments: { some: { departmentId: { in: targetDeptIds } } } },
-              ...(Array.isArray(data.selectedMemberIds) && data.selectedMemberIds.length > 0 ? [{ id: { in: data.selectedMemberIds } }] : [])
-            ],
-            status: "ACTIVE"
-          },
-          include: { user: true, departmentRel: true }
-        });
-      } else if (Array.isArray(data.selectedMemberIds) && data.selectedMemberIds.length > 0) {
-        deptMembers = await prisma.teacher.findMany({
-          where: {
-            id: { in: data.selectedMemberIds },
-            status: "ACTIVE"
-          },
-          include: { user: true, departmentRel: true }
-        });
-      }
-
-      if (deptMembers.length === 0) {
-        deptMembers = await prisma.teacher.findMany({
-          where: { status: "ACTIVE" },
-          take: 50,
-          include: { user: true, departmentRel: true }
-        });
-      }
-
-      // Email Notification from bankhaothi@skylineschool.edu.vn to resolved teacher emails in TCM
-      const emailsList = new Set<string>();
-      const creatorEmail = getTeacherResolvedEmail(currentTeacher);
-
-      for (const m of deptMembers) {
-        if (m.id === currentTeacher.id) continue;
-        const email = getTeacherResolvedEmail(m);
-        if (email && email !== creatorEmail) emailsList.add(email);
-      }
-
-      const memberEmails = Array.from(emailsList).filter(e => typeof e === 'string' && e.includes("@")) as string[];
-      console.log("[Skyline Email] Sending slot creation emails to TCM teachers:", memberEmails);
-
-      if (data.sendEmailNotif !== false && memberEmails.length > 0) {
-        const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
-        const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}&action=register`;
-        
-        const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
-        const emailHtml = renderObservationSlotCreatedForTcm({
-          teacherName: currentTeacher.teacherName,
-          teacherCode: currentTeacher.teacherCode,
-          topic: newSlot.topic,
-          subjectName: newSlot.subjectName,
-          grade: newSlot.grade,
-          className: newSlot.className || undefined,
-          campusName: newSlot.campusName || undefined,
-          room: newSlot.room || undefined,
-          dateStr: formattedDateVi,
-          timeStr: `${newSlot.startTime} - ${newSlot.endTime}`,
-          directLink: linkUrl
-        });
-
-        for (const targetEmail of memberEmails) {
-          try {
-            await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: targetEmail, subject: emailSubject, html: emailHtml });
-            console.log("[Skyline Email] Successfully sent slot creation email to:", targetEmail);
-          } catch (err) {
-            console.error("[Skyline Email Error] Failed sending to " + targetEmail + ":", err);
-          }
+    // Guaranteed Email, Teams & In-App Notification Dispatch for Tag 1 (New Slot) via Next.js after()
+    // Runs in the background without blocking the UI response or causing Vercel serverless timeouts
+    after(async () => {
+      try {
+        // 1. Collect all department IDs for the current teacher's TCM
+        const allMyDeptIds = new Set<string>();
+        if (newSlot.targetDeptId) allMyDeptIds.add(newSlot.targetDeptId);
+        if (currentTeacher.departmentId) allMyDeptIds.add(currentTeacher.departmentId);
+        if (currentTeacher.departmentAssignments && Array.isArray(currentTeacher.departmentAssignments)) {
+          currentTeacher.departmentAssignments.forEach((da: any) => {
+            if (da.departmentId) allMyDeptIds.add(da.departmentId);
+          });
         }
+
+        const targetDeptIds = Array.from(allMyDeptIds);
+
+        // 2. Query all teachers in the TCM
+        let deptMembers: any[] = [];
+        if (targetDeptIds.length > 0) {
+          deptMembers = await prisma.teacher.findMany({
+            where: {
+              OR: [
+                { departmentId: { in: targetDeptIds } },
+                { departmentAssignments: { some: { departmentId: { in: targetDeptIds } } } },
+                ...(Array.isArray(data.selectedMemberIds) && data.selectedMemberIds.length > 0 ? [{ id: { in: data.selectedMemberIds } }] : [])
+              ],
+              status: "ACTIVE"
+            },
+            include: { user: true, departmentRel: true }
+          });
+        } else if (Array.isArray(data.selectedMemberIds) && data.selectedMemberIds.length > 0) {
+          deptMembers = await prisma.teacher.findMany({
+            where: {
+              id: { in: data.selectedMemberIds },
+              status: "ACTIVE"
+            },
+            include: { user: true, departmentRel: true }
+          });
+        }
+
+        if (deptMembers.length === 0) {
+          deptMembers = await prisma.teacher.findMany({
+            where: { status: "ACTIVE" },
+            take: 50,
+            include: { user: true, departmentRel: true }
+          });
+        }
+
+        // Email Notification from bankhaothi@skylineschool.edu.vn to resolved teacher emails in TCM
+        const emailsList = new Set<string>();
+        const creatorEmail = getTeacherResolvedEmail(currentTeacher);
+
+        for (const m of deptMembers) {
+          if (m.id === currentTeacher.id) continue;
+          const email = getTeacherResolvedEmail(m);
+          if (email && email !== creatorEmail) emailsList.add(email);
+        }
+
+        const memberEmails = Array.from(emailsList).filter(e => typeof e === 'string' && e.includes("@")) as string[];
+        console.log("[Skyline Email] Sending slot creation emails to TCM teachers:", memberEmails);
+
+        if (data.sendEmailNotif !== false && memberEmails.length > 0) {
+          const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
+          const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}&action=register`;
+          
+          const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
+          const emailHtml = renderObservationSlotCreatedForTcm({
+            teacherName: currentTeacher.teacherName,
+            teacherCode: currentTeacher.teacherCode,
+            topic: newSlot.topic,
+            subjectName: newSlot.subjectName,
+            grade: newSlot.grade,
+            className: newSlot.className || undefined,
+            campusName: newSlot.campusName || undefined,
+            room: newSlot.room || undefined,
+            dateStr: formattedDateVi,
+            timeStr: `${newSlot.startTime} - ${newSlot.endTime}`,
+            directLink: linkUrl
+          });
+
+          // Send emails concurrently in parallel using Promise.allSettled
+          const sendTasks = memberEmails.map(targetEmail => 
+            sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: targetEmail, subject: emailSubject, html: emailHtml })
+              .then(() => console.log("[Skyline Email] Successfully sent slot creation email to:", targetEmail))
+              .catch(err => console.error("[Skyline Email Error] Failed sending to " + targetEmail + ":", err))
+          );
+          await Promise.allSettled(sendTasks);
+        }
+
+        // Also trigger Teams notification if department webhook is available
+        try {
+          const deptRel = (currentTeacher as any).departmentRel;
+          if (deptRel) {
+            await sendTeamsNewSlotDepartmentNotif({
+              id: newSlot.id,
+              topic: newSlot.topic,
+              subjectName: newSlot.subjectName,
+              level: newSlot.level,
+              grade: newSlot.grade,
+              className: newSlot.className,
+              date: newSlot.date,
+              startTime: newSlot.startTime,
+              endTime: newSlot.endTime,
+              campusName: newSlot.campusName,
+              room: newSlot.room,
+              teacherName: currentTeacher.teacherName,
+              teacherCode: currentTeacher.teacherCode,
+              maxSeats: newSlot.maxSeats || 4
+            }, {
+              name: deptRel.name,
+              teamsWebhookUrl: deptRel.teamsWebhookUrl
+            });
+          }
+        } catch (teamsErr) {
+          console.error("[MS Teams] Error sending slot creation notif:", teamsErr);
+        }
+      } catch (deptNotifErr) {
+        console.error("Error sending department member notifications:", deptNotifErr);
       }
-    } catch (deptNotifErr) {
-      console.error("Error sending department member notifications:", deptNotifErr);
-    }
+    });
 
     return { success: true, slot: newSlot }
   } catch (e: any) {
