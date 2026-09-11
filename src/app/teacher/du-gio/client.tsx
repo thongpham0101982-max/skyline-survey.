@@ -884,6 +884,8 @@ export function ObservationClient(props: ObservationClientProps) {
   const [monthlyLimitCount, setMonthlyLimitCount] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [editSlotId, setEditSlotId] = useState<string | null>(null)
+  const [showRequestConfirmDialog, setShowRequestConfirmDialog] = useState(false)
+  const [requestConfirmData, setRequestConfirmData] = useState<any>(null)
 
   // Targets
   const [selfRequiredObserved, setSelfRequiredObserved] = useState(currentTeacher?.requiredObserved || 0)
@@ -2070,31 +2072,61 @@ export function ObservationClient(props: ObservationClientProps) {
       return
     }
 
-    const selectedClass = classes.find(c => c.id === reqClassId)
-    const selectedSub = subjects.find(s => s.id === reqSubjectId)
+    const selectedClass = classes.find((c: any) => c.id === reqClassId)
+    const selectedSub = subjects.find((s: any) => s.id === reqSubjectId)
     const resolvedSubjectName = selectedSub
       ? selectedSub.subjectName
       : (reqSubjectId === "Khác/Chuyên đề" || reqSubjectId === "other" ? "Khác/Chuyên đề" : reqSubjectId || "Khác/Chuyên đề")
     const resolvedSubjectId = selectedSub ? selectedSub.id : null
+    const selectedTeacher = teachers.find((t: any) => t.id === reqTeacherId)
+    const selectedDept = departments.find((d: any) => d.id === reqDeptId)
+    const selectedCampus = campuses.find((c: any) => c.id === reqCampusId)
 
+    // Show confirmation popup instead of directly submitting
+    setRequestConfirmData({
+      targetTeacherId: reqTeacherId,
+      targetDeptId: reqDeptId,
+      classId: reqClassId,
+      className: selectedClass ? selectedClass.className : "",
+      level: reqLevel || (selectedClass ? selectedClass.level : "ALL"),
+      grade: reqGrade || (selectedClass ? selectedClass.grade : "Khối"),
+      subjectId: resolvedSubjectId || undefined,
+      subjectName: resolvedSubjectName,
+      topic: reqTopic || "Yêu cầu dự giờ",
+      date: reqDate,
+      period: reqPeriod,
+      notes: reqNotes,
+      academicYearId: filterAcademicYearId,
+      // Display info
+      teacherName: selectedTeacher ? selectedTeacher.teacherName : "",
+      deptName: selectedDept ? selectedDept.name : "",
+      campusName: selectedCampus ? selectedCampus.campusName : "",
+    })
+    setShowRequestConfirmDialog(true)
+  }
+
+  const handleRequestConfirmed = async () => {
+    if (!requestConfirmData) return
+    setShowRequestConfirmDialog(false)
     setSubmitting(true)
     startTransition(async () => {
       const res = await requestObservationSlot({
-        targetTeacherId: reqTeacherId,
-        targetDeptId: reqDeptId,
-        classId: reqClassId,
-        className: selectedClass ? selectedClass.className : undefined,
-        level: reqLevel || (selectedClass ? selectedClass.level : "ALL"),
-        grade: reqGrade || (selectedClass ? selectedClass.grade : "Khối"),
-        subjectId: resolvedSubjectId || undefined,
-        subjectName: resolvedSubjectName,
-        topic: reqTopic || "Yêu cầu dự giờ",
-        date: reqDate,
-        period: reqPeriod,
-        notes: reqNotes,
-        academicYearId: filterAcademicYearId
+        targetTeacherId: requestConfirmData.targetTeacherId,
+        targetDeptId: requestConfirmData.targetDeptId,
+        classId: requestConfirmData.classId,
+        className: requestConfirmData.className,
+        level: requestConfirmData.level,
+        grade: requestConfirmData.grade,
+        subjectId: requestConfirmData.subjectId,
+        subjectName: requestConfirmData.subjectName,
+        topic: requestConfirmData.topic,
+        date: requestConfirmData.date,
+        period: requestConfirmData.period,
+        notes: requestConfirmData.notes,
+        academicYearId: requestConfirmData.academicYearId,
       })
       setSubmitting(false)
+      setRequestConfirmData(null)
       if (res.success) {
         showToast("Đã gửi đề xuất xin dự giờ và gửi Email thông báo tới Giáo viên dạy thành công!", "success")
         setReqTeacherId("")
@@ -2252,6 +2284,8 @@ export function ObservationClient(props: ObservationClientProps) {
       pendingObservedCount: number;
       avgScore: string | null;
       receivedEvalCount: number;
+      surpriseTaughtCount: number;
+      surpriseObservedCount: number;
     }> = {};
 
     (availableMonths || []).forEach(mKey => {
@@ -2270,7 +2304,9 @@ export function ObservationClient(props: ObservationClientProps) {
         totalObservedSlots: 0,
         pendingObservedCount: 0,
         avgScore: null,
-        receivedEvalCount: 0
+        receivedEvalCount: 0,
+        surpriseTaughtCount: 0,
+        surpriseObservedCount: 0
       };
     });
 
@@ -2287,20 +2323,27 @@ export function ObservationClient(props: ObservationClientProps) {
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       const isHost = slot.teacherId === currentTeacher?.id;
       const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
+      const isSurprise = isSurpriseSlot(slot);
 
       if (isHost) {
         stats[key].totalTaughtSlots += 1;
-        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurpriseSlot(slot));
+        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise);
         const hasEval = approvedRegs.some((r: any) => !!r.evaluation);
         if (hasEval) {
           stats[key].taughtCount += countWeight;
+          if (isSurprise) {
+            stats[key].surpriseTaughtCount += countWeight;
+          }
         }
       }
 
-      if (myReg && (myReg.isApproved || isSurpriseSlot(slot))) {
+      if (myReg && (myReg.isApproved || isSurprise)) {
         stats[key].totalObservedSlots += 1;
         if (myReg.evaluation) {
           stats[key].observedCount += countWeight;
+          if (isSurprise) {
+            stats[key].surpriseObservedCount += countWeight;
+          }
         } else {
           stats[key].pendingObservedCount += 1;
         }
@@ -2751,6 +2794,14 @@ export function ObservationClient(props: ObservationClientProps) {
     });
     return count;
   }, [myValidTaughtSlots]);
+
+  const totalSurpriseTaughtSlots = useMemo(() => {
+    return myTaughtSlots.filter(s => isSurpriseSlot(s)).length;
+  }, [myTaughtSlots]);
+
+  const totalSurpriseObservedSlots = useMemo(() => {
+    return myObservedSlots.filter(s => isSurpriseSlot(s)).length;
+  }, [myObservedSlots]);
 
   // Tổng số phiếu đánh giá nhận được từ tất cả các tiết dạy
   const totalReceivedEvalCount = useMemo(() => {
@@ -4151,10 +4202,22 @@ export function ObservationClient(props: ObservationClientProps) {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-extrabold rounded-xl transition-all shadow-md shadow-indigo-600/20 text-xs flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full mt-2 py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 disabled:from-slate-400 disabled:to-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md shadow-indigo-600/25 text-xs flex items-center justify-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
               >
-                <Send className="w-4 h-4" />
-                {submitting ? "Đang gửi đề xuất..." : "Gửi Đề xuất Xin Dự Giờ"}
+                {submitting ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Đang xử lý, vui lòng chờ...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Gửi Đề xuất Xin Dự Giờ
+                  </>
+                )}
               </button>
             </form>
           ) : (
@@ -5461,6 +5524,10 @@ export function ObservationClient(props: ObservationClientProps) {
             pendingEvaluationCount={myPendingEvaluationsCount}
             avgScore={myReceivedEvaluationsStats.avgScore}
             receivedEvaluationCount={myReceivedEvaluationsStats.count}
+            surpriseTaughtCount={mySurpriseTaughtCount}
+            totalSurpriseTaughtSlots={totalSurpriseTaughtSlots}
+            surpriseObservedCount={mySurpriseObservedCount}
+            totalSurpriseObservedSlots={totalSurpriseObservedSlots}
             isPreschool={isMamNonTeacher}
             academicYearName={activeAcademicYear?.name || ""}
             selectedMonth={filterMonth}

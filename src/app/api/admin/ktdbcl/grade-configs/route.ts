@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       columnCount = 1,
       columnNames = [],
       columnTypes = [],
+      columnMaxScores = [],
       hasCompositeColumn = true,
       compositeColumnName = "Điểm thành phần",
       hasRemarkColumn = true,
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
 
     const columnNamesStr = JSON.stringify(columnNames)
     const columnTypesStr = typeof columnTypes === "string" ? columnTypes : JSON.stringify(columnTypes)
+    const columnMaxScoresStr = typeof columnMaxScores === "string" ? columnMaxScores : JSON.stringify(columnMaxScores)
     const weightsStr = weights ? (typeof weights === "string" ? weights : JSON.stringify(weights)) : null
     const targetSubjectId = subjectId && subjectId !== "ALL" ? subjectId : null
 
@@ -74,6 +76,7 @@ export async function POST(request: Request) {
           columnCount: Number(columnCount),
           columnNames: columnNamesStr,
           columnTypes: columnTypesStr,
+          columnMaxScores: columnMaxScoresStr,
           hasCompositeColumn: Boolean(hasCompositeColumn),
           compositeColumnName: compositeColumnName || "Điểm thành phần",
           hasRemarkColumn: Boolean(hasRemarkColumn),
@@ -93,6 +96,7 @@ export async function POST(request: Request) {
           columnCount: Number(columnCount),
           columnNames: columnNamesStr,
           columnTypes: columnTypesStr,
+          columnMaxScores: columnMaxScoresStr,
           hasCompositeColumn: Boolean(hasCompositeColumn),
           compositeColumnName: compositeColumnName || "Điểm thành phần",
           hasRemarkColumn: Boolean(hasRemarkColumn),

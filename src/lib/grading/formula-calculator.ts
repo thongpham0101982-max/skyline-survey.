@@ -15,6 +15,58 @@ export interface GradeConfigLike {
   columnCount?: number
   columnNames?: string | string[]
   columnTypes?: string | string[]
+  columnMaxScores?: string | number[] | null
+}
+
+/**
+ * Helper to get max score of a column (defaults to 10)
+ */
+export function getColumnMaxScore(
+  typeCode?: string,
+  maxScores?: number[] | (number | null)[],
+  index?: number
+): number {
+  if (maxScores && index !== undefined && maxScores[index] !== undefined && maxScores[index] !== null) {
+    const val = Number(maxScores[index])
+    if (!isNaN(val) && val > 0) return val
+  }
+  if (!typeCode) return 10
+  if (typeCode.startsWith("SCORE_MAX_")) {
+    const parsed = parseFloat(typeCode.replace("SCORE_MAX_", ""))
+    if (!isNaN(parsed) && parsed > 0) return parsed
+  }
+  if (typeCode === "SCORE_1000") return 1000
+  return 10
+}
+
+/**
+ * Safely parse max scores array from JSON or string or array
+ */
+export function parseMaxScores(maxScoresRaw: any, length: number): number[] {
+  if (Array.isArray(maxScoresRaw)) {
+    return maxScoresRaw.map(w => {
+      const num = Number(w)
+      return !isNaN(num) && num > 0 ? num : 10
+    })
+  }
+  if (typeof maxScoresRaw === "string" && maxScoresRaw.trim()) {
+    try {
+      const parsed = JSON.parse(maxScoresRaw)
+      if (Array.isArray(parsed)) {
+        return parsed.map(w => {
+          const num = Number(w)
+          return !isNaN(num) && num > 0 ? num : 10
+        })
+      }
+    } catch (_) {
+      const parts = maxScoresRaw.split(",").map(p => {
+        const num = Number(p.trim())
+        return !isNaN(num) && num > 0 ? num : 10
+      })
+      if (parts.length > 0) return parts
+    }
+  }
+  return Array(length).fill(10)
 }
 
 /**

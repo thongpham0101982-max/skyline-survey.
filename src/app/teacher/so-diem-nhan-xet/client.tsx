@@ -40,7 +40,7 @@ import {
   AlertCircle,
   Clock
 } from "lucide-react"
-import { calculateCompositeScore } from "@/lib/grading/formula-calculator"
+import { calculateCompositeScore, getColumnMaxScore } from "@/lib/grading/formula-calculator"
 
 interface Props {
   academicYears: any[]
@@ -295,6 +295,17 @@ export function DiemNhanXetTeacherClient({
     }
   }, [gradeSheetData.config])
 
+  const activeColTypes = useMemo(() => {
+    if (!gradeSheetData.config) return activeColNames.map(() => "SCORE_10")
+    try {
+      return typeof gradeSheetData.config.columnTypes === "string"
+        ? JSON.parse(gradeSheetData.config.columnTypes)
+        : gradeSheetData.config.columnTypes || activeColNames.map(() => "SCORE_10")
+    } catch (_) {
+      return activeColNames.map(() => "SCORE_10")
+    }
+  }, [gradeSheetData.config, activeColNames])
+
   const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
     setGradeSheetData(prev => {
       const studentEntry = prev.entries[studentId] || { componentScores: {}, compositeScore: "", remark: "" }
@@ -379,7 +390,11 @@ export function DiemNhanXetTeacherClient({
     const compColTitle = gradeSheetData.config?.compositeColumnName || "Điểm thành phần"
 
     const headers = ["STT", "Mã HS", "Họ tên", "Môn học"]
-    activeColNames.forEach((colName: string) => headers.push(colName))
+    activeColNames.forEach((colName: string, i: number) => {
+      const cType = activeColTypes[i] || "SCORE_10"
+      const colMax = getColumnMaxScore(cType, gradeSheetData.config?.columnMaxScores, i)
+      headers.push(colMax < 10 ? `${colName} (Tối đa ${colMax}đ)` : colName)
+    })
     if (gradeSheetData.config?.hasCompositeColumn !== false) headers.push(compColTitle)
     if (gradeSheetData.config?.hasRemarkColumn !== false) headers.push("Nhận xét")
 
@@ -445,7 +460,11 @@ export function DiemNhanXetTeacherClient({
 
           const compScores: Record<string, string> = {}
           activeColNames.forEach((colName: string, cIdx: number) => {
-            const hIdx = headers.findIndex(h => h.toLowerCase() === colName.toLowerCase())
+            const cleanColName = colName.trim().toLowerCase()
+            const hIdx = headers.findIndex(h => {
+              const cleanH = h.trim().toLowerCase().replace(/\s*\(tối đa.*?\)/i, "")
+              return cleanH === cleanColName || h.toLowerCase() === cleanColName
+            })
             if (hIdx !== -1 && row[hIdx] !== undefined && row[hIdx] !== null) {
               compScores[`col${cIdx}`] = String(row[hIdx])
             }
@@ -728,11 +747,20 @@ export function DiemNhanXetTeacherClient({
                     <th className="py-3 px-3 w-48 border-r border-slate-700">Họ và tên</th>
                     <th className="py-3 px-3 w-32 border-r border-slate-700">Môn học</th>
                     
-                    {activeColNames.map((colName: string, idx: number) => (
-                      <th key={idx} className="py-3 px-3 text-center border-r border-slate-700 bg-slate-700/60 min-w-[90px]">
-                        {colName}
-                      </th>
-                    ))}
+                    {activeColNames.map((colName: string, idx: number) => {
+                      const cType = activeColTypes[idx] || "SCORE_10"
+                      const colMax = getColumnMaxScore(cType, gradeSheetData.config?.columnMaxScores, idx)
+                      return (
+                        <th key={idx} className="py-2.5 px-3 text-center border-r border-slate-700 bg-slate-700/60 min-w-[95px]">
+                          <div>{colName}</div>
+                          {colMax < 10 && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400 text-slate-900 font-black inline-block mt-0.5 shadow-sm">
+                              Tối đa {colMax}đ
+                            </span>
+                          )}
+                        </th>
+                      )
+                    })}
 
                     {gradeSheetData.config?.hasCompositeColumn !== false && (
                       <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[110px]">
@@ -766,17 +794,79 @@ export function DiemNhanXetTeacherClient({
                           {currentSubject?.subjectName || "Môn"}
                         </td>
 
-                        {activeColNames.map((_: any, cIdx: number) => (
-                          <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200">
-                            <input
-                              type="text"
-                              value={entry.componentScores[`col${cIdx}`] ?? ""}
-                              onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                              className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-[#48BFE3] outline-none"
-                              placeholder="0-10"
-                            />
-                          </td>
-                        ))}
+                        {activeColNames.map((_: any, cIdx: number) => {
+                          const colType = activeColTypes[cIdx] || "SCORE_10"
+                          const val = entry.componentScores[`col${cIdx}`] ?? ""
+
+                          if (colType === "GRADE_SKL") {
+                            return (
+                              <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[110px]">
+                                <select
+                                  value={val}
+                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                  className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-amber-50/60 focus:ring-2 focus:ring-amber-500 outline-none"
+                                >
+                                  <option value="">-- SKL --</option>
+                                  {SKL_OPTIONS.map(opt => (
+                                    <option key={opt.code} value={opt.code}>{opt.label}</option>
+                                  ))}
+                                </select>
+                              </td>
+                            )
+                          }
+
+                          if (colType === "GRADE_INTL") {
+                            return (
+                              <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[130px]">
+                                <select
+                                  value={val}
+                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                  className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-purple-50/60 focus:ring-2 focus:ring-purple-500 outline-none"
+                                >
+                                  <option value="">-- Quốc tế --</option>
+                                  {INTL_OPTIONS.map(opt => (
+                                    <option key={opt.code} value={opt.code}>{opt.label}</option>
+                                  ))}
+                                </select>
+                              </td>
+                            )
+                          }
+
+                          if (colType === "REMARK") {
+                            return (
+                              <td key={cIdx} className="py-2 px-2 border-r border-slate-200 min-w-[160px]">
+                                <input
+                                  type="text"
+                                  value={val}
+                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                  className="w-full border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                                  placeholder="Nhập nhận xét..."
+                                />
+                              </td>
+                            )
+                          }
+
+                          const colMax = getColumnMaxScore(colType, gradeSheetData.config?.columnMaxScores, cIdx)
+                          const numVal = Number(String(val).replace(",", "."))
+                          const isOver = !isNaN(numVal) && numVal > colMax
+
+                          return (
+                            <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[80px]">
+                              <input
+                                type="text"
+                                value={val}
+                                onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                className={`w-16 text-center border rounded-lg py-1 text-xs font-extrabold outline-none transition-all ${
+                                  isOver
+                                    ? "border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-300 font-black"
+                                    : "border-slate-200 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-[#48BFE3]"
+                                }`}
+                                placeholder={colType === "SCORE_1000" ? "0-1000" : `0-${colMax}`}
+                                title={isOver ? `Điểm vượt quá tối đa ${colMax}đ` : `Tối đa ${colMax}đ`}
+                              />
+                            </td>
+                          )
+                        })}
 
                         {gradeSheetData.config?.hasCompositeColumn !== false && (
                           <td className="py-2 px-2 text-center border-r border-slate-200 bg-teal-50/50">

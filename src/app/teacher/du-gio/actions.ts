@@ -39,6 +39,21 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { sendEmail } from "@/lib/mail"
+import {
+  renderObservationRequestSubmittedForObserver,
+  renderObservationRequestForHost,
+  renderObservationRequestResponseForObserver,
+  renderObservationSlotCreatedForTcm,
+  renderObservationSlotRegisteredForHost,
+  renderObservationEvaluationCompletedForHost,
+  renderObservationEvaluationCompletedForObserver,
+  renderObservationPendingEvaluationReminder,
+  renderObservationTeacherAcknowledged,
+  renderObservationSurpriseCompletedForHost,
+  renderObservationReEvaluationApproved,
+  renderObservationReEvaluationRejected,
+  renderObservationExpiredNotification
+} from "@/lib/email-templates"
 import { ACADEMIC_DIVISIONS, normalizeDivisionCode } from "@/config/divisions"
 
 async function checkIsObservationAdmin(roleCode: string, userId?: string): Promise<boolean> {
@@ -874,32 +889,19 @@ export async function createObservationSlot(data: {
         const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}&action=register`;
         
         const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-            <div style="background-color: #48BFE3; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-              <h2 style="color: #ffffff; margin: 0; font-size: 18px;">TIẾT DẠY DỰ GIỜ MỚI Trong TỔ CHUYÊN MÔN</h2>
-            </div>
-            <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô trong <strong>Tổ chuyên môn</strong>,</p>
-            <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa mở một tiết dạy dự giờ mới cho Tổ chuyên môn. Kính mời Thầy/Cô đăng ký tham dự.</p>
-            
-            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #48BFE3; font-weight: bold;">${newSlot.topic}</td></tr>
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.subjectName} (${newSlot.grade} - ${newSlot.className || "Lớp học"})</td></tr>
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.campusName || "Trường"} - ${newSlot.room || "Phòng học"}</td></tr>
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
-              <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.startTime} - ${newSlot.endTime}</td></tr>
-            </table>
-
-            <div style="text-align: center; margin: 25px 0;">
-              <a href="${linkUrl}" style="background-color: #48BFE3; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Đăng Ký Dự Giờ Ngay Trực Tiếp Trên Skyline</a>
-            </div>
-            
-            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-              Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
-            </div>
-          </div>
-        `;
+        const emailHtml = renderObservationSlotCreatedForTcm({
+          teacherName: currentTeacher.teacherName,
+          teacherCode: currentTeacher.teacherCode,
+          topic: newSlot.topic,
+          subjectName: newSlot.subjectName,
+          grade: newSlot.grade,
+          className: newSlot.className || undefined,
+          campusName: newSlot.campusName || undefined,
+          room: newSlot.room || undefined,
+          dateStr: formattedDateVi,
+          timeStr: `${newSlot.startTime} - ${newSlot.endTime}`,
+          directLink: linkUrl
+        });
 
         await Promise.all(
           memberEmails.map(async (targetEmail) => {
@@ -995,27 +997,19 @@ export async function registerObservation(slotId: string) {
 
         const hostEmail = getTeacherResolvedEmail(slot.teacher);
         if (hostEmail && hostEmail.includes("@")) {
-          const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <h2 style="color: #48BFE3; margin-top: 0;">Thông Báo Đăng Ký Dự Giờ</h2>
-              <p>Kính gửi Thầy/Cô <strong>${slot.teacher.teacherName}</strong>,</p>
-              <p>Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.</p>
-              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 40%;">Giáo viên xin dự giờ:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tên bài dạy / Chủ đề:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.topic}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Môn học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.subjectName}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Cấp học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.level}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Khối lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.grade}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.className || "Chưa chọn"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Ngày dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${formattedDate}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.startTime} - ${slot.endTime}</td></tr>
-              </table>
-              <p>Thầy/Cô vui lòng kiểm tra danh sách người tham dự trên hệ thống Skyline.</p>
-              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
-                Hệ thống Quản lý Dự giờ Skyline
-              </div>
-            </div>
-          `;
+          const emailHtml = renderObservationSlotRegisteredForHost({
+            hostName: slot.teacher.teacherName,
+            observerName: currentTeacher.teacherName,
+            observerCode: currentTeacher.teacherCode,
+            topic: slot.topic,
+            subjectName: slot.subjectName,
+            level: slot.level,
+            grade: slot.grade,
+            className: slot.className || undefined,
+            dateStr: formattedDate,
+            timeStr: `${slot.startTime} - ${slot.endTime}`,
+            directLink: `${process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app"}/teacher/du-gio?tab=my_schedule&slotId=${slot.id}`
+          });
 
           try {
             const hostEmail = getTeacherResolvedEmail(slot.teacher);
@@ -1040,7 +1034,7 @@ export async function registerObservation(slotId: string) {
   }
 }
 
-export async function cancelObservation(slotId: string) {
+export async function cancelObservation(targetId: string) {
   try {
     const session = await auth()
     if (!session || !session.user) {
@@ -1055,25 +1049,34 @@ export async function cancelObservation(slotId: string) {
       return { success: false, error: "Teacher profile not found" }
     }
 
-    // Kiểm tra xem đã nộp phiếu đánh giá hoặc tiết học đã diễn ra hay chưa
+    // Kiểm tra xem targetId là registrationId hay slotId
     const registration = await prisma.observationRegistration.findFirst({
-      where: { slotId, teacherId: currentTeacher.id },
+      where: {
+        OR: [
+          { id: targetId },
+          { slotId: targetId, teacherId: currentTeacher.id }
+        ],
+        teacherId: currentTeacher.id
+      },
       include: { evaluation: true, slot: true }
     });
-    if (registration) {
-      if (registration.evaluation) {
-        return { success: false, error: "Thầy/Cô đã nộp phiếu đánh giá. Không thể hủy đăng ký dự giờ." }
-      }
-      if (new Date(registration.slot.date) <= new Date()) {
-        return { success: false, error: "Tiết dạy đã diễn ra. Không thể hủy đăng ký dự giờ." }
-      }
+
+    if (!registration) {
+      return { success: false, error: "Không tìm thấy thông tin đăng ký dự giờ" }
     }
 
-    await prisma.observationRegistration.deleteMany({
-      where: {
-        slotId,
-        teacherId: currentTeacher.id
-      }
+    if (registration.evaluation) {
+      return { success: false, error: "Thầy/Cô đã nộp phiếu đánh giá. Không thể hủy đăng ký dự giờ." }
+    }
+
+    const slotDateStr = new Date(registration.slot.date).toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (slotDateStr < todayStr) {
+      return { success: false, error: "Tiết dạy đã diễn ra trong quá khứ. Không thể hủy đăng ký dự giờ." }
+    }
+
+    await prisma.observationRegistration.delete({
+      where: { id: registration.id }
     })
 
     revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
@@ -1414,105 +1417,26 @@ export async function submitEvaluation(data: {
       if (hostTeacher && hostEmail && hostEmail.includes("@")) {
         const linkUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`;
         const emailSubject = `[Skyline Dự Giờ] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`;
-        const emailHtml = `
-          <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-            <div style="background: linear-gradient(135deg, #003B3A 0%, #008B82 100%); padding: 24px 20px; text-align: center; color: white;">
-              <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">KẾT QUẢ ĐÁNH GIÁ TIẾT DẠY DỰ GIỜ</h2>
-              <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
-            </div>
-
-            <div style="padding: 24px 28px; background: white;">
-              <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
-                Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,
-              </p>
-              <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-                Thầy/Cô <strong>${currentTeacher.teacherName}</strong> (${currentTeacher.position || "Giáo viên / Ban chuyên môn"}) đã hoàn tất nhập <strong>Phiếu đánh giá dự giờ</strong> cho tiết dạy của Thầy/Cô. Dưới đây là thông tin chi tiết:
-              </p>
-
-              <!-- Lesson Summary Box -->
-              <div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; width: 140px; font-weight: 600;">📖 Tên bài dạy / Chủ đề:</td>
-                    <td style="padding: 5px 0; color: #007068; font-weight: 800;">${slotFull?.topic || "Tiết dạy"}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">📚 Môn học:</td>
-                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${slotFull?.subjectName || "Môn học"} (${slotFull?.grade || ""} - ${slotFull?.className || ""})</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">📅 Thời gian & Tiết:</td>
-                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">Tiết ${slotFull?.startTime || "1"} • ${formattedDateVi}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">🏫 Cơ sở & Địa điểm:</td>
-                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${slotFull?.campusName || hostTeacher.campus?.campusName || "Sky-Line"} - Phòng ${slotFull?.room || "học"}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">👨‍🏫 Người dự giờ:</td>
-                    <td style="padding: 5px 0; color: #0f172a; font-weight: 700;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- Score & Ranking Badge -->
-              <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 14px 18px; margin: 18px 0;">
-                <table style="width: 100%; border-collapse: collapse;">
-                  <tr>
-                    <td style="vertical-align: middle;">
-                      <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Tổng điểm đạt được:</div>
-                      <div style="font-size: 18px; font-weight: 900; color: #581c87;">${totalDisplay}</div>
-                    </td>
-                    <td style="text-align: right; vertical-align: middle;">
-                      <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase; margin-bottom: 2px;">Xếp loại tiết dạy:</div>
-                      <span style="font-size: 15px; font-weight: 900; color: #047857; background: #d1fae5; border: 1px solid #a7f3d0; padding: 4px 12px; border-radius: 8px; display: inline-block;">
-                        ${ratingDisplay}
-                      </span>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- Qualitative Comments -->
-              <div style="margin: 20px 0;">
-                ${data.strengths ? `
-                <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                  <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 4px;">🌟 1. Ưu điểm nổi bật:</div>
-                  <div style="font-size: 13px; color: #166534; line-height: 1.6; white-space: pre-line;">${data.strengths}</div>
-                </div>
-                ` : ""}
-
-                <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                  <div style="font-size: 12px; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">💡 2. Nội dung cần cải thiện / Góp ý phát triển:</div>
-                  <div style="font-size: 13px; color: #92400e; line-height: 1.6; white-space: pre-line;">${data.improvements}</div>
-                </div>
-
-                ${data.generalComment ? `
-                <div style="background: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                  <div style="font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 4px;">📝 3. Đề xuất & Kiến nghị chuyên môn:</div>
-                  <div style="font-size: 13px; color: #475569; line-height: 1.6; white-space: pre-line;">${data.generalComment}</div>
-                </div>
-                ` : ""}
-              </div>
-
-              <!-- Action Link -->
-              <div style="text-align: center; margin: 26px 0 16px 0;">
-                <a href="${linkUrl}" 
-                   style="display: inline-block; background: linear-gradient(135deg, #008B82 0%, #007068 100%); color: white; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 139, 130, 0.3);">
-                  👉 Xem Chi Tiết Phiếu Đánh Giá Trên Skyline
-                </a>
-              </div>
-              
-              <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px;">
-                Dữ liệu đánh giá đã được lưu trữ an toàn và tính vào chỉ tiêu chuyên môn của Thầy/Cô.
-              </p>
-            </div>
-
-            <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-              Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
-            </div>
-          </div>
-        `;
+        const emailHtml = renderObservationEvaluationCompletedForHost({
+          hostName: hostTeacher.teacherName,
+          observerName: currentTeacher.teacherName,
+          observerCode: currentTeacher.teacherCode,
+          observerPosition: currentTeacher.position || undefined,
+          topic: slotFull?.topic || "Tiết dạy",
+          subjectName: slotFull?.subjectName || "Môn học",
+          grade: slotFull?.grade || undefined,
+          className: slotFull?.className || undefined,
+          dateStr: formattedDateVi,
+          period: slotFull?.startTime || "1",
+          campusName: slotFull?.campusName || hostTeacher.campus?.campusName || undefined,
+          room: slotFull?.room || undefined,
+          totalScore: totalDisplay,
+          rating: ratingDisplay,
+          strengths: data.strengths || undefined,
+          improvements: data.improvements || undefined,
+          generalComment: data.generalComment || undefined,
+          directLink: linkUrl
+        });
 
         await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Evaluation completed email error:", e));
 
@@ -1533,105 +1457,25 @@ export async function submitEvaluation(data: {
       if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
         const observerLinkUrl = `${baseUrl}/teacher/du-gio?tab=my-registrations`;
         const observerSubject = `[Skyline Dự Giờ] Xác nhận hoàn tất đánh giá tiết dạy: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`;
-        const observerHtml = `
-          <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-            <div style="background: linear-gradient(135deg, #003B3A 0%, #008B82 100%); padding: 24px 20px; text-align: center; color: white;">
-              <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">XÁC NHẬN HOÀN TẤT ĐÁNH GIÁ TIẾT DỰ GIỜ</h2>
-              <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
-            </div>
-
-            <div style="padding: 24px 28px; background: white;">
-              <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
-                Kính gửi Thầy/Cô <strong>${currentTeacher.teacherName}</strong> (Người dự giờ),
-              </p>
-              <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-                Thầy/Cô đã hoàn tất và nộp thành công <strong>Phiếu đánh giá dự giờ</strong> cho tiết dạy của Thầy/Cô <strong>${hostTeacher?.teacherName || "Giáo viên"}</strong>. Dưới đây là biên bản và điểm số Thầy/Cô đã ghi nhận:
-              </p>
-
-              <!-- Lesson Summary Box -->
-              <div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; width: 140px; font-weight: 600;">📖 Tên bài dạy / Chủ đề:</td>
-                    <td style="padding: 5px 0; color: #007068; font-weight: 800;">${slotFull?.topic || "Tiết dạy"}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">👨‍🏫 Giáo viên dạy:</td>
-                    <td style="padding: 5px 0; color: #0f172a; font-weight: 700;">${hostTeacher?.teacherName || "Giáo viên"} (${hostTeacher?.teacherCode || ""})</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">📚 Môn học:</td>
-                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${slotFull?.subjectName || "Môn học"} (${slotFull?.grade || ""} - ${slotFull?.className || ""})</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">📅 Thời gian & Tiết:</td>
-                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">Tiết ${slotFull?.startTime || "1"} • ${formattedDateVi}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 5px 0; color: #64748b; font-weight: 600;">🏫 Cơ sở & Địa điểm:</td>
-                    <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${slotFull?.campusName || hostTeacher?.campus?.campusName || "Sky-Line"} - Phòng ${slotFull?.room || "học"}</td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- Score & Ranking Badge -->
-              <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 14px 18px; margin: 18px 0;">
-                <table style="width: 100%; border-collapse: collapse;">
-                  <tr>
-                    <td style="vertical-align: middle;">
-                      <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Tổng điểm Thầy/Cô đã chấm:</div>
-                      <div style="font-size: 18px; font-weight: 900; color: #581c87;">${totalDisplay}</div>
-                    </td>
-                    <td style="text-align: right; vertical-align: middle;">
-                      <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase; margin-bottom: 2px;">Xếp loại:</div>
-                      <span style="font-size: 15px; font-weight: 900; color: #047857; background: #d1fae5; border: 1px solid #a7f3d0; padding: 4px 12px; border-radius: 8px; display: inline-block;">
-                        ${ratingDisplay}
-                      </span>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- Qualitative Comments -->
-              <div style="margin: 20px 0;">
-                ${data.strengths ? `
-                <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                  <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 4px;">🌟 1. Ưu điểm nổi bật:</div>
-                  <div style="font-size: 13px; color: #166534; line-height: 1.6; white-space: pre-line;">${data.strengths}</div>
-                </div>
-                ` : ""}
-
-                <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                  <div style="font-size: 12px; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">💡 2. Nội dung cần cải thiện / Góp ý phát triển:</div>
-                  <div style="font-size: 13px; color: #92400e; line-height: 1.6; white-space: pre-line;">${data.improvements}</div>
-                </div>
-
-                ${data.generalComment ? `
-                <div style="background: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                  <div style="font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 4px;">📝 3. Đề xuất & Kiến nghị chuyên môn:</div>
-                  <div style="font-size: 13px; color: #475569; line-height: 1.6; white-space: pre-line;">${data.generalComment}</div>
-                </div>
-                ` : ""}
-              </div>
-
-              <!-- Action Link -->
-              <div style="text-align: center; margin: 26px 0 16px 0;">
-                <a href="${observerLinkUrl}" 
-                   style="display: inline-block; background: linear-gradient(135deg, #008B82 0%, #007068 100%); color: white; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 139, 130, 0.3);">
-                  👉 Xem Danh Sách Tiết Tôi Dự Trên Skyline
-                </a>
-              </div>
-              
-              <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px;">
-                Tiết dự giờ này đã được tự động cộng vào tiến độ hoàn thành chỉ tiêu dự giờ cá nhân của Thầy/Cô.
-              </p>
-            </div>
-
-            <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-              Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
-            </div>
-          </div>
-        `;
+        const observerHtml = renderObservationEvaluationCompletedForObserver({
+          observerName: currentTeacher.teacherName,
+          hostName: hostTeacher?.teacherName || "Giáo viên",
+          hostCode: hostTeacher?.teacherCode || undefined,
+          topic: slotFull?.topic || "Tiết dạy",
+          subjectName: slotFull?.subjectName || "Môn học",
+          grade: slotFull?.grade || undefined,
+          className: slotFull?.className || undefined,
+          dateStr: formattedDateVi,
+          period: slotFull?.startTime || "1",
+          campusName: slotFull?.campusName || hostTeacher?.campus?.campusName || undefined,
+          room: slotFull?.room || undefined,
+          totalScore: totalDisplay,
+          rating: ratingDisplay,
+          strengths: data.strengths || undefined,
+          improvements: data.improvements || undefined,
+          generalComment: data.generalComment || undefined,
+          directLink: observerLinkUrl
+        });
         await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer evaluation confirmation email error:", e));
 
         if (currentTeacher.user?.id) {
@@ -2139,83 +1983,22 @@ export async function requestObservationSlot(data: {
 
         const hostEmail = getTeacherResolvedEmail(hostTeacher);
         
-        // 2. Email notification sent DIRECTLY to CHỌN GIÁO VIÊN DẠY (host teacher)
         if (hostEmail && hostEmail.includes("@")) {
           const emailSubject = `[Skyline - Dự Giờ] Thầy/Cô ${observerTeacher.teacherName} gửi đề xuất xin dự giờ tiết dạy: "${data.topic || "Tiết học"}"`;
-          const emailHtml = `
-            <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-              <!-- Header -->
-              <div style="background: linear-gradient(135deg, #003B3A 0%, #008B82 100%); padding: 26px 20px; text-align: center; color: white;">
-                <div style="font-size: 28px; margin-bottom: 6px;">📬</div>
-                <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">ĐỀ XUẤT XIN DỰ GIỜ MỚI</h2>
-                <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
-              </div>
-
-              <!-- Body -->
-              <div style="padding: 24px 28px; background: white;">
-                <p style="font-size: 15px; color: #1e293b; margin-top: 0; line-height: 1.6;">
-                  Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,
-                </p>
-                <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-                  Thầy/Cô <strong>${observerTeacher.teacherName}</strong> vừa gửi đề xuất xin được tham gia <strong>dự giờ tiết dạy</strong> của Thầy/Cô. Kính mời Thầy/Cô xem thông tin chi tiết bên dưới và bấm xác nhận / phê duyệt trên hệ thống:
-                </p>
-                
-                <!-- Information Card -->
-                <div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <tr style="border-bottom: 1px solid #e6fffa;">
-                      <td style="padding: 9px 0; color: #0f766e; width: 42%; font-weight: 700;">👨‍🏫 Giáo viên xin dự giờ:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 800;">${observerTeacher.teacherName} (${observerTeacher.teacherCode})</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e6fffa;">
-                      <td style="padding: 9px 0; color: #0f766e; font-weight: 700;">📖 Tên bài dạy / Chủ đề:</td>
-                      <td style="padding: 9px 0; color: #008B82; font-weight: 800;">${data.topic || "Đề xuất xin dự giờ tiết học"}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e6fffa;">
-                      <td style="padding: 9px 0; color: #0f766e; font-weight: 700;">📚 Môn học & Khối lớp:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 700;">${data.subjectName || "Môn học"} (${data.level || ""} ${data.grade || ""} - ${data.className || "Lớp học"})</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e6fffa;">
-                      <td style="padding: 9px 0; color: #0f766e; font-weight: 700;">📅 Ngày dự kiến:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 700;">${formattedDate}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e6fffa;">
-                      <td style="padding: 9px 0; color: #0f766e; font-weight: 700;">⏰ Tiết dạy:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 700;">${data.period || "Tiết 1"}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #e6fffa;">
-                      <td style="padding: 9px 0; color: #0f766e; font-weight: 700;">🏫 Cơ sở & Địa điểm:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 600;">${hostTeacher.campus?.campusName || "Sky-Line"} - Phòng ${data.room || "học"}</td>
-                    </tr>
-                    ${data.notes ? `
-                    <tr>
-                      <td style="padding: 9px 0; color: #0f766e; font-weight: 700;">📝 Ghi chú / Lời nhắn:</td>
-                      <td style="padding: 9px 0; color: #334155; font-style: italic;">${data.notes}</td>
-                    </tr>
-                    ` : ""}
-                  </table>
-                </div>
-
-                <!-- CTA Button -->
-                <div style="text-align: center; margin: 28px 0 20px 0;">
-                  <a href="${hostDirectLink}" style="display: inline-block; background: linear-gradient(135deg, #008B82 0%, #006059 100%); color: #ffffff; padding: 13px 32px; text-decoration: none; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 14px rgba(0, 139, 130, 0.35);">
-                    👉 Xem Chi Tiết & Phê Duyệt Tiết Dự Giờ Ngay
-                  </a>
-                </div>
-
-                <div style="background-color: #f8fafc; border-left: 4px solid #008B82; padding: 10px 14px; border-radius: 6px; margin: 16px 0;">
-                  <p style="color: #475569; font-size: 12px; margin: 0; line-height: 1.5;">
-                    💡 <em>Lưu ý: Sau khi Thầy/Cô bấm phê duyệt trên hệ thống, tiết dạy sẽ được chính thức ghi nhận vào lịch giảng dạy của Thầy/Cô và hệ thống sẽ gửi thông báo xác nhận tới Người dự giờ.</em>
-                  </p>
-                </div>
-              </div>
-
-              <!-- Footer -->
-              <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
-              </div>
-            </div>
-          `;
+          const emailHtml = renderObservationRequestForHost({
+            hostName: hostTeacher.teacherName,
+            observerName: observerTeacher.teacherName,
+            observerCode: observerTeacher.teacherCode,
+            observerPosition: observerTeacher.position || undefined,
+            topic: data.topic || "Đề xuất xin dự giờ tiết học",
+            subjectName: data.subjectName || "Môn học",
+            grade: `${data.level || ""} ${data.grade || ""}`.trim(),
+            className: data.className || undefined,
+            dateStr: formattedDate,
+            period: data.period || "Tiết 1",
+            notes: data.notes || undefined,
+            directLink: hostDirectLink
+          });
 
           try {
             await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml });
@@ -2229,72 +2012,21 @@ export async function requestObservationSlot(data: {
         const observerEmail = getTeacherResolvedEmail(observerTeacher);
         if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
           const observerSubject = `[Skyline - Dự Giờ] Đã gửi thành công đề xuất xin dự giờ tới Thầy/Cô ${hostTeacher.teacherName}`;
-          const observerHtml = `
-            <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-              <!-- Header -->
-              <div style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); padding: 26px 20px; text-align: center; color: white;">
-                <div style="font-size: 28px; margin-bottom: 6px;">✅</div>
-                <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">XÁC NHẬN ĐÃ GỬI ĐỀ XUẤT DỰ GIỜ</h2>
-                <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
-              </div>
-
-              <!-- Body -->
-              <div style="padding: 24px 28px; background: white;">
-                <p style="font-size: 15px; color: #1e293b; margin-top: 0; line-height: 1.6;">
-                  Kính gửi Thầy/Cô <strong>${observerTeacher.teacherName}</strong>,
-                </p>
-                <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-                  Thầy/Cô đã gửi thành công đề xuất xin tham gia dự giờ tiết dạy của Thầy/Cô <strong>${hostTeacher.teacherName}</strong>. Dưới đây là thông tin biên nhận:
-                </p>
-                
-                <!-- Information Card -->
-                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                      <td style="padding: 9px 0; color: #475569; width: 42%; font-weight: 700;">👨‍🏫 Giáo viên dạy:</td>
-                      <td style="padding: 9px 0; color: #008B82; font-weight: 800;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                      <td style="padding: 9px 0; color: #475569; font-weight: 700;">📖 Tên bài dạy / Chủ đề:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 800;">${data.topic || "Đề xuất xin dự giờ tiết học"}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                      <td style="padding: 9px 0; color: #475569; font-weight: 700;">📚 Môn học & Khối lớp:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 700;">${data.subjectName || "Môn học"} (${data.level || ""} ${data.grade || ""} - ${data.className || "Lớp học"})</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                      <td style="padding: 9px 0; color: #475569; font-weight: 700;">📅 Ngày dự kiến:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 700;">${formattedDate}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                      <td style="padding: 9px 0; color: #475569; font-weight: 700;">⏰ Tiết dạy:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 700;">${data.period || "Tiết 1"}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 9px 0; color: #475569; font-weight: 700;">🏫 Cơ sở & Địa điểm:</td>
-                      <td style="padding: 9px 0; color: #0f172a; font-weight: 600;">${hostTeacher.campus?.campusName || "Sky-Line"} - Phòng ${data.room || "học"}</td>
-                    </tr>
-                  </table>
-                </div>
-
-                <p style="font-size: 13px; color: #64748b; line-height: 1.6;">
-                  Hệ thống sẽ tự động gửi thông báo đến Thầy/Cô ngay khi Giáo viên dạy xác nhận & phê duyệt yêu cầu này.
-                </p>
-
-                <!-- CTA Button -->
-                <div style="text-align: center; margin: 24px 0 16px 0;">
-                  <a href="${observerDirectLink}" style="display: inline-block; background: #0f766e; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 13px;">
-                    👉 Xem Lịch & Danh Sách Tiết Tôi Dự
-                  </a>
-                </div>
-              </div>
-
-              <!-- Footer -->
-              <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
-              </div>
-            </div>
-          `;
+          const observerHtml = renderObservationRequestSubmittedForObserver({
+            observerName: observerTeacher.teacherName,
+            hostName: hostTeacher.teacherName,
+            hostCode: hostTeacher.teacherCode,
+            topic: data.topic || "Đề xuất xin dự giờ tiết học",
+            subjectName: data.subjectName || "Môn học",
+            level: data.level,
+            grade: data.grade,
+            className: data.className || undefined,
+            dateStr: formattedDate,
+            period: data.period || "Tiết 1",
+            campusName: hostTeacher.campus?.campusName || undefined,
+            room: data.room || undefined,
+            directLink: observerDirectLink
+          });
           await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer request confirmation email error:", e));
         }
       }
@@ -2365,33 +2097,21 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
           const obsTeacher = reg.teacher;
           const obsEmail = getTeacherResolvedEmail(obsTeacher);
           if (obsEmail && obsEmail.includes("@")) {
-            const emailSubject = `[Skyline Dự Giờ] Tiết dạy đã được chấp thuận: "${slot.topic}" - GV: ${hostTeacher?.teacherName}`;
+            const emailSubject = `[Skyline - Dự Giờ] Đề xuất dự giờ của bạn đã được Thầy/Cô ${hostTeacher?.teacherName} đồng ý`;
             const linkUrl = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
-            const emailHtml = `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-                <div style="background-color: #008B82; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                  <h2 style="color: #ffffff; margin: 0; font-size: 18px;">ĐỀ XUẤT DỰ GIỜ ĐÃ ĐƯỢC PHÊ DUYỆT ✅</h2>
-                </div>
-                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${obsTeacher?.teacherName}</strong>,</p>
-                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${hostTeacher?.teacherName}</strong> đã xác nhận đồng ý cho Thầy/Cô tham gia dự giờ tiết dạy chuyên môn.</p>
-                
-                <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #008B82; font-weight: bold;">${hostTeacher?.teacherName} (${hostTeacher?.teacherCode || ""})</td></tr>
-                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${slot.topic}</td></tr>
-                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp"})</td></tr>
-                  <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
-                  <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.startTime}</td></tr>
-                </table>
-
-                <div style="text-align: center; margin: 25px 0;">
-                  <a href="${linkUrl}" style="background-color: #008B82; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem Lịch & Đánh Giá Tiết Dạy Trên Skyline</a>
-                </div>
-                
-                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-                  Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
-                </div>
-              </div>
-            `;
+            const emailHtml = renderObservationRequestResponseForObserver({
+              observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
+              hostName: hostTeacher?.teacherName || "Giáo viên dạy",
+              hostCode: hostTeacher?.teacherCode || undefined,
+              topic: slot.topic,
+              subjectName: slot.subjectName,
+              grade: slot.grade,
+              className: slot.className || undefined,
+              dateStr: formattedDateVi,
+              period: slot.startTime,
+              accepted: true,
+              directLink: linkUrl
+            });
             await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Accept observation request email error:", e));
           }
         }
@@ -2427,27 +2147,20 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
           const obsEmail = getTeacherResolvedEmail(obsTeacher);
           if (obsEmail && obsEmail.includes("@")) {
             const emailSubject = `[Skyline Dự Giờ] Phản hồi đề xuất dự giờ: "${slot.topic}" - GV: ${hostTeacher?.teacherName}`;
-            const emailHtml = `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-                <div style="background-color: #ef4444; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                  <h2 style="color: #ffffff; margin: 0; font-size: 18px;">PHẢN HỒI ĐỀ XUẤT DỰ GIỜ</h2>
-                </div>
-                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${obsTeacher?.teacherName}</strong>,</p>
-                <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${hostTeacher?.teacherName}</strong> chưa thể tiếp nhận đề xuất dự giờ cho tiết dạy <strong>"${slot.topic}"</strong> vào ngày <strong>${formattedDateVi}</strong>.</p>
-                
-                ${reason ? `
-                <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
-                  <p style="margin: 0; color: #991b1b; font-size: 13px;"><strong>Lý do:</strong> ${reason}</p>
-                </div>
-                ` : ""}
-
-                <p style="color: #64748b; font-size: 13px; line-height: 1.5;">Thầy/Cô có thể lựa chọn các tiết dạy khác hoặc gửi đề xuất vào thời gian phù hợp hơn.</p>
-                
-                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-                  Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
-                </div>
-              </div>
-            `;
+            const emailHtml = renderObservationRequestResponseForObserver({
+              observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
+              hostName: hostTeacher?.teacherName || "Giáo viên dạy",
+              hostCode: hostTeacher?.teacherCode || undefined,
+              topic: slot.topic,
+              subjectName: slot.subjectName,
+              grade: slot.grade,
+              className: slot.className || undefined,
+              dateStr: formattedDateVi,
+              period: slot.startTime,
+              accepted: false,
+              reason: reason || undefined,
+              directLink: `${baseUrl}/teacher/du-gio`
+            });
             await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Decline observation request email error:", e));
           }
         }
@@ -2586,41 +2299,21 @@ export async function processExpiredSlotsNotifications() {
             : "<em style='color: #94a3b8;'>Chưa có Giáo viên nào đăng ký dự giờ tiết này.</em>";
 
           const hostSubject = `[Skyline - Dự Giờ] Hết hạn đăng ký: Tiết dạy "${slot.topic}" - Môn ${slot.subjectName}`;
-          const hostHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-              <div style="background-color: #e11d48; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <h2 style="color: #ffffff; margin: 0; font-size: 18px;">THÔNG BÁO HẾT HẠN ĐĂNG KÝ TIẾT DẠY</h2>
-              </div>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Tiết dạy dự giờ của Thầy/Cô đã <strong>HẾT HẠN ĐĂNG KÝ</strong>. Dưới đây là thông tin chi tiết số lượng đồng nghiệp tham dự:</p>
-
-              <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; margin: 15px 0; border: 1px solid #cbd5e1;">
-                <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #0f172a;">📊 Số lượng GV đã đăng ký: <span style="color: #00A99D; font-size: 16px;">${registeredCount} / 4 GV</span></p>
-                <div style="font-size: 13px; color: #334155; margin-top: 8px;">
-                  <strong>Danh sách Giáo viên dự giờ:</strong><br/>
-                  ${observerNamesList}
-                </div>
-              </div>
-
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #e11d48; font-weight: bold;">${slot.topic}</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp học"})</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Phòng:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.campusName || "Trường"} - ${slot.room || "Phòng học"}</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
-                <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.startTime} - ${slot.endTime}</td></tr>
-              </table>
-
-              <p style="color: #334155; font-size: 14px; line-height: 1.6; font-weight: bold; text-align: center;">Kính mời Thầy/Cô chuẩn bị và thực hiện tiết dạy theo đúng thời gian đã đăng ký.</p>
-
-              <div style="text-align: center; margin: 25px 0;">
-                <a href="${linkUrl}" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem Chi Tiết Tiết Dạy Trên Skyline</a>
-              </div>
-
-              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-                Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
-              </div>
-            </div>
-          `;
+          const hostHtml = renderObservationExpiredNotification({
+            recipientName: hostTeacher.teacherName,
+            isHost: true,
+            hostName: hostTeacher.teacherName,
+            hostCode: hostTeacher.teacherCode,
+            topic: slot.topic,
+            subjectName: slot.subjectName,
+            grade: slot.grade,
+            className: slot.className || undefined,
+            campusName: slot.campusName || undefined,
+            room: slot.room || undefined,
+            dateStr: formattedDateVi,
+            timeStr: `${slot.startTime} - ${slot.endTime}`,
+            directLink: linkUrl
+          });
 
           sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: hostSubject, html: hostHtml }).catch(e => console.error("Host expired email error:", e));
         }
@@ -2631,30 +2324,21 @@ export async function processExpiredSlotsNotifications() {
         const observerEmail = getTeacherResolvedEmail(observer);
         if (observerEmail && observerEmail.includes("@")) {
           const obsSubject = `[Skyline - Dự Giờ] Nhắc lịch dự giờ: "${slot.topic}" - GV ${hostTeacher?.teacherName || "Giáo viên"}`;
-          const obsHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-              <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <h2 style="color: #ffffff; margin: 0; font-size: 18px;">NHẮC LỊCH DỰ GIỜ TIẾT HỌC</h2>
-              </div>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${observer.teacherName}</strong>,</p>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Tiết dạy dự giờ bạn đã đăng ký thuộc môn <strong>${slot.subjectName}</strong> của Thầy/Cô <strong>${hostTeacher?.teacherName}</strong> đã hết hạn đăng ký và sẽ diễn ra theo kế hoạch.</p>
-
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${hostTeacher?.teacherName} (${hostTeacher?.teacherCode})</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #00A99D; font-weight: bold;">${slot.topic}</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp học"})</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.campusName || "Trường"} - ${slot.room || "Phòng học"}</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
-                <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.startTime} - ${slot.endTime}</td></tr>
-              </table>
-
-              <p style="color: #334155; font-size: 14px; line-height: 1.6; font-weight: bold; text-align: center;">Kính mời Thầy/Cô sắp xếp thời gian tham dự đúng giờ.</p>
-
-              <div style="text-align: center; margin: 25px 0;">
-                <a href="${linkUrl}" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem Chi Tiết Tiết Dạy Trên Skyline</a>
-              </div>
-            </div>
-          `;
+          const obsHtml = renderObservationExpiredNotification({
+            recipientName: observer.teacherName,
+            isHost: false,
+            hostName: hostTeacher?.teacherName || "Giáo viên",
+            hostCode: hostTeacher?.teacherCode || undefined,
+            topic: slot.topic,
+            subjectName: slot.subjectName,
+            grade: slot.grade,
+            className: slot.className || undefined,
+            campusName: slot.campusName || undefined,
+            room: slot.room || undefined,
+            dateStr: formattedDateVi,
+            timeStr: `${slot.startTime} - ${slot.endTime}`,
+            directLink: linkUrl
+          });
 
           sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: obsSubject, html: obsHtml }).catch(e => console.error("Observer expired email error:", e));
         }
@@ -2742,43 +2426,20 @@ export async function sendPendingEvaluationReminder(registrationId: string) {
     const linkUrl = `${hostBaseUrl}/teacher/du-gio`;
 
     const emailSubject = `[Skyline - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-        <div style="background-color: #008B82; padding: 18px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-          <h2 style="color: #ffffff; margin: 0; font-size: 18px; text-transform: uppercase;">NHẮC NHỞ HOÀN TẤT NHẬP ĐÁNH GIÁ TIẾT DỰ GIỜ</h2>
-        </div>
-        
-        <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${observer.teacherName}</strong>,</p>
-        
-        <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-          Để hoàn thành tiết dự, Quý Thầy/Cô vui lòng hoàn tất nhập đánh giá tiết dạy <strong>"${slot.topic}"</strong> của Thầy/Cô <strong>${hostTeacher?.teacherName || "Giáo viên đứng lớp"}</strong> (Tiết <strong>${slot.startTime}</strong>, Ngày <strong>${formattedDateVi}</strong> tại <strong>${slot.campusName || "Cơ sở"}</strong>).
-        </p>
-
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-          <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 38%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${hostTeacher?.teacherName} (${hostTeacher?.teacherCode})</td></tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #008B82; font-weight: bold;">${slot.topic}</td></tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp học"})</td></tr>
-          <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Thời gian:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">Tiết ${slot.startTime} • ${formattedDateVi}</td></tr>
-          <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Phòng:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.campusName || "Sky-Line"} - Phòng ${slot.room || "học"}</td></tr>
-        </table>
-
-        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin: 16px 0;">
-          <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: bold; line-height: 1.5;">
-            ⚠️ Lưu ý quan trọng: Hệ thống chỉ ghi nhận tiết dạy / tiết dự khi các Thầy/Cô hoàn thành nhập phiếu đánh giá.
-          </p>
-        </div>
-
-        <div style="text-align: center; margin: 25px 0;">
-          <a href="${linkUrl}" style="background-color: #008B82; color: #ffffff; padding: 13px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px;">
-            ✍️ Nhập Phiếu Đánh Giá Ngay Trên Hệ Thống
-          </a>
-        </div>
-
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-          Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
-        </div>
-      </div>
-    `;
+    const emailHtml = renderObservationPendingEvaluationReminder({
+      observerName: observer.teacherName,
+      hostName: hostTeacher?.teacherName || "Giáo viên đứng lớp",
+      hostCode: hostTeacher?.teacherCode || undefined,
+      topic: slot.topic,
+      subjectName: slot.subjectName,
+      grade: slot.grade,
+      className: slot.className || undefined,
+      dateStr: formattedDateVi,
+      period: slot.startTime,
+      campusName: slot.campusName || undefined,
+      room: slot.room || undefined,
+      directLink: linkUrl
+    });
 
     await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: emailSubject, html: emailHtml });
 
@@ -2884,43 +2545,20 @@ export async function sendBatchPendingEvaluationReminders() {
         });
 
         const emailSubject = `[Skyline - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-            <div style="background-color: #008B82; padding: 18px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-              <h2 style="color: #ffffff; margin: 0; font-size: 18px; text-transform: uppercase;">NHẮC NHỞ HOÀN TẤT NHẬP ĐÁNH GIÁ TIẾT DỰ GIỜ</h2>
-            </div>
-            
-            <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${observer.teacherName}</strong>,</p>
-            
-            <p style="color: #334155; font-size: 14px; line-height: 1.6;">
-              Để hoàn thành tiết dự, Quý Thầy/Cô vui lòng hoàn tất nhập đánh giá tiết dạy <strong>"${slot.topic}"</strong> của Thầy/Cô <strong>${hostTeacher?.teacherName || "Giáo viên đứng lớp"}</strong> (Tiết <strong>${slot.startTime}</strong>, Ngày <strong>${formattedDateVi}</strong> tại <strong>${slot.campusName || "Cơ sở"}</strong>).
-            </p>
-
-            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 38%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${hostTeacher?.teacherName} (${hostTeacher?.teacherCode})</td></tr>
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #008B82; font-weight: bold;">${slot.topic}</td></tr>
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp học"})</td></tr>
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Thời gian:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">Tiết ${slot.startTime} • ${formattedDateVi}</td></tr>
-              <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Phòng:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.campusName || "Sky-Line"} - Phòng ${slot.room || "học"}</td></tr>
-            </table>
-
-            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin: 16px 0;">
-              <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: bold; line-height: 1.5;">
-                ⚠️ Lưu ý quan trọng: Hệ thống chỉ ghi nhận tiết dạy / tiết dự khi các Thầy/Cô hoàn thành nhập phiếu đánh giá.
-              </p>
-            </div>
-
-            <div style="text-align: center; margin: 25px 0;">
-              <a href="${linkUrl}" style="background-color: #008B82; color: #ffffff; padding: 13px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px;">
-                ✍️ Nhập Phiếu Đánh Giá Ngay Trên Hệ Thống
-              </a>
-            </div>
-
-            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-              Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
-            </div>
-          </div>
-        `;
+        const emailHtml = renderObservationPendingEvaluationReminder({
+          observerName: observer.teacherName,
+          hostName: hostTeacher?.teacherName || "Giáo viên đứng lớp",
+          hostCode: hostTeacher?.teacherCode || undefined,
+          topic: slot.topic,
+          subjectName: slot.subjectName,
+          grade: slot.grade,
+          className: slot.className || undefined,
+          dateStr: formattedDateVi,
+          period: slot.startTime,
+          campusName: slot.campusName || undefined,
+          room: slot.room || undefined,
+          directLink: linkUrl
+        });
 
         sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Batch pending eval email error:", e));
         sentCount++;
@@ -3078,73 +2716,18 @@ export async function approveReEvaluation(data: {
       const accessUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`
 
       const emailSubject = `[Skyline Dự Giờ] Phê duyệt mở lại phiếu đánh giá tiết dạy - ${slot.topic || "Tiết dự giờ"}`
-      const emailHtml = `
-        <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-          <div style="background: linear-gradient(135deg, #003B3A 0%, #008B82 100%); padding: 24px 20px; text-align: center; color: white;">
-            <h2 style="margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.5px;">HỆ THỐNG QUẢN LÝ DỰ GIỜ SKYLINE</h2>
-            <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Thông báo xét duyệt mở lại phiếu đánh giá chuyên môn</p>
-          </div>
-          
-          <div style="padding: 24px 28px; background: white;">
-            <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
-              Kính gửi Thầy/Cô <strong>${gvbm?.teacherName || "Giáo viên"}</strong>,
-            </p>
-            <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-              Hệ thống đã ghi nhận <strong>Admin đã xét duyệt mở lại phiếu đánh giá</strong> theo yêu cầu của Thầy/Cô. Thầy/Cô vui lòng truy cập hệ thống để tiến hành cập nhật lại điểm số và nhận xét cho tiết dự giờ:
-            </p>
-
-            <div style="background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 12px; padding: 16px 20px; margin: 20px 0;">
-              <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; width: 140px; font-weight: 600;">👨‍🏫 Giáo viên dạy:</td>
-                  <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${hostTeacher?.teacherName || "Chưa xác định"}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">📖 Bài dạy:</td>
-                  <td style="padding: 6px 0; color: #0f172a; font-weight: 700;">${slot.topic || "Tiết dạy chuyên môn"}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">📚 Môn học:</td>
-                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${slot.subjectName || ""}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">🏫 Lớp / Cấp:</td>
-                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${slot.className || slot.grade || ""} ${slot.level ? `(${slot.level})` : ""}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">📅 Ngày & Tiết:</td>
-                  <td style="padding: 6px 0; color: #0f172a; font-weight: 600;">${formattedDate} (${slot.startTime}${slot.endTime ? " - " + slot.endTime : ""})</td>
-                </tr>
-                ${evaluation.reEvaluationReason ? `
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">📝 Lý do xin mở lại:</td>
-                  <td style="padding: 6px 0; color: #0284c7; font-weight: 600;">${evaluation.reEvaluationReason}</td>
-                </tr>` : ""}
-                ${data.adminNote ? `
-                <tr>
-                  <td style="padding: 6px 0; color: #64748b; font-weight: 600;">💬 Ghi chú từ Admin:</td>
-                  <td style="padding: 6px 0; color: #059669; font-weight: 600;">${data.adminNote}</td>
-                </tr>` : ""}
-              </table>
-            </div>
-
-            <div style="text-align: center; margin: 28px 0 16px 0;">
-              <a href="${accessUrl}" 
-                 style="display: inline-block; background: linear-gradient(135deg, #008B82 0%, #007068 100%); color: white; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 12px rgba(0, 139, 130, 0.3);">
-                👉 Mở Phiếu & Đánh Giá Lại Ngay
-              </a>
-            </div>
-            
-            <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px;">
-              Phiếu đánh giá đã được mở khóa và có thể chỉnh sửa trực tiếp trên Skyline Survey System.
-            </p>
-          </div>
-
-          <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-            Hệ thống Đánh giá & Khảo sát Chuyên môn - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
-          </div>
-        </div>
-      `;
+      const emailHtml = renderObservationReEvaluationApproved({
+        teacherName: gvbm?.teacherName || "Giáo viên",
+        hostName: hostTeacher?.teacherName || undefined,
+        topic: slot.topic || "Tiết dạy chuyên môn",
+        subjectName: slot.subjectName || undefined,
+        className: `${slot.className || slot.grade || ""} ${slot.level ? `(${slot.level})` : ""}`.trim() || undefined,
+        dateStr: formattedDate,
+        period: `${slot.startTime}${slot.endTime ? " - " + slot.endTime : ""}`,
+        reason: evaluation.reEvaluationReason || undefined,
+        adminNote: data.adminNote || undefined,
+        directLink: accessUrl
+      });
 
       await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: gvbmEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Re-evaluation approve email error:", e))
     }
@@ -3222,21 +2805,11 @@ export async function rejectReEvaluation(data: {
 
     if (gvbmEmail && gvbmEmail.includes("@")) {
       const emailSubject = `[Skyline Dự Giờ] Phản hồi yêu cầu mở lại phiếu đánh giá - ${slot.topic || "Tiết dự giờ"}`
-      const emailHtml = `
-        <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f8fafc; border-radius: 14px; overflow: hidden; border: 1px solid #e2e8f0;">
-          <div style="background: #dc2626; padding: 20px; text-align: center; color: white;">
-            <h3 style="margin: 0; font-size: 18px; font-weight: 800;">THÔNG BÁO XÉT DUYỆT ĐÁNH GIÁ LẠI</h3>
-          </div>
-          <div style="padding: 24px; background: white;">
-            <p style="font-size: 14px; color: #334155;">Kính gửi Thầy/Cô <strong>${gvbm?.teacherName}</strong>,</p>
-            <p style="font-size: 14px; color: #334155;">Yêu cầu mở lại phiếu đánh giá tiết dạy <strong>"${slot.topic}"</strong> chưa được phê duyệt với lý do:</p>
-            <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px; color: #991b1b; font-size: 13px; font-weight: 600;">
-              ${data.adminNote || "Không có ghi chú cụ thể"}
-            </div>
-            <p style="font-size: 13px; color: #64748b; margin-top: 16px;">Nếu cần hỗ trợ thêm, Thầy/Cô vui lòng liên hệ trực tiếp Ban Quản trị / Ban Khảo thí & ĐBCL.</p>
-          </div>
-        </div>
-      `;
+      const emailHtml = renderObservationReEvaluationRejected({
+        teacherName: gvbm?.teacherName || "Giáo viên",
+        topic: slot.topic || "Tiết dự giờ",
+        adminNote: data.adminNote || undefined
+      });
       await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: gvbmEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Re-evaluation reject email error:", e))
     }
 
@@ -3392,47 +2965,14 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
       if (evaluatorEmail && evaluatorEmail.includes("@")) {
         const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
         const emailSubject = `[Skyline Dự Giờ] GV ${hostTeacher?.teacherName} đã tiếp thu góp ý & gửi phản hồi: "${slot?.topic || "Tiết dạy"}"`;
-        const emailHtml = `
-          <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-            <div style="background: linear-gradient(135deg, #008B82 0%, #006059 100%); padding: 24px 20px; text-align: center; color: white;">
-              <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">GIÁO VIÊN ĐÃ TIẾP THU GÓP Ý & PHẢN HỒI 2 CHIỀU ✅</h2>
-              <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
-            </div>
-
-            <div style="padding: 24px 28px; background: white;">
-              <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
-                Kính gửi Thầy/Cô <strong>${evaluator?.teacherName || "Người dự giờ"}</strong>,
-              </p>
-              <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-                Giáo viên dạy <strong>${hostTeacher?.teacherName}</strong> đã xem biên bản đánh giá tiết <strong>"${slot?.topic}"</strong> và gửi phản hồi xác nhận tiếp thu ý kiến chuyên môn:
-              </p>
-
-              <!-- Feedback Box -->
-              <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #16a34a; border-radius: 12px; padding: 16px 20px; margin: 20px 0;">
-                <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 6px;">
-                  💬 Kế hoạch khắc phục & Ý kiến phản hồi của Giáo viên:
-                </div>
-                <div style="font-size: 14px; color: #14532d; line-height: 1.6; font-style: italic; white-space: pre-line;">
-                  ${feedbackText}
-                </div>
-                <div style="font-size: 11px; color: #166534; font-weight: bold; margin-top: 10px; border-top: 1px dashed #86efac; padding-top: 8px;">
-                  ⏱ Thời gian xác nhận: ${nowTime.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} • ${nowTime.toLocaleDateString("vi-VN")}
-                </div>
-              </div>
-
-              <!-- Action Link -->
-              <div style="text-align: center; margin: 25px 0 15px 0;">
-                <a href="${baseUrl}/teacher/du-gio?tab=my-registrations" style="display: inline-block; background: #008B82; color: white; text-decoration: none; padding: 12px 28px; font-size: 13px; font-weight: 700; border-radius: 10px;">
-                  👉 Xem Chi Tiết Tiết Dự Giờ Trên Skyline
-                </a>
-              </div>
-            </div>
-
-            <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-              Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
-            </div>
-          </div>
-        `;
+        const emailHtml = renderObservationTeacherAcknowledged({
+          evaluatorName: evaluator?.teacherName || "Người dự giờ",
+          hostName: hostTeacher?.teacherName || "Giáo viên dạy",
+          topic: slot?.topic || "Tiết dạy",
+          feedbackText: feedbackText,
+          acknowledgedAtStr: `${nowTime.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} • ${nowTime.toLocaleDateString("vi-VN")}`,
+          directLink: `${baseUrl}/teacher/du-gio?tab=my-registrations`
+        });
         await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: evaluatorEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Acknowledge email error:", e));
       }
     } catch (mailErr) {
@@ -3770,105 +3310,25 @@ export async function createSurpriseObservation(data: {
         if (hostEmail && hostEmail.includes("@")) {
           const linkUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`;
           const emailSubject = `[Skyline Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${data.topic}" - Người dự: ${currentTeacher.teacherName}`;
-          const emailHtml = `
-            <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-              <div style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); padding: 24px 20px; text-align: center; color: white;">
-                <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">BIÊN BẢN & KẾT QUẢ DỰ GIỜ ĐỘT XUẤT ⚡</h2>
-                <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
-              </div>
-
-              <div style="padding: 24px 28px; background: white;">
-                <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
-                  Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,
-                </p>
-                <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-                  Thầy/Cô <strong>${currentTeacher.teacherName}</strong> (${currentTeacher.position || (isTTCM ? "Tổ trưởng chuyên môn" : "Ban ĐHCM / Quản lý")}) đã thực hiện dự giờ đột xuất và hoàn tất <strong>Phiếu đánh giá chuyên môn</strong> cho tiết dạy của Thầy/Cô. Dưới đây là thông tin chi tiết:
-                </p>
-
-                <!-- Lesson Summary Box -->
-                <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; width: 140px; font-weight: 600;">📖 Tên bài dạy / Chủ đề:</td>
-                      <td style="padding: 5px 0; color: #881337; font-weight: 800;">${data.topic || "Dự giờ đột xuất"}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">📚 Môn học:</td>
-                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${data.subjectName || "Môn học"} (${data.grade || ""} - ${data.className || ""})</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">📅 Thời gian & Tiết:</td>
-                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${data.period || "Tiết dạy"} • ${formattedDateVi}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">🏫 Cơ sở & Địa điểm:</td>
-                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${hostTeacher.campus?.campusName || "Sky-Line"} - Phòng ${data.room || "học"}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">👨‍🏫 Người dự giờ:</td>
-                      <td style="padding: 5px 0; color: #0f172a; font-weight: 700;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td>
-                    </tr>
-                  </table>
-                </div>
-
-                <!-- Score & Ranking Badge -->
-                <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 14px 18px; margin: 18px 0;">
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                      <td style="vertical-align: middle;">
-                        <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Tổng điểm đạt được:</div>
-                        <div style="font-size: 18px; font-weight: 900; color: #581c87;">${totalDisplay}</div>
-                      </td>
-                      <td style="text-align: right; vertical-align: middle;">
-                        <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase; margin-bottom: 2px;">Xếp loại tiết dạy:</div>
-                        <span style="font-size: 15px; font-weight: 900; color: #047857; background: #d1fae5; border: 1px solid #a7f3d0; padding: 4px 12px; border-radius: 8px; display: inline-block;">
-                          ${ratingDisplay}
-                        </span>
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-
-                <!-- Qualitative Comments -->
-                <div style="margin: 20px 0;">
-                  ${data.strengths ? `
-                  <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 4px;">🌟 1. Ưu điểm nổi bật:</div>
-                    <div style="font-size: 13px; color: #166534; line-height: 1.6; white-space: pre-line;">${data.strengths}</div>
-                  </div>
-                  ` : ""}
-
-                  <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">💡 2. Nội dung cần cải thiện / Góp ý phát triển:</div>
-                    <div style="font-size: 13px; color: #92400e; line-height: 1.6; white-space: pre-line;">${data.improvements}</div>
-                  </div>
-
-                  ${data.generalComment ? `
-                  <div style="background: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 4px;">📝 3. Đề xuất & Kiến nghị chuyên môn:</div>
-                    <div style="font-size: 13px; color: #475569; line-height: 1.6; white-space: pre-line;">${data.generalComment}</div>
-                  </div>
-                  ` : ""}
-                </div>
-
-                <!-- Action Link -->
-                <div style="text-align: center; margin: 26px 0 16px 0;">
-                  <a href="${linkUrl}" 
-                     style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); color: white; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);">
-                    👉 Xem Chi Tiết Biên Bản Dự Giờ Trên Skyline
-                  </a>
-                </div>
-                
-                <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px;">
-                  Biên bản và điểm số đã được ghi nhận chính thức vào hệ thống dữ liệu chuyên môn.
-                </p>
-              </div>
-
-              <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
-              </div>
-            </div>
-          `;
+          const emailHtml = renderObservationSurpriseCompletedForHost({
+            hostName: hostTeacher.teacherName,
+            observerName: currentTeacher.teacherName,
+            observerCode: currentTeacher.teacherCode,
+            topic: data.topic,
+            subjectName: data.subjectName || "Môn học",
+            grade: data.grade || "",
+            className: data.className || "",
+            dateStr: formattedDateVi,
+            period: data.period || "Tiết dạy",
+            campusName: hostTeacher.campus?.campusName || "Sky-Line",
+            room: data.room || "học",
+            totalScore: totalDisplay,
+            rating: ratingDisplay,
+            strengths: data.strengths || undefined,
+            improvements: data.improvements || undefined,
+            generalComment: data.generalComment || undefined,
+            directLink: linkUrl
+          });
 
           await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Surprise eval completed email error:", e));
 
@@ -3889,105 +3349,25 @@ export async function createSurpriseObservation(data: {
         if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
           const observerLinkUrl = `${baseUrl}/teacher/du-gio?tab=my-registrations`;
           const observerSubject = `[Skyline Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${data.topic}" - GV dạy: ${hostTeacher.teacherName}`;
-          const observerHtml = `
-            <div style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 620px; margin: 0 auto; background-color: #f8fafc; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-              <div style="background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); padding: 24px 20px; text-align: center; color: white;">
-                <h2 style="margin: 0; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">XÁC NHẬN BIÊN BẢN DỰ GIỜ ĐỘT XUẤT ⚡</h2>
-                <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Dự giờ Chuyên môn Skyline</p>
-              </div>
-
-              <div style="padding: 24px 28px; background: white;">
-                <p style="font-size: 14px; color: #334155; margin-top: 0; line-height: 1.6;">
-                  Kính gửi Thầy/Cô <strong>${currentTeacher.teacherName}</strong> (Người dự giờ),
-                </p>
-                <p style="font-size: 14px; color: #334155; line-height: 1.6;">
-                  Thầy/Cô đã hoàn tất lập <strong>Biên bản & Phiếu đánh giá dự giờ đột xuất</strong> cho tiết dạy của Thầy/Cô <strong>${hostTeacher.teacherName}</strong>. Dưới đây là thông tin chi tiết:
-                </p>
-
-                <!-- Lesson Summary Box -->
-                <div style="background: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
-                  <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; width: 140px; font-weight: 600;">📖 Tên bài dạy / Chủ đề:</td>
-                      <td style="padding: 5px 0; color: #881337; font-weight: 800;">${data.topic || "Dự giờ đột xuất"}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">👨‍🏫 Giáo viên dạy:</td>
-                      <td style="padding: 5px 0; color: #0f172a; font-weight: 700;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">📚 Môn học:</td>
-                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${data.subjectName || "Môn học"} (${data.grade || ""} - ${data.className || ""})</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">📅 Thời gian & Tiết:</td>
-                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${data.period || "Tiết dạy"} • ${formattedDateVi}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 5px 0; color: #9f1239; font-weight: 600;">🏫 Cơ sở & Địa điểm:</td>
-                      <td style="padding: 5px 0; color: #0f172a; font-weight: 600;">${hostTeacher.campus?.campusName || "Sky-Line"} - Phòng ${data.room || "học"}</td>
-                    </tr>
-                  </table>
-                </div>
-
-                <!-- Score & Ranking Badge -->
-                <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 14px 18px; margin: 18px 0;">
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                      <td style="vertical-align: middle;">
-                        <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase;">Tổng điểm đã đánh giá:</div>
-                        <div style="font-size: 18px; font-weight: 900; color: #581c87;">${totalDisplay}</div>
-                      </td>
-                      <td style="text-align: right; vertical-align: middle;">
-                        <div style="font-size: 11px; font-weight: 700; color: #6b21a8; text-transform: uppercase; margin-bottom: 2px;">Xếp loại tiết dạy:</div>
-                        <span style="font-size: 15px; font-weight: 900; color: #047857; background: #d1fae5; border: 1px solid #a7f3d0; padding: 4px 12px; border-radius: 8px; display: inline-block;">
-                          ${ratingDisplay}
-                        </span>
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-
-                <!-- Qualitative Comments -->
-                <div style="margin: 20px 0;">
-                  ${data.strengths ? `
-                  <div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 800; color: #15803d; text-transform: uppercase; margin-bottom: 4px;">🌟 1. Ưu điểm nổi bật:</div>
-                    <div style="font-size: 13px; color: #166534; line-height: 1.6; white-space: pre-line;">${data.strengths}</div>
-                  </div>
-                  ` : ""}
-
-                  <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 800; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">💡 2. Nội dung cần cải thiện / Góp ý phát triển:</div>
-                    <div style="font-size: 13px; color: #92400e; line-height: 1.6; white-space: pre-line;">${data.improvements}</div>
-                  </div>
-
-                  ${data.generalComment ? `
-                  <div style="background: #f8fafc; border-left: 4px solid #64748b; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-                    <div style="font-size: 12px; font-weight: 800; color: #334155; text-transform: uppercase; margin-bottom: 4px;">📝 3. Đề xuất & Kiến nghị chuyên môn:</div>
-                    <div style="font-size: 13px; color: #475569; line-height: 1.6; white-space: pre-line;">${data.generalComment}</div>
-                  </div>
-                  ` : ""}
-                </div>
-
-                <!-- Action Link -->
-                <div style="text-align: center; margin: 26px 0 16px 0;">
-                  <a href="${observerLinkUrl}" 
-                     style="display: inline-block; background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); color: white; text-decoration: none; padding: 12px 28px; font-size: 14px; font-weight: 700; border-radius: 10px; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);">
-                    👉 Xem Danh Sách Tiết Tôi Dự Trên Skyline
-                  </a>
-                </div>
-                
-                <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-top: 20px;">
-                  Biên bản và điểm số đã được tự động cộng vào chỉ tiêu dự giờ của Thầy/Cô và ghi nhận vào hệ thống.
-                </p>
-              </div>
-
-              <div style="background: #f1f5f9; padding: 14px 24px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                Hệ thống Quản lý Dự giờ - Ban Khảo thí & ĐBCL Skyline<br/>Email gửi tự động từ: bankhaothi@skylineschool.edu.vn
-              </div>
-            </div>
-          `;
+          const observerHtml = renderObservationEvaluationCompletedForObserver({
+            observerName: currentTeacher.teacherName,
+            hostName: hostTeacher.teacherName,
+            hostCode: hostTeacher.teacherCode,
+            topic: data.topic,
+            subjectName: data.subjectName || "Môn học",
+            grade: data.grade || "",
+            className: data.className || "",
+            dateStr: formattedDateVi,
+            period: data.period || "Tiết dạy",
+            campusName: hostTeacher.campus?.campusName || "Sky-Line",
+            room: data.room || "học",
+            totalScore: totalDisplay,
+            rating: ratingDisplay,
+            strengths: data.strengths || undefined,
+            improvements: data.improvements || undefined,
+            generalComment: data.generalComment || undefined,
+            directLink: observerLinkUrl
+          });
           await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: observerSubject, html: observerHtml }).catch(e => console.error("Observer surprise eval email error:", e));
 
           if (currentTeacher.user?.id) {

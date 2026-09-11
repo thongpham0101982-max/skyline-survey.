@@ -1722,6 +1722,7 @@ model SubjectGradeConfig {
   columnCount      Int      @default(1)
   columnNames      String   @default("[\"Điểm 1\"]")
   columnTypes      String?  @default("[]")
+  columnMaxScores  String?  @default("[]")
   hasCompositeColumn Boolean @default(true)
   compositeColumnName String? @default("Điểm thành phần")
   hasRemarkColumn    Boolean @default(true)

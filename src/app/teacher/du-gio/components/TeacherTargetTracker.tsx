@@ -15,6 +15,8 @@ export interface MonthlyTeacherStatItem {
   pendingObservedCount: number
   avgScore: string | null
   receivedEvalCount: number
+  surpriseTaughtCount?: number
+  surpriseObservedCount?: number
 }
 
 interface TeacherTargetTrackerProps {
@@ -27,6 +29,10 @@ interface TeacherTargetTrackerProps {
   pendingEvaluationCount?: number
   avgScore?: string | number | null
   receivedEvaluationCount?: number
+  surpriseTaughtCount?: number
+  totalSurpriseTaughtSlots?: number
+  surpriseObservedCount?: number
+  totalSurpriseObservedSlots?: number
   isPreschool?: boolean
   academicYearName?: string
   selectedMonth?: string
@@ -45,6 +51,10 @@ export function TeacherTargetTracker({
   pendingEvaluationCount = 0,
   avgScore = null,
   receivedEvaluationCount = 0,
+  surpriseTaughtCount = 0,
+  totalSurpriseTaughtSlots = 0,
+  surpriseObservedCount = 0,
+  totalSurpriseObservedSlots = 0,
   isPreschool = false,
   academicYearName = "",
   selectedMonth = "all",
@@ -106,20 +116,27 @@ export function TeacherTargetTracker({
             {/* Selected Month Tag */}
             {isSpecificMonth && (
               <span className="px-2.5 py-0.5 rounded-full bg-cyan-500/25 text-cyan-200 border border-cyan-400/40 text-[10px] font-black flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-cyan-300" />
+                <Calendar className="w-3.5 h-3.5 text-cyan-300" />
                 <span>{selectedMonthDisplay}</span>
               </span>
             )}
 
             {isAllCompleted ? (
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 border border-emerald-400/40 text-[10px] font-black flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Đạt 100% chỉ tiêu</span>
               </span>
             ) : (
               <span className="px-2.5 py-0.5 rounded-full bg-amber-500/25 text-amber-300 border border-amber-400/40 text-[10px] font-black flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-amber-300" />
+                <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
                 <span>Đang thực hiện</span>
+              </span>
+            )}
+
+            {(surpriseTaughtCount > 0 || surpriseObservedCount > 0) && (
+              <span className="px-2.5 py-0.5 rounded-full bg-rose-500/25 text-rose-200 border border-rose-400/40 text-[10px] font-black flex items-center gap-1 shadow-xs">
+                <span>⚡</span>
+                <span>{surpriseTaughtCount + surpriseObservedCount} tiết đột xuất ({surpriseTaughtCount} dạy • {surpriseObservedCount} dự)</span>
               </span>
             )}
           </div>
@@ -217,6 +234,24 @@ export function TeacherTargetTracker({
                 <span>{isSpecificMonth ? `Mở trong tháng: ` : `Đã mở: `}<strong className="text-white font-bold">{totalTaughtSlots} tiết</strong></span>
                 <span>{taughtCount}/{totalTaughtSlots} có phiếu</span>
               </div>
+              <div className="pt-1.5 mt-1 border-t border-white/10 flex items-center justify-between text-[10px]">
+                <span className="text-teal-100/80 flex items-center gap-1 font-medium">
+                  <span>📋 Kế hoạch:</span>
+                  <strong className="text-white font-bold">{Math.max(0, taughtCount - surpriseTaughtCount)}</strong>
+                </span>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition-all border ${
+                  surpriseTaughtCount > 0
+                    ? "bg-rose-500/25 text-rose-200 border-rose-400/40 shadow-xs"
+                    : "bg-white/10 text-teal-200/80 border-white/15"
+                }`}>
+                  <span>⚡ Đột xuất:</span>
+                  <strong className="text-white font-black">{surpriseTaughtCount}</strong>
+                  {totalSurpriseTaughtSlots > surpriseTaughtCount && (
+                    <span className="text-[9px] opacity-75 font-normal">/{totalSurpriseTaughtSlots}</span>
+                  )}
+                  <span>tiết</span>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -261,6 +296,24 @@ export function TeacherTargetTracker({
                 <span>{isSpecificMonth ? `Dự trong tháng: ` : `Đã dự: `}<strong className="text-white font-bold">{totalObservedSlots} tiết</strong></span>
                 <span>{observedCount}/{totalObservedSlots} nộp phiếu</span>
               </div>
+              <div className="pt-1.5 mt-1 border-t border-white/10 flex items-center justify-between text-[10px]">
+                <span className="text-teal-100/80 flex items-center gap-1 font-medium">
+                  <span>📋 Kế hoạch:</span>
+                  <strong className="text-white font-bold">{Math.max(0, observedCount - surpriseObservedCount)}</strong>
+                </span>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition-all border ${
+                  surpriseObservedCount > 0
+                    ? "bg-rose-500/25 text-rose-200 border-rose-400/40 shadow-xs"
+                    : "bg-white/10 text-teal-200/80 border-white/15"
+                }`}>
+                  <span>⚡ Đột xuất:</span>
+                  <strong className="text-white font-black">{surpriseObservedCount}</strong>
+                  {totalSurpriseObservedSlots > surpriseObservedCount && (
+                    <span className="text-[9px] opacity-75 font-normal">/{totalSurpriseObservedSlots}</span>
+                  )}
+                  <span>tiết</span>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -302,6 +355,10 @@ export function TeacherTargetTracker({
               <div className="flex items-center justify-between text-[10px] text-teal-200/90 font-medium">
                 <span>{isSpecificMonth ? `Trong tháng: ` : `Từ: `}<strong className="text-white font-bold">{taughtCount} tiết có phiếu</strong></span>
                 <span>{scorePercent}%</span>
+              </div>
+              <div className="pt-1.5 mt-1 border-t border-white/10 flex items-center justify-between text-[10px] text-teal-100/80">
+                <span>Thang điểm: <strong className="text-white font-bold">{maxScore}.0đ</strong></span>
+                <span className="text-amber-200 font-bold">{receivedEvaluationCount} phiếu đánh giá</span>
               </div>
             </div>
           </div>
@@ -354,9 +411,23 @@ export function TeacherTargetTracker({
                     )}
                   </div>
                   <div className={`flex items-center gap-2 text-[10px] ${isSelected ? "text-slate-600 font-bold" : "text-teal-200/90 font-medium"}`}>
-                    <span>Dạy: <strong className={isSelected ? "text-teal-800" : "text-white"}>{st.taughtCount} tiết</strong></span>
+                    <span>
+                      Dạy: <strong className={isSelected ? "text-teal-800" : "text-white"}>{st.taughtCount} tiết</strong>
+                      {((st.surpriseTaughtCount || 0) > 0) && (
+                        <span className={`text-[9px] font-black ml-1 ${isSelected ? "text-rose-600" : "text-amber-300"}`}>
+                          (⚡{st.surpriseTaughtCount})
+                        </span>
+                      )}
+                    </span>
                     <span>•</span>
-                    <span>Dự: <strong className={isSelected ? "text-teal-800" : "text-white"}>{st.observedCount} tiết</strong></span>
+                    <span>
+                      Dự: <strong className={isSelected ? "text-teal-800" : "text-white"}>{st.observedCount} tiết</strong>
+                      {((st.surpriseObservedCount || 0) > 0) && (
+                        <span className={`text-[9px] font-black ml-1 ${isSelected ? "text-rose-600" : "text-cyan-300"}`}>
+                          (⚡{st.surpriseObservedCount})
+                        </span>
+                      )}
+                    </span>
                   </div>
                 </button>
               )

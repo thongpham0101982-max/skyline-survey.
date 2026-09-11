@@ -97,26 +97,35 @@ export async function GET(request: Request) {
     ].filter(Boolean)))
 
     // Fetch evaluation column configuration
-    const configs = await prisma.evaluationColumnConfig.findMany({
+    const configs = await prisma.subjectGradeConfig.findMany({
       where: {
         academicYearId: targetAcademicYearId,
-        evaluationPeriod,
+        evaluationPeriod: { in: [evaluationPeriod, "ALL"] },
         subjectId,
         grade: { in: candidateGrades }
       }
     })
 
-    let config = configs.find(c => c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) || configs.find(c => c.grade === "ALL") || configs[0] || null
+    let config = configs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === evaluationPeriod)
+      || configs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === "ALL")
+      || configs.find(c => c.grade === "ALL" && c.evaluationPeriod === evaluationPeriod)
+      || configs.find(c => c.grade === "ALL" && c.evaluationPeriod === "ALL")
+      || configs[0] || null
 
     if (!config) {
-      const generalConfigs = await prisma.evaluationColumnConfig.findMany({
+      const generalConfigs = await prisma.subjectGradeConfig.findMany({
         where: {
           academicYearId: targetAcademicYearId,
-          evaluationPeriod,
+          evaluationPeriod: { in: [evaluationPeriod, "ALL"] },
+          subjectId: null,
           grade: { in: candidateGrades }
         }
       })
-      config = generalConfigs.find(c => c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) || generalConfigs.find(c => c.grade === "ALL") || generalConfigs[0] || null
+      config = generalConfigs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === evaluationPeriod)
+        || generalConfigs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === "ALL")
+        || generalConfigs.find(c => c.grade === "ALL" && c.evaluationPeriod === evaluationPeriod)
+        || generalConfigs.find(c => c.grade === "ALL" && c.evaluationPeriod === "ALL")
+        || generalConfigs[0] || null
     }
 
     // Get students in this class
