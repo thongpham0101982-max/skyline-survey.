@@ -99,19 +99,21 @@ export async function sendEmail({
     resolvedBcc = bccTargets;
   }
 
-  // Ensure replyTo goes to school official mailbox by default
-  const resolvedReplyTo = cleanEmails(replyTo) || "bankhaothi@skylineschool.edu.vn";
+  const resolvedReplyTo = cleanEmails(replyTo);
 
-  const mailOptions = {
+  const mailOptions: any = {
     from: resolvedFrom,
     to: validTo,
     cc: cleanEmails(cc),
     bcc: resolvedBcc,
     subject,
     html,
-    attachments,
-    replyTo: resolvedReplyTo
+    attachments
   };
+
+  if (resolvedReplyTo) {
+    mailOptions.replyTo = resolvedReplyTo;
+  }
 
   try {
     const info = await transporter.sendMail(mailOptions);
