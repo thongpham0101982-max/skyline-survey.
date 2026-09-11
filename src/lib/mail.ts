@@ -35,7 +35,7 @@ export async function sendEmail({
   let pass = rawPass;
   if (!isGmail) {
     if (!pass || pass.length !== 16) {
-      pass = "txhrphxggpnlbhsk";
+      pass = "grtxdfbqfjnsfvvf";
     }
   } else if (!pass) {
     pass = "xhzihnqyiqqmdhat";
