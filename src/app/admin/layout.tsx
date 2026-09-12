@@ -5,6 +5,7 @@ import Link from "next/link"
 import { GraduationCap } from "lucide-react"
 
 import { Sidebar } from "@/components/Sidebar"
+import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
 import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"

@@ -858,26 +858,6 @@ export function TeacherObservationReportTab({
         )}
       </div>
 
-      {/* Official Signatures Section (Visible in Print & Report) */}
-      <div className="bg-white rounded-3xl p-8 border border-slate-200/80 text-center space-y-6">
-        <div className="text-right text-xs text-slate-500 italic">
-          Đà Nẵng, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-4">
-          <div className="space-y-16">
-            <p className="font-bold text-xs uppercase text-slate-600">GIÁO VIÊN BÁO CÁO</p>
-            <p className="font-bold text-xs text-slate-800">{currentTeacher?.teacherName}</p>
-          </div>
-          <div className="space-y-16">
-            <p className="font-bold text-xs uppercase text-slate-600">TỔ TRƯỞNG CHUYÊN MÔN</p>
-            <p className="font-bold text-xs text-slate-400 italic">(Ký và ghi rõ họ tên)</p>
-          </div>
-          <div className="space-y-16">
-            <p className="font-bold text-xs uppercase text-slate-600">BAN GIÁM HIỆU / QLCM</p>
-            <p className="font-bold text-xs text-slate-400 italic">(Ký và xác nhận)</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

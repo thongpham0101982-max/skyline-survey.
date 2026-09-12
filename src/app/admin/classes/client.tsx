@@ -556,11 +556,11 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       {/* Tabs */}
       <div className="flex border-b border-slate-200 gap-1 bg-slate-100 p-1.5 rounded-xl w-fit">
         <button onClick={() => { setActiveTab("k12"); setSelectedLevel(""); setSelectedGrade(""); setSelectedEduSystem("") }}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "k12" ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-600/20" : "text-slate-500 hover:text-blue-700 hover:bg-blue-100"}`}>
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "k12" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-white/60"}`}>
           <GraduationCap className="w-5 h-5" /> Phổ thông K-12
         </button>
         <button onClick={() => { setActiveTab("mam-non"); setSelectedLevel(""); setSelectedGrade(""); setSelectedEduSystem("") }}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "mam-non" ? "bg-emerald-600 text-white shadow-md ring-2 ring-emerald-600/20" : "text-slate-500 hover:text-emerald-700 hover:bg-emerald-100"}`}>
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-extrabold uppercase tracking-wider transition-all duration-200 ${activeTab === "mam-non" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:text-slate-900 hover:bg-white/60"}`}>
           <Layers className="w-5 h-5" /> Mầm non
         </button>
       </div>
@@ -630,24 +630,24 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             )}
           </div>
           <div className="flex gap-3 items-center">
-            <button onClick={() => handleOpenCreateModal()} className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+            <button onClick={() => handleOpenCreateModal()} className="flex items-center bg-[#003B3A] hover:bg-[#002B2A] text-white font-bold py-2 px-3.5 rounded-xl shadow-xs text-xs transition-all active:scale-[0.98]">
               <Plus className="w-4 h-4 mr-2" /> Thêm Mới Lớp Học
             </button>
-            <button onClick={handleOpenTransferModal} className="flex items-center bg-[#48BFE3] hover:bg-[#008075] text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+            <button onClick={handleOpenTransferModal} className="flex items-center bg-[#48BFE3] hover:bg-[#38A8CB] text-white font-bold py-2 px-3.5 rounded-xl shadow-xs text-xs transition-all active:scale-[0.98]">
               <ArrowRightLeft className="w-4 h-4 mr-2" /> Kết chuyển lớp
             </button>
-            <button onClick={handleOpenCopyStudentModal} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+            <button onClick={handleOpenCopyStudentModal} className="flex items-center bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold py-2 px-3.5 rounded-xl shadow-xs text-xs transition-all active:scale-[0.98]">
               <Copy className="w-4 h-4 mr-2" /> Sao chép học sinh
             </button>
-            <button onClick={handleOpenCopyAssignModal} className="flex items-center bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+            <button onClick={handleOpenCopyAssignModal} className="flex items-center bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold py-2 px-3.5 rounded-xl shadow-xs text-xs transition-all active:scale-[0.98]">
               <ClipboardCheck className="w-4 h-4 mr-2" /> Phân công GD
             </button>
-            <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-100 font-semibold text-sm text-xs font-semibold">
+            <button onClick={handleDownloadTemplate} className="flex items-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 font-bold py-2 px-3.5 rounded-xl shadow-2xs text-xs transition-all active:scale-[0.98]">
               <Download className="w-4 h-4 mr-2" /> Tải File Mẫu
             </button>
             <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
             <button onClick={() => fileInputRef.current?.click()} disabled={uploading || !selectedYearId}
-              className="flex items-center bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm disabled:opacity-50 text-sm">
+              className="flex items-center bg-[#007A72] hover:bg-[#005B55] text-white font-bold py-2 px-3.5 rounded-xl shadow-xs text-xs transition-all disabled:opacity-50 active:scale-[0.98]">
               <Upload className="w-4 h-4 mr-2" /> {uploading ? "Đang xử lý..." : "Import File Excel"}
             </button>
           </div>
@@ -923,7 +923,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 )}
                 <div className="pt-4 flex items-center justify-end gap-3">
                    <button type="button" onClick={() => setCreateModal(null)} className="px-4 py-2 font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm">Hủy</button>
-                   <button type="submit" className="font-medium text-white hover:bg-blue-700 text-sm shadow-sm flex items-center text-xs font-semibold bg-blue-600 px-4 py-2 rounded-xl"><Save className="w-4 h-4 mr-2" /> Thêm mới</button>
+                   <button type="submit" className="inline-flex items-center gap-1.5 font-bold text-white bg-[#003B3A] hover:bg-[#002B2A] text-xs px-4 py-2 rounded-xl shadow-xs transition-all active:scale-[0.98]"><Save className="w-4 h-4 mr-2" /> Thêm mới</button>
                 </div>
              </form>
            </div>

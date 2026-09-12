@@ -61,7 +61,8 @@ export async function getAdminSession(): Promise<AdminSession> {
         departmentAssignments: {
           include: { department: true }
         },
-        divisionAssignments: true
+        divisionAssignments: true,
+        departmentRel: true
       }
     })
   } catch (e) {
@@ -171,4 +172,186 @@ export async function getScopedDepartmentIds(session: AdminSession): Promise<str
 export function campusFilter(field: string, session: AdminSession): Record<string, any> {
   if (session.isFullAccess || session.isHeadOfAcademic || session.allowedCampusIds.length === 0) return {}
   return { [field]: { in: session.allowedCampusIds } }
+}
+
+
+export interface OperationalScope {
+  session: AdminSession
+  userId: string
+  isSuperAdmin: boolean
+  isHeadOfAcademic: boolean
+  isTBP: boolean          // True if TBP or Head
+  isDirectTBP: boolean    // True if specifically TBP (not Head/SuperAdmin)
+  isTTCM: boolean         // True if TTCM or above
+  isDirectTTCM: boolean   // True if specifically TTCM
+  isManager: boolean      // True if Head, TBP, or TTCM
+  managedDivisions: string[]
+  scopedDepartmentIds: string[] | null // null = all departments
+  scopedDepartmentCodes: string[] | null
+  scopedDepartments: Array<{ id: string; code: string; name: string; divisionCode: string | null }>
+  scopedUserIds: string[] | null // null = all users
+}
+
+/**
+ * High-level helper for Operational Tasks and Weekly Reports scoping
+ * Enforces strict isolation:
+ * - TBP only manages TCMs within their division(s) and staff belonging to those TCMs.
+ * - TTCM only manages their own TCM and staff within that TCM.
+ * - Regular teachers only view/report their own.
+ * - Trưởng Ban (Head of Academic) / Admin has global view across all divisions.
+ */
+export async function getOperationalScope(): Promise<OperationalScope> {
+  const session = await getAdminSession()
+  const isSuperAdmin = session.isSuperAdmin
+  const isHeadOfAcademic = session.isHeadOfAcademic
+  const isDirectTBP = Boolean(session.isTBP && !isHeadOfAcademic && !isSuperAdmin)
+  const isDirectTTCM = Boolean(session.isTTCM && !isDirectTBP && !isHeadOfAcademic && !isSuperAdmin)
+  const isManager = isSuperAdmin || isHeadOfAcademic || session.isTBP || session.isTTCM
+
+  if (isSuperAdmin || isHeadOfAcademic) {
+    const allDepts = await prisma.department.findMany({
+      where: { status: 'ACTIVE' },
+      select: { id: true, code: true, name: true, divisionCode: true },
+      orderBy: { name: 'asc' }
+    })
+    return {
+      session,
+      userId: session.userId,
+      isSuperAdmin,
+      isHeadOfAcademic,
+      isTBP: true,
+      isDirectTBP: false,
+      isTTCM: true,
+      isDirectTTCM: false,
+      isManager: true,
+      managedDivisions: session.managedDivisions,
+      scopedDepartmentIds: null,
+      scopedDepartmentCodes: null,
+      scopedDepartments: allDepts,
+      scopedUserIds: null
+    }
+  }
+
+  // TBP scoping: Only departments belonging to their managed divisions
+  if (isDirectTBP && session.managedDivisions.length > 0) {
+    const scopedDepts = await prisma.department.findMany({
+      where: {
+        divisionCode: { in: session.managedDivisions },
+        status: 'ACTIVE'
+      },
+      select: { id: true, code: true, name: true, divisionCode: true },
+      orderBy: { name: 'asc' }
+    })
+
+    const deptIds = scopedDepts.map(d => d.id)
+    const deptCodes = scopedDepts.map(d => d.code)
+    const deptNames = scopedDepts.map(d => d.name)
+
+    // Find all users in these departments
+    const teachersInDepts = await prisma.teacher.findMany({
+      where: {
+        OR: [
+          { departmentId: { in: deptIds } },
+          { departmentAssignments: { some: { departmentId: { in: deptIds } } } }
+        ]
+      },
+      select: { userId: true }
+    })
+
+    const userIdsSet = new Set(teachersInDepts.map(t => t.userId))
+    if (session.userId) userIdsSet.add(session.userId)
+
+    // Also include users whose role matches department code/name
+    if (deptCodes.length > 0 || deptNames.length > 0) {
+      const usersByRole = await prisma.user.findMany({
+        where: {
+          role: { in: [...deptCodes, ...deptNames] },
+          status: 'ACTIVE'
+        },
+        select: { id: true }
+      })
+      usersByRole.forEach(u => userIdsSet.add(u.id))
+    }
+
+    return {
+      session,
+      userId: session.userId,
+      isSuperAdmin: false,
+      isHeadOfAcademic: false,
+      isTBP: true,
+      isDirectTBP: true,
+      isTTCM: true,
+      isDirectTTCM: false,
+      isManager: true,
+      managedDivisions: session.managedDivisions,
+      scopedDepartmentIds: deptIds,
+      scopedDepartmentCodes: deptCodes,
+      scopedDepartments: scopedDepts,
+      scopedUserIds: Array.from(userIdsSet)
+    }
+  }
+
+  // TTCM scoping: Only their managed departments
+  if (session.managedDepartmentIds.length > 0) {
+    const scopedDepts = await prisma.department.findMany({
+      where: {
+        id: { in: session.managedDepartmentIds },
+        status: 'ACTIVE'
+      },
+      select: { id: true, code: true, name: true, divisionCode: true },
+      orderBy: { name: 'asc' }
+    })
+
+    const deptIds = scopedDepts.map(d => d.id)
+    const deptCodes = scopedDepts.map(d => d.code)
+    const deptNames = scopedDepts.map(d => d.name)
+
+    const teachersInDepts = await prisma.teacher.findMany({
+      where: {
+        OR: [
+          { departmentId: { in: deptIds } },
+          { departmentAssignments: { some: { departmentId: { in: deptIds } } } }
+        ]
+      },
+      select: { userId: true }
+    })
+
+    const userIdsSet = new Set(teachersInDepts.map(t => t.userId))
+    if (session.userId) userIdsSet.add(session.userId)
+
+    return {
+      session,
+      userId: session.userId,
+      isSuperAdmin: false,
+      isHeadOfAcademic: false,
+      isTBP: false,
+      isDirectTBP: false,
+      isTTCM: true,
+      isDirectTTCM: true,
+      isManager: true,
+      managedDivisions: [],
+      scopedDepartmentIds: deptIds,
+      scopedDepartmentCodes: deptCodes,
+      scopedDepartments: scopedDepts,
+      scopedUserIds: Array.from(userIdsSet)
+    }
+  }
+
+  // Regular staff: Personal scope only
+  return {
+    session,
+    userId: session.userId,
+    isSuperAdmin: false,
+    isHeadOfAcademic: false,
+    isTBP: false,
+    isDirectTBP: false,
+    isTTCM: false,
+    isDirectTTCM: false,
+    isManager: false,
+    managedDivisions: [],
+    scopedDepartmentIds: session.primaryDepartmentId ? [session.primaryDepartmentId] : [],
+    scopedDepartmentCodes: [],
+    scopedDepartments: [],
+    scopedUserIds: session.userId ? [session.userId] : []
+  }
 }

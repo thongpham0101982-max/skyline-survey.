@@ -41,6 +41,7 @@ import {
   Clock
 } from "lucide-react"
 import { calculateCompositeScore, getColumnMaxScore } from "@/lib/grading/formula-calculator"
+import { Button } from "@/components/ui/button"
 
 interface Props {
   academicYears: any[]

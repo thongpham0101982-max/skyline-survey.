@@ -236,17 +236,15 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   {visibleModules.map((m: any, index: number) => {
                     const isActive = pathname === m.href || (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/"))))
                     
-                    // Assign colors dynamically based on index to match Teacher styling aesthetics
-                    const colorVariants = [
-                      { activeBg: "bg-amber-500/20", activeBorder: "border-amber-500/40", activeShadow: "shadow-[0_0_8px_rgba(245,158,11,0.25)]", activeText: "text-amber-400", hoverBorder: "group-hover:border-amber-500/30", hoverText: "group-hover:text-amber-400" },
-                      { activeBg: "bg-indigo-500/20", activeBorder: "border-indigo-500/40", activeShadow: "shadow-[0_0_8px_rgba(99,102,241,0.25)]", activeText: "text-indigo-400", hoverBorder: "group-hover:border-indigo-500/30", hoverText: "group-hover:text-indigo-400" },
-                      { activeBg: "bg-teal-500/20", activeBorder: "border-teal-500/40", activeShadow: "shadow-[0_0_8px_rgba(20,184,166,0.25)]", activeText: "text-teal-400", hoverBorder: "group-hover:border-teal-500/30", hoverText: "group-hover:text-teal-400" },
-                      { activeBg: "bg-sky-500/20", activeBorder: "border-sky-500/40", activeShadow: "shadow-[0_0_8px_rgba(14,165,233,0.25)]", activeText: "text-sky-400", hoverBorder: "group-hover:border-sky-500/30", hoverText: "group-hover:text-sky-400" },
-                      { activeBg: "bg-fuchsia-500/20", activeBorder: "border-fuchsia-500/40", activeShadow: "shadow-[0_0_8px_rgba(217,70,239,0.25)]", activeText: "text-fuchsia-400", hoverBorder: "group-hover:border-fuchsia-500/30", hoverText: "group-hover:text-fuchsia-400" },
-                      { activeBg: "bg-emerald-500/20", activeBorder: "border-emerald-500/40", activeShadow: "shadow-[0_0_8px_rgba(16,185,129,0.25)]", activeText: "text-emerald-400", hoverBorder: "group-hover:border-emerald-500/30", hoverText: "group-hover:text-emerald-400" },
-                      { activeBg: "bg-rose-500/20", activeBorder: "border-rose-500/40", activeShadow: "shadow-[0_0_8px_rgba(244,63,94,0.25)]", activeText: "text-rose-400", hoverBorder: "group-hover:border-rose-500/30", hoverText: "group-hover:text-rose-400" },
-                    ];
-                    const v = colorVariants[index % colorVariants.length];
+                    // Uniform Sky-Line Brand Theme
+                    const v = {
+                      activeBg: "bg-[#48BFE3]/20",
+                      activeBorder: "border-[#48BFE3]/50",
+                      activeShadow: "shadow-[0_0_10px_rgba(72,191,227,0.25)]",
+                      activeText: "text-[#48BFE3]",
+                      hoverBorder: "group-hover:border-teal-400/40",
+                      hoverText: "group-hover:text-[#48BFE3]"
+                    };
 
                     const hasSubModules = !isCollapsed && m.subModules && m.subModules.length > 0;
                     const isSubExpanded = expandedSubModules[m.code] ?? (isActive || m.code === "QL_DGNL" || m.code === "COMPETENCY_ASSESSMENT");

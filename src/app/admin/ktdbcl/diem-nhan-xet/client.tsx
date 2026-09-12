@@ -49,8 +49,10 @@ import {
   Play,
   Check,
   Info,
-  Code
+  Code,
+  TrendingUp
 } from "lucide-react"
+import { GradeAnalyticsTab } from "./analytics-tab"
 import {
   calculateCompositeScore,
   generateExcelFormula,
@@ -85,7 +87,7 @@ const GRADES = [
 ]
 
 export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, subjects }: Props) {
-  const [activeTab, setActiveTab] = useState<"config" | "grades">("config")
+  const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics">("config")
 
   // Common filters
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
@@ -750,6 +752,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           >
             <FileSpreadsheet className="w-4 h-4" />
             2. Quản lý & Nhập Sổ điểm Học sinh
+          </button>
+          <button
+            onClick={() => setActiveTab("analytics")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === "analytics"
+                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
+                : "text-white/80 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            3. Phân tích kết quả & Phổ điểm
           </button>
         </div>
       </div>
@@ -1753,6 +1766,16 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
             )}
           </div>
         </div>
+      )}
+
+      {/* TAB 3: ANALYTICS & SCORE DISTRIBUTION */}
+      {activeTab === "analytics" && (
+        <GradeAnalyticsTab
+          academicYears={academicYears}
+          selectedYearId={selectedYearId}
+          classes={classes}
+          subjects={subjects}
+        />
       )}
     </div>
   )

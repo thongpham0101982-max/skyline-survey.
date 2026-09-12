@@ -54,7 +54,7 @@ export default async function AdminSurveysPage() {
     <div className="space-y-6 pb-20 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row justify-between items-end gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#BE1E2E] font-black text-[10px] uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-2 text-[#007A72] font-black text-[10px] uppercase tracking-[0.2em]">
             <Sparkles className="w-3 h-3" /> Skyline Admin System
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Quản lý Khảo sát</h1>
@@ -66,7 +66,7 @@ export default async function AdminSurveysPage() {
         </div>
         {activeYear && (
           <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <CalendarDays className="w-5 h-5 text-[#BE1E2E]" />
+            <CalendarDays className="w-5 h-5 text-[#007A72]" />
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Năm học</p>
               <p className="text-sm font-black text-slate-800">{activeYear}</p>
