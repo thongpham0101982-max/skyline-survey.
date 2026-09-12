@@ -22,7 +22,7 @@ export async function sendEmail({
   from?: string;
 }) {
   const rawUser = (process.env.SMTP_USER || "").trim();
-  const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "").replace(/^["']|["']$/g, "");
+  const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "").replace(/[^a-zA-Z0-9]/g, "");
 
   const user = rawUser || "bankhaothi@skylineschool.edu.vn";
   
