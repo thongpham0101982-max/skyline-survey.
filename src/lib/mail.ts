@@ -139,16 +139,17 @@ export async function sendEmail({
     // Auto-failover to backup Gmail if primary Office 365 fails
     if (!isGmail) {
       try {
-        console.log("[mail.ts] Attempting auto-failover to Backup Gmail SMTP (dbclskl@gmail.com)...");
-        const backupPass = (process.env.BACKUP_SMTP_PASS || process.env.SMTP_PASS || "").trim();
+        console.log("[mail.ts] Primary Office 365 returned error (likely cloud IP block 535). Attempting auto-failover to Gmail SMTP...");
+        const backupPass = (process.env.BACKUP_SMTP_PASS || "xhzihnqyiqqmdhat").trim();
         const backupTransporter = createTransporter("smtp.gmail.com", 465, true, "dbclskl@gmail.com", backupPass);
         const backupMailOptions = {
           ...mailOptions,
-          from: `"BAN KHẢO THÍ & ĐBCL SKY-LINE" <dbclskl@gmail.com>`,
+          from: `"BAN KHẢO THÍ & ĐBCL SKY-LINE" <bankhaothi@skylineschool.edu.vn>`,
+          replyTo: "bankhaothi@skylineschool.edu.vn"
         };
         const backupInfo = await backupTransporter.sendMail(backupMailOptions);
-        console.log("[mail.ts] Auto-failover SUCCESS via Gmail to:", validTo, "MessageId:", backupInfo.messageId);
-        return { success: true, failover: true, provider: "GMAIL_BACKUP", ...backupInfo };
+        console.log("[mail.ts] Auto-failover SUCCESS via Gmail Relay to:", validTo, "MessageId:", backupInfo.messageId);
+        return { success: true, failover: true, provider: "GMAIL_RELAY", messageId: backupInfo.messageId, ...backupInfo };
       } catch (backupError: any) {
         console.error("[mail.ts] Backup Gmail SMTP also failed:", backupError?.message || backupError);
       }

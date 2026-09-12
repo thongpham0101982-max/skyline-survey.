@@ -1,102 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
+import { sendEmail } from "@/lib/mail";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const rawEnvPass = process.env.SMTP_PASS || "";
-  const cleanedPass = rawEnvPass.trim().replace(/\s+/g, "").replace(/[^a-zA-Z0-9]/g, "");
-  const knownGoodPass = "jrfypwzkpccndjqw";
+  const url = new URL(req.url);
+  const toEmail = url.searchParams.get("to") || "thongpn@skylineschool.edu.vn";
 
-  const charCodes = Array.from(rawEnvPass).map((c, i) => ({
-    idx: i,
-    char: c,
-    code: c.charCodeAt(0)
-  }));
-
-  // Helper to test an auth pass
-  async function testSmtp(pwd: string, label: string) {
-    const transporter = nodemailer.createTransport({
-      host: "smtp.office365.com",
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: {
-        user: "bankhaothi@skylineschool.edu.vn",
-        pass: pwd,
-      },
-      tls: {
-        ciphers: "SSLv3",
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
-    });
-
-    try {
-      await transporter.verify();
-      return { label, success: true, message: "VERIFY_SUCCESS" };
-    } catch (err: any) {
-      return {
-        label,
-        success: false,
-        error: err.message,
-        response: err.response,
-        responseCode: err.responseCode,
-      };
-    }
-  }
-
-  const [rawResult, cleanedResult, knownGoodResult] = await Promise.all([
-    testSmtp(rawEnvPass, "Raw env SMTP_PASS"),
-    testSmtp(cleanedPass, "Cleaned (letters/digits only) SMTP_PASS"),
-    testSmtp(knownGoodPass, "Hardcoded known good pass"),
-  ]);
-
-  let testSendInfo = null;
-  const workingPass = knownGoodResult.success ? knownGoodPass : (cleanedResult.success ? cleanedPass : null);
-  if (workingPass) {
-    try {
-      const workingTransporter = nodemailer.createTransport({
-        host: "smtp.office365.com",
-        port: 587,
-        secure: false,
-        requireTLS: true,
-        auth: {
-          user: "bankhaothi@skylineschool.edu.vn",
-          pass: workingPass,
-        },
-        tls: {
-          ciphers: "SSLv3",
-          rejectUnauthorized: false,
-        }
-      });
-
-      const info = await workingTransporter.sendMail({
-        from: '"HỆ THỐNG DỰ GIỜ SKY-LINE" <bankhaothi@skylineschool.edu.vn>',
-        to: "thongpn@skylineschool.edu.vn",
-        subject: "[Skyline Test Live] Thử nghiệm gửi email trực tiếp từ Vercel",
-        html: `<p>Xin chào Thầy Thông, kết nối SMTP trên Vercel đã hoạt động thành công lúc ${new Date().toISOString()}!</p>`,
-      });
-      testSendInfo = { success: true, messageId: info.messageId };
-    } catch (sendErr: any) {
-      testSendInfo = { success: false, error: sendErr.message };
-    }
-  }
+  const result = await sendEmail({
+    from: "BAN KHẢO THÍ & ĐBCL SKY-LINE",
+    to: toEmail,
+    subject: "[Skyline Test] Thử nghiệm gửi thư từ Ban Khảo thí lúc " + new Date().toISOString(),
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 24px; border: 2px solid #008B82; border-radius: 12px; background: #ffffff;">
+        <h2 style="color: #008B82; margin-top: 0;">🎉 THỬ NGHIỆM GỬI EMAIL THÀNH CÔNG!</h2>
+        <p>Email này được gửi tự động từ <strong>Ban Khảo thí & ĐBCL Sky-Line</strong>.</p>
+        <p>Người nhận: <strong>${toEmail}</strong></p>
+        <p>Thời gian gửi: <strong>${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</strong></p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;" />
+        <p style="font-size: 12px; color: #64748b;">Hệ thống Quản lý Dự giờ Chuyên môn Sky-Line</p>
+      </div>
+    `
+  });
 
   return NextResponse.json({
-    debug: {
-      rawLength: rawEnvPass.length,
-      cleanedLength: cleanedPass.length,
-      charCodes,
-      cleanedPassMatchesKnown: cleanedPass === knownGoodPass,
-    },
-    tests: {
-      rawResult,
-      cleanedResult,
-      knownGoodResult,
-    },
-    testSendInfo,
+    recipient: toEmail,
+    result,
+    env: {
+      smtpUser: process.env.SMTP_USER,
+      hasSmtpPass: !!process.env.SMTP_PASS,
+      hasBackupPass: !!process.env.BACKUP_SMTP_PASS,
+    }
   });
 }
