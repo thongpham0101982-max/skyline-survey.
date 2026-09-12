@@ -6262,6 +6262,7 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* ======================================================== */}
       <CreateObservationModal
         isOpen={showCreateModal}
+        showCreateModal={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         creationMode={creationMode}
         setCreationMode={setCreationMode}
@@ -6271,6 +6272,42 @@ export function ObservationClient(props: ObservationClientProps) {
         canCreateSurprise={canCreateSurprise}
         currentTeacher={currentTeacher}
         monthlyLimitCount={monthlyLimitCount}
+        myTaughtCount={myTaughtCount}
+        myObservedCount={myObservedCount}
+        myReceivedEvaluationsStats={myReceivedEvaluationsStats}
+        onViewAllSchedule={() => {
+          setShowCreateModal(false);
+          setActiveMainTab("my_schedule");
+          setMyScheduleSubTab("all");
+        }}
+        onViewTaught={() => {
+          setShowCreateModal(false);
+          setActiveMainTab("my_schedule");
+          setMyScheduleSubTab("taught");
+        }}
+        onViewObserved={() => {
+          setShowCreateModal(false);
+          setActiveMainTab("my_schedule");
+          setMyScheduleSubTab("observed");
+        }}
+        onViewEvaluations={() => {
+          setShowCreateModal(false);
+          setActiveMainTab("evaluations");
+        }}
+        upcomingSlots={upcomingSlots}
+        onResetForm={() => {
+          setNewTopic("");
+          setNewDescription("");
+          setNewNotes("");
+          setNewLessonPlanName("");
+          setNewLessonPlanData("");
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          showToast("Đã làm mới biểu mẫu đăng ký!", "info");
+        }}
+        onSaveDraft={() => {
+          showToast("Bản nháp thông tin tiết dạy đã được lưu tạm!", "success");
+        }}
+        editSlotId={editSlotId}
         surpriseDeptId={surpriseDeptId}
         setSurpriseDeptId={setSurpriseDeptId}
         surpriseTeacherId={surpriseTeacherId}
@@ -6298,9 +6335,7 @@ export function ObservationClient(props: ObservationClientProps) {
         surpriseRoom={surpriseRoom}
         setSurpriseRoom={setSurpriseRoom}
         surpriseScoresK12={surpriseScoresK12}
-        setSurpriseScoresK12={setSurpriseScoresK12}
         surpriseScoresMN={surpriseScoresMN}
-        setSurpriseScoresMN={setSurpriseScoresMN}
         surpriseStrengths={surpriseStrengths}
         setSurpriseStrengths={setSurpriseStrengths}
         surpriseImprovements={surpriseImprovements}
@@ -6379,6 +6414,46 @@ export function ObservationClient(props: ObservationClientProps) {
         myDeptTeachers={myDeptTeachers}
         isSubmittingOpen={submitting}
         handleOpenSlotSubmit={handleCreateSubmit}
+        newCampusId={newCampusId}
+        setNewCampusId={setNewCampusId}
+        newDeptId={newTargetDeptId}
+        setNewDeptId={setNewTargetDeptId}
+        newSubjectId={newSubjectId}
+        setNewSubjectId={setNewSubjectId}
+        newLevel={newLevel}
+        setNewLevel={setNewLevel}
+        newGrade={newGrade}
+        setNewGrade={setNewGrade}
+        newClassId={newClassId}
+        setNewClassId={setNewClassId}
+        newDate={newDate}
+        setNewDate={setNewDate}
+        newStartTime={newStartTime}
+        setNewStartTime={setNewStartTime}
+        newEndTime={newEndTime}
+        setNewEndTime={setNewEndTime}
+        newIsDoublePeriod={newIsDoublePeriod}
+        setNewIsDoublePeriod={setNewIsDoublePeriod}
+        newTopic={newTopic}
+        setNewTopic={setNewTopic}
+        newChuDe={newChuDe}
+        setNewChuDe={setNewChuDe}
+        newHoatDong={newHoatDong}
+        setNewHoatDong={setNewHoatDong}
+        newDeTai={newDeTai}
+        setNewDeTai={setNewDeTai}
+        newLessonPlanName={newLessonPlanName}
+        setNewLessonPlanName={setNewLessonPlanName}
+        newLessonPlanData={newLessonPlanData}
+        setNewLessonPlanData={setNewLessonPlanData}
+        fileInputRef={fileInputRef}
+        handleCreateSubmit={handleCreateSubmit}
+        handleStartTimeChange={handleStartTimeChange}
+        handleDoublePeriodChange={handleDoublePeriodChange}
+        handleFileChange={handleFileChange}
+        filteredClassesForCreation={filteredClassesForCreation}
+        submitting={submitting}
+        minAllowedDate={minAllowedDate}
         subjects={subjects}
         departments={departments}
         teachers={teachers}
