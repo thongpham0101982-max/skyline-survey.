@@ -5,7 +5,12 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const toEmail = url.searchParams.get("to") || "thongpn@skylineschool.edu.vn";
+  const toEmail = (url.searchParams.get("to") || "thongpn@skylineschool.edu.vn").trim().toLowerCase();
+
+  // Security restriction: Only allow sending test emails to internal Skyline domains
+  if (!toEmail.endsWith("@skylineschool.edu.vn") && !toEmail.endsWith("@skyline.edu.vn")) {
+    return NextResponse.json({ error: "Only Skyline domains are permitted for testing" }, { status: 403 });
+  }
 
   const result = await sendEmail({
     from: "BAN KHẢO THÍ & ĐBCL SKY-LINE",
