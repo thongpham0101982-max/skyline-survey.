@@ -992,7 +992,10 @@ export async function registerObservation(slotId: string) {
 
     const slot = await prisma.observationSlot.findUnique({
       where: { id: slotId },
-      include: { registrations: true, teacher: { include: { user: true } } }
+      include: {
+        registrations: true,
+        teacher: { include: { user: true, campus: true, departmentRel: true } }
+      }
     })
 
     if (!slot) {
@@ -1029,27 +1032,43 @@ export async function registerObservation(slotId: string) {
       }
     })
 
-    // Notify host teacher about new observation registration
-    try {
-      if (slot.teacher?.user?.id) {
-        const formattedDate = new Date(slot.date).toLocaleDateString("vi-VN");
-        const notifTitle = `Thông báo đăng ký tiết dạy`;
-        const notifMsg = `Thầy/Cô ${currentTeacher.teacherName} vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.`;
-
-        await prisma.notification.create({
-          data: {
-            userId: slot.teacher.user.id,
-            title: notifTitle,
-            message: notifMsg,
-            link: `/teacher/du-gio?tab=my_schedule&slotId=${slot.id}`,
-            isRead: false
-          }
+    // Asynchronous background dispatch of In-App Notification and Email via Next.js after()
+    // Ensures 100% reliable delivery on Vercel Serverless without delaying UI response
+    after(async () => {
+      try {
+        const hostTeacher = slot.teacher;
+        const formattedDate = new Date(slot.date).toLocaleDateString("vi-VN", {
+          weekday: "long",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
         });
 
-        const hostEmail = getTeacherResolvedEmail(slot.teacher);
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
+        const hostDirectLink = `${baseUrl}/teacher/du-gio?tab=my_schedule&slotId=${slot.id}`;
+        const observerDirectLink = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
+
+        // 1. In-App Notification for Host Teacher
+        if (hostTeacher?.user?.id) {
+          await prisma.notification.create({
+            data: {
+              userId: hostTeacher.user.id,
+              title: "Thông báo đăng ký tiết dạy 📝",
+              message: `Thầy/Cô ${currentTeacher.teacherName} vừa đăng ký tiết dạy "${slot.topic || "tiết học"}" của Thầy/Cô. Vui lòng kiểm tra danh sách người tham dự.`,
+              link: `/teacher/du-gio?tab=my_schedule&slotId=${slot.id}`,
+              isRead: false
+            }
+          }).catch(e => console.error("[registerObservation] In-app notif error:", e));
+        }
+
+        const hostEmail = getTeacherResolvedEmail(hostTeacher);
+        const observerEmail = getTeacherResolvedEmail(currentTeacher);
+        const emailTasks: Promise<any>[] = [];
+
+        // 2. Email Notification to Host Teacher
         if (hostEmail && hostEmail.includes("@")) {
           const emailHtml = renderObservationSlotRegisteredForHost({
-            hostName: slot.teacher.teacherName,
+            hostName: hostTeacher?.teacherName || "Giáo viên dạy",
             observerName: currentTeacher.teacherName,
             observerCode: currentTeacher.teacherCode,
             topic: slot.topic,
@@ -1059,23 +1078,58 @@ export async function registerObservation(slotId: string) {
             className: slot.className || undefined,
             dateStr: formattedDate,
             timeStr: `${slot.startTime} - ${slot.endTime}`,
-            directLink: `${process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app"}/teacher/du-gio?tab=my_schedule&slotId=${slot.id}`
+            directLink: hostDirectLink
           });
 
-          try {
-            const hostEmail = getTeacherResolvedEmail(slot.teacher);
-            if (hostEmail) {
-              await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: "[Skyline Dự Giờ] Thông báo có GV đăng ký dự giờ tiết dạy của bạn", html: emailHtml });
-              console.log("[Skyline Email] Sent registration email to:", hostEmail);
-            }
-          } catch (mailErr) {
-            console.error("Failed to send email to host teacher:", mailErr);
-          }
+          emailTasks.push(
+            sendEmail({
+              from: "HỆ THỐNG DỰ GIỜ SKY-LINE",
+              to: hostEmail,
+              subject: `[Skyline Dự Giờ] Thầy/Cô ${currentTeacher.teacherName} đăng ký dự giờ tiết dạy: "${slot.topic}"`,
+              html: emailHtml
+            })
+              .then(res => console.log("[registerObservation] Email sent successfully to host:", hostEmail, res?.messageId))
+              .catch(err => console.error("[registerObservation] Failed sending email to host " + hostEmail + ":", err))
+          );
+        } else {
+          console.warn("[registerObservation] Host teacher does not have a valid email:", hostTeacher?.teacherName);
         }
+
+        // 3. Email Confirmation to Observer Teacher (Biên nhận đã đăng ký thành công)
+        if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
+          const observerHtml = renderObservationRequestSubmittedForObserver({
+            observerName: currentTeacher.teacherName,
+            hostName: hostTeacher?.teacherName || "Giáo viên dạy",
+            hostCode: hostTeacher?.teacherCode || undefined,
+            topic: slot.topic,
+            subjectName: slot.subjectName,
+            level: slot.level,
+            grade: slot.grade,
+            className: slot.className || undefined,
+            dateStr: formattedDate,
+            period: `${slot.startTime} - ${slot.endTime}`,
+            campusName: hostTeacher?.campus?.campusName || undefined,
+            room: slot.room || undefined,
+            directLink: observerDirectLink
+          });
+
+          emailTasks.push(
+            sendEmail({
+              from: "HỆ THỐNG DỰ GIỜ SKY-LINE",
+              to: observerEmail,
+              subject: `[Skyline Dự Giờ] Đăng ký dự giờ thành công tiết dạy của Thầy/Cô ${hostTeacher?.teacherName || ""}`,
+              html: observerHtml
+            })
+              .then(res => console.log("[registerObservation] Confirmation email sent to observer:", observerEmail, res?.messageId))
+              .catch(err => console.error("[registerObservation] Failed sending confirmation to observer " + observerEmail + ":", err))
+          );
+        }
+
+        await Promise.allSettled(emailTasks);
+      } catch (bgErr) {
+        console.error("[registerObservation] Error in background notification task:", bgErr);
       }
-    } catch (notifErr) {
-      console.error("Error sending registerObservation notification:", notifErr);
-    }
+    });
 
     revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
