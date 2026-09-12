@@ -22,18 +22,19 @@ export async function sendEmail({
   from?: string;
 }) {
   const rawUser = (process.env.SMTP_USER || "").trim();
-  const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "");
+  const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "").replace(/^["']|["']$/g, "");
 
-  // Detect whether Gmail is explicitly configured
-  const isGmail = rawUser.toLowerCase().includes("@gmail.com") || (process.env.SMTP_HOST || "").toLowerCase().includes("gmail");
+  const user = rawUser || "bankhaothi@skylineschool.edu.vn";
   
-  const host = isGmail ? "smtp.gmail.com" : (process.env.SMTP_HOST || "smtp.office365.com");
-  const port = isGmail ? 465 : parseInt(process.env.SMTP_PORT || "587", 10);
-  const secure = isGmail ? true : (process.env.SMTP_SECURE === "true" || port === 465);
+  // Detect domain
+  const isSkylineDomain = user.toLowerCase().includes("@skylineschool.edu.vn") || user.toLowerCase().includes("@skyline.edu.vn");
+  const isGmail = !isSkylineDomain && (user.toLowerCase().includes("@gmail.com") || (process.env.SMTP_HOST || "").toLowerCase().includes("gmail"));
 
-  const user = rawUser || (isGmail ? "dbclskl@gmail.com" : "bankhaothi@skylineschool.edu.vn");
-  
-  // App password configured via environment variables
+  // Enforce Office 365 configuration for Skyline domain (port 587 STARTTLS, NEVER port 465 or SSL)
+  const host = isSkylineDomain ? "smtp.office365.com" : (isGmail ? "smtp.gmail.com" : (process.env.SMTP_HOST || "smtp.office365.com"));
+  const port = isSkylineDomain ? 587 : (isGmail ? 465 : parseInt(process.env.SMTP_PORT || "587", 10));
+  const secure = isSkylineDomain ? false : (isGmail ? true : (process.env.SMTP_SECURE === "true" || port === 465));
+
   const pass = rawPass;
   if (!pass) {
     console.warn("[mail.ts] SMTP_PASS is missing in environment variables. Email sending may fail.");
@@ -44,6 +45,7 @@ export async function sendEmail({
       host: h,
       port: p,
       secure: s,
+      requireTLS: !s,
       auth: {
         user: u,
         pass: pwd,
