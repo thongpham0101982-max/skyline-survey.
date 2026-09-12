@@ -299,6 +299,14 @@ export function ForeignObservationClient(props: {
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
   const [slots, setSlots] = useState<any[]>(props.initialSlots || []);
 
+  const mySlotsCount = useMemo(() => {
+    if (!props.currentTeacher?.id) return slots.length;
+    return slots.filter(s =>
+      s.teacherId === props.currentTeacher?.id ||
+      (s.registrations || []).some((r: any) => r.teacherId === props.currentTeacher?.id)
+    ).length;
+  }, [slots, props.currentTeacher?.id]);
+
   React.useEffect(() => {
     if (props.initialSlots) {
       setSlots(props.initialSlots);
@@ -742,7 +750,7 @@ export function ForeignObservationClient(props: {
                 }
               >
                 <ClipboardList className="w-4 h-4" />
-                📜 Lược sử đánh giá ({slots.length})
+                📜 Lược sử đánh giá ({mySlotsCount})
               </button>
               <button
                 onClick={() => setActiveTab("kpi")}

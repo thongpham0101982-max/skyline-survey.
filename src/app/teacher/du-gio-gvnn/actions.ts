@@ -531,12 +531,41 @@ export async function createForeignObservationWithEvaluation(data: {
   }
 }
 
-export async function getForeignObservationSlots(params?: string | { academicYearId?: string; campusId?: string; deptId?: string; grade?: string; date?: string; month?: string }) {
+export async function getForeignObservationSlots(params?: string | {
+  academicYearId?: string;
+  campusId?: string;
+  deptId?: string;
+  grade?: string;
+  date?: string;
+  month?: string;
+  onlyMySlots?: boolean;
+}) {
   try {
     const session = await auth();
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" };
     }
+
+    const roleCode = (session.user as any)?.role || "TEACHER";
+    const isAdmin = [
+      "ADMIN",
+      "ADMINISTRATOR",
+      "BGH",
+      "SUPER_ADMIN",
+      "BAN_GIAM_HIEU",
+      "TIEU_BAN_CHUYEN_MON",
+      "TO_TRUONG_CHUYEN_MON"
+    ].includes(roleCode.toUpperCase());
+
+    const currentTeacher = await prisma.teacher.findFirst({
+      where: {
+        OR: [
+          { userId: session.user.id },
+          { email: session.user.email || "" },
+          { id: session.user.id }
+        ]
+      }
+    });
 
     const andConditions: any[] = [
       {
@@ -556,6 +585,19 @@ export async function getForeignObservationSlots(params?: string | { academicYea
     const academicYearId = typeof params === "string" ? params : params?.academicYearId;
     if (academicYearId && academicYearId !== "all") {
       andConditions.push({ academicYearId });
+    }
+
+    const shouldRestrictToTeacher = typeof params === "object" && params?.onlyMySlots
+      ? true
+      : (!isAdmin);
+
+    if (shouldRestrictToTeacher && currentTeacher) {
+      andConditions.push({
+        OR: [
+          { teacherId: currentTeacher.id },
+          { registrations: { some: { teacherId: currentTeacher.id } } }
+        ]
+      });
     }
 
     if (typeof params === "object" && params) {

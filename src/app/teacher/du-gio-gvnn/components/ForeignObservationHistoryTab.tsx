@@ -37,6 +37,7 @@ interface ForeignObservationHistoryTabProps {
   departments: any[];
   indicators: IndicatorConfig[];
   onOpenWalkthroughForm?: () => void;
+  showAllForAdmin?: boolean;
 }
 
 const RATING_CONFIG: Record<string, { label: string; shortLabel: string; badgeClass: string; score: number }> = {
@@ -107,7 +108,8 @@ export function ForeignObservationHistoryTab({
   campuses = [],
   departments = [],
   indicators = [],
-  onOpenWalkthroughForm
+  onOpenWalkthroughForm,
+  showAllForAdmin = false
 }: ForeignObservationHistoryTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCampus, setFilterCampus] = useState("all");
@@ -116,10 +118,20 @@ export function ForeignObservationHistoryTab({
   const [filterMonth, setFilterMonth] = useState("all");
   const [selectedSlotForModal, setSelectedSlotForModal] = useState<any | null>(null);
 
-  // Available months from slots
+  // Base slots filtered to the logged-in teacher unless showAllForAdmin is explicitly true
+  const baseSlots = useMemo(() => {
+    if (showAllForAdmin || !currentTeacher?.id) return slots;
+    return slots.filter(slot => {
+      const isHost = slot.teacherId === currentTeacher.id;
+      const isObserver = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher.id);
+      return isHost || isObserver;
+    });
+  }, [slots, showAllForAdmin, currentTeacher?.id]);
+
+  // Available months from baseSlots
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
-    slots.forEach(slot => {
+    baseSlots.forEach(slot => {
       if (!slot.date) return;
       const d = new Date(slot.date);
       if (isNaN(d.getTime())) return;
@@ -128,11 +140,11 @@ export function ForeignObservationHistoryTab({
       months.add(`${y}-${m}`);
     });
     return Array.from(months).sort().reverse();
-  }, [slots]);
+  }, [baseSlots]);
 
   // Filter slots
   const filteredSlots = useMemo(() => {
-    return slots.filter(slot => {
+    return baseSlots.filter(slot => {
       // Find evaluation
       const reg = (slot.registrations || [])[0];
       const evaluation = reg?.evaluation;
@@ -180,7 +192,7 @@ export function ForeignObservationHistoryTab({
 
       return true;
     });
-  }, [slots, filterRole, filterCampus, filterRating, filterMonth, searchQuery, currentTeacher?.id]);
+  }, [baseSlots, filterRole, filterCampus, filterRating, filterMonth, searchQuery, currentTeacher?.id]);
 
   // KPI calculations
   const stats = useMemo(() => {
@@ -419,7 +431,7 @@ export function ForeignObservationHistoryTab({
                 filterRole === "all" ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              Tất cả ({slots.length})
+              Tất cả ({baseSlots.length})
             </button>
             <button
               type="button"
@@ -430,7 +442,7 @@ export function ForeignObservationHistoryTab({
             >
               <span>👁️ Tôi đi dự</span>
               <span className="text-[11px] opacity-75">
-                ({slots.filter(s => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)).length})
+                ({baseSlots.filter(s => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)).length})
               </span>
             </button>
             <button
@@ -442,7 +454,7 @@ export function ForeignObservationHistoryTab({
             >
               <span>🏫 Tôi được dự</span>
               <span className="text-[11px] opacity-75">
-                ({slots.filter(s => s.teacherId === currentTeacher?.id).length})
+                ({baseSlots.filter(s => s.teacherId === currentTeacher?.id).length})
               </span>
             </button>
           </div>

@@ -39,7 +39,8 @@ export default async function ForeignTeacherObservationPage(props: {
     deptId,
     grade,
     date,
-    month
+    month,
+    onlyMySlots: true
   })
 
   return (
