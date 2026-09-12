@@ -1470,42 +1470,102 @@ export async function approveRegistration(registrationId: string) {
 
     await prisma.observationRegistration.update({ where: { id: registrationId }, data: { isApproved: true, approvedAt: new Date() } })
 
-    // Send MS Teams confirmation with Evaluation Form link to Observer Teacher
-    try {
-      const regFull = await prisma.observationRegistration.findUnique({
-        where: { id: registrationId },
-        include: {
-          teacher: { include: { departmentRel: true } },
-          slot: { include: { teacher: true } }
+    // Non-blocking dispatch of Email, In-app Notification, and MS Teams via after()
+    after(async () => {
+      try {
+        const regFull = await prisma.observationRegistration.findUnique({
+          where: { id: registrationId },
+          include: {
+            teacher: { include: { departmentRel: true, campus: true, user: true } },
+            slot: { include: { teacher: { include: { campus: true } } } }
+          }
+        });
+
+        if (!regFull || !regFull.teacher) return;
+
+        const observerTeacher = regFull.teacher;
+        const hostSlot = regFull.slot;
+        const observerEmail = getTeacherResolvedEmail(observerTeacher);
+
+        const formattedDate = new Date(hostSlot.date).toLocaleDateString("vi-VN", {
+          weekday: "long",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        });
+
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
+        const observerDirectLink = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
+
+        // 1. In-App Notification for Observer Teacher
+        if (observerTeacher?.user?.id) {
+          await prisma.notification.create({
+            data: {
+              userId: observerTeacher.user.id,
+              title: "Đăng ký dự giờ đã được duyệt ✅",
+              message: `Thầy/Cô ${currentTeacher.teacherName} đã phê duyệt đăng ký tham gia dự giờ tiết "${hostSlot.topic || "tiết học"}" của Thầy/Cô.`,
+              link: "/teacher/du-gio?tab=my_schedule",
+              isRead: false
+            }
+          }).catch(e => console.error("[approveRegistration] In-app notif error:", e));
         }
-      });
-      if (regFull && regFull.teacher) {
+
+        // 2. Email Notification to Observer Teacher
+        if (observerEmail && observerEmail.includes("@")) {
+          const emailHtml = renderObservationRequestResponseForObserver({
+            observerName: observerTeacher.teacherName,
+            hostName: currentTeacher.teacherName,
+            hostCode: currentTeacher.teacherCode || undefined,
+            topic: hostSlot.topic,
+            subjectName: hostSlot.subjectName,
+            grade: hostSlot.grade,
+            className: hostSlot.className || undefined,
+            dateStr: formattedDate,
+            period: `${hostSlot.startTime} - ${hostSlot.endTime}`,
+            accepted: true,
+            directLink: observerDirectLink
+          });
+
+          await sendEmail({
+            from: "BAN KHẢO THÍ & ĐBCL SKY-LINE",
+            to: observerEmail,
+            subject: `[Skyline Dự Giờ] Xác nhận tham dự tiết dạy: "${hostSlot.topic}" - GV ${currentTeacher.teacherName}`,
+            html: emailHtml
+          })
+            .then(res => console.log("[approveRegistration] Email sent to observer:", observerEmail, res?.messageId))
+            .catch(err => console.error("[approveRegistration] Failed sending email to observer:", err));
+        } else {
+          console.warn("[approveRegistration] Observer teacher does not have a valid email:", observerTeacher.teacherName);
+        }
+
+        // 3. MS Teams Notification
         sendTeamsApprovalWithEvalFormNotif(
           {
-            id: regFull.slot.id,
-            topic: regFull.slot.topic,
-            subjectName: regFull.slot.subjectName,
-            level: regFull.slot.level,
-            grade: regFull.slot.grade,
-            className: regFull.slot.className,
-            date: regFull.slot.date,
-            startTime: regFull.slot.startTime,
-            endTime: regFull.slot.endTime,
-            campusName: regFull.slot.campusName,
-            room: regFull.slot.room
+            id: hostSlot.id,
+            topic: hostSlot.topic,
+            subjectName: hostSlot.subjectName,
+            level: hostSlot.level,
+            grade: hostSlot.grade,
+            className: hostSlot.className,
+            date: hostSlot.date,
+            startTime: hostSlot.startTime,
+            endTime: hostSlot.endTime,
+            campusName: hostSlot.campusName,
+            room: hostSlot.room
           },
           {
-            teacherName: regFull.teacher.teacherName,
-            teacherCode: regFull.teacher.teacherCode,
-            email: regFull.teacher.email,
-            teamsWebhookUrl: (regFull.teacher as any)?.departmentRel?.teamsWebhookUrl
+            teacherName: observerTeacher.teacherName,
+            teacherCode: observerTeacher.teacherCode,
+            email: observerTeacher.email,
+            teamsWebhookUrl: (observerTeacher as any)?.departmentRel?.teamsWebhookUrl
           },
           currentTeacher.teacherName
         ).catch(err => console.error("Teams approval error:", err));
+
+      } catch (bgErr) {
+        console.error("[approveRegistration] Background dispatch error:", bgErr);
       }
-    } catch (apprTeamsErr) {
-      console.error("Teams approval dispatch error:", apprTeamsErr);
-    }
+    });
 
     revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
