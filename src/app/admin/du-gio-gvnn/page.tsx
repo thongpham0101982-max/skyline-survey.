@@ -52,6 +52,7 @@ export default async function AdminForeignTeacherObservationPage(props: {
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
       initialSlots={slotsResult.success ? (slotsResult.slots || []) : []}
+      teacherStats={refDataResult.teacherStats}
     />
   )
 }

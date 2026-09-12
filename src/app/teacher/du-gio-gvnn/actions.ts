@@ -190,6 +190,70 @@ export async function getForeignObservationData(academicYearId?: string) {
       orderBy: { className: "asc" }
     });
 
+    let teacherStats = { taughtCount: 0, observedCount: 0, eslTaughtCount: 0, eslObservedCount: 0 };
+    if (currentTeacher?.id) {
+      const yearSlotCondition: any = activeYear
+        ? {
+            OR: [
+              { academicYearId: activeYear.id },
+              {
+                AND: [
+                  { academicYearId: null },
+                  {
+                    date: {
+                      gte: activeYear.startDate,
+                      lte: activeYear.endDate
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        : {};
+
+      const teacherSlots = await prisma.observationSlot.findMany({
+        where: {
+          status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] },
+          AND: [
+            yearSlotCondition,
+            {
+              OR: [
+                { teacherId: currentTeacher.id },
+                { registrations: { some: { teacherId: currentTeacher.id } } }
+              ]
+            }
+          ]
+        },
+        include: {
+          registrations: {
+            include: { evaluation: true }
+          }
+        }
+      }).catch(() => []);
+
+      teacherSlots.forEach((slot: any) => {
+        const weight = slot.isDoublePeriod ? 2 : 1;
+        const isEsl = (slot.subjectName || "").includes("ESL") ||
+          (slot.subjectName || "").toLowerCase().includes("tiếng anh (esl)") ||
+          (slot.topic || "").toLowerCase().includes("foreign english") ||
+          slot.requestOrigin === "FOREIGN_WALKTHROUGH";
+
+        if (slot.teacherId === currentTeacher.id) {
+          const hasEval = slot.registrations?.some((r: any) => r.evaluation && r.evaluation.reEvaluationStatus !== "DRAFT");
+          if (hasEval) {
+            teacherStats.taughtCount += weight;
+            if (isEsl) teacherStats.eslTaughtCount += weight;
+          }
+        }
+
+        const myReg = slot.registrations?.find((r: any) => r.teacherId === currentTeacher.id);
+        if (myReg && myReg.isApproved && myReg.evaluation && myReg.evaluation.reEvaluationStatus !== "DRAFT") {
+          teacherStats.observedCount += weight;
+          if (isEsl) teacherStats.eslObservedCount += weight;
+        }
+      });
+    }
+
     return {
       success: true,
       currentTeacher,
@@ -198,7 +262,8 @@ export async function getForeignObservationData(academicYearId?: string) {
       campuses,
       classes,
       academicYears,
-      selectedYearId: activeYearId
+      selectedYearId: activeYearId,
+      teacherStats
     };
   } catch (error: any) {
     console.error("Error in getForeignObservationData:", error);
@@ -208,6 +273,7 @@ export async function getForeignObservationData(academicYearId?: string) {
 
 export async function createForeignObservationWithEvaluation(data: {
   observerId?: string;
+  academicYearId?: string;
   teacherId: string;
   campusId: string;
   classId?: string;
@@ -256,47 +322,47 @@ export async function createForeignObservationWithEvaluation(data: {
       return { success: false, error: "Teacher to be observed not found" };
     }
 
-    let evaluatorTeacher = await prisma.teacher.findFirst({
-      where: {
-        OR: [
-          { id: data.observerId || "" },
-          { email: session.user.email || "" },
-          { id: session.user.id }
-        ]
-      }
-    });
-
-    if (!evaluatorTeacher) {
+    let evaluatorTeacher = null;
+    if (data.observerId) {
+      evaluatorTeacher = await prisma.teacher.findUnique({ where: { id: data.observerId } });
+    }
+    if (!evaluatorTeacher && session.user?.id) {
       evaluatorTeacher = await prisma.teacher.findFirst({
-        where: { email: session.user.email || "" }
-      });
-      if (!evaluatorTeacher && session.user.id) {
-        evaluatorTeacher = await prisma.teacher.findFirst({
-          where: { id: session.user.id }
-        });
-      }
-      if (!evaluatorTeacher && session.user.email) {
-        try {
-          evaluatorTeacher = await prisma.teacher.create({
-            data: {
-              teacherCode: "ADMIN_" + (session.user.name || "GV").substring(0, 3).toUpperCase(),
-              teacherName: session.user.name || "Administrator",
-              email: session.user.email,
-              position: "QLCM",
-              status: "ACTIVE"
-            }
-          });
-        } catch (e) {
-          evaluatorTeacher = await prisma.teacher.findFirst();
+        where: {
+          OR: [
+            { userId: session.user.id },
+            { id: session.user.id },
+            { email: session.user.email || "" }
+          ]
         }
+      });
+    }
+    if (!evaluatorTeacher && session.user?.email) {
+      evaluatorTeacher = await prisma.teacher.findFirst({
+        where: { email: session.user.email }
+      });
+    }
+    if (!evaluatorTeacher && session.user.email) {
+      try {
+        evaluatorTeacher = await prisma.teacher.create({
+          data: {
+            teacherCode: "ADMIN_" + (session.user.name || "GV").substring(0, 3).toUpperCase(),
+            teacherName: session.user.name || "Administrator",
+            email: session.user.email,
+            position: "QLCM",
+            status: "ACTIVE"
+          }
+        });
+      } catch (e) {
+        evaluatorTeacher = await prisma.teacher.findFirst();
       }
     }
 
     const evaluatorId = evaluatorTeacher?.id || hostTeacher.id;
 
-    let academicYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
-    });
+    let academicYear = data.academicYearId
+      ? await prisma.academicYear.findUnique({ where: { id: data.academicYearId } })
+      : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } });
     if (!academicYear) {
       academicYear = await prisma.academicYear.findFirst({
         orderBy: { startDate: "desc" }
@@ -447,53 +513,11 @@ export async function createForeignObservationWithEvaluation(data: {
       }
     });
 
-    // Update quotas
-    if (!data.isDraft && academicYear?.id) {
-      try {
-        await prisma.teacherAcademicYearTarget.upsert({
-          where: {
-            teacherId_academicYearId: {
-              teacherId: data.teacherId,
-              academicYearId: academicYear.id
-            }
-          },
-          update: {
-            requiredTaught: { increment: 1 }
-          },
-          create: {
-            teacherId: data.teacherId,
-            academicYearId: academicYear.id,
-            requiredTaught: 1,
-            requiredObserved: 0
-          }
-        });
-
-        if (evaluatorId) {
-          await prisma.teacherAcademicYearTarget.upsert({
-            where: {
-              teacherId_academicYearId: {
-                teacherId: evaluatorId,
-                academicYearId: academicYear.id
-              }
-            },
-            update: {
-              requiredObserved: { increment: 1 }
-            },
-            create: {
-              teacherId: evaluatorId,
-              academicYearId: academicYear.id,
-              requiredTaught: 0,
-              requiredObserved: 1
-            }
-          });
-        }
-      } catch (e) {
-        console.warn("Could not update target counts:", e);
-      }
-    }
-
     revalidatePath("/teacher/du-gio-gvnn");
     revalidatePath("/admin/du-gio-gvnn");
+    revalidatePath("/teacher/du-gio");
+    revalidatePath("/teacher/du-gio-mam-non");
+    revalidatePath("/admin/tong-hop-du-gio");
 
     return {
       success: true,

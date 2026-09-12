@@ -39,6 +39,7 @@ interface TeacherTargetTrackerProps {
   onSelectMonth?: (m: string) => void
   availableMonths?: string[]
   monthlyStatsList?: MonthlyTeacherStatItem[]
+  onViewReport?: () => void
 }
 
 export function TeacherTargetTracker({
@@ -60,7 +61,8 @@ export function TeacherTargetTracker({
   selectedMonth = "all",
   onSelectMonth,
   availableMonths = [],
-  monthlyStatsList = []
+  monthlyStatsList = [],
+  onViewReport
 }: TeacherTargetTrackerProps) {
   const isSpecificMonth = selectedMonth && selectedMonth !== "all"
   
@@ -153,9 +155,9 @@ export function TeacherTargetTracker({
               : "Theo dõi tiết trực tiếp giảng dạy (≥1 phiếu nhận xét), tiết đi dự giờ và điểm trung bình nhận được."}
           </p>
 
-          {/* Month Selector Dropdown directly on Banner */}
-          {onSelectMonth && availableMonths.length > 0 && (
-            <div className="pt-1 flex items-center gap-2">
+          {/* Action Row: Month Selector & Quick View Report */}
+          <div className="pt-1 flex items-center gap-2 flex-wrap">
+            {onSelectMonth && availableMonths.length > 0 && (
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/20 backdrop-blur-md rounded-xl border border-white/20 transition-all shadow-inner">
                 <Calendar className="w-3.5 h-3.5 text-[#48BFE3]" />
                 <span className="text-[10px] font-bold text-teal-200">Xem tháng:</span>
@@ -179,8 +181,19 @@ export function TeacherTargetTracker({
                   })}
                 </select>
               </div>
-            </div>
-          )}
+            )}
+
+            {onViewReport && (
+              <button
+                type="button"
+                onClick={onViewReport}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white rounded-xl text-xs font-black transition-all shadow-md shadow-teal-900/30 cursor-pointer border border-white/20 active:scale-95"
+              >
+                <span>📊</span>
+                <span>Báo cáo thống kê & Xuất Excel</span>
+              </button>
+            )}
+          </div>
 
           {/* Pending evaluation warning if any */}
           {pendingEvaluationCount > 0 && (

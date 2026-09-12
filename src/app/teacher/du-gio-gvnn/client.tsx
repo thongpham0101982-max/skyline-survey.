@@ -284,6 +284,12 @@ export function ForeignObservationClient(props: {
   academicYears: any[];
   selectedYearId?: string;
   initialSlots?: any[];
+  teacherStats?: {
+    taughtCount: number;
+    observedCount: number;
+    eslTaughtCount: number;
+    eslObservedCount: number;
+  };
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -639,6 +645,8 @@ export function ForeignObservationClient(props: {
     });
 
     const payload = {
+      observerId: props.currentTeacher?.id,
+      academicYearId: props.selectedYearId,
       teacherId,
       campusId,
       classId,
@@ -1375,34 +1383,60 @@ export function ForeignObservationClient(props: {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-4">
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-left space-y-3">
-                <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider block">
-                  Observed as Host Teacher (Tiết Dạy)
-                </span>
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-left space-y-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider block">
+                    Tiết Giảng Dạy (Host Teacher)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[11px] font-black">
+                    {props.teacherStats?.eslTaughtCount || 0} tiết ESL
+                  </span>
+                </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-slate-900">
-                    {props.currentTeacher?.requiredTaught || 0}
+                    {props.teacherStats?.taughtCount ?? 0}
                   </span>
-                  <span className="text-xs text-slate-500">/ target per term</span>
+                  <span className="text-sm font-bold text-slate-500">
+                    / {props.currentTeacher?.requiredTaught || 2} tiết chỉ tiêu
+                  </span>
                 </div>
                 <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-indigo-600 h-full w-3/4 rounded-full" />
+                  <div 
+                    className="bg-indigo-600 h-full rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.min(100, Math.round(((props.teacherStats?.taughtCount ?? 0) / (props.currentTeacher?.requiredTaught || 2)) * 100))}%` }}
+                  />
                 </div>
+                <p className="text-[11px] text-slate-500">
+                  Tổng hợp từ tất cả các danh mục: Mầm non, K-12, và ESL.
+                </p>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-left space-y-3">
-                <span className="text-xs font-bold text-teal-700 uppercase tracking-wider block">
-                  Observation Credits as Evaluator (Tiết Đi Dự)
-                </span>
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-left space-y-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-teal-700 uppercase tracking-wider block">
+                    Tiết Đi Dự Giờ (Evaluator)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[11px] font-black">
+                    {props.teacherStats?.eslObservedCount || 0} tiết ESL
+                  </span>
+                </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-3xl font-black text-slate-900">
-                    {props.currentTeacher?.requiredObserved || 0}
+                    {props.teacherStats?.observedCount ?? 0}
                   </span>
-                  <span className="text-xs text-slate-500">/ target per term</span>
+                  <span className="text-sm font-bold text-slate-500">
+                    / {props.currentTeacher?.requiredObserved || 10} tiết chỉ tiêu
+                  </span>
                 </div>
                 <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
-                  <div className="bg-teal-600 h-full w-4/5 rounded-full" />
+                  <div 
+                    className="bg-teal-600 h-full rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.min(100, Math.round(((props.teacherStats?.observedCount ?? 0) / (props.currentTeacher?.requiredObserved || 10)) * 100))}%` }}
+                  />
                 </div>
+                <p className="text-[11px] text-slate-500">
+                  Đã hoàn thành đánh giá và nộp phiếu nhận xét.
+                </p>
               </div>
             </div>
           </div>

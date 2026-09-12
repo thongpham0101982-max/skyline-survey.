@@ -448,6 +448,94 @@ export async function getObservationData(academicYearId?: string) {
       role: e.registration?.slot?.teacherId === currentTeacher?.id ? "TEACHER" : "OBSERVER"
     })).filter((item: any) => item.slot != null);
 
+    let myPersonalSlots: any[] = [];
+    if (currentTeacher?.id && !currentTeacher.id.startsWith("admin-")) {
+      const yearSlotCondition: any = selectedYear
+        ? {
+            OR: [
+              { academicYearId: selectedYear.id },
+              {
+                AND: [
+                  { academicYearId: null },
+                  {
+                    date: {
+                      gte: selectedYear.startDate,
+                      lte: selectedYear.endDate
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        : {};
+
+      myPersonalSlots = await prisma.observationSlot.findMany({
+        where: {
+          status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] },
+          AND: [
+            yearSlotCondition,
+            {
+              OR: [
+                { teacherId: currentTeacher.id },
+                { registrations: { some: { teacherId: currentTeacher.id } } }
+              ]
+            }
+          ]
+        },
+        include: {
+          teacher: {
+            select: {
+              id: true,
+              teacherName: true,
+              teacherCode: true,
+              email: true,
+              departmentId: true,
+              departmentRel: true,
+              departmentAssignments: {
+                include: { department: true }
+              },
+              campusId: true,
+              campus: {
+                select: { campusName: true }
+              }
+            }
+          },
+          registrations: {
+            include: {
+              teacher: {
+                select: {
+                  id: true,
+                  teacherName: true,
+                  teacherCode: true,
+                  departmentId: true,
+                  campusId: true,
+                  campus: {
+                    select: {
+                      id: true,
+                      campusName: true,
+                      campusCode: true
+                    }
+                  },
+                  position: true,
+                  departmentAssignments: {
+                    select: { departmentId: true, position: true }
+                  },
+                  email: true
+                }
+              },
+              evaluation: true
+            }
+          }
+        },
+        orderBy: {
+          date: "desc"
+        }
+      }).catch(err => {
+        console.error("Error fetching myPersonalSlots:", err);
+        return [];
+      });
+    }
+
     return {
       success: true,
       currentTeacher,
@@ -459,7 +547,8 @@ export async function getObservationData(academicYearId?: string) {
       classes,
       academicYears,
       selectedYearId: activeYearId,
-      myReceivedEvaluations
+      myReceivedEvaluations,
+      myPersonalSlots
     }
   } catch (e: any) {
     return { success: false, error: e.message }

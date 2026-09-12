@@ -10,6 +10,7 @@ import { PrintObservationEvaluationModal } from './components/PrintObservationEv
 import { QuickCommentPresets } from './components/QuickCommentPresets';
 import { TeacherTargetTracker } from './components/TeacherTargetTracker';
 import { AdminObservationKpiCards } from './components/AdminObservationKpiCards';
+import { TeacherObservationReportTab } from './components/TeacherObservationReportTab';
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
@@ -245,11 +246,40 @@ interface DeptInfo { id: string; code: string; name: string }
 interface CampusInfo { id: string; campusCode: string; campusName: string }
 interface ClassInfo { id: string; classCode: string; className: string; level: string; grade: string; campusId: string; academicYearId?: string }
 
+export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | "K12", label: string, shortCode: "MN" | "GVNN" | "PT", badgeClass: string } {
+  const isMN = slot?.level === "Mầm non" ||
+    (slot?.grade || "").toLowerCase().includes("mầm non") ||
+    (slot?.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
+    (slot?.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+  if (isMN) {
+    return { key: "MAM_NON", label: "Mầm non", shortCode: "MN", badgeClass: "bg-amber-100 text-amber-900 border-amber-300" };
+  }
+  const subj = (slot?.subjectName || "").toLowerCase();
+  const top = (slot?.topic || "").toLowerCase();
+  const desc = (slot?.description || "").toLowerCase();
+  const deptName = (slot?.teacher?.departmentRel?.name || "").toLowerCase();
+
+  const isEsl = subj.includes("esl") ||
+    subj.includes("tiếng anh (esl)") ||
+    subj.includes("tieng anh (esl)") ||
+    subj.includes("foreign") ||
+    top.includes("foreign") ||
+    top.includes("gvnn") ||
+    desc.includes("gvnn") ||
+    slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
+    (deptName.includes("quốc tế") && (subj.includes("esl") || subj.includes("ela") || subj.includes("english")));
+  if (isEsl) {
+    return { key: "GVNN_ESL", label: "Dự giờ GVNN (ESL)", shortCode: "GVNN", badgeClass: "bg-sky-100 text-sky-900 border-sky-300" };
+  }
+  return { key: "K12", label: "Phổ thông K-12", shortCode: "PT", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300" };
+}
+
 interface ObservationClientProps {
   isAdminPage?: boolean
   initialViewMode?: "ADMIN" | "TEACHER"
   isPreschoolPage?: boolean
   initialSlots: any[]
+  initialPersonalSlots?: any[]
   currentTeacher?: TeacherInfo | null
   subjects: SubjectInfo[]
   departments: DeptInfo[]
@@ -413,11 +443,12 @@ const getAvatarGradient = (name: string) => {
 };
 
 
-const mapTabToMainTab = (tab: string | null | undefined, isDefaultAdmin = false): "my_schedule" | "overview_slots" | "evaluations" | "ttcm_summary" | "re_evaluations" => {
+const mapTabToMainTab = (tab: string | null | undefined, isDefaultAdmin = false): "my_schedule" | "overview_slots" | "evaluations" | "teacher_report" | "ttcm_summary" | "re_evaluations" => {
   if (!tab) return isDefaultAdmin ? "overview_slots" : "my_schedule";
   if (tab === "my_schedule" || tab === "my-schedule" || tab === "lich-day" || tab === "schedule") return "my_schedule";
   if (tab === "overview_slots" || tab === "tong-quan" || tab === "overview" || tab === "slots" || tab === "danh-sach" || tab === "dang-ky-du-gio" || tab === "dang-ky" || tab === "register_request") return "overview_slots";
   if (tab === "evaluations" || tab === "evaluation" || tab === "danh-gia") return "evaluations";
+  if (tab === "teacher_report" || tab === "report" || tab === "bao-cao" || tab === "thong-ke" || tab === "bao-cao-thong-ke") return "teacher_report";
   if (tab === "ttcm_summary" || tab === "ttcm" || tab === "theo-doi-tong-hop" || tab === "tong-hop-ttcm" || tab === "to-chuyen-mon") return "ttcm_summary";
   if (tab === "re_evaluations" || tab === "re-evaluations" || tab === "xet-duyet" || tab === "xet-duyet-danh-gia-lai") return "re_evaluations";
   return isDefaultAdmin ? "overview_slots" : "my_schedule";
@@ -538,6 +569,7 @@ const getSlotMonthStatus = (dateValue: string | Date | undefined | null): "CURRE
 export function ObservationClient(props: ObservationClientProps) {
   const {
     initialSlots = [],
+    initialPersonalSlots = [],
     currentTeacher = null,
     subjects = [],
     departments = [],
@@ -573,6 +605,13 @@ export function ObservationClient(props: ObservationClientProps) {
   });
 
   const [slots, setSlots] = useState(initialSlots)
+  const [personalSlots, setPersonalSlots] = useState<any[]>(props.initialPersonalSlots || initialSlots)
+
+  useEffect(() => {
+    if (props.initialPersonalSlots) {
+      setPersonalSlots(props.initialPersonalSlots);
+    }
+  }, [props.initialPersonalSlots])
   const [activeTab, setActiveTab] = useState(activeTabParam)
   
   // Re-evaluation States
@@ -646,12 +685,14 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [selectedEvalMonth, setSelectedEvalMonth] = useState('ALL');
-  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab"), (props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))));
+  const [activeMainTab, setActiveMainTab] = useState<"register_request" | "overview_slots" | "my_schedule" | "evaluations" | "teacher_report" | "ttcm_summary" | "re_evaluations">(() => mapTabToMainTab(searchParams.get("tab"), (props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))));
   const [myScheduleSubTab, setMyScheduleSubTab] = useState<"register" | "all" | "taught" | "observed" | "requests">("all");
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
   const [taughtOriginFilter, setTaughtOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
+  const [taughtCategoryFilter, setTaughtCategoryFilter] = useState<"all" | "MN" | "PT">("all");
   const [observedOriginFilter, setObservedOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
+  const [observedCategoryFilter, setObservedCategoryFilter] = useState<"all" | "GVNN" | "MN" | "PT">("all");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(true);
   const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
 
@@ -1342,20 +1383,24 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const refreshSlots = async () => {
-    const res = await getObservationSlots({ 
-      schoolBlock: filterSchoolBlock, 
-      campusId: filterCampusId, 
-      divisionCode: filterDivisionCode,
-      deptId: filterDeptId, 
-      level: filterLevel, 
-      grade: filterGrade, 
-      classId: filterClassId, 
-      period: filterPeriod, 
-      date: filterDate,
-      month: filterMonth,
-      academicYearId: filterAcademicYearId
-    })
-    if (res.success && res.slots) setSlots(res.slots)
+    const [res, refRes] = await Promise.all([
+      getObservationSlots({ 
+        schoolBlock: filterSchoolBlock, 
+        campusId: filterCampusId, 
+        divisionCode: filterDivisionCode,
+        deptId: filterDeptId, 
+        level: filterLevel, 
+        grade: filterGrade, 
+        classId: filterClassId, 
+        period: filterPeriod, 
+        date: filterDate,
+        month: filterMonth,
+        academicYearId: filterAcademicYearId
+      }),
+      getObservationData(filterAcademicYearId)
+    ]);
+    if (res.success && res.slots) setSlots(res.slots);
+    if (refRes.success && refRes.myPersonalSlots) setPersonalSlots(refRes.myPersonalSlots);
   }
 
 
@@ -2285,7 +2330,7 @@ export function ObservationClient(props: ObservationClientProps) {
       };
     });
 
-    (slots || []).forEach(slot => {
+    (personalSlots || []).forEach(slot => {
       const slotDate = new Date(slot.date);
       if (isNaN(slotDate.getTime())) return;
       const year = slotDate.getFullYear();
@@ -2328,7 +2373,7 @@ export function ObservationClient(props: ObservationClientProps) {
     Object.values(stats).forEach(st => {
       let sum = 0;
       let cnt = 0;
-      (slots || []).forEach(slot => {
+      (personalSlots || []).forEach(slot => {
         const slotDate = new Date(slot.date);
         if (isNaN(slotDate.getTime())) return;
         const key = `${slotDate.getFullYear()}-${(slotDate.getMonth() + 1).toString().padStart(2, "0")}`;
@@ -2719,30 +2764,43 @@ export function ObservationClient(props: ObservationClientProps) {
   };
 
   const myTaughtSlots = useMemo(() => {
-    return (slots || []).filter(slot => slot.teacherId === currentTeacher?.id)
+    return (personalSlots || []).filter(slot => slot.teacherId === currentTeacher?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [slots, currentTeacher?.id]);
+  }, [personalSlots, currentTeacher?.id]);
 
   const displayedMyTaughtSlots = useMemo(() => {
     return myTaughtSlots.filter(slot => {
-      if (taughtOriginFilter === "all") return true;
-      const isSurprise = isSurpriseSlot(slot);
-      return taughtOriginFilter === "SURPRISE" ? isSurprise : !isSurprise;
+      if (taughtOriginFilter !== "all") {
+        const isSurprise = isSurpriseSlot(slot);
+        if (taughtOriginFilter === "SURPRISE" ? !isSurprise : isSurprise) return false;
+      }
+      if (taughtCategoryFilter !== "all") {
+        const cat = getSlotCategoryInfo(slot);
+        const code = cat.shortCode === "MN" ? "MN" : (cat.shortCode === "GVNN" ? "GVNN" : "PT");
+        if (code !== taughtCategoryFilter) return false;
+      }
+      return true;
     });
-  }, [myTaughtSlots, taughtOriginFilter]);
+  }, [myTaughtSlots, taughtOriginFilter, taughtCategoryFilter]);
 
   const myObservedSlots = useMemo(() => {
-    return (slots || []).filter(slot => (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
+    return (personalSlots || []).filter(slot => (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [slots, currentTeacher?.id]);
+  }, [personalSlots, currentTeacher?.id]);
 
   const displayedMyObservedSlots = useMemo(() => {
     return myObservedSlots.filter(slot => {
-      if (observedOriginFilter === "all") return true;
-      const isSurprise = isSurpriseSlot(slot);
-      return observedOriginFilter === "SURPRISE" ? isSurprise : !isSurprise;
+      if (observedOriginFilter !== "all") {
+        const isSurprise = isSurpriseSlot(slot);
+        if (observedOriginFilter === "SURPRISE" ? !isSurprise : isSurprise) return false;
+      }
+      if (observedCategoryFilter !== "all") {
+        const cat = getSlotCategoryInfo(slot);
+        if (cat.shortCode !== observedCategoryFilter) return false;
+      }
+      return true;
     });
-  }, [myObservedSlots, observedOriginFilter]);
+  }, [myObservedSlots, observedOriginFilter, observedCategoryFilter]);
 
   // Các tiết dự hợp lệ (bản thân GV đã có phiếu đánh giá / nhận xét)
   const myValidObservedSlots = useMemo(() => {
@@ -3147,8 +3205,8 @@ export function ObservationClient(props: ObservationClientProps) {
             </button>
           </div>
         ) : (
-          /* TEACHER MODE TAB BAR (UP TO 5 TABS) */
-          <div className={`grid grid-cols-2 ${(isAdminUser && isTTCM) ? "lg:grid-cols-3 xl:grid-cols-5" : (isAdminUser || isTTCM || isTBP) ? "lg:grid-cols-3 xl:grid-cols-4" : "lg:grid-cols-3"} gap-1.5`}>
+          /* TEACHER MODE TAB BAR (UP TO 6 TABS) */
+          <div className={`grid grid-cols-2 sm:grid-cols-3 ${(isAdminUser && isTTCM) ? "lg:grid-cols-6" : (isAdminUser || isTTCM || isTBP) ? "lg:grid-cols-5" : "lg:grid-cols-4"} gap-1.5`}>
             
             {/* Tab 1: My Schedule & Tasks */}
             <button
@@ -3213,7 +3271,28 @@ export function ObservationClient(props: ObservationClientProps) {
               </span>
             </button>
 
-            {/* Tab 4: TTCM / TBP Department Summary (TTCM / TBP / Admin only) */}
+            {/* Tab 4: Teacher Personal Report */}
+            <button
+              type="button"
+              onClick={() => setActiveMainTab("teacher_report")}
+              className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-200 cursor-pointer ${
+                activeMainTab === "teacher_report"
+                  ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-800 text-white shadow-md shadow-emerald-800/25 scale-[1.01] border border-emerald-400/40"
+                  : "text-emerald-950 bg-emerald-50/60 hover:bg-emerald-100/80 border border-emerald-200/70"
+              }`}
+            >
+              <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "teacher_report" ? "text-emerald-200" : "text-emerald-600"}`} />
+              <span className="truncate">4. Báo cáo thống kê</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                activeMainTab === "teacher_report" 
+                  ? "bg-white/25 text-white border border-white/30" 
+                  : "bg-emerald-200/80 text-emerald-950 border border-emerald-300/80"
+              }`}>
+                {myTaughtCount} dạy • {myObservedCount} dự
+              </span>
+            </button>
+
+            {/* Tab 5: TTCM / TBP Department Summary (TTCM / TBP / Admin only) */}
             {(isTTCM || isTBP || isAdminUser) && (
               <button
                 type="button"
@@ -3224,8 +3303,8 @@ export function ObservationClient(props: ObservationClientProps) {
                     : "text-indigo-950 bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200/80"
                 }`}
               >
-                <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
-                <span className="truncate">{isTBP ? "4. Báo cáo TBP & Tổ CM" : "4. Báo cáo TTCM"}</span>
+                <LayoutDashboard className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
+                <span className="truncate">{isTBP ? "5. Báo cáo TBP & Tổ CM" : "5. Báo cáo TTCM"}</span>
                 <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
                   activeMainTab === "ttcm_summary" 
                     ? "bg-white/25 text-white border border-white/30" 
@@ -3236,7 +3315,7 @@ export function ObservationClient(props: ObservationClientProps) {
               </button>
             )}
 
-            {/* Tab 5: Re-evaluation Approvals (Admin only) */}
+            {/* Tab 6: Re-evaluation Approvals (Admin only) */}
             {isAdminUser && (
               <button
                 type="button"
@@ -3248,7 +3327,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 }`}
               >
                 <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
-                <span className="truncate">5. Duyệt chấm lại</span>
+                <span className="truncate">6. Duyệt chấm lại</span>
                 {pendingReEvalCount > 0 && (
                   <span className="px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 bg-red-500 text-white border border-white animate-pulse">
                     {pendingReEvalCount}
@@ -4444,6 +4523,7 @@ export function ObservationClient(props: ObservationClientProps) {
             onSelectMonth={handleMonthChange}
             availableMonths={availableMonths}
             monthlyStatsList={teacherMonthlyStatsList}
+            onViewReport={() => setActiveMainTab("teacher_report")}
           />
           
           {/* Sub-navigation inside My Workspace */}
@@ -4534,44 +4614,85 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
               </div>
 
-              {/* Filter tabs */}
+              {/* Filter tabs: Origin + Cấp học (MN, PT) */}
               {myTaughtSlots.length > 0 && (
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => setTaughtOriginFilter("all")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                      taughtOriginFilter === "all"
-                        ? "bg-white text-slate-800 shadow-xs"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    Tất cả ({myTaughtSlots.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTaughtOriginFilter("PLAN")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
-                      taughtOriginFilter === "PLAN"
-                        ? "bg-white text-teal-800 shadow-xs"
-                        : "text-slate-500 hover:text-teal-800"
-                    }`}
-                  >
-                    <span>📋 Kế hoạch</span>
-                    <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => !isSurpriseSlot(s)).length})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTaughtOriginFilter("SURPRISE")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
-                      taughtOriginFilter === "SURPRISE"
-                        ? "bg-white text-rose-700 shadow-xs"
-                        : "text-slate-500 hover:text-rose-700"
-                    }`}
-                  >
-                    <span>⚡ Đột xuất</span>
-                    <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => isSurpriseSlot(s)).length})</span>
-                  </button>
+                <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+                    <button
+                      type="button"
+                      onClick={() => setTaughtOriginFilter("all")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        taughtOriginFilter === "all"
+                          ? "bg-white text-slate-800 shadow-xs"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Tất cả ({myTaughtSlots.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaughtOriginFilter("PLAN")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        taughtOriginFilter === "PLAN"
+                          ? "bg-white text-teal-800 shadow-xs"
+                          : "text-slate-500 hover:text-teal-800"
+                      }`}
+                    >
+                      <span>📋 Kế hoạch</span>
+                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => !isSurpriseSlot(s)).length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaughtOriginFilter("SURPRISE")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        taughtOriginFilter === "SURPRISE"
+                          ? "bg-white text-rose-700 shadow-xs"
+                          : "text-slate-500 hover:text-rose-700"
+                      }`}
+                    >
+                      <span>⚡ Đột xuất</span>
+                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => isSurpriseSlot(s)).length})</span>
+                    </button>
+                  </div>
+
+                  {/* Cấp học filter pills */}
+                  <div className="flex items-center gap-1 bg-amber-50/80 p-1 rounded-2xl border border-amber-200/80">
+                    <button
+                      type="button"
+                      onClick={() => setTaughtCategoryFilter("all")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        taughtCategoryFilter === "all"
+                          ? "bg-white text-amber-950 shadow-xs border border-amber-300/60"
+                          : "text-amber-800/80 hover:text-amber-950"
+                      }`}
+                    >
+                      Mọi cấp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaughtCategoryFilter("MN")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        taughtCategoryFilter === "MN"
+                          ? "bg-white text-amber-950 shadow-xs border border-amber-300"
+                          : "text-amber-800/80 hover:text-amber-950"
+                      }`}
+                    >
+                      <span>🍼 MN</span>
+                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).shortCode === "MN").length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaughtCategoryFilter("PT")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        taughtCategoryFilter === "PT"
+                          ? "bg-white text-emerald-950 shadow-xs border border-emerald-300"
+                          : "text-emerald-800/80 hover:text-emerald-950"
+                      }`}
+                    >
+                      <span>🏫 PT</span>
+                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).shortCode !== "MN").length})</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -4606,7 +4727,8 @@ export function ObservationClient(props: ObservationClientProps) {
                   <thead>
                     <tr className="bg-amber-50/60 border-b border-amber-200/80 text-amber-950 font-black uppercase text-[11px] tracking-wider">
                       <th className="p-3.5 text-center w-12">TT</th>
-                      <th className="p-3.5">Cơ sở</th>
+                      <th className="p-3.5 text-center w-20">Cơ sở</th>
+                      <th className="p-3.5 text-center w-24">Cấp học</th>
                       <th className="p-3.5">Môn học & Tên bài dạy / Chủ đề</th>
                       <th className="p-3.5">Thời gian & Lớp</th>
                       <th className="p-3.5">GV Đăng ký dự giờ (Duyệt)</th>
@@ -4631,10 +4753,33 @@ export function ObservationClient(props: ObservationClientProps) {
                           <td className="p-3.5 text-center font-black text-slate-400">{index + 1}</td>
 
                           {/* Cơ sở */}
-                          <td className="p-3.5">
+                          <td className="p-3.5 text-center">
                             <span className="px-2.5 py-1 rounded-xl bg-amber-100 text-amber-950 border border-amber-300 text-xs font-black inline-block shadow-2xs">
                               {campusDisplay}
                             </span>
+                          </td>
+
+                          {/* Cột Cấp học (MN, PT nếu dạy) */}
+                          <td className="p-3.5 text-center">
+                            {(() => {
+                              const cat = getSlotCategoryInfo(slot);
+                              const code = cat.shortCode === "MN" ? "MN" : (cat.shortCode === "GVNN" ? "GVNN" : "PT");
+                              const badgeStyle = code === "MN"
+                                ? "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30"
+                                : (code === "GVNN"
+                                  ? "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30"
+                                  : "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30");
+                              const icon = code === "MN" ? "🍼" : (code === "GVNN" ? "🌐" : "🏫");
+                              return (
+                                <span
+                                  className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center justify-center gap-1 shadow-2xs min-w-[56px] ${badgeStyle}`}
+                                  title={code === "MN" ? "Mầm non" : (code === "GVNN" ? "Dự giờ GVNN (ESL)" : "Phổ thông")}
+                                >
+                                  <span>{icon}</span>
+                                  <span>{code}</span>
+                                </span>
+                              );
+                            })()}
                           </td>
 
                           {/* Môn học & Chủ đề */}
@@ -4837,44 +4982,97 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
               </div>
 
-              {/* Filter tabs */}
+              {/* Filter tabs: Origin + Phân loại (GVNN, MN, PT nếu Dự) */}
               {myObservedSlots.length > 0 && (
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => setObservedOriginFilter("all")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                      observedOriginFilter === "all"
-                        ? "bg-white text-slate-800 shadow-xs"
-                        : "text-slate-500 hover:text-slate-800"
-                    }`}
-                  >
-                    Tất cả ({myObservedSlots.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setObservedOriginFilter("PLAN")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
-                      observedOriginFilter === "PLAN"
-                        ? "bg-white text-teal-800 shadow-xs"
-                        : "text-slate-500 hover:text-teal-800"
-                    }`}
-                  >
-                    <span>📋 Kế hoạch</span>
-                    <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => !isSurpriseSlot(s)).length})</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setObservedOriginFilter("SURPRISE")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
-                      observedOriginFilter === "SURPRISE"
-                        ? "bg-white text-rose-700 shadow-xs"
-                        : "text-slate-500 hover:text-rose-700"
-                    }`}
-                  >
-                    <span>⚡ Đột xuất</span>
-                    <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => isSurpriseSlot(s)).length})</span>
-                  </button>
+                <div className="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80">
+                    <button
+                      type="button"
+                      onClick={() => setObservedOriginFilter("all")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        observedOriginFilter === "all"
+                          ? "bg-white text-slate-800 shadow-xs"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      Tất cả ({myObservedSlots.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setObservedOriginFilter("PLAN")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        observedOriginFilter === "PLAN"
+                          ? "bg-white text-teal-800 shadow-xs"
+                          : "text-slate-500 hover:text-teal-800"
+                      }`}
+                    >
+                      <span>📋 Kế hoạch</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => !isSurpriseSlot(s)).length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setObservedOriginFilter("SURPRISE")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        observedOriginFilter === "SURPRISE"
+                          ? "bg-white text-rose-700 shadow-xs"
+                          : "text-slate-500 hover:text-rose-700"
+                      }`}
+                    >
+                      <span>⚡ Đột xuất</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => isSurpriseSlot(s)).length})</span>
+                    </button>
+                  </div>
+
+                  {/* Phân loại (GVNN, MN, PT) filter pills */}
+                  <div className="flex items-center gap-1 bg-teal-50/80 p-1 rounded-2xl border border-teal-200/80">
+                    <button
+                      type="button"
+                      onClick={() => setObservedCategoryFilter("all")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                        observedCategoryFilter === "all"
+                          ? "bg-white text-teal-950 shadow-xs border border-teal-300/60"
+                          : "text-teal-800/80 hover:text-teal-950"
+                      }`}
+                    >
+                      Tất cả loại
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setObservedCategoryFilter("GVNN")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        observedCategoryFilter === "GVNN"
+                          ? "bg-white text-sky-950 shadow-xs border border-sky-300"
+                          : "text-sky-800/80 hover:text-sky-950"
+                      }`}
+                    >
+                      <span>🌐 GVNN</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).shortCode === "GVNN").length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setObservedCategoryFilter("MN")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        observedCategoryFilter === "MN"
+                          ? "bg-white text-amber-950 shadow-xs border border-amber-300"
+                          : "text-amber-800/80 hover:text-amber-950"
+                      }`}
+                    >
+                      <span>🍼 MN</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).shortCode === "MN").length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setObservedCategoryFilter("PT")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        observedCategoryFilter === "PT"
+                          ? "bg-white text-emerald-950 shadow-xs border border-emerald-300"
+                          : "text-emerald-800/80 hover:text-emerald-950"
+                      }`}
+                    >
+                      <span>🏫 PT</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).shortCode === "PT").length})</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -4909,7 +5107,8 @@ export function ObservationClient(props: ObservationClientProps) {
                   <thead>
                     <tr className="bg-teal-50/70 border-b border-teal-200 text-teal-950 font-black uppercase text-[11px] tracking-wider">
                       <th className="p-3.5 text-center w-12">TT</th>
-                      <th className="p-3.5">Cơ sở</th>
+                      <th className="p-3.5 text-center w-20">Cơ sở</th>
+                      <th className="p-3.5 text-center w-24">Phân loại</th>
                       <th className="p-3.5">Giáo viên dạy</th>
                       <th className="p-3.5">Môn học & Tên bài dạy / Chủ đề</th>
                       <th className="p-3.5">Thời gian & Lớp</th>
@@ -4936,10 +5135,33 @@ export function ObservationClient(props: ObservationClientProps) {
                           <td className="p-3.5 text-center font-black text-slate-400">{index + 1}</td>
 
                           {/* Cơ sở */}
-                          <td className="p-3.5">
+                          <td className="p-3.5 text-center">
                             <span className="px-2.5 py-1 rounded-xl bg-teal-50 text-teal-800 border border-teal-200/80 text-xs font-black inline-block shadow-2xs">
                               {campusDisplay}
                             </span>
+                          </td>
+
+                          {/* Cột Phân loại (GVNN, MN, PT nếu Dự) */}
+                          <td className="p-3.5 text-center">
+                            {(() => {
+                              const cat = getSlotCategoryInfo(slot);
+                              const code = cat.shortCode;
+                              const badgeStyle = code === "GVNN"
+                                ? "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30"
+                                : (code === "MN"
+                                  ? "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30"
+                                  : "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30");
+                              const icon = code === "GVNN" ? "🌐" : (code === "MN" ? "🍼" : "🏫");
+                              return (
+                                <span
+                                  className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center justify-center gap-1 shadow-2xs min-w-[64px] ${badgeStyle}`}
+                                  title={code === "GVNN" ? "Dự giờ GVNN (ESL)" : (code === "MN" ? "Mầm non" : "Phổ thông")}
+                                >
+                                  <span>{icon}</span>
+                                  <span>{code}</span>
+                                </span>
+                              );
+                            })()}
                           </td>
 
                           {/* Giáo viên dạy */}
@@ -5150,7 +5372,7 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
       )}
 
-      {/* TAB 4: 4. KẾT QUẢ ĐÁNH GIÁ TIẾT DẠY NHẬN ĐƯỢC */}
+      {/* TAB 3: 3. KẾT QUẢ ĐÁNH GIÁ TIẾT DẠY NHẬN ĐƯỢC */}
       {activeMainTab === 'evaluations' && (
         <ReceivedEvaluationsTab
           receivedEvaluations={receivedEvaluations}
@@ -5160,6 +5382,27 @@ export function ObservationClient(props: ObservationClientProps) {
           RATING_COLORS={RATING_COLORS}
           currentTeacher={currentTeacher}
           setPrintModalSlot={setPrintModalSlot}
+        />
+      )}
+
+      {/* TAB 4: BÁO CÁO THỐNG KÊ DỰ GIỜ & TIẾT DẠY CỦA GIÁO VIÊN */}
+      {activeMainTab === 'teacher_report' && (
+        <TeacherObservationReportTab
+          currentTeacher={currentTeacher}
+          academicYearName={activeAcademicYear?.name || "Năm học hiện tại"}
+          personalSlots={personalSlots}
+          myTaughtSlots={myTaughtSlots}
+          myObservedSlots={myObservedSlots}
+          myTaughtCount={myTaughtCount}
+          myObservedCount={myObservedCount}
+          taughtTarget={taughtTarget}
+          obsTarget={obsTarget}
+          avgScore={myReceivedEvaluationsStats?.avgScore}
+          totalReceivedEvalCount={totalReceivedEvalCount}
+          myPendingEvaluationsCount={myPendingEvaluationsCount}
+          monthlyStatsList={teacherMonthlyStatsList}
+          availableMonths={availableMonths}
+          isPreschool={isMamNonTeacher}
         />
       )}
 

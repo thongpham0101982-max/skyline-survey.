@@ -353,8 +353,10 @@ export function AdminTongHopClient({
       observedSurpriseCount: number;
       taughtMamNon: number;
       taughtPhoThong: number;
+      taughtEsl: number;
       observedMamNon: number;
       observedPhoThong: number;
+      observedEsl: number;
     }> = {};
 
     teachersList.forEach((t: any) => {
@@ -365,8 +367,10 @@ export function AdminTongHopClient({
         observedSurpriseCount: 0,
         taughtMamNon: 0,
         taughtPhoThong: 0,
+        taughtEsl: 0,
         observedMamNon: 0,
-        observedPhoThong: 0
+        observedPhoThong: 0,
+        observedEsl: 0
       };
     });
 
@@ -380,6 +384,10 @@ export function AdminTongHopClient({
 
       const isMamNon = slot.level === "Mầm non" ||
         (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().includes("mam non");
+      const isEsl = (slot.subjectName || "").includes("ESL") ||
+        (slot.subjectName || "").toLowerCase().includes("tiếng anh (esl)") ||
+        (slot.topic || "").toLowerCase().includes("foreign english") ||
+        slot.requestOrigin === "FOREIGN_WALKTHROUGH";
       const isSurprise = isSurpriseSlot(slot);
 
       if (statsMap[slot.teacherId]) {
@@ -392,6 +400,7 @@ export function AdminTongHopClient({
           statsMap[slot.teacherId].taughtCount += increment;
           if (isSurprise) statsMap[slot.teacherId].taughtSurpriseCount += increment;
           if (isMamNon) statsMap[slot.teacherId].taughtMamNon += increment;
+          else if (isEsl) statsMap[slot.teacherId].taughtEsl += increment;
           else statsMap[slot.teacherId].taughtPhoThong += increment;
         }
       }
@@ -403,6 +412,7 @@ export function AdminTongHopClient({
           statsMap[reg.teacherId].observedCount += increment;
           if (isSurprise) statsMap[reg.teacherId].observedSurpriseCount += increment;
           if (isMamNon) statsMap[reg.teacherId].observedMamNon += increment;
+          else if (isEsl) statsMap[reg.teacherId].observedEsl += increment;
           else statsMap[reg.teacherId].observedPhoThong += increment;
         }
       });
