@@ -453,28 +453,6 @@ export function ObservationRegistrationSection(props: any) {
 
   return (
     <div className="w-full space-y-6 animate-in fade-in duration-300">
-      {/* 1. TOP BANNER: Sky-Line Better Teaching, Brighter Learners */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-100/90 via-sky-50 to-teal-50/60 border border-sky-200/70 p-6 sm:p-7 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1.5 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-teal-100/90 text-teal-800 border border-teal-200/70 shadow-2xs">
-              <span>QUẢN LÝ DỰ GIỜ</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-slate-800">
-              Dự giờ & Đánh giá tiết dạy
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-600 font-medium">
-              Hỗ trợ phát triển năng lực giảng dạy – Vì chất lượng giáo dục Sky-Line
-            </p>
-          </div>
-
-          <div className="flex flex-col items-end justify-center self-start md:self-auto text-right">
-            <span className="font-serif italic text-teal-900/90 font-bold text-xs sm:text-sm tracking-wide bg-white/80 backdrop-blur-xs px-4 py-2 rounded-2xl border border-teal-100 shadow-2xs">
-              &ldquo;Better Teaching, Brighter Learners&rdquo;
-            </span>
-          </div>
-        </div>
-      </div>
 
       {/* 2. 4 OVERVIEW METRIC CARDS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
