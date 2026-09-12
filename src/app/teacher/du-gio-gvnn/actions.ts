@@ -538,33 +538,47 @@ export async function getForeignObservationSlots(params?: string | { academicYea
       return { success: false, error: "Unauthorized" };
     }
 
-    const where: any = {};
+    const andConditions: any[] = [
+      {
+        OR: [
+          { requestOrigin: "FOREIGN_WALKTHROUGH" },
+          { description: { contains: "GVNN" } },
+          { description: { contains: "Dự giờ GVNN" } },
+          { description: { contains: "FOREIGN" } },
+          { subjectName: { contains: "ESL" } },
+          { subjectName: { contains: "Tiếng Anh" } },
+          { topic: { contains: "Foreign" } },
+          { topic: { contains: "ESL" } }
+        ]
+      }
+    ];
+
     const academicYearId = typeof params === "string" ? params : params?.academicYearId;
     if (academicYearId && academicYearId !== "all") {
-      where.academicYearId = academicYearId;
+      andConditions.push({ academicYearId });
     }
 
     if (typeof params === "object" && params) {
       if (params.campusId && params.campusId !== "all") {
-        where.campusId = params.campusId;
+        andConditions.push({ campusId: params.campusId });
       }
       if (params.grade && params.grade !== "all") {
-        where.grade = params.grade;
+        andConditions.push({ grade: params.grade });
       }
       if (params.deptId && params.deptId !== "all") {
-        where.targetDeptId = params.deptId;
+        andConditions.push({ targetDeptId: params.deptId });
       }
       if (params.date) {
         const start = new Date(params.date);
         start.setHours(0, 0, 0, 0);
         const end = new Date(params.date);
         end.setHours(23, 59, 59, 999);
-        where.date = { gte: start, lte: end };
+        andConditions.push({ date: { gte: start, lte: end } });
       }
     }
 
     const slots = await prisma.observationSlot.findMany({
-      where,
+      where: { AND: andConditions },
       include: {
         teacher: {
           select: {

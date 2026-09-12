@@ -31,9 +31,11 @@ import {
   BarChart3,
   Layers,
   Check,
-  Star
+  Star,
+  ClipboardList
 } from "lucide-react";
 import { createForeignObservationWithEvaluation } from "./actions";
+import { ForeignObservationHistoryTab } from "./components/ForeignObservationHistoryTab";
 
 export interface IndicatorConfig {
   id: number;
@@ -54,7 +56,7 @@ const cleanStr = (s: string | null | undefined) =>
    .replace(/đ/g, "d")
    .replace(/Đ/g, "d");
 
-const ESL_INDICATORS: IndicatorConfig[] = [
+export const ESL_INDICATORS: IndicatorConfig[] = [
   // SECTION D: CURRICULUM IMPLEMENTATION (From Excel)
   {
     id: 14,
@@ -295,6 +297,13 @@ export function ForeignObservationClient(props: {
   const [isPending, startTransition] = useTransition();
 
   const [activeTab, setActiveTab] = useState<"walkthrough" | "schedule" | "evaluations" | "kpi">("walkthrough");
+  const [slots, setSlots] = useState<any[]>(props.initialSlots || []);
+
+  React.useEffect(() => {
+    if (props.initialSlots) {
+      setSlots(props.initialSlots);
+    }
+  }, [props.initialSlots]);
 
   // Observed Teacher State
   const [observedDeptId, setObservedDeptId] = useState<string>("ALL");
@@ -668,6 +677,10 @@ export function ForeignObservationClient(props: {
       const res = await createForeignObservationWithEvaluation(payload);
       if (res.success) {
         showToast(res.message || "Submitted successfully!", "success");
+        router.refresh();
+        setTimeout(() => {
+          setActiveTab("evaluations");
+        }, 1200);
       } else {
         showToast(res.error || "Failed to submit observation.", "error");
       }
@@ -719,6 +732,17 @@ export function ForeignObservationClient(props: {
               >
                 <Sparkles className="w-4 h-4" />
                 ⚡ Walkthrough Form
+              </button>
+              <button
+                onClick={() => setActiveTab("evaluations")}
+                className={"flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all " +
+                  (activeTab === "evaluations"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    : "text-slate-300 hover:text-white hover:bg-slate-700/50")
+                }
+              >
+                <ClipboardList className="w-4 h-4" />
+                📜 Lược sử đánh giá ({slots.length})
               </button>
               <button
                 onClick={() => setActiveTab("kpi")}
@@ -1367,6 +1391,20 @@ export function ForeignObservationClient(props: {
               </div>
             </div>
           </>
+        )}
+
+        {/* Tab: Evaluations History */}
+        {activeTab === "evaluations" && (
+          <ForeignObservationHistoryTab
+            slots={slots}
+            currentTeacher={props.currentTeacher}
+            academicYears={props.academicYears}
+            selectedYearId={props.selectedYearId}
+            campuses={props.campuses}
+            departments={props.departments}
+            indicators={ESL_INDICATORS}
+            onOpenWalkthroughForm={() => setActiveTab("walkthrough")}
+          />
         )}
 
         {/* Tab 2: Quota & KPI */}
