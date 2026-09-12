@@ -33,10 +33,10 @@ export async function sendEmail({
 
   const user = rawUser || (isGmail ? "dbclskl@gmail.com" : "bankhaothi@skylineschool.edu.vn");
   
-  // App password for bankhaothi@skylineschool.edu.vn or dbclskl@gmail.com
-  let pass = rawPass;
-  if (!pass || pass === "txhrphxggpnlbhsk" || pass === "vpxgjprlqkwvdgmq") {
-    pass = !isGmail ? "grtxdfbqfjnsfvvf" : "xhzihnqyiqqmdhat";
+  // App password configured via environment variables
+  const pass = rawPass;
+  if (!pass) {
+    console.warn("[mail.ts] SMTP_PASS is missing in environment variables. Email sending may fail.");
   }
 
   const createTransporter = (h: string, p: number, s: boolean, u: string, pwd: string) => {
@@ -138,7 +138,8 @@ export async function sendEmail({
     if (!isGmail) {
       try {
         console.log("[mail.ts] Attempting auto-failover to Backup Gmail SMTP (dbclskl@gmail.com)...");
-        const backupTransporter = createTransporter("smtp.gmail.com", 465, true, "dbclskl@gmail.com", "xhzihnqyiqqmdhat");
+        const backupPass = (process.env.BACKUP_SMTP_PASS || process.env.SMTP_PASS || "").trim();
+        const backupTransporter = createTransporter("smtp.gmail.com", 465, true, "dbclskl@gmail.com", backupPass);
         const backupMailOptions = {
           ...mailOptions,
           from: `"BAN KHẢO THÍ & ĐBCL SKY-LINE" <dbclskl@gmail.com>`,
