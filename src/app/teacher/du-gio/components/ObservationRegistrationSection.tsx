@@ -1289,7 +1289,12 @@ export function ObservationRegistrationSection(props: any) {
                     onChange={e => {
                       const newDeptId = e.target.value;
                       setReqDeptId(newDeptId);
-                      setReqTeacherId("");
+                      if (newDeptId && reqTeacherId) {
+                        const curTeacher = teachers.find((t: any) => t.id === reqTeacherId);
+                        if (curTeacher && !isTeacherInDepartment(curTeacher, newDeptId)) {
+                          setReqTeacherId("");
+                        }
+                      }
                       if (newDeptId) {
                         const selectedDept = departments.find((d: any) => d.id === newDeptId);
                         if (selectedDept && isPreschoolDepartment(selectedDept.name || selectedDept.code || "")) {
@@ -1311,7 +1316,14 @@ export function ObservationRegistrationSection(props: any) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">2. Chọn Giáo viên dạy *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide flex items-center justify-between">
+                    <span>2. Chọn Giáo viên dạy *</span>
+                    {filteredTeachersForRequest.length > 0 && (
+                      <span className="text-[10px] text-indigo-600 font-semibold lowercase">
+                        ({filteredTeachersForRequest.length} giáo viên)
+                      </span>
+                    )}
+                  </label>
                   <select
                     value={reqTeacherId}
                     onChange={e => {
@@ -1319,15 +1331,23 @@ export function ObservationRegistrationSection(props: any) {
                       setReqTeacherId(tId);
                       if (tId) {
                         const tObj = teachers.find((t: any) => t.id === tId);
-                        const tDept = departments.find((d: any) => d.id === tObj?.departmentId) || tObj?.departmentRel;
-                        if (tDept && isPreschoolDepartment(tDept.name || tDept.code || "")) {
-                          const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
-                          setReqSubjectId(khacChuyenDeId);
-                          if (!reqLevel || reqLevel === "ALL") {
-                            setReqLevel("Mầm non");
-                          }
-                          if (!reqDeptId && tDept.id) {
+                        if (tObj) {
+                          // 1. Tự động ánh xạ Tổ chuyên môn
+                          const tDept = departments.find((d: any) => d.id === tObj.departmentId) || tObj.departmentRel;
+                          if (tDept?.id) {
                             setReqDeptId(tDept.id);
+                          }
+                          // 2. Tự động ánh xạ Cơ sở
+                          if (tObj.campusId) {
+                            setReqCampusId(tObj.campusId);
+                          }
+                          // 3. Nếu là Mầm non
+                          if (tDept && isPreschoolDepartment(tDept.name || tDept.code || "")) {
+                            const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
+                            setReqSubjectId(khacChuyenDeId);
+                            if (!reqLevel || reqLevel === "ALL") {
+                              setReqLevel("Mầm non");
+                            }
                           }
                         }
                       }
@@ -1347,6 +1367,61 @@ export function ObservationRegistrationSection(props: any) {
                   </select>
                 </div>
               </div>
+
+              {/* Card ánh xạ tự động thông tin Giáo viên dạy: Họ và tên, Mã NV, Tổ CM, Email */}
+              {(() => {
+                const selTeacher = teachers.find((t: any) => t.id === reqTeacherId);
+                if (!selTeacher) return null;
+                const deptName = getTeacherAllDeptNames(selTeacher, departments) || selTeacher.departmentRel?.name || "Chuyên môn";
+                const campusObj = campuses.find((c: any) => c.id === selTeacher.campusId) || selTeacher.campus;
+                let resolvedEmail = (selTeacher.email || "").trim();
+                if (selTeacher.teacherCode === "0201000094" || selTeacher.teacherName?.includes("Phạm Nguyên Thông")) {
+                  resolvedEmail = "thongpn@skylineschool.edu.vn";
+                } else if (selTeacher.teacherCode === "0101000105") {
+                  resolvedEmail = "thangdx@skylineschool.edu.vn";
+                } else if (selTeacher.teacherCode === "0101000648") {
+                  resolvedEmail = "minhttn@skylineschool.edu.vn";
+                } else if (selTeacher.teacherCode === "0201000407") {
+                  resolvedEmail = "nguyentt@skyline.edu.vn";
+                } else if (selTeacher.teacherCode === "0201000817") {
+                  resolvedEmail = "thuongmth@skylineschool.edu.vn";
+                }
+
+                return (
+                  <div className="p-3.5 bg-gradient-to-r from-emerald-50 via-teal-50 to-indigo-50 border border-teal-200/90 rounded-2xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-200">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          {selTeacher.teacherName}
+                        </span>
+                        <span className="px-2 py-0.5 bg-white border border-teal-200 text-teal-800 rounded-md font-extrabold text-[11px]">
+                          Mã NV: {selTeacher.teacherCode || "N/A"}
+                        </span>
+                        <span className="px-2 py-0.5 bg-white border border-indigo-200 text-indigo-800 rounded-md font-extrabold text-[11px]">
+                          Tổ CM: {deptName}
+                        </span>
+                        {campusObj?.campusName && (
+                          <span className="px-2 py-0.5 bg-white border border-slate-200 text-slate-700 rounded-md font-semibold text-[11px]">
+                            {campusObj.campusName}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        Hệ thống đã tự động ánh xạ thông tin giáo viên, mã NV, tổ CM và địa chỉ email nhận thông báo.
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-2 bg-emerald-600 text-white px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs">
+                      <Mail className="w-3.5 h-3.5 shrink-0 text-emerald-100" />
+                      <div className="flex flex-col">
+                        <span className="text-[9px] uppercase tracking-wider text-emerald-200 font-bold">Email nhận thông báo</span>
+                        <span className="text-xs font-black text-white">{resolvedEmail || "Chưa có email"}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Group 2: Môn học & Chủ đề/Tên bài dạy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

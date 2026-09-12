@@ -311,6 +311,7 @@ export function renderObservationRequestSubmittedForObserver(params: {
   observerName: string;
   hostName: string;
   hostCode?: string;
+  hostDept?: string;
   topic: string;
   subjectName: string;
   level?: string;
@@ -330,7 +331,7 @@ export function renderObservationRequestSubmittedForObserver(params: {
     recipientName: params.observerName,
     introMessage: `Thầy/Cô đã gửi thành công đề xuất xin tham gia dự giờ tiết dạy của Thầy/Cô <strong>${params.hostName}</strong>. Dưới đây là thông tin biên nhận chi tiết:`,
     details: [
-      { icon: "👨‍🏫", label: "Giáo viên dạy", value: `${params.hostName} ${params.hostCode ? `(${params.hostCode})` : ""}`, highlight: true },
+      { icon: "👨‍🏫", label: "Giáo viên dạy", value: `${params.hostName}${params.hostCode ? ` (${params.hostCode})` : ""}${params.hostDept ? ` - Tổ CM: ${params.hostDept}` : ""}`, highlight: true },
       { icon: "📖", label: "Tên bài dạy / Chủ đề", value: params.topic || "Đề xuất xin dự giờ tiết học", highlight: true },
       { icon: "📚", label: "Môn học & Khối lớp", value: `${params.subjectName} (${params.level || ""} ${params.grade || ""} - ${params.className || "Lớp học"})` },
       { icon: "📅", label: "Ngày dự kiến", value: params.dateStr, highlight: true },
@@ -355,6 +356,8 @@ export function renderObservationRequestSubmittedForObserver(params: {
  */
 export function renderObservationRequestForHost(params: {
   hostName: string;
+  hostCode?: string;
+  hostDept?: string;
   observerName: string;
   observerCode?: string;
   observerPosition?: string;
@@ -375,7 +378,8 @@ export function renderObservationRequestForHost(params: {
     recipientName: params.hostName,
     introMessage: `Thầy/Cô <strong>${params.observerName}</strong> (${params.observerPosition || "Giáo viên"}) vừa gửi đề xuất xin tham gia dự giờ một tiết dạy của Thầy/Cô:`,
     details: [
-      { icon: "👨‍🏫", label: "Người xin dự giờ", value: `${params.observerName} ${params.observerCode ? `(${params.observerCode})` : ""}`, highlight: true },
+      { icon: "👨‍🏫", label: "Giáo viên dạy được đề xuất", value: `${params.hostName}${params.hostCode ? ` (${params.hostCode})` : ""}${params.hostDept ? ` - Tổ CM: ${params.hostDept}` : ""}`, highlight: true },
+      { icon: "👤", label: "Người xin dự giờ", value: `${params.observerName}${params.observerCode ? ` (${params.observerCode})` : ""}${params.observerPosition ? ` (${params.observerPosition})` : ""}` },
       { icon: "📖", label: "Tên bài dạy / Chủ đề", value: params.topic || "Đề xuất xin dự giờ tiết học", highlight: true },
       { icon: "📚", label: "Môn học & Khối lớp", value: `${params.subjectName} (${params.grade || ""} - ${params.className || "Lớp học"})` },
       { icon: "📅", label: "Ngày dự kiến", value: params.dateStr, highlight: true },

@@ -3,16 +3,26 @@
 
 function getTeacherResolvedEmail(teacher: any): string | null {
   if (!teacher) return null;
-  // Special lookup for teacher 0201000094 / 020100094 / Phạm Nguyên Thông
-  if (teacher.teacherCode === "0201000094" || teacher.teacherCode === "020100094" || teacher.teacherName?.includes("Phạm Nguyên Thông")) {
+
+  const code = String(teacher.teacherCode || "").trim();
+  const name = String(teacher.teacherName || "").trim();
+
+  // 1. High-priority staff / admin mappings
+  if (code === "0201000094" || code === "020100094" || name.includes("Phạm Nguyên Thông")) {
     return "thongpn@skylineschool.edu.vn";
   }
-  let email = (teacher.email || "").trim();
-  let userEmail = (teacher.user?.email || "").trim();
-
-  // Auto-complete domain if username only was stored
-  if (email && !email.includes("@")) email = `${email}@skylineschool.edu.vn`;
-  if (userEmail && !userEmail.includes("@")) userEmail = `${userEmail}@skylineschool.edu.vn`;
+  if (code === "0101000105" || name.includes("Dương Xuân Thắng")) {
+    return "thangdx@skylineschool.edu.vn";
+  }
+  if (code === "0101000648" || name.includes("Trần Thị Ngọc Minh")) {
+    return "minhttn@skylineschool.edu.vn";
+  }
+  if (code === "0201000407" || name.includes("Từ Thảo Nguyên")) {
+    return "nguyentt@skyline.edu.vn";
+  }
+  if (code === "0201000817" || name.includes("Mai Thị Hoài Thương")) {
+    return "thuongmth@skylineschool.edu.vn";
+  }
 
   const systemEmails = [
     "bankhaothi@skylineschool.edu.vn",
@@ -20,12 +30,26 @@ function getTeacherResolvedEmail(teacher: any): string | null {
     "system@skylineschool.edu.vn",
     "noreply@skylineschool.edu.vn"
   ];
-  if (email && email.includes("@") && !systemEmails.includes(email.toLowerCase())) {
-    return email;
-  }
-  if (userEmail && userEmail.includes("@") && !systemEmails.includes(userEmail.toLowerCase())) {
-    return userEmail;
-  }
+
+  const isRealEmail = (e?: string | null): boolean => {
+    if (!e) return false;
+    const clean = e.trim().toLowerCase();
+    if (!clean.includes("@") || clean.includes(" ") || clean.length < 6) return false;
+    const local = clean.split("@")[0];
+    if (/^\d+$/.test(local)) return false; // Prevent numeric codes from being treated as inboxes
+    return !systemEmails.includes(clean);
+  };
+
+  // 2. Direct teacher profile email
+  let tEmail = (teacher.email || "").trim();
+  if (tEmail && !tEmail.includes("@")) tEmail = `${tEmail}@skylineschool.edu.vn`;
+  if (isRealEmail(tEmail)) return tEmail;
+
+  // 3. User account email
+  let uEmail = (teacher.user?.email || "").trim();
+  if (uEmail && !uEmail.includes("@")) uEmail = `${uEmail}@skylineschool.edu.vn`;
+  if (isRealEmail(uEmail)) return uEmail;
+
   return null;
 }
 
@@ -1938,19 +1962,33 @@ export async function requestObservationSlot(data: {
     const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode);
 
     // Parallelize initial lookups for maximum database speed
-    const [observerTeacherResult, hostTeacher, activeYear] = await Promise.all([
-      prisma.teacher.findUnique({
-        where: { userId: session.user.id },
+    const [observerTeacherResult, hostTeacherResult, activeYear] = await Promise.all([
+      prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { userId: session.user.id },
+            { email: session.user.email || undefined },
+            { teacherCode: (session.user as any)?.username || undefined }
+          ]
+        },
         include: { user: true, campus: true, departmentRel: true }
       }),
-      prisma.teacher.findUnique({
-        where: { id: data.targetTeacherId },
+      prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { id: data.targetTeacherId },
+            { teacherCode: data.targetTeacherId },
+            { userId: data.targetTeacherId }
+          ]
+        },
         include: { campus: true, departmentRel: true, user: true }
       }),
       data.academicYearId
         ? prisma.academicYear.findUnique({ where: { id: data.academicYearId } })
         : prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
     ]);
+
+    const hostTeacher = hostTeacherResult;
 
     let observerTeacher = observerTeacherResult;
     if (!observerTeacher && isAdmin) {
@@ -1995,7 +2033,7 @@ export async function requestObservationSlot(data: {
     let newSlot: any;
     const slotCreateData: any = {
       teacherId: hostTeacher.id,
-      targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+      targetDeptId: data.targetDeptId || hostTeacher.departmentId || hostTeacher.departmentRel?.id || null,
       classId: data.classId || null,
       className: data.className || "Lớp chọn",
       level: data.level || "ALL",
@@ -2087,11 +2125,17 @@ export async function requestObservationSlot(data: {
 
         const emailTasks: Promise<any>[] = [];
 
+        console.log(`[requestObservationSlot] Auto-mapping & dispatching emails for slot ${newSlot.id}:`);
+        console.log(` - Host: ${hostTeacher.teacherName} (Code: ${hostTeacher.teacherCode || "N/A"}, Dept: ${hostTeacher.departmentRel?.name || "N/A"}) -> Email: ${hostEmail}`);
+        console.log(` - Observer: ${observerTeacher.teacherName} (Code: ${observerTeacher.teacherCode || "N/A"}) -> Email: ${observerEmail}`);
+
         // 2. Email Notification to Host Teacher
         if (hostEmail && hostEmail.includes("@")) {
           const emailSubject = `[Skyline - Dự Giờ] Thầy/Cô ${observerTeacher.teacherName} gửi đề xuất xin dự giờ tiết dạy: "${data.topic || "Tiết học"}"`;
           const emailHtml = renderObservationRequestForHost({
             hostName: hostTeacher.teacherName,
+            hostCode: hostTeacher.teacherCode || undefined,
+            hostDept: hostTeacher.departmentRel?.name || undefined,
             observerName: observerTeacher.teacherName,
             observerCode: observerTeacher.teacherCode,
             observerPosition: observerTeacher.position || undefined,
@@ -2107,11 +2151,11 @@ export async function requestObservationSlot(data: {
 
           emailTasks.push(
             sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml })
-              .then(res => console.log("[Observation Request] Email successfully sent to host:", hostEmail, res?.success))
-              .catch(err => console.error("[Observation Request] Email failed sending to host:", hostEmail, err))
+              .then(res => console.log("[requestObservationSlot] Email successfully sent to host:", hostEmail, res?.messageId))
+              .catch(err => console.error("[requestObservationSlot] Email failed sending to host " + hostEmail + ":", err))
           );
         } else {
-          console.warn("[Observation Request] Host teacher does not have a resolved email address:", hostTeacher.teacherName);
+          console.warn("[requestObservationSlot] Host teacher does not have a valid resolved email address:", hostTeacher.teacherName, hostTeacher.teacherCode);
         }
 
         // 3. Email Confirmation to Observer Teacher (Skipped if self-observation)
@@ -2121,6 +2165,7 @@ export async function requestObservationSlot(data: {
             observerName: observerTeacher.teacherName,
             hostName: hostTeacher.teacherName,
             hostCode: hostTeacher.teacherCode,
+            hostDept: hostTeacher.departmentRel?.name || undefined,
             topic: data.topic || "Đề xuất xin dự giờ tiết học",
             subjectName: data.subjectName || "Môn học",
             level: data.level,
@@ -2135,8 +2180,8 @@ export async function requestObservationSlot(data: {
 
           emailTasks.push(
             sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: observerEmail, subject: observerSubject, html: observerHtml })
-              .then(res => console.log("[Observation Request] Email successfully sent to observer:", observerEmail, res?.success))
-              .catch(err => console.error("[Observation Request] Email failed sending to observer:", observerEmail, err))
+              .then(res => console.log("[requestObservationSlot] Confirmation email sent to observer:", observerEmail, res?.messageId))
+              .catch(err => console.error("[requestObservationSlot] Confirmation email failed sending to observer " + observerEmail + ":", err))
           );
         }
 
