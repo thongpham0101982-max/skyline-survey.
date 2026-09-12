@@ -35,7 +35,7 @@ import {
   ClipboardList
 } from "lucide-react";
 import { createForeignObservationWithEvaluation } from "./actions";
-import { isSlotBelongsToForeignEsl } from "./utils";
+import { isSlotBelongsToForeignEsl, isExactWalkthroughForm } from "./utils";
 import { ForeignObservationHistoryTab } from "./components/ForeignObservationHistoryTab";
 
 export interface IndicatorConfig {
@@ -302,7 +302,7 @@ export function ForeignObservationClient(props: {
 
   const mySlotsCount = useMemo(() => {
     return slots.filter(s => {
-      if (!isSlotBelongsToForeignEsl(s)) return false;
+      if (!isExactWalkthroughForm(s)) return false;
       if (!props.currentTeacher?.id) return true;
       return (
         s.teacherId === props.currentTeacher?.id ||

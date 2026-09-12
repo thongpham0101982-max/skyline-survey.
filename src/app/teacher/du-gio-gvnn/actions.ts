@@ -1,6 +1,6 @@
 "use server";
 
-import { isSlotBelongsToForeignEsl } from "./utils";
+import { isSlotBelongsToForeignEsl, isExactWalkthroughForm } from "./utils";
 
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -572,17 +572,22 @@ export async function getForeignObservationSlots(params?: string | {
       {
         OR: [
           { requestOrigin: "FOREIGN_WALKTHROUGH" },
-          { description: { contains: "GVNN" } },
           { description: { contains: "Dự giờ GVNN" } },
-          { description: { contains: "FOREIGN" } },
-          { description: { contains: "Tổ Tiếng Anh" } },
-          { subjectName: { contains: "ESL" } },
-          { subjectName: { contains: "Tiếng Anh (ESL)" } },
-          { subjectName: { contains: "Tieng Anh (ESL)" } },
+          { description: { contains: "GVNN" } },
+          { topic: { contains: "Walkthrough" } },
           { topic: { contains: "Foreign" } },
-          { topic: { contains: "GVNN" } },
-          { topic: { contains: "ESL" } },
-          { topic: { contains: "Walkthrough" } }
+          {
+            registrations: {
+              some: {
+                evaluation: {
+                  OR: [
+                    { overallRating: { in: ["Strong Practice", "Effective", "Developing", "Needs Support", "Effective Practice"] } },
+                    { generalComment: { contains: "criterionScores" } }
+                  ]
+                }
+              }
+            }
+          }
         ]
       }
     ];
@@ -659,7 +664,7 @@ export async function getForeignObservationSlots(params?: string | {
       orderBy: { date: "desc" }
     });
 
-    const filteredSlots = slots.filter(isSlotBelongsToForeignEsl);
+    const filteredSlots = slots.filter(isExactWalkthroughForm);
     return { success: true, slots: filteredSlots };
   } catch (error: any) {
     return { success: false, error: error.message };

@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { IndicatorConfig } from "../client";
-import { isSlotBelongsToForeignEsl } from "../utils";
+import { isSlotBelongsToForeignEsl, isExactWalkthroughForm } from "../utils";
 
 interface ForeignObservationHistoryTabProps {
   slots: any[];
@@ -123,7 +123,7 @@ export function ForeignObservationHistoryTab({
   const baseSlots = useMemo(() => {
     return slots.filter(slot => {
       // 1. MUST belong to category Dự giờ GVNN (ESL)
-      if (!isSlotBelongsToForeignEsl(slot)) {
+      if (!isExactWalkthroughForm(slot)) {
         return false;
       }
 
