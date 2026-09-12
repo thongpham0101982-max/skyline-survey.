@@ -795,7 +795,7 @@ export function TTCMDepartmentSummaryTab({
         "Tiết dự Chỉ tiêu": reqObserved > 0 ? reqObserved : "-",
         "Tiết dự Kế hoạch": stats.observedPlanCount,
         "Tiết dự Đột xuất": stats.observedSurpriseCount,
-        "Điểm TB Tiết dạy": stats.avgScore !== null ? stats.avgScore.toFixed(1) : "-",
+        "Điểm TB Tiết dạy": stats.avgScore !== null ? Number(stats.avgScore).toFixed(1) : "-",
         "Đánh giá tiến độ": progress.label
       };
     });
@@ -1168,7 +1168,7 @@ export function TTCMDepartmentSummaryTab({
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-violet-950">
                 {departmentKPIs.avgScore !== null
-                  ? departmentKPIs.avgScore.toFixed(1)
+                  ? Number(departmentKPIs.avgScore).toFixed(1)
                   : "Chưa có"}
               </span>
               {!isPreschool && departmentKPIs.avgScore !== null && (
@@ -1411,7 +1411,7 @@ export function TTCMDepartmentSummaryTab({
                         <td className="py-3.5 px-4 text-center">
                           {stats.avgScore !== null ? (
                             <span className="font-black text-slate-800 text-sm">
-                              {stats.avgScore.toFixed(1)}
+                              {Number(stats.avgScore).toFixed(1)}
                             </span>
                           ) : (
                             <span className="text-slate-300 font-bold">-</span>
@@ -1627,7 +1627,7 @@ export function TTCMDepartmentSummaryTab({
                       </span>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className="text-xs font-black text-[#003B3A]">
-                          {crit.avgScore.toFixed(2)}/{crit.maxScore}đ
+                          {Number(crit.avgScore || 0).toFixed(2)}/{crit.maxScore}đ
                         </span>
                         <span
                           className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
@@ -1728,7 +1728,7 @@ export function TTCMDepartmentSummaryTab({
                           />
                         </div>
                         <span className="text-xs font-black text-amber-900 shrink-0">
-                          {item.pct}% (TB: {item.avgScore.toFixed(1)}/{item.maxScore}đ)
+                          {item.pct}% (TB: {Number(item.avgScore || 0).toFixed(1)}/{item.maxScore}đ)
                         </span>
                       </div>
                     </div>
@@ -1815,7 +1815,7 @@ export function TTCMDepartmentSummaryTab({
                           </td>
 
                           <td className="py-3.5 px-4 text-center font-black text-slate-900">
-                            {tw.avgScore !== null ? tw.avgScore.toFixed(1) : "-"}
+                            {tw.avgScore !== null ? Number(tw.avgScore).toFixed(1) : "-"}
                           </td>
 
                           <td className="py-3.5 px-4">
@@ -2225,7 +2225,7 @@ export function TTCMDepartmentSummaryTab({
                           Điểm TB Tiết Dạy
                         </span>
                         <span className="text-xl font-black text-purple-900">
-                          {s.avgScore !== null ? s.avgScore.toFixed(1) : "-"}
+                          {s.avgScore !== null ? Number(s.avgScore).toFixed(1) : "-"}
                         </span>
                       </div>
                     </div>

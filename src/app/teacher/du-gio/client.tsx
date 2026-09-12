@@ -858,38 +858,71 @@ export function ObservationClient(props: ObservationClientProps) {
     return false;
   }, [currentTeacher, isMamNonTeacher]);
 
-  const filteredReqClasses = useMemo(() => {
-    let cleanDbLevel = "";
-    if (reqLevel && reqLevel !== "all") {
-      if (reqLevel === "Tiểu học") cleanDbLevel = "tieu hoc";
-      else if (reqLevel === "THCS") cleanDbLevel = "thcs";
-      else if (reqLevel === "THPT") cleanDbLevel = "thpt";
-      else if (reqLevel === "Mầm non") cleanDbLevel = "mam non";
-      else cleanDbLevel = reqLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const isClassInCampus = useCallback((c: any, targetCampusId: string) => {
+    if (!targetCampusId || targetCampusId === "all") return true;
+    const target = String(targetCampusId).trim().toLowerCase();
+    const cCampusId = String(c.campusId || "").trim().toLowerCase();
+    if (cCampusId === target) return true;
+
+    // CAMP_MAIN / cs1 cross-mapping
+    if ((target === "camp_main" || target === "cơ sở 1") && (cCampusId === "cs1" || cCampusId === "camp_main")) return true;
+    if ((cCampusId === "camp_main" || cCampusId === "cơ sở 1") && (target === "cs1" || target === "camp_main")) return true;
+
+    const selCampus = (campuses || []).find((cp: any) =>
+      String(cp.id || "").toLowerCase() === target ||
+      String(cp.campusCode || "").toLowerCase() === target ||
+      String(cp.campusName || "").toLowerCase() === target
+    );
+    if (selCampus) {
+      const sId = String(selCampus.id || "").toLowerCase();
+      const sCode = String(selCampus.campusCode || "").toLowerCase();
+      if (cCampusId === sId || cCampusId === sCode) return true;
+      if (sCode && c.className && String(c.className).toLowerCase().includes(sCode)) return true;
+      if (sId && c.className && String(c.className).toLowerCase().includes(sId)) return true;
     }
 
+    if (c.className && (String(c.className).toLowerCase().includes(`_${target}`) || String(c.className).toLowerCase().includes(target))) {
+      return true;
+    }
+    return false;
+  }, [campuses]);
+
+  const normalizeLevel = useCallback((lvl: string) => {
+    if (!lvl) return "";
+    const cleaned = lvl.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
+    if (cleaned.includes("tieu hoc")) return "tieu hoc";
+    if (cleaned.includes("thcs")) return "thcs";
+    if (cleaned.includes("thpt")) return "thpt";
+    if (cleaned.includes("mam non") || cleaned.includes("nha tre") || cleaned.includes("mau giao")) return "mam non";
+    return cleaned;
+  }, []);
+
+  const filteredReqClasses = useMemo(() => {
+    const cleanDbLevel = reqLevel && reqLevel !== "all" ? normalizeLevel(reqLevel) : "";
     const numGrade = reqGrade ? reqGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
 
     return classes.filter((c: any) => {
-      if (reqCampusId && reqCampusId !== "all" && c.campusId !== reqCampusId) return false;
+      if (reqCampusId && reqCampusId !== "all") {
+        if (!isClassInCampus(c, reqCampusId)) return false;
+      }
 
       if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
-        const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const cLevelClean = normalizeLevel(c.level || "");
         if (cLevelClean !== cleanDbLevel) return false;
       }
 
       if (!reqGrade || reqGrade === "all") return true;
 
       if (cleanDbLevel === "mam non") {
-        const cleanCGrade = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        const cleanNGrade = reqGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const cleanCGrade = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
+        const cleanNGrade = reqGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
         return cleanCGrade === cleanNGrade || cleanCGrade.includes(cleanNGrade) || cleanNGrade.includes(cleanCGrade);
       }
 
       const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
       return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
     });
-  }, [classes, reqLevel, reqGrade, reqCampusId]);
+  }, [classes, reqLevel, reqGrade, reqCampusId, isClassInCampus, normalizeLevel]);
 
   const filteredTeachersForRequest = useMemo(() => {
     if (!reqDeptId) return teachers;
@@ -903,7 +936,9 @@ export function ObservationClient(props: ObservationClientProps) {
   const [newSubjectName, setNewSubjectName] = useState("")
   const [newLevel, setNewLevel] = useState(isMamNonTeacher ? "Mầm non" : "")
   const [newGrade, setNewGrade] = useState("")
-  const [newCampusId, setNewCampusId] = useState(currentTeacher?.campusId || "")
+  const [newCampusId, setNewCampusId] = useState(
+    currentTeacher?.campusId && currentTeacher.campusId !== "CAMP_MAIN" ? currentTeacher.campusId : ""
+  )
   const [newClassId, setNewClassId] = useState("")
   const [newClassNameText, setNewClassNameText] = useState("")
   const [newTopic, setNewTopic] = useState("")
@@ -1196,38 +1231,34 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const filteredClassesForCreation = useMemo(() => {
-    if (!newLevel) return [];
-    const effectiveCampusId = newCampusId || currentTeacher?.campusId || "";
+    if (!newCampusId && !newLevel) return [];
+    const effectiveCampusId = newCampusId;
 
-    let cleanDbLevel = "";
-    if (newLevel === "Tiểu học") cleanDbLevel = "tieu hoc";
-    else if (newLevel === "THCS") cleanDbLevel = "thcs";
-    else if (newLevel === "THPT") cleanDbLevel = "thpt";
-    else if (newLevel === "Mầm non") cleanDbLevel = "mam non";
-    else cleanDbLevel = newLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
+    const cleanDbLevel = newLevel && newLevel !== "all" ? normalizeLevel(newLevel) : "";
     const numGrade = newGrade ? newGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
 
-    return classes.filter(c => {
-      if (effectiveCampusId && c.campusId !== effectiveCampusId) return false;
+    return classes.filter((c: any) => {
+      if (effectiveCampusId && effectiveCampusId !== "all") {
+        if (!isClassInCampus(c, effectiveCampusId)) return false;
+      }
 
       if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
-        const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const cLevelClean = normalizeLevel(c.level || "");
         if (cLevelClean !== cleanDbLevel) return false;
       }
 
       if (!newGrade || newGrade === "all") return true;
 
       if (cleanDbLevel === "mam non") {
-        const cleanCGrade = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        const cleanNGrade = newGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const cleanCGrade = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
+        const cleanNGrade = newGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/_/g, " ").toLowerCase().trim();
         return cleanCGrade === cleanNGrade || cleanCGrade.includes(cleanNGrade) || cleanNGrade.includes(cleanCGrade);
       }
 
       const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
       return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
     });
-  }, [classes, newCampusId, currentTeacher?.campusId, newLevel, newGrade]);
+  }, [classes, newCampusId, newLevel, newGrade, isClassInCampus, normalizeLevel]);
 
   
 
@@ -1654,13 +1685,16 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const filteredClassesForSurprise = useMemo(() => {
     if (!classes || classes.length === 0) return [];
-    return classes.filter(c => {
-      if (isMamNonTeacher && c.level !== "Mầm non") return false;
-      if (!isMamNonTeacher && surpriseLevel !== "Mầm non" && c.level === "Mầm non") return false;
-      if (surpriseCampusId && c.campusId !== surpriseCampusId) return false;
+    return classes.filter((c: any) => {
+      const cLvl = normalizeLevel(c.level || "");
+      if (isMamNonTeacher && cLvl !== "mam non") return false;
+      if (!isMamNonTeacher && surpriseLevel !== "Mầm non" && cLvl === "mam non") return false;
+      if (surpriseCampusId && surpriseCampusId !== "all") {
+        if (!isClassInCampus(c, surpriseCampusId)) return false;
+      }
       return true;
     });
-  }, [classes, surpriseCampusId, isMamNonTeacher, surpriseLevel]);
+  }, [classes, surpriseCampusId, isMamNonTeacher, surpriseLevel, isClassInCampus, normalizeLevel]);
 
 
 
@@ -2914,7 +2948,7 @@ export function ObservationClient(props: ObservationClientProps) {
       });
     });
     return {
-      avgScore: count > 0 ? (sum / count).toFixed(2) : null,
+      avgScore: count > 0 ? Number((sum / count).toFixed(2)) : null,
       count
     };
   }, [myTaughtSlots]);

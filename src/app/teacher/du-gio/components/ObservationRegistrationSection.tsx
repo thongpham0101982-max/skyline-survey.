@@ -533,7 +533,7 @@ export function ObservationRegistrationSection(props: any) {
             </div>
             <div>
               <div className="text-2xl font-black text-slate-800 leading-tight">
-                {myReceivedEvaluationsStats?.avgScore > 0 ? myReceivedEvaluationsStats.avgScore.toFixed(2) : "-"}
+                {myReceivedEvaluationsStats?.avgScore != null && Number(myReceivedEvaluationsStats.avgScore) > 0 ? Number(myReceivedEvaluationsStats.avgScore).toFixed(2) : "-"}
               </div>
               <div className="text-xs font-bold text-slate-500 whitespace-nowrap">
                 Điểm TB tháng
@@ -1521,22 +1521,40 @@ export function ObservationRegistrationSection(props: any) {
                       setReqClassId(selectedId);
                       if (selectedId) {
                         const selClass = classes.find((c: any) => c.id === selectedId);
-                        if (selClass && selClass.campusId && !reqCampusId) {
-                          setReqCampusId(selClass.campusId);
+                        if (selClass) {
+                          if (selClass.campusId && !reqCampusId) {
+                            setReqCampusId(selClass.campusId);
+                          }
+                          if (selClass.grade && (!reqGrade || reqGrade === "all")) {
+                            const cleanG = String(selClass.grade).replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+                            setReqGrade(`Khối ${cleanG}`);
+                          }
+                          if (!reqLevel) {
+                            const lvl = (selClass.level || "").toLowerCase();
+                            if (lvl.includes("thcs")) setReqLevel("THCS");
+                            else if (lvl.includes("thpt")) setReqLevel("THPT");
+                            else if (lvl.includes("tieu") || lvl.includes("tiểu")) setReqLevel("Tiểu học");
+                            else if (lvl.includes("mam") || lvl.includes("mầm")) setReqLevel("Mầm non");
+                          }
                         }
                       }
                     }}
                     required
-                    disabled={!reqGrade}
+                    disabled={!reqCampusId && !reqGrade && !reqLevel}
                     className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
-                    <option value="">-- Chọn lớp học --</option>
+                    <option value="">
+                      {filteredReqClasses.length > 0
+                        ? `-- Chọn lớp học (${filteredReqClasses.length} lớp) --`
+                        : (reqCampusId ? "Không có lớp học phù hợp" : "-- Chọn lớp học --")}
+                    </option>
                     {filteredReqClasses.map((c: any) => {
-                      const campusObj = campuses.find((cp: any) => cp.id === c.campusId);
-                      const campusLabel = campusObj ? campusObj.campusName : "";
+                      const campusObj = campuses.find((cp: any) => cp.id === c.campusId || cp.campusCode === c.campusId);
+                      const campusLabel = campusObj ? (campusObj.campusCode || campusObj.campusName) : "";
+                      const gLabel = c.grade ? `Khối ${String(c.grade).replace(/Khối\s+/gi, "")}` : "";
                       return (
                         <option key={c.id} value={c.id}>
-                          {c.className} {campusLabel ? `(${campusLabel})` : ""}
+                          {c.className} {gLabel ? `(${gLabel})` : ""} {campusLabel ? `[${campusLabel}]` : ""}
                         </option>
                       );
                     })}
@@ -1675,13 +1693,32 @@ export function ObservationRegistrationSection(props: any) {
                     <label className="text-[11px] font-black text-amber-900 uppercase tracking-wide">Tên lớp *</label>
                     <select
                       value={newClassId}
-                      onChange={e => setNewClassId(e.target.value)}
+                      onChange={e => {
+                        const cId = e.target.value;
+                        setNewClassId(cId);
+                        if (cId && cId !== "other") {
+                          const sel = classes.find((c: any) => c.id === cId);
+                          if (sel) {
+                            if (!newCampusId && sel.campusId) setNewCampusId(sel.campusId);
+                            if (sel.grade && (!newGrade || newGrade === "all")) setNewGrade(sel.grade);
+                          }
+                        }
+                      }}
                       required
-                      disabled={!newCampusId || !newGrade}
+                      disabled={!newCampusId && !newGrade}
                       className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800 disabled:opacity-50"
                     >
-                      <option value="">Chọn tên lớp</option>
-                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                      <option value="">
+                        {filteredClassesForCreation.length > 0
+                          ? `-- Chọn tên lớp (${filteredClassesForCreation.length} lớp) --`
+                          : (newCampusId ? "Không có lớp học phù hợp" : "-- Vui lòng chọn cơ sở trước --")}
+                      </option>
+                      {filteredClassesForCreation.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.className} {c.grade ? `(${c.grade})` : ""}
+                        </option>
+                      ))}
+                      <option value="other">Lớp khác (Nhập tay...)</option>
                     </select>
                   </div>
 
@@ -1761,13 +1798,46 @@ export function ObservationRegistrationSection(props: any) {
                     <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Lớp học *</label>
                     <select
                       value={newClassId}
-                      onChange={e => setNewClassId(e.target.value)}
+                      onChange={e => {
+                        const cId = e.target.value;
+                        setNewClassId(cId);
+                        if (cId && cId !== "other") {
+                          const selClass = classes.find((c: any) => c.id === cId);
+                          if (selClass) {
+                            if (!newCampusId && selClass.campusId) {
+                              setNewCampusId(selClass.campusId);
+                            }
+                            if (selClass.grade && (!newGrade || newGrade === "all")) {
+                              const cleanG = String(selClass.grade).replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+                              setNewGrade(`Khối ${cleanG}`);
+                            }
+                            if (!newLevel) {
+                              const lvl = (selClass.level || "").toLowerCase();
+                              if (lvl.includes("thcs")) setNewLevel("THCS");
+                              else if (lvl.includes("thpt")) setNewLevel("THPT");
+                              else if (lvl.includes("tieu") || lvl.includes("tiểu")) setNewLevel("Tiểu học");
+                              else if (lvl.includes("mam") || lvl.includes("mầm")) setNewLevel("Mầm non");
+                            }
+                          }
+                        }
+                      }}
                       required
-                      disabled={!newCampusId || !newLevel || !newGrade}
+                      disabled={!newCampusId && !newLevel}
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800 disabled:opacity-50"
                     >
-                      <option value="">Chọn lớp học</option>
-                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                      <option value="">
+                        {filteredClassesForCreation.length > 0
+                          ? `-- Chọn lớp học (${filteredClassesForCreation.length} lớp) --`
+                          : (newCampusId ? "Không có lớp học phù hợp" : "-- Vui lòng chọn cơ sở trước --")}
+                      </option>
+                      {filteredClassesForCreation.map(c => {
+                        const gLabel = c.grade ? `(Khối ${String(c.grade).replace(/Khối\s+/gi, "")})` : (c.level ? `(${c.level})` : "");
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {c.className} {gLabel}
+                          </option>
+                        );
+                      })}
                       <option value="other">Lớp khác (Nhập tay...)</option>
                     </select>
                   </div>

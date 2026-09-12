@@ -213,7 +213,7 @@ export function ReceivedEvaluationsTab({
         label: `Tháng ${sp[1]}`,
         fullLabel: `Tháng ${sp[1]}/${sp[0]} (${monthMap[mKey].length} tiết)`,
         score: stats.overallPct,
-        avgScore: isPreschoolEvaluations ? stats.avgScore.toFixed(2) : stats.avgScore.toFixed(1),
+        avgScore: isPreschoolEvaluations ? Number(stats.avgScore || 0).toFixed(2) : Number(stats.avgScore || 0).toFixed(1),
         rawScore: stats.avgScore,
         count: monthMap[mKey].length,
         observerName: `${monthMap[mKey].length} lượt dự`,
@@ -234,7 +234,7 @@ export function ReceivedEvaluationsTab({
         label: `${day}/${month}`,
         fullLabel: `Tiết ${idx + 1} (${day}/${month}): ${item.slot?.topic || item.slot?.subjectName || "Dự giờ"}`,
         score: stats.overallPct,
-        avgScore: isPreschoolEvaluations ? stats.avgScore.toFixed(2) : stats.avgScore.toFixed(1),
+        avgScore: isPreschoolEvaluations ? Number(stats.avgScore || 0).toFixed(2) : Number(stats.avgScore || 0).toFixed(1),
         rawScore: stats.avgScore,
         count: 1,
         observerName,
@@ -393,8 +393,8 @@ export function ReceivedEvaluationsTab({
       nextGoalPct,
       availableMonths,
       activeEvalsCount: activeEvals.length,
-      currentAvgScore: hasActiveEvals && currentStats.avgScore > 0
-        ? (isPreschoolEvaluations ? currentStats.avgScore.toFixed(2) : currentStats.avgScore.toFixed(1))
+      currentAvgScore: hasActiveEvals && Number(currentStats.avgScore || 0) > 0
+        ? (isPreschoolEvaluations ? Number(currentStats.avgScore || 0).toFixed(2) : Number(currentStats.avgScore || 0).toFixed(1))
         : null
     };
   }, [receivedEvaluations, isPreschoolEvaluations, selectedEvalMonth, selectedOriginType, selectedEvalRole, currentTeacher?.id]);
