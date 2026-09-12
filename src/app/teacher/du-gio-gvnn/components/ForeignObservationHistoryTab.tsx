@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { IndicatorConfig } from "../client";
+import { isSlotBelongsToForeignEsl } from "../utils";
 
 interface ForeignObservationHistoryTabProps {
   slots: any[];
@@ -118,13 +119,22 @@ export function ForeignObservationHistoryTab({
   const [filterMonth, setFilterMonth] = useState("all");
   const [selectedSlotForModal, setSelectedSlotForModal] = useState<any | null>(null);
 
-  // Base slots filtered to the logged-in teacher unless showAllForAdmin is explicitly true
+  // Base slots: Strictly belonging to category Dự giờ GVNN (ESL), filtered to the logged-in teacher unless showAllForAdmin
   const baseSlots = useMemo(() => {
-    if (showAllForAdmin || !currentTeacher?.id) return slots;
     return slots.filter(slot => {
-      const isHost = slot.teacherId === currentTeacher.id;
-      const isObserver = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher.id);
-      return isHost || isObserver;
+      // 1. MUST belong to category Dự giờ GVNN (ESL)
+      if (!isSlotBelongsToForeignEsl(slot)) {
+        return false;
+      }
+
+      // 2. Filter by teacher if not showAllForAdmin
+      if (!showAllForAdmin && currentTeacher?.id) {
+        const isHost = slot.teacherId === currentTeacher.id;
+        const isObserver = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher.id);
+        if (!isHost && !isObserver) return false;
+      }
+
+      return true;
     });
   }, [slots, showAllForAdmin, currentTeacher?.id]);
 

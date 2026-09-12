@@ -1,5 +1,6 @@
-// @ts-nocheck
 "use server";
+
+import { isSlotBelongsToForeignEsl } from "./utils";
 
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
@@ -574,10 +575,14 @@ export async function getForeignObservationSlots(params?: string | {
           { description: { contains: "GVNN" } },
           { description: { contains: "Dự giờ GVNN" } },
           { description: { contains: "FOREIGN" } },
+          { description: { contains: "Tổ Tiếng Anh" } },
           { subjectName: { contains: "ESL" } },
-          { subjectName: { contains: "Tiếng Anh" } },
+          { subjectName: { contains: "Tiếng Anh (ESL)" } },
+          { subjectName: { contains: "Tieng Anh (ESL)" } },
           { topic: { contains: "Foreign" } },
-          { topic: { contains: "ESL" } }
+          { topic: { contains: "GVNN" } },
+          { topic: { contains: "ESL" } },
+          { topic: { contains: "Walkthrough" } }
         ]
       }
     ];
@@ -654,7 +659,8 @@ export async function getForeignObservationSlots(params?: string | {
       orderBy: { date: "desc" }
     });
 
-    return { success: true, slots };
+    const filteredSlots = slots.filter(isSlotBelongsToForeignEsl);
+    return { success: true, slots: filteredSlots };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

@@ -35,6 +35,7 @@ import {
   ClipboardList
 } from "lucide-react";
 import { createForeignObservationWithEvaluation } from "./actions";
+import { isSlotBelongsToForeignEsl } from "./utils";
 import { ForeignObservationHistoryTab } from "./components/ForeignObservationHistoryTab";
 
 export interface IndicatorConfig {
@@ -300,11 +301,14 @@ export function ForeignObservationClient(props: {
   const [slots, setSlots] = useState<any[]>(props.initialSlots || []);
 
   const mySlotsCount = useMemo(() => {
-    if (!props.currentTeacher?.id) return slots.length;
-    return slots.filter(s =>
-      s.teacherId === props.currentTeacher?.id ||
-      (s.registrations || []).some((r: any) => r.teacherId === props.currentTeacher?.id)
-    ).length;
+    return slots.filter(s => {
+      if (!isSlotBelongsToForeignEsl(s)) return false;
+      if (!props.currentTeacher?.id) return true;
+      return (
+        s.teacherId === props.currentTeacher?.id ||
+        (s.registrations || []).some((r: any) => r.teacherId === props.currentTeacher?.id)
+      );
+    }).length;
   }, [slots, props.currentTeacher?.id]);
 
   React.useEffect(() => {
