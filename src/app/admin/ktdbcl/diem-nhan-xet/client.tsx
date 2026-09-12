@@ -212,6 +212,14 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
             maxScores[idx] = getColumnMaxScore(t)
           }
         })
+        const syncedTypes = types.map((t, idx) => {
+          if (t && t.startsWith("SCORE_MAX_")) return t
+          if (t === "SCORE_CUSTOM" || (maxScores[idx] && maxScores[idx] < 10)) {
+            return `SCORE_MAX_${maxScores[idx]}`
+          }
+          return t || "SCORE_10"
+        })
+        setColumnTypes(syncedTypes)
         setColumnMaxScores(maxScores)
       }
       setHasComposite(match.hasCompositeColumn !== false)
@@ -248,6 +256,14 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           maxScores[idx] = getColumnMaxScore(t)
         }
       })
+      const syncedTypes = types.map((t, idx) => {
+        if (t && t.startsWith("SCORE_MAX_")) return t
+        if (t === "SCORE_CUSTOM" || (maxScores[idx] && maxScores[idx] < 10)) {
+          return `SCORE_MAX_${maxScores[idx]}`
+        }
+        return t || "SCORE_10"
+      })
+      setColumnTypes(syncedTypes)
       setColumnMaxScores(maxScores)
     }
     setHasComposite(cfg.hasCompositeColumn !== false)
@@ -281,6 +297,22 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   const handleSaveConfig = async () => {
     try {
       setSavingConfig(true)
+      const finalMaxScores = columnNames.map((_, i) => {
+        const cType = columnTypes[i] || "SCORE_10"
+        return getColumnMaxScore(cType, columnMaxScores, i)
+      })
+      const finalColumnTypes = columnTypes.map((t, i) => {
+        const isCustom = t === "SCORE_CUSTOM" || (t && t.startsWith("SCORE_MAX_"))
+        if (isCustom) {
+          const maxVal = finalMaxScores[i] || 10
+          return `SCORE_MAX_${maxVal}`
+        }
+        return t || "SCORE_10"
+      })
+
+      setColumnMaxScores(finalMaxScores)
+      setColumnTypes(finalColumnTypes)
+
       const res = await fetch("/api/admin/ktdbcl/grade-configs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -291,8 +323,8 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           evaluationPeriod: configPeriod,
           columnCount,
           columnNames,
-          columnTypes,
-          columnMaxScores,
+          columnTypes: finalColumnTypes,
+          columnMaxScores: finalMaxScores,
           hasCompositeColumn: hasComposite,
           compositeColumnName,
           hasRemarkColumn: hasRemark,
@@ -826,16 +858,18 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
               {/* Dynamic Column Name Inputs */}
               <div className="space-y-2 pt-2 border-t border-slate-200">
                 <label className="block text-xs font-bold text-slate-700">Tên các cột điểm thành phần (Đặt tên tùy chỉnh):</label>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-2.5">
                   {columnNames.map((name, idx) => {
                     const cType = columnTypes[idx] || "SCORE_10"
                     const isCustomMax = cType === "SCORE_CUSTOM" || cType.startsWith("SCORE_MAX_")
                     const currentMax = columnMaxScores[idx] || (cType.startsWith("SCORE_MAX_") ? Number(cType.replace("SCORE_MAX_", "")) : 10)
 
                     return (
-                      <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-xl">
-                        <div className="flex items-center gap-2 shrink-0 sm:w-1/3">
-                          <span className="text-[11px] font-bold text-[#48BFE3] w-12">Cột {idx + 1}:</span>
+                      <div key={idx} className="flex flex-col md:flex-row md:items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs transition-colors hover:border-teal-200">
+                        <div className="flex items-center gap-2 shrink-0 md:w-56 lg:w-64">
+                          <span className="text-[11px] font-extrabold text-[#008080] bg-teal-50 border border-teal-200/80 px-2 py-1 rounded-lg shrink-0">
+                            Cột {idx + 1}:
+                          </span>
                           <input
                             type="text"
                             value={name}
@@ -844,30 +878,41 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                               setColumnNames(prev => prev.map((n, i) => i === idx ? val : n))
                             }}
                             placeholder={`Tên cột ${idx + 1}`}
-                            className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                            className="w-full min-w-0 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none"
                           />
                         </div>
-                        <div className="flex-1 flex flex-wrap sm:flex-nowrap items-center gap-2">
-                          <select
-                            value={isCustomMax ? "SCORE_CUSTOM" : cType}
-                            onChange={(e) => {
-                              const val = e.target.value
-                              setColumnTypes(prev => {
-                                const next = [...prev]
-                                next[idx] = val === "SCORE_CUSTOM" ? `SCORE_MAX_${currentMax || 5}` : val
-                                return next
-                              })
-                            }}
-                            className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 focus:ring-2 focus:ring-[#48BFE3] outline-none"
-                          >
-                            {COLUMN_TYPES.map(ct => (
-                              <option key={ct.code} value={ct.code}>{ct.name}</option>
-                            ))}
-                          </select>
+                        <div className="flex-1 min-w-0 flex flex-wrap sm:flex-nowrap items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <select
+                              value={isCustomMax ? "SCORE_CUSTOM" : cType}
+                              onChange={(e) => {
+                                const val = e.target.value
+                                const isCustom = val === "SCORE_CUSTOM"
+                                const chosenMax = isCustom
+                                  ? (columnMaxScores[idx] && columnMaxScores[idx] > 0 && columnMaxScores[idx] <= 10 ? columnMaxScores[idx] : 5)
+                                  : (val === "SCORE_1000" ? 1000 : 10)
+                                setColumnTypes(prev => {
+                                  const next = [...prev]
+                                  next[idx] = isCustom ? `SCORE_MAX_${chosenMax}` : val
+                                  return next
+                                })
+                                setColumnMaxScores(prev => {
+                                  const next = [...prev]
+                                  next[idx] = chosenMax
+                                  return next
+                                })
+                              }}
+                              className="w-full min-w-0 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 focus:ring-2 focus:ring-[#48BFE3] outline-none truncate"
+                            >
+                              {COLUMN_TYPES.map(ct => (
+                                <option key={ct.code} value={ct.code}>{ct.name}</option>
+                              ))}
+                            </select>
+                          </div>
 
                           {isCustomMax && (
-                            <div className="flex items-center gap-1.5 shrink-0 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
-                              <span className="text-[11px] font-bold text-amber-900">Điểm tối đa:</span>
+                            <div className="flex items-center gap-1.5 shrink-0 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 shadow-xs">
+                              <span className="text-[11px] font-bold text-amber-900 whitespace-nowrap">Điểm tối đa:</span>
                               <input
                                 type="number"
                                 min="0.5"
@@ -875,7 +920,9 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                                 step="0.5"
                                 value={currentMax}
                                 onChange={(e) => {
-                                  const val = Math.min(10, Math.max(0.5, Number(e.target.value) || 1))
+                                  const raw = e.target.value
+                                  const num = parseFloat(raw)
+                                  const val = isNaN(num) ? 5 : Math.min(10, Math.max(0.5, num))
                                   setColumnMaxScores(prev => {
                                     const next = [...prev]
                                     next[idx] = val
@@ -887,9 +934,9 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                                     return next
                                   })
                                 }}
-                                className="w-14 text-center bg-white border border-amber-300 rounded px-1.5 py-0.5 text-xs font-black text-amber-950 focus:ring-2 focus:ring-amber-500 outline-none"
+                                className="w-14 text-center bg-white border border-amber-300 rounded px-1.5 py-0.5 text-xs font-black text-amber-950 focus:ring-2 focus:ring-amber-500 outline-none shadow-xs"
                               />
-                              <span className="text-[10px] text-amber-700 font-bold">/ 10đ</span>
+                              <span className="text-[10px] text-amber-700 font-bold whitespace-nowrap">/ 10đ</span>
                             </div>
                           )}
                         </div>
@@ -1329,11 +1376,23 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                       </div>
 
                       <div className="flex flex-wrap gap-1 pt-1">
-                        {cols.map((colName, i) => (
-                          <span key={i} className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-600 font-medium">
-                            {colName}
-                          </span>
-                        ))}
+                        {cols.map((colName, i) => {
+                          let parsedTypes = []
+                          try { parsedTypes = typeof cfg.columnTypes === "string" ? JSON.parse(cfg.columnTypes) : cfg.columnTypes || [] } catch (_) {}
+                          const t = parsedTypes[i] || "SCORE_10"
+                          const colMax = getColumnMaxScore(t, cfg.columnMaxScores, i)
+                          const isCustom = t === "SCORE_CUSTOM" || t.startsWith("SCORE_MAX_") || (colMax > 0 && colMax < 10)
+                          return (
+                            <span key={i} className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700 font-semibold flex items-center gap-1">
+                              {colName}
+                              {isCustom && (
+                                <span className="text-[9px] bg-amber-100 text-amber-800 font-extrabold px-1 rounded border border-amber-200">
+                                  {colMax}đ
+                                </span>
+                              )}
+                            </span>
+                          )
+                        })}
                       </div>
 
                       {cfg.hasCompositeColumn && (

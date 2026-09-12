@@ -23,12 +23,20 @@ export interface GradeConfigLike {
  */
 export function getColumnMaxScore(
   typeCode?: string,
-  maxScores?: number[] | (number | null)[],
+  maxScores?: any,
   index?: number
 ): number {
-  if (maxScores && index !== undefined && maxScores[index] !== undefined && maxScores[index] !== null) {
-    const val = Number(maxScores[index])
-    if (!isNaN(val) && val > 0) return val
+  if (maxScores !== undefined && maxScores !== null && index !== undefined) {
+    let parsedList: number[] = []
+    if (Array.isArray(maxScores)) {
+      parsedList = maxScores
+    } else if (typeof maxScores === "string" && maxScores.trim()) {
+      parsedList = parseMaxScores(maxScores, index + 1)
+    }
+    if (parsedList[index] !== undefined && parsedList[index] !== null) {
+      const val = Number(parsedList[index])
+      if (!isNaN(val) && val > 0) return val
+    }
   }
   if (!typeCode) return 10
   if (typeCode.startsWith("SCORE_MAX_")) {
@@ -43,17 +51,17 @@ export function getColumnMaxScore(
  * Safely parse max scores array from JSON or string or array
  */
 export function parseMaxScores(maxScoresRaw: any, length: number): number[] {
+  let result: number[] = []
   if (Array.isArray(maxScoresRaw)) {
-    return maxScoresRaw.map(w => {
+    result = maxScoresRaw.map(w => {
       const num = Number(w)
       return !isNaN(num) && num > 0 ? num : 10
     })
-  }
-  if (typeof maxScoresRaw === "string" && maxScoresRaw.trim()) {
+  } else if (typeof maxScoresRaw === "string" && maxScoresRaw.trim()) {
     try {
       const parsed = JSON.parse(maxScoresRaw)
       if (Array.isArray(parsed)) {
-        return parsed.map(w => {
+        result = parsed.map(w => {
           const num = Number(w)
           return !isNaN(num) && num > 0 ? num : 10
         })
@@ -63,10 +71,17 @@ export function parseMaxScores(maxScoresRaw: any, length: number): number[] {
         const num = Number(p.trim())
         return !isNaN(num) && num > 0 ? num : 10
       })
-      if (parts.length > 0) return parts
+      if (parts.length > 0) result = parts
     }
   }
-  return Array(length).fill(10)
+
+  // Ensure result has at least length items padded with 10
+  const targetLength = Math.max(result.length, length)
+  const padded = [...result]
+  while (padded.length < targetLength) {
+    padded.push(10)
+  }
+  return padded.length > 0 ? padded : Array(length).fill(10)
 }
 
 /**
