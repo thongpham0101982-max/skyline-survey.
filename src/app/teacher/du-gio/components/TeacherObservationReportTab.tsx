@@ -526,9 +526,9 @@ export function TeacherObservationReportTab({
               onChange={e => setSelectedCategory(e.target.value as any)}
               className="bg-transparent text-xs font-black text-slate-800 outline-none cursor-pointer pr-1"
             >
-              <option value="ALL">🌟 Tất cả (Mầm non, K-12, ESL)</option>
-              <option value="MAM_NON">🍼 Mầm non</option>
-              <option value="K12">🏫 Phổ thông K-12</option>
+              <option value="ALL">🌟 Tất cả danh mục</option>
+              <option value="K12">🏫 Dự giờ đánh giá Giáo viên</option>
+              <option value="MAM_NON">🍼 Dự giờ đánh giá Mầm non</option>
               <option value="GVNN_ESL">🌐 Dự giờ GVNN (ESL)</option>
             </select>
           </div>

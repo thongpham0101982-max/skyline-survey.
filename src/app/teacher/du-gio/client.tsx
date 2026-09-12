@@ -246,13 +246,13 @@ interface DeptInfo { id: string; code: string; name: string }
 interface CampusInfo { id: string; campusCode: string; campusName: string }
 interface ClassInfo { id: string; classCode: string; className: string; level: string; grade: string; campusId: string; academicYearId?: string }
 
-export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | "K12", label: string, shortCode: "MN" | "GVNN" | "PT", badgeClass: string } {
+export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | "K12", label: string, shortCode: string, badgeClass: string } {
   const isMN = slot?.level === "Mầm non" ||
     (slot?.grade || "").toLowerCase().includes("mầm non") ||
     (slot?.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
     (slot?.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
   if (isMN) {
-    return { key: "MAM_NON", label: "Mầm non", shortCode: "MN", badgeClass: "bg-amber-100 text-amber-900 border-amber-300" };
+    return { key: "MAM_NON", label: "Dự giờ đánh giá Mầm non", shortCode: "ĐG Mầm non", badgeClass: "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30" };
   }
   const subj = (slot?.subjectName || "").toLowerCase();
   const top = (slot?.topic || "").toLowerCase();
@@ -269,9 +269,9 @@ export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | 
     slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
     (deptName.includes("quốc tế") && (subj.includes("esl") || subj.includes("ela") || subj.includes("english")));
   if (isEsl) {
-    return { key: "GVNN_ESL", label: "Dự giờ GVNN (ESL)", shortCode: "GVNN", badgeClass: "bg-sky-100 text-sky-900 border-sky-300" };
+    return { key: "GVNN_ESL", label: "Dự giờ GVNN (ESL)", shortCode: "GVNN (ESL)", badgeClass: "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30" };
   }
-  return { key: "K12", label: "Phổ thông K-12", shortCode: "PT", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300" };
+  return { key: "K12", label: "Dự giờ đánh giá Giáo viên", shortCode: "ĐG Giáo viên", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
 }
 
 interface ObservationClientProps {
@@ -2776,8 +2776,8 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       if (taughtCategoryFilter !== "all") {
         const cat = getSlotCategoryInfo(slot);
-        const code = cat.shortCode === "MN" ? "MN" : (cat.shortCode === "GVNN" ? "GVNN" : "PT");
-        if (code !== taughtCategoryFilter) return false;
+        const matchCat = taughtCategoryFilter === "MN" ? cat.key === "MAM_NON" : cat.key !== "MAM_NON";
+        if (!matchCat) return false;
       }
       return true;
     });
@@ -2796,7 +2796,8 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       if (observedCategoryFilter !== "all") {
         const cat = getSlotCategoryInfo(slot);
-        if (cat.shortCode !== observedCategoryFilter) return false;
+        const matchCat = observedCategoryFilter === "GVNN" ? cat.key === "GVNN_ESL" : (observedCategoryFilter === "MN" ? cat.key === "MAM_NON" : cat.key === "K12");
+        if (!matchCat) return false;
       }
       return true;
     });
@@ -4655,7 +4656,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     </button>
                   </div>
 
-                  {/* Cấp học filter pills */}
+                  {/* Danh mục filter pills */}
                   <div className="flex items-center gap-1 bg-amber-50/80 p-1 rounded-2xl border border-amber-200/80">
                     <button
                       type="button"
@@ -4666,7 +4667,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-amber-800/80 hover:text-amber-950"
                       }`}
                     >
-                      Mọi cấp
+                      Mọi danh mục
                     </button>
                     <button
                       type="button"
@@ -4677,8 +4678,8 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-amber-800/80 hover:text-amber-950"
                       }`}
                     >
-                      <span>🍼 MN</span>
-                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).shortCode === "MN").length})</span>
+                      <span>🍼 ĐG Mầm non</span>
+                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).key === "MAM_NON").length})</span>
                     </button>
                     <button
                       type="button"
@@ -4689,8 +4690,8 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-emerald-800/80 hover:text-emerald-950"
                       }`}
                     >
-                      <span>🏫 PT</span>
-                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).shortCode !== "MN").length})</span>
+                      <span>🏫 ĐG Giáo viên</span>
+                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).key !== "MAM_NON").length})</span>
                     </button>
                   </div>
                 </div>
@@ -4728,7 +4729,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <tr className="bg-amber-50/60 border-b border-amber-200/80 text-amber-950 font-black uppercase text-[11px] tracking-wider">
                       <th className="p-3.5 text-center w-12">TT</th>
                       <th className="p-3.5 text-center w-20">Cơ sở</th>
-                      <th className="p-3.5 text-center w-24">Cấp học</th>
+                      <th className="p-3.5 text-center w-36">Danh mục</th>
                       <th className="p-3.5">Môn học & Tên bài dạy / Chủ đề</th>
                       <th className="p-3.5">Thời gian & Lớp</th>
                       <th className="p-3.5">GV Đăng ký dự giờ (Duyệt)</th>
@@ -4759,24 +4760,18 @@ export function ObservationClient(props: ObservationClientProps) {
                             </span>
                           </td>
 
-                          {/* Cột Cấp học (MN, PT nếu dạy) */}
+                          {/* Cột Danh mục: Dự giờ đánh giá Mầm non / Dự giờ đánh giá Giáo viên */}
                           <td className="p-3.5 text-center">
                             {(() => {
                               const cat = getSlotCategoryInfo(slot);
-                              const code = cat.shortCode === "MN" ? "MN" : (cat.shortCode === "GVNN" ? "GVNN" : "PT");
-                              const badgeStyle = code === "MN"
-                                ? "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30"
-                                : (code === "GVNN"
-                                  ? "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30"
-                                  : "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30");
-                              const icon = code === "MN" ? "🍼" : (code === "GVNN" ? "🌐" : "🏫");
+                              const icon = cat.key === "MAM_NON" ? "🍼" : (cat.key === "GVNN_ESL" ? "🌐" : "🏫");
                               return (
                                 <span
-                                  className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center justify-center gap-1 shadow-2xs min-w-[56px] ${badgeStyle}`}
-                                  title={code === "MN" ? "Mầm non" : (code === "GVNN" ? "Dự giờ GVNN (ESL)" : "Phổ thông")}
+                                  className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap min-w-[110px] ${cat.badgeClass}`}
+                                  title={cat.label}
                                 >
                                   <span>{icon}</span>
-                                  <span>{code}</span>
+                                  <span>{cat.shortCode}</span>
                                 </span>
                               );
                             })()}
@@ -5023,7 +5018,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     </button>
                   </div>
 
-                  {/* Phân loại (GVNN, MN, PT) filter pills */}
+                  {/* Danh mục (Dự giờ GVNN, ĐG Mầm non, ĐG Giáo viên) filter pills */}
                   <div className="flex items-center gap-1 bg-teal-50/80 p-1 rounded-2xl border border-teal-200/80">
                     <button
                       type="button"
@@ -5034,7 +5029,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-teal-800/80 hover:text-teal-950"
                       }`}
                     >
-                      Tất cả loại
+                      Tất cả danh mục
                     </button>
                     <button
                       type="button"
@@ -5045,8 +5040,8 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-sky-800/80 hover:text-sky-950"
                       }`}
                     >
-                      <span>🌐 GVNN</span>
-                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).shortCode === "GVNN").length})</span>
+                      <span>🌐 GVNN (ESL)</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).key === "GVNN_ESL").length})</span>
                     </button>
                     <button
                       type="button"
@@ -5057,8 +5052,8 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-amber-800/80 hover:text-amber-950"
                       }`}
                     >
-                      <span>🍼 MN</span>
-                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).shortCode === "MN").length})</span>
+                      <span>🍼 ĐG Mầm non</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).key === "MAM_NON").length})</span>
                     </button>
                     <button
                       type="button"
@@ -5069,8 +5064,8 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-emerald-800/80 hover:text-emerald-950"
                       }`}
                     >
-                      <span>🏫 PT</span>
-                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).shortCode === "PT").length})</span>
+                      <span>🏫 ĐG Giáo viên</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).key === "K12").length})</span>
                     </button>
                   </div>
                 </div>
@@ -5108,7 +5103,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <tr className="bg-teal-50/70 border-b border-teal-200 text-teal-950 font-black uppercase text-[11px] tracking-wider">
                       <th className="p-3.5 text-center w-12">TT</th>
                       <th className="p-3.5 text-center w-20">Cơ sở</th>
-                      <th className="p-3.5 text-center w-24">Phân loại</th>
+                      <th className="p-3.5 text-center w-36">Danh mục</th>
                       <th className="p-3.5">Giáo viên dạy</th>
                       <th className="p-3.5">Môn học & Tên bài dạy / Chủ đề</th>
                       <th className="p-3.5">Thời gian & Lớp</th>
@@ -5141,24 +5136,18 @@ export function ObservationClient(props: ObservationClientProps) {
                             </span>
                           </td>
 
-                          {/* Cột Phân loại (GVNN, MN, PT nếu Dự) */}
+                          {/* Cột Danh mục (Dự giờ đánh giá giáo viên, Dự giờ đánh giá Mầm non, Dự giờ GVNN (ESL)) */}
                           <td className="p-3.5 text-center">
                             {(() => {
                               const cat = getSlotCategoryInfo(slot);
-                              const code = cat.shortCode;
-                              const badgeStyle = code === "GVNN"
-                                ? "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30"
-                                : (code === "MN"
-                                  ? "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30"
-                                  : "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30");
-                              const icon = code === "GVNN" ? "🌐" : (code === "MN" ? "🍼" : "🏫");
+                              const icon = cat.key === "GVNN_ESL" ? "🌐" : (cat.key === "MAM_NON" ? "🍼" : "🏫");
                               return (
                                 <span
-                                  className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center justify-center gap-1 shadow-2xs min-w-[64px] ${badgeStyle}`}
-                                  title={code === "GVNN" ? "Dự giờ GVNN (ESL)" : (code === "MN" ? "Mầm non" : "Phổ thông")}
+                                  className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap min-w-[110px] ${cat.badgeClass}`}
+                                  title={cat.label}
                                 >
                                   <span>{icon}</span>
-                                  <span>{code}</span>
+                                  <span>{cat.shortCode}</span>
                                 </span>
                               );
                             })()}
