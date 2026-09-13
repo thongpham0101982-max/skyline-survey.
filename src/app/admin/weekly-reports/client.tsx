@@ -54,7 +54,7 @@ export function WeeklyReportClient({
   roles,
   operationalScope,
   divisions,
-  defaultDeptId = "",
+  defaultDeptId: initialDefaultDeptId = "",
   defaultDivisionCode = ""
 }: any) {
   const now = new Date()
@@ -93,7 +93,7 @@ export function WeeklyReportClient({
   const [toastMsg, setToastMsg] = useState<{msg: string, type: string} | null>(null)
 
   // "Mặc định thì chỉ xuất hiện Tổ mặc định"
-  const resolvedDefaultDeptId = defaultDeptId || (roles && roles.length > 0 ? (roles[0].id || roles[0].code) : "")
+  const resolvedDefaultDeptId = initialDefaultDeptId || (roles && roles.length > 0 ? (roles[0].id || roles[0].code) : "")
   const resolvedDefaultDivCode = defaultDivisionCode || 
     roles?.find((r: any) => r.id === resolvedDefaultDeptId || r.code === resolvedDefaultDeptId)?.divisionCode || 
     (divisions && divisions.length > 0 ? divisions[0].code : "")

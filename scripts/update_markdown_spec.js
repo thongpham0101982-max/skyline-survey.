@@ -26,7 +26,7 @@ const docContent = `# TÀI LIỆU ĐẶC TẢ TOÀN DIỆN VÀ MÔ TẢ HỆ TH�
 
 Tại Hệ thống Giáo dục Sky-Line, giáo dục không phải là một chuỗi các năm học rời rạc mà là **hành trình kiến tạo nhân cách và năng lực liên tục suốt 12 đến 15 năm (từ Mầm non/Lớp 1 đến khi tốt nghiệp THPT)**.
 
-Hồ sơ Học sinh 360° tại Sky-Line đóng vai trò là một **Học bạ Điện tử Tích lũy (Cumulative e-Portfolio)**:
+Hồ sơ học tập HS tại Sky-Line đóng vai trò là một **Học bạ Điện tử Tích lũy (Cumulative e-Portfolio)**:
 - Không bao giờ bị đứt gãy dữ liệu khi học sinh chuyển lớp, chuyển cấp (từ Tiểu học lên THCS, từ THCS lên THPT).
 - Theo dõi toàn diện 4 trụ cột cốt lõi: **Tri thức Văn hóa – Kỹ năng & Năng lực 360° – Sức khỏe Cảm xúc & Tâm lý – Chuẩn Đầu ra Quốc tế (Tiếng Anh & ICT)**.
 

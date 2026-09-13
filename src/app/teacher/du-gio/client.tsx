@@ -271,7 +271,7 @@ export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | 
   if (isEsl) {
     return { key: "GVNN_ESL", label: "Dự giờ GVNN (ESL)", shortCode: "GVNN (ESL)", badgeClass: "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30" };
   }
-  return { key: "K12", label: "Dự giờ đánh giá Giáo viên", shortCode: "ĐG Giáo viên", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
+  return { key: "K12", label: "Dự giờ Giáo viên Phổ thông", shortCode: "GV Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
 }
 
 interface ObservationClientProps {
@@ -4724,7 +4724,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-emerald-800/80 hover:text-emerald-950"
                       }`}
                     >
-                      <span>🏫 ĐG Giáo viên</span>
+                      <span>🏫 GV Phổ thông</span>
                       <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).key !== "MAM_NON").length})</span>
                     </button>
                   </div>
@@ -4794,7 +4794,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             </span>
                           </td>
 
-                          {/* Cột Danh mục: Dự giờ đánh giá Mầm non / Dự giờ đánh giá Giáo viên */}
+                          {/* Cột Danh mục: Dự giờ đánh giá Mầm non / Dự giờ Giáo viên Phổ thông */}
                           <td className="p-3.5 text-center">
                             {(() => {
                               const cat = getSlotCategoryInfo(slot);
@@ -5052,7 +5052,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     </button>
                   </div>
 
-                  {/* Danh mục (Dự giờ GVNN, ĐG Mầm non, ĐG Giáo viên) filter pills */}
+                  {/* Danh mục (Dự giờ GVNN, ĐG Mầm non, GV Phổ thông) filter pills */}
                   <div className="flex items-center gap-1 bg-teal-50/80 p-1 rounded-2xl border border-teal-200/80">
                     <button
                       type="button"
@@ -5098,7 +5098,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-emerald-800/80 hover:text-emerald-950"
                       }`}
                     >
-                      <span>🏫 ĐG Giáo viên</span>
+                      <span>🏫 GV Phổ thông</span>
                       <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).key === "K12").length})</span>
                     </button>
                   </div>
@@ -5170,7 +5170,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             </span>
                           </td>
 
-                          {/* Cột Danh mục (Dự giờ đánh giá giáo viên, Dự giờ đánh giá Mầm non, Dự giờ GVNN (ESL)) */}
+                          {/* Cột Danh mục (Dự giờ Giáo viên Phổ thông, Dự giờ đánh giá Mầm non, Dự giờ GVNN (ESL)) */}
                           <td className="p-3.5 text-center">
                             {(() => {
                               const cat = getSlotCategoryInfo(slot);

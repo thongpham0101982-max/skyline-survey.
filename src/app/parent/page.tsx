@@ -337,7 +337,7 @@ export default async function ParentDashboard() {
             </Link>
           </div>
 
-          {/* Card 3: Hồ Sơ Học Sinh 360° */}
+          {/* Card 3: Hồ sơ học tập HS */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4 relative overflow-hidden group">
             <div className="space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold shadow-inner border border-sky-100">
@@ -346,7 +346,7 @@ export default async function ParentDashboard() {
               <div>
                 <span className="text-[10px] font-black text-sky-700 uppercase tracking-widest block">TÍNH NĂNG 03</span>
                 <h3 className="text-base font-black text-slate-900 group-hover:text-sky-600 transition-colors">
-                  Hồ Sơ Học Sinh 360°
+                  Hồ sơ học tập HS
                 </h3>
               </div>
               <p className="text-xs text-slate-500 font-medium leading-relaxed">

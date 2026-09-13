@@ -305,7 +305,7 @@ export function TeacherObservationReportTab({
               Báo Cáo Thống Kê Hoạt Động Chuyên Môn Giáo Viên
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-              Thống kê đầy đủ tiết trực tiếp giảng dạy và tiết tham gia dự giờ xuyên suốt 3 danh mục: Mầm non, Phổ thông K-12, và GVNN (ESL).
+              Thống kê đầy đủ tiết trực tiếp giảng dạy và tiết tham gia dự giờ xuyên suốt 3 danh mục: Mầm non, Dự giờ Giáo viên Phổ thông, và GVNN (ESL).
             </p>
           </div>
 
@@ -527,7 +527,7 @@ export function TeacherObservationReportTab({
               className="bg-transparent text-xs font-black text-slate-800 outline-none cursor-pointer pr-1"
             >
               <option value="ALL">🌟 Tất cả danh mục</option>
-              <option value="K12">🏫 Dự giờ đánh giá Giáo viên</option>
+              <option value="K12">🏫 Dự giờ Giáo viên Phổ thông</option>
               <option value="MAM_NON">🍼 Dự giờ đánh giá Mầm non</option>
               <option value="GVNN_ESL">🌐 Dự giờ GVNN (ESL)</option>
             </select>
@@ -759,7 +759,7 @@ export function TeacherObservationReportTab({
                 Danh Sách Tiết Tôi Đi Dự Giờ ({filteredObservedSlots.length} tiết)
               </h3>
               <p className="text-xs text-slate-400 font-medium">
-                Bao gồm các tiết tham gia dự giờ ở Mầm non, Phổ thông K-12, và GVNN (ESL)
+                Bao gồm các tiết tham gia dự giờ ở Mầm non, Dự giờ Giáo viên Phổ thông, và GVNN (ESL)
               </p>
             </div>
           </div>

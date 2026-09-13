@@ -155,9 +155,18 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
       {/* Sidebar Content */}
       <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#003B3A] text-white p-6 flex flex-col shadow-xl fixed md:sticky inset-y-0 left-0 z-40 h-screen transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-2'} mb-8`}>
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Sky-Line Logo" className={`h-8 w-auto object-contain brightness-0 invert opacity-90 transition-all ${isCollapsed ? 'scale-75' : ''}`} />
-            {!isCollapsed && <div className="font-bold text-lg tracking-tight leading-none whitespace-nowrap overflow-hidden">{title}</div>}
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="Sky-Line" className={`h-8 w-auto object-contain brightness-0 invert opacity-95 transition-all ${isCollapsed ? 'scale-75' : ''}`} />
+            {!isCollapsed && (
+              <div className="flex flex-col">
+                <span className="font-black text-sm tracking-wide text-white uppercase leading-none">
+                  SKYLINE
+                </span>
+                <span className="text-[9px] font-bold text-[#48BFE3] tracking-wider leading-tight mt-0.5">
+                  Survey System
+                </span>
+              </div>
+            )}
           </div>
           {/* Mobile close button inside the sidebar */}
           <button 
@@ -428,7 +437,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     {!isCollapsed && <span>3. Cố vấn Học tập & Check-in</span>}
                   </Link>
 
-                  {/* 4. Hồ sơ Học sinh 360 */}
+                  {/* 4. Hồ sơ học tập HS */}
                   <Link 
                     href="/teacher/ho-so-hoc-sinh" 
                     onClick={() => setIsOpen(false)} 
@@ -447,7 +456,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/ho-so-hoc-sinh') ? "text-fuchsia-400" : "text-slate-400 group-hover:text-fuchsia-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>4. Hồ sơ Học sinh 360°</span>}
+                    {!isCollapsed && <span>4. Hồ sơ học tập HS</span>}
                   </Link>
 
                   {/* 5. Phụ đạo, bồi dưỡng Học sinh */}
@@ -647,7 +656,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         (pathname === '/teacher/du-gio' && !pathname.startsWith('/teacher/du-gio-mam-non')) ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>2. Dự giờ đánh giá Giáo viên</span>}
+                    {!isCollapsed && <span>2. Dự giờ Giáo viên Phổ thông</span>}
                   </Link>
                 )}
 

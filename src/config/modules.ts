@@ -240,7 +240,7 @@ export const APP_CATEGORIES = [
     color: "teal",
     icon: ClipboardCheck,
     modules: [
-      { code: "DU_GIO_K12", name: "Dự giờ đánh giá Giáo viên (K-12)", icon: ClipboardCheck, href: "/admin/du-gio" },
+      { code: "DU_GIO_K12", name: "Dự giờ Giáo viên Phổ thông", icon: ClipboardCheck, href: "/admin/du-gio" },
       { code: "DU_GIO_MAM_NON", name: "Dự giờ đánh giá Mầm non", icon: Baby, href: "/admin/du-gio-mam-non" },
       { code: "DU_GIO_GVNN", name: "Dự giờ GVNN (ESL)", icon: Globe, href: "/admin/du-gio-gvnn" },
       {
