@@ -2719,7 +2719,6 @@ export default function TeacherStudentProfilePage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Brand Footer */}
       <footer className="mt-12 pt-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-400 no-print select-none">
