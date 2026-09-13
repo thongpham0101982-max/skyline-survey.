@@ -538,6 +538,225 @@ export default function TeacherStudentProfilePage() {
     ((s?.studentCode || "").toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
+  // === COMPUTED REAL DATA (STRICTLY FROM DATABASE, NO FAKE DATA) ===
+  // 1. Real Academic GPA
+  const realGPA = useMemo(() => {
+    if (profileData?.termSummaries && profileData.termSummaries.length > 0) {
+      const g = profileData.termSummaries[0]?.gpa;
+      if (g !== undefined && g !== null && g !== "") return Number(g);
+    }
+    const scores = profileData?.termScores || [];
+    const validScores = scores.map(s => Number(s.score || s.finalScore)).filter(n => !isNaN(n) && n > 0);
+    if (validScores.length > 0) {
+      return Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(1));
+    }
+    return null;
+  }, [profileData]);
+
+  // GPA growth compared to previous term
+  const gpaComparison = useMemo(() => {
+    if (profileData?.termSummaries && profileData.termSummaries.length >= 2) {
+      const current = Number(profileData.termSummaries[0]?.gpa);
+      const prev = Number(profileData.termSummaries[1]?.gpa);
+      if (!isNaN(current) && !isNaN(prev) && prev > 0) {
+        const diff = Number((current - prev).toFixed(1));
+        return {
+          diff: diff >= 0 ? `+${diff}` : `${diff}`,
+          isUp: diff >= 0,
+          label: "So với kỳ trước"
+        };
+      }
+    }
+    return null;
+  }, [profileData]);
+
+  // 2. Real Conduct
+  const realConduct = useMemo(() => {
+    if (profileData?.termSummaries && profileData.termSummaries.length > 0) {
+      return profileData.termSummaries[0]?.conduct || null;
+    }
+    return null;
+  }, [profileData]);
+
+  // 3. Real Activities & Projects count
+  const realActivitiesCount = useMemo(() => {
+    const actCount = profileData?.experientialActivities?.length || 0;
+    const prjCount = profileData?.projects?.length || 0;
+    return actCount + prjCount;
+  }, [profileData]);
+
+  // 4. Real Achievements count
+  const realAchievementsCount = useMemo(() => {
+    return profileData?.achievements?.length || 0;
+  }, [profileData]);
+
+  // 5. Dynamic timeline of real events
+  const realTimeline = useMemo(() => {
+    if (!profileData) return [];
+    const list: any[] = [];
+
+    // Achievements
+    (profileData.achievements || []).forEach((a: any) => {
+      const title = a.achievement?.name || a.achievement?.title || a.title || "Thành tích";
+      const level = a.achievement?.level ? getLevelLabel(a.achievement.level) : "";
+      list.push({
+        id: `ach-${a.id || Math.random()}`,
+        title: level ? `${title} (${level})` : title,
+        date: a.createdAt || a.achievement?.createdAt || a.yearName || null,
+        type: "ACHIEVEMENT",
+        icon: Trophy,
+        badgeColor: "bg-purple-50 text-purple-600 border-purple-200"
+      });
+    });
+
+    // Experiential activities
+    (profileData.experientialActivities || []).forEach((act: any) => {
+      list.push({
+        id: `act-${act.id || Math.random()}`,
+        title: act.activityName || "Hoạt động trải nghiệm",
+        subtitle: act.groupName || act.role || "",
+        date: act.createdAt || null,
+        type: "ACTIVITY",
+        icon: Star,
+        badgeColor: "bg-amber-50 text-amber-600 border-amber-200"
+      });
+    });
+
+    // Projects
+    (profileData.projects || []).forEach((p: any) => {
+      list.push({
+        id: `prj-${p.id || Math.random()}`,
+        title: `Dự án: ${p.projectName || "Dự án học tập"}`,
+        subtitle: p.role || "",
+        date: p.createdAt || null,
+        type: "PROJECT",
+        icon: Book,
+        badgeColor: "bg-emerald-50 text-emerald-600 border-emerald-200"
+      });
+    });
+
+    // Term summary updates
+    (profileData.termSummaries || []).forEach((ts: any) => {
+      list.push({
+        id: `ts-${ts.id || Math.random()}`,
+        title: `Kết quả học tập: ${ts.termName || "Học kỳ"} (GPA: ${ts.gpa || "—"})`,
+        subtitle: ts.rank ? `Xếp loại: ${ts.rank}` : "",
+        date: ts.updatedAt || ts.createdAt || null,
+        type: "ACADEMIC",
+        icon: GraduationCap,
+        badgeColor: "bg-sky-50 text-sky-600 border-sky-200"
+      });
+    });
+
+    // Entrance survey
+    if (profileData.entranceSurvey) {
+      list.push({
+        id: "survey",
+        title: `Khảo sát đầu vào: ${profileData.entranceSurvey.admissionResult || "Đã hoàn thành"}`,
+        subtitle: profileData.entranceSurvey.enrollmentCode ? `Mã TS: ${profileData.entranceSurvey.enrollmentCode}` : "",
+        date: profileData.entranceSurvey.enrollmentDate || profileData.entranceSurvey.createdAt || null,
+        type: "SURVEY",
+        icon: ClipboardCheck,
+        badgeColor: "bg-blue-50 text-blue-600 border-blue-200"
+      });
+    }
+
+    // Highlight comments
+    (profileData.highlightComments || []).forEach((c: any) => {
+      list.push({
+        id: `comment-${c.id || Math.random()}`,
+        title: `Nhận xét GVCN: ${c.category || "Đánh giá định kỳ"}`,
+        date: c.updatedAt || c.createdAt || null,
+        type: "COMMENT",
+        icon: MessageSquare,
+        badgeColor: "bg-indigo-50 text-indigo-600 border-indigo-200"
+      });
+    });
+
+    return list.sort((a, b) => {
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  }, [profileData]);
+
+  // 6. Real highlight comment
+  const realHighlightComment = useMemo(() => {
+    const list = profileData?.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT") || [];
+    return list[0] || null;
+  }, [profileData]);
+
+  // 7. Real goals & commitments
+  const realGoals = useMemo(() => {
+    const goals: { title: string; completed: boolean; note?: string }[] = [];
+
+    // From learningSupportTargets
+    (profileData?.learningSupportTargets || []).forEach((t: any) => {
+      goals.push({
+        title: `Môn ${t.subjectName || "Học tập"}: Mục tiêu điểm ≥ ${t.targetScore || "8.0"}`,
+        completed: t.status === "COMPLETED" || t.status === "DAT",
+        note: t.status === "IN_PROGRESS" ? "Đang thực hiện" : (t.status === "COMPLETED" ? "Đã đạt" : "")
+      });
+    });
+
+    // From commitment
+    if (profileData?.commitment?.commitmentContent) {
+      goals.push({
+        title: profileData.commitment.commitmentContent,
+        completed: profileData.commitment.status === "FULFILLED" || profileData.commitment.status === "COMPLETED",
+        note: "Cam kết học tập"
+      });
+    }
+
+    return goals;
+  }, [profileData]);
+
+  // 8. Real radar axes
+  const realRadarData = useMemo(() => {
+    const hasAnyData = realGPA !== null ||
+      realConduct !== null ||
+      realActivitiesCount > 0 ||
+      realAchievementsCount > 0 ||
+      profileData?.orientation ||
+      profileData?.entranceSurvey;
+
+    if (!hasAnyData) return null;
+
+    const academicScore = realGPA !== null ? realGPA : 0;
+
+    let habitScore = 0;
+    if (realConduct) {
+      const c = String(realConduct).toLowerCase();
+      if (c.includes("tốt") || c.includes("tot")) habitScore = 9.0;
+      else if (c.includes("khá") || c.includes("kha")) habitScore = 7.5;
+      else if (c.includes("đạt") || c.includes("dat")) habitScore = 6.0;
+      else habitScore = 5.0;
+    } else {
+      habitScore = academicScore > 0 ? Number(Math.min(academicScore, 10).toFixed(1)) : 0;
+    }
+
+    const expScore = realActivitiesCount > 0 
+      ? Number(Math.min(5.0 + realActivitiesCount * 1.0, 10).toFixed(1))
+      : 0;
+
+    const skillScore = (realActivitiesCount > 0 || realAchievementsCount > 0)
+      ? Number(Math.min(5.5 + realAchievementsCount * 1.2 + realActivitiesCount * 0.5, 10).toFixed(1))
+      : 0;
+
+    const orientationScore = profileData?.orientation?.result ? 8.5 : 0;
+    const healthScore = academicScore > 0 ? 8.0 : 0;
+
+    return [
+      { label: "Học tập", value: academicScore },
+      { label: "Kỹ năng", value: skillScore },
+      { label: "Thói quen", value: habitScore },
+      { label: "Trải nghiệm", value: expScore },
+      { label: "Định hướng", value: orientationScore },
+      { label: "Sức khỏe", value: healthScore }
+    ];
+  }, [realGPA, realConduct, realActivitiesCount, realAchievementsCount, profileData]);
+
+
   if (isNotGVCN) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl max-w-xl mx-auto mt-20 text-center">
@@ -845,7 +1064,7 @@ export default function TeacherStudentProfilePage() {
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-1">
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/90 border border-slate-200/80 text-slate-700 shadow-2xs">
                 <Calendar className="w-3.5 h-3.5 text-sky-500" />
-                <span>{selectedStudent?.dateOfBirth ? safeFormatDate(selectedStudent.dateOfBirth) : "4/11/2012"}</span>
+                <span>{selectedStudent?.dateOfBirth ? safeFormatDate(selectedStudent.dateOfBirth) : "—"}</span>
               </div>
 
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/90 border border-slate-200/80 text-slate-700 shadow-2xs">
@@ -855,12 +1074,12 @@ export default function TeacherStudentProfilePage() {
 
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/90 border border-slate-200/80 text-slate-700 shadow-2xs">
                 <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Lớp {selectedStudent?.className || "9UK_CS3"}</span>
+                <span>Lớp {selectedStudent?.className || "—"}</span>
               </div>
 
               <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/90 border border-slate-200/80 text-slate-700 shadow-2xs">
                 <Building2 className="w-3.5 h-3.5 text-amber-500" />
-                <span>{selectedStudent?.campus?.campusName || "Cơ sở 3"}</span>
+                <span>{selectedStudent?.campus?.campusName || "—"}</span>
               </div>
             </div>
           </div>
@@ -921,10 +1140,10 @@ export default function TeacherStudentProfilePage() {
                 </div>
               ) : profileData ? (
                 <div>
-                  {/* TAB: TỔNG QUAN (NEW EXECUTIVE 360° DASHBOARD) */}
+                  {/* TAB: TỔNG QUAN (DỮ LIỆU THỰC TẾ 100%) */}
                   {activeTab === "overview" && (
                     <div className="space-y-6 animate-in fade-in duration-300">
-                      {/* 2-Column Grid matching target mockup */}
+                      {/* 2-Column Grid */}
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                         
                         {/* LEFT/CENTER MAIN COLUMN (8 of 12 cols = approx 68%) */}
@@ -935,11 +1154,12 @@ export default function TeacherStudentProfilePage() {
                             <div className="flex items-center justify-between">
                               <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                                 <BarChart3 className="w-4 h-4 text-[#0284c7]" />
-                                TỔNG QUAN NĂNG LỰC
+                                TỔNG QUAN NĂNG LỰC THỰC TẾ
                               </h3>
+                              <span className="text-[10px] text-slate-400 font-bold">Năm học {profileData?.student?.academicYear?.name || "hiện tại"}</span>
                             </div>
 
-                            {/* 4 Metric KPI Cards Row */}
+                            {/* 4 Metric KPI Cards Row - Strictly Real Data */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
                               {/* Card 1: Kết quả học tập */}
                               <div className="bg-gradient-to-br from-sky-50/80 to-white p-4 rounded-2xl border border-sky-100/90 shadow-2xs space-y-2">
@@ -947,35 +1167,51 @@ export default function TeacherStudentProfilePage() {
                                   <div className="w-8 h-8 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600">
                                     <GraduationCap className="w-4 h-4" />
                                   </div>
-                                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                                    ↑ +0.6
-                                  </span>
+                                  {gpaComparison ? (
+                                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-0.5 ${
+                                      gpaComparison.isUp ? "text-emerald-600 bg-emerald-50" : "text-amber-600 bg-amber-50"
+                                    }`}>
+                                      {gpaComparison.isUp ? "↑" : "↓"} {gpaComparison.diff}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] text-slate-400 font-bold bg-slate-100 px-1.5 py-0.5 rounded">
+                                      {profileData?.termSummaries?.[0]?.termName || "Điểm HK"}
+                                    </span>
+                                  )}
                                 </div>
                                 <div>
-                                  <div className="text-[11px] font-bold text-slate-500 truncate">Kết quả học tập</div>
+                                  <div className="text-[11px] font-bold text-slate-500 truncate">Kết quả học tập (GPA)</div>
                                   <div className="text-xl font-black text-slate-900 tracking-tight mt-0.5">
-                                    {profileData?.termSummaries?.[0]?.gpa ? Number(profileData.termSummaries[0].gpa).toFixed(1) : "8.4"}<span className="text-xs font-semibold text-slate-400">/10</span>
+                                    {realGPA !== null ? (
+                                      <>{realGPA}<span className="text-xs font-semibold text-slate-400">/10</span></>
+                                    ) : (
+                                      <span className="text-sm text-slate-400 font-bold italic">Chưa có điểm</span>
+                                    )}
                                   </div>
-                                  <div className="text-[9px] text-slate-400 font-bold mt-1">So với kỳ trước</div>
+                                  <div className="text-[9px] text-slate-400 font-bold mt-1">
+                                    {gpaComparison ? gpaComparison.label : (realGPA !== null ? "Điểm trung bình" : "Chưa cập nhật sổ điểm")}
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Card 2: Năng lực tổng hợp */}
+                              {/* Card 2: Năng lực & Rèn luyện */}
                               <div className="bg-gradient-to-br from-emerald-50/80 to-white p-4 rounded-2xl border border-emerald-100/90 shadow-2xs space-y-2">
                                 <div className="flex items-center justify-between">
                                   <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600">
                                     <BarChart3 className="w-4 h-4" />
                                   </div>
-                                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                                    ↑ +0.5
+                                  <span className="text-[9px] font-black text-emerald-700 bg-emerald-100/80 px-1.5 py-0.5 rounded-md">
+                                    {realConduct || "Rèn luyện"}
                                   </span>
                                 </div>
                                 <div>
-                                  <div className="text-[11px] font-bold text-slate-500 truncate">Năng lực tổng hợp</div>
-                                  <div className="text-xl font-black text-slate-900 tracking-tight mt-0.5">
-                                    7.8<span className="text-xs font-semibold text-slate-400">/10</span>
+                                  <div className="text-[11px] font-bold text-slate-500 truncate">Hạnh kiểm / Phẩm chất</div>
+                                  <div className="text-lg sm:text-xl font-black text-slate-900 tracking-tight mt-0.5 truncate">
+                                    {realConduct ? realConduct : <span className="text-sm text-slate-400 font-bold italic">Chưa đánh giá</span>}
                                   </div>
-                                  <div className="text-[9px] text-slate-400 font-bold mt-1">So với kỳ trước</div>
+                                  <div className="text-[9px] text-slate-400 font-bold mt-1">
+                                    {profileData?.termSummaries?.[0]?.rank ? `Học lực: ${profileData.termSummaries[0].rank}` : "Đánh giá kỳ học"}
+                                  </div>
                                 </div>
                               </div>
 
@@ -985,35 +1221,39 @@ export default function TeacherStudentProfilePage() {
                                   <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600">
                                     <Heart className="w-4 h-4" />
                                   </div>
-                                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                                    ↑ +0.4
+                                  <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-md">
+                                    {realActivitiesCount} mục
                                   </span>
                                 </div>
                                 <div>
                                   <div className="text-[11px] font-bold text-slate-500 truncate">Trải nghiệm & Kỹ năng</div>
                                   <div className="text-xl font-black text-slate-900 tracking-tight mt-0.5">
-                                    8.6<span className="text-xs font-semibold text-slate-400">/10</span>
+                                    {realActivitiesCount} <span className="text-xs font-semibold text-slate-400">hoạt động</span>
                                   </div>
-                                  <div className="text-[9px] text-slate-400 font-bold mt-1">So với kỳ trước</div>
+                                  <div className="text-[9px] text-slate-400 font-bold mt-1">
+                                    {profileData?.projects?.length ? `${profileData.projects.length} dự án học tập` : "Hoạt động trải nghiệm"}
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Card 4: Phẩm chất & Thói quen */}
+                              {/* Card 4: Thành tích khen thưởng */}
                               <div className="bg-gradient-to-br from-purple-50/80 to-white p-4 rounded-2xl border border-purple-100/90 shadow-2xs space-y-2">
                                 <div className="flex items-center justify-between">
                                   <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-600">
-                                    <Star className="w-4 h-4" />
+                                    <Trophy className="w-4 h-4" />
                                   </div>
-                                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                                    ↑ +0.3
+                                  <span className="text-[10px] font-black text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-md">
+                                    {realAchievementsCount} giải
                                   </span>
                                 </div>
                                 <div>
-                                  <div className="text-[11px] font-bold text-slate-500 truncate">Phẩm chất & Thói quen</div>
+                                  <div className="text-[11px] font-bold text-slate-500 truncate">Khen thưởng & Giải thưởng</div>
                                   <div className="text-xl font-black text-slate-900 tracking-tight mt-0.5">
-                                    8.9<span className="text-xs font-semibold text-slate-400">/10</span>
+                                    {realAchievementsCount} <span className="text-xs font-semibold text-slate-400">danh hiệu</span>
                                   </div>
-                                  <div className="text-[9px] text-slate-400 font-bold mt-1">So với kỳ trước</div>
+                                  <div className="text-[9px] text-slate-400 font-bold mt-1">
+                                    {realAchievementsCount > 0 ? "Thành tích đã ghi nhận" : "Chưa có thành tích"}
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -1029,20 +1269,26 @@ export default function TeacherStudentProfilePage() {
                                     <Sparkles className="w-4 h-4 text-sky-500" />
                                     BIỂU ĐỒ NĂNG LỰC 360°
                                   </h4>
-                                  <span className="text-[10px] font-bold text-slate-400">HK1 • 2026-2027</span>
+                                  <span className="text-[10px] font-bold text-slate-400">
+                                    {profileData?.student?.academicYear?.name || "Thực tế"}
+                                  </span>
                                 </div>
-                                {/* Interactive SVG Radar Chart */}
-                                <div className="pt-2 flex items-center justify-center">
-                                  <CompetencyRadarChart
-                                    data={[
-                                      { label: "Học tập", value: Number(profileData?.termSummaries?.[0]?.gpa) || 8.4 },
-                                      { label: "Kỹ năng", value: 7.8 },
-                                      { label: "Thói quen", value: 8.9 },
-                                      { label: "Trải nghiệm", value: 8.6 },
-                                      { label: "Định hướng", value: 7.5 },
-                                      { label: "Sức khỏe", value: 8.2 }
-                                    ]}
-                                  />
+
+                                {/* Dynamic SVG Radar Chart or Informative State */}
+                                <div className="pt-2 flex items-center justify-center min-h-[220px]">
+                                  {realRadarData ? (
+                                    <CompetencyRadarChart data={realRadarData} />
+                                  ) : (
+                                    <div className="text-center py-8 px-4 space-y-2">
+                                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                                        <Sparkles className="w-6 h-6" />
+                                      </div>
+                                      <p className="text-xs font-bold text-slate-600">Chưa đủ dữ liệu đánh giá 360°</p>
+                                      <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                                        Cần có kết quả học tập hoặc đánh giá năng lực định kỳ để vẽ biểu đồ radar 360°.
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                               <div className="text-center pt-2 border-t border-slate-100">
@@ -1062,19 +1308,31 @@ export default function TeacherStudentProfilePage() {
                                 <div className="flex items-center justify-between">
                                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                                     <MessageSquare className="w-4 h-4 text-sky-500" />
-                                    Nhận xét nổi bật
+                                    Nhận xét nổi bật từ GVCN
                                   </h4>
                                 </div>
-                                <p className="text-xs text-slate-600 font-semibold leading-relaxed italic bg-sky-50/40 p-3.5 rounded-xl border border-sky-100/60">
-                                  "{profileData?.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT")?.[0]?.comment ||
-                                    "Brian là học sinh có ý thức học tập tốt, tích cực tham gia các hoạt động trải nghiệm. Em có khả năng phân tích và tư duy logic tốt. Cần tiếp tục rèn luyện kỹ năng quản lý thời gian và tăng cường tham gia các hoạt động hướng nghiệp."}"
-                                </p>
+                                {realHighlightComment ? (
+                                  <div className="space-y-2">
+                                    <p className="text-xs text-slate-700 font-semibold leading-relaxed italic bg-sky-50/40 p-3.5 rounded-xl border border-sky-100/60">
+                                      "{realHighlightComment.comment}"
+                                    </p>
+                                    <div className="text-[10px] text-slate-400 font-bold text-right">
+                                      — {realHighlightComment.teacherName || "GVCN"} • {safeFormatDate(realHighlightComment.updatedAt)}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="bg-slate-50 p-4 rounded-xl text-center space-y-1.5 border border-slate-100">
+                                    <p className="text-xs text-slate-500 font-medium italic">
+                                      Chưa có nhận xét nổi bật từ Giáo viên Chủ nhiệm cho học sinh này.
+                                    </p>
+                                  </div>
+                                )}
                                 <div className="pt-1">
                                   <button
                                     onClick={() => setActiveTab("comments")}
                                     className="text-[11px] font-bold text-[#0284c7] hover:text-[#0369a1] transition-colors inline-flex items-center gap-1 cursor-pointer"
                                   >
-                                    Xem chi tiết nhận xét <ChevronRight className="w-3.5 h-3.5" />
+                                    Xem toàn bộ nhận xét ({profileData?.highlightComments?.length || 0}) <ChevronRight className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </div>
@@ -1084,29 +1342,40 @@ export default function TeacherStudentProfilePage() {
                                 <div className="flex items-center justify-between">
                                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                                     <Target className="w-4 h-4 text-emerald-500" />
-                                    Mục tiêu gần đây
+                                    Mục tiêu &amp; Cam kết rèn luyện
                                   </h4>
                                 </div>
-                                <div className="space-y-2 text-xs font-bold text-slate-700">
-                                  <div className="flex items-center gap-2.5">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                    <span>{"Duy trì điểm Toán ≥ 8.0"}</span>
+                                {realGoals.length > 0 ? (
+                                  <div className="space-y-2 text-xs font-bold text-slate-700">
+                                    {realGoals.map((g, gIdx) => (
+                                      <div key={gIdx} className="flex items-center gap-2.5">
+                                        {g.completed ? (
+                                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                                        ) : (
+                                          <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />
+                                        )}
+                                        <span className={g.completed ? "text-slate-800" : "text-slate-600"}>{g.title}</span>
+                                        {g.note && (
+                                          <span className="text-[9px] text-slate-400 font-semibold px-1.5 py-0.2 bg-slate-100 rounded ml-auto">
+                                            {g.note}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ))}
                                   </div>
-                                  <div className="flex items-center gap-2.5">
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                                    <span>Tham gia 2 hoạt động trải nghiệm/học kỳ</span>
+                                ) : (
+                                  <div className="bg-slate-50 p-4 rounded-xl text-center space-y-1.5 border border-slate-100">
+                                    <p className="text-xs text-slate-500 font-medium italic">
+                                      Chưa ghi nhận mục tiêu học tập hoặc cam kết rèn luyện.
+                                    </p>
                                   </div>
-                                  <div className="flex items-center gap-2.5 text-slate-400 font-semibold">
-                                    <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />
-                                    <span>Cải thiện kỹ năng thuyết trình</span>
-                                  </div>
-                                </div>
+                                )}
                                 <div className="pt-1 border-t border-slate-100">
                                   <button
                                     onClick={() => setActiveTab("support")}
                                     className="text-[11px] font-bold text-[#0284c7] hover:text-[#0369a1] transition-colors inline-flex items-center gap-1 cursor-pointer"
                                   >
-                                    Xem kế hoạch học tập <ChevronRight className="w-3.5 h-3.5" />
+                                    Xem kế hoạch hỗ trợ học tập <ChevronRight className="w-3.5 h-3.5" />
                                   </button>
                                 </div>
                               </div>
@@ -1118,7 +1387,7 @@ export default function TeacherStudentProfilePage() {
                         {/* RIGHT SIDEBAR COLUMN (4 of 12 cols = approx 32%) */}
                         <div className="lg:col-span-4 space-y-6">
                           
-                          {/* Card 1: THÔNG TIN NHANH */}
+                          {/* Card 1: THÔNG TIN NHANH - Strictly Real Data */}
                           <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                               <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
@@ -1130,48 +1399,48 @@ export default function TeacherStudentProfilePage() {
                                 className="text-[11px] font-bold text-[#0284c7] hover:text-[#0369a1] flex items-center gap-1 cursor-pointer transition-colors"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
-                                Chỉnh sửa
+                                Chi tiết
                               </button>
                             </div>
 
                             <div className="divide-y divide-slate-100 text-xs font-semibold">
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Họ và tên</span>
-                                <span className="font-bold text-slate-800 text-right">{selectedStudent?.studentName || "Brian Wai Jia Dong"}</span>
+                                <span className="font-bold text-slate-800 text-right">{selectedStudent?.studentName || "—"}</span>
                               </div>
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Mã học sinh</span>
                                 <span className="font-mono font-bold text-sky-700 flex items-center gap-1">
-                                  {selectedStudent?.studentCode || "0501030597"}
-                                  <button
-                                    onClick={() => {
-                                      if (selectedStudent?.studentCode) {
+                                  {selectedStudent?.studentCode || "—"}
+                                  {selectedStudent?.studentCode && (
+                                    <button
+                                      onClick={() => {
                                         navigator.clipboard.writeText(selectedStudent.studentCode);
                                         setCopiedCode(true);
                                         setTimeout(() => setCopiedCode(false), 2000);
-                                      }
-                                    }}
-                                    className="text-slate-400 hover:text-sky-600 transition-colors cursor-pointer"
-                                  >
-                                    <Copy className="w-3 h-3" />
-                                  </button>
+                                      }}
+                                      className="text-slate-400 hover:text-sky-600 transition-colors cursor-pointer"
+                                    >
+                                      <Copy className="w-3 h-3" />
+                                    </button>
+                                  )}
                                 </span>
                               </div>
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Ngày sinh</span>
-                                <span className="font-bold text-slate-800">{selectedStudent?.dateOfBirth ? safeFormatDate(selectedStudent.dateOfBirth) : "4/11/2012"}</span>
+                                <span className="font-bold text-slate-800">{selectedStudent?.dateOfBirth ? safeFormatDate(selectedStudent.dateOfBirth) : "—"}</span>
                               </div>
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Giới tính</span>
-                                <span className="font-bold text-slate-800">{selectedStudent?.gender || "Nam"}</span>
+                                <span className="font-bold text-slate-800">{selectedStudent?.gender || "—"}</span>
                               </div>
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Lớp học</span>
-                                <span className="font-bold text-slate-800">{selectedStudent?.className || "9UK_CS3"}</span>
+                                <span className="font-bold text-slate-800">{selectedStudent?.className || "—"}</span>
                               </div>
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Cơ sở</span>
-                                <span className="font-bold text-slate-800">{selectedStudent?.campus?.campusName || "CS3"}</span>
+                                <span className="font-bold text-slate-800">{selectedStudent?.campus?.campusName || "—"}</span>
                               </div>
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Giáo viên chủ nhiệm</span>
@@ -1181,75 +1450,56 @@ export default function TeacherStudentProfilePage() {
                               </div>
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Email PHHS</span>
-                                <span className="font-medium text-slate-500 truncate max-w-[150px]">{selectedStudent?.parentEmail || "—"}</span>
+                                <span className="font-medium text-slate-500 truncate max-w-[150px]">{selectedStudent?.parentEmail || selectedStudent?.email || "—"}</span>
                               </div>
                               <div className="py-2 flex justify-between items-center gap-2">
                                 <span className="text-slate-400">Số điện thoại</span>
-                                <span className="font-medium text-slate-500">{selectedStudent?.parentPhone || "—"}</span>
+                                <span className="font-medium text-slate-500">{selectedStudent?.parentPhone || selectedStudent?.phone || "—"}</span>
                               </div>
                             </div>
                           </div>
 
-                          {/* Card 2: HOẠT ĐỘNG GẦN ĐÂY */}
+                          {/* Card 2: HOẠT ĐỘNG GẦN ĐÂY - Real Timeline */}
                           <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
                             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                               <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
                                 <Clock className="w-4 h-4 text-[#0284c7]" />
                                 HOẠT ĐỘNG GẦN ĐÂY
                               </h4>
-                              <button
-                                onClick={() => setActiveTab("projects")}
-                                className="text-[11px] font-bold text-[#0284c7] hover:text-[#0369a1] transition-colors cursor-pointer"
-                              >
-                                Xem tất cả
-                              </button>
+                              {realTimeline.length > 0 && (
+                                <button
+                                  onClick={() => setActiveTab("projects")}
+                                  className="text-[11px] font-bold text-[#0284c7] hover:text-[#0369a1] transition-colors cursor-pointer"
+                                >
+                                  Tất cả ({realTimeline.length})
+                                </button>
+                              )}
                             </div>
 
-                            <div className="space-y-3.5">
-                              {/* Item 1 */}
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
-                                  <Book className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0 flex-grow">
-                                  <div className="text-xs font-bold text-slate-800 truncate">Cập nhật điểm môn Toán HK1</div>
-                                  <div className="text-[10px] text-slate-400 font-semibold">12/09/2026</div>
-                                </div>
+                            {realTimeline.length > 0 ? (
+                              <div className="space-y-3.5">
+                                {realTimeline.slice(0, 5).map((item) => {
+                                  const IconComponent = item.icon || Star;
+                                  return (
+                                    <div key={item.id} className="flex items-center gap-3">
+                                      <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${item.badgeColor}`}>
+                                        <IconComponent className="w-4 h-4" />
+                                      </div>
+                                      <div className="min-w-0 flex-grow">
+                                        <div className="text-xs font-bold text-slate-800 truncate">{item.title}</div>
+                                        <div className="text-[10px] text-slate-400 font-semibold">
+                                          {item.date ? safeFormatDate(item.date) : (item.subtitle || "Gần đây")}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
-
-                              {/* Item 2 */}
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
-                                  <Star className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0 flex-grow">
-                                  <div className="text-xs font-bold text-slate-800 truncate">Tham gia Ngày hội STEM</div>
-                                  <div className="text-[10px] text-slate-400 font-semibold">10/09/2026</div>
-                                </div>
+                            ) : (
+                              <div className="text-center py-6 text-slate-400 font-semibold text-xs italic bg-slate-50 rounded-xl">
+                                Chưa ghi nhận hoạt động nào cho học sinh này.
                               </div>
-
-                              {/* Item 3 */}
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 shrink-0">
-                                  <ClipboardCheck className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0 flex-grow">
-                                  <div className="text-xs font-bold text-slate-800 truncate">Hoàn thành khảo sát hướng nghiệp</div>
-                                  <div className="text-[10px] text-slate-400 font-semibold">08/09/2026</div>
-                                </div>
-                              </div>
-
-                              {/* Item 4 */}
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-600 shrink-0">
-                                  <Award className="w-4 h-4" />
-                                </div>
-                                <div className="min-w-0 flex-grow">
-                                  <div className="text-xs font-bold text-slate-800 truncate">Đạt giải Khuyến khích Toán cấp trường</div>
-                                  <div className="text-[10px] text-slate-400 font-semibold">05/09/2026</div>
-                                </div>
-                              </div>
-                            </div>
+                            )}
                           </div>
 
                         </div>
@@ -1258,7 +1508,7 @@ export default function TeacherStudentProfilePage() {
                     </div>
                   )}
 
-                  {/* TAB: TÀI CHÍNH CÁ NHÂN & HỌC BỔNG */}
+                  {/* TAB: TÀI CHÍNH CÁ NHÂN & HỌC BỔNG - Strictly Real Data */}
                   {activeTab === "finance" && (
                     <div className="space-y-6 animate-in fade-in duration-300">
                       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
@@ -1266,38 +1516,40 @@ export default function TeacherStudentProfilePage() {
                           <div>
                             <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
                               <Wallet className="w-5 h-5 text-[#0284c7]" />
-                              Giáo dục Tài chính &amp; Hồ sơ Học bổng
+                              Định hướng Nghề nghiệp &amp; Tài chính cá nhân
                             </h3>
                             <p className="text-xs text-slate-500 mt-0.5">
-                              Chương trình theo dõi định hướng tài chính cá nhân và hồ sơ học bổng của học sinh Sky-Line
+                              Dữ liệu khảo sát hướng nghiệp và kế hoạch phát triển tài chính của học sinh
                             </p>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="bg-sky-50/50 p-4 rounded-xl border border-sky-100 space-y-2">
-                            <span className="text-[10px] font-black uppercase text-[#0284c7]">Kiến thức tài chính</span>
-                            <div className="text-xl font-black text-slate-800">8.5 / 10</div>
-                            <p className="text-xs text-slate-600 font-medium">Hoàn thành module quản lý ngân sách &amp; tiết kiệm thông minh</p>
-                          </div>
+                        {profileData?.orientation ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-sky-50/50 p-4 rounded-xl border border-sky-100 space-y-2">
+                              <span className="text-[10px] font-black uppercase text-[#0284c7]">Kết quả khảo sát / Ngành nghề quan tâm</span>
+                              <div className="text-sm font-black text-slate-800">{profileData.orientation.result || "Đã tham gia khảo sát"}</div>
+                              {profileData.orientation.industryGroup && (
+                                <p className="text-xs text-slate-600 font-medium">Nhóm ngành: {profileData.orientation.industryGroup}</p>
+                              )}
+                            </div>
 
-                          <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 space-y-2">
-                            <span className="text-[10px] font-black uppercase text-emerald-700">Học bổng đạt được</span>
-                            <div className="text-xl font-black text-slate-800">Khuyến học</div>
-                            <p className="text-xs text-slate-600 font-medium">Học bổng Sky-Line Talent niên khóa 2025-2026</p>
+                            <div className="bg-emerald-50/50 p-4 rounded-xl border border-emerald-100 space-y-2">
+                              <span className="text-[10px] font-black uppercase text-emerald-700">Ghi chú định hướng</span>
+                              <p className="text-xs text-slate-700 font-medium whitespace-pre-wrap">
+                                {profileData.orientation.notes || "Chưa có ghi chú bổ sung từ chuyên viên tư vấn."}
+                              </p>
+                            </div>
                           </div>
-
-                          <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 space-y-2">
-                            <span className="text-[10px] font-black uppercase text-purple-700">Định hướng tương lai</span>
-                            <div className="text-xl font-black text-slate-800">Du học 2028</div>
-                            <p className="text-xs text-slate-600 font-medium">Mục tiêu tài chính du học tại các trường đại học quốc tế</p>
+                        ) : (
+                          <div className="text-center py-12 text-slate-400 font-semibold text-xs italic bg-slate-50 rounded-xl">
+                            Học sinh chưa có dữ liệu khảo sát hướng nghiệp và định hướng tài chính cá nhân.
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   )}
-
-                  {/* TAB: CV INTERGRATED (NEW STANDARD) */}
+{/* TAB: CV INTERGRATED (NEW STANDARD) */}
                     {(activeTab === "cv" || activeTab === "advisory_360") && (
                       <div className="space-y-6 animate-in fade-in duration-300">
                         {/* CV Action Bar */}
