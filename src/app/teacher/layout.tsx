@@ -1,3 +1,4 @@
+import { TeacherMobileBottomNav } from "@/components/TeacherMobileBottomNav"
 export const dynamic = "force-dynamic"
 import { ChatBotWidget } from "@/components/ChatBotWidget"
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
@@ -123,6 +124,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           {children}
         </div>
         
+        <TeacherMobileBottomNav />
         <ChatBotWidget role="TEACHER" />
       </main>
     </div>

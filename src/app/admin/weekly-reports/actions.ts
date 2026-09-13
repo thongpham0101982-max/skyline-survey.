@@ -286,7 +286,13 @@ export async function getConsolidatedReports(roleCode: string, weekNumber: numbe
       whereClause.user = {
         OR: [
           { role: roleCode },
-          { teacher: { departmentRel: { OR: [{ code: roleCode }, { name: roleCode }] } } }
+          { teacher: {
+            OR: [
+              { departmentId: roleCode },
+              { departmentRel: { OR: [{ id: roleCode }, { code: roleCode }, { name: roleCode }] } },
+              { departmentAssignments: { some: { OR: [{ departmentId: roleCode }, { department: { OR: [{ code: roleCode }, { name: roleCode }] } }] } } }
+            ]
+          } }
         ]
       }
     }
@@ -738,6 +744,7 @@ export async function getPersonalProgressCards(
         email: resolveUserEmail(staff),
         role: staff.role,
         position: staff.teacher?.position || staff.role || "GV",
+        departmentId: staff.teacher?.departmentRel?.id || staff.teacher?.departmentId || "",
         departmentName: staff.teacher?.departmentRel?.name || staff.role || "Chưa phân tổ",
         departmentCode: staff.teacher?.departmentRel?.code || "",
         divisionCode: staff.teacher?.departmentRel?.divisionCode || null,

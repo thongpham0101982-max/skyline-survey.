@@ -708,45 +708,6 @@ export default function TeacherDashboard() {
         })}
       </div>
 
-      {/* 6. MOBILE BOTTOM NAVIGATION BAR */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 py-2 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
-        <Link
-          href="/teacher"
-          className="flex flex-col items-center gap-1 text-[#0284C7] font-bold text-[10px]"
-        >
-          <Home className="w-5 h-5" />
-          <span>Trang chủ</span>
-        </Link>
-        <Link
-          href="/teacher/surveys"
-          className="flex flex-col items-center gap-1 text-slate-500 hover:text-[#0284C7] font-medium text-[10px] transition-colors"
-        >
-          <ClipboardList className="w-5 h-5" />
-          <span>Khảo sát</span>
-        </Link>
-        <Link
-          href="/teacher/so-diem-nhan-xet"
-          className="flex flex-col items-center gap-1 text-slate-500 hover:text-[#0284C7] font-medium text-[10px] transition-colors"
-        >
-          <BarChart3 className="w-5 h-5" />
-          <span>Sổ điểm</span>
-        </Link>
-        <Link
-          href="/teacher/classes"
-          className="flex flex-col items-center gap-1 text-slate-500 hover:text-[#0284C7] font-medium text-[10px] transition-colors"
-        >
-          <Layers className="w-5 h-5" />
-          <span>Lớp học</span>
-        </Link>
-        <button
-          onClick={() => setIsPasswordModalOpen(true)}
-          className="flex flex-col items-center gap-1 text-slate-500 hover:text-[#0284C7] font-medium text-[10px] transition-colors cursor-pointer"
-        >
-          <Settings className="w-5 h-5" />
-          <span>Cài đặt</span>
-        </button>
-      </div>
-
       {/* 7. MODAL ĐỔI MẬT KHẨU */}
       <ChangePasswordModal
         isOpen={isPasswordModalOpen}

@@ -69,6 +69,48 @@ export default async function WeeklyReportsPage() {
     }))
   }
 
+  
+  // Query current user's default department & division
+  let defaultDeptId = ""
+  let defaultDivisionCode = ""
+
+  try {
+    const myUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        teacher: {
+          select: {
+            departmentId: true,
+            departmentRel: { select: { id: true, code: true, name: true, divisionCode: true } },
+            departmentAssignments: {
+              where: { isPrimary: true },
+              select: { departmentId: true, department: { select: { id: true, code: true, name: true, divisionCode: true } } }
+            }
+          }
+        }
+      }
+    })
+
+    const primaryAssignment = myUser?.teacher?.departmentAssignments?.[0]?.department
+    const primaryRel = myUser?.teacher?.departmentRel
+
+    if (primaryAssignment) {
+      defaultDeptId = primaryAssignment.id || primaryAssignment.code
+      defaultDivisionCode = primaryAssignment.divisionCode || ""
+    } else if (primaryRel) {
+      defaultDeptId = primaryRel.id || primaryRel.code
+      defaultDivisionCode = primaryRel.divisionCode || ""
+    } else if (opScope.scopedDepartments && opScope.scopedDepartments.length > 0) {
+      defaultDeptId = opScope.scopedDepartments[0].id || opScope.scopedDepartments[0].code
+      defaultDivisionCode = opScope.scopedDepartments[0].divisionCode || ""
+    } else if (roles.length > 0) {
+      defaultDeptId = roles[0].id || roles[0].code
+      defaultDivisionCode = roles[0].divisionCode || ""
+    }
+  } catch (e) {
+    console.error("Error resolving default department:", e)
+  }
+
   return (
     <Suspense fallback={<div className="p-8 text-center text-slate-500 font-bold">Đang tải Báo cáo Tuần...</div>}>
       <WeeklyReportClient
@@ -80,6 +122,8 @@ export default async function WeeklyReportsPage() {
         roles={roles}
         operationalScope={JSON.parse(JSON.stringify(opScope))}
         divisions={ACADEMIC_DIVISIONS}
+        defaultDeptId={defaultDeptId}
+        defaultDivisionCode={defaultDivisionCode}
       />
     </Suspense>
   )

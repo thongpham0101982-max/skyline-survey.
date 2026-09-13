@@ -53,7 +53,9 @@ export function WeeklyReportClient({
   staffUsers, 
   roles,
   operationalScope,
-  divisions 
+  divisions,
+  defaultDeptId = "",
+  defaultDivisionCode = ""
 }: any) {
   const now = new Date()
   
@@ -90,13 +92,19 @@ export function WeeklyReportClient({
   const [itemNoteText, setItemNoteText] = useState("")
   const [toastMsg, setToastMsg] = useState<{msg: string, type: string} | null>(null)
 
-  // Cascading Filter State: Division -> Department -> Teacher
+  // "Mặc định thì chỉ xuất hiện Tổ mặc định"
+  const resolvedDefaultDeptId = defaultDeptId || (roles && roles.length > 0 ? (roles[0].id || roles[0].code) : "")
+  const resolvedDefaultDivCode = defaultDivisionCode || 
+    roles?.find((r: any) => r.id === resolvedDefaultDeptId || r.code === resolvedDefaultDeptId)?.divisionCode || 
+    (divisions && divisions.length > 0 ? divisions[0].code : "")
+
+  // Cascading Filter State: Theo mặc định thì CHỈ XUẤT HIỆN TỔ MẶC ĐỊNH
   const [filterDivisionCode, setFilterDivisionCode] = useState<string>(
     isDirectTBP && operationalScope?.managedDivisions?.length > 0 
       ? operationalScope.managedDivisions[0] 
-      : "ALL"
+      : (resolvedDefaultDivCode || "ALL")
   )
-  const [filterDeptId, setFilterDeptId] = useState<string>("ALL")
+  const [filterDeptId, setFilterDeptId] = useState<string>(resolvedDefaultDeptId || "ALL")
   const [filterTeacherUserId, setFilterTeacherUserId] = useState<string>("ALL")
 
   // Personal Cards State
@@ -113,9 +121,9 @@ export function WeeklyReportClient({
   const [configDivisionCode, setConfigDivisionCode] = useState<string>(
     isDirectTBP && operationalScope?.managedDivisions?.length > 0 
       ? operationalScope.managedDivisions[0] 
-      : (divisions?.[0]?.code || "BP_TRUNG_HOC")
+      : (resolvedDefaultDivCode || divisions?.[0]?.code || "BP_TRUNG_HOC")
   )
-  const [configDeptId, setConfigDeptId] = useState<string>("")
+  const [configDeptId, setConfigDeptId] = useState<string>(resolvedDefaultDeptId || "")
   const [deptTeachers, setDeptTeachers] = useState<any[]>([])
   const [loadingDeptTeachers, setLoadingDeptTeachers] = useState(false)
   
@@ -132,29 +140,30 @@ export function WeeklyReportClient({
   const [defaultDivCode, setDefaultDivCode] = useState<string>("")
   const [defaultDeptId, setDefaultDeptId] = useState<string>("")
 
-  // Load saved default preferences from localStorage on mount
+  // Load saved default preferences from localStorage on mount: Mặc định luôn chỉ xuất hiện Tổ mặc định
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
         const savedDiv = localStorage.getItem("skyline_default_division_code")
         const savedDept = localStorage.getItem("skyline_default_dept_id")
-        if (savedDiv) setDefaultDivCode(savedDiv)
-        if (savedDept) setDefaultDeptId(savedDept)
+        const targetDiv = savedDiv || resolvedDefaultDivCode
+        const targetDept = savedDept || resolvedDefaultDeptId
 
-        // If user already saved a default, automatically apply it to initial filters
-        if (savedDiv && filterDivisionCode === "ALL" && !isDirectTBP) {
-          setFilterDivisionCode(savedDiv)
-          setConfigDivisionCode(savedDiv)
+        if (targetDiv) {
+          setDefaultDivCode(targetDiv)
+          setFilterDivisionCode(targetDiv)
+          setConfigDivisionCode(targetDiv)
         }
-        if (savedDept && filterDeptId === "ALL") {
-          setFilterDeptId(savedDept)
-          setConfigDeptId(savedDept)
+        if (targetDept) {
+          setDefaultDeptId(targetDept)
+          setFilterDeptId(targetDept)
+          setConfigDeptId(targetDept)
         }
       }
     } catch (e) {
       console.warn("Could not read localStorage defaults", e)
     }
-  }, [])
+  }, [resolvedDefaultDivCode, resolvedDefaultDeptId])
 
   // Handler: Set current selected Division & Department as user default
   const handleSetAsDefault = (divCode: string, deptId: string) => {
@@ -629,6 +638,7 @@ export function WeeklyReportClient({
         (cardStatusFilter === "OVERDUE" && card.tasks?.overdue > 0)
 
       const matchDept = filterDeptId === "ALL" || 
+        card.departmentId === filterDeptId || 
         card.departmentCode === filterDeptId || 
         card.departmentName === filterDeptId
 
@@ -1125,8 +1135,12 @@ export function WeeklyReportClient({
                   disabled={isDirectTBP}
                   value={filterDivisionCode}
                   onChange={e => {
-                    setFilterDivisionCode(e.target.value)
-                    setFilterDeptId("ALL")
+                    const newDiv = e.target.value
+                    setFilterDivisionCode(newDiv)
+                    const deptsInDiv = roles?.filter((r: any) => !r.divisionCode || r.divisionCode === newDiv) || []
+                    const matchDef = deptsInDiv.find((d: any) => d.id === (defaultDeptId || resolvedDefaultDeptId) || d.code === (defaultDeptId || resolvedDefaultDeptId))
+                    const targetDept = matchDef ? (matchDef.id || matchDef.code) : (deptsInDiv[0]?.id || deptsInDiv[0]?.code || "ALL")
+                    setFilterDeptId(targetDept)
                     setFilterTeacherUserId("ALL")
                   }}
                   className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50 disabled:opacity-75"
@@ -1148,12 +1162,19 @@ export function WeeklyReportClient({
                     setFilterDeptId(e.target.value)
                     setFilterTeacherUserId("ALL")
                   }}
-                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50"
+                  className="w-full p-2.5 border border-teal-200 rounded-xl text-xs font-extrabold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-teal-50/40 text-teal-900"
                 >
-                  <option value="ALL">-- Tất cả Tổ Chuyên môn trong Bộ phận --</option>
-                  {availableDepts.map((d: any) => (
-                    <option key={d.id || d.code} value={d.id || d.code}>{d.name}</option>
-                  ))}
+                  {(isSuperAdmin || isHeadOfAcademic) && (
+                    <option value="ALL">-- Tất cả Tổ Chuyên môn trong Bộ phận --</option>
+                  )}
+                  {availableDepts.map((d: any) => {
+                    const isDef = (d.id === (defaultDeptId || resolvedDefaultDeptId) || d.code === (defaultDeptId || resolvedDefaultDeptId))
+                    return (
+                      <option key={d.id || d.code} value={d.id || d.code}>
+                        {d.name} {isDef ? "⭐ (Tổ mặc định)" : ""}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
 
