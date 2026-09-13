@@ -94,21 +94,32 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   return (
     <div className="flex min-h-screen text-xs font-semibold">
       <Sidebar role="TEACHER" permissionModules={readableModules} actualRole={roleCode} isGVCN={isGVCN} isPreschoolTeacher={isPreschoolTeacher} />
-      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
-        <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 shrink-0">
-          <div className="flex items-center gap-4">
+      <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-slate-50/50">
+        <header className="h-16 border-b border-slate-200/90 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-xs">
+          <div className="flex items-center gap-3">
             <MobileMenuTrigger />
-            <div className="hidden md:flex text-sm font-medium text-slate-500">
-              <span className="text-[#48BFE3] font-bold">Giáo viên</span>
+            <div className="flex items-center gap-2">
+              <img 
+                src="/logo.png" 
+                alt="Sky-Line" 
+                className="h-7 w-auto object-contain md:hidden" 
+              />
+              <div className="flex flex-col">
+                <span className="text-xs md:text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5">
+                  <span className="text-[#0284C7] font-extrabold uppercase tracking-wide">SKYLINE</span>
+                  <span className="hidden md:inline text-xs font-bold text-slate-400">• Giáo viên</span>
+                </span>
+                <span className="md:hidden text-[9px] text-[#48BFE3] font-bold leading-none">Skyline Survey System</span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
              <AcademicYearSelector />
              <NotificationBell />
              <UserMenu session={session} />
           </div>
         </header>
-        <div className="p-4 sm:p-6 md:p-8 flex-1 overflow-x-hidden overflow-y-auto text-xs font-semibold">
+        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-hidden overflow-y-auto text-xs font-semibold">
           {children}
         </div>
         

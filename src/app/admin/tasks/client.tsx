@@ -33,10 +33,10 @@ const PROGRESS_OPTIONS = [
   { value: "OVERDUE", label: "Trễ hạn", color: "bg-red-50 text-red-700 border-red-200" },
 ]
 
-export function TasksClient({ initialTasks, years, roles, dbCategories, currentRole, currentUserId }: any) {
+export function TasksClient({ initialTasks, years, roles, dbCategories, currentRole, currentUserId, operationalScope }: any) {
   const searchParams = useSearchParams()
   const [tasks, setTasks] = useState(initialTasks || [])
-  const [viewMode, setViewMode] = useState<"list" | "kanban" | "timeline">("list")
+  const [viewMode, setViewMode] = useState<"list" | "kanban" | "timeline" | "cards">("list")
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
   
@@ -85,7 +85,12 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   const [taskToast, setTaskToast] = useState<{msg: string, type: string} | null>(null)
   const [detailTask, setDetailTask] = useState<any>(null)
 
-  const isAdmin = currentRole === "ADMIN"
+  const isSuperAdmin = operationalScope?.isSuperAdmin || false
+  const isHeadOfAcademic = operationalScope?.isHeadOfAcademic || false
+  const isTBP = operationalScope?.isTBP || false
+  const isTTCM = operationalScope?.isTTCM || false
+  const isManager = operationalScope?.isManager ?? (currentRole === "ADMIN" || isTBP || isTTCM)
+  const isAdmin = isManager
 
   // Open modal if URL has taskId
   useEffect(() => {
@@ -353,6 +358,14 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
               }`}
             >
               <Calendar className="w-4 h-4" /> Tiến độ
+            </button>
+            <button
+              onClick={() => setViewMode("cards")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                viewMode === "cards" ? "bg-white text-[#48BFE3] shadow-sm" : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <Users className="w-4 h-4" /> Thẻ Cá Nhân
             </button>
           </div>
 

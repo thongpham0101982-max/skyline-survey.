@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
+import { getOperationalScope } from "@/lib/session"
 
 function resolveUserEmail(u: any) {
   let email = u?.teacher?.email || u?.email;
@@ -17,28 +18,36 @@ function resolveUserEmail(u: any) {
 
 export async function getUsersByRole(roleCode: string) {
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        status: "ACTIVE",
-        OR: [
-          { role: roleCode },
-          {
-            teacher: {
-              OR: [
-                { departmentRel: { name: roleCode } },
-                { departmentRel: { code: roleCode } },
-                { mainSubjectRel: { subjectName: roleCode } },
-                { mainSubjectRel: { subjectCode: roleCode } }
-              ]
-            }
+    const opScope = await getOperationalScope()
+
+    let whereClause: any = {
+      status: "ACTIVE",
+      OR: [
+        { role: roleCode },
+        {
+          teacher: {
+            OR: [
+              { departmentRel: { name: roleCode } },
+              { departmentRel: { code: roleCode } },
+              { mainSubjectRel: { subjectName: roleCode } },
+              { mainSubjectRel: { subjectCode: roleCode } }
+            ]
           }
-        ]
-      },
+        }
+      ]
+    }
+
+    if (opScope.scopedUserIds !== null) {
+      whereClause.id = { in: opScope.scopedUserIds }
+    }
+
+    const users = await prisma.user.findMany({
+      where: whereClause,
       select: { 
         id: true, 
         fullName: true, 
-        email: true,
-        teacher: { select: { email: true } }
+        email: true, 
+        teacher: { select: { email: true } } 
       },
       orderBy: { fullName: "asc" }
     })

@@ -853,3 +853,244 @@ export async function deleteWeeklyReport(reportId: string) {
     return { success: false, error: e.message }
   }
 }
+
+
+/**
+ * Lấy danh sách giáo viên thuộc một Tổ Chuyên Môn cụ thể
+ */
+export async function getDepartmentTeachers(departmentId: string) {
+  try {
+    const dept = await prisma.department.findUnique({
+      where: { id: departmentId },
+      select: { id: true, code: true, name: true, divisionCode: true, blockCM: true }
+    });
+    if (!dept) return { success: false, error: "Không tìm thấy Tổ chuyên môn", teachers: [] };
+
+    // Fetch teachers assigned directly or via TeacherDepartmentAssignment
+    const teachers = await prisma.teacher.findMany({
+      where: {
+        OR: [
+          { departmentId },
+          { departmentAssignments: { some: { departmentId } } }
+        ],
+        status: "ACTIVE"
+      },
+      select: {
+        id: true,
+        teacherCode: true,
+        teacherName: true,
+        email: true,
+        phone: true,
+        position: true,
+        userId: true,
+        campus: { select: { campusName: true } },
+        departmentAssignments: {
+          where: { departmentId },
+          select: { position: true, isPrimary: true }
+        }
+      },
+      orderBy: { teacherName: "asc" }
+    });
+
+    const resolvedList = teachers.map(t => {
+      const assignment = t.departmentAssignments?.[0];
+      const posInDept = assignment?.position || t.position || "GV";
+      return {
+        id: t.id,
+        teacherCode: t.teacherCode,
+        teacherName: t.teacherName,
+        email: t.email || "",
+        phone: t.phone || "",
+        position: posInDept,
+        isPrimary: assignment?.isPrimary ?? (t.position === posInDept),
+        userId: t.userId,
+        campusName: t.campus?.campusName || ""
+      };
+    });
+
+    return {
+      success: true,
+      department: dept,
+      teachers: JSON.parse(JSON.stringify(resolvedList))
+    };
+  } catch (e: any) {
+    return { success: false, error: e.message, teachers: [] };
+  }
+}
+
+/**
+ * Gán danh sách Giáo viên vào một Tổ Chuyên Môn
+ */
+export async function assignTeachersToDepartment(departmentId: string, teacherIds: string[], position: string = "GV") {
+  try {
+    const opScope = await getOperationalScope();
+    if (!opScope.isManager) {
+      return { success: false, error: "Bạn không có quyền quản lý cấu hình Tổ chuyên môn" };
+    }
+
+    const dept = await prisma.department.findUnique({ where: { id: departmentId } });
+    if (!dept) return { success: false, error: "Không tìm thấy Tổ chuyên môn" };
+
+    const pAny = prisma as any;
+
+    for (const teacherId of teacherIds) {
+      // Upsert TeacherDepartmentAssignment
+      if (pAny.teacherDepartmentAssignment) {
+        await pAny.teacherDepartmentAssignment.upsert({
+          where: {
+            teacherId_departmentId: { teacherId, departmentId }
+          },
+          create: {
+            teacherId,
+            departmentId,
+            position,
+            isPrimary: true
+          },
+          update: {
+            position,
+            isPrimary: true
+          }
+        });
+      }
+
+      // Update primary department on Teacher record
+      const updateData: any = { departmentId };
+      if (position === "TTCM" || position === "TPTCM") {
+        updateData.position = position;
+      }
+      await prisma.teacher.update({
+        where: { id: teacherId },
+        data: updateData
+      });
+    }
+
+    revalidatePath("/admin/weekly-reports");
+    revalidatePath("/admin/departments");
+    return { success: true, count: teacherIds.length };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+/**
+ * Gỡ Giáo viên khỏi Tổ Chuyên Môn
+ */
+export async function removeTeacherFromDepartment(departmentId: string, teacherId: string) {
+  try {
+    const opScope = await getOperationalScope();
+    if (!opScope.isManager) {
+      return { success: false, error: "Bạn không có quyền quản lý cấu hình Tổ chuyên môn" };
+    }
+
+    const pAny = prisma as any;
+    if (pAny.teacherDepartmentAssignment) {
+      await pAny.teacherDepartmentAssignment.deleteMany({
+        where: { teacherId, departmentId }
+      });
+    }
+
+    // Check if teacher's primary departmentId matches this one
+    const teacher = await prisma.teacher.findUnique({
+      where: { id: teacherId },
+      include: { departmentAssignments: true }
+    });
+
+    if (teacher && teacher.departmentId === departmentId) {
+      // If there are other department assignments, assign the first one, else null
+      const remaining = teacher.departmentAssignments.filter(a => a.departmentId !== departmentId);
+      const nextDeptId = remaining.length > 0 ? remaining[0].departmentId : null;
+      await prisma.teacher.update({
+        where: { id: teacherId },
+        data: { departmentId: nextDeptId }
+      });
+    }
+
+    revalidatePath("/admin/weekly-reports");
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+/**
+ * Cập nhật Chức vụ của Giáo viên trong Tổ (TTCM / TPTCM / GV)
+ */
+export async function updateTeacherDepartmentPosition(departmentId: string, teacherId: string, position: string) {
+  try {
+    const opScope = await getOperationalScope();
+    if (!opScope.isManager) {
+      return { success: false, error: "Bạn không có quyền quản lý cấu hình Tổ chuyên môn" };
+    }
+
+    const pAny = prisma as any;
+    if (pAny.teacherDepartmentAssignment) {
+      await pAny.teacherDepartmentAssignment.upsert({
+        where: {
+          teacherId_departmentId: { teacherId, departmentId }
+        },
+        create: {
+          teacherId,
+          departmentId,
+          position,
+          isPrimary: position === "TTCM" || position === "TPTCM"
+        },
+        update: {
+          position,
+          ...(position === "TTCM" || position === "TPTCM" ? { isPrimary: true } : {})
+        }
+      });
+    }
+
+    if (position === "TTCM" || position === "TPTCM") {
+      await prisma.teacher.update({
+        where: { id: teacherId },
+        data: { position, departmentId }
+      });
+    }
+
+    revalidatePath("/admin/weekly-reports");
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+/**
+ * Lấy danh sách toàn bộ Giáo viên để tìm kiếm và gán vào Tổ
+ */
+export async function getAllTeachersForAssignment() {
+  try {
+    const teachers = await prisma.teacher.findMany({
+      where: { status: "ACTIVE" },
+      select: {
+        id: true,
+        teacherCode: true,
+        teacherName: true,
+        email: true,
+        position: true,
+        campus: { select: { campusName: true } },
+        departmentRel: { select: { id: true, code: true, name: true, divisionCode: true } },
+        departmentAssignments: {
+          select: { departmentId: true, position: true, department: { select: { name: true } } }
+        }
+      },
+      orderBy: { teacherName: "asc" }
+    });
+
+    const list = teachers.map(t => ({
+      id: t.id,
+      teacherCode: t.teacherCode,
+      teacherName: t.teacherName,
+      email: t.email || "",
+      position: t.position || "GV",
+      campusName: t.campus?.campusName || "",
+      currentDeptName: t.departmentRel?.name || t.departmentAssignments?.[0]?.department?.name || "Chưa phân tổ",
+      currentDeptId: t.departmentRel?.id || t.departmentAssignments?.[0]?.departmentId || null,
+      divisionCode: t.departmentRel?.divisionCode || null
+    }));
+
+    return { success: true, teachers: JSON.parse(JSON.stringify(list)) };
+  } catch (e: any) {
+    return { success: false, error: e.message, teachers: [] };
+  }
+}

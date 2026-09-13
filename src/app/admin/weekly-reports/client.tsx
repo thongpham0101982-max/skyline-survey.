@@ -4,12 +4,15 @@ import { useState, useEffect, useMemo } from "react"
 import { 
   FileText, Plus, Trash2, Save, Send, Calendar, MessageSquare, 
   CheckCircle2, Clock, AlertTriangle, MinusCircle, User, BarChart3, 
-  Users, TrendingUp, ClipboardList, Table2, Bell, Download, Copy, History, Edit3, Eye, Search, Filter, X
+  Users, TrendingUp, ClipboardList, Table2, Bell, Download, Copy, History, Edit3, Eye, Search, Filter, X,
+  UserCheck, AlertCircle, Sparkles, ChevronRight, Layers, ArrowRight, Check, Settings, UserPlus, Shield
 } from "lucide-react"
 import { 
   getWeeklyReport, getAllWeeklyReports, saveWeeklyReport, addManagerComment, 
   addManagerItemNote, getConsolidatedReports, getDashboardStats, sendWeeklyReportEmailReminders,
-  getUserReportHistory, deleteWeeklyReport
+  getUserReportHistory, deleteWeeklyReport, getPersonalProgressCards,
+  getDepartmentTeachers, assignTeachersToDepartment, removeTeacherFromDepartment,
+  updateTeacherDepartmentPosition, getAllTeachersForAssignment
 } from "./actions"
 import * as XLSX from "xlsx"
 
@@ -43,9 +46,32 @@ const PROGRESS = [
 
 interface ReportItem { id?: string; mainTask: string; workContent: string; progress: string; proposedSolution: string; managerNote?: string }
 
-export function WeeklyReportClient({ currentRole, currentUserId, currentUserName, years, staffUsers, roles }: any) {
+export function WeeklyReportClient({ 
+  currentRole, 
+  currentUserId, 
+  currentUserName, 
+  years, 
+  staffUsers, 
+  roles,
+  operationalScope,
+  divisions 
+}: any) {
   const now = new Date()
-  const [activeTab, setActiveTab] = useState<"personal"|"consolidated"|"dashboard"|"history">("dashboard")
+  
+  // Scope permissions
+  const isSuperAdmin = operationalScope?.isSuperAdmin || false
+  const isHeadOfAcademic = operationalScope?.isHeadOfAcademic || false
+  const isTBP = operationalScope?.isTBP || false
+  const isDirectTBP = operationalScope?.isDirectTBP || false
+  const isTTCM = operationalScope?.isTTCM || false
+  const isDirectTTCM = operationalScope?.isDirectTTCM || false
+  const isManager = operationalScope?.isManager ?? (currentRole === "ADMIN" || isTBP || isTTCM)
+
+  // Default tab: "cards" if manager, otherwise "personal"
+  const [activeTab, setActiveTab] = useState<"cards"|"dashboard"|"consolidated"|"config"|"personal"|"history">(
+    isManager ? "cards" : "personal"
+  )
+  
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [year, setYear] = useState(now.getFullYear())
   const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
@@ -58,11 +84,50 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(false)
   const [reminding, setReminding] = useState(false)
+  const [remindingUserId, setRemindingUserId] = useState<string | null>(null)
   const [viewUserId, setViewUserId] = useState(currentUserId)
   const [mgmtComment, setMgmtComment] = useState("")
   const [editingItemNote, setEditingItemNote] = useState<string|null>(null)
   const [itemNoteText, setItemNoteText] = useState("")
   const [toastMsg, setToastMsg] = useState<{msg: string, type: string} | null>(null)
+
+  // Cascading Filter State: Division -> Department -> Teacher
+  const [filterDivisionCode, setFilterDivisionCode] = useState<string>(
+    isDirectTBP && operationalScope?.managedDivisions?.length > 0 
+      ? operationalScope.managedDivisions[0] 
+      : "ALL"
+  )
+  const [filterDeptId, setFilterDeptId] = useState<string>("ALL")
+  const [filterTeacherUserId, setFilterTeacherUserId] = useState<string>("ALL")
+
+  // Personal Cards State
+  const [personalCards, setPersonalCards] = useState<any[]>([])
+  const [cardsSummary, setCardsSummary] = useState<any>({ totalStaff: 0, submittedCount: 0, pendingCount: 0, reviewedCount: 0 })
+  const [cardSearch, setCardSearch] = useState("")
+  const [cardStatusFilter, setCardStatusFilter] = useState<string>("ALL")
+  const [selectedStaffForModal, setSelectedStaffForModal] = useState<any | null>(null)
+  const [modalReportData, setModalReportData] = useState<any | null>(null)
+  const [modalCommentInput, setModalCommentInput] = useState("")
+  const [modalSavingComment, setModalSavingComment] = useState(false)
+
+  // ================= CONFIGURATION TAB STATE =================
+  const [configDivisionCode, setConfigDivisionCode] = useState<string>(
+    isDirectTBP && operationalScope?.managedDivisions?.length > 0 
+      ? operationalScope.managedDivisions[0] 
+      : (divisions?.[0]?.code || "BP_TRUNG_HOC")
+  )
+  const [configDeptId, setConfigDeptId] = useState<string>("")
+  const [deptTeachers, setDeptTeachers] = useState<any[]>([])
+  const [loadingDeptTeachers, setLoadingDeptTeachers] = useState(false)
+  
+  // Add Teachers Modal
+  const [showAddTeacherModal, setShowAddTeacherModal] = useState(false)
+  const [allAvailableTeachers, setAllAvailableTeachers] = useState<any[]>([])
+  const [loadingAvailableTeachers, setLoadingAvailableTeachers] = useState(false)
+  const [addTeacherSearch, setAddTeacherSearch] = useState("")
+  const [selectedTeacherIdsToAdd, setSelectedTeacherIdsToAdd] = useState<string[]>([])
+  const [defaultAddPosition, setDefaultAddPosition] = useState("GV")
+  const [submittingAssign, setSubmittingAssign] = useState(false)
 
   // History State
   const [historyReports, setHistoryReports] = useState<any[]>([])
@@ -70,38 +135,101 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
   const [viewingHistoryReport, setViewingHistoryReport] = useState<any|null>(null)
 
   // Consolidated State
-  const [selectedRoleCode, setSelectedRoleCode] = useState("ALL")
   const [consolidatedData, setConsolidatedData] = useState<any[]>([])
   
   // Dashboard State
   const [stats, setStats] = useState<any>({ totalTasks: 0, completed: 0, overdue: 0, inProgress: 0, pending: 0 })
   const [chartData, setChartData] = useState<any>({})
 
-  const isAdmin = currentRole === "ADMIN"
-
   const getRoleName = (code: string) => {
-    return roles?.find((r: any) => r.code === code)?.name || code;
+    return roles?.find((r: any) => r.code === code || r.name === code || r.id === code)?.name || code;
   }
+
+  // Filtered department list for cascading selection based on filterDivisionCode
+  const availableDepts = useMemo(() => {
+    if (!roles) return []
+    if (filterDivisionCode === "ALL") return roles
+    return roles.filter((r: any) => !r.divisionCode || r.divisionCode === filterDivisionCode)
+  }, [roles, filterDivisionCode])
+
+  // Filtered department list for Configuration Tab
+  const configAvailableDepts = useMemo(() => {
+    if (!roles) return []
+    if (!configDivisionCode || configDivisionCode === "ALL") return roles
+    return roles.filter((r: any) => !r.divisionCode || r.divisionCode === configDivisionCode)
+  }, [roles, configDivisionCode])
+
+  // Set default configDeptId when configAvailableDepts changes
+  useEffect(() => {
+    if (configAvailableDepts.length > 0) {
+      if (!configDeptId || !configAvailableDepts.some(d => d.id === configDeptId || d.code === configDeptId)) {
+        setConfigDeptId(configAvailableDepts[0].id || configAvailableDepts[0].code)
+      }
+    } else {
+      setConfigDeptId("")
+    }
+  }, [configAvailableDepts])
+
+  // Teachers filtered by selected Department for the cascading dropdown
+  const teachersInSelectedDept = useMemo(() => {
+    if (filterDeptId === "ALL") {
+      // If no department is selected, filter by division if selected
+      if (filterDivisionCode === "ALL") return staffUsers || []
+      return (staffUsers || []).filter((u: any) => {
+        const div = u.teacher?.departmentRel?.divisionCode
+        return div === filterDivisionCode
+      })
+    }
+    return (staffUsers || []).filter((u: any) => {
+      const dId = u.teacher?.departmentRel?.id
+      const dCode = u.teacher?.departmentRel?.code
+      const dName = u.teacher?.departmentRel?.name
+      return dId === filterDeptId || dCode === filterDeptId || dName === filterDeptId
+    })
+  }, [staffUsers, filterDeptId, filterDivisionCode])
 
   const groupedStaff = useMemo(() => {
     const groups: Record<string, any[]> = {};
     (staffUsers || []).forEach((u: any) => {
-      const rName = getRoleName(u.role);
-      if (!groups[rName]) groups[rName] = [];
-      groups[rName].push(u);
+      const deptName = u.teacher?.departmentRel?.name || getRoleName(u.role);
+      if (!groups[deptName]) groups[deptName] = [];
+      groups[deptName].push(u);
     });
     return groups;
   }, [staffUsers, roles]);
 
   useEffect(() => { setWeeks(getWeeksOfMonth(month, year)) }, [month, year])
-  useEffect(() => { if (activeTab === "personal") loadReport() }, [selectedWeek, month, year, viewUserId, activeTab])
-  useEffect(() => { if (activeTab === "consolidated") loadConsolidated() }, [selectedRoleCode, selectedWeek, month, year, activeTab])
-  useEffect(() => { if (activeTab === "dashboard") loadDashboard() }, [month, year, activeTab])
-  useEffect(() => { if (activeTab === "history") loadHistory() }, [viewUserId, activeTab])
+  
+  // Load data based on tab
+  useEffect(() => {
+    if (activeTab === "cards") loadPersonalCards()
+    else if (activeTab === "personal") loadReport()
+    else if (activeTab === "consolidated") loadConsolidated()
+    else if (activeTab === "dashboard") loadDashboard()
+    else if (activeTab === "history") loadHistory()
+    else if (activeTab === "config") loadConfigDepartmentTeachers()
+  }, [selectedWeek, month, year, viewUserId, activeTab, filterDivisionCode, filterDeptId, filterTeacherUserId, academicYearId, configDeptId])
+
+  const loadPersonalCards = async () => {
+    setLoading(true)
+    const res = await getPersonalProgressCards(
+      selectedWeek, 
+      month, 
+      year, 
+      academicYearId, 
+      filterDivisionCode, 
+      filterDeptId
+    )
+    if (res.success) {
+      setPersonalCards(res.cards || [])
+      setCardsSummary(res.summary || { totalStaff: 0, submittedCount: 0, pendingCount: 0, reviewedCount: 0 })
+    }
+    setLoading(false)
+  }
 
   const loadReport = async () => {
     setLoading(true)
-    const uid = isAdmin ? viewUserId : currentUserId
+    const uid = isManager ? viewUserId : currentUserId
     const res = await getWeeklyReport(uid, selectedWeek, month, year)
     if (res.success && res.report) {
       setItems(res.report.items.map((i: any) => ({ 
@@ -130,27 +258,157 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
 
   const loadConsolidated = async () => {
     setLoading(true)
-    const res = await getConsolidatedReports(selectedRoleCode, selectedWeek, month, year)
-    if (res.success) setConsolidatedData(res.reports)
+    const res = await getConsolidatedReports(filterDeptId, selectedWeek, month, year, filterDivisionCode)
+    if (res.success) {
+      // If a specific teacher is selected, filter by that teacher
+      let data = res.reports || []
+      if (filterTeacherUserId && filterTeacherUserId !== "ALL") {
+        data = data.filter((r: any) => r.user?.id === filterTeacherUserId)
+      }
+      setConsolidatedData(data)
+    }
     setLoading(false)
   }
 
   const loadDashboard = async () => {
     setLoading(true)
-    const res = await getDashboardStats(month, year)
+    const res = await getDashboardStats(month, year, filterDivisionCode, filterDeptId)
     if (res.success) { setStats(res.stats); setChartData(res.chartData) }
     setLoading(false)
   }
 
   const loadHistory = async () => {
     setLoading(true)
-    const uid = isAdmin ? viewUserId : currentUserId
+    const uid = isManager ? viewUserId : currentUserId
     const res = await getUserReportHistory(uid)
     if (res.success) setHistoryReports(res.reports)
     setLoading(false)
   }
 
-  // Edit / Re-open Past Report
+  // Load Department Teachers for Configuration Tab
+  const loadConfigDepartmentTeachers = async () => {
+    if (!configDeptId) return
+    setLoadingDeptTeachers(true)
+    const res = await getDepartmentTeachers(configDeptId)
+    if (res.success) {
+      setDeptTeachers(res.teachers || [])
+    } else {
+      setDeptTeachers([])
+    }
+    setLoadingDeptTeachers(false)
+  }
+
+  // Open modal to add teachers to current department
+  const handleOpenAddTeacherModal = async () => {
+    setShowAddTeacherModal(true)
+    setSelectedTeacherIdsToAdd([])
+    setLoadingAvailableTeachers(true)
+    const res = await getAllTeachersForAssignment()
+    if (res.success) {
+      setAllAvailableTeachers(res.teachers || [])
+    }
+    setLoadingAvailableTeachers(false)
+  }
+
+  const handleSaveAssignedTeachers = async () => {
+    if (!configDeptId || selectedTeacherIdsToAdd.length === 0) {
+      alert("Vui lòng chọn ít nhất 1 Giáo viên để gán vào Tổ!")
+      return
+    }
+    setSubmittingAssign(true)
+    const res = await assignTeachersToDepartment(configDeptId, selectedTeacherIdsToAdd, defaultAddPosition)
+    setSubmittingAssign(false)
+    if (res.success) {
+      setToastMsg({ msg: `✅ Đã gán ${res.count} giáo viên vào Tổ thành công!`, type: "success" })
+      setTimeout(() => setToastMsg(null), 3000)
+      setShowAddTeacherModal(false)
+      loadConfigDepartmentTeachers()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleRemoveTeacher = async (teacherId: string, teacherName: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn gỡ giáo viên "${teacherName}" khỏi Tổ này không?`)) return
+    const res = await removeTeacherFromDepartment(configDeptId, teacherId)
+    if (res.success) {
+      setToastMsg({ msg: `🗑️ Đã gỡ ${teacherName} khỏi Tổ!`, type: "success" })
+      setTimeout(() => setToastMsg(null), 3000)
+      loadConfigDepartmentTeachers()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleUpdatePosition = async (teacherId: string, position: string) => {
+    const res = await updateTeacherDepartmentPosition(configDeptId, teacherId, position)
+    if (res.success) {
+      setToastMsg({ msg: "✅ Đã cập nhật chức vụ thành công!", type: "success" })
+      setTimeout(() => setToastMsg(null), 2000)
+      loadConfigDepartmentTeachers()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleOpenCardReportModal = async (card: any) => {
+    setSelectedStaffForModal(card)
+    setModalCommentInput(card.managerComment || "")
+    setModalReportData(null)
+    if (card.reportId) {
+      const res = await getWeeklyReport(card.userId, selectedWeek, month, year)
+      if (res.success && res.report) {
+        setModalReportData(res.report)
+      }
+    }
+  }
+
+  const handleSaveModalComment = async () => {
+    if (!selectedStaffForModal?.reportId) {
+      alert("Nhân sự này chưa nộp báo cáo tuần để nhận xét!")
+      return
+    }
+    if (!modalCommentInput.trim()) return
+    setModalSavingComment(true)
+    const res = await addManagerComment(selectedStaffForModal.reportId, modalCommentInput.trim())
+    setModalSavingComment(false)
+    if (res.success) {
+      setToastMsg({ msg: "✅ Đã lưu nhận xét chỉ đạo thành công!", type: "success" })
+      setTimeout(() => setToastMsg(null), 3000)
+      setSelectedStaffForModal(null)
+      loadPersonalCards()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleRemindSingleStaff = async (staffUserId: string, staffName: string) => {
+    setRemindingUserId(staffUserId)
+    const res = await sendWeeklyReportEmailReminders(selectedWeek, month, year, staffUserId)
+    setRemindingUserId(null)
+    if (res.success) {
+      setToastMsg({ msg: `🔔 Đã gửi nhắc nộp báo cáo tuần cho ${staffName}!`, type: "success" })
+      setTimeout(() => setToastMsg(null), 3500)
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleSendReminderAllPending = async () => {
+    setReminding(true)
+    const res = await sendWeeklyReportEmailReminders(selectedWeek, month, year)
+    setReminding(false)
+    if (res.success) {
+      setToastMsg({ 
+        msg: `🔔 Đã gửi nhắc nộp báo cáo cho ${res.remindedCount} nhân sự chưa nộp!`, 
+        type: "success" 
+      })
+      setTimeout(() => setToastMsg(null), 4000)
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
   const handleEditPastReport = (report: any) => {
     setMonth(report.month)
     setYear(report.year)
@@ -173,7 +431,6 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
     } else alert("Lỗi: " + res.error)
   }
 
-  // Row Manipulation helpers
   const addRows = (count: number = 1) => {
     const newRows: ReportItem[] = Array.from({ length: count }, () => ({
       mainTask: "", workContent: "", progress: "NOT_STARTED", proposedSolution: ""
@@ -181,22 +438,8 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
     setItems(prev => [...prev, ...newRows])
   }
 
-  const duplicateRow = (idx: number) => {
-    const target = items[idx]
-    if (!target) return
-    const copy = { ...target, id: undefined }
-    const next = [...items]
-    next.splice(idx + 1, 0, copy)
-    setItems(next)
-  }
-
   const removeRow = (idx: number) => {
     setItems(prev => prev.filter((_, i) => i !== idx))
-  }
-
-  const clearEmptyRows = () => {
-    const filtered = items.filter(i => i.mainTask.trim() || i.workContent.trim())
-    setItems(filtered.length > 0 ? filtered : [{ mainTask: "", workContent: "", progress: "NOT_STARTED", proposedSolution: "" }])
   }
 
   const updateItem = (idx: number, field: string, value: string) => {
@@ -213,7 +456,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
       month, 
       year, 
       academicYearId, 
-      targetUserId: isAdmin ? viewUserId : undefined,
+      targetUserId: isManager ? viewUserId : undefined,
       items: activeItems.map(i => ({ 
         mainTask: i.mainTask, 
         workContent: i.workContent, 
@@ -231,33 +474,6 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
     }
   }
 
-  const handleSendReminder = async () => {
-    setReminding(true)
-    const res = await sendWeeklyReportEmailReminders(selectedWeek, month, year)
-    setReminding(false)
-    if (res.success) {
-      setToastMsg({ 
-        msg: `🔔 Đã gửi email nhắc nộp báo cáo cho ${res.remindedCount} nhân viên chưa nộp!`, 
-        type: "success" 
-      })
-      setTimeout(() => setToastMsg(null), 4000)
-    } else {
-      alert("Lỗi: " + res.error)
-    }
-  }
-
-  const handleManagerComment = async (rptId: string) => {
-    if (!mgmtComment.trim()) return
-    const res = await addManagerComment(rptId, mgmtComment.trim())
-    if (res.success) { loadReport(); setMgmtComment("") } else alert("Lỗi: " + res.error)
-  }
-
-  const handleItemNote = async (itemId: string) => {
-    const res = await addManagerItemNote(itemId, itemNoteText.trim())
-    if (res.success) { loadReport(); setEditingItemNote(null) } else alert("Lỗi: " + res.error)
-  }
-
-  // Export to Excel
   const exportToExcel = () => {
     if (consolidatedData.length === 0) return alert("Không có dữ liệu để xuất Excel!")
     const rows: any[] = []
@@ -268,7 +484,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
           "STT": stt++,
           "Mã Email": report.user?.email || "",
           "Họ và Tên": report.user?.fullName || "",
-          "Chức danh / Tổ": getRoleName(report.user?.role),
+          "Chức danh / Tổ": report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role),
           "Task Chính": item.mainTask,
           "Nội Dung Công Việc": item.workContent,
           "Tiến Độ": PROGRESS.find(p => p.value === item.progress)?.label || item.progress,
@@ -283,6 +499,32 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
     XLSX.writeFile(wb, `BaoCaoTuan_Tuan${selectedWeek}_Thang${month}_${year}.xlsx`)
   }
 
+  // Filtered Cards
+  const filteredCards = useMemo(() => {
+    return personalCards.filter(card => {
+      const q = cardSearch.trim().toLowerCase()
+      const matchQuery = !q || 
+        card.fullName.toLowerCase().includes(q) || 
+        card.email.toLowerCase().includes(q) ||
+        card.departmentName.toLowerCase().includes(q) ||
+        card.position.toLowerCase().includes(q)
+
+      const matchStatus = cardStatusFilter === "ALL" ||
+        (cardStatusFilter === "PENDING" && (card.submissionStatus === "NOT_SUBMITTED" || card.submissionStatus === "DRAFT")) ||
+        (cardStatusFilter === "SUBMITTED" && (card.submissionStatus === "SUBMITTED" || card.submissionStatus === "REVIEWED")) ||
+        (cardStatusFilter === "REVIEWED" && card.submissionStatus === "REVIEWED") ||
+        (cardStatusFilter === "OVERDUE" && card.tasks?.overdue > 0)
+
+      const matchDept = filterDeptId === "ALL" || 
+        card.departmentCode === filterDeptId || 
+        card.departmentName === filterDeptId
+
+      const matchTeacher = filterTeacherUserId === "ALL" || card.userId === filterTeacherUserId
+
+      return matchQuery && matchStatus && matchDept && matchTeacher
+    })
+  }, [personalCards, cardSearch, cardStatusFilter, filterDeptId, filterTeacherUserId])
+
   const filteredHistory = useMemo(() => {
     if (!historySearch.trim()) return historyReports
     const q = historySearch.toLowerCase()
@@ -294,7 +536,38 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
     )
   }, [historyReports, historySearch])
 
-  const maxWeeks = Math.max(...Object.values(chartData as Record<string, any>).map((u: any) => Math.max(...Object.keys(u.weeks || {}).map(Number), 0)), 0)
+  // Get current division label
+  const currentDivisionLabel = useMemo(() => {
+    if (isSuperAdmin || isHeadOfAcademic) return "Ban Điều Hành / Toàn Trường"
+    if (isDirectTBP) {
+      const divNames = operationalScope?.managedDivisions?.map((d: string) => {
+        const found = divisions?.find((div: any) => div.code === d)
+        return found?.name || d
+      }).join(", ")
+      return `Trưởng Bộ Phận (${divNames || 'Chuyên môn'})`
+    }
+    if (isDirectTTCM) {
+      const deptNames = operationalScope?.scopedDepartments?.map((d: any) => d.name).join(", ")
+      return `Tổ Trưởng Chuyên Môn (${deptNames || 'Tổ CM'})`
+    }
+    return "Giáo viên / Nhân viên"
+  }, [isSuperAdmin, isHeadOfAcademic, isDirectTBP, isDirectTTCM, operationalScope, divisions])
+
+  // Filtered available teachers in Add Modal
+  const filteredAvailableTeachers = useMemo(() => {
+    const assignedIds = new Set(deptTeachers.map(t => t.id))
+    return allAvailableTeachers.filter(t => {
+      if (assignedIds.has(t.id)) return false
+      if (!addTeacherSearch.trim()) return true
+      const q = addTeacherSearch.toLowerCase().trim()
+      return (
+        t.teacherName.toLowerCase().includes(q) ||
+        t.teacherCode.toLowerCase().includes(q) ||
+        t.email.toLowerCase().includes(q) ||
+        t.campusName.toLowerCase().includes(q)
+      )
+    })
+  }, [allAvailableTeachers, deptTeachers, addTeacherSearch])
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto p-4 sm:p-6 bg-slate-50/50 min-h-screen">
@@ -308,86 +581,246 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
             <p className="font-bold text-sm">Thông báo</p>
             <p className="text-xs opacity-95">{toastMsg.msg}</p>
           </div>
+          <button onClick={() => setToastMsg(null)} className="p-1 hover:bg-white/20 rounded-lg"><X className="w-4 h-4" /></button>
         </div>
       )}
 
-      {/* Detail View Modal for History */}
-      {viewingHistoryReport && (
+      {/* Modal: Add Teachers to Department */}
+      {showAddTeacherModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-5 border-b flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-3">
-                <FileText className="w-6 h-6 text-[#48BFE3]" />
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#48BFE3] font-black">
+                  <UserPlus className="w-5 h-5" />
+                </div>
                 <div>
                   <h3 className="font-extrabold text-base text-slate-800">
-                    Báo cáo Tuần {viewingHistoryReport.weekNumber} - Tháng {viewingHistoryReport.month}/{viewingHistoryReport.year}
+                    Thêm Giáo viên vào Tổ Chuyên Môn
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Người thực hiện: {viewingHistoryReport.user?.fullName || currentUserName}
+                    Tổ đang chọn: <strong>{roles?.find((r: any) => r.id === configDeptId || r.code === configDeptId)?.name}</strong>
                   </p>
                 </div>
               </div>
               <button 
-                onClick={() => setViewingHistoryReport(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl"
+                onClick={() => setShowAddTeacherModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-4 flex-1">
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                      <th className="p-3 text-center w-10">STT</th>
-                      <th className="p-3 min-w-[140px]">Task chính</th>
-                      <th className="p-3 min-w-[240px]">Nội dung công việc</th>
-                      <th className="p-3 w-28">Tiến độ</th>
-                      <th className="p-3 min-w-[180px]">Đề xuất giải pháp</th>
-                      <th className="p-3 min-w-[180px]">Nhận xét QL</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y font-medium">
-                    {viewingHistoryReport.items.map((item: any, idx: number) => {
-                      const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
-                      return (
-                        <tr key={idx} className="hover:bg-slate-50">
-                          <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                          <td className="p-3 font-bold text-indigo-900">{item.mainTask}</td>
-                          <td className="p-3 text-slate-700 leading-relaxed break-words">{item.workContent}</td>
-                          <td className="p-3">
-                            <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
-                              {prog.label}
-                            </span>
-                          </td>
-                          <td className="p-3 text-slate-500 italic break-words">{item.proposedSolution || "-"}</td>
-                          <td className="p-3 text-slate-700 break-words">{item.managerNote || "-"}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
+            <div className="p-5 border-b bg-white space-y-3">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="relative flex-1 w-full">
+                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    value={addTeacherSearch}
+                    onChange={e => setAddTeacherSearch(e.target.value)}
+                    placeholder="Tìm theo tên, mã GV, cơ sở..."
+                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3]"
+                  />
+                </div>
 
-              {viewingHistoryReport.managerComment && (
-                <div className="p-4 bg-teal-50 border border-teal-200 rounded-2xl">
-                  <p className="text-xs font-bold text-teal-800 mb-1">💬 Nhận xét chỉ đạo của Ban Quản Lý:</p>
-                  <p className="text-xs text-slate-700 whitespace-pre-wrap">{viewingHistoryReport.managerComment}</p>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <label className="text-xs font-bold text-slate-600 whitespace-nowrap">Chức vụ gán:</label>
+                  <select
+                    value={defaultAddPosition}
+                    onChange={e => setDefaultAddPosition(e.target.value)}
+                    className="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50"
+                  >
+                    <option value="GV">GV (Giáo viên)</option>
+                    <option value="TTCM">TTCM (Tổ trưởng)</option>
+                    <option value="TPTCM">TPTCM (Tổ phó)</option>
+                  </select>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Đã chọn: <strong>{selectedTeacherIdsToAdd.length}</strong> giáo viên
+              </p>
+            </div>
+
+            <div className="p-4 overflow-y-auto flex-1 max-h-96">
+              {loadingAvailableTeachers ? (
+                <div className="py-12 text-center text-slate-400 text-xs">Đang tải danh sách giáo viên...</div>
+              ) : filteredAvailableTeachers.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs">
+                  Không tìm thấy giáo viên nào phù hợp hoặc tất cả đã thuộc tổ này!
+                </div>
+              ) : (
+                <div className="divide-y border rounded-2xl overflow-hidden">
+                  {filteredAvailableTeachers.map(t => {
+                    const isSelected = selectedTeacherIdsToAdd.includes(t.id)
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedTeacherIdsToAdd(prev => prev.filter(id => id !== t.id))
+                          } else {
+                            setSelectedTeacherIdsToAdd(prev => [...prev, t.id])
+                          }
+                        }}
+                        className={`p-3 flex items-center justify-between cursor-pointer transition-colors ${
+                          isSelected ? "bg-teal-50/70" : "hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}} // handled by parent div
+                            className="rounded text-[#48BFE3] focus:ring-[#48BFE3] w-4 h-4"
+                          />
+                          <div>
+                            <p className="font-extrabold text-xs text-slate-800">{t.teacherName}</p>
+                            <p className="text-[11px] text-slate-400">
+                              Mã: {t.teacherCode} &bull; {t.email} &bull; {t.campusName}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 border">
+                          Hiện tại: {t.currentDeptName}
+                        </span>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
 
-            <div className="p-4 border-t bg-slate-50 flex justify-end gap-2">
+            <div className="p-4 border-t bg-slate-50 flex justify-between items-center">
               <button
-                onClick={() => {
-                  const rpt = viewingHistoryReport
-                  setViewingHistoryReport(null)
-                  handleEditPastReport(rpt)
-                }}
-                className="bg-[#48BFE3] hover:bg-[#007A72] text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm"
+                onClick={() => setShowAddTeacherModal(false)}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold"
               >
-                <Edit3 className="w-4 h-4" /> Hiệu chỉnh báo cáo này
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleSaveAssignedTeachers}
+                disabled={submittingAssign || selectedTeacherIdsToAdd.length === 0}
+                className="bg-[#48BFE3] hover:bg-[#007A72] disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all"
+              >
+                {submittingAssign ? "Đang gán..." : `Gán ${selectedTeacherIdsToAdd.length} GV vào Tổ`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: View & Quick Comment from Card */}
+      {selectedStaffForModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#48BFE3] font-black">
+                  {selectedStaffForModal.fullName.slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-800 flex items-center gap-2">
+                    {selectedStaffForModal.fullName}
+                    <span className="text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-slate-200 text-slate-700">
+                      {selectedStaffForModal.departmentName}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Báo cáo Tuần {selectedWeek} (Tháng {month}/{year}) &bull; {selectedStaffForModal.email}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedStaffForModal(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-5 flex-1">
+              {modalReportData && modalReportData.items?.length > 0 ? (
+                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                        <th className="p-3 text-center w-10">STT</th>
+                        <th className="p-3 min-w-[140px]">Task chính</th>
+                        <th className="p-3 min-w-[240px]">Nội dung công việc</th>
+                        <th className="p-3 w-28">Tiến độ</th>
+                        <th className="p-3 min-w-[180px]">Đề xuất giải pháp</th>
+                        <th className="p-3 min-w-[180px]">Nhận xét QL</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y font-medium">
+                      {modalReportData.items.map((item: any, idx: number) => {
+                        const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
+                        return (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                            <td className="p-3 font-bold text-indigo-900">{item.mainTask}</td>
+                            <td className="p-3 text-slate-700 leading-relaxed break-words">{item.workContent}</td>
+                            <td className="p-3">
+                              <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
+                                {prog.label}
+                              </span>
+                            </td>
+                            <td className="p-3 text-slate-500 italic break-words">{item.proposedSolution || "-"}</td>
+                            <td className="p-3 text-slate-700 break-words">{item.managerNote || "-"}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center bg-amber-50/50 rounded-2xl border border-amber-200 text-amber-800">
+                  <AlertCircle className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                  <p className="font-bold text-sm">Nhân sự chưa nộp báo cáo tuần {selectedWeek}!</p>
+                  <p className="text-xs text-amber-600 mt-1">Hạn định kỳ nộp báo cáo là trước 14h00 Thứ 5 hàng tuần.</p>
+                  <button
+                    onClick={() => handleRemindSingleStaff(selectedStaffForModal.userId, selectedStaffForModal.fullName)}
+                    className="mt-4 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-sm"
+                  >
+                    <Bell className="w-4 h-4" /> Gửi nhắc nhở ngay
+                  </button>
+                </div>
+              )}
+
+              {modalReportData && (
+                <div className="p-4 bg-teal-50/70 border border-teal-200 rounded-2xl space-y-3">
+                  <label className="block text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                    <MessageSquare className="w-4 h-4 text-[#48BFE3]" /> Nhận xét chỉ đạo của Ban Quản Lý (TBP / Trưởng Ban):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={modalCommentInput}
+                    onChange={e => setModalCommentInput(e.target.value)}
+                    placeholder="Nhập nhận xét, đánh giá kết quả và chỉ đạo công việc cho nhân sự này..."
+                    className="w-full p-3 border border-teal-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white text-slate-800"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveModalComment}
+                      disabled={modalSavingComment}
+                      className="bg-[#48BFE3] hover:bg-[#007A72] text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      <Save className="w-4 h-4" /> {modalSavingComment ? "Đang lưu..." : "Lưu nhận xét chỉ đạo"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t bg-slate-50 flex justify-between items-center">
+              <span className="text-xs text-slate-400">Trạng thái: <strong>{selectedStaffForModal.submissionStatus}</strong></span>
+              <button
+                onClick={() => setSelectedStaffForModal(null)}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold"
+              >
+                Đóng
               </button>
             </div>
           </div>
@@ -397,23 +830,37 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
       {/* Header Bar */}
       <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#48BFE3] shadow-sm">
             <FileText className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-              Báo cáo Tuần Giáo viên & Nhân viên
-            </h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
+                Báo cáo Tuần Giáo viên & Nhân sự
+              </h1>
+              <span className="text-[11px] px-3 py-1 bg-gradient-to-r from-teal-500/10 to-teal-700/10 text-teal-800 border border-teal-200 rounded-full font-extrabold">
+                {currentDivisionLabel}
+              </span>
+            </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Lập báo cáo tuần, xem lại lịch sử, hiệu chỉnh linh hoạt, duyệt & tổng hợp toàn hệ thống
+              Cấu hình nhân sự theo Bộ phận & Tổ CM &bull; Chỉ thấy danh sách GV thuộc TCM đó &bull; Bám sát tiến độ & Thẻ cá nhân
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          {isManager && (
+            <button
+              onClick={handleSendReminderAllPending}
+              disabled={reminding}
+              className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-sm font-bold text-xs"
+            >
+              <Bell className="w-4 h-4" /> 
+              {reminding ? "Đang gửi nhắc nhở..." : `Nhắc nộp báo cáo (${cardsSummary.pendingCount} chưa nộp)`}
+            </button>
+          )}
 
-
-          {activeTab === "consolidated" && isAdmin && (
+          {activeTab === "consolidated" && isManager && (
             <button
               onClick={exportToExcel}
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-sm font-bold text-xs"
@@ -427,15 +874,17 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
       {/* Tab Navigation */}
       <div className="flex bg-white rounded-2xl shadow-sm border border-slate-200 p-1.5 gap-1.5 flex-wrap">
         {[
-          ...(isAdmin ? [{ key: "dashboard", label: "Dashboard Thống kê", icon: BarChart3 }] : []),
-          ...(isAdmin ? [{ key: "consolidated", label: "Tổng hợp Toàn Hệ Thống", icon: Table2 }] : []),
-          { key: "personal", label: "Lập & Hiệu chỉnh Báo cáo", icon: Edit3 },
-          { key: "history", label: "📜 Lịch sử Báo cáo đã nộp", icon: History },
+          ...(isManager ? [{ key: "cards", label: "📇 Thẻ Tiến Độ Cá Nhân", icon: Users }] : []),
+          ...(isManager ? [{ key: "dashboard", label: "📊 Thống Kê & Bám Sát", icon: BarChart3 }] : []),
+          ...(isManager ? [{ key: "consolidated", label: "📋 Tổng Hợp Báo Cáo", icon: Table2 }] : []),
+          ...(isManager ? [{ key: "config", label: "⚙️ Cấu hình Nhân sự Tổ CM", icon: Settings }] : []),
+          { key: "personal", label: "📝 Lập & Hiệu Chỉnh Báo Cáo", icon: Edit3 },
+          { key: "history", label: "📜 Lịch Sử Đã Nộp", icon: History },
         ].map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as any)}
-            className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
+            className={`flex-1 min-w-[145px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
               activeTab === tab.key
                 ? "bg-[#48BFE3] text-white shadow-md"
                 : "text-slate-500 hover:text-teal-700 hover:bg-teal-50/50"
@@ -446,8 +895,8 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
         ))}
       </div>
 
-      {/* Filters Bar (For Personal, Consolidated, Dashboard) */}
-      {activeTab !== "history" && (
+      {/* ============ 3-TIER CASCADING FILTER BAR (For Cards, Consolidated, Dashboard, Personal) ============ */}
+      {activeTab !== "history" && activeTab !== "config" && (
         <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
@@ -503,654 +952,780 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
             </div>
           </div>
 
-          {(activeTab === "personal" || activeTab === "history") && isAdmin && (
-            <div className="pt-3 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-                <User className="w-3.5 h-3.5 text-[#48BFE3]" /> Chọn nhân viên để Lập / Xem / Hiệu chỉnh báo cáo
-              </label>
-              <select
-                value={viewUserId}
-                onChange={e => setViewUserId(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white text-indigo-900"
-              >
-                {Object.entries(groupedStaff).map(([roleName, users]) => (
-                  <optgroup key={roleName} label={roleName}>
-                    {users.map((u: any) => (
-                      <option key={u.id} value={u.id}>
-                        {u.fullName} ({u.email}) - {roleName}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* CASCADING FILTER: 1. Bộ Phận -> 2. Tổ CM -> 3. Chỉ thấy GV thuộc TCM đó */}
+          {isManager && (
+            <div className="pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5 text-[#48BFE3]" /> 1. Chọn Bộ Phận Chuyên Môn
+                </label>
+                <select
+                  disabled={isDirectTBP}
+                  value={filterDivisionCode}
+                  onChange={e => {
+                    setFilterDivisionCode(e.target.value)
+                    setFilterDeptId("ALL")
+                    setFilterTeacherUserId("ALL")
+                  }}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50 disabled:opacity-75"
+                >
+                  <option value="ALL">-- Tất cả Bộ phận --</option>
+                  {(divisions || []).map((div: any) => (
+                    <option key={div.code} value={div.code}>{div.name} ({div.code})</option>
+                  ))}
+                </select>
+              </div>
 
-          {activeTab === "consolidated" && isAdmin && (
-            <div className="pt-3 border-t border-slate-100">
-              <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-[#48BFE3]" /> Lọc theo Tổ / Nhóm quyền
-              </label>
-              <select
-                value={selectedRoleCode}
-                onChange={e => setSelectedRoleCode(e.target.value)}
-                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50"
-              >
-                <option value="ALL">-- Tất cả bộ phận --</option>
-                {(roles || []).map((r: any) => (
-                  <option key={r.code} value={r.code}>{r.name} ({r.code})</option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-[#48BFE3]" /> 2. Chọn Tổ Chuyên Môn (TCM)
+                </label>
+                <select
+                  value={filterDeptId}
+                  onChange={e => {
+                    setFilterDeptId(e.target.value)
+                    setFilterTeacherUserId("ALL")
+                  }}
+                  className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50"
+                >
+                  <option value="ALL">-- Tất cả Tổ Chuyên môn trong Bộ phận --</option>
+                  {availableDepts.map((d: any) => (
+                    <option key={d.id || d.code} value={d.id || d.code}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
+                  <User className="w-3.5 h-3.5 text-[#48BFE3]" /> 3. Chỉ thấy Danh sách GV thuộc TCM đó
+                </label>
+                <select
+                  value={filterTeacherUserId}
+                  onChange={e => {
+                    setFilterTeacherUserId(e.target.value)
+                    if (e.target.value !== "ALL") setViewUserId(e.target.value)
+                  }}
+                  className="w-full p-2.5 border border-teal-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white text-teal-900 shadow-sm"
+                >
+                  <option value="ALL">
+                    {filterDeptId !== "ALL" 
+                      ? `-- Tất cả ${teachersInSelectedDept.length} GV thuộc tổ này --`
+                      : "-- Tất cả GV trong phạm vi --"
+                    }
+                  </option>
+                  {teachersInSelectedDept.map((u: any) => (
+                    <option key={u.id} value={u.id}>
+                      {u.fullName} ({u.email || u.teacher?.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-10 h-10 border-4 border-teal-200 border-t-[#48BFE3] rounded-full animate-spin"></div>
+          <p className="text-xs font-bold text-slate-400">Đang tải dữ liệu...</p>
         </div>
       ) : (
         <>
-          {/* ============ HISTORY TAB ============ */}
-          {activeTab === "history" && (
-            <div className="space-y-5">
-              {isAdmin && (
-                <div className="bg-white border border-slate-100 rounded-3xl p-4 shadow-sm">
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-                    <User className="w-3.5 h-3.5 text-[#48BFE3]" /> Xem Lịch sử Báo cáo của Nhân viên
-                  </label>
-                  <select
-                    value={viewUserId}
-                    onChange={e => setViewUserId(e.target.value)}
-                    className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white text-indigo-900"
-                  >
-                    {Object.entries(groupedStaff).map(([roleName, users]) => (
-                      <optgroup key={roleName} label={roleName}>
-                        {users.map((u: any) => (
-                          <option key={u.id} value={u.id}>
-                            {u.fullName} ({u.email}) - {roleName}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </div>
-              )}
-
+          {/* ============ TAB: CẤU HÌNH NHÂN SỰ THEO TỔ CM & BỘ PHẬN ============ */}
+          {activeTab === "config" && isManager && (
+            <div className="space-y-6">
+              {/* Configuration Header Box */}
               <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                      <History className="w-5 h-5 text-[#48BFE3]" /> Lịch sử Báo cáo Tuần đã gửi
+                      <Settings className="w-5 h-5 text-[#48BFE3]" /> Cấu Hình Nhân Sự: Chọn Bộ Phận & Tổ Chuyên Môn
                     </h3>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {isAdmin ? `Đang xem lịch sử của: ${staffUsers.find((u: any) => u.id === viewUserId)?.fullName || currentUserName}` : `Tổng cộng ${historyReports.length} báo cáo tuần đã lưu`}
+                      Gán Giáo viên vào đúng Tổ CM để các chức năng Báo cáo, Điều hành chỉ hiển thị Giáo viên thuộc Tổ đó
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
+                      <Layers className="w-3.5 h-3.5 text-[#48BFE3]" /> 1. Chọn Bộ Phận
+                    </label>
+                    <select
+                      disabled={isDirectTBP}
+                      value={configDivisionCode}
+                      onChange={e => setConfigDivisionCode(e.target.value)}
+                      className="w-full p-3 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50 disabled:opacity-80"
+                    >
+                      {(divisions || []).map((div: any) => (
+                        <option key={div.code} value={div.code}>{div.name} ({div.code})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-[#48BFE3]" /> 2. Chọn Tổ Chuyên Môn (TCM)
+                    </label>
+                    <select
+                      value={configDeptId}
+                      onChange={e => setConfigDeptId(e.target.value)}
+                      className="w-full p-3 border border-teal-200 rounded-xl text-xs font-extrabold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-teal-50/50 text-teal-900"
+                    >
+                      {configAvailableDepts.map((d: any) => (
+                        <option key={d.id || d.code} value={d.id || d.code}>{d.name} ({d.code})</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Department Teachers List Box */}
+              <div className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-6 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                  <div>
+                    <h4 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-teal-600" />
+                      Danh Sách Giáo Viên Thuộc: {roles?.find((r: any) => r.id === configDeptId || r.code === configDeptId)?.name || "Tổ chuyên môn"}
+                    </h4>
+                    <p className="text-xs text-slate-400">
+                      Hiện có <strong>{deptTeachers.length}</strong> giáo viên thuộc tổ này
                     </p>
                   </div>
 
-                  <div className="relative w-full sm:w-64">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-                    <input
-                      type="text"
-                      value={historySearch}
-                      onChange={e => setHistorySearch(e.target.value)}
-                      placeholder="Tìm kiếm công việc, tuần..."
-                      className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3]"
-                    />
-                  </div>
+                  <button
+                    onClick={handleOpenAddTeacherModal}
+                    className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#007A72] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all"
+                  >
+                    <UserPlus className="w-4 h-4" /> Thêm / Gán Giáo Viên Vào Tổ Này
+                  </button>
                 </div>
 
-                {filteredHistory.length === 0 ? (
-                  <div className="text-center py-16 text-slate-400">
-                    <History className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                    <p className="font-bold">Không tìm thấy báo cáo tuần nào trong lịch sử</p>
+                {loadingDeptTeachers ? (
+                  <div className="py-12 text-center text-slate-400 text-xs font-bold">Đang tải danh sách giáo viên trong tổ...</div>
+                ) : deptTeachers.length === 0 ? (
+                  <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed text-slate-400">
+                    <Users className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+                    <p className="font-bold text-sm text-slate-600">Tổ này hiện chưa có giáo viên nào!</p>
+                    <p className="text-xs mt-1">Bấm nút "Thêm / Gán Giáo Viên Vào Tổ Này" ở trên để đưa giáo viên vào tổ.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredHistory.map((rpt: any) => {
-                      const completedCount = rpt.items.filter((i: any) => i.progress === "COMPLETED").length
-                      const doingCount = rpt.items.filter((i: any) => i.progress === "DOING").length
-                      const notCompCount = rpt.items.filter((i: any) => i.progress !== "COMPLETED" && i.progress !== "DOING").length
-
-                      return (
-                        <div 
-                          key={rpt.id} 
-                          className="bg-slate-50/70 border border-slate-200 rounded-3xl p-5 hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
-                        >
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="bg-amber-100 text-amber-900 border border-amber-200 font-extrabold px-3 py-1 rounded-full text-xs">
-                                Tuần {rpt.weekNumber} (T{rpt.month}/{rpt.year})
-                              </span>
-                              <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
-                                rpt.status === "REVIEWED" ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800"
-                              }`}>
-                                {rpt.status === "REVIEWED" ? "✅ Đã duyệt" : "📝 Đã nộp"}
-                              </span>
-                            </div>
-
-                            <div className="text-xs text-slate-500 font-medium">
-                              Cập nhật lúc: {new Date(rpt.updatedAt || rpt.createdAt).toLocaleDateString("vi-VN")} {new Date(rpt.updatedAt || rpt.createdAt).toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}
-                            </div>
-
-                            {/* Summary Progress Pills */}
-                            <div className="flex items-center gap-2 text-[11px] flex-wrap font-bold pt-1">
-                              <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-100">
-                                ✓ {completedCount} hoàn thành
-                              </span>
-                              <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-100">
-                                ⏳ {doingCount} đang làm
-                              </span>
-                              {notCompCount > 0 && (
-                                <span className="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg border border-amber-100">
-                                  ! {notCompCount} chưa xong
-                                </span>
-                              )}
-                            </div>
-
-                            {/* First 2 items preview */}
-                            <div className="bg-white p-3 rounded-2xl border border-slate-100 text-xs space-y-1.5">
-                              <div className="font-bold text-slate-700 border-b pb-1">Các công việc chính:</div>
-                              {rpt.items.slice(0, 2).map((item: any, idx: number) => (
-                                <div key={idx} className="text-slate-600 truncate font-medium">
-                                  • <span className="font-bold text-indigo-900">{item.mainTask}:</span> {item.workContent}
-                                </div>
-                              ))}
-                              {rpt.items.length > 2 && (
-                                <div className="text-[11px] text-slate-400 italic">
-                                  + và {rpt.items.length - 2} công việc khác...
-                                </div>
-                              )}
-                            </div>
-
-                            {rpt.managerComment && (
-                              <div className="bg-teal-50 border border-teal-100 p-2.5 rounded-2xl text-xs text-teal-900">
-                                <span className="font-bold">Nhận xét QL:</span> {rpt.managerComment}
+                  <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                          <th className="p-3 text-center w-12">STT</th>
+                          <th className="p-3 min-w-[200px]">Họ và Tên Giáo viên</th>
+                          <th className="p-3 min-w-[150px]">Email</th>
+                          <th className="p-3 min-w-[120px]">Cơ sở</th>
+                          <th className="p-3 w-44">Chức vụ trong Tổ</th>
+                          <th className="p-3 text-center w-28">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y font-medium">
+                        {deptTeachers.map((t, idx) => (
+                          <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                            <td className="p-3 font-extrabold text-slate-800 flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#48BFE3] flex items-center justify-center font-black text-xs">
+                                {t.teacherName.slice(0, 2).toUpperCase()}
                               </div>
-                            )}
-                          </div>
-
-                          <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
-                            <button
-                              onClick={() => setViewingHistoryReport(rpt)}
-                              className="text-xs text-slate-600 hover:text-slate-900 font-bold px-3 py-1.5 rounded-xl border bg-white hover:bg-slate-100 flex items-center gap-1"
-                            >
-                              <Eye className="w-3.5 h-3.5 text-[#48BFE3]" /> Xem
-                            </button>
-
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                onClick={() => handleEditPastReport(rpt)}
-                                className="bg-[#48BFE3] hover:bg-[#007A72] text-white font-extrabold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm"
+                              <div>
+                                <div>{t.teacherName}</div>
+                                <div className="text-[10px] text-slate-400 font-normal">Mã: {t.teacherCode}</div>
+                              </div>
+                            </td>
+                            <td className="p-3 text-slate-600">{t.email || "-"}</td>
+                            <td className="p-3 text-slate-600">{t.campusName || "-"}</td>
+                            <td className="p-3">
+                              <select
+                                value={t.position}
+                                onChange={e => handleUpdatePosition(t.id, e.target.value)}
+                                className="p-1.5 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white w-full"
                               >
-                                <Edit3 className="w-3.5 h-3.5" /> Hiệu chỉnh
+                                <option value="GV">GV (Thành viên)</option>
+                                <option value="TTCM">TTCM (Tổ trưởng)</option>
+                                <option value="TPTCM">TPTCM (Tổ phó)</option>
+                              </select>
+                            </td>
+                            <td className="p-3 text-center">
+                              <button
+                                onClick={() => handleRemoveTeacher(t.id, t.teacherName)}
+                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                title="Gỡ khỏi tổ này"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </button>
-
-                              {isAdmin && (
-                                <button
-                                  onClick={() => handleDeleteReport(rpt.id)}
-                                  className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
-                                  title="Xóa báo cáo này"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
             </div>
           )}
 
-          {/* ============ DASHBOARD TAB ============ */}
-          {activeTab === "dashboard" && isAdmin && (
+          {/* ============ TAB: CARDS THEO DÕI TIẾN ĐỘ CÁ NHÂN ============ */}
+          {activeTab === "cards" && isManager && (
             <div className="space-y-6">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                {[
-                  { label: "Tổng đầu việc", value: stats.totalTasks, color: "from-slate-600 to-slate-800", icon: ClipboardList },
-                  { label: "Hoàn thành", value: stats.completed, color: "from-emerald-600 to-emerald-800", icon: CheckCircle2 },
-                  { label: "Đang thực hiện", value: stats.inProgress, color: "from-blue-600 to-blue-800", icon: Clock },
-                  { label: "Chưa thực hiện", value: stats.pending, color: "from-amber-600 to-amber-800", icon: MinusCircle },
-                  { label: "Trễ hạn", value: stats.overdue, color: "from-red-600 to-red-800", icon: AlertTriangle },
-                ].map((s, i) => (
-                  <div key={i} className={"bg-gradient-to-br " + s.color + " text-white rounded-3xl p-5 shadow-md space-y-1"}>
-                    <div className="flex items-center justify-between"><s.icon className="w-5 h-5 opacity-80" /></div>
-                    <div className="text-3xl font-black">{s.value}</div>
-                    <div className="text-xs font-bold opacity-90">{s.label}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black">
+                    <Users className="w-6 h-6" />
                   </div>
-                ))}
-              </div>
-
-              {/* Chart Bars */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-[#48BFE3]" />
-                  <h3 className="text-base font-extrabold text-slate-800">
-                    Tiến độ thực hiện công việc từng tuần - Tháng {month}/{year}
-                  </h3>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Tổng Nhân Sự</p>
+                    <p className="text-2xl font-black text-slate-800">{cardsSummary.totalStaff}</p>
+                  </div>
                 </div>
 
-                <div className="pt-2">
-                  {Object.keys(chartData).length === 0 ? (
-                    <div className="text-center py-12 text-slate-400">
-                      <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                      <p className="font-bold">Chưa có dữ liệu báo cáo tuần</p>
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-black">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Đã Nộp Báo Cáo</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-2xl font-black text-emerald-600">{cardsSummary.submittedCount}</p>
+                      <span className="text-xs font-bold text-slate-400">
+                        ({cardsSummary.totalStaff > 0 ? Math.round((cardsSummary.submittedCount / cardsSummary.totalStaff) * 100) : 0}%)
+                      </span>
                     </div>
-                  ) : (
-                    <div className="space-y-6">
-                      <div className="flex flex-wrap gap-4 justify-center text-xs font-bold">
-                        {PROGRESS.map(p => (
-                          <div key={p.value} className="flex items-center gap-1.5">
-                            <div className="w-3.5 h-3.5 rounded-md" style={{ background: p.barColor }} />
-                            <span className="text-slate-600">{p.label}</span>
-                          </div>
-                        ))}
-                      </div>
+                  </div>
+                </div>
 
-                      {Object.entries(chartData).map(([uid, userData]: any) => (
-                        <div key={uid} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-                          <div className="font-extrabold text-xs text-indigo-900 mb-3 flex items-center gap-2">
-                            <User className="w-4 h-4 text-[#48BFE3]" />
-                            {userData.name}
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-black">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Chưa Nộp Báo Cáo</p>
+                    <p className="text-2xl font-black text-amber-600">{cardsSummary.pendingCount}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Đã Duyệt / Nhận Xét</p>
+                    <p className="text-2xl font-black text-purple-600">{cardsSummary.reviewedCount}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Cards Filter Bar */}
+              <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    value={cardSearch}
+                    onChange={e => setCardSearch(e.target.value)}
+                    placeholder="Tìm theo họ tên, email, chức danh..."
+                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3]"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  <select
+                    value={cardStatusFilter}
+                    onChange={e => setCardStatusFilter(e.target.value)}
+                    className="p-2 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50"
+                  >
+                    <option value="ALL">-- Tất cả trạng thái nộp --</option>
+                    <option value="PENDING">🔴 Chưa nộp báo cáo</option>
+                    <option value="SUBMITTED">🟢 Đã nộp báo cáo</option>
+                    <option value="REVIEWED">🟣 Đã nhận xét / duyệt</option>
+                    <option value="OVERDUE">⚠️ Có việc trễ hạn</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Cards Grid */}
+              {filteredCards.length === 0 ? (
+                <div className="bg-white p-12 text-center rounded-3xl border border-slate-100 text-slate-400">
+                  <Users className="w-12 h-12 mx-auto text-slate-300 mb-3" />
+                  <p className="font-bold text-sm text-slate-600">Không tìm thấy giáo viên phù hợp bộ lọc!</p>
+                  <p className="text-xs mt-1">Vui lòng thay đổi từ khóa tìm kiếm hoặc chọn lại Bộ phận / Tổ CM.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredCards.map(card => {
+                    const isSubmitted = card.submissionStatus === "SUBMITTED" || card.submissionStatus === "REVIEWED"
+                    const isReviewed = card.submissionStatus === "REVIEWED"
+                    const rateColor = card.completionRate >= 80 ? "bg-emerald-500" : card.completionRate >= 50 ? "bg-blue-500" : "bg-amber-500"
+
+                    return (
+                      <div
+                        key={card.userId}
+                        className="bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
+                      >
+                        <div className="p-5 space-y-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-teal-500 to-[#48BFE3] text-white flex items-center justify-center font-black text-sm shadow-sm">
+                                {card.fullName.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <h4 className="font-extrabold text-sm text-slate-800 leading-snug group-hover:text-teal-700 transition-colors">
+                                  {card.fullName}
+                                </h4>
+                                <p className="text-[11px] text-slate-400 truncate max-w-[150px]">{card.email}</p>
+                              </div>
+                            </div>
+                            
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-slate-100 text-slate-600 uppercase border">
+                              {card.position}
+                            </span>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                            {Array.from({ length: Math.max(maxWeeks, weeks.length) }, (_, i) => i + 1).map(wk => {
-                              const wData = userData.weeks?.[wk]
-                              const total = wData?.total || 0
-                              return (
-                                <div key={wk} className="text-center bg-white p-2.5 rounded-xl border border-slate-100">
-                                  <div className="text-[10px] text-slate-400 font-extrabold mb-1">Tuần {wk}</div>
-                                  {total > 0 ? (
-                                    <div className="flex h-20 items-end justify-center gap-1 py-1">
-                                      {[
-                                        { count: wData.completed, color: "#10b981" },
-                                        { count: wData.doing, color: "#3b82f6" },
-                                        { count: wData.notCompleted, color: "#f59e0b" },
-                                      ].map((bar, bi) => (
-                                        <div 
-                                          key={bi} 
-                                          className="w-3.5 rounded-t-md transition-all" 
-                                          style={{ height: Math.max((bar.count / total) * 64, bar.count > 0 ? 6 : 0) + "px", background: bar.color, opacity: bar.count > 0 ? 1 : 0.15 }}
-                                          title={bar.count + " mục"} 
-                                        />
-                                      ))}
-                                    </div>
-                                  ) : (
-                                    <div className="h-20 flex items-end justify-center pb-2">
-                                      <span className="text-[10px] text-slate-300 font-bold">Chưa nộp</span>
-                                    </div>
-                                  )}
-                                  <div className="text-[10px] text-slate-500 font-bold">{total} công việc</div>
-                                </div>
-                              )
-                            })}
+
+                          <div className="flex items-center justify-between gap-2 pt-1">
+                            <span className="text-xs font-semibold text-slate-600 flex items-center gap-1 truncate max-w-[140px]">
+                              <Layers className="w-3 h-3 text-[#48BFE3] flex-shrink-0" /> {card.departmentName}
+                            </span>
+
+                            {isReviewed ? (
+                              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-purple-50 text-purple-700 border border-purple-200 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Đã duyệt
+                              </span>
+                            ) : isSubmitted ? (
+                              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                <Check className="w-3 h-3" /> Đã nộp
+                              </span>
+                            ) : (
+                              <span className="text-[11px] px-2.5 py-0.5 rounded-full font-extrabold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                                <Clock className="w-3 h-3" /> Chưa nộp
+                              </span>
+                            )}
                           </div>
+
+                          <div className="space-y-1.5 pt-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-bold text-slate-500 text-[11px]">Tiến độ công việc</span>
+                              <span className="font-black text-slate-800 text-[11px]">{card.completionRate}%</span>
+                            </div>
+                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-500 ${rateColor}`} 
+                                style={{ width: `${card.completionRate}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-4 gap-1.5 p-2 bg-slate-50 rounded-2xl text-center">
+                            <div>
+                              <p className="text-[10px] text-slate-400 font-bold">Xong</p>
+                              <p className="text-xs font-black text-emerald-600">{card.reportCompleted}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-slate-400 font-bold">Đang làm</p>
+                              <p className="text-xs font-black text-blue-600">{card.reportDoing}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-slate-400 font-bold">Chưa xong</p>
+                              <p className="text-xs font-black text-amber-600">{card.reportNotCompleted}</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-slate-400 font-bold">Trễ hạn</p>
+                              <p className="text-xs font-black text-red-600">{card.tasks?.overdue || 0}</p>
+                            </div>
+                          </div>
+
+                          {card.managerComment && (
+                            <div className="p-2.5 bg-teal-50/60 rounded-xl border border-teal-100 text-[11px] text-teal-900 line-clamp-2">
+                              💬 <strong>QL:</strong> {card.managerComment}
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* ============ CONSOLIDATED TAB ============ */}
-          {activeTab === "consolidated" && isAdmin && (
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden space-y-4 p-5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                  <Table2 className="w-5 h-5 text-[#48BFE3]" /> Tổng hợp báo cáo Tuần {selectedWeek} - Tháng {month}/{year}
-                </h3>
-                <span className="text-xs bg-teal-50 text-[#48BFE3] font-extrabold px-3 py-1 rounded-full border border-teal-100">
-                  {consolidatedData.length} báo cáo đã nộp
-                </span>
-              </div>
+                        <div className="p-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between gap-1.5">
+                          <button
+                            onClick={() => handleOpenCardReportModal(card)}
+                            className="flex-1 py-1.5 px-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 font-bold text-xs flex items-center justify-center gap-1 shadow-2xl transition-all"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-[#48BFE3]" /> Xem & Duyệt
+                          </button>
 
-              <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl shadow-sm">
-                <table className="w-full text-left text-xs border-collapse table-fixed min-w-[850px]">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider">
-                      <th className="p-3 text-center w-[5%] whitespace-nowrap">STT</th>
-                      <th className="p-3 whitespace-nowrap w-[11%]">Mã NV</th>
-                      <th className="p-3 whitespace-nowrap w-[14%]">Họ và Tên</th>
-                      <th className="p-3 whitespace-normal break-words w-[18%]">Task chính</th>
-                      <th className="p-3 whitespace-normal break-words w-[28%]">Nội dung công việc</th>
-                      <th className="p-3 whitespace-nowrap w-[10%]">Tiến độ</th>
-                      <th className="p-3 whitespace-normal break-words w-[12%]">Đề xuất giải pháp</th>
-                      <th className="p-3 whitespace-normal break-words w-[12%]">Nhận xét QL</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium">
-                    {consolidatedData.length === 0 && (
-                      <tr>
-                        <td colSpan={8} className="p-12 text-center text-slate-400">
-                          <Table2 className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                          <p className="font-bold">Chưa có nhân viên nào nộp báo cáo cho tuần này</p>
-                        </td>
-                      </tr>
-                    )}
-                    {(() => {
-                      let stt = 0
-                      return consolidatedData.flatMap((report: any) =>
-                        report.items.map((item: any, idx: number) => {
-                          stt++
-                          const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
-                          const isFirst = idx === 0
-                          return (
-                            <tr key={item.id || stt} className={`hover:bg-slate-50 transition-colors ${isFirst && stt > 1 ? "border-t-2 border-slate-200" : ""}`}>
-                              <td className="p-3 text-center text-slate-400 font-bold whitespace-nowrap">{stt}</td>
-                              <td className="p-3 whitespace-nowrap">
-                                {isFirst && <span className="font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded text-slate-700">{report.user?.email}</span>}
-                              </td>
-                              <td className="p-3 whitespace-nowrap">
-                                {isFirst && <span className="font-bold text-slate-800">{report.user?.fullName}</span>}
-                              </td>
-                              <td className="p-3 font-bold text-indigo-900 whitespace-normal break-words align-top">{item.mainTask}</td>
-                              <td className="p-3 whitespace-normal break-words leading-relaxed text-slate-700 align-top">{item.workContent}</td>
-                              <td className="p-3 whitespace-nowrap">
-                                <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
-                                  {prog.label}
-                                </span>
-                              </td>
-                              <td className="p-3 whitespace-normal break-words text-slate-500 italic min-w-[160px]">{item.proposedSolution || "-"}</td>
-                              <td className="p-3 whitespace-normal break-words min-w-[160px]">
-                                {item.managerNote ? (
-                                  <span className="text-xs text-indigo-700 bg-teal-50 border border-teal-100 p-2 rounded-xl block font-medium">{item.managerNote}</span>
-                                ) : (
-                                  <span className="text-xs text-slate-400 italic">-</span>
-                                )}
-                              </td>
-                            </tr>
-                          )
-                        })
-                      )
-                    })()}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* ============ PERSONAL / EDIT TAB ============ */}
-          {activeTab === "personal" && (
-            <div className="space-y-5">
-              {/* Week Banner & Status Header */}
-              {weeks.find(w => w.weekNum === selectedWeek) && (
-                <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-3xl p-5 shadow-lg border border-amber-400 flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-sm sm:text-base">
-                        {weeks.find(w => w.weekNum === selectedWeek)?.label}
-                      </h3>
-                      <p className="text-xs text-amber-100 mt-0.5">
-                        {isAdmin ? `Đang xem/chỉnh sửa báo cáo cho: ${staffUsers.find((u: any) => u.id === viewUserId)?.fullName || currentUserName}` : `Người thực hiện: ${currentUserName}`}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {reportStatus ? (
-                      <span className={`text-xs font-extrabold px-3 py-1 rounded-full shadow-sm ${
-                        reportStatus === "REVIEWED" ? "bg-emerald-100 text-emerald-800" : "bg-white text-amber-900"
-                      }`}>
-                        {reportStatus === "REVIEWED" ? "✅ Đã duyệt" : "📝 Đã nộp"}
-                      </span>
-                    ) : (
-                      <span className="bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full">
-                        Chưa nộp
-                      </span>
-                    )}
-                  </div>
+                          {!isSubmitted && (
+                            <button
+                              onClick={() => handleRemindSingleStaff(card.userId, card.fullName)}
+                              disabled={remindingUserId === card.userId}
+                              className="py-1.5 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 rounded-xl font-bold text-xs flex items-center gap-1 transition-all"
+                              title="Gửi nhắc nộp báo cáo riêng cho nhân sự này"
+                            >
+                              <Bell className="w-3.5 h-3.5" /> 
+                              {remindingUserId === card.userId ? "..." : "Nhắc"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
+            </div>
+          )}
 
-              {/* Row Expansion Toolbar */}
-              <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-1">Thêm dòng nhanh:</span>
-                  <button
-                    onClick={() => addRows(1)}
-                    className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-xl text-xs transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> +1 Dòng
-                  </button>
-                  <button
-                    onClick={() => addRows(3)}
-                    className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-xl text-xs transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> +3 Dòng
-                  </button>
-                  <button
-                    onClick={() => addRows(5)}
-                    className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 font-bold px-3 py-1.5 rounded-xl text-xs transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> +5 Dòng
-                  </button>
-                  <button
-                    onClick={clearEmptyRows}
-                    className="text-xs text-slate-500 hover:text-slate-700 font-bold px-3 py-1.5 rounded-xl border hover:bg-slate-50"
-                  >
-                    Xóa các dòng trống
-                  </button>
+          {/* ============ TAB: DASHBOARD THỐNG KÊ ============ */}
+          {activeTab === "dashboard" && isManager && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <ClipboardList className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Tổng Task Giao</p>
+                    <p className="text-2xl font-black text-slate-800">{stats.totalTasks}</p>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-slate-400">Tổng cộng {items.length} dòng</span>
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+                    <CheckCircle2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Hoàn thành</p>
+                    <p className="text-2xl font-black text-emerald-600">{stats.completed}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Đang thực hiện</p>
+                    <p className="text-2xl font-black text-blue-600">{stats.inProgress}</p>
+                  </div>
+                </div>
+
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center font-bold">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase">Trễ hạn</p>
+                    <p className="text-2xl font-black text-red-600">{stats.overdue}</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Weekly Report Form Table */}
-              <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-                <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl shadow-sm">
-                  <table className="w-full text-left text-xs border-collapse table-fixed min-w-[850px]">
+              <div className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-6 shadow-sm space-y-4">
+                <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#48BFE3]" /> Ma trận Tiến độ Báo cáo Tuần trong Tháng {month}/{year}
+                </h3>
+
+                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                  <table className="w-full text-left text-xs border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider">
-                        <th className="p-3 text-center w-[5%] whitespace-nowrap">STT</th>
-                        <th className="p-3 whitespace-normal break-words w-[18%]">Task chính *</th>
-                        <th className="p-3 whitespace-normal break-words w-[32%]">Nội dung công việc *</th>
-                        <th className="p-3 whitespace-nowrap w-[12%]">Tiến độ *</th>
-                        <th className="p-3 whitespace-normal break-words w-[13%]">Đề xuất giải pháp</th>
-                        <th className="p-3 whitespace-normal break-words w-[14%]">Nhận xét QL</th>
-                        <th className="p-3 text-center whitespace-nowrap w-[6%]">Thao tác</th>
+                      <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                        <th className="p-3 min-w-[200px]">Họ và Tên Nhân sự</th>
+                        {weeks.map(w => (
+                          <th key={w.weekNum} className="p-3 text-center min-w-[120px]">
+                            Tuần {w.weekNum}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {items.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="p-12 text-center text-slate-400">
-                            <FileText className="w-12 h-12 mx-auto mb-2 opacity-30" />
-                            <p className="font-bold">Báo cáo chưa có dòng công việc nào</p>
-                            <button onClick={() => addRows(3)} className="mt-2 text-[#48BFE3] font-bold text-xs hover:underline">
-                              + Bấm vào đây để thêm 3 dòng ngay
-                            </button>
-                          </td>
+                    <tbody className="divide-y font-medium">
+                      {Object.entries(chartData as Record<string, any>).map(([uid, u]: any) => (
+                        <tr key={uid} className="hover:bg-slate-50">
+                          <td className="p-3 font-bold text-slate-800">{u.name}</td>
+                          {weeks.map(w => {
+                            const st = u.weeks?.[w.weekNum]
+                            if (!st) {
+                              return (
+                                <td key={w.weekNum} className="p-3 text-center text-slate-300">
+                                  Chưa nộp
+                                </td>
+                              )
+                            }
+                            return (
+                              <td key={w.weekNum} className="p-3 text-center">
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                  {st.completed}/{st.total} xong
+                                </span>
+                              </td>
+                            )
+                          })}
                         </tr>
-                      )}
-                      {items.map((item, i) => {
-                        const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
-                        return (
-                          <tr key={i} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="p-3 text-center text-slate-400 font-bold whitespace-nowrap">{i + 1}</td>
-
-                            {/* Task chính */}
-                            <td className="p-3 whitespace-normal break-words align-top">
-                              <textarea
-                                value={item.mainTask}
-                                onChange={e => updateItem(i, "mainTask", e.target.value)}
-                                rows={2}
-                                placeholder="Tên Task chính..."
-                                className="w-full border border-slate-200 rounded-xl p-2 text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white text-indigo-900 resize-none leading-snug"
-                              />
-                            </td>
-
-                            {/* Nội dung công việc (Multiline) */}
-                            <td className="p-3 whitespace-normal break-words align-top">
-                              <textarea
-                                value={item.workContent}
-                                onChange={e => updateItem(i, "workContent", e.target.value)}
-                                rows={2}
-                                placeholder="Chi tiết công việc đã thực hiện..."
-                                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3] resize-none leading-relaxed bg-white"
-                              />
-                            </td>
-
-                            {/* Tiến độ */}
-                            <td className="p-3 whitespace-nowrap">
-                              <select
-                                value={item.progress}
-                                onChange={e => updateItem(i, "progress", e.target.value)}
-                                className={`w-full border rounded-xl p-2.5 text-xs font-bold outline-none cursor-pointer ${prog.color}`}
-                              >
-                                {PROGRESS.map(p => (
-                                  <option key={p.value} value={p.value}>{p.label}</option>
-                                ))}
-                              </select>
-                            </td>
-
-                            {/* Đề xuất giải pháp (Multiline) */}
-                            <td className="p-3 whitespace-normal min-w-[160px]">
-                              <textarea
-                                value={item.proposedSolution}
-                                onChange={e => updateItem(i, "proposedSolution", e.target.value)}
-                                rows={2}
-                                placeholder="Nhập đề xuất, kiến nghị..."
-                                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3] resize-none leading-relaxed bg-white"
-                              />
-                            </td>
-
-                            {/* Nhận xét Quản lý */}
-                            <td className="p-3 whitespace-normal min-w-[160px]">
-                              {isAdmin ? (
-                                editingItemNote === (item.id || String(i)) ? (
-                                  <div className="flex flex-col gap-1.5">
-                                    <textarea
-                                      value={itemNoteText}
-                                      onChange={e => setItemNoteText(e.target.value)}
-                                      rows={2}
-                                      placeholder="Viết nhận xét của QL..."
-                                      className="w-full border border-slate-200 rounded-xl p-2 text-xs outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white resize-none"
-                                    />
-                                    <div className="flex gap-1 justify-end">
-                                      <button onClick={() => setEditingItemNote(null)} className="text-[11px] text-slate-500 px-2 py-1 rounded-lg border">Hủy</button>
-                                      <button onClick={() => item.id && handleItemNote(item.id)} className="text-[11px] bg-[#48BFE3] text-white px-2 py-1 rounded-lg font-bold">Lưu</button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div 
-                                    onClick={() => { setEditingItemNote(item.id || String(i)); setItemNoteText(item.managerNote || "") }}
-                                    className="cursor-pointer group"
-                                  >
-                                    {item.managerNote ? (
-                                      <span className="text-xs text-indigo-800 bg-teal-50 border border-teal-100 p-2 rounded-xl block font-medium">{item.managerNote}</span>
-                                    ) : (
-                                      <span className="text-xs text-slate-400 group-hover:text-[#48BFE3] italic font-bold">+ Nhấn để ghi nhận xét...</span>
-                                    )}
-                                  </div>
-                                )
-                              ) : (
-                                item.managerNote ? (
-                                  <span className="text-xs text-indigo-800 bg-teal-50 border border-teal-100 p-2 rounded-xl block font-medium">{item.managerNote}</span>
-                                ) : (
-                                  <span className="text-xs text-slate-400 italic">Chưa có</span>
-                                )
-                              )}
-                            </td>
-
-                            {/* Action Buttons */}
-                            <td className="p-3 text-center whitespace-nowrap">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  onClick={() => duplicateRow(i)}
-                                  title="Nhân bản dòng"
-                                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg"
-                                >
-                                  <Copy className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => removeRow(i)}
-                                  title="Xóa dòng này"
-                                  className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
+                      ))}
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          )}
 
-                {/* Form Action Controls */}
-                <div className="p-4 bg-slate-50 border-t flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => addRows(1)}
-                      className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Plus className="w-4 h-4 text-amber-600" /> Thêm 1 dòng
-                    </button>
-                    <button
-                      onClick={() => addRows(3)}
-                      className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Plus className="w-4 h-4 text-amber-600" /> Thêm 3 dòng
-                    </button>
+          {/* ============ TAB: CONSOLIDATED TỔNG HỢP (From User Screenshot) ============ */}
+          {activeTab === "consolidated" && isManager && (
+            <div className="space-y-4">
+              <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                      <Table2 className="w-5 h-5 text-[#48BFE3]" /> Tổng hợp báo cáo Tuần {selectedWeek} - Tháng {month}/{year}
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      {filterDeptId !== "ALL" 
+                        ? `Đang lọc theo: ${roles?.find((r: any) => r.id === filterDeptId || r.code === filterDeptId)?.name} (${consolidatedData.length} báo cáo)`
+                        : `Tổng cộng ${consolidatedData.length} báo cáo nộp trong tuần`
+                      }
+                    </p>
                   </div>
+                </div>
 
+                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                        <th className="p-3 text-center w-12">STT</th>
+                        <th className="p-3 min-w-[150px]">Nhân sự / Tổ</th>
+                        <th className="p-3 min-w-[140px]">Task chính</th>
+                        <th className="p-3 min-w-[240px]">Nội dung công việc</th>
+                        <th className="p-3 w-28">Tiến độ</th>
+                        <th className="p-3 min-w-[180px]">Đề xuất giải pháp</th>
+                        <th className="p-3 min-w-[180px]">Nhận xét QL</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y font-medium">
+                      {consolidatedData.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-slate-400">
+                            Chưa có báo cáo nào được nộp cho tuần này theo bộ lọc hiện tại!
+                          </td>
+                        </tr>
+                      ) : (
+                        consolidatedData.map((report: any, rIdx: number) => 
+                          report.items.map((item: any, iIdx: number) => {
+                            const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
+                            return (
+                              <tr key={`${report.id}_${item.id || iIdx}`} className="hover:bg-slate-50">
+                                <td className="p-3 text-center text-slate-400 font-bold">{rIdx + 1}.{iIdx + 1}</td>
+                                <td className="p-3 font-bold text-slate-800">
+                                  <div>{report.user?.fullName}</div>
+                                  <div className="text-[10px] text-slate-400 font-normal">
+                                    {report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role)}
+                                  </div>
+                                </td>
+                                <td className="p-3 font-bold text-indigo-900">{item.mainTask}</td>
+                                <td className="p-3 text-slate-700 leading-relaxed">{item.workContent}</td>
+                                <td className="p-3">
+                                  <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
+                                    {prog.label}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-slate-500 italic">{item.proposedSolution || "-"}</td>
+                                <td className="p-3 text-slate-700">{item.managerNote || report.managerComment || "-"}</td>
+                              </tr>
+                            )
+                          })
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ============ TAB: PERSONAL LẬP BÁO CÁO ============ */}
+          {activeTab === "personal" && (
+            <div className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-6 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                    <Edit3 className="w-5 h-5 text-[#48BFE3]" /> Nội dung Báo cáo Tuần {selectedWeek} (Tháng {month}/{year})
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Người lập: <strong>{staffUsers.find((u: any) => u.id === (isManager ? viewUserId : currentUserId))?.fullName || currentUserName}</strong>
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => addRows(1)}
+                    className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition-all"
+                  >
+                    <Plus className="w-4 h-4" /> Thêm dòng
+                  </button>
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-gradient-to-r from-amber-600 to-amber-700 text-white font-extrabold px-8 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-lg hover:opacity-95 disabled:opacity-50 transition-all"
+                    className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#007A72] text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-md"
                   >
-                    <Save className="w-4 h-4" /> {saving ? "Đang lưu..." : isAdmin ? "Lưu Báo Cáo Cho Nhân Viên" : "Lưu / Hiệu Chỉnh Báo Cáo"}
+                    <Save className="w-4 h-4" /> {saving ? "Đang lưu..." : "Lưu Báo Cáo"}
                   </button>
                 </div>
               </div>
 
-              {/* Overall Manager Comment Section */}
-              {managerComment && (
-                <div className="bg-teal-50/70 border border-teal-200 rounded-3xl p-5 space-y-1">
-                  <div className="flex items-center gap-2 text-[#48BFE3]">
-                    <MessageSquare className="w-5 h-5" />
-                    <span className="text-sm font-extrabold">Nhận xét tổng thể của Ban Quản Lý</span>
-                  </div>
-                  <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap pl-7">{managerComment}</p>
-                </div>
-              )}
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                      <th className="p-3 text-center w-10">STT</th>
+                      <th className="p-3 min-w-[160px]">Task chính</th>
+                      <th className="p-3 min-w-[260px]">Nội dung công việc chi tiết</th>
+                      <th className="p-3 w-36">Tiến độ</th>
+                      <th className="p-3 min-w-[180px]">Đề xuất giải pháp (nếu có)</th>
+                      <th className="p-3 text-center w-16">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y font-medium">
+                    {items.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/50">
+                        <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                        <td className="p-3">
+                          <input
+                            type="text"
+                            value={item.mainTask}
+                            onChange={e => updateItem(idx, "mainTask", e.target.value)}
+                            placeholder="Tên Task chính..."
+                            className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-bold text-slate-800"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <textarea
+                            rows={2}
+                            value={item.workContent}
+                            onChange={e => updateItem(idx, "workContent", e.target.value)}
+                            placeholder="Mô tả công việc thực hiện trong tuần..."
+                            className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-700"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <select
+                            value={item.progress}
+                            onChange={e => updateItem(idx, "progress", e.target.value)}
+                            className="w-full p-2 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white"
+                          >
+                            {PROGRESS.map(p => (
+                              <option key={p.value} value={p.value}>{p.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-3">
+                          <input
+                            type="text"
+                            value={item.proposedSolution}
+                            onChange={e => updateItem(idx, "proposedSolution", e.target.value)}
+                            placeholder="Đề xuất giải pháp..."
+                            className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-600 italic"
+                          />
+                        </td>
+                        <td className="p-3 text-center">
+                          <button
+                            onClick={() => removeRow(idx)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            title="Xóa dòng này"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-              {isAdmin && reportId && (
-                <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-3">
-                  <h3 className="text-xs font-bold text-slate-700 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-[#48BFE3]" /> Thêm nhận xét tổng thể cho Báo cáo này
-                  </h3>
-                  <textarea
-                    value={mgmtComment}
-                    onChange={e => setMgmtComment(e.target.value)}
-                    rows={3}
-                    placeholder="Nhập nhận xét chỉ đạo chung..."
-                    className="w-full border border-slate-200 rounded-2xl p-3 text-xs outline-none focus:ring-2 focus:ring-[#48BFE3] resize-none"
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => handleManagerComment(reportId)}
-                      className="flex items-center gap-2 bg-[#48BFE3] text-white px-5 py-2 rounded-xl hover:bg-[#007A72] text-xs font-bold shadow-sm"
-                    >
-                      <Send className="w-4 h-4" /> Gửi nhận xét
-                    </button>
-                  </div>
+              {managerComment && (
+                <div className="p-4 bg-teal-50 border border-teal-200 rounded-2xl">
+                  <p className="text-xs font-bold text-teal-800 mb-1">💬 Nhận xét chỉ đạo của Ban Quản Lý (TBP / Trưởng Ban):</p>
+                  <p className="text-xs text-slate-700 whitespace-pre-wrap">{managerComment}</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ============ TAB: HISTORY ============ */}
+          {activeTab === "history" && (
+            <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                    <History className="w-5 h-5 text-[#48BFE3]" /> Lịch sử Báo cáo Tuần đã gửi
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Tổng cộng {filteredHistory.length} báo cáo tuần đã lưu
+                  </p>
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    value={historySearch}
+                    onChange={e => setHistorySearch(e.target.value)}
+                    placeholder="Tìm kiếm công việc, tuần..."
+                    className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#48BFE3]"
+                  />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                      <th className="p-3 text-center w-12">STT</th>
+                      <th className="p-3 min-w-[120px]">Thời gian</th>
+                      <th className="p-3 min-w-[200px]">Task chính thực hiện</th>
+                      <th className="p-3 w-28 text-center">Trạng thái</th>
+                      <th className="p-3 min-w-[200px]">Nhận xét Ban Quản Lý</th>
+                      <th className="p-3 text-center w-28">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y font-medium">
+                    {filteredHistory.map((rpt, idx) => (
+                      <tr key={rpt.id} className="hover:bg-slate-50">
+                        <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                        <td className="p-3 font-bold text-slate-800">
+                          Tuần {rpt.weekNumber} &bull; Tháng {rpt.month}/{rpt.year}
+                        </td>
+                        <td className="p-3 text-slate-700">
+                          {rpt.items.map((i: any) => i.mainTask).filter(Boolean).join(", ") || "-"}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                            rpt.status === "REVIEWED" ? "bg-purple-100 text-purple-800" : "bg-emerald-100 text-emerald-800"
+                          }`}>
+                            {rpt.status === "REVIEWED" ? "Đã duyệt" : "Đã nộp"}
+                          </span>
+                        </td>
+                        <td className="p-3 text-slate-600 italic">
+                          {rpt.managerComment || "-"}
+                        </td>
+                        <td className="p-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => handleEditPastReport(rpt)}
+                              className="p-1.5 text-[#48BFE3] hover:bg-teal-50 rounded-lg"
+                              title="Hiệu chỉnh báo cáo này"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            {isManager && (
+                              <button
+                                onClick={() => handleDeleteReport(rpt.id)}
+                                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
+                                title="Xóa báo cáo này"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>

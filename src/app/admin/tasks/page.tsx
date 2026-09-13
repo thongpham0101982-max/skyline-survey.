@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { TasksClient } from "./client"
 import { auth } from "@/lib/auth"
 import { checkAndNotifyOverdueTasks, checkAndNotifyUpcomingTasks } from "./actions"
+import { getOperationalScope } from "@/lib/session"
 
 export const metadata = { title: "Điều hành Công việc | Admin Portal" }
 export const dynamic = "force-dynamic"
@@ -18,34 +19,84 @@ export default async function TasksPage() {
     checkAndNotifyUpcomingTasks().catch(() => {})
   ])
 
-  let whereClause: any = {}
-  if (role !== "ADMIN") {
-    const userTeacher = await prisma.teacher.findUnique({
-      where: { userId },
-      select: {
-        departmentRel: { select: { name: true, code: true } },
-        mainSubjectRel: { select: { subjectName: true, subjectCode: true } }
-      }
-    });
-    const deptName = userTeacher?.departmentRel?.name || "";
-    const deptCode = userTeacher?.departmentRel?.code || "";
-    const subjName = userTeacher?.mainSubjectRel?.subjectName || "";
-    const subjCode = userTeacher?.mainSubjectRel?.subjectCode || "";
+  const opScope = await getOperationalScope()
 
-    whereClause = {
-      OR: [
-        { assignedToUserId: userId },
-        { collaborators: { contains: userId } },
-        { assignedToRole: role, assignedToUserId: null },
-        ...(deptName ? [{ assignedToRole: deptName, assignedToUserId: null }] : []),
-        ...(deptCode ? [{ assignedToRole: deptCode, assignedToUserId: null }] : []),
-        ...(subjName ? [{ assignedToRole: subjName, assignedToUserId: null }] : []),
-        ...(subjCode ? [{ assignedToRole: subjCode, assignedToUserId: null }] : [])
+  let whereClause: any = {}
+  if (!opScope.isSuperAdmin && !opScope.isHeadOfAcademic) {
+    if (opScope.isDirectTBP && opScope.scopedUserIds) {
+      const allowedRoles = [
+        ...(opScope.scopedDepartmentCodes || []),
+        ...(opScope.scopedDepartments.map(d => d.name) || []),
+        ...(opScope.managedDivisions || [])
       ]
+      whereClause = {
+        OR: [
+          { assignedToUserId: { in: opScope.scopedUserIds } },
+          { assignedById: userId },
+          { collaborators: { contains: userId } },
+          { assignedToRole: { in: allowedRoles }, assignedToUserId: null }
+        ]
+      }
+    } else if (opScope.isDirectTTCM && opScope.scopedUserIds) {
+      const allowedRoles = [
+        ...(opScope.scopedDepartmentCodes || []),
+        ...(opScope.scopedDepartments.map(d => d.name) || [])
+      ]
+      whereClause = {
+        OR: [
+          { assignedToUserId: { in: opScope.scopedUserIds } },
+          { assignedById: userId },
+          { collaborators: { contains: userId } },
+          { assignedToRole: { in: allowedRoles }, assignedToUserId: null }
+        ]
+      }
+    } else {
+      const userTeacher = await prisma.teacher.findUnique({
+        where: { userId },
+        select: {
+          departmentRel: { select: { name: true, code: true } },
+          mainSubjectRel: { select: { subjectName: true, subjectCode: true } }
+        }
+      });
+      const deptName = userTeacher?.departmentRel?.name || "";
+      const deptCode = userTeacher?.departmentRel?.code || "";
+      const subjName = userTeacher?.mainSubjectRel?.subjectName || "";
+      const subjCode = userTeacher?.mainSubjectRel?.subjectCode || "";
+
+      whereClause = {
+        OR: [
+          { assignedToUserId: userId },
+          { collaborators: { contains: userId } },
+          { assignedToRole: role, assignedToUserId: null },
+          ...(deptName ? [{ assignedToRole: deptName, assignedToUserId: null }] : []),
+          ...(deptCode ? [{ assignedToRole: deptCode, assignedToUserId: null }] : []),
+          ...(subjName ? [{ assignedToRole: subjName, assignedToUserId: null }] : []),
+          ...(subjCode ? [{ assignedToRole: subjCode, assignedToUserId: null }] : [])
+        ]
+      }
     }
   }
 
-  const [tasks, years, departments, initialDbCategories] = await Promise.all([
+  // Scoped departments (roles) list
+  let departmentsList: any[] = []
+  if (opScope.isSuperAdmin || opScope.isHeadOfAcademic) {
+    departmentsList = await prisma.department.findMany({
+      where: { status: "ACTIVE" },
+      select: { code: true, name: true, divisionCode: true },
+      orderBy: { name: "asc" }
+    }).then(depts => depts.length > 0 ? depts.map(d => ({ code: d.name, name: d.name, divisionCode: d.divisionCode })) : [{ code: "KT&ĐBCL", name: "KT&ĐBCL" }])
+  } else {
+    departmentsList = opScope.scopedDepartments.map(d => ({
+      code: d.name,
+      name: d.name,
+      divisionCode: d.divisionCode
+    }))
+    if (departmentsList.length === 0) {
+      departmentsList = [{ code: "KT&ĐBCL", name: "KT&ĐBCL" }]
+    }
+  }
+
+  const [tasks, years, initialDbCategories] = await Promise.all([
     prisma.workTask.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
@@ -59,9 +110,6 @@ export default async function TasksPage() {
       orderBy: { startDate: "desc" },
       select: { id: true, name: true, isOff: true }
     }),
-    prisma.department.findMany({
-      select: { code: true, name: true }
-    }).then(depts => depts.length > 0 ? depts.map(d => ({ code: d.name, name: d.name })) : [{ code: "KT&ĐBCL", name: "KT&ĐBCL" }]),
     prisma.taskCategory.findMany({
       orderBy: { name: "asc" }
     })
@@ -93,10 +141,11 @@ export default async function TasksPage() {
       <TasksClient
         initialTasks={JSON.parse(JSON.stringify(tasks))}
         years={years}
-        roles={departments}
+        roles={departmentsList}
         dbCategories={JSON.parse(JSON.stringify(dbCategories))}
         currentRole={role}
         currentUserId={userId}
+        operationalScope={JSON.parse(JSON.stringify(opScope))}
       />
     </Suspense>
   )
