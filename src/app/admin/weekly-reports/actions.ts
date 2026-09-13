@@ -1094,3 +1094,52 @@ export async function getAllTeachersForAssignment() {
     return { success: false, error: e.message, teachers: [] };
   }
 }
+
+/**
+ * Đặt Tổ Chuyên Môn này làm Tổ Mặc Định (Primary Department) cho Giáo viên
+ */
+export async function setTeacherPrimaryDepartment(departmentId: string, teacherId: string) {
+  try {
+    const opScope = await getOperationalScope();
+    if (!opScope.isManager) {
+      return { success: false, error: "Bạn không có quyền quản lý cấu hình Tổ chuyên môn" };
+    }
+
+    const pAny = prisma as any;
+    if (pAny.teacherDepartmentAssignment) {
+      // Gỡ cờ isPrimary của các tổ khác của GV này
+      await pAny.teacherDepartmentAssignment.updateMany({
+        where: { teacherId },
+        data: { isPrimary: false }
+      });
+
+      // Bật isPrimary = true cho tổ này
+      await pAny.teacherDepartmentAssignment.upsert({
+        where: {
+          teacherId_departmentId: { teacherId, departmentId }
+        },
+        create: {
+          teacherId,
+          departmentId,
+          position: "GV",
+          isPrimary: true
+        },
+        update: {
+          isPrimary: true
+        }
+      });
+    }
+
+    // Cập nhật trường departmentId chính trong bảng Teacher
+    await prisma.teacher.update({
+      where: { id: teacherId },
+      data: { departmentId }
+    });
+
+    revalidatePath("/admin/weekly-reports");
+    revalidatePath("/admin/departments");
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}

@@ -2,7 +2,7 @@
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useMemo } from "react"
 import { 
-  FileText, Plus, Trash2, Save, Send, Calendar, MessageSquare, 
+  Star, Target, BookmarkCheck, CheckCheck, FileText, Plus, Trash2, Save, Send, Calendar, MessageSquare, 
   CheckCircle2, Clock, AlertTriangle, MinusCircle, User, BarChart3, 
   Users, TrendingUp, ClipboardList, Table2, Bell, Download, Copy, History, Edit3, Eye, Search, Filter, X,
   UserCheck, AlertCircle, Sparkles, ChevronRight, Layers, ArrowRight, Check, Settings, UserPlus, Shield
@@ -12,8 +12,7 @@ import {
   addManagerItemNote, getConsolidatedReports, getDashboardStats, sendWeeklyReportEmailReminders,
   getUserReportHistory, deleteWeeklyReport, getPersonalProgressCards,
   getDepartmentTeachers, assignTeachersToDepartment, removeTeacherFromDepartment,
-  updateTeacherDepartmentPosition, getAllTeachersForAssignment
-} from "./actions"
+  updateTeacherDepartmentPosition, getAllTeachersForAssignment, setTeacherPrimaryDepartment } from "./actions"
 import * as XLSX from "xlsx"
 
 function getWeeksOfMonth(month: number, year: number) {
@@ -128,6 +127,120 @@ export function WeeklyReportClient({
   const [selectedTeacherIdsToAdd, setSelectedTeacherIdsToAdd] = useState<string[]>([])
   const [defaultAddPosition, setDefaultAddPosition] = useState("GV")
   const [submittingAssign, setSubmittingAssign] = useState(false)
+
+  // ================= DEFAULT DIVISION & DEPARTMENT PREFERENCE =================
+  const [defaultDivCode, setDefaultDivCode] = useState<string>("")
+  const [defaultDeptId, setDefaultDeptId] = useState<string>("")
+
+  // Load saved default preferences from localStorage on mount
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const savedDiv = localStorage.getItem("skyline_default_division_code")
+        const savedDept = localStorage.getItem("skyline_default_dept_id")
+        if (savedDiv) setDefaultDivCode(savedDiv)
+        if (savedDept) setDefaultDeptId(savedDept)
+
+        // If user already saved a default, automatically apply it to initial filters
+        if (savedDiv && filterDivisionCode === "ALL" && !isDirectTBP) {
+          setFilterDivisionCode(savedDiv)
+          setConfigDivisionCode(savedDiv)
+        }
+        if (savedDept && filterDeptId === "ALL") {
+          setFilterDeptId(savedDept)
+          setConfigDeptId(savedDept)
+        }
+      }
+    } catch (e) {
+      console.warn("Could not read localStorage defaults", e)
+    }
+  }, [])
+
+  // Handler: Set current selected Division & Department as user default
+  const handleSetAsDefault = (divCode: string, deptId: string) => {
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("skyline_default_division_code", divCode)
+        localStorage.setItem("skyline_default_dept_id", deptId)
+        setDefaultDivCode(divCode)
+        setDefaultDeptId(deptId)
+      }
+      const divObj = divisions?.find((d: any) => d.code === divCode)
+      const deptObj = roles?.find((r: any) => r.id === deptId || r.code === deptId)
+      const divName = divObj?.name || divCode
+      const deptName = deptObj?.name || deptId
+      setToastMsg({
+        msg: `⭐ Đã đặt "${divName} - ${deptName}" làm Bộ phận & Tổ CM mặc định của bạn!`,
+        type: "success"
+      })
+      setTimeout(() => setToastMsg(null), 4000)
+    } catch (e: any) {
+      alert("Không thể lưu cài đặt mặc định: " + e.message)
+    }
+  }
+
+  // Handler: 1-Click apply default Division & Department
+  const handleApplyDefault = () => {
+    try {
+      let targetDiv = defaultDivCode || (typeof window !== "undefined" ? localStorage.getItem("skyline_default_division_code") : null)
+      let targetDept = defaultDeptId || (typeof window !== "undefined" ? localStorage.getItem("skyline_default_dept_id") : null)
+
+      // If no custom default set yet, find user's own department & division
+      if (!targetDiv || !targetDept) {
+        const curStaff = staffUsers?.find((u: any) => u.id === currentUserId)
+        const userDept = curStaff?.teacher?.departmentRel
+        if (userDept) {
+          targetDiv = userDept.divisionCode || targetDiv
+          targetDept = userDept.id || userDept.code || targetDept
+        } else if (isDirectTBP && operationalScope?.managedDivisions?.length > 0) {
+          targetDiv = operationalScope.managedDivisions[0]
+        }
+      }
+
+      if (!targetDiv && divisions && divisions.length > 0) targetDiv = divisions[0].code
+      if (!targetDept && roles && roles.length > 0) targetDept = roles[0].id || roles[0].code
+
+      if (targetDiv) {
+        setFilterDivisionCode(targetDiv)
+        setConfigDivisionCode(targetDiv)
+      }
+      if (targetDept) {
+        setFilterDeptId(targetDept)
+        setConfigDeptId(targetDept)
+      }
+      setFilterTeacherUserId("ALL")
+
+      const divObj = divisions?.find((d: any) => d.code === targetDiv)
+      const deptObj = roles?.find((r: any) => r.id === targetDept || r.code === targetDept)
+      const divName = divObj?.name || targetDiv || "Bộ phận"
+      const deptName = deptObj?.name || targetDept || "Tổ CM"
+
+      setToastMsg({
+        msg: `🎯 Đã chọn mặc định: ${divName} - ${deptName}`,
+        type: "success"
+      })
+      setTimeout(() => setToastMsg(null), 3000)
+    } catch (e: any) {
+      console.error(e)
+    }
+  }
+
+  // Handler: Set teacher primary default department
+  const handleSetPrimaryDept = async (teacherId: string, teacherName: string) => {
+    if (!configDeptId) return
+    const res = await setTeacherPrimaryDepartment(configDeptId, teacherId)
+    if (res.success) {
+      setToastMsg({
+        msg: `⭐ Đã đặt tổ này làm Tổ CM mặc định cho GV ${teacherName}!`,
+        type: "success"
+      })
+      setTimeout(() => setToastMsg(null), 3500)
+      loadConfigDepartmentTeachers()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
 
   // History State
   const [historyReports, setHistoryReports] = useState<any[]>([])
@@ -637,9 +750,32 @@ export function WeeklyReportClient({
                   </select>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Đã chọn: <strong>{selectedTeacherIdsToAdd.length}</strong> giáo viên
-              </p>
+              <div className="flex items-center justify-between text-[11px] pt-1">
+                <p className="text-slate-500">
+                  Đã chọn: <strong className="text-teal-700">{selectedTeacherIdsToAdd.length}</strong> giáo viên
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allIds = filteredAvailableTeachers.map(t => t.id)
+                      setSelectedTeacherIdsToAdd(allIds)
+                    }}
+                    className="px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 transition-all"
+                  >
+                    ☑️ Chọn tất cả ({filteredAvailableTeachers.length})
+                  </button>
+                  {selectedTeacherIdsToAdd.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTeacherIdsToAdd([])}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all"
+                    >
+                      Bỏ chọn
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="p-4 overflow-y-auto flex-1 max-h-96">
@@ -954,6 +1090,32 @@ export function WeeklyReportClient({
 
           {/* CASCADING FILTER: 1. Bộ Phận -> 2. Tổ CM -> 3. Chỉ thấy GV thuộc TCM đó */}
           {isManager && (
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 pb-1">
+              <span className="text-[11px] font-black uppercase tracking-wide text-slate-400 flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-[#48BFE3]" /> Bộ lọc 3 cấp bám sát tổ chuyên môn
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleApplyDefault}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 shadow-2xs transition-all active:scale-95"
+                  title="Nhấp 1-click để đưa bộ lọc về đúng Bộ phận & Tổ CM mặc định"
+                >
+                  <Target className="w-3.5 h-3.5 text-[#48BFE3]" /> Chọn mặc định
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSetAsDefault(filterDivisionCode, filterDeptId)}
+                  disabled={filterDivisionCode === "ALL" || filterDeptId === "ALL"}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 shadow-2xs transition-all disabled:opacity-40 active:scale-95"
+                  title="Lưu bộ lọc hiện tại làm mặc định của bạn"
+                >
+                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Đặt làm mặc định
+                </button>
+              </div>
+            </div>
+          )}
+          {isManager && (
             <div className="pt-3 border-t border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
@@ -1046,6 +1208,26 @@ export function WeeklyReportClient({
                       Gán Giáo viên vào đúng Tổ CM để các chức năng Báo cáo, Điều hành chỉ hiển thị Giáo viên thuộc Tổ đó
                     </p>
                   </div>
+
+                  {/* Nút Chọn Mặc Định & Đặt Làm Mặc Định */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleApplyDefault}
+                      className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 px-3.5 py-2 rounded-xl text-xs font-black shadow-xs transition-all active:scale-95"
+                      title="Chọn nhanh Bộ phận & Tổ CM mặc định của bạn"
+                    >
+                      <Target className="w-4 h-4 text-[#48BFE3]" /> Chọn mặc định
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSetAsDefault(configDivisionCode, configDeptId)}
+                      className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2 rounded-xl text-xs font-extrabold shadow-xs transition-all active:scale-95"
+                      title="Lưu Bộ phận & Tổ CM đang chọn làm mặc định cho các lần sau"
+                    >
+                      <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> Đặt làm mặc định
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -1079,6 +1261,34 @@ export function WeeklyReportClient({
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Default badge indicator */}
+                <div className="pt-2 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold">Mặc định đã lưu:</span>
+                    {defaultDivCode && defaultDeptId ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-100/80 text-teal-800 font-bold border border-teal-200">
+                        <BookmarkCheck className="w-3 h-3 text-[#48BFE3]" />
+                        {divisions?.find((d: any) => d.code === defaultDivCode)?.name || defaultDivCode} • {roles?.find((r: any) => r.id === defaultDeptId || r.code === defaultDeptId)?.name || defaultDeptId}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 italic">Chưa lưu (Bấm "Đặt làm mặc định" để lưu)</span>
+                    )}
+                  </div>
+                  {configDivisionCode === defaultDivCode && configDeptId === defaultDeptId ? (
+                    <span className="text-emerald-600 font-black flex items-center gap-1 text-[11px]">
+                      <Check className="w-3 h-3" /> Đang xem đúng tổ mặc định
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleApplyDefault}
+                      className="text-[#48BFE3] hover:underline font-bold text-[11px]"
+                    >
+                      Bấm để chọn mặc định
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1121,7 +1331,8 @@ export function WeeklyReportClient({
                           <th className="p-3 min-w-[150px]">Email</th>
                           <th className="p-3 min-w-[120px]">Cơ sở</th>
                           <th className="p-3 w-44">Chức vụ trong Tổ</th>
-                          <th className="p-3 text-center w-28">Thao tác</th>
+                          <th className="p-3 text-center w-36">Tổ Mặc Định</th>
+                          <th className="p-3 text-center w-24">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y font-medium">
@@ -1149,6 +1360,22 @@ export function WeeklyReportClient({
                                 <option value="TTCM">TTCM (Tổ trưởng)</option>
                                 <option value="TPTCM">TPTCM (Tổ phó)</option>
                               </select>
+                            </td>
+                            <td className="p-3 text-center">
+                              {t.isPrimary ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs">
+                                  <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-600" /> Mặc định
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetPrimaryDept(t.id, t.teacherName)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-slate-500 hover:text-amber-800 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 transition-all active:scale-95"
+                                  title="Chọn tổ này làm Tổ Chuyên Môn chính (mặc định) cho giáo viên"
+                                >
+                                  <Star className="w-3.5 h-3.5 text-slate-400 hover:text-amber-500" /> Chọn mặc định
+                                </button>
+                              )}
                             </td>
                             <td className="p-3 text-center">
                               <button

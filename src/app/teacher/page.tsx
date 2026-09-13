@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import React, { useEffect, useState, useMemo, useCallback } from "react"
 import { useSession } from "next-auth/react"
@@ -140,7 +140,7 @@ function SchoolCampusArtwork() {
 }
 
 
-﻿export default function TeacherDashboard() {
+export default function TeacherDashboard() {
   const { data: session } = useSession()
   const [metrics, setMetrics] = useState<MetricData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -342,7 +342,7 @@ function SchoolCampusArtwork() {
   }, [actionItems, activeTab, searchQuery])
 
 
-﻿  return (
+  return (
     <div className="space-y-5 md:space-y-6 max-w-7xl mx-auto">
       
       {/* 1. HERO WELCOME CARD - CHUẨN NHẬN DIỆN THƯƠNG HIỆU SKY-LINE */}
