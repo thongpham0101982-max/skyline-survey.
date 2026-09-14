@@ -195,10 +195,34 @@ export async function GET(request: Request) {
       subMap.get(entry.subjectId)!.set(entry.evaluationPeriod, entry)
     })
 
-    // 5. Distinct subjects present in filtered data
+    // 5. Distinct subjects strictly belonging to the Survey Periods (currentPeriod & baselinePeriod)
+    // 5.1 Query SubjectGradeConfig for target periods
+    const surveyConfigs = await prisma.subjectGradeConfig.findMany({
+      where: {
+        academicYearId,
+        evaluationPeriod: { in: [currentPeriod, baselinePeriod] }
+      },
+      include: { subject: true }
+    })
+
     const subjectMap = new Map<string, { id: string; name: string; code: string }>()
+
+    // Add subjects configured for currentPeriod or baselinePeriod
+    surveyConfigs.forEach(cfg => {
+      if (cfg.subject) {
+        if (gradeFilter === "ALL" || cfg.grade === gradeFilter || cfg.grade === "ALL") {
+          subjectMap.set(cfg.subject.id, {
+            id: cfg.subject.id,
+            name: cfg.subject.subjectName,
+            code: cfg.subject.subjectCode
+          })
+        }
+      }
+    })
+
+    // Also include subjects that have actual score entries in currentPeriod or baselinePeriod
     allEntries.forEach(e => {
-      if (e.subject) {
+      if (e.subject && (e.evaluationPeriod === currentPeriod || e.evaluationPeriod === baselinePeriod)) {
         subjectMap.set(e.subject.id, {
           id: e.subject.id,
           name: e.subject.subjectName,
@@ -207,7 +231,7 @@ export async function GET(request: Request) {
       }
     })
 
-    // If a subjectId was selected but not yet having entries, let's also query subject metadata
+    // If a specific subjectId was selected by user, include it
     if (subjectId && subjectId !== "ALL" && !subjectMap.has(subjectId)) {
       const sb = await prisma.subject.findUnique({ where: { id: subjectId } })
       if (sb) {

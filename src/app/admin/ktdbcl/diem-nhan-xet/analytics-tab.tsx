@@ -44,6 +44,7 @@ interface Props {
   selectedYearId: string
   classes: any[]
   subjects: any[]
+  savedConfigs?: any[]
 }
 
 const EVAL_PERIODS = [
@@ -60,7 +61,7 @@ const GRADES = [
   "Khối 10", "Khối 11", "Khối 12"
 ]
 
-export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subjects }: Props) {
+export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subjects, savedConfigs = [] }: Props) {
   // Filters
   const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
@@ -116,6 +117,49 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
     })
     return Array.from(set).sort()
   }, [classes])
+
+  // Filter subjects strictly according to the Survey Period (currentPeriod & baselinePeriod)
+  const surveyPeriodSubjects = useMemo(() => {
+    const subMap = new Map<string, { id: string; subjectName: string; subjectCode: string }>()
+    
+    // 1. From API data.subjects (already filtered by backend to target survey periods)
+    if (data.subjects && data.subjects.length > 0) {
+      data.subjects.forEach((s: any) => {
+        subMap.set(s.id, {
+          id: s.id,
+          subjectName: s.name || s.subjectName,
+          subjectCode: s.code || s.subjectCode
+        })
+      })
+    }
+
+    // 2. From savedConfigs matching currentPeriod or baselinePeriod and grade
+    if (savedConfigs && savedConfigs.length > 0) {
+      savedConfigs.forEach((cfg: any) => {
+        const pMatch = cfg.evaluationPeriod === currentPeriod || cfg.evaluationPeriod === baselinePeriod
+        const gMatch = selectedGradeFilter === "ALL" || cfg.grade === selectedGradeFilter || cfg.grade === "ALL"
+        if (pMatch && gMatch && cfg.subject) {
+          subMap.set(cfg.subject.id, {
+            id: cfg.subject.id,
+            subjectName: cfg.subject.subjectName,
+            subjectCode: cfg.subject.subjectCode
+          })
+        }
+      })
+    }
+
+    // Fallback: If no period-specific configs or entries exist yet, return empty or fallback
+    return Array.from(subMap.values())
+  }, [data.subjects, savedConfigs, currentPeriod, baselinePeriod, selectedGradeFilter])
+
+  // Reset selectedSubjectId if not in surveyPeriodSubjects
+  useEffect(() => {
+    if (selectedSubjectId !== "ALL" && surveyPeriodSubjects.length > 0) {
+      if (!surveyPeriodSubjects.some(s => s.id === selectedSubjectId)) {
+        setSelectedSubjectId("ALL")
+      }
+    }
+  }, [surveyPeriodSubjects, selectedSubjectId])
 
   // Filtered classes based on Level, Grade, System
   const filteredClasses = useMemo(() => {
@@ -391,16 +435,27 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
             </select>
           </div>
 
-          {/* Môn học */}
+          {/* Môn học (Chỉ lấy đúng các môn theo Kỳ khảo sát) */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">Môn học</label>
+            <label className="block text-[11px] font-semibold text-slate-500 mb-1 flex items-center justify-between">
+              <span>Môn theo Kỳ khảo sát</span>
+              {surveyPeriodSubjects.length > 0 && (
+                <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1 rounded">
+                  {surveyPeriodSubjects.length} môn
+                </span>
+              )}
+            </label>
             <select
               value={selectedSubjectId}
               onChange={e => setSelectedSubjectId(e.target.value)}
-              className="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-[#005B58] focus:border-transparent outline-none bg-slate-50"
+              className="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-[#005B58] focus:border-transparent outline-none bg-teal-50/40 text-slate-800"
             >
-              <option value="ALL">-- Tất cả Môn học --</option>
-              {subjects.map(s => (
+              <option value="ALL">
+                {surveyPeriodSubjects.length > 0
+                  ? `-- Tất cả môn khảo sát (${surveyPeriodSubjects.length} môn) --`
+                  : "-- Tất cả Môn học --"}
+              </option>
+              {(surveyPeriodSubjects.length > 0 ? surveyPeriodSubjects : subjects).map(s => (
                 <option key={s.id} value={s.id}>
                   {s.subjectName} ({s.subjectCode})
                 </option>

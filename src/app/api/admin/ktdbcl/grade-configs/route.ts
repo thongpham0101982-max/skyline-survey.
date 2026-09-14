@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       academicYearId,
       grade = "ALL",
       subjectId = null,
+      batchSubjectIds = null,
       evaluationPeriod = "ALL",
       columnCount = 1,
       columnNames = [],
@@ -57,6 +58,64 @@ export async function POST(request: Request) {
     const columnTypesStr = typeof columnTypes === "string" ? columnTypes : JSON.stringify(columnTypes)
     const columnMaxScoresStr = typeof columnMaxScores === "string" ? columnMaxScores : JSON.stringify(columnMaxScores)
     const weightsStr = weights ? (typeof weights === "string" ? weights : JSON.stringify(weights)) : null
+    // Batch assignment mode
+    if (batchSubjectIds && Array.isArray(batchSubjectIds) && batchSubjectIds.length > 0) {
+      const results = []
+      for (const subId of batchSubjectIds) {
+        const targetSubId = subId && subId !== "ALL" ? subId : null
+        const existing = await prisma.subjectGradeConfig.findFirst({
+          where: {
+            academicYearId,
+            grade,
+            subjectId: targetSubId,
+            evaluationPeriod
+          }
+        })
+
+        if (existing) {
+          const updated = await prisma.subjectGradeConfig.update({
+            where: { id: existing.id },
+            data: {
+              columnCount: Number(columnCount),
+              columnNames: columnNamesStr,
+              columnTypes: columnTypesStr,
+              columnMaxScores: columnMaxScoresStr,
+              hasCompositeColumn: Boolean(hasCompositeColumn),
+              compositeColumnName: compositeColumnName || "Điểm thành phần",
+              hasRemarkColumn: Boolean(hasRemarkColumn),
+              formula,
+              formulaCustom: formulaCustom || null,
+              weights: weightsStr,
+              roundingRule: roundingRule || "ROUND_1"
+            }
+          })
+          results.push(updated)
+        } else {
+          const created = await prisma.subjectGradeConfig.create({
+            data: {
+              academicYearId,
+              grade,
+              subjectId: targetSubId,
+              evaluationPeriod,
+              columnCount: Number(columnCount),
+              columnNames: columnNamesStr,
+              columnTypes: columnTypesStr,
+              columnMaxScores: columnMaxScoresStr,
+              hasCompositeColumn: Boolean(hasCompositeColumn),
+              compositeColumnName: compositeColumnName || "Điểm thành phần",
+              hasRemarkColumn: Boolean(hasRemarkColumn),
+              formula,
+              formulaCustom: formulaCustom || null,
+              weights: weightsStr,
+              roundingRule: roundingRule || "ROUND_1"
+            }
+          })
+          results.push(created)
+        }
+      }
+      return NextResponse.json({ success: true, count: results.length, configs: results })
+    }
+
     const targetSubjectId = subjectId && subjectId !== "ALL" ? subjectId : null
 
     const existing = await prisma.subjectGradeConfig.findFirst({

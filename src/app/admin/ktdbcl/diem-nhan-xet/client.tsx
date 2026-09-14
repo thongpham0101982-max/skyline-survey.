@@ -50,7 +50,13 @@ import {
   Check,
   Info,
   Code,
-  TrendingUp
+  TrendingUp,
+  Calendar,
+  Search,
+  Filter,
+  X,
+  CheckSquare,
+  Square
 } from "lucide-react"
 import { GradeAnalyticsTab } from "./analytics-tab"
 import {
@@ -118,6 +124,22 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   const [savedConfigs, setSavedConfigs] = useState<any[]>([])
   const [loadingConfigs, setLoadingConfigs] = useState(false)
 
+  // --- BATCH ASSIGN MODAL STATES ---
+  const [isBatchAssignOpen, setIsBatchAssignOpen] = useState(false)
+  const [batchPeriod, setBatchPeriod] = useState("KSĐN")
+  const [batchGrade, setBatchGrade] = useState("Khối 12")
+  const [batchSelectedSubjectIds, setBatchSelectedSubjectIds] = useState<string[]>([])
+  const [batchSaving, setBatchSaving] = useState(false)
+  const [batchTemplateType, setBatchTemplateType] = useState<"CURRENT" | "2_COL_TEST" | "3_COL_STANDARD">("CURRENT")
+
+  // --- TAB 1: SAVED CONFIGS FILTER STATES ---
+  const [listFilterPeriod, setListFilterPeriod] = useState("ALL")
+  const [listFilterGrade, setListFilterGrade] = useState("ALL")
+  const [listSearchTerm, setListSearchTerm] = useState("")
+
+  // --- TAB 2: OVERRIDE ALL SUBJECTS TOGGLE ---
+  const [showAllTab2Subjects, setShowAllTab2Subjects] = useState(false)
+
   // Sync columnNames, columnTypes, columnMaxScores & weights length when columnCount changes
   useEffect(() => {
     setColumnNames(prev => {
@@ -165,6 +187,221 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       return next
     })
   }, [columnCount])
+
+
+  // Subjects configured in selected period and grade (for Tab 1 form grouping)
+  const configuredSubjectIdsInSelectedPeriodAndGrade = useMemo(() => {
+    const set = new Set<string>()
+    savedConfigs.forEach(c => {
+      const pMatch = configPeriod === "ALL" || c.evaluationPeriod === configPeriod
+      const gMatch = configGrade === "ALL" || c.grade === configGrade
+      if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
+        set.add(c.subjectId)
+      }
+    })
+    return set
+  }, [savedConfigs, configPeriod, configGrade])
+
+  // Open batch assign modal
+  const openBatchAssignModal = (defaultPeriod?: string, defaultGrade?: string) => {
+    const pToUse = defaultPeriod || (configPeriod !== "ALL" ? configPeriod : "KSĐN")
+    const gToUse = defaultGrade || (configGrade !== "ALL" ? configGrade : "Khối 12")
+    setBatchPeriod(pToUse)
+    setBatchGrade(gToUse)
+    const existing = savedConfigs
+      .filter(c => c.evaluationPeriod === pToUse && (c.grade === gToUse || c.grade === "ALL") && c.subjectId && c.subjectId !== "ALL")
+      .map(c => c.subjectId)
+    setBatchSelectedSubjectIds(existing)
+    setIsBatchAssignOpen(true)
+  }
+
+  // When changing period or grade inside batch modal
+  const handleBatchPeriodOrGradeChange = (newPeriod: string, newGrade: string) => {
+    setBatchPeriod(newPeriod)
+    setBatchGrade(newGrade)
+    const existing = savedConfigs
+      .filter(c => c.evaluationPeriod === newPeriod && (c.grade === newGrade || c.grade === "ALL") && c.subjectId && c.subjectId !== "ALL")
+      .map(c => c.subjectId)
+    setBatchSelectedSubjectIds(existing)
+  }
+
+  // Quick subject select helper
+  const handleQuickSelectSubjects = (type: "ALL" | "NONE" | "CORE" | "KHTN" | "KHXH") => {
+    if (type === "ALL") {
+      setBatchSelectedSubjectIds(subjects.map(s => s.id))
+    } else if (type === "NONE") {
+      setBatchSelectedSubjectIds([])
+    } else if (type === "CORE") {
+      const coreIds = subjects
+        .filter(s => {
+          const n = s.subjectName.toLowerCase()
+          return n.includes("toán") || n.includes("văn") || n.includes("tiếng việt") || n.includes("tiếng anh") || n.includes("english")
+        })
+        .map(s => s.id)
+      setBatchSelectedSubjectIds(coreIds)
+    } else if (type === "KHTN") {
+      const khtnIds = subjects
+        .filter(s => {
+          const n = s.subjectName.toLowerCase()
+          return n.includes("toán") || n.includes("vật lí") || n.includes("vật lý") || n.includes("hóa") || n.includes("sinh") || n.includes("tin học") || n.includes("khtn") || n.includes("khoa học tự nhiên")
+        })
+        .map(s => s.id)
+      setBatchSelectedSubjectIds(khtnIds)
+    } else if (type === "KHXH") {
+      const khxhIds = subjects
+        .filter(s => {
+          const n = s.subjectName.toLowerCase()
+          return n.includes("văn") || n.includes("lịch sử") || n.includes("sử") || n.includes("địa") || n.includes("công dân") || n.includes("kinh tế") || n.includes("pháp luật") || n.includes("khxh") || n.includes("khoa học xã hội")
+        })
+        .map(s => s.id)
+      setBatchSelectedSubjectIds(khxhIds)
+    }
+  }
+
+  // Toggle single subject
+  const toggleBatchSubject = (id: string) => {
+    setBatchSelectedSubjectIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+
+  // Save batch assign
+  const handleSaveBatchAssign = async () => {
+    if (batchSelectedSubjectIds.length === 0) {
+      alert("Vui lòng chọn ít nhất 1 môn học để gán cho kỳ khảo sát!")
+      return
+    }
+
+    try {
+      setBatchSaving(true)
+      let payloadColumns: any = {
+        columnCount,
+        columnNames,
+        columnTypes,
+        columnMaxScores,
+        hasCompositeColumn: hasComposite,
+        compositeColumnName,
+        hasRemarkColumn: hasRemark,
+        formula: formulaType,
+        formulaCustom,
+        weights,
+        roundingRule
+      }
+
+      if (batchTemplateType === "2_COL_TEST") {
+        payloadColumns = {
+          columnCount: 2,
+          columnNames: ["Trắc nghiệm lựa chọn (ABCD)", "Trắc nghiệm đúng sai"],
+          columnTypes: ["SCORE_MAX_6", "SCORE_MAX_4"],
+          columnMaxScores: [6, 4],
+          hasCompositeColumn: true,
+          compositeColumnName: "Tổng điểm",
+          hasRemarkColumn: false,
+          formula: "SUM",
+          formulaCustom: "",
+          weights: [1, 1],
+          roundingRule: "ROUND_1"
+        }
+      } else if (batchTemplateType === "3_COL_STANDARD") {
+        payloadColumns = {
+          columnCount: 3,
+          columnNames: ["Điểm Miệng", "Điểm 15 Phút", "Điểm 1 Tiết"],
+          columnTypes: ["SCORE_10", "SCORE_10", "SCORE_10"],
+          columnMaxScores: [10, 10, 10],
+          hasCompositeColumn: true,
+          compositeColumnName: "Điểm thành phần",
+          hasRemarkColumn: true,
+          formula: "AVERAGE",
+          formulaCustom: "",
+          weights: [1, 1, 1],
+          roundingRule: "ROUND_1"
+        }
+      }
+
+      const res = await fetch("/api/admin/ktdbcl/grade-configs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          academicYearId: selectedYearId,
+          grade: batchGrade,
+          evaluationPeriod: batchPeriod,
+          batchSubjectIds: batchSelectedSubjectIds,
+          ...payloadColumns
+        })
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        alert(`Đã gán thành công ${batchSelectedSubjectIds.length} môn cho kỳ ${batchPeriod} - ${batchGrade}!`)
+        setIsBatchAssignOpen(false)
+        fetchConfigs()
+      } else {
+        alert("Lỗi: " + (data.error || "Không thể lưu cấu hình hàng loạt"))
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message)
+    } finally {
+      setBatchSaving(false)
+    }
+  }
+
+  // Count configs per period for quick filter pills
+  const periodCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: savedConfigs.length }
+    EVAL_PERIODS.forEach(p => counts[p.code] = 0)
+    savedConfigs.forEach(c => {
+      const p = c.evaluationPeriod || "ALL"
+      counts[p] = (counts[p] || 0) + 1
+    })
+    return counts
+  }, [savedConfigs])
+
+  // Filtered saved configs for Tab 1 list
+  const filteredSavedConfigs = useMemo(() => {
+    return savedConfigs.filter(cfg => {
+      if (listFilterPeriod !== "ALL" && cfg.evaluationPeriod !== listFilterPeriod) return false
+      if (listFilterGrade !== "ALL" && cfg.grade !== listFilterGrade) return false
+      if (listSearchTerm.trim()) {
+        const kw = listSearchTerm.toLowerCase().trim()
+        const sName = (cfg.subject?.subjectName || "Mẫu chung tất cả môn").toLowerCase()
+        const sCode = (cfg.subject?.subjectCode || "").toLowerCase()
+        if (!sName.includes(kw) && !sCode.includes(kw)) return false
+      }
+      return true
+    })
+  }, [savedConfigs, listFilterPeriod, listFilterGrade, listSearchTerm])
+
+  // Available subjects for Tab 2 (Quản lý & Nhập Sổ điểm)
+  // CHỈ LẤY ĐÚNG CÁC MÔN THEO KỲ KHẢO SÁT & KHỐI
+  const availableSubjectsForTab2 = useMemo(() => {
+    const currentClass = classes.find(c => c.id === selectedClassId)
+    const targetGrade = currentClass?.grade || selectedGradeFilter
+
+    const assignedSubjectIds = new Set<string>()
+    savedConfigs.forEach(c => {
+      const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
+      const gMatch = targetGrade === "ALL" || c.grade === targetGrade || c.grade === "ALL"
+      if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
+        assignedSubjectIds.add(c.subjectId)
+      }
+    })
+
+    if (assignedSubjectIds.size > 0) {
+      return subjects.filter(s => assignedSubjectIds.has(s.id))
+    }
+    return []
+  }, [savedConfigs, selectedPeriod, selectedClassId, selectedGradeFilter, classes, subjects])
+
+  // Auto sync selectedSubjectId in Tab 2
+  useEffect(() => {
+    if (activeTab === "grades" && !showAllTab2Subjects) {
+      if (availableSubjectsForTab2.length > 0) {
+        if (!availableSubjectsForTab2.some(s => s.id === selectedSubjectId)) {
+          setSelectedSubjectId(availableSubjectsForTab2[0].id)
+        }
+      }
+    }
+  }, [activeTab, availableSubjectsForTab2, selectedSubjectId, showAllTab2Subjects])
 
   // Fetch saved configs
   const fetchConfigs = async () => {
@@ -769,20 +1006,52 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
       {/* TAB 1: CONFIG FORM */}
       {activeTab === "config" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
           {/* Form setup */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-[#48BFE3]" />
-                Thiết lập Định dạng File nhập điểm
-              </h2>
-              <span className="text-xs text-slate-400 font-normal">Tối đa khoảng 8 cột điểm thành phần</span>
+          <div className="xl:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-[#48BFE3]" />
+                  Thiết lập Định dạng File nhập điểm
+                </h2>
+                <span className="text-xs text-slate-400 font-normal">Tối đa khoảng 8 cột điểm thành phần & công thức tổng hợp</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => openBatchAssignModal()}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-600 to-[#48BFE3] hover:from-teal-700 hover:to-teal-500 text-white rounded-xl text-xs font-extrabold shadow-md shadow-teal-500/20 transition-all hover:scale-105"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                ⚡ Gán môn theo Kỳ khảo sát
+              </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* 1. Kỳ khảo sát / đánh giá */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Áp dụng Khối:</label>
+                <label className="block text-xs font-bold text-teal-800 mb-1.5 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-[#00A6A9]" />
+                  1. Kỳ đánh giá / Khảo sát:
+                </label>
+                <select
+                  value={configPeriod}
+                  onChange={(e) => setConfigPeriod(e.target.value)}
+                  className="w-full border border-teal-200 bg-teal-50/50 text-teal-900 rounded-xl px-3 py-2 text-xs font-bold focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                >
+                  <option value="ALL">-- Tất cả Kỳ đánh giá --</option>
+                  {EVAL_PERIODS.map(p => (
+                    <option key={p.code} value={p.code}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 2. Áp dụng Khối */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5 text-sky-600" />
+                  2. Áp dụng Khối:
+                </label>
                 <select
                   value={configGrade}
                   onChange={(e) => setConfigGrade(e.target.value)}
@@ -795,34 +1064,47 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 </select>
               </div>
 
+              {/* 3. Áp dụng Môn học */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Áp dụng Môn học:</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1">
+                    <BookOpen className="w-3.5 h-3.5 text-purple-600" />
+                    3. Áp dụng Môn học:
+                  </span>
+                  {configuredSubjectIdsInSelectedPeriodAndGrade.size > 0 && (
+                    <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-1.5 rounded">
+                      {configuredSubjectIdsInSelectedPeriodAndGrade.size} đã gán
+                    </span>
+                  )}
+                </label>
                 <select
                   value={configSubjectId}
                   onChange={(e) => setConfigSubjectId(e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#48BFE3] outline-none"
                 >
                   <option value="ALL">-- Tất cả môn (Mẫu chung) --</option>
-                  {subjects.map(s => (
-                    <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">Kỳ đánh giá:</label>
-                <select
-                  value={configPeriod}
-                  onChange={(e) => setConfigPeriod(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#48BFE3] outline-none"
-                >
-                  <option value="ALL">-- Tất cả Kỳ đánh giá --</option>
-                  {EVAL_PERIODS.map(p => (
-                    <option key={p.code} value={p.code}>{p.name}</option>
-                  ))}
+                  {configuredSubjectIdsInSelectedPeriodAndGrade.size > 0 ? (
+                    <>
+                      <optgroup label={`⭐ Môn đã gán cho ${configPeriod !== "ALL" ? configPeriod : "kỳ này"} (${configuredSubjectIdsInSelectedPeriodAndGrade.size} môn)`}>
+                        {subjects.filter(s => configuredSubjectIdsInSelectedPeriodAndGrade.has(s.id)).map(s => (
+                          <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="➕ Môn chưa gán (chọn để thiết lập & gán mới)">
+                        {subjects.filter(s => !configuredSubjectIdsInSelectedPeriodAndGrade.has(s.id)).map(s => (
+                          <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
+                        ))}
+                      </optgroup>
+                    </>
+                  ) : (
+                    subjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
+                    ))
+                  )}
                 </select>
               </div>
             </div>
+
 
             {/* Column count selection */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-4">
@@ -1354,41 +1636,171 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
             </div>
           </div>
 
-          {/* Saved Configs List */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col">
-            <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#48BFE3]" />
-              Danh sách Cấu hình Mẫu đã lưu ({savedConfigs.length})
-            </h3>
+          {/* Saved Configs List - Bố trí hài hòa, khoa học, thẩm mỹ */}
+          <div className="xl:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col space-y-3.5">
+            {/* Header & Quick Action */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-[#48BFE3]" />
+                <h3 className="text-sm font-bold text-slate-800">
+                  Danh sách Cấu hình Mẫu đã lưu
+                </h3>
+                <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  {filteredSavedConfigs.length} / {savedConfigs.length}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => openBatchAssignModal(configPeriod !== "ALL" ? configPeriod : undefined, configGrade !== "ALL" ? configGrade : undefined)}
+                className="text-[11px] font-bold text-teal-700 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1"
+                title="Gán nhanh môn cho kỳ khảo sát"
+              >
+                <Plus className="w-3 h-3" />
+                Gán môn
+              </button>
+            </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3 max-h-[550px] pr-1">
+            {/* Quick Filter Toolbar */}
+            <div className="space-y-2 bg-slate-50/70 p-3 rounded-xl border border-slate-200/80">
+              {/* Period Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                <span className="text-[11px] font-bold text-slate-400 shrink-0 mr-1">Kỳ:</span>
+                <button
+                  type="button"
+                  onClick={() => setListFilterPeriod("ALL")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+                    listFilterPeriod === "ALL"
+                      ? "bg-teal-700 text-white shadow-sm"
+                      : "bg-white text-slate-600 hover:bg-slate-200/60 border border-slate-200"
+                  }`}
+                >
+                  Tất cả ({periodCounts.ALL || 0})
+                </button>
+                {EVAL_PERIODS.map(p => {
+                  const count = periodCounts[p.code] || 0
+                  const isSelected = listFilterPeriod === p.code
+                  return (
+                    <button
+                      key={p.code}
+                      type="button"
+                      onClick={() => setListFilterPeriod(p.code)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+                        isSelected
+                          ? "bg-teal-700 text-white shadow-sm"
+                          : "bg-white text-slate-600 hover:bg-slate-200/60 border border-slate-200"
+                      }`}
+                    >
+                      {p.code} ({count})
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Grade Filter & Search Input */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
+                <select
+                  value={listFilterGrade}
+                  onChange={(e) => setListFilterGrade(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-white focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                >
+                  <option value="ALL">-- Tất cả các Khối --</option>
+                  {GRADES.map(g => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                  <input
+                    type="text"
+                    value={listSearchTerm}
+                    onChange={(e) => setListSearchTerm(e.target.value)}
+                    placeholder="Tìm môn học..."
+                    className="w-full border border-slate-200 rounded-lg pl-8 pr-7 py-1.5 text-xs text-slate-700 bg-white focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                  />
+                  {listSearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setListSearchTerm("")}
+                      className="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Configs Scroll List */}
+            <div className="flex-1 overflow-y-auto space-y-2.5 max-h-[620px] pr-1">
               {loadingConfigs ? (
-                <div className="text-center py-8 text-slate-400 text-xs">Đang tải...</div>
-              ) : savedConfigs.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-xs">Chưa có cấu hình nào được lưu</div>
+                <div className="text-center py-12 text-slate-400 text-xs flex flex-col items-center gap-2">
+                  <RefreshCw className="w-5 h-5 animate-spin text-teal-600" />
+                  Đang tải danh sách cấu hình...
+                </div>
+              ) : filteredSavedConfigs.length === 0 ? (
+                <div className="text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 p-6 space-y-2">
+                  <BookOpen className="w-8 h-8 text-slate-300 mx-auto" />
+                  <div className="text-xs font-bold text-slate-600">Không tìm thấy cấu hình mẫu nào</div>
+                  <div className="text-[11px] text-slate-400">
+                    {listFilterPeriod !== "ALL" || listFilterGrade !== "ALL" || listSearchTerm
+                      ? "Không có mẫu nào khớp với bộ lọc đang chọn"
+                      : "Chưa có cấu hình mẫu nào được tạo"}
+                  </div>
+                  {(listFilterPeriod !== "ALL" || listFilterGrade !== "ALL" || listSearchTerm) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setListFilterPeriod("ALL")
+                        setListFilterGrade("ALL")
+                        setListSearchTerm("")
+                      }}
+                      className="text-xs font-bold text-teal-700 hover:underline pt-1 block mx-auto"
+                    >
+                      Xóa bộ lọc để xem tất cả
+                    </button>
+                  )}
+                </div>
               ) : (
-                savedConfigs.map((cfg) => {
+                filteredSavedConfigs.map((cfg) => {
                   let cols: string[] = []
                   try {
                     cols = typeof cfg.columnNames === "string" ? JSON.parse(cfg.columnNames) : cfg.columnNames || []
                   } catch (_) {}
 
+                  const periodBadgeColor = 
+                    cfg.evaluationPeriod === "KSĐN" ? "bg-teal-50 text-teal-800 border-teal-200" :
+                    cfg.evaluationPeriod === "GK1" ? "bg-sky-50 text-sky-800 border-sky-200" :
+                    cfg.evaluationPeriod === "CK1" ? "bg-indigo-50 text-indigo-800 border-indigo-200" :
+                    cfg.evaluationPeriod === "GK2" ? "bg-amber-50 text-amber-800 border-amber-200" :
+                    cfg.evaluationPeriod === "CK2" ? "bg-purple-50 text-purple-800 border-purple-200" :
+                    "bg-slate-100 text-slate-700 border-slate-200"
+
                   return (
-                    <div key={cfg.id} className="p-3.5 rounded-xl border border-slate-200 hover:border-teal-400/50 bg-slate-50/50 space-y-2 transition-all">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800">
-                          {cfg.grade === "ALL" ? "Tất cả các Khối" : cfg.grade}
-                        </span>
-                        <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
-                          {cfg.evaluationPeriod === "ALL" ? "Tất cả Kỳ" : cfg.evaluationPeriod}
-                        </span>
+                    <div
+                      key={cfg.id}
+                      className="p-3.5 rounded-xl border border-slate-200/90 hover:border-teal-400 hover:shadow-sm bg-white space-y-2.5 transition-all group"
+                    >
+                      {/* Top row: Subject name & Badges */}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <BookOpen className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                          <span className="text-xs font-extrabold text-slate-800 truncate" title={cfg.subject ? cfg.subject.subjectName : "Mẫu chung tất cả môn"}>
+                            {cfg.subject ? cfg.subject.subjectName : "Mẫu chung tất cả môn"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                            {cfg.grade === "ALL" ? "Tất cả Khối" : cfg.grade}
+                          </span>
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${periodBadgeColor}`}>
+                            {cfg.evaluationPeriod === "ALL" ? "Tất cả Kỳ" : cfg.evaluationPeriod}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="text-[11px] text-slate-600 font-medium">
-                        Môn: <strong className="text-slate-800">{cfg.subject ? cfg.subject.subjectName : "Mẫu chung tất cả môn"}</strong>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1 pt-1">
+                      {/* Column chips */}
+                      <div className="flex flex-wrap gap-1">
                         {cols.map((colName, i) => {
                           let parsedTypes = []
                           try { parsedTypes = typeof cfg.columnTypes === "string" ? JSON.parse(cfg.columnTypes) : cfg.columnTypes || [] } catch (_) {}
@@ -1396,10 +1808,10 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                           const colMax = getColumnMaxScore(t, cfg.columnMaxScores, i)
                           const isCustom = t === "SCORE_CUSTOM" || t.startsWith("SCORE_MAX_") || (colMax > 0 && colMax < 10)
                           return (
-                            <span key={i} className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700 font-semibold flex items-center gap-1">
+                            <span key={i} className="text-[10px] bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-slate-700 font-semibold flex items-center gap-1">
                               {colName}
                               {isCustom && (
-                                <span className="text-[9px] bg-amber-100 text-amber-800 font-extrabold px-1 rounded border border-amber-200">
+                                <span className="text-[9px] bg-amber-100 text-amber-800 font-black px-1 rounded">
                                   {colMax}đ
                                 </span>
                               )}
@@ -1408,30 +1820,35 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                         })}
                       </div>
 
+                      {/* Composite Column Pill */}
                       {cfg.hasCompositeColumn && (
                         <div className="text-[10px] text-indigo-700 bg-indigo-50/70 p-1.5 rounded-lg border border-indigo-100 flex items-center gap-1.5 font-medium">
-                          <Calculator className="w-3 h-3 shrink-0" />
-                          <span>
+                          <Calculator className="w-3 h-3 text-indigo-600 shrink-0" />
+                          <span className="truncate">
                             Cột: <strong>{cfg.compositeColumnName || "Điểm thành phần"}</strong> ({getFormulaDescription(cfg, cols)})
                           </span>
                         </div>
                       )}
 
+                      {/* Bottom row: Nhận xét & Actions */}
                       <div className="text-[10px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-100">
-                        <span>Nhận xét: {cfg.hasRemarkColumn ? "Có" : "Không"}</span>
+                        <span className="text-slate-500">
+                          Nhận xét: <strong className="text-slate-700">{cfg.hasRemarkColumn ? "Có" : "Không"}</strong>
+                        </span>
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             onClick={() => handleSelectConfig(cfg)}
-                            className="px-2 py-0.5 bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 rounded font-bold transition-all"
+                            className="px-2.5 py-1 bg-teal-50 text-teal-800 hover:bg-teal-100 border border-teal-200 rounded-lg font-bold transition-all flex items-center gap-1"
                             title="Nạp cấu hình lên Form"
                           >
+                            <Edit2 className="w-3 h-3" />
                             Xem / Sửa
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteConfig(cfg.id)}
-                            className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                             title="Xóa cấu hình"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1444,6 +1861,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
               )}
             </div>
           </div>
+
         </div>
       )}
 
@@ -1521,31 +1939,48 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 </select>
               </div>
 
+              {/* Kỳ đánh giá / Khảo sát (Ưu tiên chọn kỳ trước) */}
               <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1">Môn học:</label>
-                <select
-                  value={selectedSubjectId}
-                  onChange={(e) => setSelectedSubjectId(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none"
-                >
-                  {subjects.map(s => (
-                    <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1">Kỳ đánh giá:</label>
+                <label className="block text-[11px] font-bold text-teal-800 mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-teal-600" />
+                  Kỳ khảo sát / đánh giá:
+                </label>
                 <select
                   value={selectedPeriod}
                   onChange={(e) => setSelectedPeriod(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none bg-teal-50 text-teal-800 border-teal-200"
+                  className="border border-teal-300 rounded-xl px-3 py-1.5 text-xs font-bold text-teal-900 focus:ring-2 focus:ring-[#48BFE3] outline-none bg-teal-50"
                 >
                   {EVAL_PERIODS.map(p => (
                     <option key={p.code} value={p.code}>{p.name}</option>
                   ))}
                 </select>
               </div>
+
+              {/* Môn học theo kỳ khảo sát */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Môn theo Kỳ khảo sát:</span>
+                  {availableSubjectsForTab2.length > 0 && !showAllTab2Subjects && (
+                    <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 rounded border border-teal-200">
+                      {availableSubjectsForTab2.length} môn
+                    </span>
+                  )}
+                </label>
+                <select
+                  value={selectedSubjectId}
+                  onChange={(e) => setSelectedSubjectId(e.target.value)}
+                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none bg-white"
+                >
+                  {availableSubjectsForTab2.length === 0 && !showAllTab2Subjects ? (
+                    <option value="">-- Chưa có môn nào gán cho kỳ này --</option>
+                  ) : (
+                    (showAllTab2Subjects ? subjects : availableSubjectsForTab2).map(s => (
+                      <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
+                    ))
+                  )}
+                </select>
+              </div>
+
 
               <button
                 onClick={fetchGradeSheet}
@@ -1595,6 +2030,35 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
               </button>
             </div>
           </div>
+
+          {/* Warning banner when no subjects are configured for this period */}
+          {availableSubjectsForTab2.length === 0 && !showAllTab2Subjects && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-xs text-amber-800">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  Chưa ghi nhận môn học nào được gán cho kỳ <strong>{EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod}</strong> (Khối {selectedGradeFilter !== "ALL" ? selectedGradeFilter : "của lớp"}).
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openBatchAssignModal(selectedPeriod, selectedGradeFilter !== "ALL" ? selectedGradeFilter : undefined)}
+                  className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Gán môn cho kỳ này ngay
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAllTab2Subjects(true)}
+                  className="text-xs text-slate-600 hover:text-slate-900 underline font-medium px-2 py-1"
+                >
+                  Hiển thị tất cả môn
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Grade Sheet Table */}
           <div className="overflow-x-auto border border-slate-200 rounded-2xl">
@@ -1775,8 +2239,240 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           selectedYearId={selectedYearId}
           classes={classes}
           subjects={subjects}
+          savedConfigs={savedConfigs}
         />
       )}
-    </div>
+    
+      {/* MODAL: GÁN MÔN THEO KỲ KHẢO SÁT & THIẾT LẬP CẤU HÌNH HÀNG LOẠT */}
+      {isBatchAssignOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#48BFE3] flex items-center justify-center font-bold">
+                  <Sparkles className="w-4 h-4 text-teal-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-800">Gán Môn học theo Kỳ khảo sát</h3>
+                  <p className="text-xs text-slate-500">Thiết lập danh sách môn tham gia khảo sát và tạo cấu hình mẫu hàng loạt</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBatchAssignOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {/* Step 1 & 2: Select Period and Grade */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">1. Kỳ khảo sát / Đánh giá:</label>
+                  <select
+                    value={batchPeriod}
+                    onChange={(e) => handleBatchPeriodOrGradeChange(e.target.value, batchGrade)}
+                    className="w-full border border-teal-300 rounded-xl px-3 py-2 text-xs font-bold text-teal-900 bg-white focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                  >
+                    {EVAL_PERIODS.map(p => (
+                      <option key={p.code} value={p.code}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">2. Áp dụng Khối học:</label>
+                  <select
+                    value={batchGrade}
+                    onChange={(e) => handleBatchPeriodOrGradeChange(batchPeriod, e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                  >
+                    {GRADES.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Step 3: Choose Subjects */}
+              <div className="space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4 text-teal-600" />
+                    3. Chọn các Môn học tham gia khảo sát ({batchSelectedSubjectIds.length}/{subjects.length}):
+                  </span>
+                  <div className="flex items-center gap-1 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickSelectSubjects("ALL")}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold transition-all"
+                    >
+                      Tất cả
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickSelectSubjects("NONE")}
+                      className="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold transition-all"
+                    >
+                      Bỏ chọn
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickSelectSubjects("CORE")}
+                      className="px-2 py-0.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded font-semibold transition-all"
+                    >
+                      Toán - Văn - Anh
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickSelectSubjects("KHTN")}
+                      className="px-2 py-0.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded font-semibold transition-all"
+                    >
+                      Tổ hợp KHTN
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickSelectSubjects("KHXH")}
+                      className="px-2 py-0.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded font-semibold transition-all"
+                    >
+                      Tổ hợp KHXH
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-slate-50/70 rounded-xl border border-slate-200 max-h-[220px] overflow-y-auto">
+                  {subjects.map(s => {
+                    const isChecked = batchSelectedSubjectIds.includes(s.id)
+                    const isConfiguredAlready = savedConfigs.some(
+                      c => c.evaluationPeriod === batchPeriod && (c.grade === batchGrade || c.grade === "ALL") && c.subjectId === s.id
+                    )
+
+                    return (
+                      <label
+                        key={s.id}
+                        onClick={() => toggleBatchSubject(s.id)}
+                        className={`p-2 rounded-lg border text-xs font-medium cursor-pointer transition-all flex items-center gap-2 select-none ${
+                          isChecked
+                            ? "bg-teal-50 text-teal-900 border-teal-300 shadow-sm"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100/70"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => {}}
+                          className="w-3.5 h-3.5 text-teal-600 rounded border-slate-300 focus:ring-teal-500 pointer-events-none"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-semibold text-[11.5px]">{s.subjectName}</div>
+                          <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                            <span>{s.subjectCode}</span>
+                            {isConfiguredAlready && (
+                              <span className="text-[9px] text-teal-700 bg-teal-100/80 px-1 rounded font-bold">
+                                Đã gán
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Step 4: Choose Template for assigned subjects */}
+              <div className="space-y-2 p-3.5 bg-teal-50/40 rounded-xl border border-teal-100">
+                <span className="text-xs font-bold text-teal-950 flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5 text-teal-600" />
+                  4. Áp dụng Mẫu Cột điểm & Công thức cho các môn được chọn:
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                  <label
+                    onClick={() => setBatchTemplateType("CURRENT")}
+                    className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
+                      batchTemplateType === "CURRENT"
+                        ? "bg-white border-teal-400 text-teal-950 ring-2 ring-teal-400/40 shadow-sm"
+                        : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
+                    }`}
+                  >
+                    <div className="font-bold flex items-center gap-1.5">
+                      <input type="radio" checked={batchTemplateType === "CURRENT"} onChange={() => {}} className="pointer-events-none" />
+                      Mẫu đang trên Form
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      {columnCount} cột điểm ({columnNames.slice(0, 2).join(", ")}...)
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setBatchTemplateType("2_COL_TEST")}
+                    className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
+                      batchTemplateType === "2_COL_TEST"
+                        ? "bg-white border-teal-400 text-teal-950 ring-2 ring-teal-400/40 shadow-sm"
+                        : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
+                    }`}
+                  >
+                    <div className="font-bold flex items-center gap-1.5">
+                      <input type="radio" checked={batchTemplateType === "2_COL_TEST"} onChange={() => {}} className="pointer-events-none" />
+                      2 cột Trắc nghiệm
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      TN ABCD (6đ) + TN Đúng sai (4đ) → Tổng điểm
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setBatchTemplateType("3_COL_STANDARD")}
+                    className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
+                      batchTemplateType === "3_COL_STANDARD"
+                        ? "bg-white border-teal-400 text-teal-950 ring-2 ring-teal-400/40 shadow-sm"
+                        : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
+                    }`}
+                  >
+                    <div className="font-bold flex items-center gap-1.5">
+                      <input type="radio" checked={batchTemplateType === "3_COL_STANDARD"} onChange={() => {}} className="pointer-events-none" />
+                      3 cột Kiểm tra
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      Miệng (10) + 15p (10) + 1 Tiết (10) → Điểm TP
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+              <span className="text-xs font-semibold text-slate-500">
+                Đã chọn: <strong className="text-teal-700 font-black">{batchSelectedSubjectIds.length}</strong> môn học
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBatchAssignOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveBatchAssign}
+                  disabled={batchSaving || batchSelectedSubjectIds.length === 0}
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#48BFE3] hover:bg-[#008c82] text-white text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
+                >
+                  {batchSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Lưu Gán Môn cho Kỳ Khảo sát
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+</div>
   )
 }
