@@ -53,7 +53,7 @@ export async function sendEmail({
   const secure = isSkylineDomain ? false : (isGmail ? true : (process.env.SMTP_SECURE === "true" || port === 465));
 
   let pass = rawPass;
-  if (!pass) {
+  if (!pass || pass === "vpxgjprlqkwvdgmq" || pass === "grtxdfbqfjnsfvvf") {
     pass = !isGmail ? "tpcynmmfltbbjfsz" : "xhzihnqyiqqmdhat";
   }
 
@@ -165,27 +165,33 @@ export async function sendEmail({
     console.error("[mail.ts] Primary SMTP error:", error?.message || error);
     
     // Auto-failover to backup Gmail if primary Office 365 fails
+    let failoverErrorMsg = "";
     if (!isGmail) {
       try {
         console.log("[mail.ts] Attempting auto-failover to backup Gmail SMTP...");
+        const backupUser = (process.env.BACKUP_SMTP_USER || "dbclskl@gmail.com").trim();
         const backupPass = (process.env.BACKUP_SMTP_PASS || "xhzihnqyiqqmdhat").trim();
-        const backupTransporter = createTransporter("smtp.gmail.com", 465, true, "dbclskl@gmail.com", backupPass);
+        const backupTransporter = createTransporter("smtp.gmail.com", 465, true, backupUser, backupPass);
         const backupMailOptions = {
           ...mailOptions,
-          from: `"BAN KHẢO THÍ & ĐBCL SKY-LINE" <bankhaothi@skylineschool.edu.vn>`,
+          from: `"BAN KHẢO THÍ & ĐBCL SKY-LINE" <${backupUser}>`,
           replyTo: "bankhaothi@skylineschool.edu.vn"
         };
         const backupInfo = await backupTransporter.sendMail(backupMailOptions);
         console.log("[mail.ts] Auto-failover SUCCESS via Gmail Relay to:", validTo, "MessageId:", backupInfo.messageId);
         return { ...backupInfo, success: true, failover: true, provider: "GMAIL_RELAY", messageId: backupInfo.messageId };
       } catch (backupError: any) {
-        console.error("[mail.ts] Backup Gmail SMTP also failed:", backupError?.message || backupError);
+        failoverErrorMsg = backupError?.message || String(backupError);
+        console.error("[mail.ts] Backup Gmail SMTP also failed:", failoverErrorMsg);
       }
     }
 
     if (throwOnError) {
       throw error;
     }
-    return { success: false, error: error?.message || "Failed to send email", skipped: false };
+    const combinedError = failoverErrorMsg 
+      ? `${error?.message || "Primary SMTP error"} (Dự phòng Gmail: ${failoverErrorMsg})`
+      : (error?.message || "Failed to send email");
+    return { success: false, error: combinedError, skipped: false };
   }
 }
