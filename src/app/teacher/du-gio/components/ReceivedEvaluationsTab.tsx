@@ -1220,7 +1220,7 @@ export function ReceivedEvaluationsTab({
                   const teacherName = evalItem.slot?.teacher?.teacherName || (isHost ? currentTeacher?.teacherName : "Giáo viên dạy");
                   const evaluatorName = evalItem.registration?.teacher?.teacherName || evalItem.registration?.observerTeacher?.teacherName || (!isHost ? currentTeacher?.teacherName : "Giáo viên dự");
                   const isSurprise = isSurpriseSlot(evalItem.slot);
-                  const isAcknowledged = !!evalItem.evaluation?.teacherAcknowledgedAt;
+                  const isAcknowledged = !!(evalItem.evaluation?.teacherAcknowledgedAt || evalItem.registration?.evaluation?.teacherAcknowledgedAt);
 
                   return (
                     <tr key={evalItem.evaluation?.id || evalItem.registration?.id || idx} className="hover:bg-slate-50/80 transition-colors">

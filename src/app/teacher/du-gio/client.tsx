@@ -2119,21 +2119,37 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const handleAcknowledgeAndFeedback = async () => {
-    if (!evalModal?.registration?.evaluation?.id && !evalModal?.registration?.id) return;
+    if (!evalModal?.registration?.evaluation?.id && !evalModal?.registration?.id && !evalModal?.slot?.id) return;
     setTeacherFeedbackSubmitting(true);
     const res = await acknowledgeAndFeedbackEvaluation({
-      evaluationId: evalModal.registration.evaluation?.id,
-      registrationId: evalModal.registration.id,
+      evaluationId: evalModal.registration?.evaluation?.id,
+      registrationId: evalModal.registration?.id,
       feedback: teacherFeedbackText
     });
     setTeacherFeedbackSubmitting(false);
     if (res.success) {
       showToast(res.message || "Đã xác nhận tiếp thu góp ý thành công!", "success");
-      if (evalModal.registration.evaluation) {
-        evalModal.registration.evaluation.teacherAcknowledgedAt = new Date();
-        evalModal.registration.evaluation.teacherFeedback = teacherFeedbackText.trim() || "Đã tiếp thu toàn bộ góp ý chuyên môn.";
-        evalModal.registration.evaluation.teacherFeedbackAt = new Date();
-      }
+      const updatedAckAt = res.evaluation?.teacherAcknowledgedAt ? new Date(res.evaluation.teacherAcknowledgedAt) : new Date();
+      const updatedFeedback = teacherFeedbackText.trim() || "Đã tiếp thu toàn bộ góp ý chuyên môn.";
+
+      // CRITICAL: Cập nhật state với tham chiếu object mới để React render lại ngay lập tức
+      setEvalModal((prev: any) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          registration: {
+            ...prev.registration,
+            evaluation: {
+              ...(prev.registration?.evaluation || {}),
+              teacherAcknowledgedAt: updatedAckAt,
+              teacherFeedback: updatedFeedback,
+              teacherFeedbackAt: updatedAckAt
+            }
+          }
+        };
+      });
+
+      router.refresh();
       refreshSlots();
     } else {
       showToast(res.error || "Không thể gửi phản hồi", "error");
@@ -5940,104 +5956,112 @@ export function ObservationClient(props: ObservationClientProps) {
                 )}
 
                 {/* Two-way Feedback & Acknowledgment Section */}
-                {evalModal.registration.evaluation && (
-                  <div className="mt-4 p-5 rounded-2xl border border-slate-200/90 transition-all bg-gradient-to-b from-slate-50/80 to-white shadow-xs">
-                    {/* Header */}
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-150 gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center text-xs font-black">💬</span>
-                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                          Phản hồi 2 chiều & Kế hoạch khắc phục của Giáo viên dạy
-                        </h4>
+                {evalModal.registration.evaluation && !isDraft && (() => {
+                  const isHostTeacher = 
+                    evalModal.slot.teacherId === currentTeacher?.id || 
+                    evalModal.slot.teacher?.id === currentTeacher?.id ||
+                    (evalModal.slot.teacher?.teacherCode && currentTeacher?.teacherCode && evalModal.slot.teacher.teacherCode === currentTeacher.teacherCode) ||
+                    (evalModal.slot.teacher?.email && currentTeacher?.email && evalModal.slot.teacher.email.toLowerCase() === currentTeacher.email.toLowerCase());
+
+                  return (
+                    <div className="mt-4 p-5 rounded-2xl border border-slate-200/90 transition-all bg-gradient-to-b from-slate-50/80 to-white shadow-xs">
+                      {/* Header */}
+                      <div className="flex items-center justify-between pb-3 border-b border-slate-150 gap-2 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center text-xs font-black">💬</span>
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                            Phản hồi 2 chiều & Kế hoạch khắc phục của Giáo viên dạy
+                          </h4>
+                        </div>
+                        {evalModal.registration.evaluation.teacherAcknowledgedAt ? (
+                          <span className="px-3 py-1 text-[11px] font-black rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Đã tiếp thu góp ý ({new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")})
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 text-[11px] font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1.5 shadow-2xs">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            Chưa xác nhận tiếp thu
+                          </span>
+                        )}
                       </div>
-                      {evalModal.registration.evaluation.teacherAcknowledgedAt ? (
-                        <span className="px-3 py-1 text-[11px] font-black rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Đã tiếp thu góp ý ({new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")})
-                        </span>
+
+                      {/* Content for Host Teacher (Giáo viên dạy) */}
+                      {isHostTeacher ? (
+                        <div className="space-y-3 pt-3">
+                          {!evalModal.registration.evaluation.teacherAcknowledgedAt ? (
+                            <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 text-amber-950 text-xs">
+                              <p className="font-bold flex items-center gap-1.5">
+                                <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                                Xác nhận đã đọc biên bản & Tiếp thu ý kiến chuyên môn
+                              </p>
+                              <p className="text-[11px] text-amber-900 mt-1 leading-relaxed">
+                                Thầy/Cô vui lòng nhập ngắn gọn kế hoạch khắc phục điểm tồn tại (nếu có) hoặc ý kiến trao đổi và bấm <strong>"Xác nhận đã tiếp thu góp ý"</strong> để hoàn tất quy trình phản hồi 2 chiều.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200 text-emerald-950 text-xs">
+                              <p className="font-bold flex items-center gap-1.5 text-emerald-900">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                                Thầy/Cô đã xác nhận tiếp thu góp ý của tiết dạy này
+                              </p>
+                              <p className="text-[11px] text-emerald-800 mt-0.5">
+                                Thời gian xác nhận: {new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleString("vi-VN")}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="flex flex-col gap-1.5">
+                            <label className="text-[11px] font-bold text-slate-700">
+                              Kế hoạch khắc phục / Ý kiến phản hồi của Thầy/Cô:
+                            </label>
+                            <textarea
+                              rows={3}
+                              value={teacherFeedbackText}
+                              onChange={(e) => setTeacherFeedbackText(e.target.value)}
+                              placeholder="Nhập kế hoạch điều chỉnh phương pháp, quản lý thời gian hoặc ý kiến chuyên môn phản hồi lại người dự giờ..."
+                              className="w-full text-xs font-medium p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 outline-none resize-none bg-white text-slate-800"
+                            />
+                          </div>
+
+                          <div className="flex justify-end pt-1">
+                            <button
+                              type="button"
+                              disabled={teacherFeedbackSubmitting}
+                              onClick={handleAcknowledgeAndFeedback}
+                              className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-900/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60 hover:scale-105 active:scale-95"
+                            >
+                              <CheckCheck className="w-4 h-4 text-emerald-200" />
+                              {teacherFeedbackSubmitting ? "Đang xử lý..." : evalModal.registration.evaluation.teacherAcknowledgedAt ? "Cập nhật phản hồi" : "✅ Xác nhận Đã Tiếp Thu Góp Ý & Gửi Phản Hồi"}
+                            </button>
+                          </div>
+                        </div>
                       ) : (
-                        <span className="px-3 py-1 text-[11px] font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-300 flex items-center gap-1.5 shadow-2xs">
-                          <Clock className="w-3.5 h-3.5 text-amber-600" />
-                          Chưa xác nhận tiếp thu
-                        </span>
+                        /* Content for Observer / TTCM / Ban DHCM / Admin */
+                        <div className="pt-3 text-xs">
+                          {evalModal.registration.evaluation.teacherAcknowledgedAt ? (
+                            <div className="p-3.5 bg-emerald-50/50 rounded-xl border border-emerald-200 text-slate-800 space-y-1.5">
+                              <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900">
+                                <span>👨‍🏫 Phản hồi từ Giáo viên dạy ({evalModal.slot.teacher?.teacherName}):</span>
+                                <span className="text-slate-500 font-medium">
+                                  {new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleString("vi-VN")}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-700 font-medium leading-relaxed italic bg-white p-2.5 rounded-lg border border-emerald-100 whitespace-pre-line">
+                                "{evalModal.registration.evaluation.teacherFeedback || "Đã tiếp thu toàn bộ góp ý chuyên môn."}"
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-xs italic flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-slate-400" />
+                              <span>Giáo viên dạy chưa gửi phản hồi xác nhận tiếp thu biên bản này.</span>
+                            </div>
+                          )}
+                        </div>
                       )}
                     </div>
-
-                    {/* Content for Host Teacher (Giáo viên dạy) */}
-                    {evalModal.slot.teacherId === currentTeacher?.id || evalModal.slot.teacher?.id === currentTeacher?.id ? (
-                      <div className="space-y-3 pt-3">
-                        {!evalModal.registration.evaluation.teacherAcknowledgedAt ? (
-                          <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-200 text-amber-950 text-xs">
-                            <p className="font-bold flex items-center gap-1.5">
-                              <Info className="w-4 h-4 text-amber-600 shrink-0" />
-                              Xác nhận đã đọc biên bản & Tiếp thu ý kiến chuyên môn
-                            </p>
-                            <p className="text-[11px] text-amber-900 mt-1 leading-relaxed">
-                              Thầy/Cô vui lòng nhập ngắn gọn kế hoạch khắc phục điểm tồn tại (nếu có) hoặc ý kiến trao đổi và bấm <strong>"Xác nhận đã tiếp thu góp ý"</strong> để hoàn tất quy trình phản hồi 2 chiều.
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200 text-emerald-950 text-xs">
-                            <p className="font-bold flex items-center gap-1.5 text-emerald-900">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                              Thầy/Cô đã xác nhận tiếp thu góp ý của tiết dạy này
-                            </p>
-                            <p className="text-[11px] text-emerald-800 mt-0.5">
-                              Thời gian xác nhận: {new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleString("vi-VN")}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className="flex flex-col gap-1.5">
-                          <label className="text-[11px] font-bold text-slate-700">
-                            Kế hoạch khắc phục / Ý kiến phản hồi của Thầy/Cô:
-                          </label>
-                          <textarea
-                            rows={3}
-                            value={teacherFeedbackText}
-                            onChange={(e) => setTeacherFeedbackText(e.target.value)}
-                            placeholder="Nhập kế hoạch điều chỉnh phương pháp, quản lý thời gian hoặc ý kiến chuyên môn phản hồi lại người dự giờ..."
-                            className="w-full text-xs font-medium p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-500 outline-none resize-none bg-white text-slate-800"
-                          />
-                        </div>
-
-                        <div className="flex justify-end pt-1">
-                          <button
-                            type="button"
-                            disabled={teacherFeedbackSubmitting}
-                            onClick={handleAcknowledgeAndFeedback}
-                            className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-900/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60"
-                          >
-                            <CheckCheck className="w-4 h-4 text-emerald-200" />
-                            {teacherFeedbackSubmitting ? "Đang xử lý..." : evalModal.registration.evaluation.teacherAcknowledgedAt ? "Cập nhật phản hồi" : "✅ Xác nhận Đã Tiếp Thu Góp Ý & Gửi Phản Hồi"}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Content for Observer / TTCM / Ban DHCM / Admin */
-                      <div className="pt-3 text-xs">
-                        {evalModal.registration.evaluation.teacherAcknowledgedAt ? (
-                          <div className="p-3.5 bg-emerald-50/50 rounded-xl border border-emerald-200 text-slate-800 space-y-1.5">
-                            <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900">
-                              <span>👨‍🏫 Phản hồi từ Giáo viên dạy ({evalModal.slot.teacher?.teacherName}):</span>
-                              <span className="text-slate-500 font-medium">
-                                {new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleString("vi-VN")}
-                              </span>
-                            </div>
-                            <p className="text-xs text-slate-700 font-medium leading-relaxed italic bg-white p-2.5 rounded-lg border border-emerald-100 whitespace-pre-line">
-                              "{evalModal.registration.evaluation.teacherFeedback || "Đã tiếp thu toàn bộ góp ý chuyên môn."}"
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-500 text-xs italic flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-slate-400" />
-                            <span>Giáo viên dạy chưa gửi phản hồi xác nhận tiếp thu biên bản này.</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Modal Footer */}

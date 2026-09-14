@@ -3235,11 +3235,38 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
     const session = await auth();
     if (!session || !session.user) return { success: false, error: "Unauthorized" };
 
-    const currentTeacher = await prisma.teacher.findUnique({
+    const roleCode = ((session.user as any)?.role || "TEACHER").toUpperCase();
+    const isAdmin = [
+      "ADMIN",
+      "ADMINISTRATOR",
+      "SUPER_ADMIN",
+      "BGH",
+      "BAN_GIAM_HIEU",
+      "KT_DBCL",
+      "QLCM",
+      "QUAN_LY_CM",
+      "BAN_DHCM"
+    ].includes(roleCode);
+
+    let currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
       include: { user: true, campus: true }
     });
-    if (!currentTeacher) return { success: false, error: "Teacher profile not found" };
+    if (!currentTeacher && session.user?.email) {
+      currentTeacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { userId: session.user.id },
+            { id: session.user.id },
+            { email: session.user.email }
+          ]
+        },
+        include: { user: true, campus: true }
+      });
+    }
+    if (!currentTeacher && !isAdmin) {
+      return { success: false, error: "Không tìm thấy hồ sơ giáo viên." };
+    }
 
     let evaluation = null;
     if (data.evaluationId) {
@@ -3258,9 +3285,28 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
           }
         }
       });
-    } else if (data.registrationId) {
+    }
+    if (!evaluation && data.registrationId) {
       evaluation = await prisma.observationEvaluation.findUnique({
         where: { registrationId: data.registrationId },
+        include: {
+          registration: {
+            include: {
+              teacher: { include: { user: true } },
+              slot: {
+                include: {
+                  teacher: { include: { user: true } }
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+    if (!evaluation && data.evaluationId) {
+      // In case evaluationId was passed as a slotId
+      evaluation = await prisma.observationEvaluation.findFirst({
+        where: { slotId: data.evaluationId },
         include: {
           registration: {
             include: {
@@ -3282,10 +3328,13 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
     const hostTeacher = slot?.teacher;
     const evaluator = evaluation.registration?.teacher;
 
-    // Chỉ GV dạy của tiết hoặc Admin mới có quyền xác nhận tiếp thu & phản hồi
-    const roleCode = (session.user as any)?.role || "TEACHER";
-    const isAdmin = ["ADMIN", "ADMINISTRATOR"].includes(roleCode);
-    if (!isAdmin && hostTeacher?.id !== currentTeacher.id) {
+    // Kiểm tra quyền: Chỉ GV dạy của tiết hoặc Admin mới có quyền xác nhận tiếp thu & phản hồi
+    const isHost = 
+      (currentTeacher && (hostTeacher?.id === currentTeacher.id || slot?.teacherId === currentTeacher.id)) ||
+      (hostTeacher?.userId === session.user.id) ||
+      (hostTeacher?.email && session.user?.email && hostTeacher.email.toLowerCase() === session.user.email.toLowerCase());
+
+    if (!isAdmin && !isHost) {
       return { success: false, error: "Chỉ Giáo viên dạy của tiết này mới có quyền gửi phản hồi & xác nhận tiếp thu góp ý!" };
     }
 
@@ -3301,7 +3350,7 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
       }
     });
 
-    // Gửi Email thông báo trực tiếp đến Người dự giờ (Evaluator)
+    // 1. Gửi Email thông báo trực tiếp đến Người dự giờ (Evaluator)
     try {
       const evaluatorEmail = getTeacherResolvedEmail(evaluator);
       if (evaluatorEmail && evaluatorEmail.includes("@")) {
@@ -3316,8 +3365,22 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
         });
         await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: evaluatorEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Acknowledge email error:", e));
       }
+
+      // 2. Tạo thông báo chuông in-app cho Người dự giờ
+      const evaluatorUserId = evaluator?.userId || evaluator?.user?.id;
+      if (evaluatorUserId) {
+        await prisma.notification.create({
+          data: {
+            userId: evaluatorUserId,
+            title: "Giáo viên đã tiếp thu góp ý dự giờ 💬",
+            message: `GV ${hostTeacher?.teacherName || "dạy"} đã xác nhận tiếp thu góp ý và gửi phản hồi cho tiết "${slot?.topic || "Tiết dạy"}".`,
+            link: `/teacher/du-gio?tab=evaluations`,
+            isRead: false
+          }
+        }).catch(e => console.warn("Could not create evaluator ack notification:", e));
+      }
     } catch (mailErr) {
-      console.error("Failed to send acknowledge email:", mailErr);
+      console.error("Failed to process acknowledge email & notifications:", mailErr);
     }
 
     revalidatePath("/teacher/du-gio");
