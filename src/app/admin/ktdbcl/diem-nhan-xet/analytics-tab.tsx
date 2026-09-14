@@ -23,7 +23,8 @@ import {
   BookOpen,
   Calendar,
   Layers,
-  GraduationCap
+  GraduationCap,
+  Compass
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -293,6 +294,53 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
     })
   }, [data.studentsTracking, searchKeyword, filterMode])
 
+  // Điều kiện kiểm tra đã chọn cả Lớp và Môn học
+  const isClassAndSubjectSelected = selectedClassId !== "ALL" && selectedSubjectId !== "ALL"
+
+  // Lớp và Môn đang được chọn
+  const currentSelectedClass = useMemo(() => {
+    return classes.find(c => c.id === selectedClassId) || null
+  }, [classes, selectedClassId])
+
+  const currentSelectedSubject = useMemo(() => {
+    return (surveyPeriodSubjects.length > 0 ? surveyPeriodSubjects : subjects).find(s => s.id === selectedSubjectId) || null
+  }, [surveyPeriodSubjects, subjects, selectedSubjectId])
+
+  // Chỉ số Mini-KPI của riêng Lớp và Môn học này
+  const classSubjectMetrics = useMemo(() => {
+    if (!isClassAndSubjectSelected) return null
+    const total = filteredStudents.length
+    const withBaseline = filteredStudents.filter(s => s.baselineScore !== null)
+    const withCurrent = filteredStudents.filter(s => s.currentScore !== null)
+    const withBoth = filteredStudents.filter(s => s.baselineScore !== null && s.currentScore !== null)
+
+    const avgCurrent = withCurrent.length > 0
+      ? Math.round((withCurrent.reduce((acc, s) => acc + (s.currentScore || 0), 0) / withCurrent.length) * 100) / 100
+      : 0
+    const avgBaseline = withBaseline.length > 0
+      ? Math.round((withBaseline.reduce((acc, s) => acc + (s.baselineScore || 0), 0) / withBaseline.length) * 100) / 100
+      : 0
+
+    const improved = withBoth.filter(s => s.delta !== null && s.delta > 0)
+    const regressed = withBoth.filter(s => s.delta !== null && s.delta < 0)
+    const urgent = withBoth.filter(s => s.baselineScore < 5.0 && s.currentScore < 5.0)
+    const atRiskBaseline = withBaseline.filter(s => s.baselineScore < 6.5)
+
+    return {
+      total,
+      gradedCount: withCurrent.length,
+      avgCurrent,
+      avgBaseline,
+      avgDelta: Math.round((avgCurrent - avgBaseline) * 100) / 100,
+      improvedCount: improved.length,
+      improvedPercent: withBoth.length > 0 ? Math.round((improved.length / withBoth.length) * 100) : 0,
+      regressedCount: regressed.length,
+      regressedPercent: withBoth.length > 0 ? Math.round((regressed.length / withBoth.length) * 100) : 0,
+      urgentCount: urgent.length,
+      atRiskBaselineCount: atRiskBaseline.length
+    }
+  }, [isClassAndSubjectSelected, filteredStudents])
+
   // Export to Excel
   const handleExportExcel = () => {
     if (!filteredStudents || filteredStudents.length === 0) {
@@ -333,7 +381,9 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
     }))
     worksheet["!cols"] = maxCols
 
-    const fileName = `BaoCao_PhoDiem_BamSat_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.xlsx`
+    const fileName = isClassAndSubjectSelected
+      ? `BaoCao_BamSat_${(currentSelectedClass?.className || "Lop").replace(/\s+/g, "")}_${(currentSelectedSubject?.subjectCode || "Mon").replace(/\s+/g, "")}_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.xlsx`
+      : `BaoCao_PhoDiem_BamSat_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.xlsx`
     XLSX.writeFile(workbook, fileName)
   }
 
@@ -418,15 +468,28 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
 
           {/* Lớp học */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1">
-              Lớp học ({filteredClasses.length})
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
+              <span>Lớp học ({filteredClasses.length})</span>
+              {selectedClassId === "ALL" ? (
+                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1 rounded border border-amber-200">
+                  Cần chọn
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1 rounded">
+                  ✓ Đã chọn
+                </span>
+              )}
             </label>
             <select
               value={selectedClassId}
               onChange={e => setSelectedClassId(e.target.value)}
-              className="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-[#005B58] focus:border-transparent outline-none bg-slate-50"
+              className={`w-full text-xs font-medium border rounded-lg p-2 focus:ring-2 focus:ring-[#005B58] focus:border-transparent outline-none transition-all ${
+                selectedClassId === "ALL"
+                  ? "border-amber-300 bg-amber-50/40 text-slate-700"
+                  : "border-[#005B58] bg-teal-50/30 text-[#005B58] font-bold"
+              }`}
             >
-              <option value="ALL">-- Tất cả các Lớp --</option>
+              <option value="ALL">-- Chọn Lớp học --</option>
               {filteredClasses.map(c => (
                 <option key={c.id} value={c.id}>
                   {c.className}
@@ -437,23 +500,31 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
 
           {/* Môn học (Chỉ lấy đúng các môn theo Kỳ khảo sát) */}
           <div>
-            <label className="block text-[11px] font-semibold text-slate-500 mb-1 flex items-center justify-between">
+            <label className="block text-[11px] font-semibold text-slate-600 mb-1 flex items-center justify-between">
               <span>Môn theo Kỳ khảo sát</span>
-              {surveyPeriodSubjects.length > 0 && (
+              {selectedSubjectId === "ALL" ? (
+                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1 rounded border border-amber-200">
+                  Cần chọn
+                </span>
+              ) : (
                 <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1 rounded">
-                  {surveyPeriodSubjects.length} môn
+                  ✓ Đã chọn
                 </span>
               )}
             </label>
             <select
               value={selectedSubjectId}
               onChange={e => setSelectedSubjectId(e.target.value)}
-              className="w-full text-xs font-medium border border-slate-200 rounded-lg p-2 focus:ring-2 focus:ring-[#005B58] focus:border-transparent outline-none bg-teal-50/40 text-slate-800"
+              className={`w-full text-xs font-medium border rounded-lg p-2 focus:ring-2 focus:ring-[#005B58] focus:border-transparent outline-none transition-all ${
+                selectedSubjectId === "ALL"
+                  ? "border-amber-300 bg-amber-50/40 text-slate-700"
+                  : "border-[#005B58] bg-teal-50/30 text-[#005B58] font-bold"
+              }`}
             >
               <option value="ALL">
                 {surveyPeriodSubjects.length > 0
-                  ? `-- Tất cả môn khảo sát (${surveyPeriodSubjects.length} môn) --`
-                  : "-- Tất cả Môn học --"}
+                  ? `-- Chọn Môn khảo sát (${surveyPeriodSubjects.length} môn) --`
+                  : "-- Chọn Môn học --"}
               </option>
               {(surveyPeriodSubjects.length > 0 ? surveyPeriodSubjects : subjects).map(s => (
                 <option key={s.id} value={s.id}>
@@ -856,20 +927,291 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
       </div>
 
       {/* 5. DANH SÁCH CHI TIẾT HỌC SINH THEO DÕI BÁM SÁT (TRACKING TABLE) */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div>
-            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-              <GraduationCap className="w-5 h-5 text-[#005B58]" />
-              Danh sách Học sinh Theo dõi & Bám sát Tiến độ ({filteredStudents.length} HS)
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Tra cứu từng học sinh, mức độ tiến bộ qua các kỳ kiểm tra, điểm khảo sát đầu vào và các cảnh báo học tập.
-            </p>
+      {!isClassAndSubjectSelected ? (
+        /* MÀN HÌNH HƯỚNG DẪN TƯƠNG TÁC KHI CHƯA CHỌN LỚP VÀ MÔN */
+        <div className="bg-gradient-to-br from-white via-slate-50 to-teal-50/30 rounded-2xl p-6 sm:p-8 border-2 border-dashed border-teal-200/80 shadow-sm text-center relative overflow-hidden">
+          <div className="max-w-2xl mx-auto space-y-5">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-teal-100 text-[#005B58] shadow-inner">
+              <Compass className="w-7 h-7" />
+            </div>
+
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-slate-800 tracking-tight">
+                Danh sách Học sinh Theo dõi & Bám sát Tiến độ
+              </h3>
+              <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                Để bám sát tiến độ học tập và can thiệp kịp thời từng em, danh sách học sinh chỉ hiển thị khi đã chọn cụ thể <strong>Lớp học</strong> và <strong>Môn học</strong> (không xả tất cả học sinh và tất cả môn).
+              </p>
+            </div>
+
+            {/* Quick Selector Box */}
+            <div className="bg-white rounded-xl p-4 border border-teal-100 shadow-sm text-left space-y-4">
+              {/* Bước 1: Chọn Lớp */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#005B58] text-white flex items-center justify-center text-[10px] font-black">1</span>
+                    Chọn Lớp học {selectedGradeFilter !== "ALL" ? `(${selectedGradeFilter})` : ""}:
+                  </span>
+                  {selectedClassId !== "ALL" && (
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Đã chọn: {currentSelectedClass?.className}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                  {filteredClasses.length === 0 ? (
+                    <span className="text-xs text-slate-400 italic">Không có lớp nào phù hợp với bộ lọc khối/hệ hiện tại.</span>
+                  ) : (
+                    filteredClasses.map(c => {
+                      const isSelected = selectedClassId === c.id
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => setSelectedClassId(c.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                            isSelected
+                              ? "bg-[#005B58] text-white shadow-sm font-bold"
+                              : "bg-slate-100 hover:bg-teal-50 hover:text-[#005B58] text-slate-700 border border-slate-200/60"
+                          }`}
+                        >
+                          {c.className}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Bước 2: Chọn Môn */}
+              <div className="border-t border-slate-100 pt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-[#005B58] text-white flex items-center justify-center text-[10px] font-black">2</span>
+                    Chọn Môn học ({currentPeriod}):
+                  </span>
+                  {selectedSubjectId !== "ALL" && (
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Đã chọn: {currentSelectedSubject?.subjectName}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                  {(surveyPeriodSubjects.length > 0 ? surveyPeriodSubjects : subjects).map(s => {
+                    const isSelected = selectedSubjectId === s.id
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setSelectedSubjectId(s.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          isSelected
+                            ? "bg-[#005B58] text-white shadow-sm font-bold"
+                            : "bg-slate-100 hover:bg-teal-50 hover:text-[#005B58] text-slate-700 border border-slate-200/60"
+                        }`}
+                      >
+                        {s.subjectName}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Action Button */}
+            {filteredClasses.length > 0 && (surveyPeriodSubjects.length > 0 || subjects.length > 0) && (
+              <button
+                onClick={() => {
+                  if (selectedClassId === "ALL" && filteredClasses[0]) {
+                    setSelectedClassId(filteredClasses[0].id)
+                  }
+                  if (selectedSubjectId === "ALL") {
+                    const firstSub = surveyPeriodSubjects[0] || subjects[0]
+                    if (firstSub) setSelectedSubjectId(firstSub.id)
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#005B58] hover:bg-[#004845] text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
+              >
+                <Sparkles className="w-4 h-4" />
+                Xem ngay Lớp {filteredClasses[0]?.className} — Môn {(surveyPeriodSubjects[0] || subjects[0])?.subjectName}
+              </button>
+            )}
+          </div>
+        </div>
+      ) : (
+        /* BẢNG BÁM SÁT TIẾN ĐỘ HỌC SINH KHI ĐÃ CHỌN ĐỦ LỚP VÀ MÔN */
+        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          {/* Header Banner */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2.5 py-1 rounded-md bg-[#005B58] text-white text-xs font-black tracking-wide">
+                  LỚP {currentSelectedClass?.className}
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-teal-100 text-teal-800 text-xs font-black">
+                  MÔN {(currentSelectedSubject?.subjectName || "").toUpperCase()}
+                </span>
+                <span className="text-xs text-slate-400 font-medium">
+                  • Đối chiếu: <strong className="text-teal-700">{baselinePeriod}</strong> → <strong className="text-sky-700">{currentPeriod}</strong>
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Theo dõi tiến độ học sinh lớp {currentSelectedClass?.className}, biến động điểm số môn {currentSelectedSubject?.subjectName} qua các kỳ khảo sát ({filteredStudents.length} HS).
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => {
+                  setSelectedClassId("ALL")
+                  setSelectedSubjectId("ALL")
+                }}
+                className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Đổi Lớp / Môn
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Xuất Excel Lớp {currentSelectedClass?.className}
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Search Input */}
+          {/* 5 Thẻ Mini-KPI cho Lớp & Môn này */}
+          {classSubjectMetrics && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {/* KPI 1 */}
+              <div className="bg-slate-50/80 rounded-xl p-3 border border-slate-200/80">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sĩ số có điểm</span>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-lg font-black text-slate-800">{classSubjectMetrics.gradedCount}</span>
+                  <span className="text-[11px] text-slate-400 font-medium">/ {classSubjectMetrics.total} HS</span>
+                </div>
+                <span className="text-[10px] text-teal-700 font-semibold block mt-0.5">
+                  {classSubjectMetrics.total > 0 ? Math.round((classSubjectMetrics.gradedCount / classSubjectMetrics.total) * 100) : 0}% hoàn thành
+                </span>
+              </div>
+
+              {/* KPI 2 */}
+              <div className="bg-teal-50/50 rounded-xl p-3 border border-teal-200/60">
+                <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider block">Điểm TB Lớp ({currentPeriod})</span>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-lg font-black text-[#005B58]">{classSubjectMetrics.avgCurrent}</span>
+                  <span className={`text-[10px] font-bold ${classSubjectMetrics.avgDelta >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+                    ({classSubjectMetrics.avgDelta >= 0 ? `+${classSubjectMetrics.avgDelta}` : classSubjectMetrics.avgDelta} đ)
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-500 font-medium block mt-0.5">
+                  Đầu vào ({baselinePeriod}): {classSubjectMetrics.avgBaseline} đ
+                </span>
+              </div>
+
+              {/* KPI 3 */}
+              <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-200/60">
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" />
+                  Tiến bộ tăng điểm
+                </span>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-lg font-black text-emerald-800">{classSubjectMetrics.improvedCount}</span>
+                  <span className="text-[11px] text-emerald-600 font-bold">({classSubjectMetrics.improvedPercent}%)</span>
+                </div>
+                <span className="text-[10px] text-emerald-700 font-medium block mt-0.5">Tăng điểm so với đầu vào</span>
+              </div>
+
+              {/* KPI 4 */}
+              <div className="bg-rose-50/50 rounded-xl p-3 border border-rose-200/60">
+                <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider block flex items-center gap-1">
+                  <TrendingDown className="w-3 h-3" />
+                  Sa sút giảm điểm
+                </span>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-lg font-black text-rose-800">{classSubjectMetrics.regressedCount}</span>
+                  <span className="text-[11px] text-rose-600 font-bold">({classSubjectMetrics.regressedPercent}%)</span>
+                </div>
+                <span className="text-[10px] text-rose-700 font-medium block mt-0.5">Giảm điểm so với đầu vào</span>
+              </div>
+
+              {/* KPI 5 */}
+              <div className="bg-amber-50/50 rounded-xl p-3 border border-amber-200/60">
+                <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider block flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Đầu vào cần bám sát
+                </span>
+                <div className="mt-1 flex items-baseline gap-1.5">
+                  <span className="text-lg font-black text-amber-800">{classSubjectMetrics.atRiskBaselineCount}</span>
+                  <span className="text-[11px] text-amber-700 font-semibold">HS (&lt; 6.5đ)</span>
+                </div>
+                <span className="text-[10px] text-amber-700 font-medium block mt-0.5">
+                  Khẩn cấp (&lt; 5.0): {classSubjectMetrics.urgentCount} HS
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Filter Tag Buttons & Search */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                onClick={() => setFilterMode("ALL")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  filterMode === "ALL"
+                    ? "bg-[#005B58] text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                Tất cả ({data.studentsTracking?.length || 0})
+              </button>
+              <button
+                onClick={() => setFilterMode("AT_RISK")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                  filterMode === "AT_RISK"
+                    ? "bg-amber-600 text-white shadow-sm"
+                    : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                }`}
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Đầu vào cần bám sát (&lt;6.5)
+              </button>
+              <button
+                onClick={() => setFilterMode("URGENT")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                  filterMode === "URGENT"
+                    ? "bg-rose-600 text-white shadow-sm"
+                    : "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+                }`}
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                Cần phụ đạo khẩn cấp (&lt;5đ)
+              </button>
+              <button
+                onClick={() => setFilterMode("REGRESSED")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                  filterMode === "REGRESSED"
+                    ? "bg-rose-700 text-white shadow-sm"
+                    : "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
+                }`}
+              >
+                <TrendingDown className="w-3.5 h-3.5" />
+                Sa sút điểm
+              </button>
+              <button
+                onClick={() => setFilterMode("IMPROVED")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                  filterMode === "IMPROVED"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                Tiến bộ tăng điểm
+              </button>
+            </div>
+
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
               <input
@@ -881,249 +1223,178 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
               />
             </div>
           </div>
-        </div>
 
-        {/* Quick Filter Tag Buttons */}
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={() => setFilterMode("ALL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filterMode === "ALL"
-                ? "bg-[#005B58] text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            Tất cả ({data.studentsTracking?.length || 0})
-          </button>
-          <button
-            onClick={() => setFilterMode("AT_RISK")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-              filterMode === "AT_RISK"
-                ? "bg-amber-600 text-white shadow-sm"
-                : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            Đầu vào cần bám sát (&lt;6.5) ({summary.atRiskBaselineCount})
-          </button>
-          <button
-            onClick={() => setFilterMode("URGENT")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-              filterMode === "URGENT"
-                ? "bg-rose-600 text-white shadow-sm"
-                : "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5" />
-            Cần phụ đạo khẩn cấp (&lt;5đ)
-          </button>
-          <button
-            onClick={() => setFilterMode("REGRESSED")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-              filterMode === "REGRESSED"
-                ? "bg-rose-700 text-white shadow-sm"
-                : "bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200"
-            }`}
-          >
-            <TrendingDown className="w-3.5 h-3.5" />
-            Sa sút điểm (&gt;1đ) ({summary.regressedCount})
-          </button>
-          <button
-            onClick={() => setFilterMode("IMPROVED")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
-              filterMode === "IMPROVED"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            Tiến bộ tăng điểm ({summary.improvedCount})
-          </button>
-          <button
-            onClick={() => setFilterMode("ONLY_BASELINE")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              filterMode === "ONLY_BASELINE"
-                ? "bg-teal-600 text-white shadow-sm"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-            }`}
-          >
-            Chỉ HS có điểm KS đầu vào ({summary.totalWithBaseline})
-          </button>
-        </div>
-
-        {/* Student Table */}
-        <div className="overflow-x-auto border border-slate-200 rounded-xl">
-          <table className="w-full text-xs text-left">
-            <thead>
-              <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
-                <th className="py-3 px-3 font-semibold text-center w-12">STT</th>
-                <th className="py-3 px-3 font-semibold">Mã HS</th>
-                <th className="py-3 px-4 font-semibold">Họ và Tên</th>
-                <th className="py-3 px-3 font-semibold">Lớp</th>
-                <th className="py-3 px-3 font-semibold">Môn học</th>
-                <th className="py-3 px-3 font-semibold text-center bg-teal-50/60 text-[#005B58]">
-                  Khảo sát đầu vào ({baselinePeriod})
-                </th>
-                <th className="py-3 px-3 font-semibold text-center bg-sky-50/60 text-sky-900">
-                  Điểm {currentPeriod}
-                </th>
-                <th className="py-3 px-3 font-semibold text-center">Độ lệch (Δ)</th>
-                <th className="py-3 px-4 font-semibold text-center">Trạng thái Bám sát</th>
-                <th className="py-3 px-4 font-semibold text-center">Lịch sử các kỳ</th>
-                <th className="py-3 px-3 font-semibold">Ghi chú</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredStudents.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="py-8 text-center text-slate-400 italic">
-                    Không tìm thấy dữ liệu học sinh phù hợp với bộ lọc hiện tại.
-                  </td>
+          {/* Student Table */}
+          <div className="overflow-x-auto border border-slate-200 rounded-xl">
+            <table className="w-full text-xs text-left">
+              <thead>
+                <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
+                  <th className="py-3 px-3 font-semibold text-center w-12">STT</th>
+                  <th className="py-3 px-3 font-semibold">Mã HS</th>
+                  <th className="py-3 px-4 font-semibold">Họ và Tên</th>
+                  <th className="py-3 px-3 font-semibold text-center bg-teal-50/60 text-[#005B58]">
+                    Khảo sát đầu vào ({baselinePeriod})
+                  </th>
+                  <th className="py-3 px-3 font-semibold text-center bg-sky-50/60 text-sky-900">
+                    Điểm {currentPeriod}
+                  </th>
+                  <th className="py-3 px-3 font-semibold text-center">Độ lệch (Δ)</th>
+                  <th className="py-3 px-4 font-semibold text-center">Trạng thái Bám sát</th>
+                  <th className="py-3 px-4 font-semibold text-center">Lịch sử các kỳ</th>
+                  <th className="py-3 px-3 font-semibold">Ghi chú</th>
                 </tr>
-              ) : (
-                filteredStudents.map((s, idx) => (
-                  <tr key={`${s.studentId}_${s.subjectId}`} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-2.5 px-3 text-center text-slate-400 font-medium">{idx + 1}</td>
-                    <td className="py-2.5 px-3 font-mono font-medium text-slate-600">{s.studentCode}</td>
-                    <td className="py-2.5 px-4 font-bold text-slate-800">
-                      {s.studentName}
-                    </td>
-                    <td className="py-2.5 px-3 text-slate-600 font-medium">{s.className}</td>
-                    <td className="py-2.5 px-3">
-                      <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
-                        {s.subjectName}
-                      </span>
-                    </td>
-
-                    {/* Điểm Khảo sát đầu vào */}
-                    <td className="py-2.5 px-3 text-center bg-teal-50/20">
-                      {s.baselineScore !== null ? (
-                        <div className="flex flex-col items-center">
-                          <span className={`font-black text-xs px-2 py-0.5 rounded-md ${
-                            s.baselineScore < 5.0
-                              ? "bg-rose-100 text-rose-700"
-                              : s.baselineScore < 6.5
-                              ? "bg-amber-100 text-amber-800"
-                              : s.baselineScore < 8.0
-                              ? "bg-teal-100 text-teal-800"
-                              : "bg-emerald-100 text-emerald-800"
-                          }`}>
-                            {s.baselineScore}
-                          </span>
-                          {s.isFromEntranceTest && (
-                            <span className="text-[9px] text-teal-600 font-medium mt-0.5">Tuyển sinh</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-slate-300">-</span>
-                      )}
-                    </td>
-
-                    {/* Điểm Kỳ hiện tại */}
-                    <td className="py-2.5 px-3 text-center bg-sky-50/20">
-                      {s.currentScore !== null ? (
-                        <span className={`font-black text-xs px-2 py-0.5 rounded-md ${
-                          s.currentScore < 5.0
-                            ? "bg-rose-100 text-rose-700"
-                            : s.currentScore < 6.5
-                            ? "bg-amber-100 text-amber-800"
-                            : s.currentScore < 8.0
-                            ? "bg-sky-100 text-sky-800"
-                            : "bg-emerald-100 text-emerald-800"
-                        }`}>
-                          {s.currentScore}
-                        </span>
-                      ) : (
-                        <span className="text-slate-300">-</span>
-                      )}
-                    </td>
-
-                    {/* Độ lệch Delta */}
-                    <td className="py-2.5 px-3 text-center">
-                      {s.delta !== null ? (
-                        s.delta > 0 ? (
-                          <span className="font-bold text-emerald-600 inline-flex items-center gap-0.5">
-                            <ArrowUpRight className="w-3.5 h-3.5" />
-                            +{s.delta}
-                          </span>
-                        ) : s.delta < 0 ? (
-                          <span className="font-bold text-rose-600 inline-flex items-center gap-0.5">
-                            <ArrowDownRight className="w-3.5 h-3.5" />
-                            {s.delta}
-                          </span>
-                        ) : (
-                          <span className="text-slate-500 font-semibold inline-flex items-center gap-0.5">
-                            <Minus className="w-3 h-3" />
-                            0
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-slate-300">-</span>
-                      )}
-                    </td>
-
-                    {/* Badge Trạng thái Bám sát */}
-                    <td className="py-2.5 px-4 text-center">
-                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
-                        s.statusTag === "PROGRESS_HIGH"
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                          : s.statusTag === "PROGRESS"
-                          ? "bg-teal-100 text-teal-800 border border-teal-200"
-                          : s.statusTag === "STABLE"
-                          ? "bg-blue-50 text-blue-700 border border-blue-200"
-                          : s.statusTag === "SLIGHT_DROP"
-                          ? "bg-amber-50 text-amber-700 border border-amber-200"
-                          : s.statusTag === "REGRESS"
-                          ? "bg-rose-100 text-rose-800 border border-rose-300"
-                          : s.statusTag === "URGENT_INTERVENTION"
-                          ? "bg-red-600 text-white font-black animate-pulse"
-                          : s.statusTag === "AT_RISK"
-                          ? "bg-amber-100 text-amber-800 border border-amber-300 font-bold"
-                          : "bg-slate-100 text-slate-500"
-                      }`}>
-                        {s.statusTag === "PROGRESS_HIGH" && <Sparkles className="w-3 h-3" />}
-                        {s.statusTag === "URGENT_INTERVENTION" && <AlertTriangle className="w-3 h-3" />}
-                        {s.statusLabel}
-                      </span>
-                    </td>
-
-                    {/* Lịch sử điểm qua các kỳ */}
-                    <td className="py-2.5 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1 font-mono text-[10px]">
-                        {EVAL_PERIODS.map(p => {
-                          const sc = s.periodHistory?.[p.code]
-                          return (
-                            <span
-                              key={p.code}
-                              title={`${p.name}: ${sc !== null ? sc : "Chưa có"}`}
-                              className={`w-6 py-0.5 rounded text-center font-bold ${
-                                sc !== null && sc !== undefined
-                                  ? sc < 5.0
-                                    ? "bg-rose-100 text-rose-700"
-                                    : sc < 6.5
-                                    ? "bg-amber-100 text-amber-700"
-                                    : "bg-teal-50 text-teal-800"
-                                  : "bg-slate-100 text-slate-300"
-                              }`}
-                            >
-                              {sc !== null && sc !== undefined ? sc : "-"}
-                            </span>
-                          )
-                        })}
-                      </div>
-                    </td>
-
-                    {/* Nhận xét / Ghi chú */}
-                    <td className="py-2.5 px-3 text-slate-500 text-[11px] max-w-[180px] truncate" title={s.remark}>
-                      {s.remark || "-"}
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-slate-400 italic">
+                      Chưa có dữ liệu điểm môn {currentSelectedSubject?.subjectName} của lớp {currentSelectedClass?.className} phù hợp với bộ lọc hiện tại.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredStudents.map((s, idx) => (
+                    <tr key={`${s.studentId}_${s.subjectId}`} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-2.5 px-3 text-center text-slate-400 font-medium">{idx + 1}</td>
+                      <td className="py-2.5 px-3 font-mono font-medium text-slate-600">{s.studentCode}</td>
+                      <td className="py-2.5 px-4 font-bold text-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-teal-50 text-teal-800 font-bold text-[10px] flex items-center justify-center border border-teal-200">
+                            {(s.studentName || "").trim().split(" ").pop()?.charAt(0) || "H"}
+                          </span>
+                          <span>{s.studentName}</span>
+                        </div>
+                      </td>
+
+                      {/* Điểm Khảo sát đầu vào */}
+                      <td className="py-2.5 px-3 text-center bg-teal-50/20">
+                        {s.baselineScore !== null ? (
+                          <div className="flex flex-col items-center">
+                            <span className={`font-black text-xs px-2 py-0.5 rounded-md ${
+                              s.baselineScore < 5.0
+                                ? "bg-rose-100 text-rose-700"
+                                : s.baselineScore < 6.5
+                                ? "bg-amber-100 text-amber-800"
+                                : s.baselineScore < 8.0
+                                ? "bg-teal-100 text-teal-800"
+                                : "bg-emerald-100 text-emerald-800"
+                            }`}>
+                              {s.baselineScore}
+                            </span>
+                            {s.isFromEntranceTest && (
+                              <span className="text-[9px] text-teal-600 font-medium mt-0.5">Tuyển sinh</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </td>
+
+                      {/* Điểm Kỳ hiện tại */}
+                      <td className="py-2.5 px-3 text-center bg-sky-50/20">
+                        {s.currentScore !== null ? (
+                          <span className={`font-black text-xs px-2 py-0.5 rounded-md ${
+                            s.currentScore < 5.0
+                              ? "bg-rose-100 text-rose-700"
+                              : s.currentScore < 6.5
+                              ? "bg-amber-100 text-amber-800"
+                              : s.currentScore < 8.0
+                              ? "bg-sky-100 text-sky-800"
+                              : "bg-emerald-100 text-emerald-800"
+                          }`}>
+                            {s.currentScore}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </td>
+
+                      {/* Độ lệch Delta */}
+                      <td className="py-2.5 px-3 text-center">
+                        {s.delta !== null ? (
+                          s.delta > 0 ? (
+                            <span className="font-bold text-emerald-600 inline-flex items-center gap-0.5">
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                              +{s.delta}
+                            </span>
+                          ) : s.delta < 0 ? (
+                            <span className="font-bold text-rose-600 inline-flex items-center gap-0.5">
+                              <ArrowDownRight className="w-3.5 h-3.5" />
+                              {s.delta}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500 font-semibold inline-flex items-center gap-0.5">
+                              <Minus className="w-3 h-3" />
+                              0
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
+                      </td>
+
+                      {/* Badge Trạng thái Bám sát */}
+                      <td className="py-2.5 px-4 text-center">
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+                          s.statusTag === "PROGRESS_HIGH"
+                            ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                            : s.statusTag === "PROGRESS"
+                            ? "bg-teal-100 text-teal-800 border border-teal-200"
+                            : s.statusTag === "STABLE"
+                            ? "bg-blue-50 text-blue-700 border border-blue-200"
+                            : s.statusTag === "SLIGHT_DROP"
+                            ? "bg-amber-50 text-amber-700 border border-amber-200"
+                            : s.statusTag === "REGRESS"
+                            ? "bg-rose-100 text-rose-800 border border-rose-300"
+                            : s.statusTag === "URGENT_INTERVENTION"
+                            ? "bg-red-600 text-white font-black animate-pulse"
+                            : s.statusTag === "AT_RISK"
+                            ? "bg-amber-100 text-amber-800 border border-amber-300 font-bold"
+                            : "bg-slate-100 text-slate-500"
+                        }`}>
+                          {s.statusTag === "PROGRESS_HIGH" && <Sparkles className="w-3 h-3" />}
+                          {s.statusTag === "URGENT_INTERVENTION" && <AlertTriangle className="w-3 h-3" />}
+                          {s.statusLabel}
+                        </span>
+                      </td>
+
+                      {/* Lịch sử điểm qua các kỳ */}
+                      <td className="py-2.5 px-4 text-center">
+                        <div className="flex items-center justify-center gap-1 font-mono text-[10px]">
+                          {EVAL_PERIODS.map(p => {
+                            const sc = s.periodHistory?.[p.code]
+                            return (
+                              <span
+                                key={p.code}
+                                title={`${p.name}: ${sc !== null ? sc : "Chưa có"}`}
+                                className={`w-6 py-0.5 rounded text-center font-bold ${
+                                  sc !== null && sc !== undefined
+                                    ? sc < 5.0
+                                      ? "bg-rose-100 text-rose-700"
+                                      : sc < 6.5
+                                      ? "bg-amber-100 text-amber-700"
+                                      : "bg-teal-50 text-teal-800"
+                                    : "bg-slate-100 text-slate-300"
+                                }`}
+                              >
+                                {sc !== null && sc !== undefined ? sc : "-"}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </td>
+
+                      {/* Nhận xét / Ghi chú */}
+                      <td className="py-2.5 px-3 text-slate-500 text-[11px] max-w-[180px] truncate" title={s.remark}>
+                        {s.remark || "-"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

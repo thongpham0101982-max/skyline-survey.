@@ -432,28 +432,37 @@ export async function GET(request: Request) {
           periodHistory[p] = pe?.compositeScore !== null && pe?.compositeScore !== undefined ? Number(pe.compositeScore) : null
         })
 
-        studentsTracking.push({
-          studentId: student.id,
-          studentCode: student.studentCode,
-          studentName: student.studentName,
-          gender: student.gender,
-          className: student.class?.className || "",
-          grade: student.class?.grade || "",
-          subjectId: sub.id,
-          subjectName: sub.name,
-          subjectCode: sub.code,
-          baselineScore: effectiveBaselineScore,
-          isFromEntranceTest,
-          currentScore,
-          delta,
-          statusTag,
-          statusLabel,
-          statusColor,
-          remark: currentEntry?.remark || baselineEntry?.remark || "",
-          periodHistory
-        })
+        // Chỉ thêm vào danh sách bám sát chi tiết khi đã chọn cả Lớp và Môn học
+        const isClassAndSubjectSelected = Boolean(classId && classId !== "ALL" && subjectId && subjectId !== "ALL")
+        if (isClassAndSubjectSelected) {
+          studentsTracking.push({
+            studentId: student.id,
+            studentCode: student.studentCode,
+            studentName: student.studentName,
+            gender: student.gender,
+            className: student.class?.className || "",
+            grade: student.class?.grade || "",
+            subjectId: sub.id,
+            subjectName: sub.name,
+            subjectCode: sub.code,
+            baselineScore: effectiveBaselineScore,
+            isFromEntranceTest,
+            currentScore,
+            delta,
+            statusTag,
+            statusLabel,
+            statusColor,
+            remark: currentEntry?.remark || baselineEntry?.remark || "",
+            periodHistory
+          })
+        }
       })
     })
+
+    // Sắp xếp học sinh theo thứ tự tên tiếng Việt
+    if (studentsTracking.length > 0) {
+      studentsTracking.sort((a, b) => (a.studentName || "").localeCompare(b.studentName || "", "vi"))
+    }
 
     // 7. Format Distribution Data for Recharts Bar Chart
     const distribution = [
@@ -558,6 +567,7 @@ export async function GET(request: Request) {
       multiPeriodTrend,
       transitionMatrix,
       studentsTracking,
+      isClassAndSubjectSelected: Boolean(classId && classId !== "ALL" && subjectId && subjectId !== "ALL"),
       subjects: Array.from(subjectMap.values())
     })
   } catch (error: any) {
