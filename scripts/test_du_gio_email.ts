@@ -3,7 +3,7 @@ import { sendEmail } from "../src/lib/mail";
 import { renderObservationRequestForHost } from "../src/lib/email-templates";
 
 async function main() {
-  const targetEmail = "anhnt@skylineschool.edu.vn";
+  const targetEmail = process.argv[2] || "thongpn@skylineschool.edu.vn";
   console.log(`[Test] Chuẩn bị gửi email kiểm thử chức năng Dự giờ đến: ${targetEmail}`);
 
   const formattedDate = new Date().toLocaleDateString("vi-VN", {
@@ -17,11 +17,11 @@ async function main() {
   const directLink = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
 
   const emailHtml = renderObservationRequestForHost({
-    hostName: "Thầy/Cô Nguyễn Thị Ánh",
-    observerName: "Phạm Nguyên Thông",
-    observerCode: "0201000094",
-    observerPosition: "Giáo viên / Ban Khảo thí",
-    topic: "[Kiểm thử] Đề xuất tham gia dự giờ tiết dạy Toán học - Ứng dụng thực tế",
+    hostName: "Thầy Phạm Nguyên Thông",
+    observerName: "Ban Khảo thí & ĐBCL",
+    observerCode: "BKT_DBCL",
+    observerPosition: "Cán bộ Quản lý / Chuyên môn",
+    topic: "[Kiểm thử] Đề xuất tham gia dự giờ tiết dạy môn Toán học - Chuyên đề Khảo sát chất lượng",
     subjectName: "Toán học",
     grade: "Khối 10",
     className: "Lớp 10A1",
