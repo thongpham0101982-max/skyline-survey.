@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use server"
 
-function getTeacherResolvedEmail(teacher: any): string | null {
+function getTeacherResolvedEmail(teacher: any, allowSystemEmail = false): string | null {
   if (!teacher) return null;
 
   const code = String(teacher.teacherCode || "").trim();
@@ -25,12 +25,8 @@ function getTeacherResolvedEmail(teacher: any): string | null {
   }
 
   const systemEmails = [
-    "bankhaothi@skylineschool.edu.vn",
-    "admin@skylineschool.edu.vn",
-    "system@skylineschool.edu.vn",
     "noreply@skylineschool.edu.vn"
   ];
-
   const isRealEmail = (e?: string | null): boolean => {
     if (!e) return false;
     const clean = e.trim().toLowerCase();

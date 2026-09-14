@@ -5,6 +5,7 @@ import { isSlotBelongsToForeignEsl, isExactWalkthroughForm } from "./utils";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { sendEmail } from "@/lib/mail";
 
 export async function getForeignObservationData(academicYearId?: string) {
   try {
@@ -345,14 +346,14 @@ export async function createForeignObservationWithEvaluation(data: {
     }
     if (!evaluatorTeacher && session.user.email) {
       try {
-        evaluatorTeacher = await prisma.teacher.create({
+        evaluatorTeacher = await (prisma.teacher as any).create({
           data: {
             teacherCode: "ADMIN_" + (session.user.name || "GV").substring(0, 3).toUpperCase(),
             teacherName: session.user.name || "Administrator",
             email: session.user.email,
             position: "QLCM",
             status: "ACTIVE"
-          }
+          } as any
         });
       } catch (e) {
         evaluatorTeacher = await prisma.teacher.findFirst();
@@ -514,6 +515,88 @@ export async function createForeignObservationWithEvaluation(data: {
       }
     });
 
+    // Update quotas
+    if (!data.isDraft && academicYear?.id) {
+      try {
+        await prisma.teacherAcademicYearTarget.upsert({
+          where: {
+            teacherId_academicYearId: {
+              teacherId: data.teacherId,
+              academicYearId: academicYear.id
+            }
+          },
+          update: {
+            requiredTaught: { increment: 1 }
+          },
+          create: {
+            teacherId: data.teacherId,
+            academicYearId: academicYear.id,
+            requiredTaught: 1,
+            requiredObserved: 0
+          }
+        });
+
+        if (evaluatorId) {
+          await prisma.teacherAcademicYearTarget.upsert({
+            where: {
+              teacherId_academicYearId: {
+                teacherId: evaluatorId,
+                academicYearId: academicYear.id
+              }
+            },
+            update: {
+              requiredObserved: { increment: 1 }
+            },
+            create: {
+              teacherId: evaluatorId,
+              academicYearId: academicYear.id,
+              requiredTaught: 0,
+              requiredObserved: 1
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Could not update target counts:", e);
+      }
+    }
+
+    if (!data.isDraft && hostTeacher?.email) {
+      try {
+        const hostEmail = hostTeacher.email.includes("@") ? hostTeacher.email : `${hostTeacher.email}@skylineschool.edu.vn`;
+        const dateStr = new Date(observationDate).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "short", day: "numeric" });
+        const emailSubject = `[Skyline - ESL Observation] Lesson Evaluation Completed: ${data.topic || "English Lesson"}`;
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
+            <div style="background: linear-gradient(135deg, #00A6A9 0%, #48BFE3 100%); padding: 24px; text-align: center; color: white;">
+              <h2 style="margin: 0; font-size: 20px;">FOREIGN TEACHER OBSERVATION EVALUATION</h2>
+              <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Sky-Line Education System - Academic Quality Assurance</p>
+            </div>
+            <div style="padding: 24px;">
+              <p style="font-size: 15px; color: #1e293b;">Dear Teacher <strong>${hostTeacher.teacherName}</strong>,</p>
+              <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+                Your recent lesson observation has been evaluated by <strong>${evaluatorTeacher?.teacherName || "Academic Supervisor"}</strong>.
+              </p>
+              <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e2e8f0;">
+                <p style="margin: 4px 0; font-size: 13px;"><strong>Topic:</strong> ${data.topic || "English Lesson"}</p>
+                <p style="margin: 4px 0; font-size: 13px;"><strong>Date:</strong> ${dateStr}</p>
+                <p style="margin: 4px 0; font-size: 13px;"><strong>Class:</strong> ${data.className || "ESL Class"}</p>
+                <p style="margin: 4px 0; font-size: 13px;"><strong>Overall Rating:</strong> <span style="display: inline-block; padding: 3px 8px; border-radius: 4px; background: #00A6A9; color: white; font-weight: bold;">${data.overallRating || "Effective Practice"}</span></p>
+                ${data.summary?.keyStrengths ? `<p style="margin: 8px 0 4px 0; font-size: 13px;"><strong>Key Strengths:</strong> ${data.summary.keyStrengths}</p>` : ""}
+              </div>
+              <p style="font-size: 13px; color: #64748b;">Please log in to the Skyline Portal to review your detailed evaluation feedback.</p>
+            </div>
+          </div>
+        `;
+        await sendEmail({
+          to: hostEmail,
+          subject: emailSubject,
+          html: emailHtml,
+          from: "SKY-LINE ACADEMIC OBSERVATION"
+        });
+      } catch (mailErr) {
+        console.error("Failed to send foreign observation email:", mailErr);
+      }
+    }
     revalidatePath("/teacher/du-gio-gvnn");
     revalidatePath("/admin/du-gio-gvnn");
     revalidatePath("/teacher/du-gio");

@@ -46,11 +46,14 @@ export async function POST(req: Request) {
     }
 
     try {
-      await sendEmail({ to, cc, subject, html: emailHtml, attachments: mailAttachments });
-      return NextResponse.json({ success: true, sent: true });
+      const mailRes = await sendEmail({ to, cc, subject, html: emailHtml, attachments: mailAttachments });
+      if (!mailRes.success) {
+        return NextResponse.json({ success: false, sent: false, error: mailRes.error || "SMTP error", html: emailHtml });
+      }
+      return NextResponse.json({ success: true, sent: true, messageId: mailRes.messageId });
     } catch (err) {
       console.error("SMTP SEND ERROR:", err);
-      return NextResponse.json({ success: true, sent: false, error: err.message || "SMTP error", html: emailHtml });
+      return NextResponse.json({ success: false, sent: false, error: err.message || "SMTP error", html: emailHtml });
     }
   } catch (error) {
     console.error("API ERROR:", error);

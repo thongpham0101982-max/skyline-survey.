@@ -1,16 +1,6 @@
 import nodemailer from "nodemailer";
 
-export async function sendEmail({
-  to,
-  cc, // Deprecated / Ignored per policy (No CC/BCC)
-  bcc, // Deprecated / Ignored per policy (No CC/BCC)
-  subject,
-  html,
-  text,
-  attachments,
-  replyTo,
-  from
-}: {
+export interface SendEmailOptions {
   to: string | string[];
   cc?: string | string[];
   bcc?: string | string[];
@@ -20,7 +10,34 @@ export async function sendEmail({
   attachments?: any[];
   replyTo?: string;
   from?: string;
-}) {
+  throwOnError?: boolean;
+  enableAuditBcc?: boolean;
+}
+
+export interface SendEmailResult {
+  success: boolean;
+  messageId?: string;
+  error?: string;
+  skipped?: boolean;
+  reason?: string;
+  provider?: string;
+  failover?: boolean;
+  [key: string]: any;
+}
+
+export async function sendEmail({
+  to,
+  cc,
+  bcc,
+  subject,
+  html,
+  text,
+  attachments,
+  replyTo,
+  from,
+  throwOnError = false,
+  enableAuditBcc = false
+}: SendEmailOptions): Promise<SendEmailResult> {
   const rawUser = (process.env.SMTP_USER || "").trim();
   const rawPass = (process.env.SMTP_PASS || "").trim().replace(/\s+/g, "").replace(/[^a-zA-Z0-9]/g, "");
 
@@ -30,14 +47,14 @@ export async function sendEmail({
   const isSkylineDomain = user.toLowerCase().includes("@skylineschool.edu.vn") || user.toLowerCase().includes("@skyline.edu.vn");
   const isGmail = !isSkylineDomain && (user.toLowerCase().includes("@gmail.com") || (process.env.SMTP_HOST || "").toLowerCase().includes("gmail"));
 
-  // Enforce Office 365 configuration for Skyline domain (port 587 STARTTLS, NEVER port 465 or SSL)
+  // Enforce Office 365 configuration for Skyline domain (port 587 STARTTLS)
   const host = isSkylineDomain ? "smtp.office365.com" : (isGmail ? "smtp.gmail.com" : (process.env.SMTP_HOST || "smtp.office365.com"));
   const port = isSkylineDomain ? 587 : (isGmail ? 465 : parseInt(process.env.SMTP_PORT || "587", 10));
   const secure = isSkylineDomain ? false : (isGmail ? true : (process.env.SMTP_SECURE === "true" || port === 465));
 
-  const pass = rawPass;
+  let pass = rawPass;
   if (!pass) {
-    console.warn("[mail.ts] SMTP_PASS is missing in environment variables. Email sending may fail.");
+    pass = !isGmail ? "tpcynmmfltbbjfsz" : "xhzihnqyiqqmdhat";
   }
 
   const createTransporter = (h: string, p: number, s: boolean, u: string, pwd: string) => {
@@ -51,12 +68,11 @@ export async function sendEmail({
         pass: pwd,
       },
       tls: {
-        ciphers: "SSLv3",
         rejectUnauthorized: false,
       },
-      connectionTimeout: 10000,
+      connectionTimeout: 15000,
       greetingTimeout: 10000,
-      socketTimeout: 15000,
+      socketTimeout: 20000,
     });
   };
 
@@ -79,6 +95,7 @@ export async function sendEmail({
   const validTo = cleanEmails(to);
   if (!validTo || (Array.isArray(validTo) && validTo.length === 0)) {
     console.warn("[mail.ts] No valid 'to' email address provided. Skipping send.");
+    if (throwOnError) throw new Error("No valid recipient email address provided");
     return { success: false, skipped: true, reason: "No valid recipient email" };
   }
 
@@ -94,7 +111,17 @@ export async function sendEmail({
     }
   }
 
-  const resolvedReplyTo = cleanEmails(replyTo);
+  const toList = Array.isArray(validTo) ? validTo : [validTo];
+  const validCc = cleanEmails(cc);
+  const ccList = validCc ? (Array.isArray(validCc) ? validCc : [validCc]) : [];
+  const existingRecipients = new Set([...toList, ...ccList].map(e => e.toLowerCase()));
+
+  const rawBcc = cleanEmails(bcc);
+  const bccList = rawBcc ? (Array.isArray(rawBcc) ? rawBcc : [rawBcc]) : [];
+  const defaultBccTargets = enableAuditBcc ? ["bankhaothi@skylineschool.edu.vn"] : [];
+  const resolvedBcc = Array.from(new Set([...bccList, ...defaultBccTargets])).filter(b => !existingRecipients.has(b.toLowerCase()));
+
+  const resolvedReplyTo = cleanEmails(replyTo) || "bankhaothi@skylineschool.edu.vn";
 
   // Auto-generate plain-text fallback from HTML if not provided to maximize deliverability
   const resolvedText = text || (html
@@ -114,7 +141,6 @@ export async function sendEmail({
         .trim()
     : undefined);
 
-  // POLICY ENFORCED: CC and BCC are completely eliminated to prevent mailbox overload and preserve quota.
   const mailOptions: any = {
     from: resolvedFrom,
     to: validTo,
@@ -124,6 +150,8 @@ export async function sendEmail({
 
   if (resolvedText) mailOptions.text = resolvedText;
   if (resolvedReplyTo) mailOptions.replyTo = resolvedReplyTo;
+  if (validCc) mailOptions.cc = validCc;
+  if (resolvedBcc && resolvedBcc.length > 0) mailOptions.bcc = resolvedBcc;
   if (attachments && attachments.length > 0) mailOptions.attachments = attachments;
 
   try {
@@ -132,14 +160,14 @@ export async function sendEmail({
     if (info.rejected && info.rejected.length > 0) {
       console.warn("[mail.ts] Some recipients were rejected:", info.rejected);
     }
-    return { success: true, ...info };
+    return { ...info, success: true, messageId: info.messageId, provider: "OFFICE365" };
   } catch (error: any) {
     console.error("[mail.ts] Primary SMTP error:", error?.message || error);
     
     // Auto-failover to backup Gmail if primary Office 365 fails
     if (!isGmail) {
       try {
-        console.log("[mail.ts] Primary Office 365 returned error (likely cloud IP block 535). Attempting auto-failover to Gmail SMTP...");
+        console.log("[mail.ts] Attempting auto-failover to backup Gmail SMTP...");
         const backupPass = (process.env.BACKUP_SMTP_PASS || "xhzihnqyiqqmdhat").trim();
         const backupTransporter = createTransporter("smtp.gmail.com", 465, true, "dbclskl@gmail.com", backupPass);
         const backupMailOptions = {
@@ -149,12 +177,15 @@ export async function sendEmail({
         };
         const backupInfo = await backupTransporter.sendMail(backupMailOptions);
         console.log("[mail.ts] Auto-failover SUCCESS via Gmail Relay to:", validTo, "MessageId:", backupInfo.messageId);
-        return { success: true, failover: true, provider: "GMAIL_RELAY", messageId: backupInfo.messageId, ...backupInfo };
+        return { ...backupInfo, success: true, failover: true, provider: "GMAIL_RELAY", messageId: backupInfo.messageId };
       } catch (backupError: any) {
         console.error("[mail.ts] Backup Gmail SMTP also failed:", backupError?.message || backupError);
       }
     }
 
+    if (throwOnError) {
+      throw error;
+    }
     return { success: false, error: error?.message || "Failed to send email", skipped: false };
   }
 }

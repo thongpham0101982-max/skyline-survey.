@@ -187,7 +187,6 @@ export async function POST(req) {
        for (const [userId, group] of Object.entries(teacherGroups)) {
           const user = group.user;
           const teacher = user?.teacher;
-          
           // Robust email resolution
           let targetEmail = (teacher?.email || user?.email || "").trim();
           if (teacher?.teacherCode === "0201000094" || teacher?.teacherCode === "020100094" || user?.fullName?.includes("Phạm Nguyên Thông")) {
@@ -198,7 +197,7 @@ export async function POST(req) {
           
           if (!targetEmail || !targetEmail.includes("@")) {
              failedCount++;
-             errors.push(`Teacher ${user?.fullName || "Unknown"} has invalid email: ${targetEmail || "none"}`);
+             errors.push(`Giáo viên ${user?.fullName || "Chưa xác định"} không có email hợp lệ: ${targetEmail || "Không có"}`);
              continue;
           }
           
@@ -315,16 +314,22 @@ export async function POST(req) {
           `;
           
           try {
-             await sendEmail({
+             const mailRes = await sendEmail({
                 to: targetEmail,
                 subject: `[Sky-Line] Thông báo Phân công Khảo sát Năng lực Học sinh Phổ thông`,
                 html: emailHtml,
                 replyTo: "bankhaothi@skylineschool.edu.vn"
              });
-             sentCount++;
+
+             if (mailRes && mailRes.success) {
+                sentCount++;
+             } else {
+                failedCount++;
+                errors.push(`Thất bại khi gửi cho ${user.fullName} (${targetEmail}): ${mailRes?.error || "Lỗi SMTP"}`);
+             }
           } catch(err) {
              failedCount++;
-             errors.push(`Failed sending to ${user.fullName} (${targetEmail}): ${err.message}`);
+             errors.push(`Lỗi khi gửi cho ${user.fullName} (${targetEmail}): ${err.message}`);
           }
        }
        

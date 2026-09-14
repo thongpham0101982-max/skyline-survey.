@@ -134,11 +134,17 @@ export async function POST(req: NextRequest) {
       </div>
     `
 
-    await sendEmail({
+    const emailRes = await sendEmail({
       to: userEmail,
       subject: '[SQMS Portal] Yêu cầu Đặt lại Mật khẩu Tài khoản',
       html: emailHtml
     })
+
+    if (!emailRes.success) {
+      return NextResponse.json({
+        error: `Không thể gửi email đặt lại mật khẩu: ${emailRes.error || 'Lỗi kết nối SMTP'}. Vui lòng liên hệ Ban Khảo thí.`
+      }, { status: 500 })
+    }
 
     return NextResponse.json({
       ok: true,

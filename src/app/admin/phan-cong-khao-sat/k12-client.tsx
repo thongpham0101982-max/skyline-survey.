@@ -283,7 +283,7 @@ export function PhanCongK12Client({
       })
       if (res.ok) {
         const j = await res.json()
-        if (j.emailError) { notify(`Phân công thành công NHƯNG gửi mail thất bại: ${j.emailError}`, "err") } else { notify("Đã hoàn tất phân công và gửi email") }
+        notify("Đã hoàn tất lưu phân công môn thi cho giáo viên!")
         fetchAssignments()
         setAsSelSubjects([]); setAsSelGrades([]); setAsSelSystems([])
       } else {

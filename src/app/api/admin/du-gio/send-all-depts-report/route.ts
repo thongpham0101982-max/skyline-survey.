@@ -427,12 +427,18 @@ export async function POST(req: Request) {
     `;
 
     // 7. Send Email
-    await sendEmail({
+    const mailRes = await sendEmail({
       to: toEmail,
       // cc removed per policy
       subject: emailSubject,
       html: emailHtml
     });
+
+    if (!mailRes.success) {
+      return NextResponse.json({
+        error: mailRes.error || "Gửi email báo cáo tổng hợp thất bại qua SMTP"
+      }, { status: 500 });
+    }
 
     return NextResponse.json({
       success: true,

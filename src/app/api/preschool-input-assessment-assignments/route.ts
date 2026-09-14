@@ -203,9 +203,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, sentCount: 0, message: "No assignments found to notify" });
       }
 
-      const host = req.headers.get("host") || "skyline-survey-rh4k.vercel.app";
+      const host = req.headers.get("host") || "skyline-survey.vercel.app";
       const protocol = req.headers.get("x-forwarded-proto") || "https";
-      const baseUrl = `${protocol}://${host}`;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || `${protocol}://${host}`;
 
       let sentCount = 0;
       let failedCount = 0;
@@ -225,7 +225,7 @@ export async function POST(req: NextRequest) {
 
         if (!targetEmail || !targetEmail.includes("@")) {
           failedCount++;
-          errors.push(`Teacher ${user?.fullName || "Unknown"} has invalid email: ${targetEmail || "none"}`);
+          errors.push(`Giáo viên ${user?.fullName || "Chưa xác định"} không có email hợp lệ: ${targetEmail || "Không có"}`);
           continue;
         }
 
@@ -324,16 +324,22 @@ export async function POST(req: NextRequest) {
         `;
 
         try {
-          await sendEmail({
+          const mailRes = await sendEmail({
             to: targetEmail,
             subject: `[Sky-Line Preschool] Phân công Khảo sát Năng lực Đầu vào - Bé ${gradeLabel}`,
             html: emailHtml,
             replyTo: "bankhaothi@skylineschool.edu.vn"
           });
-          sentCount++;
+
+          if (mailRes && mailRes.success) {
+            sentCount++;
+          } else {
+            failedCount++;
+            errors.push(`Thất bại khi gửi cho ${user.fullName} (${targetEmail}): ${mailRes?.error || "Lỗi SMTP"}`);
+          }
         } catch (err) {
           failedCount++;
-          errors.push(`Failed sending to ${user.fullName} (${targetEmail}): ${err.message}`);
+          errors.push(`Lỗi khi gửi cho ${user.fullName} (${targetEmail}): ${err.message}`);
         }
       }
 
