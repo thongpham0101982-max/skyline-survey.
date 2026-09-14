@@ -307,6 +307,8 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
 /**
  * 1. Email confirmation for Observer (Biên nhận gửi đề xuất xin dự giờ) - The one from user's screenshot!
  */
+export const SKYLINE_SSM_LOGIN_URL = "https://ssm.skylineschool.edu.vn/login";
+
 export function renderObservationRequestSubmittedForObserver(params: {
   observerName: string;
   hostName: string;
@@ -321,8 +323,9 @@ export function renderObservationRequestSubmittedForObserver(params: {
   period: string;
   campusName?: string;
   room?: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   return renderSkylineEmail({
     headerBadge: "✅ ĐÃ GỬI ĐỀ XUẤT",
     headerTitle: "XÁC NHẬN ĐÃ GỬI ĐỀ XUẤT DỰ GIỜ",
@@ -345,7 +348,7 @@ export function renderObservationRequestSubmittedForObserver(params: {
     },
     button: {
       text: "👉 Xem Lịch & Danh Sách Tiết Tôi Dự",
-      url: params.directLink
+      url: targetLink
     },
     secondaryNote: "Quý Thầy/Cô có thể quản lý và theo dõi tiến độ dự giờ trực tiếp trên hệ thống Skyline."
   });
@@ -368,8 +371,9 @@ export function renderObservationRequestForHost(params: {
   dateStr: string;
   period: string;
   notes?: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   return renderSkylineEmail({
     headerBadge: "📩 ĐỀ XUẤT MỚI",
     headerTitle: "ĐỀ XUẤT XIN THAM GIA DỰ GIỜ",
@@ -393,7 +397,7 @@ export function renderObservationRequestForHost(params: {
     },
     button: {
       text: "👉 Xem Chi Tiết & Phê Duyệt Tiết Dự Giờ Ngay",
-      url: params.directLink
+      url: targetLink
     }
   });
 }
@@ -413,8 +417,9 @@ export function renderObservationRequestResponseForObserver(params: {
   period: string;
   accepted: boolean;
   reason?: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   if (params.accepted) {
     return renderSkylineEmail({
       headerBadge: "✅ ĐÃ PHÊ DUYỆT",
@@ -437,7 +442,7 @@ export function renderObservationRequestResponseForObserver(params: {
       },
       button: {
         text: "👉 Xem Lịch & Thông Tin Tiết Dạy Trên Skyline",
-        url: params.directLink
+        url: targetLink
       }
     });
   } else {
@@ -455,7 +460,7 @@ export function renderObservationRequestResponseForObserver(params: {
       },
       button: {
         text: "👉 Tìm & Đăng Ký Tiết Dạy Khác",
-        url: params.directLink
+        url: targetLink
       },
       secondaryNote: "Thầy/Cô có thể lựa chọn các tiết dạy khác trong Tổ chuyên môn hoặc liên hệ trao đổi trực tiếp."
     });
@@ -463,45 +468,88 @@ export function renderObservationRequestResponseForObserver(params: {
 }
 
 /**
- * 4. New Observation Slot Notification to Department Members
+ * 4. New Observation Slot Notification to Department Members (Tổ Chuyên Môn)
+ * Standard Sky-Line branded notification matching official requirements.
  */
 export function renderObservationSlotCreatedForTcm(params: {
+  recipientName?: string;
+  creatorName?: string;
   teacherName: string;
   teacherCode?: string;
+  departmentName?: string;
   topic: string;
   subjectName: string;
+  level?: string;
   grade?: string;
   className?: string;
   campusName?: string;
   room?: string;
   dateStr: string;
-  timeStr: string;
-  directLink: string;
+  timeStr?: string;
+  period?: string;
+  directLink?: string;
+  buttonText?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
+  const buttonLabel = params.buttonText || "👉 Xem Chi Tiết & Phê Duyệt Tiết Dự Giờ Ngay";
+  const effectivePeriod = params.period || params.timeStr || "Tiết 1";
+
   return renderSkylineEmail({
-    headerBadge: "📢 TIẾT DẠY MỚI",
-    headerTitle: "TIẾT DẠY DỰ GIỜ MỚI TRONG TỔ CHUYÊN MÔN",
-    headerSubtitle: "Kính mời Quý Thầy/Cô đăng ký tham gia dự giờ",
+    headerBadge: "📢 TỔ CHUYÊN MÔN",
+    headerTitle: "THÔNG BÁO TIẾT DẠY ĐĂNG KÝ DỰ GIỜ MỚI (TỔ CHUYÊN MÔN)",
+    headerSubtitle: "Kính mời Quý Thầy/Cô đăng nhập hệ thống để xem chi tiết và đăng ký tham gia",
     headerTheme: "teal",
-    recipientName: "Quý Thầy/Cô trong Tổ Chuyên Môn",
-    introMessage: `Thầy/Cô <strong>${params.teacherName}</strong> vừa mở một tiết dạy dự giờ mới cho Tổ chuyên môn. Kính mời Thầy/Cô đăng ký tham dự:`,
+    recipientName: params.recipientName || "Quý Thầy/Cô trong Tổ Chuyên Môn",
+    greetingPrefix: "Kính gửi Thầy/Cô",
+    introMessage: `Thầy/Cô <strong>${params.creatorName || params.teacherName}</strong> thuộc Tổ Chuyên Môn vừa khởi tạo tiết dạy đăng ký dự giờ. Kính mời Thầy/Cô đăng nhập hệ thống để xem chi tiết và đăng ký tham gia dự giờ:`,
     details: [
-      { icon: "👨‍🏫", label: "Giáo viên dạy", value: `${params.teacherName} ${params.teacherCode ? `(${params.teacherCode})` : ""}`, highlight: true },
-      { icon: "📖", label: "Bài dạy / Chủ đề", value: params.topic, highlight: true },
-      { icon: "📚", label: "Môn học & Lớp", value: `${params.subjectName} (${params.grade || ""} - ${params.className || "Lớp học"})` },
-      { icon: "🏫", label: "Cơ sở & Địa điểm", value: `${params.campusName || "Trường"} - ${params.room || "Phòng học"}` },
-      { icon: "📅", label: "Ngày dạy", value: params.dateStr, highlight: true },
-      { icon: "⏰", label: "Thời gian / Tiết", value: params.timeStr }
+      {
+        icon: "👨‍🏫",
+        label: "Giáo viên đăng ký tiết dạy",
+        value: `${params.teacherName}${params.teacherCode ? ` (${params.teacherCode})` : ""}${params.departmentName ? ` - Tổ CM: ${params.departmentName}` : ""}`,
+        highlight: true
+      },
+      {
+        icon: "📖",
+        label: "Tên bài dạy / Chủ đề",
+        value: params.topic || "Tiết dạy đăng ký dự giờ",
+        highlight: true
+      },
+      {
+        icon: "📚",
+        label: "Môn học",
+        value: params.subjectName || "Môn học"
+      },
+      ...(params.level ? [{ icon: "🏫", label: "Cấp học", value: params.level }] : []),
+      ...(params.grade ? [{ icon: "🏷️", label: "Khối lớp", value: params.grade }] : []),
+      ...(params.className ? [{ icon: "👥", label: "Lớp", value: params.className }] : []),
+      {
+        icon: "📅",
+        label: "Ngày dạy",
+        value: params.dateStr,
+        highlight: true
+      },
+      {
+        icon: "⏰",
+        label: "Tiết dạy",
+        value: effectivePeriod
+      },
+      ...(params.campusName || params.room ? [{
+        icon: "📍",
+        label: "Cơ sở & Địa điểm",
+        value: `${params.campusName || "Sky-Line"}${params.room ? ` - Phòng ${params.room}` : ""}`
+      }] : [])
     ],
     noticeBox: {
       type: "info",
-      title: "Số lượng tham dự",
-      content: "Số lượng giáo viên tham dự mỗi tiết dạy có giới hạn. Kính mời Thầy/Cô đăng ký sớm để hệ thống ghi nhận."
+      title: "LƯU Ý QUAN TRỌNG",
+      content: "Thầy/Cô vui lòng truy cập hệ thống Skyline để xem chi tiết và chọn tiết đăng ký dự giờ. Tiết dạy sẽ được chính thức ghi nhận vào lịch giảng dạy và hệ thống sẽ gửi thông báo xác nhận tới Thầy/Cô."
     },
     button: {
-      text: "👉 Đăng Ký Dự Giờ Ngay Trực Tiếp",
-      url: params.directLink
-    }
+      text: buttonLabel,
+      url: targetLink
+    },
+    secondaryNote: "Quý Thầy/Cô có thể quản lý, theo dõi lịch và đăng ký dự giờ trực tiếp trên hệ thống Quản lý Dự giờ Skyline."
   });
 }
 
@@ -519,8 +567,9 @@ export function renderObservationSlotRegisteredForHost(params: {
   className?: string;
   dateStr: string;
   timeStr: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   return renderSkylineEmail({
     headerBadge: "📝 ĐĂNG KÝ MỚI",
     headerTitle: "THÔNG BÁO ĐĂNG KÝ TIẾT DỰ GIỜ",
@@ -542,7 +591,7 @@ export function renderObservationSlotRegisteredForHost(params: {
     },
     button: {
       text: "👉 Xem Danh Sách Tiết Dạy & Người Dự",
-      url: params.directLink
+      url: targetLink
     }
   });
 }
@@ -568,8 +617,9 @@ export function renderObservationEvaluationCompletedForHost(params: {
   strengths?: string;
   improvements?: string;
   generalComment?: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   const extraHtml = `
     <!-- Score & Ranking Badge -->
     <div style="background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
@@ -631,7 +681,7 @@ export function renderObservationEvaluationCompletedForHost(params: {
     extraHtml,
     button: {
       text: "👉 Xem Chi Tiết Phiếu Đánh Giá & Tiếp Thu Góp Ý",
-      url: params.directLink
+      url: targetLink
     },
     secondaryNote: "Dữ liệu đánh giá đã được lưu trữ an toàn và tính vào chỉ tiêu chuyên môn của Thầy/Cô."
   });
@@ -657,8 +707,9 @@ export function renderObservationEvaluationCompletedForObserver(params: {
   strengths?: string;
   improvements?: string;
   generalComment?: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   const extraHtml = `
     <!-- Score & Ranking Badge -->
     <div style="background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
@@ -713,7 +764,7 @@ export function renderObservationEvaluationCompletedForObserver(params: {
     extraHtml,
     button: {
       text: "👉 Xem Danh Sách Tiết Tôi Dự Trên Skyline",
-      url: params.directLink
+      url: targetLink
     },
     secondaryNote: "Tiết dự giờ này đã được tự động cộng vào tiến độ hoàn thành chỉ tiêu dự giờ cá nhân của Thầy/Cô."
   });
@@ -734,8 +785,9 @@ export function renderObservationPendingEvaluationReminder(params: {
   period: string;
   campusName?: string;
   room?: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   return renderSkylineEmail({
     headerBadge: "⏰ NHẮC NHỞ ĐÁNH GIÁ",
     headerTitle: "NHẮC NHỞ HOÀN TẤT NHẬP ĐÁNH GIÁ TIẾT DỰ GIỜ",
@@ -757,7 +809,7 @@ export function renderObservationPendingEvaluationReminder(params: {
     },
     button: {
       text: "✍️ Nhập Phiếu Đánh Giá Ngay Trên Hệ Thống",
-      url: params.directLink,
+      url: targetLink,
       color: "#008B82"
     }
   });
@@ -772,8 +824,9 @@ export function renderObservationTeacherAcknowledged(params: {
   topic: string;
   feedbackText: string;
   acknowledgedAtStr: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   const extraHtml = `
     <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-left: 5px solid #16A34A; border-radius: 12px; padding: 16px 20px; margin: 20px 0;">
       <div style="font-size: 12px; font-weight: 800; color: #15803D; text-transform: uppercase; margin-bottom: 6px;">
@@ -798,7 +851,7 @@ export function renderObservationTeacherAcknowledged(params: {
     extraHtml,
     button: {
       text: "👉 Xem Chi Tiết Tiết Dự Giờ Trên Skyline",
-      url: params.directLink
+      url: targetLink
     }
   });
 }
@@ -823,8 +876,9 @@ export function renderObservationSurpriseCompletedForHost(params: {
   strengths?: string;
   improvements?: string;
   generalComment?: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   const extraHtml = `
     <!-- Score & Ranking Badge -->
     <div style="background-color: #FFF1F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
@@ -886,7 +940,7 @@ export function renderObservationSurpriseCompletedForHost(params: {
     extraHtml,
     button: {
       text: "👉 Xem Chi Tiết Biên Bản Dự Giờ Trên Skyline",
-      url: params.directLink,
+      url: targetLink,
       color: "#E11D48"
     }
   });
@@ -905,8 +959,9 @@ export function renderObservationReEvaluationApproved(params: {
   period: string;
   reason?: string;
   adminNote?: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   return renderSkylineEmail({
     headerBadge: "🔓 ĐÃ MỞ LẠI PHIẾU",
     headerTitle: "PHÊ DUYỆT MỞ LẠI PHIẾU ĐÁNH GIÁ",
@@ -929,7 +984,7 @@ export function renderObservationReEvaluationApproved(params: {
     },
     button: {
       text: "👉 Mở Phiếu & Đánh Giá Lại Ngay",
-      url: params.directLink
+      url: targetLink
     }
   });
 }
@@ -974,8 +1029,9 @@ export function renderObservationExpiredNotification(params: {
   room?: string;
   dateStr: string;
   timeStr: string;
-  directLink: string;
+  directLink?: string;
 }): string {
+  const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
   return renderSkylineEmail({
     headerBadge: "⏰ NHẮC LỊCH DẠY / DỰ",
     headerTitle: params.isHost ? "HẾT HẠN ĐĂNG KÝ & NHẮC LỊCH TIẾT DẠY" : "NHẮC LỊCH DỰ GIỜ TIẾT HỌC",
@@ -1004,3 +1060,132 @@ export function renderObservationExpiredNotification(params: {
     }
   });
 }
+
+/**
+ * 13. Foreign Teacher / ESL Observation Completed (For Foreign Teacher)
+ */
+export function renderForeignObservationEvaluationForHost(params: {
+  hostName: string;
+  observerName: string;
+  topic: string;
+  subjectName?: string;
+  grade?: string;
+  className?: string;
+  dateStr: string;
+  period?: string;
+  campusName?: string;
+  room?: string;
+  totalScore: string;
+  rating: string;
+  strengths?: string;
+  challenges?: string;
+  directLink?: string;
+}): string {
+  const targetLink = params.directLink || `${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio-gvnn`;
+  const extraHtml = `
+    <!-- Score & Rating Badge -->
+    <div style="background-color: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="vertical-align: middle;">
+            <div style="font-size: 11px; font-weight: 800; color: #3730A3; text-transform: uppercase; letter-spacing: 0.5px;">Overall Rating:</div>
+            <div style="font-size: 20px; font-weight: 900; color: #312E81; margin-top: 2px;">${params.rating}</div>
+          </td>
+          <td align="right" style="vertical-align: middle;">
+            <div style="font-size: 11px; font-weight: 800; color: #3730A3; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Average Score:</div>
+            <span style="font-size: 16px; font-weight: 900; color: #047857; background-color: #D1FAE5; border: 1px solid #A7F3D0; padding: 6px 16px; border-radius: 8px; display: inline-block;">
+              ${params.totalScore} / 4.00
+            </span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Qualitative Sections -->
+    <div style="margin: 20px 0;">
+      ${params.strengths ? `
+      <div style="background-color: #F0FDF4; border-left: 4px solid #16A34A; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+        <div style="font-size: 12px; font-weight: 800; color: #15803D; text-transform: uppercase; margin-bottom: 4px;">🌟 Key Strengths & Effective Practices:</div>
+        <div style="font-size: 13px; color: #166534; line-height: 1.6; white-space: pre-line;">${params.strengths}</div>
+      </div>
+      ` : ""}
+
+      ${params.challenges ? `
+      <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
+        <div style="font-size: 12px; font-weight: 800; color: #B45309; text-transform: uppercase; margin-bottom: 4px;">💡 Key Areas for Growth / Next Steps:</div>
+        <div style="font-size: 13px; color: #92400E; line-height: 1.6; white-space: pre-line;">${params.challenges}</div>
+      </div>
+      ` : ""}
+    </div>
+  `;
+
+  return renderSkylineEmail({
+    headerBadge: "🌐 FOREIGN TEACHER OBSERVATION (ESL)",
+    headerTitle: "LESSON OBSERVATION EVALUATION",
+    headerSubtitle: "Sky-Line Education System - Academic Quality Assurance",
+    headerTheme: "indigo",
+    recipientName: params.hostName,
+    greetingPrefix: "Dear Teacher ",
+    introMessage: `Your recent lesson observation has been completed and evaluated by <strong>${params.observerName}</strong>. Please find the evaluation summary below:`,
+    detailsTitle: "Observation Details",
+    details: [
+      { icon: "📖", label: "Topic / Lesson", value: params.topic || "English Lesson", highlight: true },
+      { icon: "📚", label: "Subject & Class", value: `${params.subjectName || "ESL"} (${params.className || "Class"})` },
+      { icon: "📅", label: "Date & Period", value: `${params.dateStr} • ${params.period || "Period"}`, highlight: true },
+      { icon: "🏫", label: "Campus & Room", value: `${params.campusName || "Sky-Line"} - Room ${params.room || "Phòng học"}` },
+      { icon: "👨‍🏫", label: "Evaluator / Observer", value: params.observerName }
+    ],
+    extraHtml,
+    button: {
+      text: "👉 View Detailed Evaluation On Skyline Portal",
+      url: targetLink,
+      color: "#4F46E5"
+    }
+  });
+}
+
+/**
+ * 14. Foreign Teacher / ESL Observation Confirmation (For Observer)
+ */
+export function renderForeignObservationEvaluationForObserver(params: {
+  observerName: string;
+  hostName: string;
+  topic: string;
+  subjectName?: string;
+  grade?: string;
+  className?: string;
+  dateStr: string;
+  period?: string;
+  campusName?: string;
+  room?: string;
+  totalScore: string;
+  rating: string;
+  strengths?: string;
+  challenges?: string;
+  directLink?: string;
+}): string {
+  const targetLink = params.directLink || `${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio-gvnn`;
+  return renderSkylineEmail({
+    headerBadge: "🌐 FOREIGN TEACHER OBSERVATION (ESL)",
+    headerTitle: "OBSERVATION COMPLETED CONFIRMATION",
+    headerSubtitle: "Sky-Line Education System - Academic Quality Assurance",
+    headerTheme: "teal",
+    recipientName: params.observerName,
+    greetingPrefix: "Dear ",
+    introMessage: `You have successfully completed and recorded the lesson observation walkthrough for Teacher <strong>${params.hostName}</strong>. The evaluation details have been stored and sent to the teacher.`,
+    detailsTitle: "Summary Details",
+    details: [
+      { icon: "👨‍🏫", label: "Foreign Teacher", value: params.hostName, highlight: true },
+      { icon: "📖", label: "Topic / Lesson", value: params.topic || "English Lesson", highlight: true },
+      { icon: "📚", label: "Class & Subject", value: `${params.className || "Class"} • ${params.subjectName || "ESL"}` },
+      { icon: "📅", label: "Date & Period", value: `${params.dateStr} • ${params.period || "Period"}` },
+      { icon: "⭐", label: "Overall Rating", value: `${params.rating} (${params.totalScore} / 4.00)`, highlight: true }
+    ],
+    button: {
+      text: "👉 Review On Skyline Portal",
+      url: targetLink,
+      color: "#008B82"
+    }
+  });
+}
+

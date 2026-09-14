@@ -1695,6 +1695,8 @@ export async function submitEvaluation(data: {
       const observerEmail = getTeacherResolvedEmail(currentTeacher);
 
       const isMN = slotFull?.level === "Mầm non";
+      const isSurprise = slotFull?.requestOrigin === "SURPRISE" || 
+        (typeof slotFull?.description === "string" && (slotFull.description.includes("[SURPRISE]") || slotFull.description.toLowerCase().includes("dự giờ đột xuất")));
       const formattedDateVi = slotFull?.date 
         ? new Date(slotFull.date).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
         : "";
@@ -1705,27 +1707,50 @@ export async function submitEvaluation(data: {
       // 1. Gửi Email thông báo cho Giáo viên được dự (Host Teacher)
       if (hostTeacher && hostEmail && hostEmail.includes("@")) {
         const linkUrl = SKYLINE_SSM_LOGIN_URL;
-        const emailSubject = `[Skyline Dự Giờ] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`;
-        const emailHtml = renderObservationEvaluationCompletedForHost({
-          hostName: hostTeacher.teacherName,
-          observerName: currentTeacher.teacherName,
-          observerCode: currentTeacher.teacherCode,
-          observerPosition: currentTeacher.position || undefined,
-          topic: slotFull?.topic || "Tiết dạy",
-          subjectName: slotFull?.subjectName || "Môn học",
-          grade: slotFull?.grade || undefined,
-          className: slotFull?.className || undefined,
-          dateStr: formattedDateVi,
-          period: slotFull?.startTime || "1",
-          campusName: slotFull?.campusName || hostTeacher.campus?.campusName || undefined,
-          room: slotFull?.room || undefined,
-          totalScore: totalDisplay,
-          rating: ratingDisplay,
-          strengths: data.strengths || undefined,
-          improvements: data.improvements || undefined,
-          generalComment: data.generalComment || undefined,
-          directLink: linkUrl
-        });
+        const emailSubject = isSurprise
+          ? `[Skyline Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`
+          : `[Skyline Dự Giờ] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`;
+
+        const emailHtml = isSurprise
+          ? renderObservationSurpriseCompletedForHost({
+              hostName: hostTeacher.teacherName,
+              observerName: currentTeacher.teacherName,
+              observerCode: currentTeacher.teacherCode,
+              topic: slotFull?.topic || "Tiết dạy",
+              subjectName: slotFull?.subjectName || "Môn học",
+              grade: slotFull?.grade || "",
+              className: slotFull?.className || "",
+              dateStr: formattedDateVi,
+              period: slotFull?.startTime || "Tiết dạy",
+              campusName: slotFull?.campusName || hostTeacher.campus?.campusName || "Sky-Line",
+              room: slotFull?.room || "học",
+              totalScore: totalDisplay,
+              rating: ratingDisplay,
+              strengths: data.strengths || undefined,
+              improvements: data.improvements || undefined,
+              generalComment: data.generalComment || undefined,
+              directLink: linkUrl
+            })
+          : renderObservationEvaluationCompletedForHost({
+              hostName: hostTeacher.teacherName,
+              observerName: currentTeacher.teacherName,
+              observerCode: currentTeacher.teacherCode,
+              observerPosition: currentTeacher.position || undefined,
+              topic: slotFull?.topic || "Tiết dạy",
+              subjectName: slotFull?.subjectName || "Môn học",
+              grade: slotFull?.grade || undefined,
+              className: slotFull?.className || undefined,
+              dateStr: formattedDateVi,
+              period: slotFull?.startTime || "1",
+              campusName: slotFull?.campusName || hostTeacher.campus?.campusName || undefined,
+              room: slotFull?.room || undefined,
+              totalScore: totalDisplay,
+              rating: ratingDisplay,
+              strengths: data.strengths || undefined,
+              improvements: data.improvements || undefined,
+              generalComment: data.generalComment || undefined,
+              directLink: linkUrl
+            });
 
         await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Evaluation completed email error:", e));
 
@@ -1733,8 +1758,8 @@ export async function submitEvaluation(data: {
           await prisma.notification.create({
             data: {
               userId: hostTeacher.user.id,
-              title: "Kết quả đánh giá tiết dạy dự giờ",
-              message: `Thầy/Cô ${currentTeacher.teacherName} vừa hoàn thành phiếu đánh giá tiết dạy "${slotFull?.topic}". Xếp loại: ${ratingDisplay}.`,
+              title: isSurprise ? "Kết quả dự giờ đột xuất ⚡" : "Kết quả đánh giá tiết dạy dự giờ",
+              message: `Thầy/Cô ${currentTeacher.teacherName} vừa hoàn thành phiếu đánh giá ${isSurprise ? "dự giờ đột xuất" : "tiết dạy"} "${slotFull?.topic}". Xếp loại: ${ratingDisplay}.`,
               link: `/teacher/du-gio?tab=evaluations`,
               isRead: false
             }
@@ -1745,7 +1770,10 @@ export async function submitEvaluation(data: {
       // 2. Gửi Email xác nhận & bản lưu cho Người dự giờ (Observer / Evaluator)
       if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
         const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
-        const observerSubject = `[Skyline Dự Giờ] Xác nhận hoàn tất đánh giá tiết dạy: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`;
+        const observerSubject = isSurprise
+          ? `[Skyline Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`
+          : `[Skyline Dự Giờ] Xác nhận hoàn tất đánh giá tiết dạy: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`;
+
         const observerHtml = renderObservationEvaluationCompletedForObserver({
           observerName: currentTeacher.teacherName,
           hostName: hostTeacher?.teacherName || "Giáo viên",
@@ -1771,8 +1799,8 @@ export async function submitEvaluation(data: {
           await prisma.notification.create({
             data: {
               userId: currentTeacher.user.id,
-              title: "Đã hoàn tất đánh giá tiết dự giờ",
-              message: `Thầy/Cô đã hoàn tất nộp phiếu đánh giá tiết dạy "${slotFull?.topic}" của GV ${hostTeacher?.teacherName || ""}.`,
+              title: isSurprise ? "Đã hoàn tất dự giờ đột xuất ⚡" : "Đã hoàn tất đánh giá tiết dự giờ",
+              message: `Thầy/Cô đã hoàn tất ${isSurprise ? "biên bản và phiếu đánh giá dự giờ đột xuất" : "nộp phiếu đánh giá"} tiết dạy "${slotFull?.topic}" của GV ${hostTeacher?.teacherName || ""}.`,
               link: `/teacher/du-gio?tab=my-registrations`,
               isRead: false
             }

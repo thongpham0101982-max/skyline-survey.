@@ -4,11 +4,29 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        'ssm.skylineschool.edu.vn',
+        '*.skylineschool.edu.vn',
+        'localhost:3000',
+        'localhost',
+        '127.0.0.1:3000',
+        '127.0.0.1',
+        '192.168.10.239:3000',
+        '192.168.10.239',
+      ],
+    },
+  },
   allowedDevOrigins: [
     '192.168.10.239',
+    '192.168.10.239:3000',
     'localhost',
+    'localhost:3000',
     '127.0.0.1',
+    '127.0.0.1:3000',
     'ssm.skylineschool.edu.vn',
+    '*.skylineschool.edu.vn',
   ],
   outputFileTracingIncludes: {
     '/api/**': ['./dev.db', './prisma/dev.db'],

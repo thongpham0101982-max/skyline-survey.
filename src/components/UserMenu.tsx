@@ -1,11 +1,10 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { LogOut, KeyRound, ChevronDown, Bell, CheckCircle2, X, GraduationCap, LayoutDashboard } from "lucide-react";
+import { useState } from "react";
+import { LogOut, KeyRound, ChevronDown, CheckCircle2, GraduationCap, LayoutDashboard } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { ChangePasswordModal } from "./ChangePasswordModal";
-import { getUserNotificationsAction, markNotificationsAsReadAction } from "@/lib/notification_actions";
 import Link from "next/link";
 
 interface UserMenuProps {
@@ -16,40 +15,6 @@ interface UserMenuProps {
 export function UserMenu({ session, permissionModules }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [notifs, setNotifs] = useState<any[]>([]);
-  const [unread, setUnread] = useState(0);
-  const [showNotifs, setShowNotifs] = useState(false);
-  const notifRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    getUserNotificationsAction().then(res => {
-      if (Array.isArray(res)) {
-        setNotifs(res);
-        setUnread(res.filter((n: any) => !n.isRead).length);
-      }
-    }).catch(err => {
-      console.error("Failed to load notifications:", err);
-    });
-  }, []);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
-        setShowNotifs(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [notifRef]);
-
-  const handleOpenNotifs = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowNotifs(!showNotifs);
-    setIsOpen(false);
-    if (!showNotifs && unread > 0) {
-      markNotificationsAsReadAction().then(() => setUnread(0));
-    }
-  };
 
   const initial = session?.user?.name ? session.user.name.charAt(0).toUpperCase() : 'U';
 

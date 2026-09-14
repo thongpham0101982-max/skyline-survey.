@@ -1,7 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
 import { Bell, CheckCircle2, MessageSquare, ExternalLink } from "lucide-react"
-import { getUserNotificationsAction, markNotificationsAsReadAction } from "@/lib/notification_actions"
 import Link from "next/link"
 
 export function resolveNotificationLink(n: { title?: string; message?: string; link?: string | null }): string {
@@ -114,13 +113,29 @@ export function NotificationBell() {
 
   const fetchNotifs = async () => {
     try {
-      const res = await getUserNotificationsAction()
-      if (Array.isArray(res)) {
-        setNotifs(res)
-        setUnread(res.filter(n => !n.isRead).length)
+      const res = await fetch("/api/notifications", { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data.notifications)) {
+          setNotifs(data.notifications)
+          setUnread(typeof data.unreadCount === "number" ? data.unreadCount : data.notifications.filter((n: any) => !n.isRead).length)
+        }
       }
     } catch (err) {
       console.error("Failed to fetch notifications:", err)
+    }
+  }
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      })
+      setUnread(0)
+    } catch (err) {
+      console.error("Failed to mark notifications read:", err)
     }
   }
 
@@ -144,7 +159,7 @@ export function NotificationBell() {
     const nextState = !open
     setOpen(nextState)
     if (nextState && unread > 0) {
-      markNotificationsAsReadAction().then(() => setUnread(0))
+      markAllAsRead()
     }
   }
 
@@ -198,7 +213,12 @@ export function NotificationBell() {
                     onClick={() => {
                       setOpen(false)
                       if (!n.isRead) {
-                        markNotificationsAsReadAction()
+                        fetch("/api/notifications", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ notificationId: n.id })
+                        }).catch(() => {})
+                        setUnread(prev => Math.max(0, prev - 1))
                       }
                     }}
                     className={"block p-3.5 hover:bg-teal-50/60 transition-colors cursor-pointer group " + (!n.isRead ? "bg-teal-50/30" : "")}

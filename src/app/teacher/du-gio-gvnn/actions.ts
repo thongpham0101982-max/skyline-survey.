@@ -6,6 +6,33 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/mail";
+import {
+  renderForeignObservationEvaluationForHost,
+  renderForeignObservationEvaluationForObserver,
+  SKYLINE_SSM_LOGIN_URL
+} from "@/lib/email-templates";
+
+function getTeacherResolvedEmail(teacher: any): string | null {
+  if (!teacher) return null;
+  const isRealEmail = (e?: string | null): boolean => {
+    if (!e) return false;
+    const clean = e.trim().toLowerCase();
+    if (!clean.includes("@") || clean.includes(" ") || clean.length < 6) return false;
+    const local = clean.split("@")[0];
+    if (/^\d+$/.test(local)) return false; // Exclude numeric staff codes
+    return !clean.includes("noreply");
+  };
+
+  let tEmail = (teacher.email || "").trim();
+  if (tEmail && !tEmail.includes("@")) tEmail = `${tEmail}@skylineschool.edu.vn`;
+  if (isRealEmail(tEmail)) return tEmail;
+
+  let uEmail = (teacher.user?.email || "").trim();
+  if (uEmail && !uEmail.includes("@")) uEmail = `${uEmail}@skylineschool.edu.vn`;
+  if (isRealEmail(uEmail)) return uEmail;
+
+  return null;
+}
 
 export async function getForeignObservationData(academicYearId?: string) {
   try {
@@ -316,7 +343,8 @@ export async function createForeignObservationWithEvaluation(data: {
       where: { id: data.teacherId },
       include: {
         campus: true,
-        departmentRel: true
+        departmentRel: true,
+        user: true
       }
     });
 
@@ -326,7 +354,10 @@ export async function createForeignObservationWithEvaluation(data: {
 
     let evaluatorTeacher = null;
     if (data.observerId) {
-      evaluatorTeacher = await prisma.teacher.findUnique({ where: { id: data.observerId } });
+      evaluatorTeacher = await prisma.teacher.findUnique({
+        where: { id: data.observerId },
+        include: { user: true, campus: true }
+      });
     }
     if (!evaluatorTeacher && session.user?.id) {
       evaluatorTeacher = await prisma.teacher.findFirst({
@@ -336,12 +367,14 @@ export async function createForeignObservationWithEvaluation(data: {
             { id: session.user.id },
             { email: session.user.email || "" }
           ]
-        }
+        },
+        include: { user: true, campus: true }
       });
     }
     if (!evaluatorTeacher && session.user?.email) {
       evaluatorTeacher = await prisma.teacher.findFirst({
-        where: { email: session.user.email }
+        where: { email: session.user.email },
+        include: { user: true, campus: true }
       });
     }
     if (!evaluatorTeacher && session.user.email) {
@@ -353,10 +386,13 @@ export async function createForeignObservationWithEvaluation(data: {
             email: session.user.email,
             position: "QLCM",
             status: "ACTIVE"
-          } as any
+          } as any,
+          include: { user: true, campus: true }
         });
       } catch (e) {
-        evaluatorTeacher = await prisma.teacher.findFirst();
+        evaluatorTeacher = await prisma.teacher.findFirst({
+          include: { user: true, campus: true }
+        });
       }
     }
 
@@ -432,6 +468,7 @@ export async function createForeignObservationWithEvaluation(data: {
         visibilityType: "PUBLIC",
         maxSeats: 4,
         status: data.isDraft ? "DRAFT" : "COMPLETED",
+        requestOrigin: "FOREIGN_WALKTHROUGH",
         academicYearId: academicYear?.id || null,
         campusId: data.campusId || hostTeacher.campusId || null,
         campusName: hostTeacher.campus?.campusName || null
@@ -560,41 +597,93 @@ export async function createForeignObservationWithEvaluation(data: {
       }
     }
 
-    if (!data.isDraft && hostTeacher?.email) {
+    if (!data.isDraft) {
       try {
-        const hostEmail = hostTeacher.email.includes("@") ? hostTeacher.email : `${hostTeacher.email}@skylineschool.edu.vn`;
-        const dateStr = new Date(observationDate).toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "short", day: "numeric" });
-        const emailSubject = `[Skyline - ESL Observation] Lesson Evaluation Completed: ${data.topic || "English Lesson"}`;
-        const emailHtml = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0;">
-            <div style="background: linear-gradient(135deg, #00A6A9 0%, #48BFE3 100%); padding: 24px; text-align: center; color: white;">
-              <h2 style="margin: 0; font-size: 20px;">FOREIGN TEACHER OBSERVATION EVALUATION</h2>
-              <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Sky-Line Education System - Academic Quality Assurance</p>
-            </div>
-            <div style="padding: 24px;">
-              <p style="font-size: 15px; color: #1e293b;">Dear Teacher <strong>${hostTeacher.teacherName}</strong>,</p>
-              <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-                Your recent lesson observation has been evaluated by <strong>${evaluatorTeacher?.teacherName || "Academic Supervisor"}</strong>.
-              </p>
-              <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin: 20px 0; border: 1px solid #e2e8f0;">
-                <p style="margin: 4px 0; font-size: 13px;"><strong>Topic:</strong> ${data.topic || "English Lesson"}</p>
-                <p style="margin: 4px 0; font-size: 13px;"><strong>Date:</strong> ${dateStr}</p>
-                <p style="margin: 4px 0; font-size: 13px;"><strong>Class:</strong> ${data.className || "ESL Class"}</p>
-                <p style="margin: 4px 0; font-size: 13px;"><strong>Overall Rating:</strong> <span style="display: inline-block; padding: 3px 8px; border-radius: 4px; background: #00A6A9; color: white; font-weight: bold;">${data.overallRating || "Effective Practice"}</span></p>
-                ${data.summary?.keyStrengths ? `<p style="margin: 8px 0 4px 0; font-size: 13px;"><strong>Key Strengths:</strong> ${data.summary.keyStrengths}</p>` : ""}
-              </div>
-              <p style="font-size: 13px; color: #64748b;">Please log in to the Skyline Portal to review your detailed evaluation feedback.</p>
-            </div>
-          </div>
-        `;
-        await sendEmail({
-          to: hostEmail,
-          subject: emailSubject,
-          html: emailHtml,
-          from: "SKY-LINE ACADEMIC OBSERVATION"
+        const hostEmail = getTeacherResolvedEmail(hostTeacher);
+        const evaluatorEmail = getTeacherResolvedEmail(evaluatorTeacher);
+        const dateStr = observationDate.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "short",
+          day: "numeric"
         });
+        const evaluatorName = evaluatorTeacher?.teacherName || session.user?.name || "Academic Supervisor";
+
+        // 1. Send evaluation email to Foreign Teacher (Host)
+        if (hostEmail) {
+          const emailSubject = `[Skyline - ESL Observation] Lesson Evaluation Completed: ${data.topic || "English Lesson"}`;
+          const emailHtml = renderForeignObservationEvaluationForHost({
+            hostTeacherName: hostTeacher.teacherName,
+            observerName: evaluatorName,
+            topic: data.topic || "English Lesson",
+            dateStr: dateStr,
+            timeStr: data.period || "Tiết 1",
+            className: data.className || "ESL Class",
+            room: data.room || "Phòng học",
+            overallRating: data.overallRating || "Effective Practice",
+            keyStrengths: data.summary?.keyStrengths || undefined,
+            keyChallenges: data.summary?.keyChallenges || undefined,
+            detailUrl: `${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio-gvnn`
+          });
+
+          await sendEmail({
+            to: hostEmail,
+            subject: emailSubject,
+            html: emailHtml,
+            from: "SKY-LINE ACADEMIC OBSERVATION"
+          }).catch(err => console.error("Failed to send foreign teacher email:", err));
+
+          const hostUserId = hostTeacher.userId || hostTeacher.user?.id;
+          if (hostUserId) {
+            await prisma.notification.create({
+              data: {
+                userId: hostUserId,
+                title: "ESL Observation Evaluation Completed 🌟",
+                message: `Your lesson "${data.topic || "English Lesson"}" (${data.className || "ESL Class"}) was evaluated by ${evaluatorName}. Rating: ${data.overallRating || "Effective Practice"}.`,
+                link: "/teacher/du-gio-gvnn",
+                isRead: false
+              }
+            }).catch(e => console.warn("Failed to create foreign teacher notification:", e));
+          }
+        }
+
+        // 2. Send confirmation copy to Observer / Evaluator
+        if (evaluatorEmail && evaluatorEmail !== hostEmail) {
+          const observerSubject = `[Skyline - ESL Observation] Evaluation Confirmation: ${hostTeacher.teacherName} - ${data.topic || "English Lesson"}`;
+          const observerHtml = renderForeignObservationEvaluationForObserver({
+            hostTeacherName: hostTeacher.teacherName,
+            observerName: evaluatorName,
+            topic: data.topic || "English Lesson",
+            dateStr: dateStr,
+            timeStr: data.period || "Tiết 1",
+            className: data.className || "ESL Class",
+            room: data.room || "Phòng học",
+            overallRating: data.overallRating || "Effective Practice",
+            detailUrl: `${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio-gvnn`
+          });
+
+          await sendEmail({
+            to: evaluatorEmail,
+            subject: observerSubject,
+            html: observerHtml,
+            from: "SKY-LINE ACADEMIC OBSERVATION"
+          }).catch(err => console.error("Failed to send observer confirmation email:", err));
+
+          const evaluatorUserId = evaluatorTeacher?.userId || evaluatorTeacher?.user?.id;
+          if (evaluatorUserId) {
+            await prisma.notification.create({
+              data: {
+                userId: evaluatorUserId,
+                title: "Đã hoàn tất đánh giá tiết dạy GVNN 🌟",
+                message: `Thầy/Cô đã hoàn tất phiếu đánh giá tiết dạy ESL của GV ${hostTeacher.teacherName} (${data.topic || "English Lesson"}).`,
+                link: "/teacher/du-gio-gvnn",
+                isRead: false
+              }
+            }).catch(e => console.warn("Failed to create evaluator notification:", e));
+          }
+        }
       } catch (mailErr) {
-        console.error("Failed to send foreign observation email:", mailErr);
+        console.error("Failed to process foreign observation email & notifications:", mailErr);
       }
     }
     revalidatePath("/teacher/du-gio-gvnn");
