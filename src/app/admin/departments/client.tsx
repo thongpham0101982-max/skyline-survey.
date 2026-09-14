@@ -1,6 +1,6 @@
+"use client"
 import { PageHeader } from "@/components/PageHeader"
 // Forced Vercel Deployment: 2026-09-10T09:30:00.000Z
-"use client";
 import { useState, useEffect } from "react";
 import {
   Plus, Pencil, Trash2, Check, X, Search, Users, Loader2,

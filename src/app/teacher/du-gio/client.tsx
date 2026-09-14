@@ -1,6 +1,6 @@
+"use client"
 // @ts-nocheck
 // Forced Vercel Deployment: 2026-08-28T15:53:02.733Z
-"use client"
 
 import { CreateObservationModal } from './components/CreateObservationModal';
 import { ObservationRegistrationSection } from './components/ObservationRegistrationSection';

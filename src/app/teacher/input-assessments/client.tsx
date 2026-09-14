@@ -1,5 +1,5 @@
+"use client"
 // @ts-nocheck
-"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X, Clock, SlidersHorizontal, ShieldCheck, GraduationCap, TrendingUp, AlertCircle } from "lucide-react";

@@ -1,5 +1,5 @@
-// @ts-nocheck
 "use client"
+// @ts-nocheck
 import {
   Activity, useState, useEffect, Suspense } from "react"
 import Link from "next/link"

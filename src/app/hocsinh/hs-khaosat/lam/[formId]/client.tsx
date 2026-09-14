@@ -1,5 +1,5 @@
+"use client"
 // @ts-nocheck
-'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Send, CheckCircle2, AlertCircle, GraduationCap, Save, Check } from 'lucide-react'

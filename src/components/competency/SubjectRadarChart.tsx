@@ -1,5 +1,5 @@
+"use client"
 // @ts-nocheck
-"use client";
 
 import React, { useMemo, useState } from "react";
 import { Sparkles, CheckCircle2, TrendingUp, AlertCircle, Info, Target } from "lucide-react";

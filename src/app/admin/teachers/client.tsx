@@ -1,5 +1,5 @@
-// @ts-nocheck
 "use client"
+// @ts-nocheck
 import { ACADEMIC_DIVISIONS, ACADEMIC_POSITIONS } from "@/config/divisions";
 
 function PositionBadge({ position, positions }: { position?: string | null, positions?: string[] }) {

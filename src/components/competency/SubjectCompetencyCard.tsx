@@ -1,5 +1,5 @@
+"use client"
 // @ts-nocheck
-"use client";
 
 import React, { useMemo } from "react";
 import { SubjectRadarChart, RadarItem } from "./SubjectRadarChart";

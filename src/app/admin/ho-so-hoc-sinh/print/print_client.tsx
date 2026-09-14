@@ -1,6 +1,6 @@
+"use client"
 // Build version: 8.5-1788145100339
 // @ts-nocheck
-"use client";
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";

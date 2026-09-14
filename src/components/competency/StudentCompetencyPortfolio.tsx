@@ -1,5 +1,5 @@
+"use client"
 // @ts-nocheck
-"use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { SubjectCompetencyCard } from "./SubjectCompetencyCard";

@@ -1,5 +1,5 @@
-// @ts-nocheck
 "use client"
+// @ts-nocheck
 
 import React, { useState, useEffect } from "react"
 import { ClipboardCheck, Sparkles, Save, Info, BrainCircuit, User, MessageSquare, AlertCircle, ChevronRight, CheckCircle2 } from "lucide-react"

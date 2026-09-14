@@ -1,6 +1,6 @@
+"use client"
 // Build portfolio version: 30.0-1788358433056
 // Build version: 30.0-1788358433056
-"use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { StudentCompetencyPortfolio } from "@/components/competency/StudentCompetencyPortfolio"

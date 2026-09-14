@@ -1,5 +1,5 @@
-// @ts-nocheck
 "use client"
+// @ts-nocheck
 import { useState, useMemo, Fragment } from "react"
 import {
   Shield, Plus, Save, Edit, Trash2, X, ChevronDown, ChevronRight,

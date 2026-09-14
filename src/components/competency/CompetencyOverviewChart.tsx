@@ -1,5 +1,5 @@
+"use client"
 // @ts-nocheck
-"use client";
 
 import React from "react";
 import { BarChart3, TrendingUp, Award, AlertCircle, CheckCircle2, Sparkles, Target } from "lucide-react";
