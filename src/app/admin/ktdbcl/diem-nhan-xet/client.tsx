@@ -371,38 +371,6 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     })
   }, [savedConfigs, listFilterPeriod, listFilterGrade, listSearchTerm])
 
-  // Available subjects for Tab 2 (Quản lý & Nhập Sổ điểm)
-  // CHỈ LẤY ĐÚNG CÁC MÔN THEO KỲ KHẢO SÁT & KHỐI
-  const availableSubjectsForTab2 = useMemo(() => {
-    const currentClass = classes.find(c => c.id === selectedClassId)
-    const targetGrade = currentClass?.grade || selectedGradeFilter
-
-    const assignedSubjectIds = new Set<string>()
-    savedConfigs.forEach(c => {
-      const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
-      const gMatch = targetGrade === "ALL" || c.grade === targetGrade || c.grade === "ALL"
-      if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
-        assignedSubjectIds.add(c.subjectId)
-      }
-    })
-
-    if (assignedSubjectIds.size > 0) {
-      return subjects.filter(s => assignedSubjectIds.has(s.id))
-    }
-    return []
-  }, [savedConfigs, selectedPeriod, selectedClassId, selectedGradeFilter, classes, subjects])
-
-  // Auto sync selectedSubjectId in Tab 2
-  useEffect(() => {
-    if (activeTab === "grades" && !showAllTab2Subjects) {
-      if (availableSubjectsForTab2.length > 0) {
-        if (!availableSubjectsForTab2.some(s => s.id === selectedSubjectId)) {
-          setSelectedSubjectId(availableSubjectsForTab2[0].id)
-        }
-      }
-    }
-  }, [activeTab, availableSubjectsForTab2, selectedSubjectId, showAllTab2Subjects])
-
   // Fetch saved configs
   const fetchConfigs = async () => {
     try {
@@ -588,12 +556,14 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   }
 
   // --- TAB 2: Grade Entry states ---
-  // Level and Grade filters for Tab 2
   const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
   const [selectedSystemFilter, setSelectedSystemFilter] = useState("ALL")
+  const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id || "")
+  const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || "")
+  const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
 
-    const educationSystemOptions = useMemo(() => {
+  const educationSystemOptions = useMemo(() => {
     const set = new Set<string>()
     classes.forEach(c => {
       if (c.educationSystem && c.educationSystem.trim()) {
@@ -653,10 +623,39 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     if (filteredClasses.length > 0 && !filteredClasses.some(c => c.id === selectedClassId)) {
       setSelectedClassId(filteredClasses[0].id)
     }
-  }, [filteredClasses])
-  const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id || "")
-  const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || "")
-  const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
+  }, [filteredClasses, selectedClassId])
+
+  // Available subjects for Tab 2 (Quản lý & Nhập Sổ điểm)
+  // CHỈ LẤY ĐÚNG CÁC MÔN THEO KỲ KHẢO SÁT & KHỐI
+  const availableSubjectsForTab2 = useMemo(() => {
+    const currentClass = classes.find(c => c.id === selectedClassId)
+    const targetGrade = currentClass?.grade || selectedGradeFilter
+
+    const assignedSubjectIds = new Set<string>()
+    savedConfigs.forEach(c => {
+      const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
+      const gMatch = targetGrade === "ALL" || c.grade === targetGrade || c.grade === "ALL"
+      if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
+        assignedSubjectIds.add(c.subjectId)
+      }
+    })
+
+    if (assignedSubjectIds.size > 0) {
+      return subjects.filter(s => assignedSubjectIds.has(s.id))
+    }
+    return []
+  }, [savedConfigs, selectedPeriod, selectedClassId, selectedGradeFilter, classes, subjects])
+
+  // Auto sync selectedSubjectId in Tab 2
+  useEffect(() => {
+    if (activeTab === "grades" && !showAllTab2Subjects) {
+      if (availableSubjectsForTab2.length > 0) {
+        if (!availableSubjectsForTab2.some(s => s.id === selectedSubjectId)) {
+          setSelectedSubjectId(availableSubjectsForTab2[0].id)
+        }
+      }
+    }
+  }, [activeTab, availableSubjectsForTab2, selectedSubjectId, showAllTab2Subjects])
 
   const [gradeSheetData, setGradeSheetData] = useState<{
     config: any
