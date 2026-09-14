@@ -78,7 +78,8 @@ import {
   renderObservationSurpriseCompletedForHost,
   renderObservationReEvaluationApproved,
   renderObservationReEvaluationRejected,
-  renderObservationExpiredNotification
+  renderObservationExpiredNotification,
+  SKYLINE_SSM_LOGIN_URL
 } from "@/lib/email-templates"
 import { ACADEMIC_DIVISIONS, normalizeDivisionCode } from "@/config/divisions"
 
@@ -1018,31 +1019,45 @@ export async function createObservationSlot(data: {
         const memberEmails = Array.from(emailsList).filter(e => typeof e === 'string' && e.includes("@")) as string[];
         console.log("[Skyline Email] Sending slot creation emails to TCM teachers:", memberEmails);
 
-        if (data.sendEmailNotif !== false && memberEmails.length > 0) {
+        if (data.sendEmailNotif !== false && deptMembers.length > 0) {
           const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
-          const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}&action=register`;
-          
-          const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
-          const emailHtml = renderObservationSlotCreatedForTcm({
-            teacherName: currentTeacher.teacherName,
-            teacherCode: currentTeacher.teacherCode,
-            topic: newSlot.topic,
-            subjectName: newSlot.subjectName,
-            grade: newSlot.grade,
-            className: newSlot.className || undefined,
-            campusName: newSlot.campusName || undefined,
-            room: newSlot.room || undefined,
-            dateStr: formattedDateVi,
-            timeStr: `${newSlot.startTime} - ${newSlot.endTime}`,
-            directLink: linkUrl
-          });
+          const loginUrl = SKYLINE_SSM_LOGIN_URL;
+          const deptName = (currentTeacher as any).departmentRel?.name || (newSlot as any).departmentRel?.name || "";
 
-          // Send emails concurrently in parallel using Promise.allSettled
-          const sendTasks = memberEmails.map(targetEmail => 
-            sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: targetEmail, subject: emailSubject, html: emailHtml })
-              .then(() => console.log("[Skyline Email] Successfully sent slot creation email to:", targetEmail))
-              .catch(err => console.error("[Skyline Email Error] Failed sending to " + targetEmail + ":", err))
-          );
+          // Send personalized emails concurrently to each member in TCM
+          const sendTasks = deptMembers
+            .filter(m => m.id !== currentTeacher.id)
+            .map(m => {
+              const targetEmail = getTeacherResolvedEmail(m);
+              if (!targetEmail || !targetEmail.includes("@") || targetEmail === creatorEmail) return null;
+
+              const emailSubject = `[Skyline Dự Giờ] Thông báo tiết dạy từ ${currentTeacher.teacherName}`;
+              const emailHtml = renderObservationSlotCreatedForTcm({
+                recipientName: m.teacherName,
+                creatorName: currentTeacher.teacherName,
+                teacherName: currentTeacher.teacherName,
+                teacherCode: currentTeacher.teacherCode,
+                departmentName: deptName,
+                topic: newSlot.topic,
+                subjectName: newSlot.subjectName,
+                level: newSlot.level,
+                grade: newSlot.grade,
+                className: newSlot.className || undefined,
+                campusName: newSlot.campusName || undefined,
+                room: newSlot.room || undefined,
+                dateStr: formattedDateVi,
+                period: newSlot.startTime ? (newSlot.startTime.startsWith("Tiết") ? newSlot.startTime : `${newSlot.startTime} - ${newSlot.endTime}`) : "Tiết 1",
+                timeStr: `${newSlot.startTime} - ${newSlot.endTime}`,
+                directLink: loginUrl,
+                buttonText: "👉 Xem Chi Tiết & Phê Duyệt Tiết Dự Giờ Ngay"
+              });
+
+              return sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: targetEmail, subject: emailSubject, html: emailHtml })
+                .then(() => console.log("[Skyline Email] Successfully sent slot creation email to:", targetEmail))
+                .catch(err => console.error("[Skyline Email Error] Failed sending to " + targetEmail + ":", err));
+            })
+            .filter(Boolean);
+
           await Promise.allSettled(sendTasks);
         }
 
@@ -1153,9 +1168,9 @@ export async function registerObservation(slotId: string) {
           year: "numeric"
         });
 
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
-        const hostDirectLink = `${baseUrl}/teacher/du-gio?tab=my_schedule&slotId=${slot.id}`;
-        const observerDirectLink = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn";
+        const hostDirectLink = SKYLINE_SSM_LOGIN_URL;
+        const observerDirectLink = SKYLINE_SSM_LOGIN_URL;
 
         // 1. In-App Notification for Host Teacher
         if (hostTeacher?.user?.id) {
@@ -1490,8 +1505,8 @@ export async function approveRegistration(registrationId: string) {
           year: "numeric"
         });
 
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
-        const observerDirectLink = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn";
+        const observerDirectLink = SKYLINE_SSM_LOGIN_URL;
 
         // 1. In-App Notification for Observer Teacher
         if (observerTeacher?.user?.id) {
@@ -1656,7 +1671,7 @@ export async function submitEvaluation(data: {
       generalComment: data.generalComment || "",
       overallRating: data.overallRating,
       submittedAt: new Date(),
-      reEvaluationStatus: registration.evaluation?.reEvaluationStatus === "APPROVED" ? "COMPLETED" : registration.evaluation?.reEvaluationStatus
+      reEvaluationStatus: registration.evaluation?.reEvaluationStatus === "APPROVED" ? "COMPLETED" : (registration.evaluation?.reEvaluationStatus === "DRAFT" ? null : registration.evaluation?.reEvaluationStatus)
     }
     if (registration.evaluation) {
       await prisma.observationEvaluation.update({ where: { registrationId: data.registrationId }, data: evalData })
@@ -1683,13 +1698,13 @@ export async function submitEvaluation(data: {
       const formattedDateVi = slotFull?.date 
         ? new Date(slotFull.date).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
         : "";
-      const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
+      const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://ssm.skylineschool.edu.vn";
       const totalDisplay = data.totalScore != null ? (isMN ? `${Number(data.totalScore).toFixed(2)} / 10.00đ` : `${Number(data.totalScore).toFixed(2)} / 20.00đ`) : "Đã hoàn thành";
       const ratingDisplay = data.overallRating || "Đạt";
 
       // 1. Gửi Email thông báo cho Giáo viên được dự (Host Teacher)
       if (hostTeacher && hostEmail && hostEmail.includes("@")) {
-        const linkUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`;
+        const linkUrl = SKYLINE_SSM_LOGIN_URL;
         const emailSubject = `[Skyline Dự Giờ] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`;
         const emailHtml = renderObservationEvaluationCompletedForHost({
           hostName: hostTeacher.teacherName,
@@ -1729,7 +1744,7 @@ export async function submitEvaluation(data: {
 
       // 2. Gửi Email xác nhận & bản lưu cho Người dự giờ (Observer / Evaluator)
       if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
-        const observerLinkUrl = `${baseUrl}/teacher/du-gio?tab=my-registrations`;
+        const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
         const observerSubject = `[Skyline Dự Giờ] Xác nhận hoàn tất đánh giá tiết dạy: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`;
         const observerHtml = renderObservationEvaluationCompletedForObserver({
           observerName: currentTeacher.teacherName,
@@ -2245,9 +2260,9 @@ export async function requestObservationSlot(data: {
           year: "numeric"
         });
 
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
-        const hostDirectLink = `${baseUrl}/teacher/du-gio?tab=my_schedule&slotId=${newSlot.id}`;
-        const observerDirectLink = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn";
+        const hostDirectLink = SKYLINE_SSM_LOGIN_URL;
+        const observerDirectLink = SKYLINE_SSM_LOGIN_URL;
 
         // 1. In-App Notification for Host Teacher
         if (hostTeacher.user?.id) {
@@ -2369,7 +2384,7 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
 
     const hostTeacher = slot.teacher;
     const formattedDateVi = new Date(slot.date).toLocaleDateString("vi-VN");
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://ssm.skylineschool.edu.vn";
 
     if (accept) {
       await prisma.observationSlot.update({
@@ -2395,7 +2410,7 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
           const obsEmail = getTeacherResolvedEmail(obsTeacher);
           if (obsEmail && obsEmail.includes("@")) {
             const emailSubject = `[Skyline - Dự Giờ] Đề xuất dự giờ của bạn đã được Thầy/Cô ${hostTeacher?.teacherName} đồng ý`;
-            const linkUrl = `${baseUrl}/teacher/du-gio?tab=my_schedule`;
+            const linkUrl = SKYLINE_SSM_LOGIN_URL;
             const emailHtml = renderObservationRequestResponseForObserver({
               observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
               hostName: hostTeacher?.teacherName || "Giáo viên dạy",
@@ -2456,7 +2471,7 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
               period: slot.startTime,
               accepted: false,
               reason: reason || undefined,
-              directLink: `${baseUrl}/teacher/du-gio`
+              directLink: SKYLINE_SSM_LOGIN_URL
             });
             await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: obsEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Decline observation request email error:", e));
           }
@@ -2583,9 +2598,8 @@ export async function processExpiredSlotsNotifications() {
       const hostTeacher = slot.teacher;
       const approvedRegistrations = slot.registrations || [];
       const observerTeachers = approvedRegistrations.map(r => r.teacher).filter(Boolean);
-      const registeredCount = observerTeachers.length;
       const formattedDateVi = new Date(slot.date).toLocaleDateString("vi-VN");
-      const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + "/teacher/du-gio";
+      const linkUrl = SKYLINE_SSM_LOGIN_URL;
 
       // 1. Send Email to Host Teacher
       if (hostTeacher) {
@@ -2719,8 +2733,7 @@ export async function sendPendingEvaluationReminder(registrationId: string) {
       year: "numeric"
     });
 
-    const hostBaseUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
-    const linkUrl = `${hostBaseUrl}/teacher/du-gio`;
+    const linkUrl = SKYLINE_SSM_LOGIN_URL;
 
     const emailSubject = `[Skyline - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
     const emailHtml = renderObservationPendingEvaluationReminder({
@@ -2803,8 +2816,7 @@ export async function sendBatchPendingEvaluationReminders() {
     });
 
     let sentCount = 0;
-    const hostBaseUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
-    const linkUrl = `${hostBaseUrl}/teacher/du-gio`;
+    const linkUrl = SKYLINE_SSM_LOGIN_URL;
 
     for (const reg of pendingRegs) {
       const observer = reg.teacher;
@@ -2897,8 +2909,10 @@ export async function requestReEvaluation(data: {
     const session = await auth()
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
 
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isAdmin = await checkIsObservationAdmin(roleCode, session.user.id)
     const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
-    if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
+    if (!currentTeacher && !isAdmin) return { success: false, error: "Teacher profile not found" }
 
     let evaluation = null
     if (data.evaluationId) {
@@ -2914,8 +2928,12 @@ export async function requestReEvaluation(data: {
     }
 
     if (!evaluation) return { success: false, error: "Không tìm thấy phiếu đánh giá cần xin đánh giá lại" }
-    if (evaluation.evaluatorId !== currentTeacher.id && evaluation.registration.teacherId !== currentTeacher.id) {
-      return { success: false, error: "Bạn không phải là người đánh giá của phiếu này" }
+    
+    const isEvaluator = currentTeacher && (evaluation.evaluatorId === currentTeacher.id || evaluation.registration?.teacherId === currentTeacher.id);
+    const isHost = currentTeacher && (evaluation.registration?.slot?.teacherId === currentTeacher.id);
+
+    if (!isEvaluator && !isHost && !isAdmin) {
+      return { success: false, error: "Bạn không có quyền gửi yêu cầu đánh giá lại cho tiết dạy này" }
     }
 
     await prisma.observationEvaluation.update({
@@ -3009,8 +3027,7 @@ export async function approveReEvaluation(data: {
         year: "numeric"
       })
 
-      const baseUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
-      const accessUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`
+      const accessUrl = SKYLINE_SSM_LOGIN_URL
 
       const emailSubject = `[Skyline Dự Giờ] Phê duyệt mở lại phiếu đánh giá tiết dạy - ${slot.topic || "Tiết dự giờ"}`
       const emailHtml = renderObservationReEvaluationApproved({
@@ -3260,7 +3277,6 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
     try {
       const evaluatorEmail = getTeacherResolvedEmail(evaluator);
       if (evaluatorEmail && evaluatorEmail.includes("@")) {
-        const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
         const emailSubject = `[Skyline Dự Giờ] GV ${hostTeacher?.teacherName} đã tiếp thu góp ý & gửi phản hồi: "${slot?.topic || "Tiết dạy"}"`;
         const emailHtml = renderObservationTeacherAcknowledged({
           evaluatorName: evaluator?.teacherName || "Người dự giờ",
@@ -3268,7 +3284,7 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
           topic: slot?.topic || "Tiết dạy",
           feedbackText: feedbackText,
           acknowledgedAtStr: `${nowTime.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} • ${nowTime.toLocaleDateString("vi-VN")}`,
-          directLink: `${baseUrl}/teacher/du-gio?tab=my-registrations`
+          directLink: SKYLINE_SSM_LOGIN_URL
         });
         await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: evaluatorEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Acknowledge email error:", e));
       }
@@ -3605,7 +3621,7 @@ export async function createSurpriseObservation(data: {
 
         // 1. Email thông báo cho Giáo viên được dự (Host Teacher)
         if (hostEmail && hostEmail.includes("@")) {
-          const linkUrl = `${baseUrl}/teacher/du-gio?tab=evaluations`;
+          const linkUrl = SKYLINE_SSM_LOGIN_URL;
           const emailSubject = `[Skyline Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${data.topic}" - Người dự: ${currentTeacher.teacherName}`;
           const emailHtml = renderObservationSurpriseCompletedForHost({
             hostName: hostTeacher.teacherName,
@@ -3644,7 +3660,7 @@ export async function createSurpriseObservation(data: {
 
         // 2. Email xác nhận & bản lưu cho Người dự giờ (Observer / TTCM / Ban ĐHCM)
         if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
-          const observerLinkUrl = `${baseUrl}/teacher/du-gio?tab=my-registrations`;
+          const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
           const observerSubject = `[Skyline Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${data.topic}" - GV dạy: ${hostTeacher.teacherName}`;
           const observerHtml = renderObservationEvaluationCompletedForObserver({
             observerName: currentTeacher.teacherName,

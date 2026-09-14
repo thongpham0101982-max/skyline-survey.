@@ -617,6 +617,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Re-evaluation States
   const [reEvalModal, setReEvalModal] = useState<{ registration: any; slot: any } | null>(null)
   const [reEvalReason, setReEvalReason] = useState("")
+  const [reEvalError, setReEvalError] = useState<string | null>(null)
   const [reEvalSubmitting, setReEvalSubmitting] = useState(false)
   const [adminReEvalModal, setAdminReEvalModal] = useState<{ request: any; action: "approve" | "reject" } | null>(null)
   const [adminReEvalNote, setAdminReEvalNote] = useState("")
@@ -1702,7 +1703,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const list: any[] = [];
     slots.forEach((slot: any) => {
       slot.registrations?.forEach((reg: any) => {
-        if (reg.evaluation && reg.evaluation.reEvaluationStatus) {
+        if (reg.evaluation && reg.evaluation.reEvaluationStatus && reg.evaluation.reEvaluationStatus !== "DRAFT") {
           list.push({
             evaluation: reg.evaluation,
             registration: reg,
@@ -1745,9 +1746,11 @@ export function ObservationClient(props: ObservationClientProps) {
   const handleRequestReEval = async () => {
     if (!reEvalModal) return;
     if (!reEvalReason.trim()) {
+      setReEvalError("Vui lòng nhập lý do xin đánh giá lại!");
       showToast("Vui lòng nhập lý do xin đánh giá lại!", "error");
       return;
     }
+    setReEvalError(null);
     setReEvalSubmitting(true);
     const res = await requestReEvaluation({
       registrationId: reEvalModal.registration.id,
@@ -1759,9 +1762,11 @@ export function ObservationClient(props: ObservationClientProps) {
       showToast("Đã gửi yêu cầu xét duyệt đánh giá lại tới Ban Quản trị!", "success");
       setReEvalModal(null);
       setReEvalReason("");
+      setReEvalError(null);
       if (evalModal) setEvalModal(null);
       refreshSlots();
     } else {
+      setReEvalError(res.error || "Gửi yêu cầu thất bại");
       showToast(res.error || "Gửi yêu cầu thất bại", "error");
     }
   };
@@ -2967,7 +2972,7 @@ export function ObservationClient(props: ObservationClientProps) {
     <div className="flex flex-col gap-5 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${toast.type === "success" ? "bg-emerald-600 shadow-emerald-600/30" : toast.type === "error" ? "bg-rose-600 shadow-rose-600/30" : "bg-[#008B82] shadow-teal-700/30"}`}>
+        <div className={`fixed top-5 right-5 z-[99999] pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${toast.type === "success" ? "bg-emerald-600 shadow-emerald-600/30" : toast.type === "error" ? "bg-rose-600 shadow-rose-600/30" : "bg-[#008B82] shadow-teal-700/30"}`}>
           {toast.type === "success" && <CheckCircle2 className="w-5 h-5 shrink-0" />}
           {toast.type === "error" && <AlertCircle className="w-5 h-5 shrink-0" />}
           {toast.type === "info" && <Info className="w-5 h-5 shrink-0" />}
@@ -4882,15 +4887,21 @@ export function ObservationClient(props: ObservationClientProps) {
                                             <>
                                               {reg.evaluation ? (
                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                  <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-2xs">
-                                                    ⭐ {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
-                                                  </span>
+                                                  {reg.evaluation.reEvaluationStatus === "DRAFT" ? (
+                                                    <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-sky-100 text-sky-950 border border-sky-300 shadow-2xs">
+                                                      📝 Bản nháp
+                                                    </span>
+                                                  ) : (
+                                                    <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-2xs">
+                                                      ⭐ {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                                    </span>
+                                                  )}
                                                   <button
                                                     type="button"
                                                     onClick={() => openEvalModal(reg, slot)}
                                                     className="px-2 py-0.5 text-[10px] font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-md transition-all shadow-2xs cursor-pointer"
                                                   >
-                                                    Xem phiếu
+                                                    {reg.evaluation.reEvaluationStatus === "DRAFT" && reg.teacherId === currentTeacher?.id ? "Tiếp tục đánh giá" : "Xem phiếu"}
                                                   </button>
                                                 </div>
                                               ) : (
@@ -5265,15 +5276,21 @@ export function ObservationClient(props: ObservationClientProps) {
                             {myReg?.evaluation ? (
                               <div className="flex flex-col gap-1.5 py-0.5">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-950 font-black text-xs border border-emerald-300 shadow-2xs">
-                                    ⭐ {myReg.evaluation.overallRating || myReg.evaluation.rating || "Đã đánh giá"} {myReg.evaluation.totalScore != null && Number(myReg.evaluation.totalScore) > 0 ? `(${Number(myReg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
-                                  </span>
+                                  {myReg.evaluation.reEvaluationStatus === "DRAFT" ? (
+                                    <span className="px-2.5 py-1 rounded-xl bg-sky-100 text-sky-950 font-black text-xs border border-sky-300 shadow-2xs">
+                                      📝 Bản nháp
+                                    </span>
+                                  ) : (
+                                    <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-950 font-black text-xs border border-emerald-300 shadow-2xs">
+                                      ⭐ {myReg.evaluation.overallRating || myReg.evaluation.rating || "Đã đánh giá"} {myReg.evaluation.totalScore != null && Number(myReg.evaluation.totalScore) > 0 ? `(${Number(myReg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                    </span>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => openEvalModal(myReg, slot)}
                                     className="px-3 py-1 text-xs font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-xl transition-all shadow-2xs cursor-pointer"
                                   >
-                                    Xem phiếu
+                                    {myReg.evaluation.reEvaluationStatus === "DRAFT" ? "Tiếp tục đánh giá" : "Xem phiếu"}
                                   </button>
                                   <button
                                     type="button"
@@ -5516,7 +5533,8 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* Evaluation Modal (Phiếu đánh giá chuyên môn chuẩn) */}
       {evalModal && (() => {
         const isApprovedForReEval = evalModal.registration.evaluation?.reEvaluationStatus === "APPROVED";
-        const isReadOnly = !!evalModal.registration.evaluation && !isApprovedForReEval;
+        const isDraft = evalModal.registration.evaluation?.reEvaluationStatus === "DRAFT";
+        const isReadOnly = !!evalModal.registration.evaluation && !isApprovedForReEval && !isDraft;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
@@ -5554,6 +5572,19 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar text-xs font-semibold">
+                {/* Draft Status Alert Banner */}
+                {isDraft && (
+                  <div className="p-4 bg-sky-50/90 rounded-2xl border border-sky-300 flex items-start gap-3 shadow-xs">
+                    <FileText className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="text-xs font-black text-sky-950 uppercase tracking-wide">Bản nháp phiếu đánh giá chuyên môn</h5>
+                      <p className="text-xs text-sky-800 font-medium mt-0.5">
+                        Phiếu đánh giá này hiện đang được lưu dưới dạng <strong>Bản nháp</strong>. Thầy/Cô có thể tiếp tục chấm điểm các tiêu chí, hoàn thiện nhận xét và bấm nút <strong>"Hoàn thành & nộp biên bản"</strong> bên dưới để hoàn tất.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Re-evaluation Status Alert Banners */}
                 {isApprovedForReEval && (
                   <div className="p-4 bg-emerald-50/90 rounded-2xl border border-emerald-300 flex items-start gap-3 shadow-xs">
@@ -6012,7 +6043,7 @@ export function ObservationClient(props: ObservationClientProps) {
               {/* Modal Footer */}
               <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-between gap-3 shrink-0">
                 <div>
-                  {isReadOnly && evalModal.registration.teacherId === currentTeacher?.id && (
+                  {isReadOnly && !isDraft && evalModal.registration.teacherId === currentTeacher?.id && (
                     <>
                       {evalModal.registration.evaluation?.reEvaluationStatus === "REQUESTED" ? (
                         <span className="px-3 py-1.5 bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-black inline-flex items-center gap-1.5">
@@ -6024,6 +6055,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           onClick={() => {
                             setReEvalModal(evalModal);
                             setReEvalReason("");
+                            setReEvalError(null);
                           }}
                           className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black rounded-xl text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
                         >
@@ -6051,7 +6083,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       className="px-6 py-2.5 bg-gradient-to-r from-[#008B82] to-[#006059] hover:from-[#007068] hover:to-[#004f4a] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer flex items-center gap-2"
                     >
                       <CheckCircle2 className="w-4 h-4 text-teal-200" />
-                      {evalSubmitting ? "Đang lưu..." : isApprovedForReEval ? "💾 Lưu & Cập nhật biên bản" : "💾 Lưu và hoàn thành biên bản"}
+                      {evalSubmitting ? "Đang lưu..." : isApprovedForReEval ? "💾 Lưu & Cập nhật biên bản" : isDraft ? "💾 Hoàn thành & nộp biên bản" : "💾 Lưu và hoàn thành biên bản"}
                     </button>
                   )}
                 </div>
@@ -6343,7 +6375,7 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* MODAL 1: GVBM YÊU CẦU ĐÁNH GIÁ LẠI */}
       {/* ======================================================== */}
       {reEvalModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             <div className="px-6 py-5 bg-gradient-to-r from-amber-600 to-orange-600 text-white flex items-center justify-between">
               <div>
@@ -6355,7 +6387,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 </p>
               </div>
               <button
-                onClick={() => setReEvalModal(null)}
+                onClick={() => { setReEvalModal(null); setReEvalError(null); }}
                 className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5 text-white" />
@@ -6367,16 +6399,26 @@ export function ObservationClient(props: ObservationClientProps) {
                 ℹ️ Sau khi Thầy/Cô gửi yêu cầu, Ban Quản trị / Admin sẽ tiến hành xét duyệt. Khi được phê duyệt mở lại, hệ thống sẽ tự động gửi Email thông báo và mở khóa để Thầy/Cô cập nhật lại phiếu đánh giá.
               </div>
 
+              {reEvalError && (
+                <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{reEvalError}</span>
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <label className="block text-xs font-black text-slate-800 uppercase tracking-wide">
                   Lý do xin đánh giá lại <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   rows={4}
-                  placeholder="Ví dụ: Cần điều chỉnh lại điểm tiêu chí phương pháp, bổ sung góp ý chi tiết cho giáo viên dạy..."
+                  placeholder="Vui lòng nhập chi tiết lý do (ví dụ: Cần điều chỉnh lại điểm tiêu chí phương pháp, bổ sung góp ý chi tiết cho giáo viên dạy...)"
                   value={reEvalReason}
-                  onChange={(e) => setReEvalReason(e.target.value)}
-                  className="w-full p-3.5 rounded-2xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+                  onChange={(e) => {
+                    setReEvalReason(e.target.value);
+                    if (reEvalError) setReEvalError(null);
+                  }}
+                  className={`w-full p-3.5 rounded-2xl border text-xs font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none ${reEvalError ? "border-rose-400 bg-rose-50/20" : "border-slate-200"}`}
                 />
               </div>
             </div>
@@ -6384,7 +6426,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setReEvalModal(null)}
+                onClick={() => { setReEvalModal(null); setReEvalError(null); }}
                 className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
               >
                 Hủy bỏ
