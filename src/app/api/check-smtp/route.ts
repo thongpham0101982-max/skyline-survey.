@@ -32,8 +32,10 @@ export async function GET(req: NextRequest) {
     recipient: toEmail,
     result,
     env: {
-      smtpUser: process.env.SMTP_USER,
-      hasSmtpPass: !!process.env.SMTP_PASS,
+      smtpUser: (process.env.SMTP_USER || '').trim(),
+      rawPassLength: (process.env.SMTP_PASS || '').length,
+      rawPassStart: (process.env.SMTP_PASS || '').trim().slice(0, 4),
+      rawPassEnd: (process.env.SMTP_PASS || '').trim().slice(-4),
       hasBackupPass: !!process.env.BACKUP_SMTP_PASS,
     }
   });
