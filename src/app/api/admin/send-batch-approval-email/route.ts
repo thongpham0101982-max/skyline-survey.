@@ -75,7 +75,7 @@ export async function POST(req: Request) {
       failedCount = students.filter(s => s.admissionResult && s.admissionResult.toUpperCase().includes("KHÔNG")).length;
       pendingCount = totalStudents - passedCount - failedCount;
     } else {
-      passedCount = students.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Học thử").length;
+      passedCount = students.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Học thử" || s.admissionResult === "Đạt - Giao lưu").length;
       failedCount = students.filter(s => s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại").length;
       committedCount = students.filter(s => s.admissionResult === "Đạt cam kết").length;
       pendingCount = totalStudents - passedCount - failedCount - committedCount;
@@ -382,7 +382,7 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Open Sans', 'Segoe UI', 
           groupFailed = group.filter(s => s.admissionResult && s.admissionResult.toUpperCase().includes("KHÔNG")).length;
           groupPending = totalGroup - groupPassed - groupFailed;
         } else {
-          groupPassed = group.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Học thử").length;
+          groupPassed = group.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Học thử" || s.admissionResult === "Đạt - Giao lưu").length;
           groupFailed = group.filter(s => s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại").length;
           groupCommitted = group.filter(s => s.admissionResult === "Đạt cam kết").length;
           groupPending = totalGroup - groupPassed - groupFailed - groupCommitted;

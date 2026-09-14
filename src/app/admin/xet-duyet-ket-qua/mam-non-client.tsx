@@ -6710,6 +6710,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             >
               <option value="">Chưa duyệt</option>
               <option value="Đạt">Đạt</option>
+              <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
               <option value="Không đạt">Không đạt</option>
               <option value="Học thử">Học thử</option>
             </select>

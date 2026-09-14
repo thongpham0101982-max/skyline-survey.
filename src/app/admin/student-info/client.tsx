@@ -1065,6 +1065,7 @@ export function StudentInfoClient({
   const getResultBadgeClass = (result: string) => {
     if (!result) return "bg-slate-50 text-slate-500 border border-slate-100";
     if (result === "Đạt") return "bg-emerald-50 text-emerald-600 border border-emerald-100";
+    if (result === "Đạt - Giao lưu") return "bg-teal-50 text-teal-700 border border-teal-200";
     if (result === "Đạt cam kết") return "bg-amber-50 text-amber-600 border border-amber-100";
     if (result === "Học thử") return "bg-indigo-50 text-indigo-600 border border-indigo-100";
     if (result.includes("Không đạt")) return "bg-rose-50 text-rose-600 border border-rose-100";
@@ -3759,6 +3760,7 @@ export function StudentInfoClient({
                               <Fragment>
                                 <option value="">Chưa duyệt / Khác</option>
                                 <option value="Đạt">Đạt</option>
+                                <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
                                 <option value="Đạt cam kết">Đạt cam kết</option>
                                 <option value="Học thử">Học thử</option>
                                 <option value="Không đạt">Không đạt</option>
@@ -3769,6 +3771,7 @@ export function StudentInfoClient({
                               <Fragment>
                                 <option value="">Chưa duyệt</option>
                                 <option value="Đạt">Đạt</option>
+                                <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
                                 <option value="Không đạt">Không đạt</option>
                                 <option value="Học thử">Học thử</option>
                               </Fragment>

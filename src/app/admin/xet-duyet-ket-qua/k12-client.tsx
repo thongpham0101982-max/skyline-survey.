@@ -1690,7 +1690,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
     // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học) - Active for congratulations, invitations and commitments!
     let page2Html = "";
-    if (student.admissionResult === "Đạt" || student.admissionResult === "Đạt cam kết" || isCommitmentFlag || isInvitationFlag) {
+    if (student.admissionResult === "Đạt" || student.admissionResult === "Đạt cam kết" || student.admissionResult === "Đạt - Giao lưu" || isCommitmentFlag || isInvitationFlag) {
       const docList = getStudentDocList(student);
       if (docList && docList.length > 0) {
         const rowsHtml = docList.map((item: any, idx: number) => {
@@ -2152,7 +2152,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       if (attachLetters) {
         const html2pdf = await getHtml2Pdf();
         
-        const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
+        const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết" || s.admissionResult === "Đạt - Giao lưu");
         let currentPdfCount = 0;
         const totalPdfs = eligibleStudents.length;
 
@@ -2727,6 +2727,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
           if (!s.isAbsent) return false;
         } else if (reportApprovalStatusFilter === "Chưa duyệt") {
           if (s.admissionResult || s.isAbsent) return false;
+        } else if (reportApprovalStatusFilter === "Đạt - Giao lưu") {
+          if (s.isAbsent) return false;
+          const res = String(s.admissionResult || "").toLowerCase();
+          if (!res.includes("giao lưu")) return false;
         } else if (reportApprovalStatusFilter === "Đạt cam kết") {
           if (s.isAbsent) return false;
           const res = String(s.admissionResult || "").toLowerCase();
@@ -3478,7 +3482,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       const isTested = s.mathScore !== null || s.literatureScore !== null || s.writtenEnglishScore !== null || s.oralEnglishScore !== null || s.psychologyScore !== null || (s.scores && s.scores.length > 0);
       if (isTested) surveyed++;
 
-      if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử") passed++;
+      if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử" || s.admissionResult === "Đạt - Giao lưu") passed++;
       else if (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") failed++;
       else if (s.admissionResult === "Đạt cam kết") committed++;
       else pending++;
@@ -6237,6 +6241,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                 >
                   <option value="all">Tất cả trạng thái</option>
                   <option value="Đạt">Đạt</option>
+                  <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
                   <option value="Đạt cam kết">Đạt cam kết</option>
                   <option value="Không đạt">Không đạt</option>
                   <option value="Chưa duyệt">Chờ / Chưa duyệt</option>
@@ -7179,6 +7184,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       >
                         <option value="">-- Chưa xét duyệt --</option>
                         <option value="Đạt">Đạt</option>
+                        <option value="Đạt - Giao lưu">Đạt - Giao lưu</option>
                         <option value="Không đạt">Không đạt</option>
                         <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
                         <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
@@ -9975,6 +9981,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           <td className="p-2 text-center border border-slate-200">
                             <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${
                               s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                              s.admissionResult === "Đạt - Giao lưu" ? "bg-teal-50 text-teal-700 border border-teal-200" :
                               s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
                               (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") ? "bg-rose-50 text-rose-600 border border-rose-100" :
                               s.admissionResult === "Học thử" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
