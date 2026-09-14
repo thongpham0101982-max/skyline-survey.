@@ -2242,11 +2242,11 @@ export function InputAssessmentsClient({
       }
 
       let finalNote = reportForm.directorNote;
-      if (reportForm.admissionResult === "Đạt cam kết" && reportForm.committedSubjects.length > 0) {
+      if (reportForm.admissionResult === "Đạt cam kết" && (reportForm.committedSubjects || []).length > 0) {
         finalNote = `Môn cam kết: [${reportForm.committedSubjects.join(", ")}]
 
 ${reportForm.directorNote}`;
-      } else if (reportForm.admissionResult === "Không đạt - Kiểm tra lại" && reportForm.committedSubjects.length > 0) {
+      } else if (reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (reportForm.committedSubjects || []).length > 0) {
         finalNote = `Môn kiểm tra lại: [${reportForm.committedSubjects.join(", ")}]
 
 ${reportForm.directorNote}`;
@@ -2837,7 +2837,7 @@ ${reportForm.directorNote}`;
     // 1. Các môn khảo sát thực tế của học sinh (từ kết quả chấm thi)
     if (selectedReportStudent?.scores && Array.isArray(selectedReportStudent.scores)) {
       selectedReportStudent.scores.forEach((sc: any) => {
-        const sName = sc.subject?.name || sc.subjectName;
+        const sName = sc.subject?.name || sc.subjectName || sc.name || sc.subject?.code;
         if (sName) add(sName, true);
       });
     }
@@ -6164,12 +6164,12 @@ return {
                     </select>
                   </Field>
 
-                  {reportForm.admissionResult === "Đạt cam kết" && (
-                      <Field label={`Môn Cam Kết ${reportForm.committedSubjects.length > 0 ? `(${reportForm.committedSubjects.length} đã chọn)` : ""}`}>
+                  {(reportForm.admissionResult === "Đạt cam kết" || String(reportForm.admissionResult || "").toLowerCase().includes("cam kết")) && (
+                      <Field label={`Môn Cam Kết ${(reportForm.committedSubjects || []).length > 0 ? `(${(reportForm.committedSubjects || []).length} đã chọn)` : ""}`}>
                         <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 space-y-2">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
                             {availableCommitmentSubjects.map((sub, idx) => {
-                              const isChecked = reportForm.committedSubjects.includes(sub.name);
+                              const isChecked = (reportForm.committedSubjects || []).includes(sub.name);
                               return (
                                 <label 
                                   key={idx} 
@@ -6234,12 +6234,12 @@ return {
                       </Field>
                     )}
 
-                    {reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (
-                      <Field label={`Môn Kiểm tra lại ${reportForm.committedSubjects.length > 0 ? `(${reportForm.committedSubjects.length} đã chọn)` : ""}`}>
+                    {(reportForm.admissionResult === "Không đạt - Kiểm tra lại" || String(reportForm.admissionResult || "").toLowerCase().includes("kiểm tra lại")) && (
+                      <Field label={`Môn Kiểm tra lại ${(reportForm.committedSubjects || []).length > 0 ? `(${(reportForm.committedSubjects || []).length} đã chọn)` : ""}`}>
                         <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 space-y-2">
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
                             {availableCommitmentSubjects.map((sub, idx) => {
-                              const isChecked = reportForm.committedSubjects.includes(sub.name);
+                              const isChecked = (reportForm.committedSubjects || []).includes(sub.name);
                               return (
                                 <label 
                                   key={idx} 
