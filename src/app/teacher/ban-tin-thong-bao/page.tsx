@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader"
 "use client"
 
 import { useState, useEffect } from "react"
@@ -189,17 +190,14 @@ export default function TeacherAnnouncementsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       {/* Header Bar */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-[#48BFE3] rounded-lg flex items-center justify-center flex-shrink-0">
-            <Bell className="w-4 h-4 text-white" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Bản tin & Thông báo</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Xem tin tức luân chuyển lớp và gửi thông báo cho học sinh</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Bản tin & Thông báo"
+        description="Xem tin tức luân chuyển lớp và gửi thông báo cho học sinh"
+        breadcrumbs={[
+          { label: "Công tác Giảng dạy", href: "/teacher" },
+          { label: "Bản tin & Thông báo" }
+        ]}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Left column: Student list selection */}

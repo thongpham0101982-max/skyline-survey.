@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { 
   Users, Loader2, User, Award, Trophy, Medal, Sparkles, Compass, 
   FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,

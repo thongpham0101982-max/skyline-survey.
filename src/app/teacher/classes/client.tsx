@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader"
 "use client"
 import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
@@ -27,35 +28,34 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
   return (
     <div className="space-y-6">
       {/* Header Bar */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-[#48BFE3] rounded-lg flex items-center justify-center flex-shrink-0">
-             <ClipboardList className="w-4 h-4 text-white"/>
+      <PageHeader
+        title="Lớp học của tôi"
+        description="Quản lý các lớp học được phân công và xem kết quả khảo sát"
+        breadcrumbs={[
+          { label: "Công tác Giảng dạy", href: "/teacher" },
+          { label: "Lớp học" }
+        ]}
+        actions={
+          <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold">
+            <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+            <select 
+              value={selectedYearId} 
+              onChange={e => {
+                setSelectedYearId(e.target.value)
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("selectedAcademicYear", e.target.value)
+                  document.cookie = "selectedAcademicYear=" + e.target.value + "; path=/; max-age=31536000; SameSite=Lax"
+                }
+              }} 
+              className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none"
+            >
+              {safeYears.filter(ay => ay && !ay.isOff).map(ay => (
+                <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>
+              ))}
+            </select>
           </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Lớp học của tôi</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Quản lý các lớp học được phân công và xem kết quả khảo sát</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 flex-shrink-0 text-xs font-semibold">
-          <CalendarDays className="w-3.5 h-3.5 text-slate-400"/>
-          <select 
-            value={selectedYearId} 
-            onChange={e => {
-              setSelectedYearId(e.target.value)
-              if (typeof window !== "undefined") {
-                localStorage.setItem("selectedAcademicYear", e.target.value)
-                document.cookie = "selectedAcademicYear=" + e.target.value + "; path=/; max-age=31536000; SameSite=Lax"
-              }
-            }} 
-            className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none"
-          >
-            {safeYears.filter(ay => ay && !ay.isOff).map(ay => (
-              <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+        }
+      />
 
       {/* Classes Grid */}
       {filteredClasses.length === 0 ? (

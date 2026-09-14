@@ -1,3 +1,4 @@
+import { parseCommittedSubjects } from "@/lib/subject-mapping"
 "use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
@@ -2814,6 +2815,64 @@ ${reportForm.directorNote}`;
     }
     return false;
   }, [currentUser, reportSelPeriod, reportBatches, reportBatchId, campuses]);
+
+  
+  const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[]>([]);
+  const [newCustomSubjectInput, setNewCustomSubjectInput] = useState("");
+
+  const availableCommitmentSubjects = useMemo(() => {
+    const list: { name: string; isSurveySubject?: boolean }[] = [];
+    const seen = new Set<string>();
+
+    const add = (name?: string | null, isSurveySubject = false) => {
+      if (!name) return;
+      const clean = String(name).trim();
+      if (!clean) return;
+      const lower = clean.toLowerCase();
+      if (seen.has(lower)) return;
+      seen.add(lower);
+      list.push({ name: clean, isSurveySubject });
+    };
+
+    // 1. Các môn khảo sát thực tế của học sinh (từ kết quả chấm thi)
+    if (selectedReportStudent?.scores && Array.isArray(selectedReportStudent.scores)) {
+      selectedReportStudent.scores.forEach((sc: any) => {
+        const sName = sc.subject?.name || sc.subjectName;
+        if (sName) add(sName, true);
+      });
+    }
+
+    // 2. Các môn trong cấu hình danh mục khảo sát của hệ thống
+    const sysSubs = subjectsList && subjectsList.length > 0 ? subjectsList : initialSubjects;
+    if (Array.isArray(sysSubs)) {
+      sysSubs.forEach((sub: any) => {
+        if (sub?.name) add(sub.name, false);
+      });
+    }
+
+    // 3. Các môn phổ thông cơ bản
+    ["Toán", "Tiếng Việt", "Tiếng Anh", "Ngữ Văn", "Tâm lý"].forEach(c => add(c, false));
+
+    // 4. Các môn đang được lưu/chọn trong form
+    (reportForm.committedSubjects || []).forEach((s: string) => add(s, false));
+
+    // 5. Môn do người dùng tự gõ thêm
+    customCommitmentSubjects.forEach(s => add(s, false));
+
+    return list;
+  }, [selectedReportStudent, subjectsList, initialSubjects, reportForm.committedSubjects, customCommitmentSubjects]);
+
+  const handleAddCustomCommitmentSubject = () => {
+    const val = newCustomSubjectInput.trim();
+    if (!val) return;
+    if (!customCommitmentSubjects.includes(val)) {
+      setCustomCommitmentSubjects(prev => [...prev, val]);
+    }
+    if (!reportForm.committedSubjects.includes(val)) {
+      setReportForm(f => ({ ...f, committedSubjects: [...f.committedSubjects, val] }));
+    }
+    setNewCustomSubjectInput("");
+  };
 
   useEffect(() => {
     if (selectedReportStudent) {
@@ -6106,62 +6165,144 @@ return {
                   </Field>
 
                   {reportForm.admissionResult === "Đạt cam kết" && (
-                    <Field label="Môn Cam Kết">
-                      <div className="grid grid-cols-2 gap-2 p-4 max-h-48 overflow-y-auto text-xs font-semibold">
-                        {initialSubjects.map(sub => {
-                          const isChecked = reportForm.committedSubjects.includes(sub.name);
-                          return (
-                            <label key={sub.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer hover:text-indigo-600 transition-colors">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                disabled={!canApprove}
-                                onChange={() => {
-                                  setReportForm(f => {
-                                    const next = isChecked 
-                                      ? f.committedSubjects.filter(name => name !== sub.name)
-                                      : [...f.committedSubjects, sub.name];
-                                    return { ...f, committedSubjects: next };
-                                  });
-                                }}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                              />
-                              {sub.name}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </Field>
-                  )}
+                      <Field label={`Môn Cam Kết ${reportForm.committedSubjects.length > 0 ? `(${reportForm.committedSubjects.length} đã chọn)` : ""}`}>
+                        <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 space-y-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                            {availableCommitmentSubjects.map((sub, idx) => {
+                              const isChecked = reportForm.committedSubjects.includes(sub.name);
+                              return (
+                                <label 
+                                  key={idx} 
+                                  className={`flex items-center justify-between gap-1.5 p-1.5 rounded-lg border transition-all cursor-pointer select-none text-[11px] font-semibold ${
+                                    isChecked 
+                                      ? "bg-indigo-50 border-indigo-200 text-indigo-900 shadow-xs" 
+                                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100/80"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <input 
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      disabled={!canApprove}
+                                      onChange={() => {
+                                        setReportForm(f => {
+                                          const next = isChecked 
+                                            ? f.committedSubjects.filter(name => name !== sub.name)
+                                            : [...f.committedSubjects, sub.name];
+                                          return { ...f, committedSubjects: next };
+                                        });
+                                      }}
+                                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
+                                    />
+                                    <span className="truncate" title={sub.name}>{sub.name}</span>
+                                  </div>
+                                  {sub.isSurveySubject && (
+                                    <span className="shrink-0 text-[8px] font-bold uppercase px-1 py-0.2 bg-teal-100 text-teal-700 rounded border border-teal-200">
+                                      Môn KS
+                                    </span>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
 
-                  {reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (
-                    <Field label="Môn Kiểm tra lại">
-                      <div className="grid grid-cols-2 gap-2 p-4 max-h-48 overflow-y-auto text-xs font-semibold">
-                        {initialSubjects.map(sub => {
-                          const isChecked = reportForm.committedSubjects.includes(sub.name);
-                          return (
-                            <label key={sub.id} className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer hover:text-indigo-600 transition-colors">
-                              <input 
-                                type="checkbox"
-                                checked={isChecked}
-                                disabled={!canApprove}
-                                onChange={() => {
-                                  setReportForm(f => {
-                                    const next = isChecked 
-                                      ? f.committedSubjects.filter(name => name !== sub.name)
-                                      : [...f.committedSubjects, sub.name];
-                                    return { ...f, committedSubjects: next };
-                                  });
+                          {canApprove && (
+                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-200/70">
+                              <input
+                                type="text"
+                                placeholder="+ Thêm môn khác..."
+                                value={newCustomSubjectInput}
+                                onChange={e => setNewCustomSubjectInput(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddCustomCommitmentSubject();
+                                  }
                                 }}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                                className="flex-1 px-2.5 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 font-medium"
                               />
-                              {sub.name}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </Field>
-                  )}
+                              <button
+                                type="button"
+                                onClick={handleAddCustomCommitmentSubject}
+                                className="px-2.5 py-1 text-[11px] bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition shrink-0 cursor-pointer shadow-xs"
+                              >
+                                Thêm
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </Field>
+                    )}
+
+                    {reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (
+                      <Field label={`Môn Kiểm tra lại ${reportForm.committedSubjects.length > 0 ? `(${reportForm.committedSubjects.length} đã chọn)` : ""}`}>
+                        <div className="bg-slate-50/70 rounded-xl p-2.5 border border-slate-200/80 space-y-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                            {availableCommitmentSubjects.map((sub, idx) => {
+                              const isChecked = reportForm.committedSubjects.includes(sub.name);
+                              return (
+                                <label 
+                                  key={idx} 
+                                  className={`flex items-center justify-between gap-1.5 p-1.5 rounded-lg border transition-all cursor-pointer select-none text-[11px] font-semibold ${
+                                    isChecked 
+                                      ? "bg-amber-50 border-amber-200 text-amber-900 shadow-xs" 
+                                      : "bg-white border-slate-200 text-slate-700 hover:bg-slate-100/80"
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <input 
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      disabled={!canApprove}
+                                      onChange={() => {
+                                        setReportForm(f => {
+                                          const next = isChecked 
+                                            ? f.committedSubjects.filter(name => name !== sub.name)
+                                            : [...f.committedSubjects, sub.name];
+                                          return { ...f, committedSubjects: next };
+                                        });
+                                      }}
+                                      className="rounded border-slate-300 text-amber-600 focus:ring-amber-500 w-3.5 h-3.5 shrink-0 cursor-pointer"
+                                    />
+                                    <span className="truncate" title={sub.name}>{sub.name}</span>
+                                  </div>
+                                  {sub.isSurveySubject && (
+                                    <span className="shrink-0 text-[8px] font-bold uppercase px-1 py-0.2 bg-teal-100 text-teal-700 rounded border border-teal-200">
+                                      Môn KS
+                                    </span>
+                                  )}
+                                </label>
+                              );
+                            })}
+                          </div>
+
+                          {canApprove && (
+                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-200/70">
+                              <input
+                                type="text"
+                                placeholder="+ Thêm môn khác..."
+                                value={newCustomSubjectInput}
+                                onChange={e => setNewCustomSubjectInput(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    handleAddCustomCommitmentSubject();
+                                  }
+                                }}
+                                className="flex-1 px-2.5 py-1 text-[11px] bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-amber-500 font-medium"
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddCustomCommitmentSubject}
+                                className="px-2.5 py-1 text-[11px] bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg transition shrink-0 cursor-pointer shadow-xs"
+                              >
+                                Thêm
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </Field>
+                    )}
 
                   {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
                     <>

@@ -35,6 +35,7 @@ import {
   School
 } from "lucide-react"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
+import { UserWelcomeCard } from "@/components/UserWelcomeCard"
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -299,7 +300,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
-      <WelcomeAlert name={userName} />
+      <UserWelcomeCard userName={userName} academicYear={finalMetrics.academicYearName || "2026-2027"} />
       
       {/* REALTIME DASHBOARD TOP BAR WITH INTERACTIVE FILTERS */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border-2 border-teal-100/80 shadow-xs">

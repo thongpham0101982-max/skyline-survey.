@@ -39,9 +39,10 @@ export default async function XetDuyetKetQuaPage() {
   const allowedCampusIds = (session?.user as any)?.campusIds || [];
   let liveCampusIds = [...allowedCampusIds];
   try {
-    if (user?.id) {
+    const currentUserId = (session?.user as any)?.id;
+    if (currentUserId) {
       const dbAssignments = await prisma.userCampusAssignment.findMany({
-        where: { userId: user.id }
+        where: { userId: currentUserId }
       });
       if (dbAssignments.length > 0) {
         liveCampusIds = dbAssignments.map(a => a.campusId);
@@ -80,7 +81,7 @@ export default async function XetDuyetKetQuaPage() {
       }
       if (pAny.campus) {
         campuses = await pAny.campus.findMany({ 
-          where: isGDCS ? { id: { in: liveCampusIds } } : { status: "ACTIVE" }, 
+          where: isGdcsRole ? { id: { in: liveCampusIds } } : { status: "ACTIVE" }, 
           include: { 
             manager: {
               include: {
@@ -108,9 +109,20 @@ export default async function XetDuyetKetQuaPage() {
         }).catch(() => []);
       }
       if (pAny.assessmentSubject) {
-        subjects = await pAny.assessmentSubject.findMany({ 
-          where: { status: "ACTIVE" }, orderBy: { sortOrder: "asc" } 
-        }).catch(() => []);
+        try {
+          subjects = await pAny.assessmentSubject.findMany({ 
+            orderBy: { sortOrder: "asc" } 
+          });
+        } catch (subErr) {
+          try {
+            subjects = await pAny.assessmentSubject.findMany({ 
+              select: { id: true, code: true, name: true, status: true, sortOrder: true },
+              orderBy: { sortOrder: "asc" } 
+            });
+          } catch (subErr2) {
+            subjects = [];
+          }
+        }
       }
       if (pAny.assessmentConfig) {
         configs = await pAny.assessmentConfig.findMany({ 

@@ -99,7 +99,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     }
   }, [role])
 
-  const title = ""
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (isSuperAdmin) return true
@@ -155,18 +154,8 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
       {/* Sidebar Content */}
       <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#003B3A] text-white p-6 flex flex-col shadow-xl fixed md:sticky inset-y-0 left-0 z-40 h-screen transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-2'} mb-8`}>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center">
             <img src="/logo.png" alt="Sky-Line" className={`h-8 w-auto object-contain brightness-0 invert opacity-95 transition-all ${isCollapsed ? 'scale-75' : ''}`} />
-            {!isCollapsed && (
-              <div className="flex flex-col">
-                <span className="font-black text-sm tracking-wide text-white uppercase leading-none">
-                  SKYLINE
-                </span>
-                <span className="text-[9px] font-bold text-[#48BFE3] tracking-wider leading-tight mt-0.5">
-                  Survey System
-                </span>
-              </div>
-            )}
           </div>
           {/* Mobile close button inside the sidebar */}
           <button 

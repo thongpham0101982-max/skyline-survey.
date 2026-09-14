@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader"
 "use client"
 import { useState } from "react"
 import {
@@ -253,26 +254,27 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
     <div className="space-y-6 pb-24 font-outfit">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Danh Mục Khảo Sát</h1>
-            <span className="bg-[#48BFE3]/10 text-[#48BFE3] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              {totalCategories} Phân mục
-            </span>
-          </div>
-          <p className="text-slate-500 text-xs font-medium mt-1">
-            Tổ chức danh mục khảo sát theo chủ đề để quản lý bộ câu hỏi và phân tích báo cáo trực quan.
-          </p>
-        </div>
-
-        <button
-          onClick={() => openCreateModal("")}
-          className="inline-flex items-center justify-center gap-2 bg-[#48BFE3] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-md shadow-teal-500/20 active:scale-95 transition-all cursor-pointer border-none"
-        >
-          <Plus className="w-4 h-4" /> Tạo Danh Mục Mới
-        </button>
-      </div>
+      <PageHeader
+        title="Danh Mục Khảo Sát"
+        description="Tổ chức danh mục khảo sát theo chủ đề để quản lý bộ câu hỏi và phân tích báo cáo trực quan."
+        breadcrumbs={[
+          { label: "Khảo sát" },
+          { label: "Danh mục khảo sát" }
+        ]}
+        badge={
+          <span className="bg-[#48BFE3]/10 text-[#0284C7] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            {totalCategories} Phân mục
+          </span>
+        }
+        actions={
+          <button
+            onClick={() => openCreateModal("")}
+            className="inline-flex items-center justify-center gap-2 bg-[#48BFE3] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-md shadow-teal-500/20 active:scale-95 transition-all cursor-pointer border-none"
+          >
+            <Plus className="w-4 h-4" /> Tạo Danh Mục Mới
+          </button>
+        }
+      />
 
       {/* OVERVIEW STAT CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

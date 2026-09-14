@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader"
 import { prisma } from "@/lib/db"
 import { AdminClassesClient } from "./client"
 import { getAdminSession } from "@/lib/session"
@@ -74,9 +75,14 @@ export default async function AdminClassesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Quản lý Lớp học</h1>
-      </div>
+      <PageHeader
+        title="Quản lý Lớp học"
+        description="Danh sách các lớp học theo từng cơ sở và niên khóa"
+        breadcrumbs={[
+          { label: "Cấu hình hệ thống" },
+          { label: "Lớp học" }
+        ]}
+      />
       <AdminClassesClient
         initialClasses={mappedClasses}
         campuses={campuses}

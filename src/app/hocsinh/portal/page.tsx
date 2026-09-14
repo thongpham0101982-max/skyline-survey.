@@ -25,6 +25,10 @@ export default function StudentPortalHomePage() {
   const [studentCode, setStudentCode] = useState("")
   const [gradeNum, setGradeNum] = useState("10")
   const [campusName, setCampusName] = useState("")
+  const [academicYearName, setAcademicYearName] = useState("")
+  const [academicYearTheme, setAcademicYearTheme] = useState("")
+  const [academicYearPillars, setAcademicYearPillars] = useState<any[]>([])
+  const [activePillarDetail, setActivePillarDetail] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -43,6 +47,14 @@ export default function StudentPortalHomePage() {
           setClassName(data.className || "Lớp Học Sinh")
           setCampusName(data.campusName || "Sky-Line")
           setGradeNum(data.grade ? String(data.grade).replace("K","") : parseGradeNumber(data.className))
+          setAcademicYearName(data.academicYearName || "")
+          setAcademicYearTheme(data.academicYearTheme || "")
+          if (data.academicYearPillars) {
+            try {
+              const p = typeof data.academicYearPillars === "string" ? JSON.parse(data.academicYearPillars) : data.academicYearPillars;
+              if (Array.isArray(p)) setAcademicYearPillars(p);
+            } catch(e) {}
+          }
           localStorage.setItem("currentStudent", JSON.stringify(data))
         }
       })
@@ -79,13 +91,24 @@ export default function StudentPortalHomePage() {
               <span>TRANG CHỦ HỌC SINH SKY-LINE</span>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
                 Xin chào, <span className="text-teal-200">{studentName}</span>
               </h1>
-              <p className="text-xs sm:text-sm text-teal-100/90 font-medium leading-relaxed mt-1.5 max-w-xl">
+              <p className="text-xs sm:text-sm text-teal-100/90 font-medium leading-relaxed max-w-xl">
                 Chúc em một ngày học tập tràn đầy cảm hứng, chủ động thiết lập mục tiêu năm học Khối {gradeNum} và mở khóa hành động bứt phá!
               </p>
+              {academicYearTheme && (
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-400/20 text-amber-200 border border-amber-300/30 backdrop-blur-md shadow-xs mt-1">
+                  <Target className="w-4 h-4 text-amber-300 shrink-0" />
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-300">
+                    Chủ đề năm học {academicYearName ? `${academicYearName}: ` : ': '}
+                  </span>
+                  <span className="text-xs sm:text-sm font-bold text-white italic">
+                    &ldquo;{academicYearTheme}&rdquo;
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Student Info Tags */}
@@ -110,21 +133,34 @@ export default function StudentPortalHomePage() {
           </div>
 
           {/* Sky-Line 5 Pillars Emblem Card */}
-          <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 text-center shrink-0 w-full lg:w-64 flex flex-col items-center justify-center space-y-2.5 shadow-lg">
-            <div className="w-14 h-14 rounded-2xl bg-white/15 border border-white/30 flex items-center justify-center text-teal-200 shadow-inner">
-              <Shield className="w-8 h-8 text-amber-300" />
+          <div className="bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20 text-center shrink-0 w-full lg:w-72 flex flex-col items-center justify-center space-y-3 shadow-lg">
+            <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/30 flex items-center justify-center text-teal-200 shadow-inner">
+              <Shield className="w-7 h-7 text-amber-300" />
             </div>
             <div>
               <p className="text-xs font-black text-white uppercase tracking-wider">ĐỒNG HÀNH PHÁT TRIỂN</p>
-              <p className="text-[11px] text-teal-200 font-medium mt-0.5">5 Trụ Cột Phát Triển Toàn Diện</p>
+              <p className="text-[11px] text-teal-200 font-semibold mt-0.5">5 Trụ Cột Cho Học Sinh Sky-Line</p>
             </div>
-            <div className="flex flex-wrap justify-center gap-1 pt-1">
-              {["Trí tuệ", "Thể chất", "Tâm hồn", "Kỹ năng", "Hội nhập"].map((p, i) => (
-                <span key={i} className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-white/15 text-white">
-                  {p}
-                </span>
+            <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+              {(academicYearPillars.length > 0 ? academicYearPillars : [
+                { id: "TRI_TUE", name: "Trí tuệ", focus: "Phát triển tư duy độc lập, phản biện, sáng tạo khoa học và học tập xuất sắc" },
+                { id: "THE_CHAT", name: "Thể chất", focus: "Rèn luyện thể lực bền bỉ, phát triển chiều cao và lối sống năng động lành mạnh" },
+                { id: "TAM_HON", name: "Tâm hồn", focus: "Nuôi dưỡng lòng nhân ái, sự trung thực, bản sắc văn hóa Việt và lòng biết ơn" },
+                { id: "KY_NANG", name: "Kỹ năng", focus: "Thành thạo kỹ năng tự lập, sinh tồn, giao tiếp, hợp tác và giải quyết vấn đề" },
+                { id: "HOI_NHAP", name: "Hội nhập", focus: "Năng lực song ngữ quốc tế, tư duy công dân toàn cầu và làm chủ công nghệ số" }
+              ]).map((p: any, i: number) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setActivePillarDetail(p)}
+                  className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all hover:scale-105 border border-white/20 cursor-pointer flex items-center gap-1"
+                  title="Bấm để xem định hướng rèn luyện"
+                >
+                  <span>{p.name}</span>
+                </button>
               ))}
             </div>
+            <span className="text-[10px] text-teal-200/80 italic font-medium">Bấm vào trụ cột để xem định hướng</span>
           </div>
 
         </div>
@@ -383,7 +419,48 @@ export default function StudentPortalHomePage() {
         </div>
 
       </div>
+      {/* Modal Chi tiết Trụ Cột Phát Triển */}
+      {activePillarDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-teal-100 text-[#007A72] flex items-center justify-center font-black">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black text-teal-700 uppercase tracking-wider">Trụ cột phát triển Sky-Line</span>
+                  <h3 className="text-base font-black text-slate-800">{activePillarDetail.name}</h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setActivePillarDetail(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                ✕
+              </button>
+            </div>
 
+            <div className="bg-teal-50/60 p-4 rounded-2xl border border-teal-200/80 space-y-2">
+              <span className="text-[11px] font-black text-[#003B3A] uppercase tracking-wide">
+                🎯 Định hướng rèn luyện năm học {academicYearName}:
+              </span>
+              <p className="text-xs text-slate-700 font-medium leading-relaxed">
+                {activePillarDetail.focus || "Phát triển toàn diện và nâng cao năng lực cá nhân theo chuẩn Sky-Line."}
+              </p>
+            </div>
+
+            <div className="text-center pt-2">
+              <button
+                onClick={() => setActivePillarDetail(null)}
+                className="w-full py-2 text-xs font-bold text-white bg-[#007A72] hover:bg-[#003B3A] rounded-xl transition-colors"
+              >
+                Đã hiểu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

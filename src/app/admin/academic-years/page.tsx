@@ -1,27 +1,56 @@
+import { PageHeader } from "@/components/PageHeader"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { AcademicYearsClient } from "./client"
 
-async function createAcademicYear(formData) {
+async function createAcademicYear(formData: FormData) {
   "use server"
-  const name = formData.get("name")
-  const startDate = new Date(formData.get("startDate"))
-  const endDate = new Date(formData.get("endDate"))
+  const name = formData.get("name") as string
+  const startDate = new Date(formData.get("startDate") as string)
+  const endDate = new Date(formData.get("endDate") as string)
+  const theme = (formData.get("theme") as string || "").trim()
+  const defaultPillars = "[{\"id\":\"TRI_TUE\",\"name\":\"Trí tuệ\",\"icon\":\"Brain\",\"color\":\"blue\",\"focus\":\"Phát triển tư duy độc lập, phản biện, sáng tạo khoa học và học tập xuất sắc\"},{\"id\":\"THE_CHAT\",\"name\":\"Thể chất\",\"icon\":\"Activity\",\"color\":\"emerald\",\"focus\":\"Rèn luyện thể lực bền bỉ, phát triển chiều cao và lối sống năng động lành mạnh\"},{\"id\":\"TAM_HON\",\"name\":\"Tâm hồn\",\"icon\":\"Heart\",\"color\":\"rose\",\"focus\":\"Nuôi dưỡng lòng nhân ái, sự trung thực, bản sắc văn hóa Việt và lòng biết ơn\"},{\"id\":\"KY_NANG\",\"name\":\"Kỹ năng\",\"icon\":\"Compass\",\"color\":\"amber\",\"focus\":\"Thành thạo kỹ năng tự lập, sinh tồn, giao tiếp, hợp tác và giải quyết vấn đề\"},{\"id\":\"HOI_NHAP\",\"name\":\"Hội nhập\",\"icon\":\"Globe\",\"color\":\"purple\",\"focus\":\"Năng lực song ngữ quốc tế, tư duy công dân toàn cầu và làm chủ công nghệ số\"}]";
+
+  const initialThemes = theme ? JSON.stringify([
+    {
+      id: "thm_" + Date.now(),
+      type: "CA_NAM",
+      typeName: "Cả năm (Chính)",
+      title: theme,
+      isPrimary: true
+    }
+  ]) : null;
+
   try {
-    await prisma.academicYear.create({ data: { name, startDate, endDate } })
-  } catch(e) {}
+    await prisma.academicYear.create({
+      data: {
+        name,
+        startDate,
+        endDate,
+        theme: theme || null,
+        pillars: defaultPillars,
+        yearThemes: initialThemes
+      }
+    })
+  } catch(e) {
+    console.error("Error creating academic year:", e)
+  }
   revalidatePath("/admin/academic-years")
 }
 
-async function updateAcademicYear(data) {
+async function updateAcademicYear(data: any) {
   "use server"
-  const payload = {}
+  const payload: any = {}
   if (data.name) payload.name = data.name
   if (data.startDate) payload.startDate = data.startDate
   if (data.endDate) payload.endDate = data.endDate
   if (data.status) payload.status = data.status
+  if (data.theme !== undefined) payload.theme = data.theme
+  if (data.pillars !== undefined) payload.pillars = typeof data.pillars === 'string' ? data.pillars : JSON.stringify(data.pillars)
+  if (data.yearThemes !== undefined) payload.yearThemes = typeof data.yearThemes === 'string' ? data.yearThemes : JSON.stringify(data.yearThemes)
   await prisma.academicYear.update({ where: { id: data.id }, data: payload })
   revalidatePath("/admin/academic-years")
+  revalidatePath("/hocsinh/portal")
 }
 
 async function deleteAcademicYear(id) {
@@ -205,29 +234,44 @@ export default async function AcademicYearsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Quản lý Năm học</h1>
-        <p className="text-slate-500 mt-2 text-sm">Mọi tài khoản Phụ huynh và Giáo viên đều thuộc về một Năm học cụ thể.</p>
-      </div>
+      <PageHeader
+        title="Quản lý Năm học"
+        description="Mọi tài khoản Phụ huynh và Giáo viên đều thuộc về một Năm học cụ thể."
+        breadcrumbs={[
+          { label: "Cấu hình hệ thống" },
+          { label: "Năm học" }
+        ]}
+      />
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border-2 border-blue-100">
         <h2 className="text-base font-bold mb-4 text-slate-800">Tạo Năm học Mới</h2>
-        <form action={createAcademicYear} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tên Năm học</label>
-            <input name="name" type="text" required placeholder="2025-2026" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+        <form action={createAcademicYear} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tên Năm học *</label>
+              <input name="name" type="text" required placeholder="VD: 2026-2027" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ngày bắt đầu *</label>
+              <input name="startDate" type="date" required className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ngày kết thúc *</label>
+              <input name="endDate" type="date" required className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+            </div>
+            <div className="flex items-end">
+              <button type="submit" className="w-full bg-[#48BFE3] text-white font-bold py-2.5 px-4 rounded-xl hover:bg-[#009085] transition-colors shadow-md shadow-indigo-500/20">
+                Tạo Năm học
+              </button>
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ngày bắt đầu</label>
-            <input name="startDate" type="date" required className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Chủ đề năm học <span className="text-xs font-normal text-slate-500">(Khẩu hiệu / Thông điệp hành động cho Học sinh Sky-Line)</span></span>
+              <span className="text-[11px] font-medium text-teal-600 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100">* Sẽ tự động khởi tạo 5 trụ cột chuẩn Sky-Line</span>
+            </label>
+            <input name="theme" type="text" placeholder="VD: Khát vọng vươn tầm - Vững bước hội nhập toàn cầu" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">Ngày kết thúc</label>
-            <input name="endDate" type="date" required className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none" />
-          </div>
-          <button type="submit" className="w-full bg-[#48BFE3] text-white font-bold py-2.5 px-4 rounded-xl hover:bg-[#009085] transition-colors shadow-md shadow-indigo-500/20">
-            Tạo Năm học
-          </button>
         </form>
       </div>
 

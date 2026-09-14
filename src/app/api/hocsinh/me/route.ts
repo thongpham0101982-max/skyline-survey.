@@ -19,8 +19,17 @@ export async function GET() {
 
     const student = await prisma.student.findUnique({
       where: { id: session.studentId },
-      include: { class: true, campus: true }
+      include: { class: true, campus: true, academicYear: true }
     })
+
+    // Get active academic year theme & pillars
+    let academicYear = student?.academicYear
+    if (!academicYear) {
+      academicYear = await prisma.academicYear.findFirst({
+        where: { status: 'ACTIVE', isOff: false },
+        orderBy: { startDate: 'desc' }
+      })
+    }
 
     if (!student) {
       return jsonResponse({
@@ -30,7 +39,10 @@ export async function GET() {
         studentName: session.studentName,
         className: session.className || '',
         campusName: session.campusName || '',
-        grade: session.className ? (session.className.match(/\d+/) || ['8'])[0] : '8'
+        grade: session.className ? (session.className.match(/\d+/) || ['8'])[0] : '8',
+        academicYearName: academicYear?.name || '',
+        academicYearTheme: academicYear?.theme || '',
+        academicYearPillars: academicYear?.pillars || ''
       })
     }
 
@@ -44,7 +56,11 @@ export async function GET() {
       studentName: student.studentName,
       className: cName,
       campusName: student.campus?.campusName || session.campusName || '',
-      grade: gradeVal
+      grade: gradeVal,
+      academicYearId: academicYear?.id || student.academicYearId || '',
+      academicYearName: academicYear?.name || '',
+      academicYearTheme: academicYear?.theme || '',
+      academicYearPillars: academicYear?.pillars || ''
     })
   } catch (error: any) {
     console.error("GET /api/hocsinh/me error:", error)

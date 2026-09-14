@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/PageHeader"
 // Forced Vercel Deployment: 2026-09-10T09:30:00.000Z
 "use client";
 import { useState, useEffect } from "react";
@@ -216,35 +217,32 @@ export default function DepartmentsClient({ currentSession }: { currentSession?:
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 flex items-center gap-3 tracking-tight">
-            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-2xl">
-              <Layers className="w-6 h-6" />
-            </div>
-            Quản Lý Tổ & Bộ Phận Chuyên Môn
-          </h1>
-          <p className="text-slate-500 mt-1 text-sm">
-            Quản lý cơ cấu các Tổ chuyên môn trực thuộc các Ban & Bộ Phận (Ban GĐ, Ban KT&ĐBCL, Ban ĐHCM, Ban TT, BP Trung học, BP Tiểu học...).
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {selectedIds.length > 0 && (
+      <PageHeader
+        title="Quản Lý Tổ & Bộ Phận Chuyên Môn"
+        description="Quản lý cơ cấu các Tổ chuyên môn trực thuộc các Ban & Bộ Phận (Ban GĐ, Ban KT&ĐBCL, Ban ĐHCM, Ban TT...)"
+        breadcrumbs={[
+          { label: "Cấu hình hệ thống" },
+          { label: "Tổ chuyên môn" }
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={() => { setTargetDivisionCode(""); setBatchModalOpen(true); }}
+                className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-indigo-100 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              >
+                <ArrowRight className="w-4 h-4" /> Gán {selectedIds.length} Tổ vào Bộ Phận...
+              </button>
+            )}
             <button
-              onClick={() => { setTargetDivisionCode(""); setBatchModalOpen(true); }}
-              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md shadow-indigo-100 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+              onClick={handleOpenAdd}
+              className="px-5 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-2xl font-bold text-xs shadow-md shadow-teal-100 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
             >
-              <ArrowRight className="w-4 h-4" /> Gán {selectedIds.length} Tổ vào Bộ Phận...
+              <Plus className="w-4 h-4" /> Thêm Tổ Mới
             </button>
-          )}
-          <button
-            onClick={handleOpenAdd}
-            className="px-5 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-2xl font-bold text-xs shadow-md shadow-teal-100 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Thêm Tổ Mới
-          </button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {/* 10 Divisions Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
