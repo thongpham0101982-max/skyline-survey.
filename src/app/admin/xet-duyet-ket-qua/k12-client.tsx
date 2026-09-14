@@ -3570,64 +3570,6 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
     return false;
   }, [currentUser, reportSelPeriod, reportBatches, reportBatchId, campuses]);
 
-  
-  const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[]>([]);
-  const [newCustomSubjectInput, setNewCustomSubjectInput] = useState("");
-
-  const availableCommitmentSubjects = useMemo(() => {
-    const list: { name: string; isSurveySubject?: boolean }[] = [];
-    const seen = new Set<string>();
-
-    const add = (name?: string | null, isSurveySubject = false) => {
-      if (!name) return;
-      const clean = String(name).trim();
-      if (!clean) return;
-      const lower = clean.toLowerCase();
-      if (seen.has(lower)) return;
-      seen.add(lower);
-      list.push({ name: clean, isSurveySubject });
-    };
-
-    // 1. Các môn khảo sát thực tế của học sinh (từ kết quả chấm thi)
-    if (selectedReportStudent?.scores && Array.isArray(selectedReportStudent.scores)) {
-      selectedReportStudent.scores.forEach((sc: any) => {
-        const sName = sc.subject?.name || sc.subjectName || sc.name || sc.subject?.code;
-        if (sName) add(sName, true);
-      });
-    }
-
-    // 2. Các môn trong cấu hình danh mục khảo sát của hệ thống
-    const sysSubs = subjectsList && subjectsList.length > 0 ? subjectsList : initialSubjects;
-    if (Array.isArray(sysSubs)) {
-      sysSubs.forEach((sub: any) => {
-        if (sub?.name) add(sub.name, false);
-      });
-    }
-
-    // 3. Các môn phổ thông cơ bản
-    ["Toán", "Tiếng Việt", "Tiếng Anh", "Ngữ Văn", "Tâm lý"].forEach(c => add(c, false));
-
-    // 4. Các môn đang được lưu/chọn trong form
-    (reportForm.committedSubjects || []).forEach((s: string) => add(s, false));
-
-    // 5. Môn do người dùng tự gõ thêm
-    customCommitmentSubjects.forEach(s => add(s, false));
-
-    return list;
-  }, [selectedReportStudent, subjectsList, initialSubjects, reportForm.committedSubjects, customCommitmentSubjects]);
-
-  const handleAddCustomCommitmentSubject = () => {
-    const val = newCustomSubjectInput.trim();
-    if (!val) return;
-    if (!customCommitmentSubjects.includes(val)) {
-      setCustomCommitmentSubjects(prev => [...prev, val]);
-    }
-    if (!reportForm.committedSubjects.includes(val)) {
-      setReportForm(f => ({ ...f, committedSubjects: [...f.committedSubjects, val] }));
-    }
-    setNewCustomSubjectInput("");
-  };
-
   useEffect(() => {
     if (selectedReportStudent) {
       let commSubs: string[] = [];
@@ -4439,6 +4381,64 @@ return {
       committedSubjects: reportForm.committedSubjects
     };
   }, [selectedReportStudent, reportForm]);
+
+const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[]>([]);
+  const [newCustomSubjectInput, setNewCustomSubjectInput] = useState("");
+
+  const availableCommitmentSubjects = useMemo(() => {
+    const list: { name: string; isSurveySubject?: boolean }[] = [];
+    const seen = new Set<string>();
+
+    const add = (name?: string | null, isSurveySubject = false) => {
+      if (!name) return;
+      const clean = String(name).trim();
+      if (!clean) return;
+      const lower = clean.toLowerCase();
+      if (seen.has(lower)) return;
+      seen.add(lower);
+      list.push({ name: clean, isSurveySubject });
+    };
+
+    // 1. Các môn khảo sát thực tế của học sinh (từ kết quả chấm thi)
+    if (selectedReportStudent?.scores && Array.isArray(selectedReportStudent.scores)) {
+      selectedReportStudent.scores.forEach((sc: any) => {
+        const sName = sc.subject?.name || sc.subjectName || sc.name || sc.subject?.code;
+        if (sName) add(sName, true);
+      });
+    }
+
+    // 2. Các môn trong cấu hình danh mục khảo sát của hệ thống
+    const sysSubs = subjectsList && subjectsList.length > 0 ? subjectsList : initialSubjects;
+    if (Array.isArray(sysSubs)) {
+      sysSubs.forEach((sub: any) => {
+        if (sub?.name) add(sub.name, false);
+      });
+    }
+
+    // 3. Các môn phổ thông cơ bản
+    ["Toán", "Tiếng Việt", "Tiếng Anh", "Ngữ Văn", "Tâm lý"].forEach(c => add(c, false));
+
+    // 4. Các môn đang được lưu/chọn trong form
+    (reportForm.committedSubjects || []).forEach((s: string) => add(s, false));
+
+    // 5. Môn do người dùng tự gõ thêm
+    customCommitmentSubjects.forEach(s => add(s, false));
+
+    return list;
+  }, [selectedReportStudent, subjectsList, initialSubjects, reportForm.committedSubjects, customCommitmentSubjects]);
+
+  const handleAddCustomCommitmentSubject = () => {
+    const val = newCustomSubjectInput.trim();
+    if (!val) return;
+    if (!customCommitmentSubjects.includes(val)) {
+      setCustomCommitmentSubjects(prev => [...prev, val]);
+    }
+    if (!(reportForm.committedSubjects || []).includes(val)) {
+      setReportForm(f => ({ ...f, committedSubjects: [...(f.committedSubjects || []), val] }));
+    }
+    setNewCustomSubjectInput("");
+  };
+
 
   // ====================== RENDER ======================
   return (
