@@ -3,7 +3,7 @@
  */
 
 export type FormulaType = "AVERAGE" | "WEIGHTED" | "SUM" | "CUSTOM"
-export type RoundingRule = "ROUND_1" | "ROUND_2" | "ROUND_HALF" | "NONE"
+export type RoundingRule = "ROUND_INT" | "ROUND_0" | "ROUND_1" | "ROUND_2" | "ROUND_HALF" | "NONE"
 
 export interface GradeConfigLike {
   formula?: string | null
@@ -43,7 +43,7 @@ export function getColumnMaxScore(
     const parsed = parseFloat(typeCode.replace("SCORE_MAX_", ""))
     if (!isNaN(parsed) && parsed > 0) return parsed
   }
-  if (typeCode === "SCORE_1000") return 1000
+  if (typeCode === "SCORE_100" || typeCode === "SCORE_1000") return 100
   return 10
 }
 
@@ -91,6 +91,11 @@ export function roundScore(value: number, rule: RoundingRule | string = "ROUND_1
   if (isNaN(value) || !isFinite(value)) return ""
   
   switch (rule) {
+    case "ROUND_INT":
+    case "ROUND_0": {
+      const rounded = Math.round(value)
+      return String(rounded)
+    }
     case "ROUND_1": {
       const rounded = Math.round(value * 10) / 10
       return rounded.toFixed(1)
@@ -241,18 +246,22 @@ export function generateExcelFormula(
   const formula = (config.formula || "AVERAGE").toUpperCase()
   if (colLetters.length === 0) return ""
 
+  const rule = (config.roundingRule || "ROUND_1") as RoundingRule
+  const digits = (rule === "ROUND_INT" || rule === "ROUND_0") ? 0 : rule === "ROUND_2" ? 2 : 1
+  const wrapRound = (inner: string) => rule === "NONE" ? `=${inner}` : `=ROUND(${inner}, ${digits})`
+
   const firstCol = colLetters[0] + rowNum
   const lastCol = colLetters[colLetters.length - 1] + rowNum
 
   if (formula === "SUM") {
-    return `=ROUND(SUM(${firstCol}:${lastCol}), 1)`
+    return wrapRound(`SUM(${firstCol}:${lastCol})`)
   }
 
   if (formula === "WEIGHTED") {
     const weights = parseWeights(config.weights, colLetters.length)
     const sumProducts = colLetters.map((col, i) => `${col}${rowNum}*${weights[i] || 1}`).join(" + ")
     const totalWeight = weights.slice(0, colLetters.length).reduce((a, b) => a + b, 0) || 1
-    return `=ROUND((${sumProducts}) / ${totalWeight}, 1)`
+    return wrapRound(`(${sumProducts}) / ${totalWeight}`)
   }
 
   if (formula === "CUSTOM" && config.formulaCustom) {
@@ -260,8 +269,8 @@ export function generateExcelFormula(
     colLetters.forEach((col, i) => {
       expr = expr.replace(new RegExp(`\\[col${i}\\]|\\[cột\\s*${i + 1}\\]|col${i}`, "gi"), `${col}${rowNum}`)
     })
-    return `=ROUND(${expr}, 1)`
+    return wrapRound(expr)
   }
 
-  return `=ROUND(AVERAGE(${firstCol}:${lastCol}), 1)`
+  return wrapRound(`AVERAGE(${firstCol}:${lastCol})`)
 }

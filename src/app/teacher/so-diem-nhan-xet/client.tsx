@@ -2,7 +2,9 @@
 
 const COLUMN_TYPES = [
   { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
-  { code: "SCORE_1000", name: "Thang điểm 1000" },
+  { code: "SCORE_CUSTOM", name: "Thang điểm tùy chọn trong thang 10 (Tối đa 1 - 10đ)" },
+  { code: "SCORE_100", name: "Thang điểm 100" },
+  { code: "SCORE_CUSTOM_100", name: "Thang điểm tùy chọn trong thang 100 (Tối đa 1 - 100đ)" },
   { code: "GRADE_SKL", name: "Mức độ SKL (A - Tốt, B - Khá, C - Đạt, D - Chưa đạt)" },
   { code: "GRADE_INTL", name: "Mức độ Quốc tế (E - Tốt, S - Đạt, N - Cần cải thiện, U - Chưa đạt)" },
   { code: "REMARK", name: "Định dạng Nhận xét bằng lời" }
@@ -394,7 +396,7 @@ export function DiemNhanXetTeacherClient({
     activeColNames.forEach((colName: string, i: number) => {
       const cType = activeColTypes[i] || "SCORE_10"
       const colMax = getColumnMaxScore(cType, gradeSheetData.config?.columnMaxScores, i)
-      headers.push(colMax < 10 ? `${colName} (Tối đa ${colMax}đ)` : colName)
+      headers.push(colMax !== 10 ? `${colName} (Tối đa ${colMax}đ)` : colName)
     })
     if (gradeSheetData.config?.hasCompositeColumn !== false) headers.push(compColTitle)
     if (gradeSheetData.config?.hasRemarkColumn !== false) headers.push("Nhận xét")
@@ -754,7 +756,7 @@ export function DiemNhanXetTeacherClient({
                       return (
                         <th key={idx} className="py-2.5 px-3 text-center border-r border-slate-700 bg-slate-700/60 min-w-[95px]">
                           <div>{colName}</div>
-                          {colMax < 10 && (
+                          {colMax !== 10 && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400 text-slate-900 font-black inline-block mt-0.5 shadow-sm">
                               Tối đa {colMax}đ
                             </span>
@@ -862,7 +864,7 @@ export function DiemNhanXetTeacherClient({
                                     ? "border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-300 font-black"
                                     : "border-slate-200 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-[#48BFE3]"
                                 }`}
-                                placeholder={colType === "SCORE_1000" ? "0-1000" : `0-${colMax}`}
+                                placeholder={`0-${colMax}`}
                                 title={isOver ? `Điểm vượt quá tối đa ${colMax}đ` : `Tối đa ${colMax}đ`}
                               />
                             </td>

@@ -3,7 +3,8 @@
 const COLUMN_TYPES = [
   { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
   { code: "SCORE_CUSTOM", name: "Thang điểm tùy chọn trong thang 10 (Tối đa 1 - 10đ)" },
-  { code: "SCORE_1000", name: "Thang điểm 1000" },
+  { code: "SCORE_100", name: "Thang điểm 100" },
+  { code: "SCORE_CUSTOM_100", name: "Thang điểm tùy chọn trong thang 100 (Tối đa 1 - 100đ)" },
   { code: "GRADE_SKL", name: "Mức độ SKL (A - Tốt, B - Khá, C - Đạt, D - Chưa đạt)" },
   { code: "GRADE_INTL", name: "Mức độ Quốc tế (E - Tốt, S - Đạt, N - Cần cải thiện, U - Chưa đạt)" },
   { code: "REMARK", name: "Định dạng Nhận xét bằng lời" }
@@ -423,9 +424,10 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         })
         const syncedTypes = types.map((t, idx) => {
           if (t && t.startsWith("SCORE_MAX_")) return t
-          if (t === "SCORE_CUSTOM" || (maxScores[idx] && maxScores[idx] < 10)) {
+          if (t === "SCORE_CUSTOM" || t === "SCORE_CUSTOM_100" || (maxScores[idx] && maxScores[idx] !== 10 && maxScores[idx] !== 100)) {
             return `SCORE_MAX_${maxScores[idx]}`
           }
+          if (t === "SCORE_1000") return "SCORE_100"
           return t || "SCORE_10"
         })
         setColumnTypes(syncedTypes)
@@ -467,9 +469,10 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       })
       const syncedTypes = types.map((t, idx) => {
         if (t && t.startsWith("SCORE_MAX_")) return t
-        if (t === "SCORE_CUSTOM" || (maxScores[idx] && maxScores[idx] < 10)) {
+        if (t === "SCORE_CUSTOM" || t === "SCORE_CUSTOM_100" || (maxScores[idx] && maxScores[idx] !== 10 && maxScores[idx] !== 100)) {
           return `SCORE_MAX_${maxScores[idx]}`
         }
+        if (t === "SCORE_1000") return "SCORE_100"
         return t || "SCORE_10"
       })
       setColumnTypes(syncedTypes)
@@ -511,11 +514,12 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         return getColumnMaxScore(cType, columnMaxScores, i)
       })
       const finalColumnTypes = columnTypes.map((t, i) => {
-        const isCustom = t === "SCORE_CUSTOM" || (t && t.startsWith("SCORE_MAX_"))
+        const isCustom = t === "SCORE_CUSTOM" || t === "SCORE_CUSTOM_100" || (t && t.startsWith("SCORE_MAX_"))
         if (isCustom) {
           const maxVal = finalMaxScores[i] || 10
           return `SCORE_MAX_${maxVal}`
         }
+        if (t === "SCORE_1000") return "SCORE_100"
         return t || "SCORE_10"
       })
 
@@ -923,7 +927,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     activeColNames.forEach((colName: string, i: number) => {
       const cType = activeColTypes[i] || "SCORE_10"
       const colMax = getColumnMaxScore(cType, gradeSheetData.config?.columnMaxScores, i)
-      headers.push(colMax < 10 ? `${colName} (Tối đa ${colMax}đ)` : colName)
+      headers.push(colMax !== 10 ? `${colName} (Tối đa ${colMax}đ)` : colName)
     })
     if (gradeSheetData.config?.hasCompositeColumn !== false) headers.push(compColTitle)
     if (gradeSheetData.config?.hasRemarkColumn !== false) headers.push("Nhận xét")
@@ -1258,8 +1262,15 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <div className="grid grid-cols-1 gap-2.5">
                   {columnNames.map((name, idx) => {
                     const cType = columnTypes[idx] || "SCORE_10"
-                    const isCustomMax = cType === "SCORE_CUSTOM" || cType.startsWith("SCORE_MAX_")
-                    const currentMax = columnMaxScores[idx] || (cType.startsWith("SCORE_MAX_") ? Number(cType.replace("SCORE_MAX_", "")) : 10)
+                    const currentMax = columnMaxScores[idx] || (cType.startsWith("SCORE_MAX_") ? Number(cType.replace("SCORE_MAX_", "")) : (cType === "SCORE_100" || cType === "SCORE_1000" ? 100 : 10))
+                    const isCustom10 = cType === "SCORE_CUSTOM" || (cType.startsWith("SCORE_MAX_") && currentMax <= 10)
+                    const isCustom100 = cType === "SCORE_CUSTOM_100" || (cType.startsWith("SCORE_MAX_") && currentMax > 10)
+                    const isCustomMax = isCustom10 || isCustom100
+
+                    let selectVal = cType
+                    if (cType === "SCORE_1000") selectVal = "SCORE_100"
+                    if (isCustom10) selectVal = "SCORE_CUSTOM"
+                    if (isCustom100) selectVal = "SCORE_CUSTOM_100"
 
                     return (
                       <div key={idx} className="flex flex-col md:flex-row md:items-center gap-2.5 p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs transition-colors hover:border-teal-200">
@@ -1281,16 +1292,24 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                         <div className="flex-1 min-w-0 flex flex-wrap sm:flex-nowrap items-center gap-2">
                           <div className="flex-1 min-w-0">
                             <select
-                              value={isCustomMax ? "SCORE_CUSTOM" : cType}
+                              value={selectVal}
                               onChange={(e) => {
                                 const val = e.target.value
-                                const isCustom = val === "SCORE_CUSTOM"
-                                const chosenMax = isCustom
-                                  ? (columnMaxScores[idx] && columnMaxScores[idx] > 0 && columnMaxScores[idx] <= 10 ? columnMaxScores[idx] : 5)
-                                  : (val === "SCORE_1000" ? 1000 : 10)
+                                const isC10 = val === "SCORE_CUSTOM"
+                                const isC100 = val === "SCORE_CUSTOM_100"
+                                let chosenMax = 10
+                                if (isC10) {
+                                  chosenMax = (columnMaxScores[idx] && columnMaxScores[idx] > 0 && columnMaxScores[idx] <= 10) ? columnMaxScores[idx] : 5
+                                } else if (isC100) {
+                                  chosenMax = (columnMaxScores[idx] && columnMaxScores[idx] > 0 && columnMaxScores[idx] <= 100 && columnMaxScores[idx] > 10) ? columnMaxScores[idx] : 50
+                                } else if (val === "SCORE_100" || val === "SCORE_1000") {
+                                  chosenMax = 100
+                                } else {
+                                  chosenMax = 10
+                                }
                                 setColumnTypes(prev => {
                                   const next = [...prev]
-                                  next[idx] = isCustom ? `SCORE_MAX_${chosenMax}` : val
+                                  next[idx] = (isC10 || isC100) ? `SCORE_MAX_${chosenMax}` : (val === "SCORE_1000" ? "SCORE_100" : val)
                                   return next
                                 })
                                 setColumnMaxScores(prev => {
@@ -1313,13 +1332,15 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                               <input
                                 type="number"
                                 min="0.5"
-                                max="10"
-                                step="0.5"
+                                max={isCustom100 ? "100" : "10"}
+                                step={isCustom100 ? "1" : "0.5"}
                                 value={currentMax}
                                 onChange={(e) => {
                                   const raw = e.target.value
                                   const num = parseFloat(raw)
-                                  const val = isNaN(num) ? 5 : Math.min(10, Math.max(0.5, num))
+                                  const limit = isCustom100 ? 100 : 10
+                                  const fallback = isCustom100 ? 50 : 5
+                                  const val = isNaN(num) ? fallback : Math.min(limit, Math.max(0.5, num))
                                   setColumnMaxScores(prev => {
                                     const next = [...prev]
                                     next[idx] = val
@@ -1331,9 +1352,11 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                                     return next
                                   })
                                 }}
-                                className="w-14 text-center bg-white border border-amber-300 rounded px-1.5 py-0.5 text-xs font-black text-amber-950 focus:ring-2 focus:ring-amber-500 outline-none shadow-xs"
+                                className="w-16 text-center bg-white border border-amber-300 rounded px-1.5 py-0.5 text-xs font-black text-amber-950 focus:ring-2 focus:ring-amber-500 outline-none shadow-xs"
                               />
-                              <span className="text-[10px] text-amber-700 font-bold whitespace-nowrap">/ 10đ</span>
+                              <span className="text-[10px] text-amber-700 font-bold whitespace-nowrap">
+                                / {isCustom100 ? "100đ" : "10đ"}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -1572,6 +1595,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                       onChange={(e) => setRoundingRule(e.target.value as RoundingRule)}
                       className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-bold text-slate-800 bg-slate-50 focus:ring-2 focus:ring-[#48BFE3] outline-none"
                     >
+                      <option value="ROUND_INT">Số nguyên (Ví dụ: 8.4 → 8, 8.5 → 9)</option>
                       <option value="ROUND_1">1 chữ số thập phân (Ví dụ: 8.67 → 8.7) - Chuẩn MOET</option>
                       <option value="ROUND_2">2 chữ số thập phân (Ví dụ: 8.667 → 8.67) - Chuẩn Quốc tế</option>
                       <option value="ROUND_HALF">Làm tròn đến 0.5 (Ví dụ: 8.3 → 8.5, 8.2 → 8.0)</option>
@@ -1603,7 +1627,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                               <span className="text-[10px] font-semibold text-teal-200 truncate" title={name}>
                                 {name || `Cột ${idx + 1}`}
                               </span>
-                              {colMax < 10 && (
+                              {colMax !== 10 && (
                                 <span className="text-[9px] bg-amber-400 text-slate-900 font-extrabold px-1 rounded shrink-0">
                                   Max {colMax}đ
                                 </span>
@@ -1693,8 +1717,8 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                   {columnNames.map((name, i) => {
                     const cType = columnTypes[i] || "SCORE_10"
                     const colMax = getColumnMaxScore(cType, columnMaxScores, i)
-                    const isCustom = cType === "SCORE_CUSTOM" || cType.startsWith("SCORE_MAX_") || (columnMaxScores[i] && columnMaxScores[i] < 10)
-                    const typeLabel = cType === "GRADE_SKL" ? "SKL: A/B/C/D" : cType === "GRADE_INTL" ? "Quốc tế: E/S/N/U" : cType === "REMARK" ? "Nhận xét" : cType === "SCORE_1000" ? "Thang 1000" : isCustom ? `Thang ${colMax}đ` : "Thang 10 MOET"
+                    const isCustom = cType === "SCORE_CUSTOM" || cType === "SCORE_CUSTOM_100" || cType.startsWith("SCORE_MAX_") || (columnMaxScores[i] && columnMaxScores[i] !== 10 && columnMaxScores[i] !== 100)
+                    const typeLabel = cType === "GRADE_SKL" ? "SKL: A/B/C/D" : cType === "GRADE_INTL" ? "Quốc tế: E/S/N/U" : cType === "REMARK" ? "Nhận xét" : (cType === "SCORE_100" || cType === "SCORE_1000") && !isCustom ? "Thang 100" : isCustom ? `Thang ${colMax}đ` : "Thang 10 MOET"
                     return (
                       <span key={i} className="px-2.5 py-1 bg-teal-100 text-teal-900 text-[11px] font-bold rounded-md border border-teal-300 flex items-center gap-1">
                         {name || `Cột ${i + 1}`}
@@ -1908,11 +1932,11 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                           try { parsedTypes = typeof cfg.columnTypes === "string" ? JSON.parse(cfg.columnTypes) : cfg.columnTypes || [] } catch (_) {}
                           const t = parsedTypes[i] || "SCORE_10"
                           const colMax = getColumnMaxScore(t, cfg.columnMaxScores, i)
-                          const isCustom = t === "SCORE_CUSTOM" || t.startsWith("SCORE_MAX_") || (colMax > 0 && colMax < 10)
+                          const isCustom = t === "SCORE_CUSTOM" || t === "SCORE_CUSTOM_100" || t.startsWith("SCORE_MAX_") || (colMax > 0 && colMax !== 10 && colMax !== 100)
                           return (
                             <span key={i} className="text-[10px] bg-slate-50 border border-slate-200 px-2 py-0.5 rounded text-slate-700 font-semibold flex items-center gap-1">
                               {colName}
-                              {isCustom && (
+                              {(isCustom || colMax !== 10) && (
                                 <span className="text-[9px] bg-amber-100 text-amber-800 font-black px-1 rounded">
                                   {colMax}đ
                                 </span>
@@ -2272,7 +2296,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                               title={`${colName} (Tối đa ${colMax}đ)`}
                             >
                               <div>{label}</div>
-                              {colMax < 10 && (
+                              {colMax !== 10 && (
                                 <span className="text-[9px] text-amber-700 font-semibold block">TĐ {colMax}đ</span>
                               )}
                             </th>

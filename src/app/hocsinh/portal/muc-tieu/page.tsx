@@ -38,6 +38,12 @@ export default function StudentGoalPortalPage() {
   const [unlockHistory, setUnlockHistory] = useState<any[]>([])
   const [showWizard, setShowWizard] = useState(false)
 
+  // Adjustment Request States (Yêu cầu mở phiếu điều chỉnh)
+  const [adjustmentRequest, setAdjustmentRequest] = useState<any>(null)
+  const [showRequestModal, setShowRequestModal] = useState(false)
+  const [requestReason, setRequestReason] = useState("")
+  const [submittingRequest, setSubmittingRequest] = useState(false)
+
   // Goal Form Data States - Dynamic Multi Custom Goals per Category
   const [selectedPresetGoals, setSelectedPresetGoals] = useState<Record<string, boolean>>({})
   const [k1GoalsList, setK1GoalsList] = useState<K1GoalData[]>([])
@@ -317,6 +323,10 @@ export default function StudentGoalPortalPage() {
   const isK1 = gradeLevel === "K1" || gradeLevel === "1" || studentGrade === "K1" || (className && (className.startsWith("1.") || className.startsWith("1INT") || className.startsWith("1UK") || className.startsWith("1S") || className.includes("Khối 1")))
   const isHighSchool = ["K9", "K10", "K11", "K12", "9", "10", "11", "12"].includes(gradeLevel) || ["K9", "K10", "K11", "K12", "9", "10", "11", "12"].includes(studentGrade) || (className && /(?:^|[\s_])(9|10|11|12)[A-Z._]/i.test(className))
   const isSubmitted = !!submittedAt
+  const isUnlockedForEdit = Boolean(adjustmentRequest && adjustmentRequest.status === "APPROVED")
+  const canEdit = !isSubmitted || isUnlockedForEdit
+  const isPendingAdjustment = Boolean(adjustmentRequest && adjustmentRequest.status === "PENDING")
+  const isRejectedAdjustment = Boolean(adjustmentRequest && adjustmentRequest.status === "REJECTED")
 
   // Target Categories matching official Word/PDF Form Template and Grade Weights
   const dynamicWeightCats = getGradeCategoryWeights(gradeLevel, className)
@@ -589,7 +599,7 @@ export default function StudentGoalPortalPage() {
                             <span className="text-xs font-extrabold text-teal-800">
                               Mục tiêu {idx + 1}:
                             </span>
-                            {!isSubmitted && items.length > 1 && (
+                            {canEdit && items.length > 1 && (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -613,7 +623,7 @@ export default function StudentGoalPortalPage() {
                               </label>
                               <input
                                 type="text"
-                                readOnly={isSubmitted}
+                                readOnly={!canEdit}
                                 value={item.targetText || ""}
                                 onChange={(e) => {
                                   const nextItems = [...items]
@@ -625,7 +635,7 @@ export default function StudentGoalPortalPage() {
                                 }}
                                 placeholder="Ví dụ: Đạt IELTS 6.5, dậy lúc 5h30 sáng..."
                                 className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
-                                  isSubmitted ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed" : "border-slate-300 focus:border-teal-500"
+                                  !canEdit ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed" : "border-slate-300 focus:border-teal-500"
                                 }`}
                               />
                             </div>
@@ -636,7 +646,7 @@ export default function StudentGoalPortalPage() {
                               </label>
                               <input
                                 type="text"
-                                readOnly={isSubmitted}
+                                readOnly={!canEdit}
                                 value={item.actionText || ""}
                                 onChange={(e) => {
                                   const nextItems = [...items]
@@ -648,7 +658,7 @@ export default function StudentGoalPortalPage() {
                                 }}
                                 placeholder="Ví dụ: Luyện đề mỗi tối 45 phút..."
                                 className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
-                                  isSubmitted ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed" : "border-slate-300 focus:border-teal-500"
+                                  !canEdit ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed" : "border-slate-300 focus:border-teal-500"
                                 }`}
                               />
                             </div>
@@ -656,7 +666,7 @@ export default function StudentGoalPortalPage() {
                         </div>
                       ))}
 
-                      {!isSubmitted && (
+                      {canEdit && (
                         <button
                           type="button"
                           onClick={() => {
@@ -680,7 +690,7 @@ export default function StudentGoalPortalPage() {
                         </label>
                         <input
                           type="text"
-                          readOnly={isSubmitted}
+                          readOnly={!canEdit}
                           value={catObj.teacherSupport || ""}
                           onChange={(e) => {
                             setCustomGoals({
@@ -690,7 +700,7 @@ export default function StudentGoalPortalPage() {
                           }}
                           placeholder="Thầy Cô hỗ trợ cung cấp tài liệu, hướng dẫn phương pháp..."
                           className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
-                            isSubmitted ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed" : "border-slate-300 focus:border-teal-500"
+                            !canEdit ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed" : "border-slate-300 focus:border-teal-500"
                           }`}
                         />
                       </div>
@@ -701,7 +711,7 @@ export default function StudentGoalPortalPage() {
                         </label>
                         <input
                           type="text"
-                          readOnly={isSubmitted}
+                          readOnly={!canEdit}
                           value={catObj.parentSupport || ""}
                           onChange={(e) => {
                             setCustomGoals({
@@ -711,7 +721,7 @@ export default function StudentGoalPortalPage() {
                           }}
                           placeholder="Ba Mẹ động viên, nhắc nhở giờ giấc, tạo không gian yên tĩnh..."
                           className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
-                            isSubmitted ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed" : "border-slate-300 focus:border-teal-500"
+                            !canEdit ? "bg-slate-100 text-slate-600 border-slate-200 cursor-not-allowed" : "border-slate-300 focus:border-teal-500"
                           }`}
                         />
                       </div>
@@ -727,7 +737,7 @@ export default function StudentGoalPortalPage() {
                 </label>
                 <textarea
                   rows={3}
-                  readOnly={isSubmitted}
+                  readOnly={!canEdit}
                   value={studentCommitment}
                   onChange={(e) => !isSubmitted && setStudentCommitment(e.target.value)}
                   placeholder="Chủ động và nghiêm túc thực hiện những mục tiêu đã đề ra, duy trì kỷ luật, thói quen tự học..."
@@ -941,7 +951,80 @@ export default function StudentGoalPortalPage() {
           )}
         </div>
       )}
+      {/* ========================================================================= */}
+      {/* MODAL: YÊU CẦU MỞ PHIẾU ĐIỀU CHỈNH MỤC TIÊU */}
+      {/* ========================================================================= */}
+      {showRequestModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border-2 border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900 uppercase">
+                    Yêu Cầu Mở Phiếu Điều Chỉnh
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Gửi yêu cầu tới Thầy/Cô GVCN để mở lại quyền chỉnh sửa
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRequestModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm transition-all"
+              >
+                ✕
+              </button>
+            </div>
 
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium space-y-1">
+              <p className="font-bold flex items-center gap-1.5 text-amber-950">
+                <Info className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Hướng dẫn học sinh:</span>
+              </p>
+              <p className="pl-5 text-amber-800">
+                Phiếu mục tiêu của em hiện đang ở trạng thái đã khóa sau khi nộp. Hãy nêu rõ lý do em muốn điều chỉnh (ví dụ: bổ sung mục tiêu môn học, thay đổi kế hoạch rèn luyện sau buổi tham vấn...) để Thầy/Cô GVCN xem xét phê duyệt.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-800 block">
+                Lý do xin mở lại phiếu để điều chỉnh <span className="text-rose-500">*</span>:
+              </label>
+              <textarea
+                rows={4}
+                value={requestReason}
+                onChange={(e) => setRequestReason(e.target.value)}
+                placeholder="Ví dụ: Thưa Thầy/Cô, sau khi trao đổi và nhận được tư vấn, em muốn bổ sung thêm mục tiêu rèn luyện thói quen tự học và điều chỉnh lại kế hoạch hành động cụ thể để đạt kết quả tốt hơn..."
+                className="w-full p-3.5 rounded-2xl border-2 border-slate-200 focus:border-amber-500 focus:outline-none text-xs font-medium"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowRequestModal(false)}
+                disabled={submittingRequest}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleSendAdjustmentRequest}
+                disabled={submittingRequest}
+                className="px-6 py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+                <span>{submittingRequest ? "Đang gửi yêu cầu..." : "Gửi Yêu Cầu Tới GVCN"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

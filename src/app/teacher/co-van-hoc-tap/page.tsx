@@ -25,6 +25,14 @@ export default function TeacherAdvisoryPage() {
   const [selectedStudentId, setSelectedStudentId] = useState("")
   
   const [activeTab, setActiveTab] = useState<"consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks">("tracking")
+  
+  // 5. Goal Adjustment Requests State (Yêu cầu mở phiếu điều chỉnh)
+  const [adjustmentRequests, setAdjustmentRequests] = useState<any[]>([])
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedRequestForReview, setSelectedRequestForReview] = useState<any | null>(null)
+  const [reviewActionType, setReviewActionType] = useState<"APPROVED" | "REJECTED">("APPROVED")
+  const [teacherResponseNote, setTeacherResponseNote] = useState("")
+  const [savingReview, setSavingReview] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [toastMessage, setToastMessage] = useState("")
@@ -79,6 +87,99 @@ export default function TeacherAdvisoryPage() {
   })
 
   
+  async function loadClassAdjustmentRequests() {
+    if (!selectedClassId) return
+    try {
+      const res = await fetch("/api/advisory/goals/adjustment-request?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "") + "&_t=" + Date.now(), { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        setAdjustmentRequests(Array.isArray(data.requests) ? data.requests : [])
+      }
+    } catch (e) {
+      console.error("loadClassAdjustmentRequests error:", e)
+    }
+  }
+
+  async function handleReviewAdjustment(status: "APPROVED" | "REJECTED") {
+    if (!selectedRequestForReview) return
+    try {
+      setSavingReview(true)
+      const res = await fetch("/api/advisory/goals/adjustment-request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedRequestForReview.id,
+          status,
+          teacherResponse: teacherResponseNote.trim() || undefined
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setToastMessage(status === "APPROVED" ? "Đã phê duyệt mở lại phiếu cho học sinh thành công!" : "Đã từ chối yêu cầu mở phiếu.")
+        setShowReviewModal(false)
+        setSelectedRequestForReview(null)
+        setTeacherResponseNote("")
+        loadClassAdjustmentRequests()
+        setTimeout(() => setToastMessage(""), 4000)
+      } else {
+        alert(data.error || "Lỗi xử lý yêu cầu")
+      }
+    } catch (e: any) {
+      alert("Lỗi kết nối: " + (e.message || "Vui lòng thử lại"))
+    } finally {
+      setSavingReview(false)
+    }
+  }
+
+  async function handleForceUnlock(studentId: string) {
+    if (!confirm("Thầy/Cô có chắc chắn muốn chủ động mở khóa phiếu mục tiêu cho học sinh này?")) return
+    try {
+      const res = await fetch("/api/advisory/goals/adjustment-request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          academicYearId,
+          action: "FORCE_UNLOCK"
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setToastMessage("Đã chủ động mở khóa phiếu thành công cho học sinh!")
+        loadClassAdjustmentRequests()
+        setTimeout(() => setToastMessage(""), 4000)
+      } else {
+        alert(data.error || "Lỗi khi mở khóa phiếu")
+      }
+    } catch (e: any) {
+      alert("Lỗi kết nối: " + e.message)
+    }
+  }
+
+  async function handleLockGoal(studentId: string) {
+    if (!confirm("Thầy/Cô có chắc chắn muốn khóa lại phiếu mục tiêu của học sinh này?")) return
+    try {
+      const res = await fetch("/api/advisory/goals/adjustment-request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          action: "LOCK"
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setToastMessage("Đã khóa lại phiếu mục tiêu thành công!")
+        loadClassAdjustmentRequests()
+        setTimeout(() => setToastMessage(""), 4000)
+      } else {
+        alert(data.error || "Lỗi khi khóa phiếu")
+      }
+    } catch (e: any) {
+      alert("Lỗi kết nối: " + e.message)
+    }
+  }
+
   async function loadClassUnlocks() {
     if (!selectedClassId) return
     try {
@@ -2955,7 +3056,85 @@ export default function TeacherAdvisoryPage() {
           </div>
         </div>
       )}
+      {/* ========================================================================= */}
+      {/* MODAL: XÉT DUYỆT YÊU CẦU MỞ PHIẾU ĐIỀU CHỈNH CỦA HỌC SINH */}
+      {/* ========================================================================= */}
+      {showReviewModal && selectedRequestForReview && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border-2 border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold ${
+                  reviewActionType === "APPROVED" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
+                }`}>
+                  {reviewActionType === "APPROVED" ? <CheckCircle2 className="w-5 h-5" /> : <X className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-slate-900 uppercase">
+                    {reviewActionType === "APPROVED" ? "Phê Duyệt Mở Lại Phiếu" : "Từ Chối Mở Lại Phiếu"}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Học sinh: <strong>{selectedRequestForReview.studentName}</strong> ({selectedRequestForReview.studentCode})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReviewModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm transition-all"
+              >
+                ✕
+              </button>
+            </div>
 
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+              <span className="font-black text-slate-600 uppercase text-[10px] block">Lý do học sinh gửi xin mở lại:</span>
+              <p className="font-bold text-slate-800 italic pl-2">
+                "{selectedRequestForReview.reason}"
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-800 block">
+                {reviewActionType === "APPROVED" 
+                  ? "Lời nhắn / dặn dò học sinh (tùy chọn):" 
+                  : "Lý do từ chối (học sinh sẽ nhận được nội dung này) *:"}
+              </label>
+              <textarea
+                rows={3}
+                value={teacherResponseNote}
+                onChange={(e) => setTeacherResponseNote(e.target.value)}
+                placeholder={reviewActionType === "APPROVED" 
+                  ? "Ví dụ: Đã mở lại phiếu, em nhớ cập nhật mục tiêu bổ sung trước thứ Sáu nhé..." 
+                  : "Ví dụ: Phiếu mục tiêu hiện tại đã phù hợp, Thầy/Cô sẽ trao đổi thêm với em trong buổi tư vấn tuần này..."}
+                className="w-full p-3.5 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none text-xs font-medium"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowReviewModal(false)}
+                disabled={savingReview}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                Đóng
+              </button>
+              <button
+                type="button"
+                onClick={() => handleReviewAdjustment(reviewActionType)}
+                disabled={savingReview}
+                className={`px-6 py-2.5 rounded-xl text-xs font-black text-white shadow-md transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95 ${
+                  reviewActionType === "APPROVED" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                }`}
+              >
+                {reviewActionType === "APPROVED" ? <CheckCircle2 className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                <span>{savingReview ? "Đang xử lý..." : reviewActionType === "APPROVED" ? "Xác Nhận Mở Phiếu" : "Xác Nhận Từ Chối"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -89,7 +89,21 @@ async function ensureTablesExist() {
       "sortOrder" INTEGER NOT NULL DEFAULT 0,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );`
+    );`,
+    `CREATE TABLE IF NOT EXISTS "StudentGoalAdjustmentRequest" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "studentId" TEXT NOT NULL,
+      "academicYearId" TEXT NOT NULL,
+      "reason" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'PENDING',
+      "teacherResponse" TEXT,
+      "reviewedBy" TEXT,
+      "reviewedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE INDEX IF NOT EXISTS "idx_goal_adj_student" ON "StudentGoalAdjustmentRequest" ("studentId", "academicYearId");`,
+    `CREATE INDEX IF NOT EXISTS "idx_goal_adj_status" ON "StudentGoalAdjustmentRequest" ("status");`
   ]
   for (const ddl of ddlList) {
     try {
@@ -219,14 +233,40 @@ export async function GET(req: Request) {
       }).catch(() => [])
     }
 
+    let latestAdjustmentRequest = null
+    try {
+      const adjRes = await libsqlClient.execute({
+        sql: `SELECT * FROM "StudentGoalAdjustmentRequest" 
+              WHERE "studentId" = ? 
+              AND ("academicYearId" = ? OR ? = '')
+              ORDER BY "createdAt" DESC LIMIT 1`,
+        args: [targetStudentId, yearId, yearId]
+      })
+      if (adjRes.rows && adjRes.rows.length > 0) {
+        latestAdjustmentRequest = adjRes.rows[0]
+      }
+    } catch (e) {
+      // Bỏ qua nếu chưa có dữ liệu
+    }
+
+    const isUnlockedForEdit = Boolean(latestAdjustmentRequest && latestAdjustmentRequest.status === "APPROVED")
+
     const existingSheet = goals.length > 0 ? {
+      id: goals[0].id,
       studentCommitment: goals[0].studentCommitment || "",
       signedByStudent: goals[0].signedByStudent,
       submittedAt: goals[0].createdAt,
       goals
     } : null
 
-    return jsonResponse({ goals, presets, existingSheet, trackingLogs })
+    return jsonResponse({ 
+      goals, 
+      presets, 
+      existingSheet, 
+      trackingLogs,
+      adjustmentRequest: latestAdjustmentRequest,
+      isUnlockedForEdit
+    })
   } catch (error: any) {
     console.error("GET /api/advisory/goals error:", error)
     return jsonResponse({ error: error.message || "Server error" }, 500)
@@ -322,6 +362,18 @@ export async function POST(req: Request) {
           teacherNotes: "Đã nộp phiếu đầu năm - Chờ GVCN đánh giá"
         }
       }).catch(() => {})
+    }
+
+    // Đánh dấu yêu cầu mở phiếu điều chỉnh trước đó (nếu có APPROVED) thành COMPLETED
+    try {
+      await libsqlClient.execute({
+        sql: `UPDATE "StudentGoalAdjustmentRequest" 
+              SET "status" = 'COMPLETED', "updatedAt" = CURRENT_TIMESTAMP 
+              WHERE "studentId" = ? AND "status" = 'APPROVED'`,
+        args: [targetStudentId]
+      })
+    } catch (e) {
+      console.error("Lỗi cập nhật trạng thái COMPLETED cho request:", e)
     }
 
     return jsonResponse({ success: true, goals: createdGoals })
