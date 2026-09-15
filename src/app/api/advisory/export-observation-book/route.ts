@@ -610,7 +610,7 @@ export async function GET(req: Request) {
   <div class="page">
     <div class="sec-header">
       <span class="sec-title">5. Theo Dõi Mục Tiêu Cá Nhân Của Học Sinh</span>
-      <span class="sec-subtitle">4 Nhóm mục tiêu cốt lõi</span>
+      <span class="sec-subtitle">Danh mục mục tiêu cá nhân theo chuẩn khối lớp</span>
     </div>
 
     ${trackingLogs.length > 0 ? `

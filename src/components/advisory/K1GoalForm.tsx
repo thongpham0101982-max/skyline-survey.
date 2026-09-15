@@ -182,9 +182,10 @@ export function K1GoalForm({
       const custMap: Record<string, { targetText: string; actionText: string }[]> = { HOC_TAP: [], THOI_QUEN: [], KY_NANG_CAM_XUC: [], DINH_HUONG: [] }
 
       initialGoals.forEach(g => {
-        let cat = g.category
-        if ((cat as string) === "THOI_QUEN_SUC_KHOE") cat = "THOI_QUEN"
-        if ((cat as string) === "KY_NANG_SO_THICH" || (cat as string) === "PHAM_CHAT") cat = "KY_NANG_CAM_XUC"
+        let cat = String(g.category || "")
+        if (cat === "SUC_KHOE" || cat === "THOI_QUEN_SUC_KHOE") cat = "THOI_QUEN"
+        if (cat === "SO_THICH" || cat === "KY_NANG_SO_THICH") cat = "KY_NANG_CAM_XUC"
+        if (cat === "PHAM_CHAT") cat = "DINH_HUONG"
         if (!tgtMap[cat]) cat = "HOC_TAP"
 
         const catConfig = K1_PRESETS.find(p => p.category === cat)
@@ -279,9 +280,14 @@ export function K1GoalForm({
       const acts = selectedActions[cat] || []
       const custs = customGoals[cat] || []
 
+      let outCat: any = cat
+      if (cat === "THOI_QUEN") outCat = "SUC_KHOE"
+      if (cat === "KY_NANG_CAM_XUC") outCat = "SO_THICH"
+      if (cat === "DINH_HUONG") outCat = "PHAM_CHAT"
+
       tgts.forEach((t, i) => {
         goalsPayload.push({
-          category: cat as any,
+          category: outCat,
           targetText: t,
           actionText: acts[i] || acts[0] || ""
         })
@@ -290,7 +296,7 @@ export function K1GoalForm({
       custs.forEach(c => {
         if (c.targetText.trim()) {
           goalsPayload.push({
-            category: cat as any,
+            category: outCat,
             targetText: c.targetText.trim(),
             actionText: c.actionText.trim()
           })

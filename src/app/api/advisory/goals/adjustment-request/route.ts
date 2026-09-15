@@ -89,7 +89,7 @@ export async function GET(req: Request) {
       // Lấy danh sách học sinh thuộc lớp
       const students = await prisma.student.findMany({
         where: { classId, status: "ACTIVE" },
-        select: { id: true, studentCode: true, studentName: true, className: true }
+        select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } }
       })
 
       if (students.length === 0) {
@@ -119,7 +119,7 @@ export async function GET(req: Request) {
             ...row,
             studentName: st?.studentName || "",
             studentCode: st?.studentCode || "",
-            className: st?.className || ""
+            className: (st as any)?.class?.className || ""
           })
         }
       }

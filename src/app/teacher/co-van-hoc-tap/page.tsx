@@ -90,6 +90,23 @@ export default function TeacherAdvisoryPage() {
     deadline: "",
     notes: ""
   })
+  const [consultationStudentGoals, setConsultationStudentGoals] = useState<any[]>([])
+  const [loadingStudentGoals, setLoadingStudentGoals] = useState(false)
+
+  useEffect(() => {
+    if (showConsultationModal && consultationForm.studentId) {
+      setLoadingStudentGoals(true)
+      fetch("/api/advisory/goals?studentId=" + consultationForm.studentId + "&academicYearId=" + academicYearId)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          setConsultationStudentGoals(data?.goals || [])
+        })
+        .catch(console.error)
+        .finally(() => setLoadingStudentGoals(false))
+    } else {
+      setConsultationStudentGoals([])
+    }
+  }, [showConsultationModal, consultationForm.studentId, academicYearId])
 
   
   async function loadClassAdjustmentRequests() {
@@ -980,7 +997,7 @@ export default function TeacherAdvisoryPage() {
                 <span>Bảng Theo Dõi Tiến Độ Mục Tiêu: {activeStudent?.studentName} ({activeStudent?.studentCode})</span>
               </h3>
               <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                Hiển thị đầy đủ 4 nhóm mục tiêu cá nhân do học sinh {activeStudent?.studentName} tự điền.
+                Hiển thị đầy đủ {gradeCategoryWeights.length} nhóm mục tiêu cá nhân Khối {currentGrade.replace("K", "")} do học sinh {activeStudent?.studentName} tự điền.
               </p>
             </div>
 
@@ -1073,13 +1090,14 @@ export default function TeacherAdvisoryPage() {
                   const catItems = singleStudentTrackingRows.filter(r => r.categoryKey === catObj.key || r.category === catObj.label || (r.category && r.category.includes(catObj.key)))
                   const catEval = overallEvalResult.categories.find(c => c.categoryKey === catObj.key)
                   const numberStr = `0${catIdx + 1}`
-                  const theme = catIdx === 0 
-                    ? { border: "border-sky-200", badgeBg: "bg-sky-50 border-sky-200", badgeText: "text-sky-800", numberBadge: "bg-sky-600 text-white" }
-                    : catIdx === 1
-                    ? { border: "border-emerald-200", badgeBg: "bg-emerald-50 border-emerald-200", badgeText: "text-emerald-800", numberBadge: "bg-emerald-600 text-white" }
-                    : catIdx === 2
-                    ? { border: "border-purple-200", badgeBg: "bg-purple-50 border-purple-200", badgeText: "text-purple-800", numberBadge: "bg-purple-600 text-white" }
-                    : { border: "border-amber-200", badgeBg: "bg-amber-50 border-amber-200", badgeText: "text-amber-950", numberBadge: "bg-amber-600 text-white" }
+                  const themesList = [
+                    { border: "border-sky-200", badgeBg: "bg-sky-50 border-sky-200", badgeText: "text-sky-800", numberBadge: "bg-sky-600 text-white" },
+                    { border: "border-indigo-200", badgeBg: "bg-indigo-50 border-indigo-200", badgeText: "text-indigo-800", numberBadge: "bg-indigo-600 text-white" },
+                    { border: "border-emerald-200", badgeBg: "bg-emerald-50 border-emerald-200", badgeText: "text-emerald-800", numberBadge: "bg-emerald-600 text-white" },
+                    { border: "border-purple-200", badgeBg: "bg-purple-50 border-purple-200", badgeText: "text-purple-800", numberBadge: "bg-purple-600 text-white" },
+                    { border: "border-amber-200", badgeBg: "bg-amber-50 border-amber-200", badgeText: "text-amber-950", numberBadge: "bg-amber-600 text-white" }
+                  ]
+                  const theme = themesList[catIdx % themesList.length]
 
                   return (
                     <div key={catObj.key} className={`bg-white rounded-3xl border-2 ${theme.border} shadow-xs hover:shadow-md transition-all overflow-hidden space-y-4 p-5 sm:p-6`}>
@@ -1275,7 +1293,7 @@ export default function TeacherAdvisoryPage() {
                         
                         <td className="p-3.5 border-r border-slate-200 align-top bg-slate-50/40">
                           <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 block text-left">
-                            {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
+                            {item.category}
                           </span>
                         </td>
                         <td className="p-3.5 border-r border-slate-200 text-slate-800 align-top">
@@ -3025,6 +3043,89 @@ export default function TeacherAdvisoryPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* KHỐI XEM VÀ THAM CHIẾU MỤC TIÊU NĂM HỌC THEO KHỐI */}
+              <div className="sm:col-span-2 bg-gradient-to-r from-teal-50/90 to-sky-50/70 border-2 border-teal-200/90 rounded-2xl p-4 space-y-2.5 shadow-2xs">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1.5 rounded-lg bg-teal-600 text-white font-black text-xs">🎯</span>
+                    <div>
+                      <h4 className="text-xs font-black text-teal-950 uppercase tracking-tight">
+                        Mục tiêu học tập & rèn luyện của học sinh (Theo khối):
+                      </h4>
+                      <p className="text-[10px] text-teal-700 font-medium">
+                        Bám sát mục tiêu cá nhân đã đăng ký để cố vấn chính xác cho học sinh
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black text-teal-800 bg-white px-2.5 py-1 rounded-full border border-teal-300 shadow-2xs">
+                    {consultationStudentGoals.length} mục tiêu đã đăng ký
+                  </span>
+                </div>
+
+                {loadingStudentGoals ? (
+                  <div className="text-xs text-teal-800 font-bold py-3 text-center animate-pulse">
+                    Đang nạp mục tiêu của học sinh...
+                  </div>
+                ) : consultationStudentGoals.length === 0 ? (
+                  <div className="p-2.5 rounded-xl bg-white/70 border border-teal-100 text-center text-xs text-slate-500 italic">
+                    Học sinh này chưa điền hoặc chưa nộp phiếu mục tiêu năm học.
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {consultationStudentGoals.map((g: any, gIdx: number) => (
+                      <div key={g.id || gIdx} className="bg-white p-2.5 rounded-xl border border-teal-200/70 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs hover:border-teal-300 transition-all">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 font-black text-slate-900 text-xs">
+                            <span className="px-2 py-0.5 text-[10px] bg-teal-100 text-teal-900 rounded-md font-extrabold shrink-0 border border-teal-300">
+                              {g.category}
+                            </span>
+                            <span className="leading-snug">{g.targetText}</span>
+                          </div>
+                          {g.actions && g.actions[0]?.actionText && (
+                            <span className="text-[11px] text-slate-600 block pl-1 italic">
+                              ⚡ Kế hoạch/Hành động: {g.actions[0].actionText}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const prefix = consultationForm.content ? consultationForm.content + " • " : ""
+                              setConsultationForm(prev => ({
+                                ...prev,
+                                content: prefix + ("Trao đổi về mục tiêu: " + g.targetText)
+                              }))
+                            }}
+                            className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-all shadow-2xs cursor-pointer"
+                            title="Gán mục tiêu này vào nội dung trao đổi"
+                          >
+                            + Gán trao đổi
+                          </button>
+                          {g.actions && g.actions[0]?.actionText && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const prefix = consultationForm.nextActions ? consultationForm.nextActions + " • " : ""
+                                setConsultationForm(prev => ({
+                                  ...prev,
+                                  nextActions: prefix + ("Theo dõi hành động: " + g.actions[0].actionText)
+                                }))
+                              }}
+                              className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-2xs cursor-pointer"
+                              title="Gán hành động này vào kế hoạch tiếp theo"
+                            >
+                              + Gán hành động
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Nội dung trao đổi */}

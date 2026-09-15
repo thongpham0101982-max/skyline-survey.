@@ -13,7 +13,7 @@ import { GoalMultiSelector } from "@/components/advisory/GoalMultiSelector"
 import { K1GoalForm, K1GoalData } from "@/components/advisory/K1GoalForm"
 import { GoalUnlockWizard } from "@/components/advisory/GoalUnlockWizard"
 import { GoalUnlockCard } from "@/components/advisory/GoalUnlockCard"
-import { getGradeCategoryWeights } from "@/lib/advisory/advisoryWeights"
+import { getGradeCategoryWeights, matchCategoryKey } from "@/lib/advisory/advisoryWeights"
 
 export default function StudentGoalPortalPage() {
   const [studentId, setStudentId] = useState("")
@@ -362,7 +362,11 @@ export default function StudentGoalPortalPage() {
             <span className="text-xs font-bold text-teal-100">Chuyển xem Khối:</span>
             <select
               value={gradeLevel}
-              onChange={(e) => setGradeLevel(e.target.value)}
+              onChange={(e) => {
+                const newG = e.target.value
+                setGradeLevel(newG)
+                if (studentId) fetchGoalsForStudent(studentId, newG)
+              }}
               className="px-3 py-1 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
             >
               <option value="K1" className="text-slate-800">🎒 Khối 1 (Mẫu Mới)</option>
@@ -569,7 +573,7 @@ export default function StudentGoalPortalPage() {
                   </p>
                 </div>
                 <div className="text-xs font-black text-teal-800 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
-                  4 Nhóm Mục Tiêu Chuẩn
+                  {secondaryCategories.length} Nhóm Mục Tiêu Chuẩn
                 </div>
               </div>
 
@@ -591,6 +595,54 @@ export default function StudentGoalPortalPage() {
                       </div>
                       <span className="text-[11px] text-slate-500 italic hidden sm:inline">{cat.hint}</span>
                     </div>
+
+                    {/* GỢI Ý MỤC TIÊU CHUẨN CỦA KHỐI */}
+                    {presets && presets.length > 0 && canEdit && (() => {
+                      const catPresets = presets.filter(p => matchCategoryKey(p.category, gradeLevel) === cat.key || p.category === cat.key)
+                      if (catPresets.length === 0) return null
+                      return (
+                        <div className="bg-white/90 p-3 rounded-2xl border border-teal-200/80 shadow-2xs space-y-2">
+                          <div className="flex items-center gap-1.5 text-[11px] font-black text-teal-800 uppercase tracking-wider">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            <span>Gợi ý mục tiêu chuẩn Khối {gradeLevel.replace("K", "")}:</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {catPresets.map((p, pIdx) => (
+                              <button
+                                key={p.id || pIdx}
+                                type="button"
+                                onClick={() => {
+                                  const currentItems = catObj.items || []
+                                  const lastItem = currentItems[currentItems.length - 1]
+                                  let nextItems = [...currentItems]
+                                  if (lastItem && !lastItem.targetText && !lastItem.actionText) {
+                                    nextItems[nextItems.length - 1] = {
+                                      ...lastItem,
+                                      targetText: p.goalText,
+                                      actionText: p.actionPreset || ""
+                                    }
+                                  } else {
+                                    nextItems.push({
+                                      targetText: p.goalText,
+                                      actionText: p.actionPreset || ""
+                                    })
+                                  }
+                                  setCustomGoals({
+                                    ...customGoals,
+                                    [cat.key]: { ...catObj, items: nextItems }
+                                  })
+                                }}
+                                className="text-left text-[11px] font-bold py-1 px-2.5 rounded-xl bg-teal-50/80 hover:bg-teal-100 text-teal-900 border border-teal-200 transition-all flex items-center gap-1 shadow-2xs cursor-pointer group"
+                                title={"Chọn nhanh: " + p.goalText}
+                              >
+                                <span className="text-teal-600 font-extrabold group-hover:scale-125 transition-transform">+</span>
+                                <span className="line-clamp-1">{p.goalText}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })()}
 
                     <div className="space-y-3">
                       {items.map((item: any, idx: number) => (

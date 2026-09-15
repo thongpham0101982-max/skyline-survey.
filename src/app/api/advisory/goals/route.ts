@@ -1,3 +1,4 @@
+import { getPresetsForGradeGroup } from "@/lib/advisory/defaultPresets"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -247,7 +248,7 @@ export async function GET(req: Request) {
               WHERE "studentId" = ? 
               AND ("academicYearId" = ? OR ? = '')
               ORDER BY "createdAt" DESC LIMIT 1`,
-        args: [targetStudentId, yearId, yearId]
+        args: [targetStudentId || "", academicYearId || "", academicYearId || ""]
       })
       if (adjRes.rows && adjRes.rows.length > 0) {
         latestAdjustmentRequest = adjRes.rows[0]

@@ -150,15 +150,28 @@ export function matchCategoryKey(rawCategory: string, gradeLevel = "K12"): strin
   const c = String(rawCategory || "").toUpperCase().trim()
   if (c.includes("HOC_TAP") || c.includes("HỌC TẬP")) return "HOC_TAP"
   
-  if (gradeLevel === "K1" || gradeLevel === "K4" || gradeLevel === "K5" || gradeLevel === "K2" || gradeLevel === "K3") {
-    if (c.includes("KY_NANG") || c.includes("KỸ NĂNG")) return "KY_NANG"
-    if (c.includes("SUC_KHOE") || c.includes("SỨC KHỎE")) return "SUC_KHOE"
-    if (c.includes("SO_THICH") || c.includes("SỞ THÍCH")) return "SO_THICH"
-    if (c.includes("PHAM_CHAT") || c.includes("PHẨM CHẤT")) return "PHAM_CHAT"
+  const normGrade = normalizeGradeLevel(gradeLevel)
+
+  // Khối Tiểu học 1, 4, 5 (4 nhóm: HOC_TAP, SUC_KHOE, SO_THICH, PHAM_CHAT)
+  if (normGrade === "K1" || normGrade === "K4" || normGrade === "K5") {
+    if (c.includes("SUC_KHOE") || c.includes("SỨC KHỎE") || c.includes("THOI_QUEN") || c.includes("THÓI QUEN")) return "SUC_KHOE"
+    if (c.includes("SO_THICH") || c.includes("SỞ THÍCH") || c.includes("KY_NANG") || c.includes("KỸ NĂNG") || c.includes("CAM_XUC") || c.includes("CẢM XÚC")) return "SO_THICH"
+    if (c.includes("PHAM_CHAT") || c.includes("PHẨM CHẤT") || c.includes("DINH_HUONG") || c.includes("ĐỊNH HƯỚNG")) return "PHAM_CHAT"
+    return "SUC_KHOE"
   }
 
+  // Khối Tiểu học 2, 3 (5 nhóm: HOC_TAP, KY_NANG, SUC_KHOE, SO_THICH, PHAM_CHAT)
+  if (normGrade === "K2" || normGrade === "K3") {
+    if (c.includes("KY_NANG") || c.includes("KỸ NĂNG")) return "KY_NANG"
+    if (c.includes("SUC_KHOE") || c.includes("SỨC KHỎE") || c.includes("THOI_QUEN") || c.includes("THÓI QUEN")) return "SUC_KHOE"
+    if (c.includes("SO_THICH") || c.includes("SỞ THÍCH")) return "SO_THICH"
+    if (c.includes("PHAM_CHAT") || c.includes("PHẨM CHẤT") || c.includes("DINH_HUONG") || c.includes("ĐỊNH HƯỚNG")) return "PHAM_CHAT"
+    return "KY_NANG"
+  }
+
+  // Khối Trung học 6 đến 12 (4 nhóm: HOC_TAP, THOI_QUEN, KY_NANG_CAM_XUC, DINH_HUONG)
   if (c.includes("THOI_QUEN") || c.includes("THÓI QUEN") || c.includes("SUC_KHOE") || c.includes("SỨC KHỎE")) return "THOI_QUEN"
-  if (c.includes("KY_NANG") || c.includes("KỸ NĂNG") || c.includes("CAM_XUC") || c.includes("CẢM XÚC") || c.includes("SO_THICH")) return "KY_NANG_CAM_XUC"
+  if (c.includes("KY_NANG") || c.includes("KỸ NĂNG") || c.includes("CAM_XUC") || c.includes("CẢM XÚC") || c.includes("SO_THICH") || c.includes("SỞ THÍCH")) return "KY_NANG_CAM_XUC"
   if (c.includes("DINH_HUONG") || c.includes("ĐỊNH HƯỚNG") || c.includes("PHAM_CHAT") || c.includes("PHẨM CHẤT")) return "DINH_HUONG"
   return "HOC_TAP"
 }
