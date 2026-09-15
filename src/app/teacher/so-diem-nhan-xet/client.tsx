@@ -26,7 +26,8 @@ const INTL_OPTIONS = [
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import * as XLSX from "xlsx"
-import { 
+import {
+  Lock, 
   FileSpreadsheet, 
   Save, 
   Download, 
@@ -224,6 +225,8 @@ export function DiemNhanXetTeacherClient({
 
   const [loadingSheet, setLoadingSheet] = useState(false)
   const [savingEntries, setSavingEntries] = useState(false)
+  const [isSheetLocked, setIsSheetLocked] = useState(false)
+  const [sheetLockInfo, setSheetLockInfo] = useState<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch teaching assignments if academic year changes
@@ -245,6 +248,8 @@ export function DiemNhanXetTeacherClient({
   const fetchGradeSheet = async () => {
     if (!selectedClassId || !selectedSubjectId) {
       setGradeSheetData({ config: null, students: [], entries: {} })
+      setIsSheetLocked(false)
+      setSheetLockInfo(null)
       return
     }
     try {
@@ -270,6 +275,8 @@ export function DiemNhanXetTeacherClient({
             }
           })
         }
+        setIsSheetLocked(Boolean(data.isLocked))
+        setSheetLockInfo(data.lockInfo || null)
         setGradeSheetData({
           config: data.config,
           students: data.students || [],
@@ -350,6 +357,10 @@ export function DiemNhanXetTeacherClient({
   }
 
   const handleSaveGradeSheet = async () => {
+    if (isSheetLocked) {
+      alert("Sổ điểm đã bị khóa bởi Ban Khảo thí & ĐBCL, không thể lưu thay đổi!")
+      return
+    }
     if (!selectedClassId || !selectedSubjectId) {
       alert("Chưa chọn lớp và môn học!")
       return
@@ -703,7 +714,7 @@ export function DiemNhanXetTeacherClient({
               <button
                 type="button"
                 onClick={handleSaveGradeSheet}
-                disabled={savingEntries}
+                disabled={savingEntries || isSheetLocked}
                 className="flex items-center gap-1.5 px-5 py-2 bg-[#48BFE3] hover:bg-[#008c82] text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
               >
                 {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
@@ -827,6 +838,7 @@ export function DiemNhanXetTeacherClient({
                             return (
                               <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[110px]">
                                 <select
+                                  disabled={isSheetLocked}
                                   value={val}
                                   onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
                                   className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-amber-50/60 focus:ring-2 focus:ring-amber-500 outline-none"
@@ -844,6 +856,7 @@ export function DiemNhanXetTeacherClient({
                             return (
                               <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[130px]">
                                 <select
+                                  disabled={isSheetLocked}
                                   value={val}
                                   onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
                                   className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-purple-50/60 focus:ring-2 focus:ring-purple-500 outline-none"
@@ -861,6 +874,7 @@ export function DiemNhanXetTeacherClient({
                             return (
                               <td key={cIdx} className="py-2 px-2 border-r border-slate-200 min-w-[160px]">
                                 <input
+                                  disabled={isSheetLocked}
                                   type="text"
                                   value={val}
                                   onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
@@ -878,9 +892,10 @@ export function DiemNhanXetTeacherClient({
                           return (
                             <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[80px]">
                               <input
-                                type="text"
-                                value={val}
-                                onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                  disabled={isSheetLocked}
+                                  type="text"
+                                  value={val}
+                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
                                 className={`w-16 text-center border rounded-lg py-1 text-xs font-extrabold outline-none transition-all ${
                                   isOver
                                     ? "border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-300 font-black"
@@ -904,6 +919,7 @@ export function DiemNhanXetTeacherClient({
                         {gradeSheetData.config?.hasRemarkColumn !== false && (
                           <td className="py-2 px-2">
                             <input
+                              disabled={isSheetLocked}
                               type="text"
                               value={entry.remark ?? ""}
                               onChange={(e) => handleRemarkChange(st.id, e.target.value)}
