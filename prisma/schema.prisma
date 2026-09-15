@@ -1741,6 +1741,41 @@ model SubjectGradeConfig {
   @@index([academicYearId])
 }
 
+
+model GradebookLock {
+  id               String   @id @default(cuid())
+  academicYearId   String
+  evaluationPeriod String
+  classId          String   @default("ALL")
+  subjectId        String   @default("ALL")
+  isLocked         Boolean  @default(true)
+  lockedBy         String?
+  lockedAt         DateTime?
+  lockReason       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([academicYearId, evaluationPeriod, classId, subjectId])
+  @@index([academicYearId, evaluationPeriod])
+}
+
+model GradeEntryReminder {
+  id               String   @id @default(cuid())
+  academicYearId   String
+  evaluationPeriod String
+  classId          String
+  subjectId        String
+  teacherId        String?
+  teacherName      String?
+  recipientEmail   String?
+  remindedBy       String?
+  remindedAt       DateTime @default(now())
+  message          String?
+  channel          String   @default("SYSTEM")
+
+  @@index([academicYearId, evaluationPeriod, classId, subjectId])
+}
+
 model SubjectGradeEntry {
   id               String   @id @default(cuid())
   studentId        String

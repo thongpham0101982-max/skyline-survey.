@@ -693,7 +693,7 @@ export function DiemNhanXetTeacherClient({
 
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => { if (isSheetLocked) { alert("Sổ điểm đã bị khóa, không thể upload điểm mới!"); return; } fileInputRef.current?.click(); }}
                 className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all"
               >
                 <Upload className="w-3.5 h-3.5" />
@@ -712,6 +712,28 @@ export function DiemNhanXetTeacherClient({
             </div>
           )}
         </div>
+
+        {/* CẢNH BÁO SỔ ĐIỂM ĐÃ BỊ KHÓA */}
+        {isSheetLocked && !hasNoAssignments && (
+          <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm animate-fadeIn">
+            <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-black text-purple-950 uppercase tracking-wide flex items-center gap-1.5">
+                <span>SỔ ĐIỂM ĐÃ BỊ KHÓA BỞI BAN KHẢO THÍ & ĐBCL</span>
+                {sheetLockInfo?.lockedBy && (
+                  <span className="text-[11px] font-normal text-purple-700">
+                    ({sheetLockInfo.lockedBy})
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-purple-800 mt-0.5">
+                Sổ điểm môn này trong Kỳ {EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod} hiện đang ở trạng thái Khóa. Điểm số được bảo lưu và ở chế độ chỉ xem.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Empty State when teacher has no assignments for this semester/year */}
         {hasNoAssignments ? (

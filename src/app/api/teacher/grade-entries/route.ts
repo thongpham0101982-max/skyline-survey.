@@ -165,12 +165,31 @@ export async function GET(request: Request) {
 
     let assignedTeacher = assignment?.teacher?.teacherName || ""
     if (!assignedTeacher) {
-      const clsWithTeacher = await prisma.class.findUnique({
+      const clsObj = await prisma.class.findUnique({
         where: { id: classId },
-        include: { homeroomTeacher: true }
+        select: { homeroomTeacherId: true }
       })
-      assignedTeacher = clsWithTeacher?.homeroomTeacher?.teacherName || "Chưa phân công"
+      if (clsObj?.homeroomTeacherId) {
+        const hr = await prisma.teacher.findUnique({ where: { id: clsObj.homeroomTeacherId } })
+        assignedTeacher = hr?.teacherName || "Chưa phân công"
+      } else {
+        assignedTeacher = "Chưa phân công"
+      }
     }
+
+    // Check lock status for this class + subject or entire evaluation period
+    const lock = await prisma.gradebookLock.findFirst({
+      where: {
+        academicYearId: targetAcademicYearId,
+        evaluationPeriod,
+        OR: [
+          { classId, subjectId },
+          { classId: "ALL", subjectId: "ALL" }
+        ],
+        isLocked: true
+      }
+    })
+    const isLocked = Boolean(lock)
 
     // Get existing grade entries
     const entries = await prisma.subjectGradeEntry.findMany({
@@ -187,7 +206,9 @@ export async function GET(request: Request) {
       config,
       students,
       entries,
-      assignedTeacher
+      assignedTeacher,
+      isLocked,
+      lockInfo: lock || null
     })
 
   } catch (error: any) {
@@ -204,6 +225,29 @@ export async function POST(request: Request) {
 
     if (!classId || !subjectId || !evaluationPeriod || !Array.isArray(entries)) {
       return NextResponse.json({ success: false, error: "Thiếu dữ liệu sổ điểm" }, { status: 400 })
+    }
+
+    const userRole = ((session?.user as any)?.role || "").toUpperCase().trim()
+    const isPrivileged = ["ADMIN", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "BAN_GIAM_HIEU", "BGH", "CM", "TO_TRUONG"].includes(userRole) || (userRole && userRole !== "TEACHER")
+
+    // Check lock status before saving
+    const lock = await prisma.gradebookLock.findFirst({
+      where: {
+        academicYearId,
+        evaluationPeriod,
+        OR: [
+          { classId, subjectId },
+          { classId: "ALL", subjectId: "ALL" }
+        ],
+        isLocked: true
+      }
+    })
+
+    if (lock && !isPrivileged) {
+      return NextResponse.json({
+        success: false,
+        error: `Sổ điểm môn này trong kỳ ${evaluationPeriod} đã bị Khóa bởi ${lock.lockedBy || "Ban Khảo thí & ĐBCL"}. Bạn không thể chỉnh sửa hoặc lưu điểm lúc này.`
+      }, { status: 403 })
     }
 
     let teacherId = null

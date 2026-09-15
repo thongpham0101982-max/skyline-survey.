@@ -128,6 +128,8 @@ export async function GET(request: Request) {
         },
         assignedTeacher,
         evaluationPeriod,
+        isLocked,
+        lockInfo: lock || null,
         totalStudents: detailedStudents.length,
         gradedStudents: detailedStudents.filter(s => s.hasGrade).length,
         students: detailedStudents
@@ -178,7 +180,7 @@ export async function GET(request: Request) {
     const homeroomTeachers = homeroomIds.length > 0
       ? await prisma.teacher.findMany({
           where: { id: { in: homeroomIds } },
-          select: { id: true, teacherName: true, teacherCode: true }
+          select: { id: true, teacherName: true, teacherCode: true, email: true }
         })
       : []
     const homeroomMap = new Map()
@@ -260,6 +262,44 @@ export async function GET(request: Request) {
     const subjectsMap = new Map()
     subjects.forEach(s => subjectsMap.set(s.id, s))
 
+    // 7.1 Load locks for target year and period
+    const locks = await prisma.gradebookLock.findMany({
+      where: {
+        academicYearId: targetYearId,
+        evaluationPeriod: evaluationPeriod === "ALL" ? undefined : evaluationPeriod
+      }
+    })
+    const periodLock = locks.find(l => l.classId === "ALL" && l.subjectId === "ALL" && Boolean(l.isLocked))
+    const isPeriodLocked = Boolean(periodLock)
+    const lockMap = new Map<string, any>()
+    locks.forEach(l => {
+      lockMap.set(`${l.classId}_${l.subjectId}`, l)
+    })
+
+    // 7.2 Load reminders for target year and period
+    const reminders = await prisma.gradeEntryReminder.findMany({
+      where: {
+        academicYearId: targetYearId,
+        evaluationPeriod: evaluationPeriod === "ALL" ? undefined : evaluationPeriod
+      },
+      orderBy: { remindedAt: "desc" }
+    })
+    const reminderMap = new Map<string, { lastRemindedAt: Date; count: number; remindedBy: string; channel: string }>()
+    reminders.forEach(r => {
+      const key = `${r.classId}_${r.subjectId}`
+      if (!reminderMap.has(key)) {
+        reminderMap.set(key, {
+          lastRemindedAt: r.remindedAt,
+          count: 1,
+          remindedBy: r.remindedBy || "",
+          channel: r.channel
+        })
+      } else {
+        const existing = reminderMap.get(key)!
+        existing.count += 1
+      }
+    })
+
     // 8. Assemble progress items
     const rawItems: any[] = []
 
@@ -311,6 +351,18 @@ export async function GET(request: Request) {
           itemStatus = "IN_PROGRESS"
         }
 
+        const specificLock = lockMap.get(`${cls.id}_${sub.id}`)
+        const isLocked = isPeriodLocked || Boolean(specificLock?.isLocked)
+        const lockedAt = isLocked ? (specificLock?.lockedAt || periodLock?.lockedAt || null) : null
+        const lockedBy = isLocked ? (specificLock?.lockedBy || periodLock?.lockedBy || null) : null
+        const lockReason = isLocked ? (specificLock?.lockReason || periodLock?.lockReason || null) : null
+
+        const remInfo = reminderMap.get(`${cls.id}_${sub.id}`)
+        const lastRemindedAt = remInfo?.lastRemindedAt || null
+        const reminderCount = remInfo?.count || 0
+
+        const teacherEmail = ta?.teacher?.email || classHomeroom?.email || ""
+
         rawItems.push({
           classId: cls.id,
           className: cls.className,
@@ -323,13 +375,20 @@ export async function GET(request: Request) {
           teacherId,
           teacherName,
           teacherCode,
+          teacherEmail,
           evaluationPeriod,
           totalStudents,
           gradedCount,
           completionRate,
           status: itemStatus,
           avgScore,
-          lastUpdated
+          lastUpdated,
+          isLocked,
+          lockedAt,
+          lockedBy,
+          lockReason,
+          lastRemindedAt,
+          reminderCount
         })
       })
     })
@@ -370,9 +429,15 @@ export async function GET(request: Request) {
       ? Math.round((totalGradedStudents / totalExpectedStudents) * 100)
       : 0
 
+    const lockedCount = rawItems.filter(i => i.isLocked).length
+    const unlockedCount = rawItems.filter(i => !i.isLocked).length
+    const remindedTotal = rawItems.filter(i => (i.reminderCount || 0) > 0).length
+
     return NextResponse.json({
       success: true,
       evaluationPeriod,
+      isPeriodLocked,
+      periodLockInfo: periodLock || null,
       summary: {
         totalAssignments,
         completedCount,
@@ -381,7 +446,10 @@ export async function GET(request: Request) {
         noStudentsCount,
         overallRate,
         totalGradedStudents,
-        totalExpectedStudents
+        totalExpectedStudents,
+        lockedCount,
+        unlockedCount,
+        remindedTotal
       },
       items: filteredItems
     })
