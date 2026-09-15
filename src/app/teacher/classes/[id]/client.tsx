@@ -1,7 +1,8 @@
 "use client"
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { 
+import {
+  BarChart3,
   Users, TrendingUp, User, 
   ArrowLeftRight, LogOut, CheckCircle2,
   UserCheck, Search, Filter, Sparkles, UserPlus, UserMinus,
@@ -186,6 +187,15 @@ export function ClassDetailClient({
                     <UserMinus className="w-5 h-5 text-rose-300" />
                     {movementCounts.out}
                   </p>
+                </div>
+                <div className="pl-4 border-l border-white/10 hidden sm:block">
+                  <Link
+                    href="/teacher/diem-lop-chu-nhiem"
+                    className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs transition-all shadow-sm border border-white/25 hover:scale-102"
+                  >
+                    <BarChart3 className="w-4 h-4 text-amber-300" />
+                    <span>Xem Điểm & Đối Sánh Khối</span>
+                  </Link>
                 </div>
               </div>
             )}

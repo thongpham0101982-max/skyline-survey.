@@ -6,7 +6,8 @@ import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 import { signOut } from "next-auth/react"
 // imports updated
-import { 
+import {
+  BarChart3,
   LogOut, 
   LayoutDashboard, 
   Layers, 
@@ -490,6 +491,28 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       }`} />
                     </div>
                     {!isCollapsed && <span>6. Sổ theo dõi Hướng nghiệp</span>}
+                  </Link>
+
+                  {/* 7. Điểm lớp chủ nhiệm */}
+                  <Link 
+                    href="/teacher/diem-lop-chu-nhiem" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                      pathname.includes('/teacher/diem-lop-chu-nhiem') 
+                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      pathname.includes('/teacher/diem-lop-chu-nhiem')
+                        ? "bg-teal-500/20 border border-teal-500/40 shadow-[0_0_8px_rgba(20,184,166,0.25)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-teal-500/30"
+                    }`}>
+                      <BarChart3 className={`w-4 h-4 transition-all ${
+                        pathname.includes('/teacher/diem-lop-chu-nhiem') ? "text-teal-400" : "text-slate-400 group-hover:text-teal-400 group-hover:scale-110"
+                      }`} />
+                    </div>
+                    {!isCollapsed && <span>7. Điểm lớp chủ nhiệm</span>}
                   </Link>
                 </div>
               )}
