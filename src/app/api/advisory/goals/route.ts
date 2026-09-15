@@ -124,15 +124,22 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const targetClassId = searchParams.get("classId")
+    const queryYearId = searchParams.get("academicYearId")
     if (targetClassId) {
       const classStudents = await prisma.student.findMany({
-        where: { classId: targetClassId },
+        where: {
+          classId: targetClassId,
+          ...(queryYearId ? { academicYearId: queryYearId } : {})
+        },
         select: { id: true, studentCode: true, studentName: true }
       })
       const studentIdsInClass = classStudents.map(s => s.id)
       
       const goalsInClass = await prisma.studentGoal.findMany({
-        where: { studentId: { in: studentIdsInClass } },
+        where: {
+          studentId: { in: studentIdsInClass },
+          ...(queryYearId ? { academicYearId: queryYearId } : {})
+        },
         select: { studentId: true }
       }).catch(() => [])
       
