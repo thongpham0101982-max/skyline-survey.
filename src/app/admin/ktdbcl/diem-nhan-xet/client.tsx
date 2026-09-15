@@ -60,6 +60,8 @@ import {
   Square
 } from "lucide-react"
 import { GradeAnalyticsTab } from "./analytics-tab"
+import { GradeProgressTab } from "./progress-tab"
+import { ClipboardCheck } from "lucide-react"
 import { isGradeMatching } from "./grade-utils"
 import {
   calculateCompositeScore,
@@ -96,7 +98,7 @@ const GRADES = [
 ]
 
 export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, subjects, campuses = [] }: Props) {
-  const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics">("config")
+  const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics" | "progress">("config")
 
   // Common filters
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
@@ -1106,6 +1108,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           >
             <TrendingUp className="w-4 h-4" />
             3. Phân tích kết quả & Phổ điểm
+          </button>
+          <button
+            onClick={() => setActiveTab("progress")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === "progress"
+                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
+                : "text-white/80 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <ClipboardCheck className="w-4 h-4" />
+            4. Thống kê tiến độ nhập điểm
           </button>
         </div>
       </div>
@@ -2530,6 +2543,25 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           classes={classes}
           subjects={subjects}
           savedConfigs={savedConfigs}
+        />
+      )}
+
+      {/* TAB 4: GRADE ENTRY PROGRESS & AUDIT STATISTICS */}
+      {activeTab === "progress" && (
+        <GradeProgressTab
+          academicYears={academicYears}
+          selectedYearId={selectedYearId}
+          campuses={campuses}
+          classes={classes}
+          subjects={subjects}
+          onNavigateToGradebook={(params) => {
+            if (params.campusId) setSelectedCampusId(params.campusId)
+            if (params.grade) setSelectedGradeFilter(params.grade)
+            if (params.classId) setSelectedClassId(params.classId)
+            if (params.subjectId) setSelectedSubjectId(params.subjectId)
+            if (params.period) setSelectedPeriod(params.period)
+            setActiveTab("grades")
+          }}
         />
       )}
     
