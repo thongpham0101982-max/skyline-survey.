@@ -19,6 +19,17 @@ export default async function DiemNhanXetAdminPage() {
 
   const classes = await prisma.class.findMany({
     where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
+    include: {
+      campus: { select: { id: true, campusCode: true, campusName: true } },
+      teachingAssignments: {
+        select: {
+          id: true,
+          subjectId: true,
+          teacherId: true,
+          teacher: { select: { id: true, teacherName: true, teacherCode: true } }
+        }
+      }
+    },
     orderBy: { className: "asc" }
   })
 

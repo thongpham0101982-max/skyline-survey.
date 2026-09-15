@@ -668,6 +668,14 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     return []
   }, [savedConfigs, selectedPeriod, selectedClassId, selectedGradeFilter, classes, subjects])
 
+  // Subjects assigned specifically to this class via teaching assignments
+  const classAssignedSubjects = useMemo(() => {
+    const currentClass = classes.find(c => c.id === selectedClassId)
+    if (!currentClass?.teachingAssignments || currentClass.teachingAssignments.length === 0) return []
+    const subIds = new Set<string>(currentClass.teachingAssignments.map((ta: any) => ta.subjectId))
+    return subjects.filter(s => subIds.has(s.id))
+  }, [classes, selectedClassId, subjects])
+
   // Auto sync selectedSubjectId in Tab 2
   useEffect(() => {
     if (activeTab === "grades") {
@@ -675,13 +683,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         if (!availableSubjectsForTab2.some(s => s.id === selectedSubjectId)) {
           setSelectedSubjectId(availableSubjectsForTab2[0].id)
         }
+      } else if (classAssignedSubjects.length > 0) {
+        if (!classAssignedSubjects.some(s => s.id === selectedSubjectId)) {
+          setSelectedSubjectId(classAssignedSubjects[0].id)
+        }
       } else if (subjects.length > 0) {
         if (!subjects.some(s => s.id === selectedSubjectId)) {
           setSelectedSubjectId(subjects[0].id)
         }
       }
     }
-  }, [activeTab, availableSubjectsForTab2, selectedSubjectId, subjects])
+  }, [activeTab, availableSubjectsForTab2, classAssignedSubjects, selectedSubjectId, subjects])
 
   const [gradeSheetData, setGradeSheetData] = useState<{
     config: any
@@ -2176,16 +2188,61 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                     {availableSubjectsForTab2.length > 0 ? (
                       <>
                         <optgroup label={`⭐ Môn theo Kỳ khảo sát (${availableSubjectsForTab2.length} môn)`}>
-                          {availableSubjectsForTab2.map(s => (
-                            <option key={s.id} value={s.id}>
-                              {s.subjectName} ({s.subjectCode})
-                            </option>
-                          ))}
+                          {availableSubjectsForTab2.map(s => {
+                            const ta = currentClass?.teachingAssignments?.find((t: any) => t.subjectId === s.id)
+                            const teacherNote = ta?.teacher?.teacherName ? ` - GV: ${ta.teacher.teacherName}` : ""
+                            return (
+                              <option key={s.id} value={s.id}>
+                                {s.subjectName} ({s.subjectCode}){teacherNote}
+                              </option>
+                            )
+                          })}
                         </optgroup>
+                        {classAssignedSubjects.filter(cs => !availableSubjectsForTab2.some(as => as.id === cs.id)).length > 0 && (
+                          <optgroup label="📚 Môn theo Phân công giảng dạy của lớp">
+                            {classAssignedSubjects
+                              .filter(cs => !availableSubjectsForTab2.some(as => as.id === cs.id))
+                              .map(s => {
+                                const ta = currentClass?.teachingAssignments?.find((t: any) => t.subjectId === s.id)
+                                const teacherNote = ta?.teacher?.teacherName ? ` - GV: ${ta.teacher.teacherName}` : ""
+                                return (
+                                  <option key={s.id} value={s.id}>
+                                    {s.subjectName} ({s.subjectCode}){teacherNote}
+                                  </option>
+                                )
+                              })}
+                          </optgroup>
+                        )}
                         {showAllTab2Subjects && (
                           <optgroup label="── Các môn khác của Khối / Hệ thống ──">
                             {subjects
-                              .filter(s => !availableSubjectsForTab2.some(a => a.id === s.id))
+                              .filter(s => !availableSubjectsForTab2.some(a => a.id === s.id) && !classAssignedSubjects.some(cs => cs.id === s.id))
+                              .map(s => (
+                                <option key={s.id} value={s.id}>
+                                  {s.subjectName} ({s.subjectCode})
+                                </option>
+                              ))}
+                          </optgroup>
+                        )}
+                      </>
+                    ) : classAssignedSubjects.length > 0 ? (
+                      <>
+                        <option value="" disabled>-- Chưa có môn gán riêng cho kỳ này --</option>
+                        <optgroup label={`📚 Môn theo Phân công giảng dạy của lớp (${classAssignedSubjects.length} môn)`}>
+                          {classAssignedSubjects.map(s => {
+                            const ta = currentClass?.teachingAssignments?.find((t: any) => t.subjectId === s.id)
+                            const teacherNote = ta?.teacher?.teacherName ? ` - GV: ${ta.teacher.teacherName}` : ""
+                            return (
+                              <option key={s.id} value={s.id}>
+                                {s.subjectName} ({s.subjectCode}){teacherNote}
+                              </option>
+                            )
+                          })}
+                        </optgroup>
+                        {showAllTab2Subjects && (
+                          <optgroup label="── Tất cả môn học khác ──">
+                            {subjects
+                              .filter(s => !classAssignedSubjects.some(cs => cs.id === s.id))
                               .map(s => (
                                 <option key={s.id} value={s.id}>
                                   {s.subjectName} ({s.subjectCode})

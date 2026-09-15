@@ -32,7 +32,7 @@ export async function GET(request: Request) {
     if (detailClassId && detailSubjectId) {
       const cls = await prisma.class.findUnique({
         where: { id: detailClassId },
-        include: { campus: true, homeroomTeacher: true }
+        include: { campus: true }
       })
       const sub = await prisma.subject.findUnique({
         where: { id: detailSubjectId }
@@ -52,7 +52,16 @@ export async function GET(request: Request) {
         include: { teacher: true }
       })
 
-      const assignedTeacher = ta?.teacher?.teacherName || cls.homeroomTeacher?.teacherName || "Chưa phân công"
+      let assignedTeacher = ta?.teacher?.teacherName || ""
+      if (!assignedTeacher && cls.homeroomTeacherId) {
+        const hmTeacher = await prisma.teacher.findUnique({
+          where: { id: cls.homeroomTeacherId }
+        })
+        assignedTeacher = hmTeacher?.teacherName || ""
+      }
+      if (!assignedTeacher) {
+        assignedTeacher = "Chưa phân công"
+      }
 
       // Students
       const students = await prisma.student.findMany({
@@ -133,8 +142,7 @@ export async function GET(request: Request) {
     const classes = await prisma.class.findMany({
       where: classWhere,
       include: {
-        campus: true,
-        homeroomTeacher: true
+        campus: true
       },
       orderBy: { className: "asc" }
     })
@@ -149,11 +157,13 @@ export async function GET(request: Request) {
     if (classIds.length === 0) {
       return NextResponse.json({
         success: true,
+        evaluationPeriod,
         summary: {
           totalAssignments: 0,
           completedCount: 0,
           inProgressCount: 0,
           notStartedCount: 0,
+          noStudentsCount: 0,
           overallRate: 0,
           totalGradedStudents: 0,
           totalExpectedStudents: 0
@@ -162,7 +172,18 @@ export async function GET(request: Request) {
       })
     }
 
-    // 2. Count active students per class
+    // 2. Teachers lookup
+    const homeroomIds = Array.from(new Set(filteredClasses.map(c => c.homeroomTeacherId).filter(Boolean)))
+    const homeroomTeachers = homeroomIds.length > 0
+      ? await prisma.teacher.findMany({
+          where: { id: { in: homeroomIds } },
+          select: { id: true, teacherName: true, teacherCode: true }
+        })
+      : []
+    const homeroomMap = new Map()
+    homeroomTeachers.forEach(t => homeroomMap.set(t.id, t))
+
+    // 3. Count active students per class
     const studentGroups = await prisma.student.groupBy({
       by: ["classId"],
       where: {
@@ -176,7 +197,7 @@ export async function GET(request: Request) {
       studentCountMap.set(g.classId, g._count.id)
     })
 
-    // 3. Load configs for evaluationPeriod
+    // 4. Load configs for evaluationPeriod
     const configs = await prisma.subjectGradeConfig.findMany({
       where: {
         academicYearId: targetYearId,
@@ -185,7 +206,7 @@ export async function GET(request: Request) {
       include: { subject: true }
     })
 
-    // 4. Load TeachingAssignments
+    // 5. Load TeachingAssignments
     const assignments = await prisma.teachingAssignment.findMany({
       where: {
         classId: { in: classIds },
@@ -201,7 +222,7 @@ export async function GET(request: Request) {
       taMap.set(`${ta.classId}_${ta.subjectId}`, ta)
     })
 
-    // 5. Load Grade Entries aggregated by classId & subjectId
+    // 6. Load Grade Entries aggregated by classId & subjectId
     const entries = await prisma.subjectGradeEntry.findMany({
       where: {
         classId: { in: classIds },
@@ -231,18 +252,19 @@ export async function GET(request: Request) {
       entryStatsMap.set(key, existing)
     })
 
-    // 6. Active subjects cache
+    // 7. Active subjects cache
     const subjects = await prisma.subject.findMany({
       where: { status: "ACTIVE" }
     })
     const subjectsMap = new Map()
     subjects.forEach(s => subjectsMap.set(s.id, s))
 
-    // 7. Assemble progress items
+    // 8. Assemble progress items
     const rawItems: any[] = []
 
     filteredClasses.forEach(cls => {
       const totalStudents = studentCountMap.get(cls.id) || 0
+      const classHomeroom = cls.homeroomTeacherId ? homeroomMap.get(cls.homeroomTeacherId) : null
 
       let subjectIdsToTrack: string[] = []
 
@@ -255,7 +277,7 @@ export async function GET(request: Request) {
         const matchingConfigs = configs.filter(c => isGradeMatching(c.grade, cls.grade))
         subjectIdsToTrack = Array.from(new Set(matchingConfigs.map(c => c.subjectId).filter(Boolean)))
         
-        // If no survey subjects configured for this grade yet, check teaching assignments
+        // If no survey subjects configured for this grade yet, fallback to teaching assignments
         if (subjectIdsToTrack.length === 0) {
           const classAssignments = assignments.filter(ta => ta.classId === cls.id)
           subjectIdsToTrack = Array.from(new Set(classAssignments.map(ta => ta.subjectId).filter(Boolean)))
@@ -267,9 +289,9 @@ export async function GET(request: Request) {
         if (!sub) return
 
         const ta = taMap.get(`${cls.id}_${subId}`)
-        const teacherName = ta?.teacher?.teacherName || cls.homeroomTeacher?.teacherName || "Chưa phân công"
-        const teacherCode = ta?.teacher?.teacherCode || ""
-        const teacherId = ta?.teacher?.id || cls.homeroomTeacher?.id || null
+        const teacherName = ta?.teacher?.teacherName || classHomeroom?.teacherName || "Chưa phân công"
+        const teacherCode = ta?.teacher?.teacherCode || classHomeroom?.teacherCode || ""
+        const teacherId = ta?.teacher?.id || classHomeroom?.id || null
 
         const entryStat = entryStatsMap.get(`${cls.id}_${subId}`)
         const gradedCount = entryStat ? entryStat.count : 0
