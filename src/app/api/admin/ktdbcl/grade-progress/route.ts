@@ -43,6 +43,20 @@ export async function GET(request: Request) {
         return NextResponse.json({ success: false, error: "Không tìm thấy lớp học hoặc môn học" }, { status: 404 })
       }
 
+      // Check lock status for this class + subject or entire evaluation period
+      const lock = await prisma.gradebookLock.findFirst({
+        where: {
+          academicYearId: targetYearId,
+          evaluationPeriod,
+          OR: [
+            { classId: detailClassId, subjectId: detailSubjectId },
+            { classId: "ALL", subjectId: "ALL" }
+          ],
+          isLocked: true
+        }
+      })
+      const isLocked = Boolean(lock)
+
       // Teaching assignment
       const ta = await prisma.teachingAssignment.findFirst({
         where: {
