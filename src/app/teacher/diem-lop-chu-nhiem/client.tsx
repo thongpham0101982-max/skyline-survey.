@@ -39,11 +39,11 @@ import {
 import * as XLSX from "xlsx"
 
 const EVAL_PERIODS = [
-  { code: "KSDN", label: "Khảo sát đầu năm (KSĐN)", short: "KSĐN" },
-  { code: "GIUA_KY_1", label: "Giữa học kỳ 1 (GK1)", short: "GK1" },
-  { code: "CUOI_KY_1", label: "Cuối học kỳ 1 (CK1)", short: "CK1" },
-  { code: "GIUA_KY_2", label: "Giữa học kỳ 2 (GK2)", short: "GK2" },
-  { code: "CUOI_KY_2", label: "Cuối học kỳ 2 (CK2)", short: "CK2" }
+  { code: "KSĐN", label: "Khảo sát đầu năm (KSĐN)", short: "KSĐN" },
+  { code: "GK1", label: "Giữa kỳ 1 (GK1)", short: "GK1" },
+  { code: "CK1", label: "Cuối kỳ 1 (CK1)", short: "CK1" },
+  { code: "GK2", label: "Giữa kỳ 2 (GK2)", short: "GK2" },
+  { code: "CK2", label: "Cuối kỳ 2 (CK2)", short: "CK2" }
 ]
 
 interface Props {
@@ -62,7 +62,7 @@ export function HomeroomGradesClient({
   // Filters
   const [selectedYearId, setSelectedYearId] = useState(activeYearId)
   const [selectedClassId, setSelectedClassId] = useState<string>(homeroomClasses[0]?.id || "")
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("KSDN")
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("KSĐN")
   const [selectedScope, setSelectedScope] = useState<string>("campus") // "campus" | "all"
   const [activeTab, setActiveTab] = useState<"matrix" | "comparative" | "tracking">("matrix")
   const [searchTerm, setSearchTerm] = useState("")

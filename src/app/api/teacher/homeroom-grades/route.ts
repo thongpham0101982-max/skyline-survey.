@@ -13,12 +13,27 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const classId = searchParams.get("classId")
     const academicYearId = searchParams.get("academicYearId") || ""
-    const evaluationPeriod = searchParams.get("evaluationPeriod") || "KSDN"
+    const rawPeriod = searchParams.get("evaluationPeriod") || "KSĐN"
     const scope = searchParams.get("scope") || "campus" // "campus" (cùng cơ sở) hoặc "all" (toàn trường)
 
     if (!classId) {
       return NextResponse.json({ success: false, error: "Thiếu mã lớp học (classId)" }, { status: 400 })
     }
+
+    // Normalize evaluation period variants
+    let periodVariants = [rawPeriod, "ALL"]
+    if (rawPeriod === "KSDN" || rawPeriod === "KSĐN") {
+      periodVariants = ["KSĐN", "KSDN", "ALL"]
+    } else if (rawPeriod === "GK1" || rawPeriod === "GIUA_KY_1") {
+      periodVariants = ["GK1", "GIUA_KY_1", "ALL"]
+    } else if (rawPeriod === "CK1" || rawPeriod === "CUOI_KY_1") {
+      periodVariants = ["CK1", "CUOI_KY_1", "ALL"]
+    } else if (rawPeriod === "GK2" || rawPeriod === "GIUA_KY_2") {
+      periodVariants = ["GK2", "GIUA_KY_2", "ALL"]
+    } else if (rawPeriod === "CK2" || rawPeriod === "CUOI_KY_2") {
+      periodVariants = ["CK2", "CUOI_KY_2", "ALL"]
+    }
+    const targetPeriodFilter = periodVariants.filter(p => p !== "ALL")
 
     // 1. Get class details
     const targetClass = await prisma.class.findUnique({
@@ -82,6 +97,20 @@ export async function GET(request: Request) {
       gradeNum
     ].filter(Boolean)))
 
+    const isGradeMatching = (configGrade?: string | null, targetG?: string | null): boolean => {
+      if (!configGrade || !targetG) return false
+      const c = configGrade.trim()
+      const t = targetG.trim()
+      if (c === "ALL" || t === "ALL" || c === "" || t === "") return true
+      if (c.toLowerCase() === t.toLowerCase()) return true
+      const d1 = c.replace(/\D/g, "")
+      const d2 = t.replace(/\D/g, "")
+      if (d1 && d2) return d1 === d2
+      const clean1 = c.toLowerCase().replace(/khối|khoi|lớp|lop|\s/g, "")
+      const clean2 = t.toLowerCase().replace(/khối|khoi|lớp|lop|\s/g, "")
+      return clean1 === clean2
+    }
+
     // Determine level (TIEU_HOC vs THCS vs THPT)
     const num = parseInt(gradeNum, 10)
     let levelCode = "THCS"
@@ -120,7 +149,7 @@ export async function GET(request: Request) {
       where: {
         academicYearId: targetYearId,
         classId,
-        evaluationPeriod
+        evaluationPeriod: { in: targetPeriodFilter }
       },
       include: {
         subject: true
@@ -139,7 +168,6 @@ export async function GET(request: Request) {
       }
     })
 
-    // Map of subject teachers
     const subjectTeacherMap: Record<string, string> = {}
     teachingAssignments.forEach(ta => {
       if (ta.subjectId && ta.teacher) {
@@ -147,31 +175,42 @@ export async function GET(request: Request) {
       }
     })
 
-    // Collect all unique subjects relevant to this class
-    const subjectsMap = new Map<string, any>()
-    teachingAssignments.forEach(ta => {
-      if (ta.subject) subjectsMap.set(ta.subject.id, ta.subject)
-    })
-    classGradeEntries.forEach(ge => {
-      if (ge.subject) subjectsMap.set(ge.subject.id, ge.subject)
+    // 7. STRICTLY FETCH SUBJECTS CONFIGURED IN ADMIN TAB (SubjectGradeConfig) FOR THIS PERIOD & GRADE
+    const surveyConfigs = await prisma.subjectGradeConfig.findMany({
+      where: {
+        academicYearId: targetYearId,
+        evaluationPeriod: { in: periodVariants },
+        subjectId: { not: null },
+        status: "ACTIVE"
+      },
+      include: {
+        subject: true
+      }
     })
 
-    // If still empty, find all subjects in the system
-    if (subjectsMap.size === 0) {
-      const allSubjects = await prisma.subject.findMany({
-        where: { status: "ACTIVE" },
-        orderBy: { orderIndex: "asc" }
-      })
-      allSubjects.forEach(s => subjectsMap.set(s.id, s))
-    }
+    const subjectsMap = new Map<string, any>()
+
+    // Priority 1: Add subjects specifically configured in SubjectGradeConfig for this grade
+    surveyConfigs.forEach(cfg => {
+      if (cfg.subject && cfg.subjectId !== "ALL" && isGradeMatching(cfg.grade, targetClass.grade)) {
+        subjectsMap.set(cfg.subject.id, cfg.subject)
+      }
+    })
+
+    // Priority 2: Also include any subject that already has actual grade entries in this period for this class
+    classGradeEntries.forEach(ge => {
+      if (ge.subject) {
+        subjectsMap.set(ge.subject.id, ge.subject)
+      }
+    })
 
     const subjectsList = Array.from(subjectsMap.values()).sort((a, b) => (a.orderIndex || 99) - (b.orderIndex || 99))
 
-    // 7. Load Benchmark configurations
+    // 8. Load Benchmark configurations
     const benchmarkConfigs = await prisma.subjectBenchmarkConfig.findMany({
       where: {
         academicYearId: targetYearId,
-        evaluationPeriod: { in: [evaluationPeriod, "ALL"] }
+        evaluationPeriod: { in: [...periodVariants, "ALL"] }
       }
     })
 
@@ -181,14 +220,14 @@ export async function GET(request: Request) {
 
       const matchPeriodSubGrade = benchmarkConfigs.find(b => 
         b.subjectId === subId && 
-        candidateGrades.includes(b.grade) && 
-        b.evaluationPeriod === evaluationPeriod
+        isGradeMatching(b.grade, targetClass.grade) && 
+        periodVariants.includes(b.evaluationPeriod)
       )
       if (matchPeriodSubGrade) return matchPeriodSubGrade.benchmarkScore
 
       const matchSubGrade = benchmarkConfigs.find(b => 
         b.subjectId === subId && 
-        candidateGrades.includes(b.grade) && 
+        isGradeMatching(b.grade, targetClass.grade) && 
         b.evaluationPeriod === "ALL"
       )
       if (matchSubGrade) return matchSubGrade.benchmarkScore
@@ -209,8 +248,7 @@ export async function GET(request: Request) {
       return defaultScore
     }
 
-    // 8. Fetch Grade-level (Khối) data for comparative analytics
-    // Find all classes in the same grade
+    // 9. Fetch Grade-level (Khối) data for comparative analytics
     const gradeClassesWhere: any = {
       academicYearId: targetYearId,
       OR: [
@@ -235,7 +273,7 @@ export async function GET(request: Request) {
     const gradeWideEntries = await prisma.subjectGradeEntry.findMany({
       where: {
         academicYearId: targetYearId,
-        evaluationPeriod,
+        evaluationPeriod: { in: targetPeriodFilter },
         classId: { in: siblingClassIds }
       },
       select: {
@@ -294,8 +332,7 @@ export async function GET(request: Request) {
       }
     })
 
-    // 9. Process Class Statistics & Comparative Metrics per subject
-    // Index class entries by studentId_subjectId
+    // 10. Process Class Statistics & Comparative Metrics per subject
     const classEntryMap: Record<string, any> = {}
     classGradeEntries.forEach(ge => {
       classEntryMap[`${ge.studentId}_${ge.subjectId}`] = ge
@@ -378,7 +415,7 @@ export async function GET(request: Request) {
       }
     })
 
-    // 10. Query Commitments (InputAssessmentStudent & StudentLearningCommitment)
+    // 11. Query Commitments (InputAssessmentStudent & StudentLearningCommitment)
     const studentCodes = students.map(s => s.studentCode).filter(Boolean)
     const studentIds = students.map(s => s.id)
 
@@ -422,7 +459,7 @@ export async function GET(request: Request) {
       commitmentMap.set(lc.studentId, arr)
     })
 
-    // 11. Student Grade Matrix & Tracking List
+    // 12. Student Grade Matrix & Tracking List
     const studentMatrix = students.map(st => {
       const subjectGrades: Record<string, {
         score: number | null
@@ -482,7 +519,6 @@ export async function GET(request: Request) {
 
       const gpa = scoreCount > 0 ? Math.round((totalScoreSum / scoreCount) * 10) / 10 : null
 
-      // Commitment info
       const inputInfo = inputMap.get(st.studentCode)
       const commitments = commitmentMap.get(st.id) || []
 
@@ -512,7 +548,6 @@ export async function GET(request: Request) {
       }
     })
 
-    // Students needing special attention (below avg or below benchmark or have active commitment)
     const trackingStudents = studentMatrix.filter(st => 
       st.belowAverageCount > 0 || 
       st.belowBenchmarkCount > 0 || 
@@ -530,7 +565,7 @@ export async function GET(request: Request) {
         totalStudents: students.length,
         academicYearName: targetClass.academicYear?.name || ""
       },
-      evaluationPeriod,
+      evaluationPeriod: rawPeriod,
       scope,
       siblingClassesCount: siblingClasses.length,
       subjects: subjectsList.map(s => ({ id: s.id, name: s.subjectName, code: s.subjectCode })),
