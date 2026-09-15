@@ -29,7 +29,7 @@ export default function TeacherAdvisoryPage() {
   const [students, setStudents] = useState<any[]>([]); const [submittedStudentCodes, setSubmittedStudentCodes] = useState<string[]>([]); const [submissionFilter, setSubmissionFilter] = useState<"ALL" | "SUBMITTED" | "NOT_SUBMITTED">("ALL")
   const [selectedStudentId, setSelectedStudentId] = useState("")
   
-  const [activeTab, setActiveTab] = useState<"consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks">("tracking")
+  const [activeTab, setActiveTab] = useState<"consultations" | "sos" | "tracking" | "rubric_eval" | "unlocks" | "requests">("tracking")
   
   // 5. Goal Adjustment Requests State (Yêu cầu mở phiếu điều chỉnh)
   const [adjustmentRequests, setAdjustmentRequests] = useState<any[]>([])
@@ -58,6 +58,10 @@ export default function TeacherAdvisoryPage() {
   // 1. Student-Focused Goal Progress Tracking State
   const [checkPoint, setCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
   const [singleStudentTrackingRows, setSingleStudentTrackingRows] = useState<any[]>([]); const [viewMode, setViewMode] = useState<"card" | "table">("card"); const [activeStudentCommitment, setActiveStudentCommitment] = useState<string>("")
+  const [requestStatusFilter, setRequestStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED">("ALL")
+  const pendingAdjustmentCount = useMemo(() => {
+    return Array.isArray(adjustmentRequests) ? adjustmentRequests.filter((r: any) => r.status === "PENDING").length : 0
+  }, [adjustmentRequests])
 
   // Dynamic weights & calculation based on student grade
   const activeStudent = useMemo(() => students.find(s => s.id === selectedStudentId), [students, selectedStudentId])
@@ -363,6 +367,7 @@ export default function TeacherAdvisoryPage() {
     loadClassConsultations()
     loadClassUnlocks()
     loadClassTermEvaluations()
+    loadClassAdjustmentRequests()
   }, [selectedClassId, academicYearId])
 
   // Load Goal Tracking & Rubric Data for currently selected student
@@ -848,6 +853,23 @@ export default function TeacherAdvisoryPage() {
             <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
             <span>5. Yêu Cầu SOS ({helpRequests.length})</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab("requests")}
+            className={
+              activeTab === "requests"
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
+          >
+            <Edit3 className="w-4 h-4 text-amber-300" />
+            <span>6. Yêu Cầu Mở Phiếu</span>
+            {pendingAdjustmentCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black animate-pulse">
+                {pendingAdjustmentCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -1026,6 +1048,109 @@ export default function TeacherAdvisoryPage() {
               </div>
             </div>
           </div>
+
+          {/* Adjustment Request & Unlock Status for Selected Student */}
+          {(() => {
+            const req = Array.isArray(adjustmentRequests) ? adjustmentRequests.find((r: any) => r.studentId === selectedStudentId) : null
+            const isUnlocked = req && req.status === "APPROVED"
+            const isPending = req && req.status === "PENDING"
+            const isSubmitted = activeStudent && submittedStudentCodes.includes(activeStudent.studentCode)
+
+            return (
+              <div className="space-y-3">
+                {isPending && (
+                  <div className="p-4 bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100 border-2 border-amber-400 rounded-2xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-amber-500 text-white rounded-xl shrink-0 shadow-sm">
+                        <Clock className="w-5 h-5 animate-spin" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black uppercase text-amber-950 flex items-center gap-2">
+                          <span>HỌC SINH XIN MỞ PHIẾU ĐỂ HIỆU CHỈNH</span>
+                          <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black">CHỜ GVCN DUYỆT</span>
+                        </h4>
+                        <p className="text-xs text-amber-900 font-medium mt-0.5">
+                          Lý do: <strong className="italic font-bold">"{req.reason}"</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRequestForReview(req)
+                          setReviewActionType("APPROVED")
+                          setTeacherResponseNote("Thầy/Cô đồng ý mở phiếu. Em hãy cập nhật lại mục tiêu và nộp lại nhé.")
+                          setShowReviewModal(true)
+                        }}
+                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Phê Duyệt Mở Phiếu</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRequestForReview(req)
+                          setReviewActionType("REJECTED")
+                          setTeacherResponseNote("")
+                          setShowReviewModal(true)
+                        }}
+                        className="px-3.5 py-2 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Từ Chối</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {isUnlocked && (
+                  <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100 border-2 border-emerald-400 rounded-2xl text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-emerald-600 text-white rounded-xl shrink-0 shadow-sm">
+                        <Edit3 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black uppercase text-emerald-950 flex items-center gap-2">
+                          <span>PHIẾU ĐANG ĐƯỢC MỞ KHÓA CHO HỌC SINH HIỆU CHỈNH</span>
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black">ĐANG MỞ</span>
+                        </h4>
+                        <p className="text-xs text-emerald-800 font-medium mt-0.5">
+                          Học sinh đang có quyền chỉnh sửa lại và nộp lại phiếu. Sau khi học sinh nộp lại, phiếu sẽ tự động khóa.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleLockGoal(selectedStudentId)}
+                      className="px-3.5 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4" />
+                      <span>Khóa Lại Phiếu</span>
+                    </button>
+                  </div>
+                )}
+
+                {!isPending && !isUnlocked && isSubmitted && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                      <Lock className="w-4 h-4 text-slate-500" />
+                      <span>Phiếu mục tiêu của học sinh đã nộp và đang khóa chỉnh sửa.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleForceUnlock(selectedStudentId)}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-black border border-amber-300 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    >
+                      <Key className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Chủ Động Mở Khóa Cho HS Hiệu Chỉnh</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {/* Student Commitment Banner */}
           {activeStudentCommitment && (

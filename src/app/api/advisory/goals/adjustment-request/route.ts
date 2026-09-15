@@ -128,6 +128,59 @@ export async function GET(req: Request) {
       return jsonResponse({ requests })
     }
 
+    // 3. Trường hợp Admin / Giáo viên lấy danh sách toàn trường / theo campusId / academicYearId
+    const session = await auth()
+    if (session?.user) {
+      const campusId = searchParams.get("campusId")
+      const statusFilter = searchParams.get("status") // optional: PENDING, APPROVED, etc.
+
+      const whereStudent: any = { status: "ACTIVE" }
+      if (campusId) {
+        whereStudent.class = { campusId }
+      }
+
+      let querySql = `SELECT * FROM "StudentGoalAdjustmentRequest" 
+                      WHERE ("academicYearId" = ? OR ? = '')`
+      const args: any[] = [academicYearId, academicYearId]
+      if (statusFilter && statusFilter !== "ALL") {
+        querySql += ` AND "status" = ?`
+        args.push(statusFilter)
+      }
+      querySql += ` ORDER BY "createdAt" DESC LIMIT 300`
+
+      const result = await libsqlClient.execute({ sql: querySql, args })
+      if (result.rows.length === 0) {
+        return jsonResponse({ requests: [] })
+      }
+
+      const reqStudentIds = Array.from(new Set(result.rows.map(r => String(r.studentId))))
+      const students = await prisma.student.findMany({
+        where: { id: { in: reqStudentIds }, ...whereStudent },
+        select: {
+          id: true,
+          studentCode: true,
+          studentName: true,
+          class: { select: { className: true, campus: { select: { name: true } } } }
+        }
+      })
+      const studentMap = new Map(students.map(s => [s.id, s]))
+
+      const requests: any[] = []
+      for (const row of result.rows) {
+        const st = studentMap.get(String(row.studentId))
+        if (st) {
+          requests.push({
+            ...row,
+            studentName: st.studentName || "",
+            studentCode: st.studentCode || "",
+            className: st.class?.className || "",
+            campusName: st.class?.campus?.name || ""
+          })
+        }
+      }
+      return jsonResponse({ requests })
+    }
+
     return jsonResponse({ error: "Vui lòng cung cấp studentId hoặc classId" }, 400)
   } catch (error: any) {
     console.error("GET /api/advisory/goals/adjustment-request error:", error)

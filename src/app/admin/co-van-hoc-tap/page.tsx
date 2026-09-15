@@ -41,7 +41,7 @@ import {
 } from "@/lib/advisory/advisoryWeights"
 
 export default function AdminAdvisoryDashboard() {
-  const [activeTab, setActiveTab] = useState<"presets" | "dashboard">("presets")
+  const [activeTab, setActiveTab] = useState<"presets" | "dashboard" | "requests">("presets")
 
   // --- TAB 1: PRESETS STATE ---
   const [selectedGradeGroup, setSelectedGradeGroup] = useState<string>("K6_K8")
@@ -75,6 +75,141 @@ export default function AdminAdvisoryDashboard() {
   const [viewMode, setViewMode] = useState<"CLASS" | "STUDENT">("CLASS")
   const [selectedClassDetail, setSelectedClassDetail] = useState<any>(null)
   const [classStudentSearch, setClassStudentSearch] = useState<string>("")
+
+  // --- TAB 3: ADJUSTMENT REQUESTS STATE ---
+  const [adjustmentRequests, setAdjustmentRequests] = useState<any[]>([])
+  const [loadingRequests, setLoadingRequests] = useState<boolean>(false)
+  const [requestStatusFilter, setRequestStatusFilter] = useState<string>("ALL")
+  const [studentRequestDetail, setStudentRequestDetail] = useState<any>(null)
+  const [loadingStudentRequest, setLoadingStudentRequest] = useState<boolean>(false)
+  const [adminReviewNote, setAdminReviewNote] = useState<string>("")
+  const [actionLoading, setActionLoading] = useState<boolean>(false)
+
+  const pendingRequestsCount = useMemo(() => {
+    return Array.isArray(adjustmentRequests) ? adjustmentRequests.filter((r: any) => r.status === "PENDING").length : 0
+  }, [adjustmentRequests])
+
+  async function loadAdminAdjustmentRequests() {
+    try {
+      setLoadingRequests(true)
+      const campusParam = selectedCampusId ? "&campusId=" + selectedCampusId : ""
+      const statusParam = requestStatusFilter !== "ALL" ? "&status=" + requestStatusFilter : ""
+      const res = await fetch("/api/advisory/goals/adjustment-request?academicYearId=" + selectedAcademicYearId + campusParam + statusParam + "&_t=" + Date.now(), { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        setAdjustmentRequests(Array.isArray(data.requests) ? data.requests : [])
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingRequests(false)
+    }
+  }
+
+  async function handleAdminReview(requestId: string, status: "APPROVED" | "REJECTED", note?: string) {
+    try {
+      setActionLoading(true)
+      const res = await fetch("/api/advisory/goals/adjustment-request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: requestId,
+          status,
+          teacherResponse: note || (status === "APPROVED" ? "Admin đã phê duyệt mở khóa phiếu mục tiêu để em điều chỉnh." : "Yêu cầu chưa được chấp thuận.")
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setToastMessage(status === "APPROVED" ? "Đã phê duyệt mở khóa phiếu thành công!" : "Đã từ chối yêu cầu mở phiếu.")
+        setTimeout(() => setToastMessage(""), 4000)
+        loadAdminAdjustmentRequests()
+        if (selectedStudentDetail) {
+          const sId = selectedStudentDetail.id || selectedStudentDetail.studentId
+          fetchStudentAdjustmentRequest(sId)
+        }
+      } else {
+        alert(data.error || "Lỗi xử lý yêu cầu")
+      }
+    } catch (e: any) {
+      alert("Lỗi kết nối: " + e.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleAdminForceUnlock(studentId: string) {
+    if (!confirm("Admin có chắc chắn muốn chủ động mở khóa phiếu mục tiêu cho học sinh này?")) return
+    try {
+      setActionLoading(true)
+      const res = await fetch("/api/advisory/goals/adjustment-request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          academicYearId: selectedAcademicYearId,
+          action: "FORCE_UNLOCK",
+          teacherResponse: "Admin đã chủ động mở khóa phiếu mục tiêu để em điều chỉnh và nộp lại."
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setToastMessage("Đã chủ động mở khóa phiếu thành công cho học sinh!")
+        setTimeout(() => setToastMessage(""), 4000)
+        loadAdminAdjustmentRequests()
+        fetchStudentAdjustmentRequest(studentId)
+      } else {
+        alert(data.error || "Lỗi khi mở khóa phiếu")
+      }
+    } catch (e: any) {
+      alert("Lỗi kết nối: " + e.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleAdminLock(studentId: string) {
+    if (!confirm("Admin có chắc chắn muốn khóa lại phiếu mục tiêu của học sinh này?")) return
+    try {
+      setActionLoading(true)
+      const res = await fetch("/api/advisory/goals/adjustment-request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          action: "LOCK"
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setToastMessage("Đã khóa lại phiếu mục tiêu thành công!")
+        setTimeout(() => setToastMessage(""), 4000)
+        loadAdminAdjustmentRequests()
+        fetchStudentAdjustmentRequest(studentId)
+      } else {
+        alert(data.error || "Lỗi khi khóa phiếu")
+      }
+    } catch (e: any) {
+      alert("Lỗi kết nối: " + e.message)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function fetchStudentAdjustmentRequest(sId: string) {
+    if (!sId) return
+    try {
+      setLoadingStudentRequest(true)
+      const res = await fetch("/api/advisory/goals/adjustment-request?studentId=" + sId + "&academicYearId=" + selectedAcademicYearId + "&_t=" + Date.now(), { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        setStudentRequestDetail(data.request || null)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingStudentRequest(false)
+    }
+  }
 
   const GRADE_GROUPS = [
     { key: "K1", label: "Khối 1", desc: "Học tập (50%), Sức khỏe (20%), Sở thích (15%), Phẩm chất (15%)" },

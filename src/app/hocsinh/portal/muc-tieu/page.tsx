@@ -96,6 +96,7 @@ export default function StudentGoalPortalPage() {
 
           fetchGoalsForStudent(sId, parsedGrade)
           fetchUnlockData(sId)
+          fetchAdjustmentRequest(sId)
         }
       })
       .catch(console.error)
@@ -116,6 +117,9 @@ export default function StudentGoalPortalPage() {
         const data = await res.json()
         setPresets(data.presets || [])
         setTrackingLogs(data.trackingLogs || [])
+        if (data.adjustmentRequest) {
+          setAdjustmentRequest(data.adjustmentRequest)
+        }
 
         if (data.existingSheet) {
           setGoalSheetId(data.existingSheet.id)
@@ -188,6 +192,80 @@ export default function StudentGoalPortalPage() {
     }
   }
 
+  async function fetchAdjustmentRequest(sId: string) {
+    if (!sId) return
+    try {
+      const res = await fetch(`/api/advisory/goals/adjustment-request?studentId=${sId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" })
+      if (res.ok) {
+        const data = await res.json()
+        setAdjustmentRequest(data.request || null)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  async function handleSendAdjustmentRequest() {
+    if (!requestReason.trim()) {
+      alert("Vui lòng nhập lý do xin mở phiếu để điều chỉnh.")
+      return
+    }
+    try {
+      setSubmittingRequest(true)
+      const res = await fetch("/api/advisory/goals/adjustment-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          academicYearId,
+          reason: requestReason.trim()
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setShowRequestModal(false)
+        setRequestReason("")
+        setToastMessage("Đã gửi yêu cầu mở phiếu điều chỉnh tới Thầy/Cô GVCN thành công!")
+        setTimeout(() => setToastMessage(""), 5000)
+        fetchAdjustmentRequest(studentId)
+      } else {
+        alert(data.error || "Lỗi khi gửi yêu cầu. Vui lòng thử lại.")
+      }
+    } catch (e: any) {
+      alert("Lỗi kết nối: " + (e.message || "Vui lòng thử lại."))
+    } finally {
+      setSubmittingRequest(false)
+    }
+  }
+
+  async function handleCancelAdjustmentRequest() {
+    if (!confirm("Em có chắc chắn muốn hủy yêu cầu mở phiếu điều chỉnh này không?")) return
+    try {
+      setSubmittingRequest(true)
+      const res = await fetch("/api/advisory/goals/adjustment-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          academicYearId,
+          action: "CANCEL"
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setToastMessage("Đã hủy yêu cầu mở phiếu thành công.")
+        setTimeout(() => setToastMessage(""), 5000)
+        fetchAdjustmentRequest(studentId)
+      } else {
+        alert(data.error || "Lỗi khi hủy yêu cầu.")
+      }
+    } catch (e: any) {
+      alert("Lỗi kết nối: " + (e.message || "Vui lòng thử lại."))
+    } finally {
+      setSubmittingRequest(false)
+    }
+  }
+
   async function fetchUnlockData(sId: string) {
     if (!sId) return
     try {
@@ -203,7 +281,7 @@ export default function StudentGoalPortalPage() {
   }
 
   async function handleSaveK1Goals(data: { goals: K1GoalData[]; studentCommitment: string; fingerprintStamped: boolean }) {
-    if (submittedAt) {
+    if (submittedAt && !isUnlockedForEdit) {
       alert("Phiếu mục tiêu đã được gửi cho GVCN nên không thể chỉnh sửa.")
       return
     }
@@ -238,6 +316,7 @@ export default function StudentGoalPortalPage() {
         setToastMessage("Đã LƯU & GỬI BẢNG MỤC TIÊU KHỐI 1 về Quản lý Cố Vấn Học Tập & GVCN thành công!")
         setTimeout(() => setToastMessage(""), 5000)
         fetchGoalsForStudent(studentId, gradeLevel)
+        fetchAdjustmentRequest(studentId)
       } else {
         alert(resData.error || "Lỗi khi lưu phiếu mục tiêu. Vui lòng thử lại.")
       }
@@ -250,7 +329,7 @@ export default function StudentGoalPortalPage() {
   }
 
   async function handleSaveGoals() {
-    if (submittedAt) {
+    if (submittedAt && !isUnlockedForEdit) {
       alert("Phiếu mục tiêu đã được gửi cho GVCN nên không thể chỉnh sửa.")
       return
     }
@@ -309,6 +388,7 @@ export default function StudentGoalPortalPage() {
         setTimeout(() => setToastMessage(""), 5000)
         fetchGoalsForStudent(studentId, gradeLevel)
         fetchUnlockData(studentId)
+        fetchAdjustmentRequest(studentId)
       } else {
         alert(resData.error || "Lỗi khi lưu phiếu mục tiêu. Vui lòng thử lại.")
       }
@@ -531,24 +611,100 @@ export default function StudentGoalPortalPage() {
             </div>
           )}
 
-          {/* Lock Notice Banner when Submitted */}
+          {/* Lock & Adjustment Status Banners */}
           {isSubmitted && (
-            <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 text-amber-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-sm">
-                  <Lock className="w-6 h-6" />
+            <>
+              {isUnlockedForEdit ? (
+                <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100 border-2 border-emerald-400 rounded-3xl p-5 text-emerald-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-emerald-600 text-white rounded-2xl shrink-0 shadow-sm">
+                      <Sparkles className="w-6 h-6 animate-spin" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm uppercase text-emerald-950 flex items-center gap-2">
+                        <span>🔓 PHIẾU ĐÃ ĐƯỢC MỞ KHÓA ĐỂ EM HIỆU CHỈNH</span>
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black">CHẾ ĐỘ ĐIỀN LẠI</span>
+                      </h3>
+                      <p className="text-xs text-emerald-800 font-medium mt-0.5">
+                        Thầy/Cô GVCN ({adjustmentRequest?.reviewedBy || "Giáo viên"}) đã mở quyền chỉnh sửa cho em. {adjustmentRequest?.teacherResponse ? <strong>Lời nhắn: "{adjustmentRequest.teacherResponse}"</strong> : "Em có thể chỉnh sửa các mục tiêu, hành động và bấm 'LƯU & GỬI LẠI PHIẾU' để nộp lại nhé!"}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="px-4 py-2 bg-emerald-600 text-white rounded-2xl font-black text-xs shrink-0 shadow-sm flex items-center gap-1.5">
+                    <Edit3 className="w-4 h-4" />
+                    <span>ĐANG ĐƯỢC PHÉP SỬA</span>
+                  </span>
                 </div>
-                <div>
-                  <h3 className="font-black text-sm uppercase text-amber-950">PHIẾU MỤC TIÊU ĐÃ GỬI CHO GVCN — CHẾ ĐỘ CHỈ XEM</h3>
-                  <p className="text-xs text-amber-800 font-medium">
-                    Phiếu mục tiêu năm học đã được gửi chính thức ngày <strong className="text-amber-950 font-black">{submittedAt}</strong>. Học sinh chỉ có thể xem lại và theo dõi nhật ký đánh giá từ GVCN, không thể chỉnh sửa.
-                  </p>
+              ) : isPendingAdjustment ? (
+                <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100 border-2 border-amber-400 rounded-3xl p-5 text-amber-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-sm">
+                      <Clock className="w-6 h-6 animate-spin" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm uppercase text-amber-950 flex items-center gap-2">
+                        <span>⏳ ĐANG CHỜ GVCN / BAN GIÁM HIỆU DUYỆT MỞ PHIẾU</span>
+                      </h3>
+                      <p className="text-xs text-amber-800 font-medium mt-0.5">
+                        Em đã gửi yêu cầu xin mở phiếu ngày {adjustmentRequest?.createdAt ? new Date(adjustmentRequest.createdAt).toLocaleDateString("vi-VN") : ""}. Lý do: <em>"{adjustmentRequest?.reason}"</em>. Vui lòng chờ Thầy/Cô xét duyệt.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCancelAdjustmentRequest}
+                    disabled={submittingRequest}
+                    className="px-4 py-2 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-2xl font-black text-xs shrink-0 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    ✕ Hủy yêu cầu
+                  </button>
                 </div>
-              </div>
-              <span className="px-3.5 py-1.5 bg-amber-200 text-amber-950 rounded-2xl font-black text-xs shrink-0 border border-amber-300 shadow-xs">
-                🔒 ĐÃ KHÓA CHỈNH SỬA
-              </span>
-            </div>
+              ) : isRejectedAdjustment ? (
+                <div className="bg-gradient-to-r from-rose-50 via-pink-50 to-rose-100 border-2 border-rose-300 rounded-3xl p-5 text-rose-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-rose-500 text-white rounded-2xl shrink-0 shadow-sm">
+                      <AlertCircle className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm uppercase text-rose-950">YÊU CẦU MỞ PHIẾU CHƯA ĐƯỢC CHẤP THUẬN</h3>
+                      <p className="text-xs text-rose-800 font-medium mt-0.5">
+                        Thầy/Cô phản hồi: <strong>"{adjustmentRequest?.teacherResponse || "Chưa phù hợp điều chỉnh lúc này."}"</strong>. Em có thể trao đổi thêm với Thầy/Cô hoặc gửi lại lý do cụ thể hơn.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRequestModal(true)}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-2xl font-black text-xs shrink-0 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Gửi lại yêu cầu mở phiếu</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 text-amber-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-sm">
+                      <Lock className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-sm uppercase text-amber-950">PHIẾU MỤC TIÊU ĐÃ GỬI CHO GVCN — CHẾ ĐỘ CHỈ XEM</h3>
+                      <p className="text-xs text-amber-800 font-medium">
+                        Phiếu mục tiêu năm học đã được gửi chính thức ngày <strong className="text-amber-950 font-black">{submittedAt}</strong>. Nếu cần điều chỉnh, em hãy bấm nút <strong>"Yêu Cầu Mở Phiếu"</strong> bên cạnh để gửi đề xuất cho GVCN.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRequestModal(true)}
+                    className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-2xl font-black text-xs shrink-0 shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Yêu Cầu Mở Phiếu Để Hiệu Chỉnh</span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           {isK1 ? (
@@ -559,6 +715,7 @@ export default function StudentGoalPortalPage() {
               initialGoals={k1GoalsList}
               initialCommitment={studentCommitment}
               isSubmitted={isSubmitted}
+              isUnlockedForEdit={isUnlockedForEdit}
               onSave={handleSaveK1Goals}
             />
           ) : (
@@ -825,27 +982,66 @@ export default function StudentGoalPortalPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={handleSaveGoals}
-                  disabled={saving || isSubmitted}
-                  className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2 ${
-                    isSubmitted
-                      ? "bg-slate-400 text-slate-100 cursor-not-allowed shadow-none"
-                      : "bg-[#003B3A] hover:bg-[#002D2C] text-white shadow-teal-950/20 hover:scale-105 active:scale-95"
-                  }`}
-                >
-                  {isSubmitted ? (
+                <div className="flex flex-wrap items-center gap-3">
+                  {!canEdit ? (
                     <>
-                      <Lock className="w-4 h-4 text-slate-200" />
-                      <span>ĐÃ GỬI CHO GVCN (KHÔNG THỂ SỬA)</span>
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-xs bg-slate-400 text-slate-100 cursor-not-allowed shadow-none flex items-center justify-center gap-2"
+                      >
+                        <Lock className="w-4 h-4 text-slate-200" />
+                        <span>ĐÃ GỬI CHO GVCN (KHÔNG THỂ SỬA)</span>
+                      </button>
+
+                      {!isPendingAdjustment ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowRequestModal(true)}
+                          className="w-full sm:w-auto px-6 py-3.5 rounded-2xl font-black text-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          <span>YÊU CẦU MỞ PHIẾU ĐỂ HIỆU CHỈNH</span>
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="px-4 py-3 rounded-2xl font-black text-xs bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-700 animate-spin" />
+                            <span>ĐANG CHỜ GVCN PHÊ DUYỆT MỞ PHIẾU</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleCancelAdjustmentRequest}
+                            disabled={submittingRequest}
+                            className="px-4 py-3 rounded-2xl font-bold text-xs bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 transition-all cursor-pointer"
+                          >
+                            Hủy
+                          </button>
+                        </div>
+                      )}
                     </>
+                  ) : isUnlockedForEdit ? (
+                    <button
+                      type="button"
+                      onClick={handleSaveGoals}
+                      disabled={saving}
+                      className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-xs bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white shadow-lg shadow-emerald-950/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <Send className="w-4 h-4 text-emerald-200 animate-bounce" />
+                      <span>{saving ? "Đang lưu..." : "LƯU & GỬI LẠI PHIẾU CHO GVCN 🚀"}</span>
+                    </button>
                   ) : (
-                    <>
+                    <button
+                      type="button"
+                      onClick={handleSaveGoals}
+                      disabled={saving}
+                      className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-xs bg-[#003B3A] hover:bg-[#002D2C] text-white shadow-teal-950/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
                       <Send className="w-4 h-4 text-teal-300" />
                       <span>{saving ? "Đang gửi..." : "LƯU & GỬI PHIẾU MỤC TIÊU CHO GVCN"}</span>
-                    </>
+                    </button>
                   )}
-                </button>
+                </div>
               </div>
             </div>
           )}

@@ -19,6 +19,7 @@ interface K1GoalFormProps {
   initialCommitment?: string
   initialFingerprint?: boolean
   isSubmitted?: boolean
+  isUnlockedForEdit?: boolean
   submittedAt?: string | null
   onSave: (data: { goals: K1GoalData[]; studentCommitment: string; fingerprintStamped: boolean }) => Promise<void>
   saving?: boolean
@@ -145,10 +146,12 @@ export function K1GoalForm({
   initialCommitment = "",
   initialFingerprint = false,
   isSubmitted = false,
+  isUnlockedForEdit = false,
   submittedAt = null,
   onSave,
   saving = false
 }: K1GoalFormProps) {
+  const canEdit = !isSubmitted || isUnlockedForEdit;
 
   const [selectedTargets, setSelectedTargets] = useState<Record<string, string[]>>({
     HOC_TAP: [],
@@ -659,12 +662,12 @@ export function K1GoalForm({
           </label>
           <textarea
             rows={3}
-            readOnly={isSubmitted}
+            readOnly={!canEdit}
             value={studentCommitment}
-            onChange={(e) => !isSubmitted && setStudentCommitment(e.target.value)}
+            onChange={(e) => canEdit && setStudentCommitment(e.target.value)}
             placeholder="Em cam kết sẽ luôn cố gắng học tập tốt, vâng lời Thầy Cô và Ba Mẹ..."
             className={`w-full p-4 rounded-2xl border-2 text-xs sm:text-sm font-extrabold focus:outline-none transition-all ${
-              isSubmitted 
+              !canEdit 
                 ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" 
                 : "border-amber-300 focus:border-amber-500 bg-amber-50/30 focus:bg-white shadow-inner"
             }`}
@@ -679,10 +682,10 @@ export function K1GoalForm({
             
             <button
               type="button"
-              disabled={isSubmitted}
+              disabled={!canEdit}
               onClick={handleFingerprintTap}
               className={`w-24 h-24 rounded-3xl flex flex-col items-center justify-center transition-all duration-300 shadow-xl shrink-0 cursor-pointer active:scale-90 ${
-                isSubmitted
+                !canEdit
                   ? "bg-slate-200 text-slate-500 cursor-not-allowed border-2 border-slate-300"
                   : fingerprintStamped
                   ? "bg-gradient-to-br from-rose-500 via-red-600 to-rose-700 text-white shadow-rose-300 scale-105 ring-4 ring-rose-300"
@@ -717,17 +720,24 @@ export function K1GoalForm({
             <button
               type="button"
               onClick={handleSubmit}
-              disabled={saving || isSubmitted}
+              disabled={saving || !canEdit}
               className={`w-full h-full min-h-[70px] px-6 py-4 rounded-3xl font-black text-sm shadow-2xl transition-all duration-300 flex items-center justify-center gap-3 ${
-                isSubmitted
+                !canEdit
                   ? "bg-slate-400 text-white cursor-not-allowed shadow-none"
+                  : isUnlockedForEdit
+                  ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-teal-700 hover:to-teal-800 text-white shadow-emerald-950/30 hover:scale-[1.03] active:scale-95 cursor-pointer"
                   : "bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-teal-700 hover:to-teal-800 text-white shadow-teal-950/30 hover:scale-[1.03] active:scale-95 cursor-pointer"
               }`}
             >
-              {isSubmitted ? (
+              {!canEdit ? (
                 <>
                   <Lock className="w-5 h-5 text-slate-200" />
                   <span>PHIẾU ĐÃ GỬI CHO GVCN (ĐÃ KHÓA)</span>
+                </>
+              ) : isUnlockedForEdit ? (
+                <>
+                  <Send className="w-6 h-6 text-emerald-200 animate-bounce" />
+                  <span>{saving ? "Đang lưu..." : "LƯU & GỬI LẠI PHIẾU CHO GVCN 🚀"}</span>
                 </>
               ) : (
                 <>
