@@ -22,9 +22,10 @@ export async function GET(request: Request) {
     let targetYearId = academicYearId
     if (!targetYearId) {
       const activeYear = await prisma.academicYear.findFirst({
-        where: { status: "ACTIVE" },
-        orderBy: { startDate: "desc" }
-      })
+        where: { status: "ACTIVE" }
+      }) || await prisma.academicYear.findFirst({
+        where: { name: { contains: "2026" } }
+      }) || await prisma.academicYear.findFirst()
       targetYearId = activeYear?.id || ""
     }
 
