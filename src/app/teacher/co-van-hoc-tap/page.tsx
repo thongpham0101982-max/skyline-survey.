@@ -18,7 +18,12 @@ import {
 } from "@/lib/advisory/advisoryWeights"
 
 export default function TeacherAdvisoryPage() {
-  const [academicYearId, setAcademicYearId] = useState("")
+  const [academicYearId, setAcademicYearId] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("selectedAcademicYear") || ""
+    }
+    return ""
+  })
   const [classes, setClasses] = useState<any[]>([])
   const [selectedClassId, setSelectedClassId] = useState("")
   const [students, setStudents] = useState<any[]>([]); const [submittedStudentCodes, setSubmittedStudentCodes] = useState<string[]>([]); const [submissionFilter, setSubmissionFilter] = useState<"ALL" | "SUBMITTED" | "NOT_SUBMITTED">("ALL")
@@ -251,31 +256,65 @@ export default function TeacherAdvisoryPage() {
     ]
   }
 
+  // Listen for academic year change from Header
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedYear = localStorage.getItem("selectedAcademicYear") || ""
-      setAcademicYearId(storedYear)
+    const handleYearChange = () => {
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("selectedAcademicYear") || ""
+        if (stored && stored !== academicYearId) {
+          setAcademicYearId(stored)
+        }
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
+    return () => window.removeEventListener("academicYearChanged", handleYearChange)
+  }, [academicYearId])
+
+  // Load classes strictly filtered by selected academic year and GVCN assignment
+  useEffect(() => {
+    let year = academicYearId
+    if (!year && typeof window !== "undefined") {
+      year = localStorage.getItem("selectedAcademicYear") || ""
+      if (year) setAcademicYearId(year)
     }
 
-    fetch("/api/classes?isGVCN=true&_v=" + Date.now(), { cache: "no-store" })
+    setLoading(true)
+    const url = `/api/classes?isGVCN=true${year ? `&academicYearId=${year}` : ""}&_v=${Date.now()}`
+    fetch(url, { cache: "no-store" })
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setClasses(data)
-          setSelectedClassId(data[0].id)
+        if (Array.isArray(data)) {
+          const validClasses = year ? data.filter((c: any) => !c.academicYearId || c.academicYearId === year) : data
+          setClasses(validClasses)
+          if (validClasses.length > 0) {
+            setSelectedClassId(prev => validClasses.some((c: any) => c.id === prev) ? prev : validClasses[0].id)
+          } else {
+            setSelectedClassId("")
+            setStudents([])
+            setSelectedStudentId("")
+          }
         }
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [academicYearId])
 
   // Auto-fetch students when class changes
   useEffect(() => {
-    if (!selectedClassId) return
+    if (!selectedClassId) {
+      setStudents([])
+      setSelectedStudentId("")
+      setSubmittedStudentCodes([])
+      setHelpRequests([])
+      setConsultations([])
+      setUnlocksList([])
+      setClassTermEvaluations([])
+      return
+    }
     const url = "/api/students/search?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "")
     
-        // Fetch class submission status
-    fetch("/api/advisory/goals?classId=" + selectedClassId + "&_t=" + Date.now(), { cache: "no-store" })
+    // Fetch class submission status
+    fetch("/api/advisory/goals?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "") + "&_t=" + Date.now(), { cache: "no-store" })
       .then(r => r.json())
       .then(data => {
         if (data && Array.isArray(data.submittedStudentCodes)) {
@@ -684,9 +723,13 @@ export default function TeacherAdvisoryPage() {
               onChange={(e) => setSelectedClassId(e.target.value)}
               className="px-3.5 py-1.5 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
             >
-              {classes.map(c => (
-                <option key={c.id} value={c.id} className="text-slate-800">Lớp: {c.className}</option>
-              ))}
+              {classes.length === 0 ? (
+                <option value="" disabled className="text-slate-800">Không có lớp CN ({academicYearId ? "năm đang chọn" : "năm hiện hành"})</option>
+              ) : (
+                classes.map(c => (
+                  <option key={c.id} value={c.id} className="text-slate-800">Lớp: {c.className}</option>
+                ))
+              )}
             </select>
 
             <span className="text-xs font-bold text-teal-100 ml-2">Chọn Học Sinh:</span>
@@ -710,6 +753,16 @@ export default function TeacherAdvisoryPage() {
             Theo dõi tiến độ mục tiêu cá nhân từng học sinh (Khối {selectedClass?.grade || ""}), nhật ký tham vấn và Đánh giá kỳ theo Rubric.
           </p>
         </div>
+
+        {/* Empty classes warning notice */}
+        {!loading && classes.length === 0 && (
+          <div className="bg-amber-500/20 border border-amber-300/40 rounded-2xl p-4 text-xs font-semibold text-amber-100 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-300 shrink-0" />
+            <span>
+              Thầy/Cô chưa có phân công làm Giáo viên Chủ nhiệm (GVCN) trong năm học này. Vui lòng chọn năm học khác trên thanh tiêu đề hoặc liên hệ Quản trị viên.
+            </span>
+          </div>
+        )}
 
         {/* Feature Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/15">

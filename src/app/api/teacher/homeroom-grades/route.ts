@@ -101,9 +101,7 @@ export async function GET(request: Request) {
         studentCode: true,
         studentName: true,
         gender: true,
-        dateOfBirth: true,
-        phone: true,
-        email: true
+        dateOfBirth: true
       }
     })
 

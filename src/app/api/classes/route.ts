@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { getDefaultAcademicYear } from "@/lib/academicYear";
 
 export const dynamic = "force-dynamic";
 
@@ -12,10 +13,18 @@ export async function GET(req: Request) {
     const isGVCNOnly = searchParams.get('isGVCN') === 'true';
     const scope = searchParams.get('scope'); // 'my_teaching_classes' | 'all'
 
-    let activeYearId = academicYearId;
+    // Cookie fallback if academicYearId not in query params
+    let cookieYearId: string | undefined;
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      cookieYearId = cookieStore.get('selectedAcademicYear')?.value;
+    } catch {}
+
+    let activeYearId = academicYearId || cookieYearId;
     if (!activeYearId || activeYearId === 'all') {
-      const activeYear = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } });
-      activeYearId = activeYear?.id;
+      const defaultYear = await getDefaultAcademicYear(prisma);
+      activeYearId = defaultYear?.id;
     }
 
     const whereCondition: any = {};
@@ -25,9 +34,24 @@ export async function GET(req: Request) {
 
     // Teacher specific classes query (GVCN + GVBM)
     if (session && session.user && (isGVCNOnly || scope === 'my_teaching_classes')) {
-      const teacher = await prisma.teacher.findUnique({
-        where: { userId: session.user.id }
-      });
+      let teacher = null;
+      if (session.user.id) {
+        teacher = await prisma.teacher.findUnique({
+          where: { userId: session.user.id }
+        }).catch(() => null);
+      }
+
+      if (!teacher && session.user.email) {
+        teacher = await prisma.teacher.findFirst({
+          where: {
+            OR: [
+              { email: session.user.email },
+              { teacherCode: session.user.email },
+              { teacherCode: session.user.email.split('@')[0] }
+            ]
+          }
+        }).catch(() => null);
+      }
 
       if (teacher) {
         if (isGVCNOnly) {
@@ -37,6 +61,8 @@ export async function GET(req: Request) {
               OR: [
                 { homeroomTeacherId: teacher.id },
                 { homeroomTeacherId: { contains: teacher.id } },
+                { homeroomTeacherId: teacher.teacherCode },
+                { homeroomTeacherId: { contains: teacher.teacherCode } },
                 { teachers: { some: { teacherId: teacher.id, roleInClass: "GVCN" } } }
               ]
             },
@@ -67,6 +93,8 @@ export async function GET(req: Request) {
               OR: [
                 { homeroomTeacherId: teacher.id },
                 { homeroomTeacherId: { contains: teacher.id } },
+                { homeroomTeacherId: teacher.teacherCode },
+                { homeroomTeacherId: { contains: teacher.teacherCode } },
                 { teachers: { some: { teacherId: teacher.id, roleInClass: "GVCN" } } }
               ]
             },
@@ -124,6 +152,46 @@ export async function GET(req: Request) {
 
         return NextResponse.json(Array.from(classMap.values()));
       }
+
+      // If user is Admin / Previewing user and isGVCNOnly was requested:
+      if (isGVCNOnly) {
+        const homeroomClasses = await prisma.class.findMany({
+          where: {
+            ...whereCondition,
+            OR: [
+              { homeroomTeacherId: { not: null } },
+              { teachers: { some: { roleInClass: "GVCN" } } }
+            ]
+          },
+          include: {
+            campus: true,
+            academicYear: true,
+            teachers: {
+              where: { roleInClass: "GVCN" },
+              include: { teacher: { select: { id: true, teacherName: true, email: true } } }
+            },
+            _count: { select: { students: true } }
+          },
+          orderBy: [{ level: 'asc' }, { grade: 'asc' }, { className: 'asc' }]
+        });
+
+        const allTeachers = await prisma.teacher.findMany({
+          select: { id: true, teacherName: true, email: true }
+        });
+        const teacherMap = new Map(allTeachers.map(t => [t.id, t]));
+
+        return NextResponse.json(homeroomClasses.map(c => {
+          const gvcnFromAssignment = (c.teachers || []).find(t => t.roleInClass === 'GVCN')?.teacher;
+          const gvcnFromId = c.homeroomTeacherId ? teacherMap.get(c.homeroomTeacherId) : null;
+          const homeroomTeacher = gvcnFromAssignment || gvcnFromId || (c.homeroomTeacherId ? { id: c.homeroomTeacherId, teacherName: 'GVCN', email: '' } : null);
+
+          return {
+            ...c,
+            isHomeroom: true,
+            homeroomTeacher
+          };
+        }));
+      }
     }
 
     // Default general query (for Admin, Teacher Wizard or system dropdowns)
@@ -162,8 +230,8 @@ export async function GET(req: Request) {
       ]
     });
 
-    // Fallback: If filtered classes is empty, query all classes across all years
-    if (classes.length === 0) {
+    // Fallback: ONLY when no specific academic year filter was supplied:
+    if (classes.length === 0 && (!activeYearId || activeYearId === 'all')) {
       classes = await prisma.class.findMany({
         include: {
           campus: true,

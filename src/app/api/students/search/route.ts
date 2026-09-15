@@ -15,6 +15,9 @@ export async function GET(req: Request) {
 
     if (classId) {
       where.classId = classId;
+      if (academicYearId) {
+        where.academicYearId = academicYearId;
+      }
     } else if (grade) {
       where.class = { grade };
       if (academicYearId) {
