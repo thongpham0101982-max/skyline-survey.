@@ -143,15 +143,34 @@ export async function GET(request: Request) {
         || generalConfigs[0] || null
     }
 
-    // Get students in this class
+    // Get students in this class with dateOfBirth
     const students = await prisma.student.findMany({
       where: {
         classId,
         status: "ACTIVE"
       },
       orderBy: { studentName: "asc" },
-      select: { id: true, studentCode: true, studentName: true, gender: true }
+      select: { id: true, studentCode: true, studentName: true, gender: true, dateOfBirth: true }
     })
+
+    // Get teaching assignment to know the teacher
+    const assignment = await prisma.teachingAssignment.findFirst({
+      where: {
+        classId,
+        subjectId,
+        academicYearId: targetAcademicYearId
+      },
+      include: { teacher: true }
+    })
+
+    let assignedTeacher = assignment?.teacher?.teacherName || ""
+    if (!assignedTeacher) {
+      const clsWithTeacher = await prisma.class.findUnique({
+        where: { id: classId },
+        include: { homeroomTeacher: true }
+      })
+      assignedTeacher = clsWithTeacher?.homeroomTeacher?.teacherName || "Chưa phân công"
+    }
 
     // Get existing grade entries
     const entries = await prisma.subjectGradeEntry.findMany({
@@ -167,7 +186,8 @@ export async function GET(request: Request) {
       success: true,
       config,
       students,
-      entries
+      entries,
+      assignedTeacher
     })
 
   } catch (error: any) {

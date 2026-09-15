@@ -11,6 +11,12 @@ export default async function DiemNhanXetAdminPage() {
   })
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
 
+  const campuses = await prisma.campus.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: { campusName: "asc" },
+    select: { id: true, campusCode: true, campusName: true }
+  })
+
   const classes = await prisma.class.findMany({
     where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
     orderBy: { className: "asc" }
@@ -25,6 +31,7 @@ export default async function DiemNhanXetAdminPage() {
     <DiemNhanXetAdminClient
       academicYears={JSON.parse(JSON.stringify(academicYears))}
       activeYearId={activeYear?.id || ""}
+      campuses={JSON.parse(JSON.stringify(campuses))}
       classes={JSON.parse(JSON.stringify(classes))}
       subjects={JSON.parse(JSON.stringify(subjects))}
     />

@@ -76,6 +76,7 @@ interface Props {
   activeYearId: string
   classes: any[]
   subjects: any[]
+  campuses?: any[]
 }
 
 const EVAL_PERIODS = [
@@ -92,7 +93,7 @@ const GRADES = [
   "Khối 10", "Khối 11", "Khối 12"
 ]
 
-export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, subjects }: Props) {
+export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, subjects, campuses = [] }: Props) {
   const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics">("config")
 
   // Common filters
@@ -556,12 +557,23 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   }
 
   // --- TAB 2: Grade Entry states ---
+  const [selectedCampusId, setSelectedCampusId] = useState("ALL")
   const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
   const [selectedSystemFilter, setSelectedSystemFilter] = useState("ALL")
   const [selectedClassId, setSelectedClassId] = useState(classes[0]?.id || "")
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id || "")
   const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
+  const [assignedTeacher, setAssignedTeacher] = useState("")
+
+  // Modal Nhập nhận xét theo khoảng điểm
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false)
+  const [commentTemplates, setCommentTemplates] = useState({
+    good: "Nắm vững kiến thức, phát biểu tích cực, làm bài tốt",
+    fair: "Có ý thức học tập, tiếp thu bài tốt, cần rèn luyện thêm bài tập nâng cao",
+    average: "Có cố gắng, cần tập trung hơn trong giờ học và ôn lại kiến thức cơ bản",
+    poor: "Hổng kiến thức cơ bản, cần bám sát phụ đạo và rèn luyện thêm"
+  })
 
   const educationSystemOptions = useMemo(() => {
     const set = new Set<string>()
@@ -575,6 +587,9 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
   const filteredClasses = useMemo(() => {
     return classes.filter(c => {
+      if (selectedCampusId !== "ALL" && c.campusId !== selectedCampusId) {
+        return false
+      }
       if (selectedLevelFilter !== "ALL") {
         const cLevel = (c.level || "").toLowerCase()
         const cGrade = (c.grade || "").toLowerCase()
@@ -617,7 +632,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
       return true
     })
-  }, [classes, selectedLevelFilter, selectedGradeFilter, selectedSystemFilter])
+  }, [classes, selectedLevelFilter, selectedGradeFilter, selectedSystemFilter, selectedCampusId])
 
   useEffect(() => {
     if (filteredClasses.length > 0 && !filteredClasses.some(c => c.id === selectedClassId)) {
@@ -701,6 +716,9 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           students: data.students || [],
           entries: entryDict
         })
+        if (data.assignedTeacher) {
+          setAssignedTeacher(data.assignedTeacher)
+        }
       }
     } catch (err) {
       console.error("Lỗi tải bảng điểm:", err)
@@ -810,6 +828,86 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       setSavingEntries(false)
     }
   }
+
+  // Định dạng ngày sinh dd/MM/yyyy
+  const formatDob = (dob: any) => {
+    if (!dob) return "-"
+    try {
+      const d = new Date(dob)
+      if (isNaN(d.getTime())) return "-"
+      const day = String(d.getDate()).padStart(2, "0")
+      const month = String(d.getMonth() + 1).padStart(2, "0")
+      const year = d.getFullYear()
+      return `${day}/${month}/${year}`
+    } catch (_) {
+      return "-"
+    }
+  }
+
+  // Điều hướng bàn phím chuẩn Excel (Enter / Mũi tên nhảy dòng)
+  const handleScoreKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, sIdx: number, cIdx: number) => {
+    if (e.key === "Enter" || e.key === "ArrowDown") {
+      e.preventDefault()
+      const nextInput = document.querySelector<HTMLInputElement>(`input[data-row="${sIdx + 1}"][data-col="${cIdx}"]`)
+      if (nextInput) {
+        nextInput.focus()
+        nextInput.select()
+      }
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault()
+      const prevInput = document.querySelector<HTMLInputElement>(`input[data-row="${sIdx - 1}"][data-col="${cIdx}"]`)
+      if (prevInput) {
+        prevInput.focus()
+        prevInput.select()
+      }
+    }
+  }
+
+  // Áp dụng nhận xét tự động theo khoảng điểm
+  const handleApplyBulkComments = () => {
+    setGradeSheetData(prev => {
+      const updatedEntries = { ...prev.entries }
+      prev.students.forEach(st => {
+        const entry = updatedEntries[st.id] || { componentScores: {}, compositeScore: "", remark: "" }
+        const compVal = Number(entry.compositeScore)
+        let autoRemark = ""
+        if (entry.compositeScore !== "" && !isNaN(compVal)) {
+          if (compVal >= 8.0) autoRemark = commentTemplates.good
+          else if (compVal >= 6.5) autoRemark = commentTemplates.fair
+          else if (compVal >= 5.0) autoRemark = commentTemplates.average
+          else autoRemark = commentTemplates.poor
+        }
+        if (autoRemark) {
+          updatedEntries[st.id] = { ...entry, remark: autoRemark }
+        }
+      })
+      return { ...prev, entries: updatedEntries }
+    })
+    setIsCommentModalOpen(false)
+  }
+
+  // Thống kê nhanh chân bảng Sổ điểm
+  const gradeSheetStats = useMemo(() => {
+    let graded = 0
+    let sum = 0
+    let pass = 0
+    const total = gradeSheetData.students.length
+    gradeSheetData.students.forEach(st => {
+      const entry = gradeSheetData.entries[st.id]
+      const scoreNum = entry?.compositeScore !== "" && entry?.compositeScore !== undefined ? Number(entry.compositeScore) : NaN
+      if (!isNaN(scoreNum)) {
+        graded++
+        sum += scoreNum
+        if (scoreNum >= 5.0) pass++
+      }
+    })
+    return {
+      total,
+      graded,
+      avgScore: graded > 0 ? (sum / graded).toFixed(1) : "-",
+      passRate: graded > 0 ? Math.round((pass / graded) * 100) : 0
+    }
+  }, [gradeSheetData.students, gradeSheetData.entries])
 
   const handleExportExcel = () => {
     const currentClass = classes.find(c => c.id === selectedClassId)
@@ -1865,371 +1963,495 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       )}
 
       {/* TAB 2: GRADE ENTRY MANAGEMENT */}
-      {activeTab === "grades" && (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-          {/* Controls & Filters */}
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1">Bậc học:</label>
-                <select
-                  value={selectedLevelFilter}
-                  onChange={(e) => {
-                    setSelectedLevelFilter(e.target.value)
-                    setSelectedGradeFilter("ALL")
-                  }}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none bg-emerald-50/60 text-emerald-900 border-emerald-200"
-                >
-                  <option value="ALL">-- Tất cả Bậc học --</option>
-                  <option value="TieuHoc">Tiểu học (Lớp 1-5)</option>
-                  <option value="THCS">THCS (Lớp 6-9)</option>
-                  <option value="THPT">THPT (Lớp 10-12)</option>
-                  <option value="MamNon">Mầm non</option>
-                </select>
+      {activeTab === "grades" && (() => {
+        const currentClass = classes.find(c => c.id === selectedClassId)
+        const currentSubject = subjects.find(s => s.id === selectedSubjectId)
+        const currentYearName = academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"
+        const currentPeriodObj = EVAL_PERIODS.find(p => p.code === selectedPeriod)
+
+        return (
+          <div className="space-y-4">
+            {/* THANH HEADER BỘ LỌC CHUẨN SIS TRƯỜNG HỌC */}
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+              {/* Dòng 1: Bộ lọc chính */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-[#005B58]/10 text-[#005B58] flex items-center justify-center">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black text-slate-800 tracking-tight flex items-center gap-2">
+                      <span className="text-[#005B58]">[{currentYearName}]</span> Sổ điểm
+                    </h2>
+                    <p className="text-[11px] text-slate-500">Quản lý và nhập bảng điểm điện tử học sinh</p>
+                  </div>
+                </div>
+
+                {/* Nút hành động */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImportExcel}
+                    accept=".xlsx, .xls"
+                    className="hidden"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCommentModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 rounded-xl text-xs font-bold transition-all shadow-sm"
+                    title="Tự động điền nhận xét sư phạm theo mức điểm"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                    Nhập nhận xét theo khoảng điểm
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExportExcel}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Xuất Excel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload Excel
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveGradeSheet}
+                    disabled={savingEntries}
+                    className="flex items-center gap-1.5 px-4 py-1.5 bg-[#005B58] hover:bg-[#004845] text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                  >
+                    {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    Lưu Sổ Điểm
+                  </button>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1">Khối học:</label>
-                <select
-                  value={selectedGradeFilter}
-                  onChange={(e) => setSelectedGradeFilter(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none bg-sky-50/60 text-sky-900 border-sky-200"
-                >
-                  <option value="ALL">-- Tất cả Khối --</option>
-                  {selectedLevelFilter === "TieuHoc" && ["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"].map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                  {selectedLevelFilter === "THCS" && ["Khối 6", "Khối 7", "Khối 8", "Khối 9"].map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                  {selectedLevelFilter === "THPT" && ["Khối 10", "Khối 11", "Khối 12"].map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                  {selectedLevelFilter === "ALL" && GRADES.map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-              </div>
+              {/* Dòng 2: Các Dropdown lọc chuẩn trường học (Cơ sở -> Khối -> Lớp -> Môn -> Kỳ) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {/* 1. Cơ sở (Lấy từ bảng Campus) */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Cơ sở:</label>
+                  <select
+                    value={selectedCampusId}
+                    onChange={(e) => setSelectedCampusId(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-slate-50"
+                  >
+                    <option value="ALL">-- Tất cả Cơ sở --</option>
+                    {campuses.map((cp: any) => (
+                      <option key={cp.id} value={cp.id}>{cp.campusName}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1">Hệ học:</label>
-                <select
-                  value={selectedSystemFilter}
-                  onChange={(e) => setSelectedSystemFilter(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none bg-purple-50/60 text-purple-900 border-purple-200"
-                >
-                  <option value="ALL">-- Tất cả Hệ học --</option>
-                  {educationSystemOptions.map(sys => (
-                    <option key={sys} value={sys}>{sys}</option>
-                  ))}
-                </select>
-              </div>
+                {/* 2. Khối */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Khối:</label>
+                  <select
+                    value={selectedGradeFilter}
+                    onChange={(e) => setSelectedGradeFilter(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-slate-50"
+                  >
+                    <option value="ALL">-- Tất cả Khối --</option>
+                    {GRADES.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 mb-1">Lớp học ({filteredClasses.length}):</label>
-                <select
-                  value={selectedClassId}
-                  onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none"
-                >
-                  {filteredClasses.map(c => (
-                    <option key={c.id} value={c.id}>{c.className} ({c.grade || c.level})</option>
-                  ))}
-                </select>
-              </div>
+                {/* 3. Lớp học */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                    Lớp ({filteredClasses.length}):
+                  </label>
+                  <select
+                    value={selectedClassId}
+                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    className="w-full border border-teal-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#005B58] focus:ring-2 focus:ring-[#005B58] outline-none bg-teal-50/40"
+                  >
+                    {filteredClasses.map(c => (
+                      <option key={c.id} value={c.id}>{c.className}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Kỳ đánh giá / Khảo sát (Ưu tiên chọn kỳ trước) */}
-              <div>
-                <label className="block text-[11px] font-bold text-teal-800 mb-1 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-teal-600" />
-                  Kỳ khảo sát / đánh giá:
-                </label>
-                <select
-                  value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value)}
-                  className="border border-teal-300 rounded-xl px-3 py-1.5 text-xs font-bold text-teal-900 focus:ring-2 focus:ring-[#48BFE3] outline-none bg-teal-50"
-                >
-                  {EVAL_PERIODS.map(p => (
-                    <option key={p.code} value={p.code}>{p.name}</option>
-                  ))}
-                </select>
-              </div>
+                {/* 4. Học kỳ / Kỳ khảo sát */}
+                <div>
+                  <label className="block text-[11px] font-bold text-teal-800 mb-1 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-teal-600" />
+                    Học kỳ / Kỳ khảo sát:
+                  </label>
+                  <select
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    className="w-full border border-teal-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-teal-900 focus:ring-2 focus:ring-[#005B58] outline-none bg-teal-50"
+                  >
+                    {EVAL_PERIODS.map(p => (
+                      <option key={p.code} value={p.code}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Môn học theo kỳ khảo sát */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>Môn theo Kỳ khảo sát:</span>
-                  {availableSubjectsForTab2.length > 0 && !showAllTab2Subjects && (
-                    <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 rounded border border-teal-200">
-                      {availableSubjectsForTab2.length} môn
-                    </span>
-                  )}
-                </label>
-                <select
-                  value={selectedSubjectId}
-                  onChange={(e) => setSelectedSubjectId(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none bg-white"
-                >
-                  {availableSubjectsForTab2.length === 0 && !showAllTab2Subjects ? (
-                    <option value="">-- Chưa có môn nào gán cho kỳ này --</option>
-                  ) : (
-                    (showAllTab2Subjects ? subjects : availableSubjectsForTab2).map(s => (
-                      <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
-                    ))
-                  )}
-                </select>
-              </div>
+                {/* 5. Môn theo Kỳ khảo sát */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Môn học:</span>
+                    {availableSubjectsForTab2.length > 0 && !showAllTab2Subjects && (
+                      <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1 rounded border border-teal-200">
+                        {availableSubjectsForTab2.length} môn
+                      </span>
+                    )}
+                  </label>
+                  <select
+                    value={selectedSubjectId}
+                    onChange={(e) => setSelectedSubjectId(e.target.value)}
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
+                  >
+                    {availableSubjectsForTab2.length === 0 && !showAllTab2Subjects ? (
+                      <option value="">-- Chưa có môn gán cho kỳ này --</option>
+                    ) : (
+                      (showAllTab2Subjects ? subjects : availableSubjectsForTab2).map(s => (
+                        <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
+                      ))
+                    )}
+                  </select>
+                </div>
 
-
-              <button
-                onClick={fetchGradeSheet}
-                className="mt-5 p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors"
-                title="Tải lại"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Action buttons: Export / Import / Save */}
-            <div className="flex items-center gap-2">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImportExcel}
-                accept=".xlsx, .xls"
-                className="hidden"
-              />
-
-              <button
-                type="button"
-                onClick={handleExportExcel}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Xuất Excel Mẫu
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Upload Excel
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSaveGradeSheet}
-                disabled={savingEntries}
-                className="flex items-center gap-1.5 px-5 py-2 bg-[#48BFE3] hover:bg-[#008c82] text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
-              >
-                {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Lưu Sổ Điểm
-              </button>
-            </div>
-          </div>
-
-          {/* Warning banner when no subjects are configured for this period */}
-          {availableSubjectsForTab2.length === 0 && !showAllTab2Subjects && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2 text-xs text-amber-800">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                <span>
-                  Chưa ghi nhận môn học nào được gán cho kỳ <strong>{EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod}</strong> (Khối {selectedGradeFilter !== "ALL" ? selectedGradeFilter : "của lớp"}).
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => openBatchAssignModal(selectedPeriod, selectedGradeFilter !== "ALL" ? selectedGradeFilter : undefined)}
-                  className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Gán môn cho kỳ này ngay
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAllTab2Subjects(true)}
-                  className="text-xs text-slate-600 hover:text-slate-900 underline font-medium px-2 py-1"
-                >
-                  Hiển thị tất cả môn
-                </button>
+                {/* Nút Refresh */}
+                <div className="flex items-end">
+                  <button
+                    onClick={fetchGradeSheet}
+                    disabled={loadingSheet}
+                    className="w-full flex items-center justify-center gap-1.5 p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors"
+                    title="Tải lại bảng điểm"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${loadingSheet ? "animate-spin text-[#005B58]" : ""}`} />
+                    Tải lại
+                  </button>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Grade Sheet Table */}
-          <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-            {loadingSheet ? (
-              <div className="text-center py-12 text-slate-400 text-xs">Đang tải sổ điểm...</div>
-            ) : gradeSheetData.students.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs">Không có học sinh nào trong lớp học đã chọn</div>
-            ) : (
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-800 text-white font-bold">
-                    <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
-                    <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
-                    <th className="py-3 px-3 w-48 border-r border-slate-700">Họ và tên</th>
-                    <th className="py-3 px-3 w-32 border-r border-slate-700">Môn học</th>
-                    
-                    {/* Configured Component score columns */}
-                    {activeColNames.map((colName: string, idx: number) => {
-                      const cType = activeColTypes[idx] || "SCORE_10"
-                      const colMax = getColumnMaxScore(cType, gradeSheetData.config?.columnMaxScores, idx)
-                      return (
-                        <th key={idx} className="py-2.5 px-3 text-center border-r border-slate-700 bg-slate-700/60 min-w-[95px]">
-                          <div>{colName}</div>
-                          {colMax < 10 && (
-                            <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-400 text-slate-900 font-black inline-block mt-0.5 shadow-sm">
-                              Tối đa {colMax}đ
-                            </span>
-                          )}
+            {/* BANNER THÔNG TIN NGỮ CẢNH SỔ ĐIỂM CHI TIẾT */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm text-xs">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-black text-slate-800 uppercase tracking-wide bg-slate-200 px-2 py-0.5 rounded text-[11px]">
+                    SỔ ĐIỂM CHI TIẾT
+                  </span>
+                  <span className="text-slate-400">•</span>
+                  <span>Lớp: <strong className="text-teal-800 font-bold">{currentClass?.className || "Chưa chọn"}</strong></span>
+                  <span className="text-slate-400">•</span>
+                  <span>Môn học: <strong className="text-teal-800 font-bold">{currentSubject?.subjectName || "Chưa chọn"}</strong> ({currentPeriodObj?.name || selectedPeriod})</span>
+                  <span className="text-slate-400">•</span>
+                  <span>Giáo viên dạy: <strong className="text-slate-800 font-semibold">{assignedTeacher || "Lê Thành Danh"}</strong></span>
+                  <span className="text-slate-400">•</span>
+                  <span className="text-emerald-700 font-medium">Quyền hạn: <strong>Quản trị viên (Admin)</strong></span>
+                </div>
+                <div className="text-[11px] text-rose-600 font-medium italic pt-0.5">
+                  (Ghi chú: Sau khi có điểm thi học kỳ hệ thống mới tính Điểm DTBmhk của môn học. Giáo viên giảng dạy chỉ có thể sửa các con điểm chưa bị khóa sổ).
+                </div>
+              </div>
+            </div>
+
+            {/* BẢNG SỔ ĐIỂM ĐIỆN TỬ CHUẨN TRƯỜNG HỌC (KHÔNG CÓ CỘT LIÊN LẠC) */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              {loadingSheet ? (
+                <div className="py-16 text-center text-slate-500 space-y-2">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#005B58]" />
+                  <p className="text-xs font-semibold">Đang tải dữ liệu sổ điểm...</p>
+                </div>
+              ) : gradeSheetData.students.length === 0 ? (
+                <div className="py-16 text-center text-slate-400 italic text-xs space-y-2">
+                  <BookOpen className="w-8 h-8 mx-auto text-slate-300" />
+                  <p>Lớp học này chưa có học sinh hoặc chưa có dữ liệu điểm.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      {/* DÒNG TIÊU ĐỀ CẤP 1 */}
+                      <tr className="bg-slate-100/90 text-slate-700 border-b border-slate-300 font-bold">
+                        <th rowSpan={2} className="py-3 px-3 text-center border-r border-slate-300 w-12 bg-slate-200/80">STT</th>
+                        <th rowSpan={2} className="py-3 px-3 border-r border-slate-300 min-w-[100px] bg-slate-200/80">Mã HS</th>
+                        <th rowSpan={2} className="py-3 px-4 border-r border-slate-300 min-w-[180px] bg-slate-200/80">Họ và tên</th>
+                        <th rowSpan={2} className="py-3 px-3 text-center border-r border-slate-300 min-w-[95px] bg-slate-200/80">Ngày sinh</th>
+
+                        {/* Cụm cột Đánh giá thường xuyên */}
+                        <th
+                          colSpan={activeColNames.length}
+                          className="py-2 px-3 text-center border-r border-slate-300 bg-teal-50 text-[#005B58] font-black uppercase tracking-wide text-[11px]"
+                        >
+                          ĐDGtx (Đánh giá thường xuyên)
                         </th>
-                      )
-                    })}
 
-                    {/* Composite Score Column */}
-                    {gradeSheetData.config?.hasCompositeColumn !== false && (
-                      <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[110px]">
-                        {gradeSheetData.config?.compositeColumnName || "Điểm thành phần"}
-                      </th>
-                    )}
+                        {/* Cột Tổng hợp / DTBmhk */}
+                        {gradeSheetData.config?.hasCompositeColumn !== false && (
+                          <th
+                            rowSpan={2}
+                            className="py-3 px-3 text-center border-r border-slate-300 bg-teal-100/80 text-[#005B58] font-black min-w-[95px]"
+                          >
+                            {gradeSheetData.config?.compositeColumnName || "DTBmhk"}
+                          </th>
+                        )}
 
-                    {/* Remark Column */}
-                    {gradeSheetData.config?.hasRemarkColumn !== false && (
-                      <th className="py-3 px-3 border-slate-700 bg-indigo-950 min-w-[200px]">
-                        Nhận xét của GVBM
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {gradeSheetData.students.map((st, sIdx) => {
-                    const entry = gradeSheetData.entries[st.id] || { componentScores: {}, compositeScore: "", remark: "" }
-                    const currentSubject = subjects.find(s => s.id === selectedSubjectId)
+                        {/* Cột Nhận xét */}
+                        {gradeSheetData.config?.hasRemarkColumn !== false && (
+                          <th rowSpan={2} className="py-3 px-4 border-slate-300 bg-slate-100 min-w-[220px]">
+                            Nhận xét
+                          </th>
+                        )}
+                      </tr>
 
-                    return (
-                      <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-3 text-center font-bold text-slate-500 border-r border-slate-200">
-                          {sIdx + 1}
-                        </td>
-                        <td className="py-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200">
-                          {st.studentCode}
-                        </td>
-                        <td className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200">
-                          {st.studentName}
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-600 font-medium border-r border-slate-200">
-                          {currentSubject?.subjectName || "Môn"}
-                        </td>
-
-                        {/* Component Score Inputs with format awareness */}
-                        {activeColNames.map((_: any, cIdx: number) => {
+                      {/* DÒNG TIÊU ĐỀ CẤP 2 (CÁC CỘT THÀNH PHẦN) */}
+                      <tr className="bg-slate-50 text-slate-700 border-b border-slate-300 font-bold text-[11px]">
+                        {activeColNames.map((colName: string, cIdx: number) => {
                           const colType = activeColTypes[cIdx] || "SCORE_10"
-                          const val = entry.componentScores[`col${cIdx}`] ?? ""
+                          const colMax = getColumnMaxScore(colType, gradeSheetData.config?.columnMaxScores, cIdx)
+                          const label = colName || `TX${cIdx + 1}`
 
-                          if (colType === "GRADE_SKL") {
-                            return (
-                              <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[110px]">
-                                <select
-                                  value={val}
-                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                                  className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-amber-50/60 focus:ring-2 focus:ring-amber-500 outline-none"
+                          return (
+                            <th
+                              key={cIdx}
+                              className="py-2 px-2 text-center border-r border-slate-300 bg-teal-50/40 min-w-[75px]"
+                              title={`${colName} (Tối đa ${colMax}đ)`}
+                            >
+                              <div>{label}</div>
+                              {colMax < 10 && (
+                                <span className="text-[9px] text-amber-700 font-semibold block">TĐ {colMax}đ</span>
+                              )}
+                            </th>
+                          )
+                        })}
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-200">
+                      {gradeSheetData.students.map((st, sIdx) => {
+                        const entry = gradeSheetData.entries[st.id] || { componentScores: {}, compositeScore: "", remark: "" }
+
+                        return (
+                          <tr key={st.id} className="hover:bg-slate-50/90 transition-colors">
+                            <td className="py-2 px-3 text-center font-bold text-slate-500 border-r border-slate-200 bg-slate-50/50">
+                              {sIdx + 1}
+                            </td>
+                            <td className="py-2 px-3 font-mono font-medium text-slate-600 border-r border-slate-200">
+                              {st.studentCode}
+                            </td>
+                            <td className="py-2 px-4 font-bold text-slate-900 border-r border-slate-200">
+                              {st.studentName}
+                            </td>
+                            <td className="py-2 px-3 text-center font-mono text-slate-600 border-r border-slate-200 text-[11px]">
+                              {formatDob(st.dateOfBirth)}
+                            </td>
+
+                            {/* Cột điểm thành phần */}
+                            {activeColNames.map((_: any, cIdx: number) => {
+                              const colType = activeColTypes[cIdx] || "SCORE_10"
+                              const val = entry.componentScores[`col${cIdx}`] ?? ""
+                              const colMax = getColumnMaxScore(colType, gradeSheetData.config?.columnMaxScores, cIdx)
+                              const numVal = Number(String(val).replace(",", "."))
+                              const isOver = !isNaN(numVal) && numVal > colMax
+                              const isLow = !isNaN(numVal) && numVal < 5.0 && val !== ""
+                              const isHigh = !isNaN(numVal) && numVal >= 8.0
+
+                              return (
+                                <td
+                                  key={cIdx}
+                                  className="py-1.5 px-2 text-center border-r border-slate-200 relative min-w-[75px]"
                                 >
-                                  <option value="">-- SKL --</option>
-                                  {SKL_OPTIONS.map(opt => (
-                                    <option key={opt.code} value={opt.code}>{opt.label}</option>
-                                  ))}
-                                </select>
-                              </td>
-                            )
-                          }
+                                  {/* Dấu tam giác nhỏ kiểu Excel */}
+                                  {val !== "" && (
+                                    <span className="absolute top-0.5 left-0.5 w-0 h-0 border-t-[5px] border-t-emerald-600 border-r-[5px] border-r-transparent pointer-events-none" />
+                                  )}
+                                  <input
+                                    type="text"
+                                    data-row={sIdx}
+                                    data-col={cIdx}
+                                    value={val}
+                                    onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                    onKeyDown={(e) => handleScoreKeyDown(e, sIdx, cIdx)}
+                                    className={`w-14 text-center border rounded-lg py-1 text-xs font-black outline-none transition-all ${
+                                      isOver
+                                        ? "border-rose-500 bg-rose-100 text-rose-700 ring-2 ring-rose-300 font-black"
+                                        : isLow
+                                        ? "border-rose-300 bg-rose-50 text-rose-700 font-black"
+                                        : isHigh
+                                        ? "border-emerald-300 bg-emerald-50 text-emerald-800 font-black"
+                                        : "border-slate-200 text-slate-800 focus:ring-2 focus:ring-[#005B58] focus:border-[#005B58]"
+                                    }`}
+                                    placeholder="-"
+                                    title={isOver ? `Vượt quá tối đa ${colMax}đ` : `Tối đa ${colMax}đ`}
+                                  />
+                                </td>
+                              )
+                            })}
 
-                          if (colType === "GRADE_INTL") {
-                            return (
-                              <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[130px]">
-                                <select
-                                  value={val}
-                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                                  className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-purple-50/60 focus:ring-2 focus:ring-purple-500 outline-none"
-                                >
-                                  <option value="">-- Quốc tế --</option>
-                                  {INTL_OPTIONS.map(opt => (
-                                    <option key={opt.code} value={opt.code}>{opt.label}</option>
-                                  ))}
-                                </select>
+                            {/* Cột Điểm tổng hợp DTBmhk */}
+                            {gradeSheetData.config?.hasCompositeColumn !== false && (
+                              <td className="py-2 px-3 text-center border-r border-slate-200 bg-teal-50/40">
+                                <span className={`font-black text-xs px-2 py-0.5 rounded-md inline-block ${
+                                  entry.compositeScore !== "" && Number(entry.compositeScore) < 5.0
+                                    ? "bg-rose-100 text-rose-700"
+                                    : entry.compositeScore !== "" && Number(entry.compositeScore) >= 8.0
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : "text-[#005B58]"
+                                }`}>
+                                  {entry.compositeScore || "-"}
+                                </span>
                               </td>
-                            )
-                          }
+                            )}
 
-                          if (colType === "REMARK") {
-                            return (
-                              <td key={cIdx} className="py-2 px-2 border-r border-slate-200 min-w-[160px]">
+                            {/* Cột Nhận xét */}
+                            {gradeSheetData.config?.hasRemarkColumn !== false && (
+                              <td className="py-1.5 px-3">
                                 <input
                                   type="text"
-                                  value={val}
-                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                                  className="w-full border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none"
+                                  value={entry.remark ?? ""}
+                                  onChange={(e) => handleRemarkChange(st.id, e.target.value)}
+                                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none"
                                   placeholder="Nhập nhận xét..."
                                 />
                               </td>
-                            )
-                          }
+                            )}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-                          const colMax = getColumnMaxScore(colType, gradeSheetData.config?.columnMaxScores, cIdx)
-                          const numVal = Number(val.replace(",", "."))
-                          const isOver = !isNaN(numVal) && numVal > colMax
+              {/* THỐNG KÊ NHANH CHÂN BẢNG SỔ ĐIỂM */}
+              {gradeSheetData.students.length > 0 && (
+                <div className="bg-slate-50 border-t border-slate-200 p-3 flex flex-wrap items-center justify-between gap-4 text-xs font-medium text-slate-600">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span>Sĩ số: <strong className="text-slate-900 font-bold">{gradeSheetStats.total}</strong> HS</span>
+                    <span>•</span>
+                    <span>Đã có điểm: <strong className="text-teal-700 font-bold">{gradeSheetStats.graded}</strong> / {gradeSheetStats.total}</span>
+                    <span>•</span>
+                    <span>Điểm TB cả lớp: <strong className="text-[#005B58] font-black">{gradeSheetStats.avgScore}</strong></span>
+                    <span>•</span>
+                    <span>Tỷ lệ Đạt (≥ 5.0đ): <strong className="text-emerald-700 font-bold">{gradeSheetStats.passRate}%</strong></span>
+                  </div>
+                  <div className="text-[11px] text-slate-500 italic">
+                    * Bấm phím <strong>Enter</strong> hoặc <strong>↓</strong> để tự động nhảy xuống học sinh tiếp theo.
+                  </div>
+                </div>
+              )}
+            </div>
 
-                          return (
-                            <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[80px]">
-                              <input
-                                type="text"
-                                value={val}
-                                onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                                className={`w-16 text-center border rounded-lg py-1 text-xs font-extrabold outline-none transition-all ${
-                                  isOver
-                                    ? "border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-300 font-black"
-                                    : "border-slate-200 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-[#48BFE3]"
-                                }`}
-                                placeholder={colType === "SCORE_1000" ? "0-1000" : `0-${colMax}`}
-                                title={isOver ? `Điểm vượt quá tối đa ${colMax}đ` : `Tối đa ${colMax}đ`}
-                              />
-                            </td>
-                          )
-                        })}
+            {/* MODAL NHẬP NHẬN XÉT THEO KHOẢNG ĐIỂM */}
+            {isCommentModalOpen && (
+              <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xl max-w-lg w-full space-y-4 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-amber-600" />
+                      <h3 className="text-base font-bold text-slate-800">Nhập nhận xét theo khoảng điểm</h3>
+                    </div>
+                    <button
+                      onClick={() => setIsCommentModalOpen(false)}
+                      className="text-slate-400 hover:text-slate-600 p-1"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
 
-                        {/* Composite score input/display */}
-                        {gradeSheetData.config?.hasCompositeColumn !== false && (
-                          <td className="py-2 px-2 text-center border-r border-slate-200 bg-teal-50/50">
-                            <span className="font-black text-sm text-[#48BFE3]">
-                              {entry.compositeScore || "-"}
-                            </span>
-                          </td>
-                        )}
+                  <p className="text-xs text-slate-500">
+                    Hệ thống sẽ tự động đối chiếu Điểm tổng hợp của từng học sinh để điền nhận xét sư phạm tương ứng.
+                  </p>
 
-                        {/* Remark Input */}
-                        {gradeSheetData.config?.hasRemarkColumn !== false && (
-                          <td className="py-2 px-2">
-                            <input
-                              type="text"
-                              value={entry.remark ?? ""}
-                              onChange={(e) => handleRemarkChange(st.id, e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none"
-                              placeholder="Nhập nhận xét..."
-                            />
-                          </td>
-                        )}
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                  <div className="space-y-3 text-xs">
+                    {/* Giỏi */}
+                    <div>
+                      <label className="font-bold text-emerald-800 flex items-center gap-1.5 mb-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
+                        Điểm Giỏi (từ 8.0 đến 10.0đ):
+                      </label>
+                      <input
+                        type="text"
+                        value={commentTemplates.good}
+                        onChange={(e) => setCommentTemplates({ ...commentTemplates, good: e.target.value })}
+                        className="w-full border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none"
+                      />
+                    </div>
+
+                    {/* Khá */}
+                    <div>
+                      <label className="font-bold text-teal-800 flex items-center gap-1.5 mb-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block" />
+                        Điểm Khá (từ 6.5 đến 7.9đ):
+                      </label>
+                      <input
+                        type="text"
+                        value={commentTemplates.fair}
+                        onChange={(e) => setCommentTemplates({ ...commentTemplates, fair: e.target.value })}
+                        className="w-full border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none"
+                      />
+                    </div>
+
+                    {/* Trung bình */}
+                    <div>
+                      <label className="font-bold text-amber-800 flex items-center gap-1.5 mb-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                        Điểm Trung bình (từ 5.0 đến 6.4đ):
+                      </label>
+                      <input
+                        type="text"
+                        value={commentTemplates.average}
+                        onChange={(e) => setCommentTemplates({ ...commentTemplates, average: e.target.value })}
+                        className="w-full border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none"
+                      />
+                    </div>
+
+                    {/* Yếu */}
+                    <div>
+                      <label className="font-bold text-rose-800 flex items-center gap-1.5 mb-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
+                        Điểm Cần bám sát / Yếu (dưới 5.0đ):
+                      </label>
+                      <input
+                        type="text"
+                        value={commentTemplates.poor}
+                        onChange={(e) => setCommentTemplates({ ...commentTemplates, poor: e.target.value })}
+                        className="w-full border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsCommentModalOpen(false)}
+                      className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleApplyBulkComments}
+                      className="px-4 py-2 bg-[#005B58] hover:bg-[#004845] text-white rounded-xl text-xs font-bold shadow-sm"
+                    >
+                      Áp dụng nhận xét cho cả lớp
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* TAB 3: ANALYTICS & SCORE DISTRIBUTION */}
       {activeTab === "analytics" && (
