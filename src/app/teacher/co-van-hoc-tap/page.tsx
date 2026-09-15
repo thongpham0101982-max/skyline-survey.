@@ -7,7 +7,7 @@ import {
   Compass, Plus, Search, Calendar, User, MessageSquare, AlertTriangle,
   CheckCircle2, Clock, Filter, Save, Trash2, Heart, Sparkles, AlertCircle,
   TrendingUp, Award, Table, BookOpen, Layers, Info, ChevronRight, ChevronLeft, FileText, X, Edit3, ShieldCheck,
-  Key, Flame, Star, CheckSquare, Target, Check
+  Key, Flame, Star, CheckSquare, Target, Check, Lock, Eye
 } from "lucide-react"
 import {
   getGradeCategoryWeights,
