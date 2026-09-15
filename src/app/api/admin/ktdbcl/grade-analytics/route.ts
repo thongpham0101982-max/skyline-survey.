@@ -39,7 +39,9 @@ export async function GET(request: Request) {
         className: true,
         grade: true,
         level: true,
-        educationSystem: true
+        educationSystem: true,
+        campusId: true,
+        homeroomTeacherId: true
       },
       orderBy: { className: "asc" }
     })
@@ -111,11 +113,13 @@ export async function GET(request: Request) {
         multiPeriodTrend: [],
         transitionMatrix: [],
         studentsTracking: [],
-        subjects: []
+        teacherDistributions: [],
+        subjects: [],
+        benchmarks: []
       })
     }
 
-    // 2. Fetch all active students in target classes
+    // 2. Fetch all students in these classes
     const students = await prisma.student.findMany({
       where: {
         classId: { in: classIds },
@@ -125,23 +129,18 @@ export async function GET(request: Request) {
         id: true,
         studentCode: true,
         studentName: true,
+        dateOfBirth: true,
         gender: true,
-        classId: true,
-        class: {
-          select: {
-            id: true,
-            className: true,
-            grade: true
-          }
-        }
+        classId: true
       },
       orderBy: { studentName: "asc" }
     })
 
+    const studentIds = students.map(s => s.id)
     const studentCodes = students.map(s => s.studentCode).filter(Boolean)
 
-    // 3. Fetch input entrance assessment (tuyển sinh) if exists
-    let entranceAssessmentMap = new Map()
+    // 3. Fetch Entrance Assessment records (InputAssessmentStudent) with commitment notes
+    const entranceAssessmentMap = new Map<string, any>()
     if (studentCodes.length > 0) {
       const entranceRecords = await prisma.inputAssessmentStudent.findMany({
         where: {
@@ -149,15 +148,101 @@ export async function GET(request: Request) {
         },
         select: {
           studentCode: true,
+          fullName: true,
           mathScore: true,
           literatureScore: true,
           writtenEnglishScore: true,
-          oralEnglishScore: true
+          oralEnglishScore: true,
+          admissionCriteria: true,
+          admissionResult: true,
+          targetType: true,
+          directorNote: true
         }
       })
       entranceRecords.forEach(r => {
-        entranceAssessmentMap.set(r.studentCode, r)
+        const cleanCode = (r.studentCode || "").trim().toUpperCase()
+        if (cleanCode) entranceAssessmentMap.set(cleanCode, r)
       })
+    }
+
+    // 3.1 Fetch StudentLearningCommitment (Cam kết học tập hiện hành)
+    const learningCommitmentMap = new Map<string, any>()
+    if (studentIds.length > 0) {
+      const commitments = await prisma.studentLearningCommitment.findMany({
+        where: {
+          studentId: { in: studentIds },
+          ...(academicYearId ? { academicYearId } : {}),
+          status: "ACTIVE"
+        }
+      })
+      commitments.forEach(c => {
+        learningCommitmentMap.set(c.studentId, c)
+      })
+    }
+
+    // 3.2 Fetch Teaching Assignments for teacher lookup
+    const teachingAssignments = await prisma.teachingAssignment.findMany({
+      where: {
+        classId: { in: classIds },
+        ...(academicYearId ? { academicYearId } : {})
+      },
+      include: {
+        teacher: true,
+        subject: true
+      }
+    })
+    const taMap = new Map<string, any>()
+    teachingAssignments.forEach(ta => {
+      taMap.set(`${ta.classId}_${ta.subjectId}`, ta)
+    })
+
+    // 3.3 Fetch homeroom teachers
+    const homeroomIds = Array.from(new Set(filteredClasses.map(c => c.homeroomTeacherId).filter(Boolean)))
+    const homeroomTeachers = homeroomIds.length > 0
+      ? await prisma.teacher.findMany({
+          where: { id: { in: homeroomIds } },
+          select: { id: true, teacherName: true, teacherCode: true }
+        })
+      : []
+    const homeroomMap = new Map<string, any>()
+    homeroomTeachers.forEach(t => homeroomMap.set(t.id, t))
+
+    // 3.4 Fetch SubjectBenchmarkConfig for academicYearId
+    const benchmarkConfigs = await prisma.subjectBenchmarkConfig.findMany({
+      where: {
+        academicYearId
+      }
+    })
+
+    // Benchmark resolver helper: Priority: (subject + grade + period) -> (subject + grade) -> level -> default (7.0 for Tiểu học, 6.0 for Trung học)
+    const resolveBenchmark = (level: string, grade: string, subId: string, period: string): number => {
+      const cleanLevel = (level || "").toLowerCase()
+      const cleanGrade = (grade || "").toLowerCase()
+      const isPrimary = cleanLevel.includes("tiểu học") || cleanLevel.includes("tieu hoc") || ["1", "2", "3", "4", "5"].some(g => cleanGrade === g || cleanGrade === `khối ${g}`)
+      const defaultScore = isPrimary ? 7.0 : 6.0
+
+      if (!benchmarkConfigs || benchmarkConfigs.length === 0) return defaultScore
+
+      // Level code key
+      const levelCode = isPrimary ? "TIEU_HOC" : (["6", "7", "8", "9"].some(g => cleanGrade === g || cleanGrade === `khối ${g}`) ? "THCS" : "THPT")
+
+      // 1. Specific subject + grade + period
+      const matchSubGradePeriod = benchmarkConfigs.find(b => b.subjectId === subId && b.grade === grade && b.evaluationPeriod === period)
+      if (matchSubGradePeriod) return matchSubGradePeriod.benchmarkScore
+
+      // 2. Specific subject + grade + ALL period
+      const matchSubGrade = benchmarkConfigs.find(b => b.subjectId === subId && b.grade === grade && b.evaluationPeriod === "ALL")
+      if (matchSubGrade) return matchSubGrade.benchmarkScore
+
+      // 3. Specific subject + level
+      const matchSubLevel = benchmarkConfigs.find(b => b.subjectId === subId && b.level === levelCode)
+      if (matchSubLevel) return matchSubLevel.benchmarkScore
+
+      // 4. Level config
+      const matchLevel = benchmarkConfigs.find(b => b.level === levelCode && (b.subjectId === "ALL" || !b.subjectId) && (b.grade === "ALL" || !b.grade))
+      if (matchLevel) return matchLevel.benchmarkScore
+
+      return defaultScore
     }
 
     // 4. Fetch grade entries
@@ -196,18 +281,16 @@ export async function GET(request: Request) {
     })
 
     // 5. Distinct subjects strictly belonging to the Survey Periods (currentPeriod & baselinePeriod)
-    // 5.1 Query SubjectGradeConfig for target periods
     const surveyConfigs = await prisma.subjectGradeConfig.findMany({
       where: {
         academicYearId,
-        evaluationPeriod: { in: [currentPeriod, baselinePeriod] }
+        evaluationPeriod: { in: [currentPeriod, baselinePeriod, "ALL"] }
       },
       include: { subject: true }
     })
 
     const subjectMap = new Map<string, { id: string; name: string; code: string }>()
 
-    // Add subjects configured for currentPeriod or baselinePeriod
     surveyConfigs.forEach(cfg => {
       if (cfg.subject) {
         if (gradeFilter === "ALL" || cfg.grade === gradeFilter || cfg.grade === "ALL") {
@@ -220,7 +303,6 @@ export async function GET(request: Request) {
       }
     })
 
-    // Also include subjects that have actual score entries in currentPeriod or baselinePeriod
     allEntries.forEach(e => {
       if (e.subject && (e.evaluationPeriod === currentPeriod || e.evaluationPeriod === baselinePeriod)) {
         subjectMap.set(e.subject.id, {
@@ -231,7 +313,6 @@ export async function GET(request: Request) {
       }
     })
 
-    // If a specific subjectId was selected by user, include it
     if (subjectId && subjectId !== "ALL" && !subjectMap.has(subjectId)) {
       const sb = await prisma.subject.findUnique({ where: { id: subjectId } })
       if (sb) {
@@ -239,339 +320,260 @@ export async function GET(request: Request) {
       }
     }
 
-    // Helpers to classify bucket
-    const getScoreBucket = (score: number | null): string => {
-      if (score === null || score === undefined || isNaN(score)) return "CHUA_CO"
-      if (score < 5.0) return "UNDER_5"
-      if (score < 6.5) return "FROM_5_TO_65"
-      if (score < 8.0) return "FROM_65_TO_8"
-      return "FROM_8_TO_10"
-    }
+    const availableSubjectList = Array.from(subjectMap.values())
 
-    const BUCKET_LABELS: Record<string, string> = {
-      UNDER_5: "Dưới 5.0 (Cần bám sát)",
-      FROM_5_TO_65: "5.0 - < 6.5 (Trung bình)",
-      FROM_65_TO_8: "6.5 - < 8.0 (Khá)",
-      FROM_8_TO_10: "8.0 - 10.0 (Giỏi/Xuất sắc)"
-    }
+    // 6. BUILD TEACHER DISTRIBUTIONS (Bảng thống kê chất lượng học sinh theo Giáo viên)
+    const teacherDistributions: any[] = []
+    const classStudentMap = new Map<string, any[]>()
+    students.forEach(st => {
+      if (!classStudentMap.has(st.classId)) classStudentMap.set(st.classId, [])
+      classStudentMap.get(st.classId)!.push(st)
+    })
 
-    // 6. Build Student Tracking Data
-    const studentsTracking: any[] = []
-    const allPeriods = ["KSĐN", "GK1", "CK1", "GK2", "CK2"]
-    
-    // Period average collectors
-    const periodScoresCollector: Record<string, number[]> = {
-      KSĐN: [],
-      GK1: [],
-      CK1: [],
-      GK2: [],
-      CK2: []
-    }
-    const atRiskPeriodScoresCollector: Record<string, number[]> = {
-      KSĐN: [],
-      GK1: [],
-      CK1: [],
-      GK2: [],
-      CK2: []
-    }
+    filteredClasses.forEach(cls => {
+      const classStudents = classStudentMap.get(cls.id) || []
+      const totalStudents = classStudents.length
+      const homeroom = cls.homeroomTeacherId ? homeroomMap.get(cls.homeroomTeacherId) : null
 
-    // Distribution collectors
-    const baselineBuckets: Record<string, number> = { UNDER_5: 0, FROM_5_TO_65: 0, FROM_65_TO_8: 0, FROM_8_TO_10: 0 }
-    const currentBuckets: Record<string, number> = { UNDER_5: 0, FROM_5_TO_65: 0, FROM_65_TO_8: 0, FROM_8_TO_10: 0 }
+      // Determine subjects to calculate for this class
+      let subjectsForClass = availableSubjectList
+      if (subjectId && subjectId !== "ALL") {
+        subjectsForClass = availableSubjectList.filter(s => s.id === subjectId)
+      }
 
-    // Transition Matrix: baselineBucket -> currentBucket -> count
-    const transitionMatrixCounts: Record<string, Record<string, number>> = {
-      UNDER_5: { UNDER_5: 0, FROM_5_TO_65: 0, FROM_65_TO_8: 0, FROM_8_TO_10: 0 },
-      FROM_5_TO_65: { UNDER_5: 0, FROM_5_TO_65: 0, FROM_65_TO_8: 0, FROM_8_TO_10: 0 },
-      FROM_65_TO_8: { UNDER_5: 0, FROM_5_TO_65: 0, FROM_65_TO_8: 0, FROM_8_TO_10: 0 },
-      FROM_8_TO_10: { UNDER_5: 0, FROM_5_TO_65: 0, FROM_65_TO_8: 0, FROM_8_TO_10: 0 }
-    }
+      subjectsForClass.forEach(sub => {
+        const ta = taMap.get(`${cls.id}_${sub.id}`)
+        const teacherName = ta?.teacher?.teacherName || homeroom?.teacherName || "Chưa phân công"
+        const teacherCode = ta?.teacher?.teacherCode || homeroom?.teacherCode || ""
+        const teacherId = ta?.teacher?.id || homeroom?.id || null
 
-    let totalStudentsGraded = 0
-    let totalWithBaseline = 0
-    let totalWithBoth = 0
-    let sumCurrentScore = 0
-    let sumBaselineScore = 0
-    let improvedCount = 0
-    let regressedCount = 0
-    let atRiskBaselineCount = 0
-    let atRiskResolvedCount = 0
+        // Collect scores for students in this class + subject + currentPeriod
+        let count_0_5 = 0
+        let count_5_65 = 0
+        let count_65_8 = 0
+        let count_8_10 = 0
+        let count_5_10 = 0
+        let totalScore = 0
+        let gradedCount = 0
 
-    // Iterate over students and selected subject(s)
-    const targetSubjects = subjectId && subjectId !== "ALL"
-      ? [subjectMap.get(subjectId)].filter(Boolean)
-      : Array.from(subjectMap.values())
+        const benchmark = resolveBenchmark(cls.level, cls.grade, sub.id, currentPeriod)
+        let count_passed_benchmark = 0
+        let count_below_benchmark = 0
 
-    students.forEach(student => {
-      const studentSubs = studentSubjectPeriodMap.get(student.id)
-      const entranceInfo = entranceAssessmentMap.get(student.studentCode)
+        classStudents.forEach(st => {
+          const entry = studentSubjectPeriodMap.get(st.id)?.get(sub.id)?.get(currentPeriod)
+          if (entry && entry.compositeScore !== null && entry.compositeScore !== undefined && !isNaN(Number(entry.compositeScore))) {
+            const sc = Number(entry.compositeScore)
+            gradedCount++
+            totalScore += sc
 
-      targetSubjects.forEach(sub => {
-        if (!sub) return
-        const periodsData = studentSubs?.get(sub.id)
+            if (sc < 5.0) {
+              count_0_5++
+            } else if (sc < 6.5) {
+              count_5_65++
+              count_5_10++
+            } else if (sc < 8.0) {
+              count_65_8++
+              count_5_10++
+            } else {
+              count_8_10++
+              count_5_10++
+            }
 
-        const baselineEntry = periodsData?.get(baselinePeriod)
-        const currentEntry = periodsData?.get(currentPeriod)
-
-        const baselineScore = baselineEntry?.compositeScore !== null && baselineEntry?.compositeScore !== undefined
-          ? Number(baselineEntry.compositeScore)
-          : null
-
-        const currentScore = currentEntry?.compositeScore !== null && currentEntry?.compositeScore !== undefined
-          ? Number(currentEntry.compositeScore)
-          : null
-
-        // Check entrance assessment fallback if baseline period is KSĐN and no score yet
-        let entranceFallback: number | null = null
-        if (entranceInfo) {
-          const sName = (sub.name || "").toLowerCase()
-          if (sName.includes("toán") || sName.includes("math")) {
-            entranceFallback = entranceInfo.mathScore
-          } else if (sName.includes("văn") || sName.includes("tiếng việt") || sName.includes("literature")) {
-            entranceFallback = entranceInfo.literatureScore
-          } else if (sName.includes("anh") || sName.includes("english") || sName.includes("ace")) {
-            entranceFallback = entranceInfo.writtenEnglishScore || entranceInfo.oralEnglishScore
-          }
-        }
-
-        const effectiveBaselineScore = baselineScore !== null ? baselineScore : entranceFallback
-        const isFromEntranceTest = baselineScore === null && entranceFallback !== null
-
-        // Collect period scores for trend
-        allPeriods.forEach(p => {
-          const entry = periodsData?.get(p)
-          if (entry?.compositeScore !== null && entry?.compositeScore !== undefined) {
-            periodScoresCollector[p].push(Number(entry.compositeScore))
-            if (effectiveBaselineScore !== null && effectiveBaselineScore < 6.5) {
-              atRiskPeriodScoresCollector[p].push(Number(entry.compositeScore))
+            if (sc >= benchmark) {
+              count_passed_benchmark++
+            } else {
+              count_below_benchmark++
             }
           }
         })
 
-        // Bucketing & Comparison
-        const baseBucket = getScoreBucket(effectiveBaselineScore)
-        const currBucket = getScoreBucket(currentScore)
+        // If no grades entered and user is filtering for specific subject, we still want to show row if it's assigned
+        const hasAssignment = Boolean(ta)
+        if (gradedCount > 0 || hasAssignment || (subjectId && subjectId !== "ALL")) {
+          const avgScore = gradedCount > 0 ? Math.round((totalScore / gradedCount) * 100) / 100 : null
+          const pct = (cnt: number) => gradedCount > 0 ? Math.round((cnt / gradedCount) * 100) : 0
 
-        if (baseBucket !== "CHUA_CO") {
-          baselineBuckets[baseBucket] = (baselineBuckets[baseBucket] || 0) + 1
-          totalWithBaseline++
-          sumBaselineScore += effectiveBaselineScore!
-          if (effectiveBaselineScore! < 6.5) {
-            atRiskBaselineCount++
-          }
-        }
-
-        if (currBucket !== "CHUA_CO") {
-          currentBuckets[currBucket] = (currentBuckets[currBucket] || 0) + 1
-          totalStudentsGraded++
-          sumCurrentScore += currentScore!
-        }
-
-        let delta: number | null = null
-        let statusTag = "UNGRADED"
-        let statusLabel = "Chưa đủ dữ liệu"
-        let statusColor = "slate"
-
-        if (effectiveBaselineScore !== null && currentScore !== null) {
-          totalWithBoth++
-          delta = Math.round((currentScore - effectiveBaselineScore) * 100) / 100
-
-          if (baseBucket !== "CHUA_CO" && currBucket !== "CHUA_CO") {
-            transitionMatrixCounts[baseBucket][currBucket] = (transitionMatrixCounts[baseBucket][currBucket] || 0) + 1
-          }
-
-          if (effectiveBaselineScore < 6.5 && currentScore >= 6.5) {
-            atRiskResolvedCount++
-          }
-
-          if (delta >= 1.0) {
-            improvedCount++
-            statusTag = "PROGRESS_HIGH"
-            statusLabel = "Tiến bộ vượt bậc"
-            statusColor = "emerald"
-          } else if (delta > 0) {
-            improvedCount++
-            statusTag = "PROGRESS"
-            statusLabel = "Có tiến bộ"
-            statusColor = "teal"
-          } else if (delta === 0) {
-            statusTag = "STABLE"
-            statusLabel = "Duy trì ổn định"
-            statusColor = "blue"
-          } else if (delta > -1.0) {
-            statusTag = "SLIGHT_DROP"
-            statusLabel = "Giảm nhẹ"
-            statusColor = "amber"
-          } else {
-            regressedCount++
-            statusTag = "REGRESS"
-            statusLabel = "Cảnh báo sa sút"
-            statusColor = "rose"
-          }
-
-          // Special highlight for at-risk cases
-          if (effectiveBaselineScore < 5.0 && currentScore < 5.0) {
-            statusTag = "URGENT_INTERVENTION"
-            statusLabel = "Cần phụ đạo khẩn cấp"
-            statusColor = "rose"
-          } else if (effectiveBaselineScore < 6.5 && statusTag !== "PROGRESS_HIGH" && statusTag !== "PROGRESS") {
-            statusTag = "AT_RISK"
-            statusLabel = "Đầu vào yếu - Cần bám sát"
-            statusColor = "amber"
-          }
-        } else if (effectiveBaselineScore !== null && effectiveBaselineScore < 6.5) {
-          statusTag = "AT_RISK_NO_CURRENT"
-          statusLabel = "Đầu vào cần theo dõi"
-          statusColor = "amber"
-        }
-
-        // Build history by period
-        const periodHistory: Record<string, number | null> = {}
-        allPeriods.forEach(p => {
-          const pe = periodsData?.get(p)
-          periodHistory[p] = pe?.compositeScore !== null && pe?.compositeScore !== undefined ? Number(pe.compositeScore) : null
-        })
-
-        // Chỉ thêm vào danh sách bám sát chi tiết khi đã chọn cả Lớp và Môn học
-        const isClassAndSubjectSelected = Boolean(classId && classId !== "ALL" && subjectId && subjectId !== "ALL")
-        if (isClassAndSubjectSelected) {
-          studentsTracking.push({
-            studentId: student.id,
-            studentCode: student.studentCode,
-            studentName: student.studentName,
-            gender: student.gender,
-            className: student.class?.className || "",
-            grade: student.class?.grade || "",
+          teacherDistributions.push({
+            classId: cls.id,
+            className: cls.className,
+            grade: cls.grade,
+            level: cls.level,
             subjectId: sub.id,
             subjectName: sub.name,
             subjectCode: sub.code,
-            baselineScore: effectiveBaselineScore,
-            isFromEntranceTest,
-            currentScore,
-            delta,
-            statusTag,
-            statusLabel,
-            statusColor,
-            remark: currentEntry?.remark || baselineEntry?.remark || "",
-            periodHistory
+            teacherId,
+            teacherName,
+            teacherCode,
+            totalStudents,
+            gradedCount,
+            avgScore,
+            benchmark,
+            // 5 dải phổ điểm
+            count_0_5,
+            pct_0_5: pct(count_0_5),
+            count_5_65,
+            pct_5_65: pct(count_5_65),
+            count_65_8,
+            pct_65_8: pct(count_65_8),
+            count_8_10,
+            pct_8_10: pct(count_8_10),
+            count_5_10,
+            pct_5_10: pct(count_5_10),
+            // Đối soát chuẩn
+            count_passed_benchmark,
+            pct_passed_benchmark: pct(count_passed_benchmark),
+            count_below_benchmark,
+            pct_below_benchmark: pct(count_below_benchmark)
           })
         }
       })
     })
 
-    // Sắp xếp học sinh theo thứ tự tên tiếng Việt
-    if (studentsTracking.length > 0) {
-      studentsTracking.sort((a, b) => (a.studentName || "").localeCompare(b.studentName || "", "vi"))
+    // 7. BUILD TRACKING STUDENTS LIST (Học sinh Dưới chuẩn & Diện Cam kết đầu vào)
+    const trackingStudents: any[] = []
+
+    students.forEach(st => {
+      const cls = filteredClasses.find(c => c.id === st.classId)
+      if (!cls) return
+
+      const cleanCode = (st.studentCode || "").trim().toUpperCase()
+      const entranceInfo = entranceAssessmentMap.get(cleanCode) || null
+      const learningCommitment = learningCommitmentMap.get(st.id) || null
+
+      // Check each relevant subject
+      availableSubjectList.forEach(sub => {
+        if (subjectId && subjectId !== "ALL" && sub.id !== subjectId) return
+
+        const currentEntry = studentSubjectPeriodMap.get(st.id)?.get(sub.id)?.get(currentPeriod)
+        const baselineEntry = studentSubjectPeriodMap.get(st.id)?.get(sub.id)?.get(baselinePeriod)
+
+        const currentScore = currentEntry?.compositeScore !== null && currentEntry?.compositeScore !== undefined ? Number(currentEntry.compositeScore) : null
+        const baselineScore = baselineEntry?.compositeScore !== null && baselineEntry?.compositeScore !== undefined ? Number(baselineEntry.compositeScore) : null
+
+        const benchmark = resolveBenchmark(cls.level, cls.grade, sub.id, currentPeriod)
+
+        const isBelowAverage = currentScore !== null && currentScore < 5.0
+        const isBelowBenchmark = currentScore !== null && currentScore < benchmark
+        const isAtRiskBaseline = baselineScore !== null && baselineScore < 6.5
+
+        // Determine if student has entrance commitment
+        const hasAdmissionCommitment = Boolean(
+          entranceInfo && (
+            (entranceInfo.admissionCriteria && entranceInfo.admissionCriteria.toLowerCase().includes("cam kết")) ||
+            (entranceInfo.admissionResult && entranceInfo.admissionResult.toLowerCase().includes("cam kết")) ||
+            (entranceInfo.targetType && entranceInfo.targetType.toLowerCase().includes("cam kết")) ||
+            entranceInfo.directorNote
+          )
+        )
+
+        const hasActiveLearningCommitment = Boolean(learningCommitment)
+
+        // Include student in tracking list if any flag applies
+        if (isBelowAverage || isBelowBenchmark || hasAdmissionCommitment || hasActiveLearningCommitment || isAtRiskBaseline) {
+          const delta = currentScore !== null && baselineScore !== null ? Math.round((currentScore - baselineScore) * 10) / 10 : null
+          const benchmarkGap = currentScore !== null ? Math.round((currentScore - benchmark) * 10) / 10 : null
+
+          const ta = taMap.get(`${cls.id}_${sub.id}`)
+          const homeroom = cls.homeroomTeacherId ? homeroomMap.get(cls.homeroomTeacherId) : null
+          const teacherName = ta?.teacher?.teacherName || homeroom?.teacherName || "Chưa phân công"
+
+          trackingStudents.push({
+            studentId: st.id,
+            studentCode: st.studentCode,
+            studentName: st.studentName,
+            dateOfBirth: st.dateOfBirth,
+            gender: st.gender,
+            classId: cls.id,
+            className: cls.className,
+            grade: cls.grade,
+            level: cls.level,
+            subjectId: sub.id,
+            subjectName: sub.name,
+            subjectCode: sub.code,
+            teacherName,
+            currentScore,
+            baselineScore,
+            delta,
+            benchmark,
+            benchmarkGap,
+            // Flags
+            isBelowAverage,
+            isBelowBenchmark,
+            isAtRiskBaseline,
+            hasAdmissionCommitment,
+            hasActiveLearningCommitment,
+            // Details
+            entranceInfo,
+            learningCommitment: learningCommitment ? {
+              content: learningCommitment.content,
+              teacherName: learningCommitment.teacherName,
+              createdAt: learningCommitment.createdAt
+            } : null
+          })
+        }
+      })
+    })
+
+    // 8. Multi-period trends and overall distribution calculation
+    const distCounts = {
+      under_5: 0,
+      from_5_to_65: 0,
+      from_65_to_8: 0,
+      from_8_to_10: 0
     }
 
-    // 7. Format Distribution Data for Recharts Bar Chart
-    const distribution = [
-      {
-        bucket: "UNDER_5",
-        name: "< 5.0 (Cần bám sát)",
-        rangeLabel: "< 5.0 đ",
-        baselineCount: baselineBuckets.UNDER_5 || 0,
-        currentCount: currentBuckets.UNDER_5 || 0,
-        baselinePercent: totalWithBaseline > 0 ? Math.round(((baselineBuckets.UNDER_5 || 0) / totalWithBaseline) * 100) : 0,
-        currentPercent: totalStudentsGraded > 0 ? Math.round(((currentBuckets.UNDER_5 || 0) / totalStudentsGraded) * 100) : 0
-      },
-      {
-        bucket: "FROM_5_TO_65",
-        name: "5.0 - < 6.5 (Trung bình)",
-        rangeLabel: "5.0 - 6.4 đ",
-        baselineCount: baselineBuckets.FROM_5_TO_65 || 0,
-        currentCount: currentBuckets.FROM_5_TO_65 || 0,
-        baselinePercent: totalWithBaseline > 0 ? Math.round(((baselineBuckets.FROM_5_TO_65 || 0) / totalWithBaseline) * 100) : 0,
-        currentPercent: totalStudentsGraded > 0 ? Math.round(((currentBuckets.FROM_5_TO_65 || 0) / totalStudentsGraded) * 100) : 0
-      },
-      {
-        bucket: "FROM_65_TO_8",
-        name: "6.5 - < 8.0 (Khá)",
-        rangeLabel: "6.5 - 7.9 đ",
-        baselineCount: baselineBuckets.FROM_65_TO_8 || 0,
-        currentCount: currentBuckets.FROM_65_TO_8 || 0,
-        baselinePercent: totalWithBaseline > 0 ? Math.round(((baselineBuckets.FROM_65_TO_8 || 0) / totalWithBaseline) * 100) : 0,
-        currentPercent: totalStudentsGraded > 0 ? Math.round(((currentBuckets.FROM_65_TO_8 || 0) / totalStudentsGraded) * 100) : 0
-      },
-      {
-        bucket: "FROM_8_TO_10",
-        name: "8.0 - 10.0 (Giỏi/XS)",
-        rangeLabel: "8.0 - 10 đ",
-        baselineCount: baselineBuckets.FROM_8_TO_10 || 0,
-        currentCount: currentBuckets.FROM_8_TO_10 || 0,
-        baselinePercent: totalWithBaseline > 0 ? Math.round(((baselineBuckets.FROM_8_TO_10 || 0) / totalWithBaseline) * 100) : 0,
-        currentPercent: totalStudentsGraded > 0 ? Math.round(((currentBuckets.FROM_8_TO_10 || 0) / totalStudentsGraded) * 100) : 0
+    let totalGraded = 0
+    let totalScoreSum = 0
+
+    allEntries.forEach(e => {
+      if (e.evaluationPeriod === currentPeriod && e.compositeScore !== null && e.compositeScore !== undefined) {
+        const sc = Number(e.compositeScore)
+        if (!isNaN(sc)) {
+          totalGraded++
+          totalScoreSum += sc
+          if (sc < 5.0) distCounts.under_5++
+          else if (sc < 6.5) distCounts.from_5_to_65++
+          else if (sc < 8.0) distCounts.from_65_to_8++
+          else distCounts.from_8_to_10++
+        }
       }
+    })
+
+    const distribution = [
+      { range: "0 - <5.0", label: "Yếu (<5.0)", count: distCounts.under_5, percent: totalGraded > 0 ? Math.round((distCounts.under_5 / totalGraded) * 100) : 0, color: "#f43f5e" },
+      { range: "5.0 - <6.5", label: "Trung bình (5.0 - <6.5)", count: distCounts.from_5_to_65, percent: totalGraded > 0 ? Math.round((distCounts.from_5_to_65 / totalGraded) * 100) : 0, color: "#f59e0b" },
+      { range: "6.5 - <8.0", label: "Khá (6.5 - <8.0)", count: distCounts.from_65_to_8, percent: totalGraded > 0 ? Math.round((distCounts.from_65_to_8 / totalGraded) * 100) : 0, color: "#0ea5e9" },
+      { range: "8.0 - 10", label: "Giỏi (8.0 - 10)", count: distCounts.from_8_to_10, percent: totalGraded > 0 ? Math.round((distCounts.from_8_to_10 / totalGraded) * 100) : 0, color: "#10b981" }
     ]
 
-    // 8. Format Multi-Period Trend Data for Line Chart
-    const multiPeriodTrend = allPeriods.map(p => {
-      const scores = periodScoresCollector[p] || []
-      const atRiskScores = atRiskPeriodScoresCollector[p] || []
-      const avg = scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100 : null
-      const atRiskAvg = atRiskScores.length > 0 ? Math.round((atRiskScores.reduce((a, b) => a + b, 0) / atRiskScores.length) * 100) / 100 : null
+    const totalExpected = students.length
+    const overallAvg = totalGraded > 0 ? Math.round((totalScoreSum / totalGraded) * 100) / 100 : 0
 
-      const periodNames: Record<string, string> = {
-        KSĐN: "Khảo sát đầu năm",
-        GK1: "Giữa kỳ 1",
-        CK1: "Cuối kỳ 1",
-        GK2: "Giữa kỳ 2",
-        CK2: "Cuối kỳ 2"
-      }
-
-      return {
-        period: p,
-        periodName: periodNames[p] || p,
-        averageScore: avg,
-        atRiskAverageScore: atRiskAvg,
-        totalGraded: scores.length
-      }
-    })
-
-    // 9. Format Transition Matrix
-    const transitionMatrix = Object.entries(transitionMatrixCounts).map(([fromBucket, toBuckets]) => {
-      return {
-        fromBucket,
-        fromLabel: BUCKET_LABELS[fromBucket] || fromBucket,
-        toUnder5: toBuckets.UNDER_5 || 0,
-        toFrom5To65: toBuckets.FROM_5_TO_65 || 0,
-        toFrom65To8: toBuckets.FROM_65_TO_8 || 0,
-        toFrom8To10: toBuckets.FROM_8_TO_10 || 0,
-        total: Object.values(toBuckets).reduce((a, b) => a + b, 0)
-      }
-    })
-
-    // 10. Summary KPIs
-    const currentAverage = totalStudentsGraded > 0 ? Math.round((sumCurrentScore / totalStudentsGraded) * 100) / 100 : 0
-    const baselineAverage = totalWithBaseline > 0 ? Math.round((sumBaselineScore / totalWithBaseline) * 100) / 100 : 0
-    const averageDelta = totalWithBoth > 0 ? Math.round((currentAverage - baselineAverage) * 100) / 100 : 0
-    const improvedPercent = totalWithBoth > 0 ? Math.round((improvedCount / totalWithBoth) * 1000) / 10 : 0
+    const summary = {
+      totalStudents: totalExpected,
+      totalGraded,
+      currentAverage: overallAvg,
+      totalBelowAverage: trackingStudents.filter(t => t.isBelowAverage).length,
+      totalBelowBenchmark: trackingStudents.filter(t => t.isBelowBenchmark).length,
+      totalAdmissionCommitment: trackingStudents.filter(t => t.hasAdmissionCommitment).length,
+      totalLearningCommitment: trackingStudents.filter(t => t.hasActiveLearningCommitment).length
+    }
 
     return NextResponse.json({
       success: true,
-      summary: {
-        totalStudents: students.length,
-        totalGraded: totalStudentsGraded,
-        totalWithBaseline,
-        totalWithBoth,
-        currentAverage,
-        baselineAverage,
-        averageDelta,
-        improvedCount,
-        improvedPercent,
-        atRiskBaselineCount,
-        atRiskResolvedCount,
-        regressedCount
-      },
+      currentPeriod,
+      baselinePeriod,
+      summary,
       distribution,
-      multiPeriodTrend,
-      transitionMatrix,
-      studentsTracking,
-      isClassAndSubjectSelected: Boolean(classId && classId !== "ALL" && subjectId && subjectId !== "ALL"),
-      subjects: Array.from(subjectMap.values())
+      teacherDistributions,
+      trackingStudents,
+      benchmarks: benchmarkConfigs,
+      subjects: availableSubjectList
     })
+
   } catch (error: any) {
-    console.error("Lỗi API grade-analytics:", error)
+    console.error("Lỗi phân tích kết quả và phổ điểm:", error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

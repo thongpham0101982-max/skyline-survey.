@@ -1776,6 +1776,22 @@ model GradeEntryReminder {
   @@index([academicYearId, evaluationPeriod, classId, subjectId])
 }
 
+
+model SubjectBenchmarkConfig {
+  id               String   @id @default(cuid())
+  academicYearId   String
+  evaluationPeriod String   @default("ALL")
+  level            String?  @default("ALL")
+  grade            String?  @default("ALL")
+  subjectId        String?  @default("ALL")
+  benchmarkScore   Float    @default(6.0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([academicYearId, evaluationPeriod, level, grade, subjectId])
+  @@index([academicYearId, evaluationPeriod, level])
+}
+
 model SubjectGradeEntry {
   id               String   @id @default(cuid())
   studentId        String

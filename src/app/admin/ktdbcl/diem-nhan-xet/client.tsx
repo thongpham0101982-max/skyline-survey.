@@ -2600,6 +2600,14 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           classes={classes}
           subjects={subjects}
           savedConfigs={savedConfigs}
+          onNavigateToGradebook={(params) => {
+            if (params.campusId) setSelectedCampusId(params.campusId)
+            if (params.grade) setSelectedGradeFilter(params.grade)
+            if (params.classId) setSelectedClassId(params.classId)
+            if (params.subjectId) setSelectedSubjectId(params.subjectId)
+            if (params.period) setSelectedPeriod(params.period)
+            setActiveTab("grades")
+          }}
         />
       )}
 
