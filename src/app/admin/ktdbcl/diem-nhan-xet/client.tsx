@@ -59,6 +59,7 @@ import {
   Square
 } from "lucide-react"
 import { GradeAnalyticsTab } from "./analytics-tab"
+import { isGradeMatching } from "./grade-utils"
 import {
   calculateCompositeScore,
   generateExcelFormula,
@@ -195,7 +196,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     const set = new Set<string>()
     savedConfigs.forEach(c => {
       const pMatch = configPeriod === "ALL" || c.evaluationPeriod === configPeriod
-      const gMatch = configGrade === "ALL" || c.grade === configGrade
+      const gMatch = isGradeMatching(c.grade, configGrade)
       if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
         set.add(c.subjectId)
       }
@@ -210,7 +211,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     setBatchPeriod(pToUse)
     setBatchGrade(gToUse)
     const existing = savedConfigs
-      .filter(c => c.evaluationPeriod === pToUse && (c.grade === gToUse || c.grade === "ALL") && c.subjectId && c.subjectId !== "ALL")
+      .filter(c => (c.evaluationPeriod === pToUse || c.evaluationPeriod === "ALL") && isGradeMatching(c.grade, gToUse) && c.subjectId && c.subjectId !== "ALL")
       .map(c => c.subjectId)
     setBatchSelectedSubjectIds(existing)
     setIsBatchAssignOpen(true)
@@ -221,7 +222,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     setBatchPeriod(newPeriod)
     setBatchGrade(newGrade)
     const existing = savedConfigs
-      .filter(c => c.evaluationPeriod === newPeriod && (c.grade === newGrade || c.grade === "ALL") && c.subjectId && c.subjectId !== "ALL")
+      .filter(c => (c.evaluationPeriod === newPeriod || c.evaluationPeriod === "ALL") && isGradeMatching(c.grade, newGrade) && c.subjectId && c.subjectId !== "ALL")
       .map(c => c.subjectId)
     setBatchSelectedSubjectIds(existing)
   }
@@ -361,7 +362,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   const filteredSavedConfigs = useMemo(() => {
     return savedConfigs.filter(cfg => {
       if (listFilterPeriod !== "ALL" && cfg.evaluationPeriod !== listFilterPeriod) return false
-      if (listFilterGrade !== "ALL" && cfg.grade !== listFilterGrade) return false
+      if (listFilterGrade !== "ALL" && !isGradeMatching(cfg.grade, listFilterGrade)) return false
       if (listSearchTerm.trim()) {
         const kw = listSearchTerm.toLowerCase().trim()
         const sName = (cfg.subject?.subjectName || "Mẫu chung tất cả môn").toLowerCase()
@@ -396,7 +397,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   useEffect(() => {
     if (!savedConfigs || savedConfigs.length === 0) return
     const match = savedConfigs.find(c => {
-      const gMatch = c.grade === configGrade
+      const gMatch = isGradeMatching(c.grade, configGrade)
       const sMatch = (c.subjectId || "ALL") === configSubjectId
       const pMatch = (c.evaluationPeriod || "ALL") === configPeriod
       return gMatch && sMatch && pMatch
@@ -641,7 +642,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   }, [filteredClasses, selectedClassId])
 
   // Available subjects for Tab 2 (Quản lý & Nhập Sổ điểm)
-  // CHỈ LẤY ĐÚNG CÁC MÔN THEO KỲ KHẢO SÁT & KHỐI
+  // LẤY ĐÚNG CÁC MÔN ĐƯỢC GÁN THEO KỲ KHẢO SÁT & KHỐI
   const availableSubjectsForTab2 = useMemo(() => {
     const currentClass = classes.find(c => c.id === selectedClassId)
     const targetGrade = currentClass?.grade || selectedGradeFilter
@@ -649,7 +650,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     const assignedSubjectIds = new Set<string>()
     savedConfigs.forEach(c => {
       const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
-      const gMatch = targetGrade === "ALL" || c.grade === targetGrade || c.grade === "ALL"
+      const gMatch = isGradeMatching(c.grade, targetGrade)
       if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
         assignedSubjectIds.add(c.subjectId)
       }
@@ -663,14 +664,18 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
   // Auto sync selectedSubjectId in Tab 2
   useEffect(() => {
-    if (activeTab === "grades" && !showAllTab2Subjects) {
+    if (activeTab === "grades") {
       if (availableSubjectsForTab2.length > 0) {
         if (!availableSubjectsForTab2.some(s => s.id === selectedSubjectId)) {
           setSelectedSubjectId(availableSubjectsForTab2[0].id)
         }
+      } else if (subjects.length > 0) {
+        if (!subjects.some(s => s.id === selectedSubjectId)) {
+          setSelectedSubjectId(subjects[0].id)
+        }
       }
     }
-  }, [activeTab, availableSubjectsForTab2, selectedSubjectId, showAllTab2Subjects])
+  }, [activeTab, availableSubjectsForTab2, selectedSubjectId, subjects])
 
   const [gradeSheetData, setGradeSheetData] = useState<{
     config: any
@@ -2103,26 +2108,66 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 </div>
 
                 {/* 5. Môn theo Kỳ khảo sát */}
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                    <span>Môn học:</span>
-                    {availableSubjectsForTab2.length > 0 && !showAllTab2Subjects && (
-                      <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1 rounded border border-teal-200">
-                        {availableSubjectsForTab2.length} môn
-                      </span>
-                    )}
-                  </label>
+                <div className="min-w-[210px] flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                      <span>Môn học:</span>
+                      {availableSubjectsForTab2.length > 0 && (
+                        <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
+                          {availableSubjectsForTab2.length} môn theo kỳ
+                        </span>
+                      )}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTab2Subjects(!showAllTab2Subjects)}
+                      className={`text-[10px] px-2 py-0.5 rounded font-semibold transition-colors border ${
+                        showAllTab2Subjects
+                          ? "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100"
+                          : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                      }`}
+                      title={showAllTab2Subjects ? "Chỉ hiển thị các môn đã gán theo kỳ" : "Mở rộng hiển thị toàn bộ môn học"}
+                    >
+                      {showAllTab2Subjects ? "Chỉ môn theo kỳ" : "+ Tất cả môn"}
+                    </button>
+                  </div>
                   <select
                     value={selectedSubjectId}
                     onChange={(e) => setSelectedSubjectId(e.target.value)}
-                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
+                    className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white shadow-sm cursor-pointer"
                   >
-                    {availableSubjectsForTab2.length === 0 && !showAllTab2Subjects ? (
-                      <option value="">-- Chưa có môn gán cho kỳ này --</option>
+                    {availableSubjectsForTab2.length > 0 ? (
+                      <>
+                        <optgroup label={`⭐ Môn theo Kỳ khảo sát (${availableSubjectsForTab2.length} môn)`}>
+                          {availableSubjectsForTab2.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.subjectName} ({s.subjectCode})
+                            </option>
+                          ))}
+                        </optgroup>
+                        {showAllTab2Subjects && (
+                          <optgroup label="── Các môn khác của Khối / Hệ thống ──">
+                            {subjects
+                              .filter(s => !availableSubjectsForTab2.some(a => a.id === s.id))
+                              .map(s => (
+                                <option key={s.id} value={s.id}>
+                                  {s.subjectName} ({s.subjectCode})
+                                </option>
+                              ))}
+                          </optgroup>
+                        )}
+                      </>
                     ) : (
-                      (showAllTab2Subjects ? subjects : availableSubjectsForTab2).map(s => (
-                        <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
-                      ))
+                      <>
+                        <option value="" disabled>-- Chưa có môn gán riêng cho kỳ này --</option>
+                        <optgroup label="Danh sách tất cả môn học (Dùng mẫu chuẩn 10đ)">
+                          {subjects.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.subjectName} ({s.subjectCode})
+                            </option>
+                          ))}
+                        </optgroup>
+                      </>
                     )}
                   </select>
                 </div>
@@ -2569,7 +2614,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                   {subjects.map(s => {
                     const isChecked = batchSelectedSubjectIds.includes(s.id)
                     const isConfiguredAlready = savedConfigs.some(
-                      c => c.evaluationPeriod === batchPeriod && (c.grade === batchGrade || c.grade === "ALL") && c.subjectId === s.id
+                      c => (c.evaluationPeriod === batchPeriod || c.evaluationPeriod === "ALL") && isGradeMatching(c.grade, batchGrade) && c.subjectId === s.id
                     )
 
                     return (

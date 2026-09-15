@@ -137,8 +137,8 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
     // 2. From savedConfigs matching currentPeriod or baselinePeriod and grade
     if (savedConfigs && savedConfigs.length > 0) {
       savedConfigs.forEach((cfg: any) => {
-        const pMatch = cfg.evaluationPeriod === currentPeriod || cfg.evaluationPeriod === baselinePeriod
-        const gMatch = selectedGradeFilter === "ALL" || cfg.grade === selectedGradeFilter || cfg.grade === "ALL"
+        const pMatch = cfg.evaluationPeriod === currentPeriod || cfg.evaluationPeriod === baselinePeriod || cfg.evaluationPeriod === "ALL"
+        const gMatch = isGradeMatching(cfg.grade, selectedGradeFilter)
         if (pMatch && gMatch && cfg.subject) {
           subMap.set(cfg.subject.id, {
             id: cfg.subject.id,
@@ -149,9 +149,19 @@ export function GradeAnalyticsTab({ academicYears, selectedYearId, classes, subj
       })
     }
 
-    // Fallback: If no period-specific configs or entries exist yet, return empty or fallback
+    // Fallback: If no period-specific configs or entries exist yet, fallback to subjects
+    if (subMap.size === 0 && subjects && subjects.length > 0) {
+      subjects.forEach((s: any) => {
+        subMap.set(s.id, {
+          id: s.id,
+          subjectName: s.subjectName,
+          subjectCode: s.subjectCode
+        })
+      })
+    }
+
     return Array.from(subMap.values())
-  }, [data.subjects, savedConfigs, currentPeriod, baselinePeriod, selectedGradeFilter])
+  }, [data.subjects, savedConfigs, currentPeriod, baselinePeriod, selectedGradeFilter, subjects])
 
   // Reset selectedSubjectId if not in surveyPeriodSubjects
   useEffect(() => {
