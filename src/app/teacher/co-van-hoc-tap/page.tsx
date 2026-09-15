@@ -45,6 +45,8 @@ export default function TeacherAdvisoryPage() {
   // Data States
   const [consultations, setConsultations] = useState<any[]>([])
   const [helpRequests, setHelpRequests] = useState<any[]>([])
+  const [sosNotes, setSosNotes] = useState<Record<string, string>>({})
+  const [savingSosId, setSavingSosId] = useState<string | null>(null)
   
   // 4. Goal Unlocks Sprint State (Stage 2 - K9-12)
   const [unlocksList, setUnlocksList] = useState<any[]>([])
@@ -2772,23 +2774,65 @@ export default function TeacherAdvisoryPage() {
                       </td>
 
                       {/* 6. Lời nhắn / Phản hồi từ GVCN */}
-                      <td className="p-3.5 align-top">
+                      <td className="p-3.5 align-top space-y-2">
                         <textarea
                           rows={3}
-                          defaultValue={req.responseNotes || ""}
-                          onBlur={async (e) => {
-                            const noteVal = e.target.value
-                            await fetch("/api/advisory/help-requests", {
-                              method: "PUT",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ id: req.id, responseNotes: noteVal, status: req.status || "PROCESSING" })
-                            })
-                            setToastMessage("Đã lưu lời nhắn phản hồi SOS cho học sinh!")
-                            setTimeout(() => setToastMessage(""), 3000)
-                          }}
+                          value={sosNotes[req.id] !== undefined ? sosNotes[req.id] : (req.responseNotes || "")}
+                          onChange={(e) => setSosNotes({ ...sosNotes, [req.id]: e.target.value })}
                           placeholder="Nhập lời nhắn hỗ trợ học sinh..."
-                          className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
+                          className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-300 shadow-inner"
                         />
+
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            disabled={savingSosId === req.id}
+                            onClick={async () => {
+                              try {
+                                setSavingSosId(req.id)
+                                const currentNote = sosNotes[req.id] !== undefined ? sosNotes[req.id] : (req.responseNotes || "")
+                                const res = await fetch("/api/advisory/help-requests", {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    id: req.id,
+                                    responseNotes: currentNote,
+                                    status: req.status || "PROCESSING"
+                                  })
+                                })
+                                if (res.ok) {
+                                  setToastMessage("Đã lưu phản hồi SOS cho học sinh " + (req.student?.studentName || "") + " thành công!")
+                                  setTimeout(() => setToastMessage(""), 4000)
+                                  const ref = await fetch("/api/advisory/help-requests?classId=" + selectedClassId)
+                                  if (ref.ok) {
+                                    const d = await ref.json()
+                                    if (Array.isArray(d)) setHelpRequests(d)
+                                  }
+                                } else {
+                                  alert("Lỗi khi lưu phản hồi SOS.")
+                                }
+                              } catch (e: any) {
+                                alert("Lỗi kết nối: " + e.message)
+                              } finally {
+                                setSavingSosId(null)
+                              }
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                          >
+                            <Save className="w-3.5 h-3.5" />
+                            <span>{savingSosId === req.id ? "Đang lưu..." : "Lưu Phản Hồi"}</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleForceUnlock(req.studentId)}
+                            className="px-3 py-1.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-black border border-amber-300 flex items-center gap-1 transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+                            title="Mở khóa phiếu mục tiêu năm học cho học sinh này"
+                          >
+                            <Key className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Mở Khóa Phiếu Cho HS</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
