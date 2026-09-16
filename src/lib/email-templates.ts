@@ -863,6 +863,9 @@ export function renderObservationSurpriseCompletedForHost(params: {
   hostName: string;
   observerName: string;
   observerCode?: string;
+  observerPosition?: string;
+  observerEmail?: string;
+  observerDepartment?: string;
   topic: string;
   subjectName: string;
   grade?: string;
@@ -877,8 +880,132 @@ export function renderObservationSurpriseCompletedForHost(params: {
   improvements?: string;
   generalComment?: string;
   directLink?: string;
+  criteriaScores?: {
+    type: "K12" | "MAMNON";
+    scores: number[];
+  };
 }): string {
   const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
+
+  // Build Criteria Table HTML
+  let criteriaTableHtml = "";
+  if (params.criteriaScores && Array.isArray(params.criteriaScores.scores) && params.criteriaScores.scores.length > 0) {
+    if (params.criteriaScores.type === "MAMNON") {
+      const mnDefinitions = [
+        { id: 1, section: "1. Chuẩn bị cho hoạt động", name: "Mục tiêu phù hợp độ tuổi, khả năng trẻ", max: 1.0 },
+        { id: 2, section: "1. Chuẩn bị cho hoạt động", name: "Phương tiện dạy học kích thích trẻ hoạt động", max: 0.5 },
+        { id: 3, section: "1. Chuẩn bị cho hoạt động", name: "Tận dụng sản phẩm của trẻ để hoạt động", max: 0.5 },
+        { id: 4, section: "2. Nội dung hoạt động", name: "Trẻ vận động thân thể và các giác quan", max: 0.5 },
+        { id: 5, section: "2. Nội dung hoạt động", name: "Chính xác về kiến thức, kỹ năng", max: 0.5 },
+        { id: 6, section: "2. Nội dung hoạt động", name: "Kiến thức hệ thống, gần gũi thực tế", max: 0.5 },
+        { id: 7, section: "2. Nội dung hoạt động", name: "Thiết kế hợp lý, phát triển tư duy", max: 0.5 },
+        { id: 8, section: "2. Nội dung hoạt động", name: "Nội dung tích hợp nhẹ nhàng, phù hợp", max: 0.5 },
+        { id: 9, section: "2. Nội dung hoạt động", name: "Hướng dẫn ngắn gọn, gợi ý dẫn dắt trẻ", max: 0.5 },
+        { id: 10, section: "3. Phương pháp và tổ chức", name: "Kết hợp linh hoạt phương pháp, thời gian", max: 1.0 },
+        { id: 11, section: "3. Phương pháp và tổ chức", name: "Tổ chức hỗ trợ đúng lúc, không làm thay", max: 0.5 },
+        { id: 12, section: "3. Phương pháp và tổ chức", name: "Tình huống có vấn đề tạo hứng thú", max: 0.5 },
+        { id: 13, section: "3. Phương pháp và tổ chức", name: "Bao quát lớp, khen ngợi kịp thời, tình cảm", max: 0.5 },
+        { id: 14, section: "3. Phương pháp và tổ chức", name: "Sử dụng hiệu quả đồ dùng và đa dạng hình thức", max: 0.5 },
+        { id: 15, section: "4. Kết quả trên trẻ", name: "Trẻ tích cực, hứng thú trên giờ học", max: 0.5 },
+        { id: 16, section: "4. Kết quả trên trẻ", name: "Trẻ có nhiều cơ hội khám phá", max: 0.5 },
+        { id: 17, section: "4. Kết quả trên trẻ", name: "Mọi trẻ được hỗ trợ và tham gia", max: 0.5 },
+        { id: 18, section: "4. Kết quả trên trẻ", name: "Trẻ tự chuẩn bị đồ dùng, không làm thay", max: 0.5 }
+      ];
+
+      const rows = mnDefinitions.map((crit, idx) => {
+        const val = Number(params.criteriaScores?.scores[idx] ?? 0);
+        const isMax = val >= crit.max;
+        const color = val === 0 ? "#E11D48" : (isMax ? "#059669" : "#0284C7");
+        return `
+          <tr style="border-bottom: 1px solid #F1F5F9; font-size: 12px;">
+            <td style="padding: 8px 10px; color: #475569; font-weight: 600; width: 8%; text-align: center;">${crit.id}</td>
+            <td style="padding: 8px 10px; color: #1E293B; width: 68%;">
+              <div style="font-weight: 600;">${crit.name}</div>
+              <div style="font-size: 10.5px; color: #94A3B8;">${crit.section}</div>
+            </td>
+            <td style="padding: 8px 10px; text-align: right; width: 24%; white-space: nowrap;">
+              <span style="font-weight: 800; font-size: 13px; color: ${color};">${val.toFixed(2)}</span>
+              <span style="font-size: 11px; color: #94A3B8;"> / ${crit.max.toFixed(2)}đ</span>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      criteriaTableHtml = `
+        <div style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; margin: 20px 0; overflow: hidden;">
+          <div style="background-color: #FFF1F2; border-bottom: 1px solid #FECDD3; padding: 12px 16px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-size: 12px; font-weight: 800; color: #9F1239; text-transform: uppercase; letter-spacing: 0.5px;">
+                  📋 BẢNG ĐIỂM CHI TIẾT 18 TIÊU CHÍ ĐÁNH GIÁ (MẦM NON)
+                </td>
+                <td align="right" style="font-size: 11px; font-weight: 700; color: #BE123C;">
+                  Thang điểm 10.00đ
+                </td>
+              </tr>
+            </table>
+          </div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            ${rows}
+          </table>
+        </div>
+      `;
+    } else {
+      const k12Definitions = [
+        { id: 1, std: "Tiêu chuẩn 1: Phương tiện", name: "Kế hoạch bài dạy & Chuẩn bị giáo án", max: 1.5 },
+        { id: 2, std: "Tiêu chuẩn 1: Phương tiện", name: "Sử dụng đồ dùng, thiết bị dạy học", max: 1.5 },
+        { id: 3, std: "Tiêu chuẩn 2: Nội dung", name: "Chính xác, khoa học và hấp dẫn", max: 2.0 },
+        { id: 4, std: "Tiêu chuẩn 2: Nội dung", name: "Hệ thống, đủ chuẩn KT-KN, trọng tâm", max: 2.0 },
+        { id: 5, std: "Tiêu chuẩn 2: Nội dung", name: "Liên hệ thực tế đời sống & sản xuất", max: 1.0 },
+        { id: 6, std: "Tiêu chuẩn 3: Phương pháp", name: "Không đọc chép, phát hiện khó khăn của HS", max: 2.0 },
+        { id: 7, std: "Tiêu chuẩn 3: Phương pháp", name: "Tổ chức HS học tích cực, chủ động, hợp tác", max: 3.0 },
+        { id: 8, std: "Tiêu chuẩn 3: Phương pháp", name: "Linh hoạt các khâu, phân phối thời gian hợp lý", max: 2.0 },
+        { id: 9, std: "Tiêu chuẩn 3: Phương pháp", name: "Kết hợp tốt các phương pháp dạy học", max: 2.0 },
+        { id: 10, std: "Tiêu chuẩn 4: Kết quả", name: "Kiểm tra đánh giá, học sinh hiểu bài", max: 2.0 },
+        { id: 11, std: "Tiêu chuẩn 4: Kết quả", name: "Nhuần nhuyễn, hấp dẫn, sáng tạo", max: 1.0 }
+      ];
+
+      const rows = k12Definitions.map((crit, idx) => {
+        const val = Number(params.criteriaScores?.scores[idx] ?? 0);
+        const isMax = val >= crit.max;
+        const color = val === 0 ? "#E11D48" : (isMax ? "#059669" : "#0284C7");
+        return `
+          <tr style="border-bottom: 1px solid #F1F5F9; font-size: 12px;">
+            <td style="padding: 9px 10px; color: #475569; font-weight: 600; width: 8%; text-align: center;">${crit.id}</td>
+            <td style="padding: 9px 10px; color: #1E293B; width: 68%;">
+              <div style="font-weight: 600;">${crit.name}</div>
+              <div style="font-size: 10.5px; color: #94A3B8;">${crit.std}</div>
+            </td>
+            <td style="padding: 9px 10px; text-align: right; width: 24%; white-space: nowrap;">
+              <span style="font-weight: 800; font-size: 13px; color: ${color};">${val.toFixed(2)}</span>
+              <span style="font-size: 11px; color: #94A3B8;"> / ${crit.max.toFixed(2)}đ</span>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+      criteriaTableHtml = `
+        <div style="background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; margin: 20px 0; overflow: hidden;">
+          <div style="background-color: #FFF1F2; border-bottom: 1px solid #FECDD3; padding: 12px 16px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td style="font-size: 12px; font-weight: 800; color: #9F1239; text-transform: uppercase; letter-spacing: 0.5px;">
+                  📋 BẢNG ĐIỂM CHI TIẾT 11 TIÊU CHÍ ĐÁNH GIÁ (K-12)
+                </td>
+                <td align="right" style="font-size: 11px; font-weight: 700; color: #BE123C;">
+                  Thang điểm 20.00đ
+                </td>
+              </tr>
+            </table>
+          </div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+            ${rows}
+          </table>
+        </div>
+      `;
+    }
+  }
+
   const extraHtml = `
     <!-- Score & Ranking Badge -->
     <div style="background-color: #FFF1F2; border: 1px solid #FECDD3; border-radius: 12px; padding: 16px 20px; margin: 18px 0;">
@@ -886,17 +1013,20 @@ export function renderObservationSurpriseCompletedForHost(params: {
         <tr>
           <td style="vertical-align: middle;">
             <div style="font-size: 11px; font-weight: 800; color: #9F1239; text-transform: uppercase; letter-spacing: 0.5px;">Tổng điểm đạt được:</div>
-            <div style="font-size: 22px; font-weight: 900; color: #881337; margin-top: 2px;">${params.totalScore}</div>
+            <div style="font-size: 24px; font-weight: 900; color: #881337; margin-top: 2px;">${params.totalScore}</div>
           </td>
           <td align="right" style="vertical-align: middle;">
             <div style="font-size: 11px; font-weight: 800; color: #9F1239; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Xếp loại tiết dạy:</div>
-            <span style="font-size: 14px; font-weight: 900; color: #047857; background-color: #D1FAE5; border: 1px solid #A7F3D0; padding: 5px 14px; border-radius: 8px; display: inline-block;">
+            <span style="font-size: 14px; font-weight: 900; color: #047857; background-color: #D1FAE5; border: 1px solid #A7F3D0; padding: 6px 16px; border-radius: 8px; display: inline-block;">
               ${params.rating}
             </span>
           </td>
         </tr>
       </table>
     </div>
+
+    <!-- Detailed Evaluation Breakdown Table -->
+    ${criteriaTableHtml}
 
     <!-- Qualitative Comments -->
     <div style="margin: 20px 0;">
@@ -909,7 +1039,7 @@ export function renderObservationSurpriseCompletedForHost(params: {
 
       ${params.improvements ? `
       <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; margin-bottom: 12px;">
-        <div style="font-size: 12px; font-weight: 800; color: #B45309; text-transform: uppercase; margin-bottom: 4px;">💡 2. Nội dung cần cải thiện / Góp ý:</div>
+        <div style="font-size: 12px; font-weight: 800; color: #B45309; text-transform: uppercase; margin-bottom: 4px;">💡 2. Nội dung cần cải thiện / Góp ý phát triển:</div>
         <div style="font-size: 13px; color: #92400E; line-height: 1.6; white-space: pre-line;">${params.improvements}</div>
       </div>
       ` : ""}
@@ -923,32 +1053,46 @@ export function renderObservationSurpriseCompletedForHost(params: {
     </div>
   `;
 
+  const observerInfoDisplay = [
+    params.observerName,
+    params.observerCode ? `(${params.observerCode})` : "",
+    params.observerPosition ? `• ${params.observerPosition}` : ""
+  ].filter(Boolean).join(" ");
+
+  const observerSubInfo = [
+    params.observerDepartment ? `Bộ phận/Tổ: ${params.observerDepartment}` : "",
+    params.observerEmail ? `Email: ${params.observerEmail}` : ""
+  ].filter(Boolean).join(" • ");
+
   return renderSkylineEmail({
     headerBadge: "⚡ DỰ GIỜ ĐỘT XUẤT",
     headerTitle: "KẾT QUẢ ĐÁNH GIÁ DỰ GIỜ ĐỘT XUẤT",
     headerSubtitle: "Biên bản & phiếu đánh giá dự giờ đột xuất",
     headerTheme: "rose",
     recipientName: params.hostName,
-    introMessage: `Thầy/Cô <strong>${params.observerName}</strong> đã hoàn tất <strong>Biên bản & Phiếu đánh giá dự giờ đột xuất</strong> cho tiết dạy của Thầy/Cô. Dưới đây là thông tin chi tiết:`,
+    introMessage: `Thầy/Cô <strong>${params.observerName}</strong> (${params.observerPosition || "Người dự giờ"}) đã hoàn tất <strong>Biên bản & Phiếu đánh giá dự giờ đột xuất</strong> cho tiết dạy của Thầy/Cô. Dưới đây là kết quả chi tiết:`,
     details: [
       { icon: "📖", label: "Tên bài dạy / Chủ đề", value: params.topic || "Dự giờ đột xuất", highlight: true },
       { icon: "📚", label: "Môn học & Lớp", value: `${params.subjectName} (${params.grade || ""} - ${params.className || ""})` },
       { icon: "📅", label: "Thời gian & Tiết", value: `Tiết ${params.period} • ${params.dateStr}`, highlight: true },
       { icon: "🏫", label: "Cơ sở & Địa điểm", value: `${params.campusName || "Sky-Line"} - Phòng ${params.room || "học"}` },
-      { icon: "👨‍🏫", label: "Người dự giờ", value: `${params.observerName} ${params.observerCode ? `(${params.observerCode})` : ""}` }
+      { 
+        icon: "👨‍🏫", 
+        label: "Người dự giờ đột xuất", 
+        value: observerSubInfo ? `${observerInfoDisplay}<div style="font-size: 11px; color: #64748B; font-weight: 500; margin-top: 2px;">${observerSubInfo}</div>` : observerInfoDisplay,
+        highlight: true 
+      }
     ],
     extraHtml,
     button: {
       text: "👉 Xem Chi Tiết Biên Bản Dự Giờ Trên Skyline",
       url: targetLink,
       color: "#E11D48"
-    }
+    },
+    secondaryNote: "Thầy/Cô vui lòng đăng nhập Skyline SSM để xem đầy đủ biên bản và gửi ý kiến phản hồi 2 chiều."
   });
 }
 
-/**
- * 11. Re-Evaluation Approved Email
- */
 export function renderObservationReEvaluationApproved(params: {
   teacherName: string;
   hostName?: string;
@@ -1056,7 +1200,7 @@ export function renderObservationExpiredNotification(params: {
     },
     button: {
       text: "👉 Xem Chi Tiết Tiết Dạy Trên Skyline",
-      url: params.directLink
+      url: targetLink
     }
   });
 }

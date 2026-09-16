@@ -1614,7 +1614,12 @@ export async function submitEvaluation(data: {
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
     const currentTeacher = await prisma.teacher.findUnique({ 
       where: { userId: session.user.id },
-      include: { user: true, campus: true }
+      include: { 
+        user: true, 
+        campus: true,
+        departmentRel: true,
+        departmentAssignments: { include: { department: true } }
+      }
     })
     if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
     const registration = await prisma.observationRegistration.findUnique({ 
@@ -1711,11 +1716,52 @@ export async function submitEvaluation(data: {
           ? `[Skyline Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`
           : `[Skyline Dự Giờ] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`;
 
+        const observerDeptName = currentTeacher.departmentRel?.name || 
+          currentTeacher.departmentAssignments?.map((da: any) => da.department?.name).filter(Boolean).join(", ") || 
+          undefined;
+
+        // Parse criteria scores
+        let parsedCriteriaScores: number[] = [];
+        if (isMN) {
+          try {
+            const parsed = typeof data.generalComment === "string" ? JSON.parse(data.generalComment) : null;
+            if (parsed && Array.isArray(parsed.scores)) {
+              parsedCriteriaScores = parsed.scores;
+            }
+          } catch (e) {}
+          if (parsedCriteriaScores.length === 0) {
+            parsedCriteriaScores = [
+              data.criterion1 || 0,
+              data.criterion2 || 0,
+              data.criterion3 || 0,
+              data.criterion4 || 0,
+              data.criterion5 || 0
+            ];
+          }
+        } else {
+          parsedCriteriaScores = [
+            data.score1 || 0,
+            data.score2 || 0,
+            data.score3 || 0,
+            data.score4 || 0,
+            data.score5 || 0,
+            data.score6 || 0,
+            data.score7 || 0,
+            data.score8 || 0,
+            data.score9 || 0,
+            data.score10 || 0,
+            data.score11 || 0
+          ];
+        }
+
         const emailHtml = isSurprise
           ? renderObservationSurpriseCompletedForHost({
               hostName: hostTeacher.teacherName,
               observerName: currentTeacher.teacherName,
               observerCode: currentTeacher.teacherCode,
+              observerPosition: currentTeacher.position || undefined,
+              observerEmail: observerEmail || undefined,
+              observerDepartment: observerDeptName,
               topic: slotFull?.topic || "Tiết dạy",
               subjectName: slotFull?.subjectName || "Môn học",
               grade: slotFull?.grade || "",
@@ -1729,7 +1775,11 @@ export async function submitEvaluation(data: {
               strengths: data.strengths || undefined,
               improvements: data.improvements || undefined,
               generalComment: data.generalComment || undefined,
-              directLink: linkUrl
+              directLink: linkUrl,
+              criteriaScores: {
+                type: isMN ? "MAMNON" : "K12",
+                scores: parsedCriteriaScores
+              }
             })
           : renderObservationEvaluationCompletedForHost({
               hostName: hostTeacher.teacherName,
@@ -3714,10 +3764,51 @@ export async function createSurpriseObservation(data: {
         if (hostEmail && hostEmail.includes("@")) {
           const linkUrl = SKYLINE_SSM_LOGIN_URL;
           const emailSubject = `[Skyline Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${data.topic}" - Người dự: ${currentTeacher.teacherName}`;
+          const observerDeptName = currentTeacher.departmentRel?.name || 
+            currentTeacher.departmentAssignments?.map((da: any) => da.department?.name).filter(Boolean).join(", ") || 
+            undefined;
+
+          // Parse criteria scores
+          let parsedCriteriaScores: number[] = [];
+          if (isMN) {
+            try {
+              const parsed = typeof data.generalComment === "string" ? JSON.parse(data.generalComment) : null;
+              if (parsed && Array.isArray(parsed.scores)) {
+                parsedCriteriaScores = parsed.scores;
+              }
+            } catch (e) {}
+            if (parsedCriteriaScores.length === 0) {
+              parsedCriteriaScores = [
+                data.criterion1 || 0,
+                data.criterion2 || 0,
+                data.criterion3 || 0,
+                data.criterion4 || 0,
+                data.criterion5 || 0
+              ];
+            }
+          } else {
+            parsedCriteriaScores = [
+              data.score1 || 0,
+              data.score2 || 0,
+              data.score3 || 0,
+              data.score4 || 0,
+              data.score5 || 0,
+              data.score6 || 0,
+              data.score7 || 0,
+              data.score8 || 0,
+              data.score9 || 0,
+              data.score10 || 0,
+              data.score11 || 0
+            ];
+          }
+
           const emailHtml = renderObservationSurpriseCompletedForHost({
             hostName: hostTeacher.teacherName,
             observerName: currentTeacher.teacherName,
             observerCode: currentTeacher.teacherCode,
+            observerPosition: currentTeacher.position || undefined,
+            observerEmail: observerEmail || undefined,
+            observerDepartment: observerDeptName,
             topic: data.topic,
             subjectName: data.subjectName || "Môn học",
             grade: data.grade || "",
@@ -3731,7 +3822,11 @@ export async function createSurpriseObservation(data: {
             strengths: data.strengths || undefined,
             improvements: data.improvements || undefined,
             generalComment: data.generalComment || undefined,
-            directLink: linkUrl
+            directLink: linkUrl,
+            criteriaScores: {
+              type: isMN ? "MAMNON" : "K12",
+              scores: parsedCriteriaScores
+            }
           });
 
           await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: hostEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Surprise eval completed email error:", e));
