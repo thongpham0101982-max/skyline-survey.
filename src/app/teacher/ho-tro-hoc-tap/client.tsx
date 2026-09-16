@@ -1,12 +1,14 @@
 "use client"
 // @ts-nocheck
 
-import { useState, useEffect, useMemo } from "react"
+import {
+  useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
   FileText, Users, Plus, Mail, Send, Search, Check, RefreshCw, X, Calendar, RotateCcw, 
   MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2, Layers, List, LayoutGrid, Filter,
-  Eye, Sparkles, ChevronRight, ArrowUpRight, BarChart3, HelpCircle, CheckSquare, Target, UserCheck, ChevronDown, CheckCheck, SlidersHorizontal, Quote, Activity, ExternalLink, Compass, ClipboardCheck, History, Edit3, Save
+  Eye, Sparkles, ChevronRight, ArrowUpRight, BarChart3, HelpCircle, CheckSquare, Target, UserCheck, ChevronDown, CheckCheck, SlidersHorizontal, Quote, Activity, ExternalLink, Compass, ClipboardCheck, History, Edit3, Save,
+  Brain
 } from "lucide-react"
 
 export const ACADEMIC_MONTHS = ["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"];
