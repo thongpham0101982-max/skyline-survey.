@@ -1833,6 +1833,135 @@ export async function POST(req: Request) {
             updatedStatus
           }
         })
+        
+        // Check if psychological evaluation or requested notification to notify GVCN
+        try {
+          const target = await prisma.learningSupportTarget.findUnique({
+            where: { id: targetId },
+            include: {
+              student: {
+                include: {
+                  class: true,
+                  campus: true
+                }
+              }
+            }
+          })
+
+          const isPsych = target?.supportType === "PSYCHOLOGICAL" || 
+            (target?.reason && target.reason.toLowerCase().includes("tâm lý")) ||
+            body.isPsychological;
+
+          if (isPsych && target?.student?.class) {
+            const currentClass = target.student.class;
+            let gvcnTeacher = null;
+
+            if (currentClass.homeroomTeacherId) {
+              gvcnTeacher = await prisma.teacher.findFirst({
+                where: {
+                  OR: [
+                    { id: currentClass.homeroomTeacherId },
+                    { id: { contains: currentClass.homeroomTeacherId } }
+                  ]
+                },
+                include: { user: true }
+              });
+            }
+
+            const evaluatorTeacher = await prisma.teacher.findUnique({
+              where: { userId: session.user.id }
+            });
+            const evaluatorName = evaluatorTeacher?.teacherName || session.user?.name || "GVBM / Chuyên viên";
+            const studentName = target.student.studentName;
+            const studentCode = target.student.studentCode;
+            const className = currentClass.className;
+
+            // 1. In-App Notification to GVCN
+            if (gvcnTeacher?.userId && gvcnTeacher.userId !== session.user.id) {
+              await prisma.notification.create({
+                data: {
+                  userId: gvcnTeacher.userId,
+                  title: "🔔 Tâm lý học đường: Lớp có Học sinh vừa được đánh giá tâm lý",
+                  message: `Thầy/Cô ${evaluatorName} vừa hoàn thành đánh giá tâm lý cho học sinh ${studentName} (${studentCode}) lớp ${className}. Vui lòng truy cập để xem chi tiết kết quả.`,
+                  link: "/teacher/ho-tro-hoc-tap"
+                }
+              });
+            }
+
+            // 2. Automated Email to GVCN
+            const gvcnEmail = gvcnTeacher?.email || gvcnTeacher?.user?.email;
+            if (gvcnEmail) {
+              const emailSubject = `[Sky-Line Portal] GVBM vừa đánh giá tâm lý học sinh ${studentName} (Lớp ${className}) - Vui lòng truy cập`;
+              const emailHtml = `
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden;">
+                  <div style="background: linear-gradient(135deg, #4c1d95, #312e81, #1e1b4b); padding: 24px; color: #ffffff; text-align: center;">
+                    <h2 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</h2>
+                    <p style="margin: 0; font-size: 13px; color: #c4b5fd;">Cổng thông tin Hỗ trợ Học tập & Tâm lý Học đường</p>
+                  </div>
+                  
+                  <div style="padding: 24px 28px; background: #ffffff;">
+                    <div style="display: inline-block; background: #ede9fe; color: #6d28d9; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; margin-bottom: 16px;">
+                      THÔNG BÁO ĐÁNH GIÁ TÂM LÝ MỚI
+                    </div>
+                    
+                    <h3 style="color: #0f172a; font-size: 18px; margin: 0 0 12px 0;">Kính gửi Thầy/Cô Giáo viên Chủ nhiệm lớp ${className},</h3>
+                    <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0;">
+                      Hệ thống ghi nhận <strong>${evaluatorName}</strong> vừa hoàn tất cập nhật <strong>Nhật ký đánh giá Tâm lý</strong> cho học sinh thuộc lớp của Thầy/Cô:
+                    </p>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+                      <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px 0; color: #64748b; width: 35%;">Học sinh:</td>
+                        <td style="padding: 10px 0; font-weight: 700; color: #0f172a;">${studentName} (<span style="font-family: monospace; color: #6366f1;">${studentCode}</span>)</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px 0; color: #64748b;">Lớp & Cơ sở:</td>
+                        <td style="padding: 10px 0; font-weight: 600; color: #1e293b;">${className} - ${target.student.campus?.campusName || "Sky-Line"}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px 0; color: #64748b;">Kỳ / Đợt đánh giá:</td>
+                        <td style="padding: 10px 0; font-weight: 600; color: #1e293b;">${periodName} (${periodType === "WEEK" ? "Theo tuần" : "Theo tháng"})</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px 0; color: #64748b;">Mức độ tiến bộ:</td>
+                        <td style="padding: 10px 0; font-weight: 700; color: #7c3aed;">${trackingLevel}</td>
+                      </tr>
+                      <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 10px 0; color: #64748b;">Nhận xét / Đánh giá:</td>
+                        <td style="padding: 10px 0; color: #334155; font-style: italic;">"${comment}"</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 10px 0; color: #64748b;">Người thực hiện:</td>
+                        <td style="padding: 10px 0; font-weight: 600; color: #0f172a;">${evaluatorName}</td>
+                      </tr>
+                    </table>
+
+                    <div style="text-align: center; margin: 28px 0 16px 0;">
+                      <a href="${process.env.NEXTAUTH_URL || 'https://skyline-survey.vercel.app'}/teacher/ho-tro-hoc-tap" 
+                         style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 12px; font-weight: 700; font-size: 14px; display: inline-block; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);">
+                        👉 Truy Cập Xem Chi Tiết Kết Quả Đánh Giá
+                      </a>
+                    </div>
+                  </div>
+                  
+                  <div style="padding: 16px 24px; background: #f1f5f9; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
+                    Thông báo tự động từ Hệ thống Quản trị Khảo sát & Hỗ trợ Tâm lý Sky-Line. Vui lòng không trả lời email này.
+                  </div>
+                </div>
+              `;
+
+              await sendEmail({
+                from: "HỆ THỐNG TÂM LÝ HỌC ĐƯỜNG SKY-LINE",
+                to: gvcnEmail,
+                subject: emailSubject,
+                html: emailHtml
+              }).catch(err => console.error("Error sending psych email to GVCN:", err));
+            }
+          }
+        } catch (notifErr) {
+          console.error("Error triggering psych notification/email to GVCN:", notifErr);
+        }
+
         return NextResponse.json(created)
       }
     }

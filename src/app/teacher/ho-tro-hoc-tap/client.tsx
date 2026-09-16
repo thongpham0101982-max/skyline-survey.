@@ -132,6 +132,7 @@ export const getTrackingLevelBadge = (level: string) => {
 import toast from "react-hot-toast"
 import { UrgentEmailModal } from "./components/UrgentEmailModal"
 import { FeedbackGvcnPhhsModal } from "./components/FeedbackGvcnPhhsModal"
+import { PsychologicalEvaluationLogTab } from "./components/PsychologicalEvaluationLogTab"
 import { MONTH_WEEKS_CONFIG } from "./academic-calendar"
 
 
@@ -297,7 +298,9 @@ export function TeacherSupportClient({
   const [selectedYearId, setSelectedYearId] = useState(
     academicYears[0]?.id || ""
   )
-  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history" | "summary">("commitments")
+  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history" | "summary" | "psychology">("commitments")
+  const [psychologicalStudents, setPsychologicalStudents] = useState<any[]>([])
+  const [loadingPsychological, setLoadingPsychological] = useState(false)
   const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
   const [loadingEntranceCommitments, setLoadingEntranceCommitments] = useState(false)
   const [selectedCommitmentRowIds, setSelectedCommitmentRowIds] = useState<string[]>([])
@@ -550,6 +553,22 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     }
   }
 
+  const fetchPsychologicalStudents = async () => {
+    if (!selectedYearId || !teacher?.id) return
+    setLoadingPsychological(true)
+    try {
+      const res = await fetch(`/api/teacher-student-records?action=getPsychologicalSupportStudents&teacherId=${teacher.id}&academicYearId=${selectedYearId}&_=${Date.now()}`)
+      const data = await res.json()
+      if (!data.error && Array.isArray(data)) {
+        setPsychologicalStudents(data)
+      }
+    } catch (e) {
+      console.error("Error fetching psych students:", e)
+    } finally {
+      setLoadingPsychological(false)
+    }
+  }
+
   const fetchTeacherData = async () => {
     if (!selectedYearId) return
     setLoading(true)
@@ -578,6 +597,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     fetchTeacherData()
     fetchAssignedClasses()
     fetchEntranceCommitments()
+    fetchPsychologicalStudents()
   }, [selectedYearId])
 
   // Local storage year sync listener
@@ -1333,6 +1353,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         if (!matchName && !matchCode && !matchClass && !matchSub) return false;
       }
 
+      if (roleFilter === "HOMEROOM" && !row.isHomeroom) return false;
+      if (roleFilter === "ASSIGNED" && row.isHomeroom) return false;
+
       if (classFilter !== "ALL" && row.classId !== classFilter && row.className !== classFilter) {
         return false;
       }
@@ -1347,7 +1370,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
       return true;
     });
-  }, [flattenedCommitmentRows, searchQuery, classFilter, subjectFilter]);
+  }, [flattenedCommitmentRows, searchQuery, classFilter, subjectFilter, roleFilter]);
 
   // 5. Grouped Commitment Rows by Subject for Tab 1
   const groupedCommitmentsBySubject = useMemo(() => {
@@ -1666,6 +1689,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           <p className="text-slate-500 mt-1">
             Giao diện hỗ trợ, theo dõi mức độ tiến bộ và cập nhật đánh giá của học sinh.
           </p>
+          {homeroomClasses && homeroomClasses.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-gradient-to-r from-teal-50 to-emerald-50 text-[#003B3A] border border-teal-200 shadow-2xs">
+                <UserCheck className="h-3.5 w-3.5 text-[#009085]" />
+                <span>Giáo viên Chủ nhiệm lớp: <strong>{homeroomClasses.map((c: any) => c.className).join(", ")}</strong></span>
+              </span>
+              <span className="text-[11px] text-slate-400 font-medium">
+                ({homeroomClasses.reduce((acc: number, c: any) => acc + (c.students?.length || 0), 0)} học sinh chủ nhiệm)
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Global Year Switcher */}
@@ -1759,7 +1793,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       })()}
 
       {/* 3 Main Sub-Tabs / Feature Tags with vibrant colors, distinct highlights & live badges */}
-      <div className="bg-slate-100/90 p-1.5 sm:p-2 rounded-3xl border border-slate-200/90 shadow-xs grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <div className="bg-slate-100/90 p-1.5 sm:p-2 rounded-3xl border border-slate-200/90 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
         {/* Tab 1: HS Cam kết Học tập/Tâm lý */}
         <button
           type="button"
@@ -1885,9 +1919,52 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
             {summaryEvaluations.length}
           </span>
         </button>
+        {/* Tab 4: Nhật ký đánh giá Tâm lý */}
+        <button
+          type="button"
+          onClick={() => setActiveSubTab("psychology")}
+          className={`relative flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
+            activeSubTab === "psychology"
+              ? "bg-gradient-to-r from-purple-950 via-[#3730a3] to-indigo-900 text-white shadow-lg shadow-purple-900/25 scale-[1.01] ring-2 ring-purple-400/40"
+              : "bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/70 hover:border-purple-300 shadow-2xs hover:shadow-xs"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${
+              activeSubTab === "psychology"
+                ? "bg-white/20 text-white shadow-inner"
+                : "bg-purple-100 text-purple-800"
+            }`}>
+              <Brain className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-black tracking-tight ${
+                  activeSubTab === "psychology" ? "text-white" : "text-slate-900"
+                }`}>
+                  4. Nhật ký đánh giá Tâm lý
+                </span>
+              </div>
+              <p className={`text-[10px] font-medium leading-none mt-1 ${
+                activeSubTab === "psychology" ? "text-purple-100" : "text-slate-500"
+              }`}>
+                Theo dõi & tiến trình tham vấn lớp chủ nhiệm
+              </p>
+            </div>
+          </div>
+          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+            activeSubTab === "psychology"
+              ? "bg-white text-purple-950 shadow-sm"
+              : "bg-purple-100 text-purple-900 border border-purple-200"
+          }`}>
+            {psychologicalStudents.length}
+          </span>
+        </button>
+
       </div>
 
       {/* Action panel & Multi-Dimension Filter Toolbar */}
+      {activeSubTab !== "psychology" && (
       <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
           {/* Action buttons on the left */}
@@ -1916,6 +1993,48 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
 
           {/* Search and Filters */}
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* GVCN / GVBM Quick Role Switcher */}
+            {homeroomClasses && homeroomClasses.length > 0 && (
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter("ALL")}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    roleFilter === "ALL"
+                      ? "bg-white text-[#003B3A] shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Tất cả
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter("HOMEROOM")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    roleFilter === "HOMEROOM"
+                      ? "bg-gradient-to-r from-teal-700 to-[#009085] text-white shadow-xs"
+                      : "text-teal-800 hover:text-teal-950 hover:bg-teal-50"
+                  }`}
+                  title="Chỉ xem học sinh các lớp tôi làm Chủ nhiệm"
+                >
+                  <UserCheck className="h-3.5 w-3.5" />
+                  <span>Lớp Chủ nhiệm ({homeroomClasses.map((c: any) => c.className).join(", ")})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRoleFilter("ASSIGNED")}
+                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                    roleFilter === "ASSIGNED"
+                      ? "bg-slate-800 text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                  title="Chỉ xem học sinh lớp dạy bộ môn"
+                >
+                  Lớp Bộ môn
+                </button>
+              </div>
+            )}
+
             {/* Search Input */}
             <div className="relative min-w-[210px] flex-1 sm:flex-initial">
               <input
@@ -2074,11 +2193,22 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         )}
       </div>
 
+      )}
+
       {/* Main Student Target List Taught/Assigned */}
       {loading ? (
         <div className="flex justify-center py-20">
           <RefreshCw className="h-8 w-8 text-indigo-600 animate-spin" />
         </div>
+      ) : activeSubTab === "psychology" ? (
+        <PsychologicalEvaluationLogTab
+          students={psychologicalStudents}
+          homeroomClasses={homeroomClasses}
+          academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
+          academicYearId={selectedYearId}
+          teacher={teacher}
+          onRefresh={fetchPsychologicalStudents}
+        />
       ) : activeSubTab === "assigned" ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">

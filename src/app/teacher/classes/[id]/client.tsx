@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import {
-  BarChart3,
+  BarChart3, Brain,
   Users, TrendingUp, User, 
   ArrowLeftRight, LogOut, CheckCircle2,
   UserCheck, Search, Filter, Sparkles, UserPlus, UserMinus,
@@ -195,6 +195,14 @@ export function ClassDetailClient({
                   >
                     <BarChart3 className="w-4 h-4 text-amber-300" />
                     <span>Xem Điểm & Đối Sánh Khối</span>
+                  </Link>
+                  <Link
+                    href="/teacher/ho-tro-hoc-tap"
+                    className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500/30 to-indigo-500/30 hover:from-purple-500/50 hover:to-indigo-500/50 text-white font-extrabold text-xs transition-all shadow-sm border border-purple-300/40 hover:scale-102"
+                    title="Theo dõi hỗ trợ học tập & Nhật ký đánh giá tâm lý"
+                  >
+                    <Brain className="w-4 h-4 text-purple-200" />
+                    <span>Hỗ trợ Học tập & Tâm lý</span>
                   </Link>
                 </div>
               </div>

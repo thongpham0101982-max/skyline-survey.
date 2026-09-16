@@ -608,6 +608,185 @@ export async function GET(req: Request) {
       return NextResponse.json(candidates)
     }
 
+        if (action === "getPsychologicalSupportStudents") {
+      const academicYearId = searchParams.get("academicYearId")
+      const classIdParam = searchParams.get("classId")
+      if (!academicYearId) {
+        return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 })
+      }
+
+      // Find all homeroom classes for this teacher in the given academic year
+      const homeroomClasses = await prisma.class.findMany({
+        where: {
+          academicYearId,
+          ...(classIdParam && classIdParam !== "ALL" ? { id: classIdParam } : {}),
+          OR: [
+            { homeroomTeacherId: teacher.id },
+            { homeroomTeacherId: { contains: teacher.id } }
+          ]
+        },
+        include: {
+          campus: true
+        }
+      })
+
+      const homeroomClassIds = homeroomClasses.map(c => c.id)
+      if (homeroomClassIds.length === 0) {
+        return NextResponse.json([])
+      }
+
+      // Fetch all students in these homeroom classes
+      const students = await prisma.student.findMany({
+        where: {
+          classId: { in: homeroomClassIds },
+          academicYearId,
+          NOT: {
+            studentCode: { startsWith: "2" }
+          }
+        },
+        include: {
+          class: {
+            include: {
+              campus: true
+            }
+          },
+          campus: true
+        },
+        orderBy: {
+          studentName: "asc"
+        }
+      })
+
+      const studentIds = students.map(s => s.id)
+      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+
+      // Fetch psychological targets for these students
+      const targets = await prisma.learningSupportTarget.findMany({
+        where: {
+          studentId: { in: studentIds },
+          academicYearId,
+          OR: [
+            { supportType: "PSYCHOLOGICAL" },
+            { reason: { contains: "tâm lý" } },
+            { reason: { contains: "Tâm lý" } },
+            { notes: { contains: "tâm lý" } },
+            { notes: { contains: "Tâm lý" } }
+          ]
+        },
+        include: {
+          assignments: {
+            include: {
+              teacher: { select: { id: true, teacherName: true, email: true } },
+              subject: { select: { id: true, subjectName: true } }
+            }
+          },
+          evaluations: {
+            orderBy: { createdAt: "desc" }
+          },
+          createdBy: {
+            select: { id: true, teacherName: true, email: true }
+          }
+        }
+      })
+
+      // Fetch input assessment records for students in these classes
+      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
+        where: {
+          OR: [
+            { studentCode: { in: studentCodes } },
+            { enrollmentCode: { in: studentCodes } }
+          ]
+        },
+        include: {
+          scores: {
+            include: {
+              subject: true
+            }
+          }
+        }
+      })
+
+      const cleanString = (str) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
+
+      const result = []
+
+      for (const student of students) {
+        const studentTargets = targets.filter(t => t.studentId === student.id)
+        const assessment = inputAssessments.find(a => 
+          a.studentCode === student.studentCode || 
+          a.enrollmentCode === student.studentCode ||
+          cleanString(a.fullName) === cleanString(student.studentName)
+        )
+
+        const hasTarget = studentTargets.length > 0
+        const hasPsychAssessment = !!assessment && (
+          assessment.psychologyScore != null ||
+          assessment.scores?.some(s => s.subject?.code === 'TLY' || s.subject?.name?.toLowerCase().includes('tâm lý')) ||
+          (assessment.directorNote && assessment.directorNote.toLowerCase().includes('tâm lý')) ||
+          (assessment.admissionResult && assessment.admissionResult.toLowerCase().includes('tâm lý'))
+        )
+
+        if (hasTarget || hasPsychAssessment) {
+          const primaryTarget = studentTargets[0] || null
+          const counselorName = primaryTarget?.assignments?.[0]?.teacher?.teacherName || 
+            primaryTarget?.createdBy?.teacherName || 
+            "Chuyên viên Tham vấn Tâm lý"
+          const counselorEmail = primaryTarget?.assignments?.[0]?.teacher?.email || 
+            primaryTarget?.createdBy?.email || ""
+
+          const psychScoreObj = assessment?.scores?.find(s => s.subject?.code === 'TLY' || s.subject?.name?.toLowerCase().includes('tâm lý'))
+          let parsedScores = []
+          let parsedComments = []
+          if (psychScoreObj) {
+            try {
+              parsedScores = JSON.parse(psychScoreObj.scores || "[]")
+              parsedComments = JSON.parse(psychScoreObj.comments || "[]")
+            } catch (e) {}
+          }
+
+          result.push({
+            id: primaryTarget?.id || `psych_${student.id}`,
+            targetId: primaryTarget?.id || null,
+            studentId: student.id,
+            studentCode: student.studentCode,
+            studentName: student.studentName,
+            gender: student.gender,
+            dateOfBirth: student.dateOfBirth,
+            classId: student.classId,
+            className: student.class?.className || "",
+            campusId: student.campusId || student.class?.campusId || "",
+            campusName: student.campus?.campusName || student.class?.campus?.campusName || "Sky-Line",
+            counselorName,
+            counselorEmail,
+            startDate: primaryTarget?.startDate || student.createdAt,
+            reason: primaryTarget?.reason || (assessment?.directorNote ? "Theo dõi tâm lý & thích ứng đầu vào" : "Theo dõi tâm lý học đường"),
+            notes: primaryTarget?.notes || "",
+            status: primaryTarget?.status || "ĐANG HỖ TRỢ",
+            terminationStatus: primaryTarget?.terminationStatus || "ACTIVE",
+            evaluations: primaryTarget?.evaluations || [],
+            psychologyAssessment: {
+              hasAssessment: hasPsychAssessment,
+              psychologyScore: assessment?.psychologyScore ?? (parsedScores[6] ?? null),
+              directorNote: assessment?.directorNote || "",
+              admissionResult: assessment?.admissionResult || "",
+              conclusion: parsedComments[0] || "",
+              recommendation: parsedComments[1] || "",
+              detailedScores: parsedScores,
+              detailedComments: parsedComments
+            }
+          })
+        }
+      }
+
+      return NextResponse.json(result)
+    }
+
     if (action === "getStudentRecord") {
       const studentId = searchParams.get("studentId")
       const academicYearId = searchParams.get("academicYearId")
