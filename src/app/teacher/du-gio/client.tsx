@@ -5650,11 +5650,46 @@ export function ObservationClient(props: ObservationClientProps) {
                 {/* Score Summary Box */}
                 {evalModal.slot.level !== "Mầm non" ? (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
-                      <span className="text-xs font-black text-teal-900 uppercase tracking-wide">Tổng điểm tự động:</span>
-                      <span className="text-base font-black text-teal-950 bg-white px-4 py-1.5 rounded-xl shadow-xs border border-teal-200">
-                        {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00 điểm
-                      </span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="text-xs font-black text-teal-900 uppercase tracking-wide">Tổng điểm tự động:</span>
+                        <span className="text-base font-black text-teal-950 bg-white px-4 py-1.5 rounded-xl shadow-xs border border-teal-200">
+                          {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00 điểm
+                        </span>
+                        <span className="text-xs font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                          Xếp loại: {calculateK12Ranking(evalK12Scores)}
+                        </span>
+                      </div>
+                      {!isReadOnly && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const maxArr = K12_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
+                              setEvalK12Scores(maxArr);
+                              setEvalOverall(calculateK12Ranking(maxArr));
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95"
+                            title="Chấm điểm tối đa 20/20 cho toàn bộ 11 tiêu chí"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Chấm nhanh Max (20/20)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const zeroArr = Array(11).fill(0);
+                              setEvalK12Scores(zeroArr);
+                              setEvalOverall(calculateK12Ranking(zeroArr));
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                            title="Đặt lại toàn bộ về 0 điểm"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Đặt lại 0đ</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {K12_SECTIONS.map((sec, sIdx) => {
@@ -5681,10 +5716,19 @@ export function ObservationClient(props: ObservationClientProps) {
                               const isMaxReached = currentScore === req.max;
 
                               return (
-                                <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
-                                  <div className="space-y-1.5 min-w-0 flex-1">
+                                <div
+                                  key={req.id}
+                                  className={`p-4 rounded-2xl border transition-all ${
+                                    isMaxReached
+                                      ? "bg-emerald-50/40 border-emerald-200/80 shadow-2xs"
+                                      : currentScore > 0
+                                        ? "bg-teal-50/30 border-teal-200/70 shadow-2xs"
+                                        : "bg-slate-50/70 hover:bg-slate-50 border-slate-200/70"
+                                  }`}
+                                >
+                                  <div className="space-y-1.5 min-w-0">
                                     <div className="flex items-center flex-wrap gap-2">
-                                      <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                      <span className="px-2.5 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
                                       <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
                                       {req.mandatoryText && (
                                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-md border ${
@@ -5703,22 +5747,102 @@ export function ObservationClient(props: ObservationClientProps) {
                                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
                                   </div>
 
-                                  <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
-                                    <span className="text-xs font-bold text-slate-500">Điểm:</span>
-                                    <select
-                                      value={evalK12Scores[globalIdx]}
-                                      onChange={(e) => {
-                                        const nextScores = [...evalK12Scores];
-                                        nextScores[globalIdx] = parseFloat(e.target.value);
-                                        setEvalK12Scores(nextScores);
-                                        const nextRank = calculateK12Ranking(nextScores);
-                                        setEvalOverall(nextRank);
-                                      }}
-                                      disabled={isReadOnly}
-                                      className="rounded-xl border border-slate-200 p-2 bg-white text-xs font-black text-slate-800 outline-none w-24 shadow-2xs disabled:opacity-75"
-                                    >
-                                      {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
-                                    </select>
+                                  {/* Interactive scoring section: Badge + Quick Pills + Dropdown */}
+                                  <div className="mt-3.5 pt-3 border-t border-slate-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-black text-slate-500 uppercase tracking-wide">Điểm:</span>
+                                      <div
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border shadow-2xs transition-all ${
+                                          isMaxReached
+                                            ? "bg-emerald-600 text-white border-emerald-700 shadow-emerald-100"
+                                            : currentScore > 0
+                                              ? "bg-teal-600 text-white border-teal-700 shadow-teal-100"
+                                              : "bg-slate-200 text-slate-700 border-slate-300"
+                                        }`}
+                                      >
+                                        <span>{currentScore.toFixed(2)}đ</span>
+                                        <span className="text-[10px] opacity-80">/ {req.max}đ</span>
+                                        {isMaxReached && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                      </div>
+                                      {isMaxReached ? (
+                                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-lg border border-emerald-200">
+                                          ✓ Tối đa 100%
+                                        </span>
+                                      ) : currentScore > 0 ? (
+                                        <span className="text-[10px] font-bold text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-lg border border-teal-200">
+                                          Đạt {Math.round((currentScore / req.max) * 100)}%
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                                          Chưa chấm
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Score Pills & Dropdown */}
+                                    <div className="flex items-center flex-wrap gap-1.5 justify-start md:justify-end">
+                                      {!isReadOnly && (
+                                        <div className="flex items-center flex-wrap gap-1">
+                                          {options.map((o) => {
+                                            const isSelected = currentScore === o;
+                                            const isMax = o === req.max;
+                                            return (
+                                              <button
+                                                key={o}
+                                                type="button"
+                                                onClick={() => {
+                                                  const nextScores = [...evalK12Scores];
+                                                  nextScores[globalIdx] = o;
+                                                  setEvalK12Scores(nextScores);
+                                                  const nextRank = calculateK12Ranking(nextScores);
+                                                  setEvalOverall(nextRank);
+                                                }}
+                                                className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
+                                                  isSelected
+                                                    ? isMax
+                                                      ? "bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-300/70 scale-105 font-black"
+                                                      : "bg-teal-600 text-white border-teal-700 shadow-xs ring-2 ring-teal-300/70 scale-105 font-black"
+                                                    : isMax
+                                                      ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 font-bold"
+                                                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                                                }`}
+                                                title={`Chọn ${o.toFixed(2)} điểm`}
+                                              >
+                                                {isMax ? `★ ${o}` : o}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+
+                                      <select
+                                        value={evalK12Scores[globalIdx]}
+                                        onChange={(e) => {
+                                          const nextScores = [...evalK12Scores];
+                                          nextScores[globalIdx] = parseFloat(e.target.value);
+                                          setEvalK12Scores(nextScores);
+                                          const nextRank = calculateK12Ranking(nextScores);
+                                          setEvalOverall(nextRank);
+                                        }}
+                                        disabled={isReadOnly}
+                                        className={`rounded-xl border px-2 py-1 text-xs font-black outline-none shadow-2xs transition-all w-20 ${
+                                          isReadOnly ? "opacity-75 cursor-not-allowed" : "cursor-pointer"
+                                        } ${
+                                          isMaxReached
+                                            ? "border-emerald-300 bg-emerald-50/70 text-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                                            : currentScore > 0
+                                              ? "border-teal-300 bg-teal-50/70 text-teal-800 focus:ring-2 focus:ring-teal-500"
+                                              : "border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-slate-400"
+                                        }`}
+                                        title="Hoặc chọn điểm từ danh sách"
+                                      >
+                                        {options.map((o) => (
+                                          <option key={o} value={o}>
+                                            {o.toFixed(2)}đ
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -5730,11 +5854,46 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
-                      <span className="text-xs font-black text-amber-900 uppercase tracking-wide">Tổng điểm tự động:</span>
-                      <span className="text-base font-black text-amber-950 bg-white px-4 py-1.5 rounded-xl shadow-xs border border-amber-200">
-                        {evalCriteria.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00 điểm
-                      </span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="text-xs font-black text-amber-900 uppercase tracking-wide">Tổng điểm tự động:</span>
+                        <span className="text-base font-black text-amber-950 bg-white px-4 py-1.5 rounded-xl shadow-xs border border-amber-200">
+                          {evalCriteria.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00 điểm
+                        </span>
+                        <span className="text-xs font-black text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+                          Xếp loại: {calculateMamNonRanking(evalCriteria)}
+                        </span>
+                      </div>
+                      {!isReadOnly && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const maxArr = MAMNON_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
+                              setEvalCriteria(maxArr);
+                              setEvalOverall(calculateMamNonRanking(maxArr));
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700 text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95"
+                            title="Chấm điểm tối đa 10/10 cho toàn bộ các tiêu chí Mầm non"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Chấm nhanh Max (10/10)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const zeroArr = Array(18).fill(0);
+                              setEvalCriteria(zeroArr);
+                              setEvalOverall(calculateMamNonRanking(zeroArr));
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                            title="Đặt lại toàn bộ về 0 điểm"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Đặt lại 0đ</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {MAMNON_SECTIONS.map((sec, sIdx) => {
@@ -5758,31 +5917,125 @@ export function ObservationClient(props: ObservationClientProps) {
                               }
 
                               return (
-                                <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
-                                  <div className="space-y-1 min-w-0 flex-1">
+                                <div
+                                  key={req.id}
+                                  className={`p-4 rounded-2xl border transition-all ${
+                                    isMaxReached
+                                      ? "bg-emerald-50/40 border-emerald-200/80 shadow-2xs"
+                                      : currentScore > 0
+                                        ? "bg-amber-50/30 border-amber-200/70 shadow-2xs"
+                                        : "bg-slate-50/70 hover:bg-slate-50 border-slate-200/70"
+                                  }`}
+                                >
+                                  <div className="space-y-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                      <span className="px-2.5 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
                                       <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                      {isMaxReached && (
+                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md border bg-emerald-50 text-emerald-700 border-emerald-300">
+                                          ✓ Đạt Max
+                                        </span>
+                                      )}
                                     </div>
                                     <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
                                   </div>
 
-                                  <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
-                                    <span className="text-xs font-bold text-slate-500">Điểm:</span>
-                                    <select
-                                      value={evalCriteria[globalIdx]}
-                                      onChange={(e) => {
-                                        const nextCriteria = [...evalCriteria];
-                                        nextCriteria[globalIdx] = parseFloat(e.target.value);
-                                        setEvalCriteria(nextCriteria);
-                                        const nextRank = calculateMamNonRanking(nextCriteria);
-                                        setEvalOverall(nextRank);
-                                      }}
-                                      disabled={isReadOnly}
-                                      className="rounded-xl border border-slate-200 p-2 bg-white text-xs font-black text-slate-800 outline-none w-24 shadow-2xs disabled:opacity-75"
-                                    >
-                                      {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
-                                    </select>
+                                  {/* Interactive scoring section: Badge + Quick Pills + Dropdown */}
+                                  <div className="mt-3.5 pt-3 border-t border-slate-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2.5">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="text-xs font-black text-slate-500 uppercase tracking-wide">Điểm:</span>
+                                      <div
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black border shadow-2xs transition-all ${
+                                          isMaxReached
+                                            ? "bg-emerald-600 text-white border-emerald-700 shadow-emerald-100"
+                                            : currentScore > 0
+                                              ? "bg-amber-600 text-white border-amber-700 shadow-amber-100"
+                                              : "bg-slate-200 text-slate-700 border-slate-300"
+                                        }`}
+                                      >
+                                        <span>{currentScore.toFixed(2)}đ</span>
+                                        <span className="text-[10px] opacity-80">/ {req.max}đ</span>
+                                        {isMaxReached && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                                      </div>
+                                      {isMaxReached ? (
+                                        <span className="text-[10px] font-black text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-lg border border-emerald-200">
+                                          ✓ Tối đa 100%
+                                        </span>
+                                      ) : currentScore > 0 ? (
+                                        <span className="text-[10px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-lg border border-amber-200">
+                                          Đạt {Math.round((currentScore / req.max) * 100)}%
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                                          Chưa chấm
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {/* Score Pills & Dropdown */}
+                                    <div className="flex items-center flex-wrap gap-1.5 justify-start md:justify-end">
+                                      {!isReadOnly && (
+                                        <div className="flex items-center flex-wrap gap-1">
+                                          {options.map((o) => {
+                                            const isSelected = currentScore === o;
+                                            const isMax = o === req.max;
+                                            return (
+                                              <button
+                                                key={o}
+                                                type="button"
+                                                onClick={() => {
+                                                  const nextCriteria = [...evalCriteria];
+                                                  nextCriteria[globalIdx] = o;
+                                                  setEvalCriteria(nextCriteria);
+                                                  const nextRank = calculateMamNonRanking(nextCriteria);
+                                                  setEvalOverall(nextRank);
+                                                }}
+                                                className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
+                                                  isSelected
+                                                    ? isMax
+                                                      ? "bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-300/70 scale-105 font-black"
+                                                      : "bg-amber-600 text-white border-amber-700 shadow-xs ring-2 ring-amber-300/70 scale-105 font-black"
+                                                    : isMax
+                                                      ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 font-bold"
+                                                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
+                                                }`}
+                                                title={`Chọn ${o.toFixed(2)} điểm`}
+                                              >
+                                                {isMax ? `★ ${o}` : o}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+
+                                      <select
+                                        value={evalCriteria[globalIdx]}
+                                        onChange={(e) => {
+                                          const nextCriteria = [...evalCriteria];
+                                          nextCriteria[globalIdx] = parseFloat(e.target.value);
+                                          setEvalCriteria(nextCriteria);
+                                          const nextRank = calculateMamNonRanking(nextCriteria);
+                                          setEvalOverall(nextRank);
+                                        }}
+                                        disabled={isReadOnly}
+                                        className={`rounded-xl border px-2 py-1 text-xs font-black outline-none shadow-2xs transition-all w-20 ${
+                                          isReadOnly ? "opacity-75 cursor-not-allowed" : "cursor-pointer"
+                                        } ${
+                                          isMaxReached
+                                            ? "border-emerald-300 bg-emerald-50/70 text-emerald-800 focus:ring-2 focus:ring-emerald-500"
+                                            : currentScore > 0
+                                              ? "border-amber-300 bg-amber-50/70 text-amber-800 focus:ring-2 focus:ring-amber-500"
+                                              : "border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-slate-400"
+                                        }`}
+                                        title="Hoặc chọn điểm từ danh sách"
+                                      >
+                                        {options.map((o) => (
+                                          <option key={o} value={o}>
+                                            {o.toFixed(2)}đ
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </div>
                                   </div>
                                 </div>
                               );
