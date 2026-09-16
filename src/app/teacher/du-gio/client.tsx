@@ -2412,7 +2412,7 @@ export function ObservationClient(props: ObservationClientProps) {
         }
       }
 
-      if (myReg && (myReg.isApproved || isSurprise)) {
+      if (myReg && (myReg.isApproved || isSurprise || !!myReg.evaluation)) {
         stats[key].totalObservedSlots += 1;
         if (myReg.evaluation) {
           stats[key].observedCount += countWeight;
@@ -2446,7 +2446,7 @@ export function ObservationClient(props: ObservationClientProps) {
     });
 
     return Object.values(stats).sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
-  }, [slots, availableMonths, currentTeacher?.id]);
+  }, [slots, personalSlots, availableMonths, currentTeacher?.id]);
 
   const receivedEvaluations = useMemo(() => {
     const map = new Map<string, any>();
@@ -2862,7 +2862,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const myValidObservedSlots = useMemo(() => {
     return myObservedSlots.filter(slot => {
       const reg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
-      return reg && (reg.isApproved || isSurpriseSlot(slot)) && !!reg.evaluation;
+      return reg && (reg.isApproved || isSurpriseSlot(slot) || !!reg.evaluation) && !!reg.evaluation;
     });
   }, [myObservedSlots, currentTeacher?.id]);
 
@@ -5440,6 +5440,8 @@ export function ObservationClient(props: ObservationClientProps) {
           RATING_COLORS={RATING_COLORS}
           currentTeacher={currentTeacher}
           setPrintModalSlot={setPrintModalSlot}
+          selectedMonth={filterMonth}
+          onSelectMonth={handleMonthChange}
         />
       )}
 

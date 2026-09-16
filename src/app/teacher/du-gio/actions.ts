@@ -3537,13 +3537,13 @@ export async function createSurpriseObservation(data: {
       }
     }
 
-    // 2. Kiểm tra phạm vi nếu là TTCM (chỉ được dự giờ GV thuộc Tổ chuyên môn của mình)
-    if (!isAdminOrLeader && isTTCM && !isTBP) {
+    // 2. Kiểm tra phạm vi nếu là TTCM / QLCM (chỉ được dự giờ GV thuộc Tổ chuyên môn của mình)
+    if (!isAdminOrLeader && (isTTCM || isQLCM) && !isTBP) {
       const ttcmDeptIds = new Set<string>()
       if (currentTeacher.departmentId) ttcmDeptIds.add(currentTeacher.departmentId)
       if (currentTeacher.departmentAssignments) {
         currentTeacher.departmentAssignments.forEach((da: any) => {
-          if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM", "TPTCM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
+          if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM", "TPTCM", "QLCM", "QUAN_LY_CM", "Quản lý CM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
             ttcmDeptIds.add(da.departmentId)
           }
         })
@@ -3559,7 +3559,7 @@ export async function createSurpriseObservation(data: {
 
       const hasCommonDept = Array.from(ttcmDeptIds).some(id => hostDeptIds.has(id))
       if (!hasCommonDept) {
-        return { success: false, error: "TTCM chỉ có quyền thực hiện dự giờ đột xuất cho Giáo viên thuộc Tổ chuyên môn của mình." }
+        return { success: false, error: "Tổ trưởng / Quản lý chuyên môn (QLCM) chỉ có quyền thực hiện dự giờ đột xuất cho Giáo viên thuộc Tổ chuyên môn của mình." }
       }
     }
 

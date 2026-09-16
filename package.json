@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "git add . && git commit -m \"Auto sync to Vercel\" && git push origin main"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.0.0",

@@ -50,6 +50,28 @@ const isSurpriseSlot = (slot: any) => {
   );
 };
 
+const isGvnnItem = (item: any) => {
+  if (!item) return false;
+  const subj = (item.slot?.subjectName || "").toLowerCase();
+  const topic = (item.slot?.topic || "").toLowerCase();
+  const desc = (item.slot?.description || "").toLowerCase();
+  const rating = (item.evaluation?.overallRating || "").toLowerCase();
+  return (
+    subj.includes("esl") ||
+    subj.includes("tiếng anh (esl)") ||
+    topic.includes("grapeseed") ||
+    topic.includes("foreign") ||
+    desc.includes("gvnn") ||
+    desc.includes("foreign") ||
+    item.slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
+    rating.includes("strong practice") ||
+    rating.includes("effective practice") ||
+    rating.includes("needs support") ||
+    rating.includes("developing") ||
+    rating.includes("proficient")
+  );
+};
+
 interface ReceivedEvaluationsTabProps {
   receivedEvaluations: any[];
   isPreschoolEvaluations: boolean;
@@ -58,6 +80,8 @@ interface ReceivedEvaluationsTabProps {
   RATING_COLORS: Record<string, string>;
   currentTeacher?: any;
   setPrintModalSlot?: (obj: any) => void;
+  selectedMonth?: string;
+  onSelectMonth?: (m: string) => void;
 }
 
 export function ReceivedEvaluationsTab({
@@ -67,12 +91,31 @@ export function ReceivedEvaluationsTab({
   getAvatarGradient,
   RATING_COLORS,
   currentTeacher,
-  setPrintModalSlot
+  setPrintModalSlot,
+  selectedMonth,
+  onSelectMonth
 }: ReceivedEvaluationsTabProps) {
   const [selectedEvalRole, setSelectedEvalRole] = useState<"ALL" | "TEACHER" | "OBSERVER">("ALL");
-  const [selectedEvalMonth, setSelectedEvalMonth] = useState<string>("ALL");
+  const [selectedEvalMonth, setSelectedEvalMonth] = useState<string>(
+    selectedMonth && selectedMonth !== "all" ? selectedMonth : "ALL"
+  );
   const [selectedOriginType, setSelectedOriginType] = useState<"ALL" | "PLAN" | "SURPRISE">("ALL");
   const [trendViewMode, setTrendViewMode] = useState<"SESSION" | "MONTH">("SESSION");
+
+  React.useEffect(() => {
+    if (selectedMonth && selectedMonth !== "all") {
+      setSelectedEvalMonth(selectedMonth);
+    } else if (selectedMonth === "all") {
+      setSelectedEvalMonth("ALL");
+    }
+  }, [selectedMonth]);
+
+  const handleEvalMonthChange = (val: string) => {
+    setSelectedEvalMonth(val);
+    if (onSelectMonth) {
+      onSelectMonth(val === "ALL" ? "all" : val);
+    }
+  };
 
   // Đếm theo vai trò
   const taughtCount = useMemo(() => {
@@ -178,7 +221,8 @@ export function ReceivedEvaluationsTab({
           const altSum = evals.reduce((acc, curr) => acc + (Number(curr.evaluation?.totalScore) || 0), 0);
           if (altSum > 0) {
             totalScoreSum = altSum / evals.length;
-            maxPossibleScore = 20;
+            const hasGvnn = evals.some(e => isGvnnItem(e));
+            maxPossibleScore = (hasGvnn || totalScoreSum <= 4) ? 4 : 20;
           }
         }
       } else {
@@ -222,8 +266,17 @@ export function ReceivedEvaluationsTab({
       };
     });
 
-    // 2. Timeline trend data (từng tiết đánh giá)
-    const timelineTrendData = sortedTimelineEvals.map((item, idx) => {
+    // 2. Timeline trend data (từng tiết đánh giá, lọc theo tháng nếu chọn tháng cụ thể)
+    const timelineSource = selectedEvalMonth !== "ALL"
+      ? sortedTimelineEvals.filter(item => {
+          const d = new Date(item.slot?.date || item.evaluation?.createdAt || new Date());
+          const m = d.getMonth() + 1;
+          const y = d.getFullYear();
+          return `${y}-${m < 10 ? '0' + m : m}` === selectedEvalMonth;
+        })
+      : sortedTimelineEvals;
+
+    const timelineTrendData = timelineSource.map((item, idx) => {
       const d = new Date(item.slot?.date || item.evaluation?.createdAt || new Date());
       const day = d.getDate() < 10 ? '0' + d.getDate() : d.getDate();
       const month = (d.getMonth() + 1) < 10 ? '0' + (d.getMonth() + 1) : (d.getMonth() + 1);
@@ -550,10 +603,10 @@ export function ReceivedEvaluationsTab({
               <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider">Tháng:</span>
               <select
                 value={selectedEvalMonth}
-                onChange={e => setSelectedEvalMonth(e.target.value)}
+                onChange={e => handleEvalMonthChange(e.target.value)}
                 className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
               >
-                <option value="ALL">Toàn bộ năm học ({filteredList.length} phiếu)</option>
+                <option value="ALL">Toàn bộ năm học ({receivedEvaluations.length} phiếu)</option>
                 {availableMonths.map(m => (
                   <option key={m.key} value={m.key}>{m.label} ({m.count} phiếu)</option>
                 ))}
@@ -1180,7 +1233,7 @@ export function ReceivedEvaluationsTab({
 
           {selectedEvalMonth !== "ALL" && (
             <button
-              onClick={() => setSelectedEvalMonth("ALL")}
+              onClick={() => handleEvalMonthChange("ALL")}
               className="px-3 py-1 rounded-xl text-xs font-bold text-[#00A99D] bg-teal-50 hover:bg-teal-100 transition-colors border border-teal-200 cursor-pointer"
             >
               Xem tất cả các tháng
@@ -1213,7 +1266,8 @@ export function ReceivedEvaluationsTab({
                 {filteredList.map((evalItem, idx) => {
                   const rating = evalItem.evaluation?.overallRating || "Đạt";
                   const totalScore = evalItem.evaluation?.totalScore;
-                  const maxScoreVal = isPreschoolEvaluations ? "4.0" : "20";
+                  const isGvnn = isGvnnItem(evalItem);
+                  const maxScoreVal = isPreschoolEvaluations ? "4.0" : isGvnn ? "4.0" : "20";
                   const slotDate = new Date(evalItem.slot?.date || evalItem.evaluation?.createdAt || new Date());
                   
                   const isHost = evalItem.role === "TEACHER" || evalItem.slot?.teacherId === currentTeacher?.id;

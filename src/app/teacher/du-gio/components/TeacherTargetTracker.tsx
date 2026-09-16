@@ -64,21 +64,35 @@ export function TeacherTargetTracker({
   monthlyStatsList = [],
   onViewReport
 }: TeacherTargetTrackerProps) {
-  const isSpecificMonth = selectedMonth && selectedMonth !== "all"
+  const isSpecificMonth = selectedMonth && selectedMonth !== "all";
   
+  const currentMonthStat = React.useMemo(() => {
+    if (!isSpecificMonth || !selectedMonth || !monthlyStatsList) return null;
+    return monthlyStatsList.find(m => m.monthKey === selectedMonth) || null;
+  }, [isSpecificMonth, selectedMonth, monthlyStatsList]);
+
   // Safe targets
-  const safeTargetTaught = (targetTaught && targetTaught > 0) ? targetTaught : (isPreschool ? 4 : 2)
-  const safeTargetObserved = (targetObserved && targetObserved > 0) ? targetObserved : (isPreschool ? 8 : 10)
-  const maxScore = isPreschool ? 10 : 20
+  const safeTargetTaught = (targetTaught && targetTaught > 0) ? targetTaught : (isPreschool ? 4 : 2);
+  const safeTargetObserved = (targetObserved && targetObserved > 0) ? targetObserved : (isPreschool ? 8 : 10);
+  const maxScore = isPreschool ? 10 : 20;
 
-  const taughtPercent = Math.min(100, Math.round(((taughtCount || 0) / safeTargetTaught) * 100))
-  const observedPercent = Math.min(100, Math.round(((observedCount || 0) / safeTargetObserved) * 100))
+  const displayTaughtCount = isSpecificMonth && currentMonthStat ? currentMonthStat.taughtCount : (taughtCount || 0);
+  const displayTotalTaught = isSpecificMonth && currentMonthStat ? currentMonthStat.totalTaughtSlots : totalTaughtSlots;
+  const displayObservedCount = isSpecificMonth && currentMonthStat ? currentMonthStat.observedCount : (observedCount || 0);
+  const displayTotalObserved = isSpecificMonth && currentMonthStat ? currentMonthStat.totalObservedSlots : totalObservedSlots;
+  const displaySurpriseTaught = isSpecificMonth && currentMonthStat ? currentMonthStat.surpriseTaughtCount : surpriseTaughtCount;
+  const displaySurpriseObserved = isSpecificMonth && currentMonthStat ? currentMonthStat.surpriseObservedCount : surpriseObservedCount;
 
-  const taughtRemaining = Math.max(0, safeTargetTaught - (taughtCount || 0))
-  const observedRemaining = Math.max(0, safeTargetObserved - (observedCount || 0))
+  const taughtPercent = Math.min(100, Math.round((displayTaughtCount / safeTargetTaught) * 100));
+  const observedPercent = Math.min(100, Math.round((displayObservedCount / safeTargetObserved) * 100));
 
-  const numAvgScore = avgScore ? Number(avgScore) : null
-  const scorePercent = numAvgScore ? Math.min(100, Math.round((numAvgScore / maxScore) * 100)) : 0
+  const taughtRemaining = Math.max(0, safeTargetTaught - displayTaughtCount);
+  const observedRemaining = Math.max(0, safeTargetObserved - displayObservedCount);
+
+  const numAvgScore = (isSpecificMonth && currentMonthStat?.avgScore)
+    ? Number(currentMonthStat.avgScore)
+    : (avgScore ? Number(avgScore) : null);
+  const scorePercent = numAvgScore ? Math.min(100, Math.round((numAvgScore / maxScore) * 100)) : 0;
 
   const scoreRating = numAvgScore
     ? numAvgScore >= (isPreschool ? 9 : 17)
@@ -88,17 +102,17 @@ export function TeacherTargetTracker({
       : numAvgScore >= (isPreschool ? 7 : 10)
       ? "Đạt"
       : "Chưa đạt"
-    : "Chưa có"
+    : "Chưa có";
 
-  const isAllCompleted = taughtRemaining === 0 && observedRemaining === 0
+  const isAllCompleted = taughtRemaining === 0 && observedRemaining === 0;
 
   const selectedMonthDisplay = React.useMemo(() => {
-    if (!isSpecificMonth || !selectedMonth || selectedMonth === "all") return null
-    const parts = (selectedMonth || "").split("-")
-    if (parts.length < 2) return selectedMonth
-    const [y, m] = parts
-    return `Tháng ${m}/${y}`
-  }, [isSpecificMonth, selectedMonth])
+    if (!isSpecificMonth || !selectedMonth || selectedMonth === "all") return null;
+    const parts = (selectedMonth || "").split("-");
+    if (parts.length < 2) return selectedMonth;
+    const [y, m] = parts;
+    return `Tháng ${m}/${y}`;
+  }, [isSpecificMonth, selectedMonth]);
 
   return (
     <div className="bg-gradient-to-br from-[#003B3A] via-[#004D4B] to-[#1E8B87] rounded-3xl p-4 sm:p-5 text-white shadow-xl border border-white/10 relative overflow-hidden flex flex-col gap-4">
@@ -228,7 +242,7 @@ export function TeacherTargetTracker({
 
             <div className="flex items-baseline justify-between">
               <div className="flex items-baseline gap-1">
-                <span className="text-lg sm:text-xl font-black text-white">{taughtCount}</span>
+                <span className="text-lg sm:text-xl font-black text-white">{displayTaughtCount}</span>
                 <span className="text-[11px] font-bold text-teal-200">/ {safeTargetTaught} tiết</span>
               </div>
               <span className="text-[10px] font-extrabold text-amber-300">
@@ -244,22 +258,22 @@ export function TeacherTargetTracker({
                 />
               </div>
               <div className="flex items-center justify-between text-[10px] text-teal-200/90 font-medium">
-                <span>{isSpecificMonth ? `Mở trong tháng: ` : `Đã mở: `}<strong className="text-white font-bold">{totalTaughtSlots} tiết</strong></span>
-                <span>{taughtCount}/{totalTaughtSlots} có phiếu</span>
+                <span>{isSpecificMonth ? `Mở trong tháng: ` : `Đã mở: `}<strong className="text-white font-bold">{displayTotalTaught} tiết</strong></span>
+                <span>{displayTaughtCount}/{displayTotalTaught} có phiếu</span>
               </div>
               <div className="pt-1.5 mt-1 border-t border-white/10 flex items-center justify-between text-[10px]">
                 <span className="text-teal-100/80 flex items-center gap-1 font-medium">
                   <span>📋 Kế hoạch:</span>
-                  <strong className="text-white font-bold">{Math.max(0, taughtCount - surpriseTaughtCount)}</strong>
+                  <strong className="text-white font-bold">{Math.max(0, displayTaughtCount - displaySurpriseTaught)}</strong>
                 </span>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition-all border ${
-                  surpriseTaughtCount > 0
+                  displaySurpriseTaught > 0
                     ? "bg-rose-500/25 text-rose-200 border-rose-400/40 shadow-xs"
                     : "bg-white/10 text-teal-200/80 border-white/15"
                 }`}>
                   <span>⚡ Đột xuất:</span>
-                  <strong className="text-white font-black">{surpriseTaughtCount}</strong>
-                  {totalSurpriseTaughtSlots > surpriseTaughtCount && (
+                  <strong className="text-white font-black">{displaySurpriseTaught}</strong>
+                  {totalSurpriseTaughtSlots > displaySurpriseTaught && (
                     <span className="text-[9px] opacity-75 font-normal">/{totalSurpriseTaughtSlots}</span>
                   )}
                   <span>tiết</span>
@@ -290,7 +304,7 @@ export function TeacherTargetTracker({
 
             <div className="flex items-baseline justify-between">
               <div className="flex items-baseline gap-1">
-                <span className="text-lg sm:text-xl font-black text-white">{observedCount}</span>
+                <span className="text-lg sm:text-xl font-black text-white">{displayObservedCount}</span>
                 <span className="text-[11px] font-bold text-teal-200">/ {safeTargetObserved} tiết</span>
               </div>
               <span className="text-[10px] font-extrabold text-cyan-300">
@@ -306,22 +320,22 @@ export function TeacherTargetTracker({
                 />
               </div>
               <div className="flex items-center justify-between text-[10px] text-teal-200/90 font-medium">
-                <span>{isSpecificMonth ? `Dự trong tháng: ` : `Đã dự: `}<strong className="text-white font-bold">{totalObservedSlots} tiết</strong></span>
-                <span>{observedCount}/{totalObservedSlots} nộp phiếu</span>
+                <span>{isSpecificMonth ? `Dự trong tháng: ` : `Đã dự: `}<strong className="text-white font-bold">{displayTotalObserved} tiết</strong></span>
+                <span>{displayObservedCount}/{displayTotalObserved} nộp phiếu</span>
               </div>
               <div className="pt-1.5 mt-1 border-t border-white/10 flex items-center justify-between text-[10px]">
                 <span className="text-teal-100/80 flex items-center gap-1 font-medium">
                   <span>📋 Kế hoạch:</span>
-                  <strong className="text-white font-bold">{Math.max(0, observedCount - surpriseObservedCount)}</strong>
+                  <strong className="text-white font-bold">{Math.max(0, displayObservedCount - displaySurpriseObserved)}</strong>
                 </span>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-black transition-all border ${
-                  surpriseObservedCount > 0
+                  displaySurpriseObserved > 0
                     ? "bg-rose-500/25 text-rose-200 border-rose-400/40 shadow-xs"
                     : "bg-white/10 text-teal-200/80 border-white/15"
                 }`}>
                   <span>⚡ Đột xuất:</span>
-                  <strong className="text-white font-black">{surpriseObservedCount}</strong>
-                  {totalSurpriseObservedSlots > surpriseObservedCount && (
+                  <strong className="text-white font-black">{displaySurpriseObserved}</strong>
+                  {totalSurpriseObservedSlots > displaySurpriseObserved && (
                     <span className="text-[9px] opacity-75 font-normal">/{totalSurpriseObservedSlots}</span>
                   )}
                   <span>tiết</span>

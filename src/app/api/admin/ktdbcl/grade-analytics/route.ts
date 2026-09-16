@@ -141,78 +141,91 @@ export async function GET(request: Request) {
 
     // 3. Fetch Entrance Assessment records (InputAssessmentStudent) with commitment notes
     const entranceAssessmentMap = new Map<string, any>()
-    if (studentCodes.length > 0) {
-      const entranceRecords = await prisma.inputAssessmentStudent.findMany({
-        where: {
-          studentCode: { in: studentCodes }
-        },
-        select: {
-          studentCode: true,
-          fullName: true,
-          mathScore: true,
-          literatureScore: true,
-          writtenEnglishScore: true,
-          oralEnglishScore: true,
-          admissionCriteria: true,
-          admissionResult: true,
-          targetType: true,
-          directorNote: true
-        }
-      })
-      entranceRecords.forEach(r => {
-        const cleanCode = (r.studentCode || "").trim().toUpperCase()
-        if (cleanCode) entranceAssessmentMap.set(cleanCode, r)
-      })
+    const p = prisma as any
+    if (studentCodes.length > 0 && p.inputAssessmentStudent?.findMany) {
+      try {
+        const entranceRecords = await p.inputAssessmentStudent.findMany({
+          where: {
+            studentCode: { in: studentCodes }
+          },
+          select: {
+            studentCode: true,
+            fullName: true,
+            mathScore: true,
+            literatureScore: true,
+            writtenEnglishScore: true,
+            oralEnglishScore: true,
+            admissionCriteria: true,
+            admissionResult: true,
+            targetType: true,
+            directorNote: true
+          }
+        })
+        entranceRecords.forEach((r: any) => {
+          const cleanCode = (r.studentCode || "").trim().toUpperCase()
+          if (cleanCode) entranceAssessmentMap.set(cleanCode, r)
+        })
+      } catch (e) {
+        console.warn("Lỗi khi đọc inputAssessmentStudent:", e)
+      }
     }
 
     // 3.1 Fetch StudentLearningCommitment (Cam kết học tập hiện hành)
     const learningCommitmentMap = new Map<string, any>()
-    if (studentIds.length > 0) {
-      const commitments = await prisma.studentLearningCommitment.findMany({
-        where: {
-          studentId: { in: studentIds },
-          ...(academicYearId ? { academicYearId } : {}),
-          status: "ACTIVE"
-        }
-      })
-      commitments.forEach(c => {
-        learningCommitmentMap.set(c.studentId, c)
-      })
+    if (studentIds.length > 0 && p.studentLearningCommitment?.findMany) {
+      try {
+        const commitments = await p.studentLearningCommitment.findMany({
+          where: {
+            studentId: { in: studentIds },
+            ...(academicYearId ? { academicYearId } : {}),
+            status: "ACTIVE"
+          }
+        })
+        commitments.forEach((c: any) => {
+          learningCommitmentMap.set(c.studentId, c)
+        })
+      } catch (e) {
+        console.warn("Lỗi khi đọc studentLearningCommitment:", e)
+      }
     }
 
     // 3.2 Fetch Teaching Assignments for teacher lookup
-    const teachingAssignments = await prisma.teachingAssignment.findMany({
-      where: {
-        classId: { in: classIds },
-        ...(academicYearId ? { academicYearId } : {})
-      },
-      include: {
-        teacher: true,
-        subject: true
-      }
-    })
+    const teachingAssignments = p.teachingAssignment?.findMany
+      ? await p.teachingAssignment.findMany({
+          where: {
+            classId: { in: classIds },
+            ...(academicYearId ? { academicYearId } : {})
+          },
+          include: {
+            teacher: true,
+            subject: true
+          }
+        })
+      : []
     const taMap = new Map<string, any>()
-    teachingAssignments.forEach(ta => {
+    teachingAssignments.forEach((ta: any) => {
       taMap.set(`${ta.classId}_${ta.subjectId}`, ta)
     })
 
     // 3.3 Fetch homeroom teachers
     const homeroomIds = Array.from(new Set(filteredClasses.map(c => c.homeroomTeacherId).filter(Boolean)))
-    const homeroomTeachers = homeroomIds.length > 0
-      ? await prisma.teacher.findMany({
+    const homeroomTeachers = (homeroomIds.length > 0 && p.teacher?.findMany)
+      ? await p.teacher.findMany({
           where: { id: { in: homeroomIds } },
           select: { id: true, teacherName: true, teacherCode: true }
         })
       : []
     const homeroomMap = new Map<string, any>()
-    homeroomTeachers.forEach(t => homeroomMap.set(t.id, t))
+    homeroomTeachers.forEach((t: any) => homeroomMap.set(t.id, t))
 
     // 3.4 Fetch SubjectBenchmarkConfig for academicYearId
-    const benchmarkConfigs = await prisma.subjectBenchmarkConfig.findMany({
-      where: {
-        academicYearId
-      }
-    })
+    const benchmarkConfigs = p.subjectBenchmarkConfig?.findMany
+      ? await p.subjectBenchmarkConfig.findMany({
+          where: {
+            academicYearId
+          }
+        })
+      : []
 
     // Benchmark resolver helper: Priority: (subject + grade + period) -> (subject + grade) -> level -> default (7.0 for Tiểu học, 6.0 for Trung học)
     const resolveBenchmark = (level: string, grade: string, subId: string, period: string): number => {
@@ -227,19 +240,19 @@ export async function GET(request: Request) {
       const levelCode = isPrimary ? "TIEU_HOC" : (["6", "7", "8", "9"].some(g => cleanGrade === g || cleanGrade === `khối ${g}`) ? "THCS" : "THPT")
 
       // 1. Specific subject + grade + period
-      const matchSubGradePeriod = benchmarkConfigs.find(b => b.subjectId === subId && b.grade === grade && b.evaluationPeriod === period)
+      const matchSubGradePeriod = benchmarkConfigs.find((b: any) => b.subjectId === subId && b.grade === grade && b.evaluationPeriod === period)
       if (matchSubGradePeriod) return matchSubGradePeriod.benchmarkScore
 
       // 2. Specific subject + grade + ALL period
-      const matchSubGrade = benchmarkConfigs.find(b => b.subjectId === subId && b.grade === grade && b.evaluationPeriod === "ALL")
+      const matchSubGrade = benchmarkConfigs.find((b: any) => b.subjectId === subId && b.grade === grade && b.evaluationPeriod === "ALL")
       if (matchSubGrade) return matchSubGrade.benchmarkScore
 
       // 3. Specific subject + level
-      const matchSubLevel = benchmarkConfigs.find(b => b.subjectId === subId && b.level === levelCode)
+      const matchSubLevel = benchmarkConfigs.find((b: any) => b.subjectId === subId && b.level === levelCode)
       if (matchSubLevel) return matchSubLevel.benchmarkScore
 
       // 4. Level config
-      const matchLevel = benchmarkConfigs.find(b => b.level === levelCode && (b.subjectId === "ALL" || !b.subjectId) && (b.grade === "ALL" || !b.grade))
+      const matchLevel = benchmarkConfigs.find((b: any) => b.level === levelCode && (b.subjectId === "ALL" || !b.subjectId) && (b.grade === "ALL" || !b.grade))
       if (matchLevel) return matchLevel.benchmarkScore
 
       return defaultScore
@@ -254,22 +267,24 @@ export async function GET(request: Request) {
       entryWhere.subjectId = subjectId
     }
 
-    const allEntries = await prisma.subjectGradeEntry.findMany({
-      where: entryWhere,
-      include: {
-        subject: {
-          select: {
-            id: true,
-            subjectCode: true,
-            subjectName: true
+    const allEntries = p.subjectGradeEntry?.findMany
+      ? await p.subjectGradeEntry.findMany({
+          where: entryWhere,
+          include: {
+            subject: {
+              select: {
+                id: true,
+                subjectCode: true,
+                subjectName: true
+              }
+            }
           }
-        }
-      }
-    })
+        })
+      : []
 
     // Index entries by: studentId -> subjectId -> period -> entry
     const studentSubjectPeriodMap = new Map<string, Map<string, Map<string, any>>>()
-    allEntries.forEach(entry => {
+    allEntries.forEach((entry: any) => {
       if (!studentSubjectPeriodMap.has(entry.studentId)) {
         studentSubjectPeriodMap.set(entry.studentId, new Map())
       }
@@ -281,13 +296,15 @@ export async function GET(request: Request) {
     })
 
     // 5. Distinct subjects strictly belonging to the Survey Periods (currentPeriod & baselinePeriod)
-    const surveyConfigs = await prisma.subjectGradeConfig.findMany({
-      where: {
-        academicYearId,
-        evaluationPeriod: { in: [currentPeriod, baselinePeriod, "ALL"] }
-      },
-      include: { subject: true }
-    })
+    const surveyConfigs = p.subjectGradeConfig?.findMany
+      ? await p.subjectGradeConfig.findMany({
+          where: {
+            academicYearId,
+            evaluationPeriod: { in: [currentPeriod, baselinePeriod, "ALL"] }
+          },
+          include: { subject: true }
+        })
+      : []
 
     const subjectMap = new Map<string, { id: string; name: string; code: string }>()
 

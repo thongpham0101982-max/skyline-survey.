@@ -48,9 +48,9 @@ export function AdminObservationKpiCards({
         }
 
         const rating = (ev.overallRating || "").toLowerCase()
-        if (rating.includes("giỏi") || rating.includes("tốt")) {
+        if (rating.includes("giỏi") || rating.includes("tốt") || rating.includes("strong practice") || rating.includes("proficient") || rating.includes("effective practice") || rating.includes("effective")) {
           ratingCounts.Good++
-        } else if (rating.includes("khá")) {
+        } else if (rating.includes("khá") || rating.includes("developing")) {
           ratingCounts.Fair++
         } else if (rating.includes("trung bình") || rating.includes("đạt")) {
           ratingCounts.Average++

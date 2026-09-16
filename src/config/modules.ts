@@ -138,6 +138,7 @@ export const APP_CATEGORIES = [
         subModules: [
           { code: "CO_VAN_PRESETS", name: "QL Phiếu mẫu Mục tiêu", href: "/admin/co-van-hoc-tap?tab=presets" },
           { code: "CO_VAN_DASHBOARD", name: "Dashboard Theo dõi", href: "/admin/co-van-hoc-tap?tab=dashboard" },
+          { code: "CO_VAN_CONSULTATIONS", name: "Theo dõi hoạt động tư vấn", href: "/admin/co-van-hoc-tap?tab=consultations" },
         ]
       },
       { code: "DEPARTMENTS", name: "Tổ chuyên môn", icon: Users2, href: "/admin/departments" },
