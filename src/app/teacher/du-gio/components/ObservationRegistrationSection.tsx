@@ -448,6 +448,56 @@ export function ObservationRegistrationSection(props: any) {
     k12Labels, maxScoresK12, getK12RankingDetails, getMamNonRankingDetails
   } = props;
 
+  // Safe updaters for scores
+  const safeScoresK12 = Array.isArray(surpriseScoresK12) ? surpriseScoresK12 : Array(11).fill(0);
+  const safeScoresMN = Array.isArray(surpriseScoresMN) ? surpriseScoresMN : Array(18).fill(0);
+
+  const handleUpdateK12Score = (index: number, val: number) => {
+    const nextScores = [...safeScoresK12];
+    nextScores[index] = val;
+    if (typeof setSurpriseScoresK12 === "function") {
+      setSurpriseScoresK12(nextScores);
+    }
+    if (typeof setSurpriseOverall === "function") {
+      setSurpriseOverall(calculateK12Ranking(nextScores));
+    }
+  };
+
+  const handleUpdateMNScore = (index: number, val: number) => {
+    const nextScores = [...safeScoresMN];
+    nextScores[index] = val;
+    if (typeof setSurpriseScoresMN === "function") {
+      setSurpriseScoresMN(nextScores);
+    }
+    if (typeof setSurpriseOverall === "function") {
+      setSurpriseOverall(calculateMamNonRanking(nextScores));
+    }
+  };
+
+  const handleSetAllMaxSafe = () => {
+    if (surpriseLevel !== "Mầm non") {
+      const maxArr = K12_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
+      if (typeof setSurpriseScoresK12 === "function") setSurpriseScoresK12(maxArr);
+      if (typeof setSurpriseOverall === "function") setSurpriseOverall(calculateK12Ranking(maxArr));
+    } else {
+      const maxArr = MAMNON_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
+      if (typeof setSurpriseScoresMN === "function") setSurpriseScoresMN(maxArr);
+      if (typeof setSurpriseOverall === "function") setSurpriseOverall(calculateMamNonRanking(maxArr));
+    }
+  };
+
+  const handleResetScoresSafe = () => {
+    if (surpriseLevel !== "Mầm non") {
+      const zeroArr = Array(11).fill(0);
+      if (typeof setSurpriseScoresK12 === "function") setSurpriseScoresK12(zeroArr);
+      if (typeof setSurpriseOverall === "function") setSurpriseOverall(calculateK12Ranking(zeroArr));
+    } else {
+      const zeroArr = Array(18).fill(0);
+      if (typeof setSurpriseScoresMN === "function") setSurpriseScoresMN(zeroArr);
+      if (typeof setSurpriseOverall === "function") setSurpriseOverall(calculateMamNonRanking(zeroArr));
+    }
+  };
+
   const currentMonthNum = new Date().getMonth() + 1;
   const progressPct = Math.min(100, Math.round(((monthlyLimitCount || 0) / 2) * 100));
 
@@ -988,17 +1038,7 @@ export function ObservationRegistrationSection(props: any) {
                     <div className="flex items-center gap-1.5 pl-1">
                       <button
                         type="button"
-                        onClick={() => {
-                          if (surpriseLevel !== "Mầm non") {
-                            const maxArr = K12_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
-                            setSurpriseScoresK12(maxArr);
-                            setSurpriseOverall(calculateK12Ranking(maxArr));
-                          } else {
-                            const maxArr = MAMNON_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
-                            setSurpriseScoresMN(maxArr);
-                            setSurpriseOverall(calculateMamNonRanking(maxArr));
-                          }
-                        }}
+                        onClick={handleSetAllMaxSafe}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-xs font-black transition-all cursor-pointer shadow-2xs active:scale-95"
                         title="Chấm điểm tối đa cho toàn bộ các tiêu chí"
                       >
@@ -1008,17 +1048,7 @@ export function ObservationRegistrationSection(props: any) {
 
                       <button
                         type="button"
-                        onClick={() => {
-                          if (surpriseLevel !== "Mầm non") {
-                            const zeroArr = Array(11).fill(0);
-                            setSurpriseScoresK12(zeroArr);
-                            setSurpriseOverall(calculateK12Ranking(zeroArr));
-                          } else {
-                            const zeroArr = Array(18).fill(0);
-                            setSurpriseScoresMN(zeroArr);
-                            setSurpriseOverall(calculateMamNonRanking(zeroArr));
-                          }
-                        }}
+                        onClick={handleResetScoresSafe}
                         className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                         title="Đặt lại toàn bộ tiêu chí về 0 điểm"
                       >
@@ -1053,7 +1083,7 @@ export function ObservationRegistrationSection(props: any) {
                                 options.push(Math.round(v * 100) / 100);
                               }
 
-                              const currentScore = surpriseScoresK12[globalIdx] || 0;
+                              const currentScore = safeScoresK12[globalIdx] ?? 0;
                               const isMaxReached = currentScore === req.max;
 
                               return (
@@ -1063,7 +1093,7 @@ export function ObservationRegistrationSection(props: any) {
                                     isMaxReached
                                       ? "bg-emerald-50/40 border-emerald-200/80 shadow-2xs"
                                       : currentScore > 0
-                                        ? "bg-rose-50/30 border-rose-200/70 shadow-2xs"
+                                        ? "bg-teal-50/30 border-teal-200/70 shadow-2xs"
                                         : "bg-slate-50/70 hover:bg-slate-50 border-slate-200/70"
                                   }`}
                                 >
@@ -1097,7 +1127,7 @@ export function ObservationRegistrationSection(props: any) {
                                           isMaxReached
                                             ? "bg-emerald-600 text-white border-emerald-700 shadow-emerald-100"
                                             : currentScore > 0
-                                              ? "bg-rose-600 text-white border-rose-700 shadow-rose-100"
+                                              ? "bg-teal-600 text-white border-teal-700 shadow-teal-100"
                                               : "bg-slate-200 text-slate-700 border-slate-300"
                                         }`}
                                       >
@@ -1110,7 +1140,7 @@ export function ObservationRegistrationSection(props: any) {
                                           ✓ Tối đa 100%
                                         </span>
                                       ) : currentScore > 0 ? (
-                                        <span className="text-[10px] font-bold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-lg border border-rose-200">
+                                        <span className="text-[10px] font-bold text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-lg border border-teal-200">
                                           Đạt {Math.round((currentScore / req.max) * 100)}%
                                         </span>
                                       ) : (
@@ -1130,18 +1160,14 @@ export function ObservationRegistrationSection(props: any) {
                                             <button
                                               key={o}
                                               type="button"
-                                              onClick={() => {
-                                                const nextScores = [...surpriseScoresK12];
-                                                nextScores[globalIdx] = o;
-                                                setSurpriseScoresK12(nextScores);
-                                                const nextRank = calculateK12Ranking(nextScores);
-                                                setSurpriseOverall(nextRank);
-                                              }}
+                                              onClick={() => handleUpdateK12Score(globalIdx, o)}
                                               className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
                                                 isSelected
                                                   ? isMax
                                                     ? "bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-300/70 scale-105 font-black"
-                                                    : "bg-rose-600 text-white border-rose-700 shadow-xs ring-2 ring-rose-300/70 scale-105 font-black"
+                                                    : o > 0
+                                                      ? "bg-teal-600 text-white border-teal-700 shadow-xs ring-2 ring-teal-300/70 scale-105 font-black"
+                                                      : "bg-slate-700 text-white border-slate-800 shadow-xs ring-2 ring-slate-300/70 scale-105 font-black"
                                                   : isMax
                                                     ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 font-bold"
                                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
@@ -1155,19 +1181,13 @@ export function ObservationRegistrationSection(props: any) {
                                       </div>
 
                                       <select
-                                        value={surpriseScoresK12[globalIdx]}
-                                        onChange={(e) => {
-                                          const nextScores = [...surpriseScoresK12];
-                                          nextScores[globalIdx] = parseFloat(e.target.value);
-                                          setSurpriseScoresK12(nextScores);
-                                          const nextRank = calculateK12Ranking(nextScores);
-                                          setSurpriseOverall(nextRank);
-                                        }}
+                                        value={currentScore}
+                                        onChange={(e) => handleUpdateK12Score(globalIdx, parseFloat(e.target.value))}
                                         className={`rounded-xl border px-2 py-1 text-xs font-black outline-none shadow-2xs transition-all w-20 cursor-pointer ${
                                           isMaxReached
                                             ? "border-emerald-300 bg-emerald-50/70 text-emerald-800 focus:ring-2 focus:ring-emerald-500"
                                             : currentScore > 0
-                                              ? "border-rose-300 bg-rose-50/70 text-rose-800 focus:ring-2 focus:ring-rose-500"
+                                              ? "border-teal-300 bg-teal-50/70 text-teal-800 focus:ring-2 focus:ring-teal-500"
                                               : "border-slate-200 bg-white text-slate-800 focus:ring-2 focus:ring-slate-400"
                                         }`}
                                         title="Hoặc chọn điểm từ danh sách"
@@ -1210,6 +1230,9 @@ export function ObservationRegistrationSection(props: any) {
                               for (let v = 0; v <= req.max; v += 0.25) {
                                 options.push(Math.round(v * 100) / 100);
                               }
+
+                              const currentScore = safeScoresMN[globalIdx] ?? 0;
+                              const isMaxReached = currentScore === req.max;
 
                               return (
                                 <div
@@ -1277,18 +1300,14 @@ export function ObservationRegistrationSection(props: any) {
                                             <button
                                               key={o}
                                               type="button"
-                                              onClick={() => {
-                                                const nextScores = [...surpriseScoresMN];
-                                                nextScores[globalIdx] = o;
-                                                setSurpriseScoresMN(nextScores);
-                                                const nextRank = calculateMamNonRanking(nextScores);
-                                                setSurpriseOverall(nextRank);
-                                              }}
+                                              onClick={() => handleUpdateMNScore(globalIdx, o)}
                                               className={`px-2.5 py-1 text-xs font-bold rounded-xl border transition-all cursor-pointer select-none active:scale-95 ${
                                                 isSelected
                                                   ? isMax
                                                     ? "bg-emerald-600 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-300/70 scale-105 font-black"
-                                                    : "bg-amber-600 text-white border-amber-700 shadow-xs ring-2 ring-amber-300/70 scale-105 font-black"
+                                                    : o > 0
+                                                      ? "bg-amber-600 text-white border-amber-700 shadow-xs ring-2 ring-amber-300/70 scale-105 font-black"
+                                                      : "bg-slate-700 text-white border-slate-800 shadow-xs ring-2 ring-slate-300/70 scale-105 font-black"
                                                   : isMax
                                                     ? "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 font-bold"
                                                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
@@ -1302,14 +1321,8 @@ export function ObservationRegistrationSection(props: any) {
                                       </div>
 
                                       <select
-                                        value={surpriseScoresMN[globalIdx]}
-                                        onChange={(e) => {
-                                          const nextScores = [...surpriseScoresMN];
-                                          nextScores[globalIdx] = parseFloat(e.target.value);
-                                          setSurpriseScoresMN(nextScores);
-                                          const nextRank = calculateMamNonRanking(nextScores);
-                                          setSurpriseOverall(nextRank);
-                                        }}
+                                        value={currentScore}
+                                        onChange={(e) => handleUpdateMNScore(globalIdx, parseFloat(e.target.value))}
                                         className={`rounded-xl border px-2 py-1 text-xs font-black outline-none shadow-2xs transition-all w-20 cursor-pointer ${
                                           isMaxReached
                                             ? "border-emerald-300 bg-emerald-50/70 text-emerald-800 focus:ring-2 focus:ring-emerald-500"

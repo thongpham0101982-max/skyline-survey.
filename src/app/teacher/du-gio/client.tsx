@@ -3463,7 +3463,9 @@ export function ObservationClient(props: ObservationClientProps) {
           surpriseRoom={surpriseRoom}
           setSurpriseRoom={setSurpriseRoom}
           surpriseScoresK12={surpriseScoresK12}
+          setSurpriseScoresK12={setSurpriseScoresK12}
           surpriseScoresMN={surpriseScoresMN}
+          setSurpriseScoresMN={setSurpriseScoresMN}
           surpriseStrengths={surpriseStrengths}
           setSurpriseStrengths={setSurpriseStrengths}
           surpriseImprovements={surpriseImprovements}
@@ -6920,7 +6922,9 @@ export function ObservationClient(props: ObservationClientProps) {
         surpriseRoom={surpriseRoom}
         setSurpriseRoom={setSurpriseRoom}
         surpriseScoresK12={surpriseScoresK12}
+        setSurpriseScoresK12={setSurpriseScoresK12}
         surpriseScoresMN={surpriseScoresMN}
+        setSurpriseScoresMN={setSurpriseScoresMN}
         surpriseStrengths={surpriseStrengths}
         setSurpriseStrengths={setSurpriseStrengths}
         surpriseImprovements={surpriseImprovements}
