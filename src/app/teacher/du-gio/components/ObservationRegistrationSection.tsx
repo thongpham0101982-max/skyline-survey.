@@ -448,13 +448,33 @@ export function ObservationRegistrationSection(props: any) {
     k12Labels, maxScoresK12, getK12RankingDetails, getMamNonRankingDetails
   } = props;
 
-  // Safe updaters for scores
-  const safeScoresK12 = Array.isArray(surpriseScoresK12) ? surpriseScoresK12 : Array(11).fill(0);
-  const safeScoresMN = Array.isArray(surpriseScoresMN) ? surpriseScoresMN : Array(18).fill(0);
+  // Guaranteed reactive state for scoring (instant local reactivity + parent sync)
+  const [internalScoresK12, setInternalScoresK12] = React.useState<number[]>(() => 
+    Array.isArray(surpriseScoresK12) && surpriseScoresK12.length === 11 ? surpriseScoresK12 : Array(11).fill(0)
+  );
+  const [internalScoresMN, setInternalScoresMN] = React.useState<number[]>(() => 
+    Array.isArray(surpriseScoresMN) && surpriseScoresMN.length === 18 ? surpriseScoresMN : Array(18).fill(0)
+  );
+
+  React.useEffect(() => {
+    if (Array.isArray(surpriseScoresK12) && surpriseScoresK12.length === 11) {
+      setInternalScoresK12(surpriseScoresK12);
+    }
+  }, [surpriseScoresK12]);
+
+  React.useEffect(() => {
+    if (Array.isArray(surpriseScoresMN) && surpriseScoresMN.length === 18) {
+      setInternalScoresMN(surpriseScoresMN);
+    }
+  }, [surpriseScoresMN]);
+
+  const effectiveScoresK12 = internalScoresK12;
+  const effectiveScoresMN = internalScoresMN;
 
   const handleUpdateK12Score = (index: number, val: number) => {
-    const nextScores = [...safeScoresK12];
+    const nextScores = [...effectiveScoresK12];
     nextScores[index] = val;
+    setInternalScoresK12(nextScores);
     if (typeof setSurpriseScoresK12 === "function") {
       setSurpriseScoresK12(nextScores);
     }
@@ -464,8 +484,9 @@ export function ObservationRegistrationSection(props: any) {
   };
 
   const handleUpdateMNScore = (index: number, val: number) => {
-    const nextScores = [...safeScoresMN];
+    const nextScores = [...effectiveScoresMN];
     nextScores[index] = val;
+    setInternalScoresMN(nextScores);
     if (typeof setSurpriseScoresMN === "function") {
       setSurpriseScoresMN(nextScores);
     }
@@ -477,10 +498,12 @@ export function ObservationRegistrationSection(props: any) {
   const handleSetAllMaxSafe = () => {
     if (surpriseLevel !== "Mầm non") {
       const maxArr = K12_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
+      setInternalScoresK12(maxArr);
       if (typeof setSurpriseScoresK12 === "function") setSurpriseScoresK12(maxArr);
       if (typeof setSurpriseOverall === "function") setSurpriseOverall(calculateK12Ranking(maxArr));
     } else {
       const maxArr = MAMNON_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
+      setInternalScoresMN(maxArr);
       if (typeof setSurpriseScoresMN === "function") setSurpriseScoresMN(maxArr);
       if (typeof setSurpriseOverall === "function") setSurpriseOverall(calculateMamNonRanking(maxArr));
     }
@@ -489,10 +512,12 @@ export function ObservationRegistrationSection(props: any) {
   const handleResetScoresSafe = () => {
     if (surpriseLevel !== "Mầm non") {
       const zeroArr = Array(11).fill(0);
+      setInternalScoresK12(zeroArr);
       if (typeof setSurpriseScoresK12 === "function") setSurpriseScoresK12(zeroArr);
       if (typeof setSurpriseOverall === "function") setSurpriseOverall(calculateK12Ranking(zeroArr));
     } else {
       const zeroArr = Array(18).fill(0);
+      setInternalScoresMN(zeroArr);
       if (typeof setSurpriseScoresMN === "function") setSurpriseScoresMN(zeroArr);
       if (typeof setSurpriseOverall === "function") setSurpriseOverall(calculateMamNonRanking(zeroArr));
     }
@@ -1026,12 +1051,12 @@ export function ObservationRegistrationSection(props: any) {
                     <span className="text-xs font-black text-slate-600 uppercase">Tổng điểm:</span>
                     <span className="text-sm font-black text-rose-950 bg-rose-50 px-3.5 py-1.5 rounded-xl border border-rose-200 shadow-2xs">
                       {surpriseLevel !== "Mầm non" 
-                        ? `${surpriseScoresK12.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00đ`
-                        : `${surpriseScoresMN.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00đ`
+                        ? `${effectiveScoresK12.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00đ`
+                        : `${effectiveScoresMN.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00đ`
                       }
                     </span>
                     <span className="text-xs font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                      Xếp loại: {surpriseLevel !== "Mầm non" ? calculateK12Ranking(surpriseScoresK12) : calculateMamNonRanking(surpriseScoresMN)}
+                      Xếp loại: {surpriseLevel !== "Mầm non" ? calculateK12Ranking(effectiveScoresK12) : calculateMamNonRanking(effectiveScoresMN)}
                     </span>
 
                     {/* Quick batch scoring buttons */}
@@ -1083,7 +1108,7 @@ export function ObservationRegistrationSection(props: any) {
                                 options.push(Math.round(v * 100) / 100);
                               }
 
-                              const currentScore = safeScoresK12[globalIdx] ?? 0;
+                              const currentScore = effectiveScoresK12[globalIdx] ?? 0;
                               const isMaxReached = currentScore === req.max;
 
                               return (
@@ -1231,7 +1256,7 @@ export function ObservationRegistrationSection(props: any) {
                                 options.push(Math.round(v * 100) / 100);
                               }
 
-                              const currentScore = safeScoresMN[globalIdx] ?? 0;
+                              const currentScore = effectiveScoresMN[globalIdx] ?? 0;
                               const isMaxReached = currentScore === req.max;
 
                               return (
@@ -1399,8 +1424,8 @@ export function ObservationRegistrationSection(props: any) {
                 {(() => {
                   const isMN = surpriseLevel === "Mầm non" || isMamNonTeacher;
                   const rankInfo = isMN 
-                    ? getMamNonRankingDetails(surpriseScoresMN)
-                    : getK12RankingDetails(surpriseScoresK12);
+                    ? getMamNonRankingDetails(effectiveScoresMN)
+                    : getK12RankingDetails(effectiveScoresK12);
                   const currentRank = surpriseOverall || rankInfo.rating;
 
                   return (
