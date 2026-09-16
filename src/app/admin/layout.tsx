@@ -73,7 +73,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="flex min-h-screen text-xs font-semibold">
+    <div className="flex min-h-dvh text-xs font-semibold">
       <Sidebar 
         role="ADMIN" 
         permissionModules={readableModules} 

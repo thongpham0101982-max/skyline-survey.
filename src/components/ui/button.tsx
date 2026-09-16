@@ -25,8 +25,8 @@ const buttonVariants = cva(
         xs: "h-7 px-2.5 text-[11px] rounded-lg gap-1.5",
         sm: "h-8 px-3 text-xs rounded-lg gap-1.5",
         lg: "h-11 px-6 text-sm rounded-xl gap-2.5",
-        icon: "h-9 w-9 p-0 rounded-xl",
-        "icon-sm": "h-7 w-7 p-0 rounded-lg",
+        icon: "size-9 p-0 rounded-xl",
+        "icon-sm": "size-7 p-0 rounded-lg",
       },
     },
     defaultVariants: {
@@ -55,7 +55,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading ? (
           <>
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="size-3.5 animate-spin" />
             <span>{children}</span>
           </>
         ) : (

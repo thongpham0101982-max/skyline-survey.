@@ -93,7 +93,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   }
 
   return (
-    <div className="flex min-h-screen text-xs font-semibold">
+    <div className="flex min-h-dvh text-xs font-semibold">
       <Sidebar role="TEACHER" permissionModules={readableModules} actualRole={roleCode} isGVCN={isGVCN} isPreschoolTeacher={isPreschoolTeacher} />
       <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-slate-50/50">
         <header className="h-16 border-b border-slate-200/90 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-xs">

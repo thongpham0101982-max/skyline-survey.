@@ -50,32 +50,35 @@ export function resolveNotificationLink(n: { title?: string; message?: string; l
         return link
       }
 
-      // If notification is about evaluation
-      if (text.includes("đánh giá") || text.includes("hoàn tất nhập")) {
-        if (link === "/teacher/du-gio" || link === "/teacher/du-gio?tab=dang-ky") {
-          return "/teacher/du-gio?tab=evaluations"
+      // If notification is about an invitation, approval, or update on an existing observation
+      if (text.includes("mời dự giờ") || text.includes("phê duyệt") || text.includes("chấp nhận") || text.includes("xác nhận tham gia") || text.includes("từ chối")) {
+        // Direct to observation_list (Lịch dự giờ & Giờ dạy)
+        if (!link.includes("tab=observation_list")) {
+          return "/teacher/du-gio?tab=observation_list"
         }
         return link
       }
 
-      // If notification is for host teacher to confirm or check schedule
-      if (text.includes("đề xuất") || text.includes("xác nhận") || text.includes("hết hạn") || text.includes("nhắc lịch") || text.includes("đã đăng ký")) {
-        if (link === "/teacher/du-gio" || link === "/teacher/du-gio?tab=dang-ky") {
-          return "/teacher/du-gio?tab=my_schedule"
+      // If notification is about evaluations, ratings, or feedback
+      if (text.includes("đánh giá") || text.includes("phiếu dự giờ") || text.includes("góp ý") || text.includes("kết quả")) {
+        if (!link.includes("tab=history")) {
+          return "/teacher/du-gio?tab=history"
         }
         return link
       }
-
-      return link
     }
 
+    // Return custom link as-is if no special normalization matched
     return link
   }
 
-  // Fallback if link was missing in DB
-  if (text.includes("dự giờ") || text.includes("tiết dạy") || text.includes("tiết học")) {
-    if (text.includes("đánh giá") || text.includes("hoàn tất nhập")) {
-      return "/teacher/du-gio?tab=evaluations"
+  // If notification does NOT have a link, infer destination based on keywords
+  if (text.includes("dự giờ") || text.includes("du gio") || text.includes("tiết dạy")) {
+    if (text.includes("đánh giá") || text.includes("phiếu") || text.includes("kết quả")) {
+      return "/teacher/du-gio?tab=history"
+    }
+    if (text.includes("mời") || text.includes("lịch dạy") || text.includes("tham gia")) {
+      return "/teacher/du-gio?tab=observation_list"
     }
     if (text.includes("đề xuất") || text.includes("xác nhận") || text.includes("hết hạn") || text.includes("nhắc lịch")) {
       return "/teacher/du-gio?tab=my_schedule"
@@ -168,12 +171,13 @@ export function NotificationBell() {
       <button 
         onClick={handleOpen}
         title="Thông báo hệ thống"
+        aria-label="Thông báo hệ thống"
         className="relative p-2 rounded-xl text-slate-600 hover:text-[#48BFE3] hover:bg-slate-100/80 transition-all focus:outline-none"
       >
         <div className="relative">
-          <Bell className="w-5 h-5" />
+          <Bell className="size-5" />
           {unread > 0 && (
-            <span className="absolute -top-1.5 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md animate-pulse">
+            <span className="absolute -top-1.5 -right-2 flex size-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-md animate-pulse tabular-nums">
               {unread > 99 ? '99+' : unread}
             </span>
           )}
@@ -184,11 +188,11 @@ export function NotificationBell() {
         <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="p-4 bg-gradient-to-r from-teal-50 to-emerald-50 border-b border-teal-100/80 flex justify-between items-center">
             <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-[#48BFE3]" />
+              <MessageSquare className="size-4 text-[#48BFE3]" />
               Thông báo hệ thống
             </h3>
             {unread > 0 && (
-              <span className="bg-rose-100 text-rose-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-rose-100 text-rose-700 text-xs font-bold px-2 py-0.5 rounded-full tabular-nums">
                 {unread} tin mới
               </span>
             )}
@@ -197,13 +201,12 @@ export function NotificationBell() {
           <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
             {notifs.length === 0 ? (
               <div className="p-8 text-center text-slate-400 font-medium">
-                <Bell className="w-10 h-10 mx-auto text-slate-200 mb-2" />
+                <Bell className="size-10 mx-auto text-slate-200 mb-2" />
                 <p className="text-xs">Chưa có thông báo nào.</p>
               </div>
             ) : (
               notifs.map(n => {
                 const targetLink = resolveNotificationLink(n)
-
                 const cleanMessage = (n.message || "").replace(/\[Dự giờ\s*#[^\]]+\]\s*/gi, "")
 
                 return (
@@ -225,16 +228,16 @@ export function NotificationBell() {
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 leading-snug group-hover:text-[#008B82] transition-colors">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#48BFE3] shrink-0 group-hover:text-[#008B82]" />
+                        <CheckCircle2 className="size-3.5 text-[#48BFE3] shrink-0 group-hover:text-[#008B82]" />
                         {n.title}
                       </h4>
-                      <span className="text-[10px] text-slate-400 font-normal whitespace-nowrap shrink-0">
+                      <span className="text-[10px] text-slate-400 font-normal whitespace-nowrap shrink-0 tabular-nums">
                         {new Date(n.createdAt).toLocaleDateString("vi-VN")}
                       </span>
                     </div>
-                    <p className="text-slate-600 text-xs leading-relaxed pl-5 font-normal">{cleanMessage}</p>
+                    <p className="text-slate-600 text-xs leading-relaxed pl-5 font-normal text-pretty">{cleanMessage}</p>
                     <div className="mt-1.5 pl-5 flex items-center text-[10px] text-[#48BFE3] group-hover:text-[#008B82] font-semibold gap-1">
-                      Xem chi tiết <ExternalLink className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+                      Xem chi tiết <ExternalLink className="size-2.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </Link>
                 )

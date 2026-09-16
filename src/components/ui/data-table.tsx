@@ -65,7 +65,7 @@ export function DataTable<T extends Record<string, any>>({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs">
           {searchKey ? (
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
@@ -83,7 +83,7 @@ export function DataTable<T extends Record<string, any>>({
       {/* Table Surface */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full border-collapse text-left text-xs">
+          <table className="w-full border-collapse text-left text-xs tabular-nums">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200/80">
                 {columns.map((col, idx) => (
@@ -103,17 +103,17 @@ export function DataTable<T extends Record<string, any>>({
               {isLoading ? (
                 <tr>
                   <td colSpan={columns.length} className="py-12 text-center text-slate-400 font-semibold">
-                    <div className="inline-block w-6 h-6 border-2 border-[#48BFE3] border-t-transparent rounded-full animate-spin mb-2" />
+                    <div className="inline-block size-6 border-2 border-[#48BFE3] border-t-transparent rounded-full animate-spin mb-2" />
                     <p>Đang tải dữ liệu...</p>
                   </td>
                 </tr>
               ) : paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="py-12 text-center text-slate-400">
-                    <Inbox className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    <p className="font-semibold text-slate-500">{emptyMessage}</p>
+                    <Inbox className="size-8 mx-auto mb-2 text-slate-300" />
+                    <p className="font-semibold text-slate-500 text-balance">{emptyMessage}</p>
                     {searchQuery && (
-                      <p className="text-[11px] text-slate-400 mt-1">
+                      <p className="text-[11px] text-slate-400 mt-1 text-pretty">
                         Thử điều chỉnh từ khóa tìm kiếm: "{searchQuery}"
                       </p>
                     )}
@@ -149,19 +149,21 @@ export function DataTable<T extends Record<string, any>>({
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                aria-label="Trang trước"
+                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="size-4" />
               </button>
-              <span className="text-xs font-bold text-slate-700 px-2">
+              <span className="text-xs font-bold text-slate-700 px-2 tabular-nums">
                 {currentPage} / {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                aria-label="Trang sau"
+                className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="size-4" />
               </button>
             </div>
           </div>

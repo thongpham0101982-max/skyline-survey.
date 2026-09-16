@@ -26,7 +26,7 @@ function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement
 function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-base font-bold leading-none tracking-tight text-slate-900", className)}
+      className={cn("text-base font-bold leading-none tracking-tight text-slate-900 text-balance", className)}
       {...props}
     />
   )
@@ -35,7 +35,7 @@ function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElem
 function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn("text-xs text-slate-500 font-medium", className)}
+      className={cn("text-xs text-slate-500 font-medium text-pretty", className)}
       {...props}
     />
   )

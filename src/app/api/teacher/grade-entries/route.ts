@@ -6,6 +6,10 @@ import { auth } from "@/lib/auth"
 export async function GET(request: Request) {
   try {
     const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "Vui lòng đăng nhập để truy cập sổ điểm" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const action = searchParams.get("action")
     const academicYearId = searchParams.get("academicYearId") || ""
@@ -111,15 +115,48 @@ export async function GET(request: Request) {
       "ALL"
     ].filter(Boolean)))
 
-    // Fetch evaluation column configuration
-    const configs = await prisma.subjectGradeConfig.findMany({
-      where: {
-        academicYearId: targetAcademicYearId,
-        evaluationPeriod: { in: [evaluationPeriod, "ALL"] },
-        subjectId,
-        grade: { in: candidateGrades }
-      }
-    })
+    // Fetch evaluation configs, students, teaching assignment, homeroom teacher, and lock concurrently
+    const [configs, students, assignment, clsObj, lock] = await Promise.all([
+      prisma.subjectGradeConfig.findMany({
+        where: {
+          academicYearId: targetAcademicYearId,
+          evaluationPeriod: { in: [evaluationPeriod, "ALL"] },
+          subjectId,
+          grade: { in: candidateGrades }
+        }
+      }),
+      prisma.student.findMany({
+        where: {
+          classId,
+          status: "ACTIVE"
+        },
+        orderBy: { studentName: "asc" },
+        select: { id: true, studentCode: true, studentName: true, gender: true, dateOfBirth: true }
+      }),
+      prisma.teachingAssignment.findFirst({
+        where: {
+          classId,
+          subjectId,
+          academicYearId: targetAcademicYearId
+        },
+        include: { teacher: true }
+      }),
+      prisma.class.findUnique({
+        where: { id: classId },
+        select: { homeroomTeacherId: true }
+      }),
+      prisma.gradebookLock.findFirst({
+        where: {
+          academicYearId: targetAcademicYearId,
+          evaluationPeriod,
+          OR: [
+            { classId, subjectId },
+            { classId: "ALL", subjectId: "ALL" }
+          ],
+          isLocked: true
+        }
+      })
+    ])
 
     let config = configs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === evaluationPeriod)
       || configs.find(c => (c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) && c.evaluationPeriod === "ALL")
@@ -143,54 +180,15 @@ export async function GET(request: Request) {
         || generalConfigs[0] || null
     }
 
-    // Get students in this class with dateOfBirth
-    const students = await prisma.student.findMany({
-      where: {
-        classId,
-        status: "ACTIVE"
-      },
-      orderBy: { studentName: "asc" },
-      select: { id: true, studentCode: true, studentName: true, gender: true, dateOfBirth: true }
-    })
-
-    // Get teaching assignment to know the teacher
-    const assignment = await prisma.teachingAssignment.findFirst({
-      where: {
-        classId,
-        subjectId,
-        academicYearId: targetAcademicYearId
-      },
-      include: { teacher: true }
-    })
-
     let assignedTeacher = assignment?.teacher?.teacherName || ""
-    if (!assignedTeacher) {
-      const clsObj = await prisma.class.findUnique({
-        where: { id: classId },
-        select: { homeroomTeacherId: true }
-      })
-      if (clsObj?.homeroomTeacherId) {
-        const hr = await prisma.teacher.findUnique({ where: { id: clsObj.homeroomTeacherId } })
-        assignedTeacher = hr?.teacherName || "Chưa phân công"
-      } else {
-        assignedTeacher = "Chưa phân công"
-      }
+    if (!assignedTeacher && clsObj?.homeroomTeacherId) {
+      const hr = await prisma.teacher.findUnique({ where: { id: clsObj.homeroomTeacherId } })
+      assignedTeacher = hr?.teacherName || "Chưa phân công"
+    } else if (!assignedTeacher) {
+      assignedTeacher = "Chưa phân công"
     }
 
-    // Check lock status for this class + subject or entire evaluation period
-    const lock = await prisma.gradebookLock.findFirst({
-      where: {
-        academicYearId: targetAcademicYearId,
-        evaluationPeriod,
-        OR: [
-          { classId, subjectId },
-          { classId: "ALL", subjectId: "ALL" }
-        ],
-        isLocked: true
-      }
-    })
     const isLocked = Boolean(lock)
-
     const studentIds = students.map(s => s.id)
 
     // Get existing grade entries for this class and its active students
@@ -218,13 +216,17 @@ export async function GET(request: Request) {
 
   } catch (error: any) {
     console.error("Lỗi lấy sổ điểm:", error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Đã xảy ra lỗi khi tải dữ liệu sổ điểm. Vui lòng thử lại sau." }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
   try {
     const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "Vui lòng đăng nhập để thực hiện thao tác này" }, { status: 401 })
+    }
+
     const body = await request.json()
     const { academicYearId, classId, subjectId, evaluationPeriod, entries } = body
 
@@ -248,6 +250,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Không xác định được năm học" }, { status: 400 })
     }
 
+    let teacherId = null
+    const userId = (session?.user as any)?.id
+    let teacher = null
+    if (userId) {
+      teacher = await prisma.teacher.findUnique({ where: { userId } })
+      if (teacher) teacherId = teacher.id
+    }
+
+    // Authorization check: non-privileged teachers must be assigned to teach this class & subject
+    if (!isPrivileged && userRole === "TEACHER") {
+      if (!teacher) {
+        return NextResponse.json({
+          success: false,
+          error: "Tài khoản giáo viên không tồn tại trong hệ thống hoặc chưa được liên kết"
+        }, { status: 403 })
+      }
+      const isAssigned = await prisma.teachingAssignment.findFirst({
+        where: {
+          teacherId: teacher.id,
+          classId,
+          subjectId,
+          academicYearId: targetYearId
+        }
+      })
+      if (!isAssigned) {
+        return NextResponse.json({
+          success: false,
+          error: "Bạn không được phân công giảng dạy môn học này cho lớp đã chọn"
+        }, { status: 403 })
+      }
+    }
+
     // Check lock status before saving
     const lock = await prisma.gradebookLock.findFirst({
       where: {
@@ -268,21 +302,31 @@ export async function POST(request: Request) {
       }, { status: 403 })
     }
 
-    let teacherId = null
-    const userId = (session?.user as any)?.id
-    if (userId) {
-      const teacher = await prisma.teacher.findUnique({ where: { userId } })
-      if (teacher) teacherId = teacher.id
-    }
+    // Validate students belong to this class to preserve data integrity
+    const classStudents = await prisma.student.findMany({
+      where: { classId, status: "ACTIVE" },
+      select: { id: true }
+    })
+    const validStudentIds = new Set(classStudents.map(s => s.id))
 
-    // Deduplicate entries by studentId to prevent duplicate student submissions in payload
+    // Deduplicate entries and ensure student belongs to the class
     const cleanEntriesMap = new Map<string, any>()
     for (const entry of entries) {
       if (entry && entry.studentId) {
-        cleanEntriesMap.set(String(entry.studentId).trim(), entry)
+        const sId = String(entry.studentId).trim()
+        if (validStudentIds.has(sId)) {
+          cleanEntriesMap.set(sId, entry)
+        }
       }
     }
     const cleanEntries = Array.from(cleanEntriesMap.values())
+
+    if (entries.length > 0 && cleanEntries.length === 0) {
+      return NextResponse.json({
+        success: false,
+        error: "Danh sách học sinh không hợp lệ hoặc không thuộc lớp học này"
+      }, { status: 400 })
+    }
 
     // Upsert each grade entry atomically using transaction and compound unique key
     await prisma.$transaction(
@@ -296,7 +340,16 @@ export async function POST(request: Request) {
 
         let compScoresStr = "{}"
         if (componentScores) {
-          compScoresStr = typeof componentScores === "string" ? componentScores : JSON.stringify(componentScores)
+          if (typeof componentScores === "string") {
+            try {
+              JSON.parse(componentScores)
+              compScoresStr = componentScores
+            } catch {
+              compScoresStr = "{}"
+            }
+          } else if (typeof componentScores === "object") {
+            compScoresStr = JSON.stringify(componentScores)
+          }
         }
 
         return prisma.subjectGradeEntry.upsert({
@@ -309,10 +362,10 @@ export async function POST(request: Request) {
             }
           },
           update: {
-            classId, // Always keep classId up to date if student transferred
+            classId, // Always keep classId up to date
             componentScores: compScoresStr,
             compositeScore: safeComposite,
-            remark: remark || "",
+            remark: typeof remark === "string" ? remark.slice(0, 1000) : "",
             ...(teacherId ? { teacherId } : {})
           },
           create: {
@@ -324,7 +377,7 @@ export async function POST(request: Request) {
             teacherId,
             componentScores: compScoresStr,
             compositeScore: safeComposite,
-            remark: remark || ""
+            remark: typeof remark === "string" ? remark.slice(0, 1000) : ""
           }
         })
       })
@@ -334,6 +387,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error("Lỗi lưu sổ điểm:", error)
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ success: false, error: "Đã xảy ra lỗi trong quá trình lưu sổ điểm. Vui lòng thử lại sau." }, { status: 500 })
   }
 }

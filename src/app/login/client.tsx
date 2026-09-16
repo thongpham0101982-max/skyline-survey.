@@ -155,22 +155,22 @@ export function LoginClient() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#001D1C]/80 backdrop-blur-md animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full border border-slate-100 animate-in zoom-in-95 duration-200">
             <div className="flex justify-center mb-6">
-              <div className="relative w-16 h-16">
+              <div className="relative size-16">
                 <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
                 <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#48BFE3] animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <GraduationCap className="w-7 h-7 text-[#48BFE3]" />
+                  <GraduationCap className="size-7 text-[#48BFE3]" />
                 </div>
               </div>
             </div>
-            <h3 className="text-center text-lg font-extrabold text-[#003B3A] mb-0.5">Đang đăng nhập</h3>
+            <h3 className="text-center text-lg font-extrabold text-[#003B3A] mb-0.5 text-balance">Đang đăng nhập</h3>
             <p className="text-center text-xs text-[#48BFE3] font-black mb-6 uppercase tracking-wider">{roleLabel}</p>
             <div className="space-y-3">
               {(loadingSteps as any[]).map((step: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 px-2">
                   {step.done
-                    ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    : <Loader2 className="w-5 h-5 text-[#48BFE3] shrink-0 animate-spin" />}
+                    ? <CheckCircle2 className="size-5 text-emerald-600 shrink-0" />
+                    : <Loader2 className="size-5 text-[#48BFE3] shrink-0 animate-spin" />}
                   <span className={`text-xs font-semibold ${step.done ? 'text-slate-400 line-through opacity-70' : 'text-[#003B3A]'}`}>
                     {step.text}
                   </span>
@@ -182,10 +182,10 @@ export function LoginClient() {
       )}
 
       {/* Main split-screen layout (Image 2 style) */}
-      <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F7FAFA] font-sans selection:bg-[#48BFE3] selection:text-white relative overflow-hidden">
+      <div className="min-h-dvh w-full flex flex-col md:flex-row bg-[#F7FAFA] font-sans selection:bg-[#48BFE3] selection:text-white relative overflow-hidden">
 
         {/* LEFT PANEL: Ultra-sleek Image 2 Brand Showcase */}
-        <div className="w-full md:w-[48%] xl:w-[50%] flex flex-col justify-between p-8 sm:p-12 xl:p-16 bg-[#003B3A] relative select-none overflow-hidden min-h-[380px] md:min-h-screen">
+        <div className="w-full md:w-[48%] xl:w-[50%] flex flex-col justify-between p-8 sm:p-12 xl:p-16 bg-[#003B3A] relative select-none overflow-hidden min-h-[380px] md:min-h-dvh">
           
           {/* Dot Matrix Pattern Overlay (Top Left, Image 2 style) */}
           <div className="absolute top-8 left-8 w-48 h-48 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #00D2C4 1.5px, transparent 1.5px)', backgroundSize: '18px 18px' }} />
@@ -210,7 +210,7 @@ export function LoginClient() {
             </div>
 
             {/* Main Title: SQMS Portal */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none drop-shadow-sm">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none drop-shadow-sm text-balance">
               SQMS Portal
             </h1>
 
@@ -219,9 +219,9 @@ export function LoginClient() {
 
             {/* 3 Glowing Status Dots (Image 2 style) */}
             <div className="flex items-center gap-2 mt-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#00D2C4] animate-pulse" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#48BFE3]" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#007068]" />
+              <span className="size-2.5 rounded-full bg-[#00D2C4] animate-pulse" />
+              <span className="size-2.5 rounded-full bg-[#48BFE3]" />
+              <span className="size-2.5 rounded-full bg-[#007068]" />
             </div>
 
             {/* Feature Drawer for Mobile/Tablet inside Left Panel */}
@@ -237,7 +237,7 @@ export function LoginClient() {
         </div>
 
         {/* RIGHT PANEL: Clean Elevated Floating Login Card (Image 2 style) */}
-        <div className="w-full md:w-[52%] xl:w-[50%] bg-[#F7FAFA] flex flex-col justify-center items-center p-4 sm:p-8 md:p-12 relative z-10 min-h-[calc(100vh-380px)] md:min-h-screen">
+        <div className="w-full md:w-[52%] xl:w-[50%] bg-[#F7FAFA] flex flex-col justify-center items-center p-4 sm:p-8 md:p-12 relative z-10 min-h-[calc(100dvh-380px)] md:min-h-dvh">
 
           {/* Soft background Swoosh vector lines */}
           <svg className="absolute inset-0 w-full h-full opacity-40 pointer-events-none" viewBox="0 0 1000 1000" fill="none">
@@ -255,7 +255,7 @@ export function LoginClient() {
                 alt="Sky-Line"
                 className="h-10 sm:h-11 w-auto object-contain mb-5 pointer-events-none"
               />
-              <h2 className="text-2xl sm:text-3xl font-black text-[#003B3A] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-black text-[#003B3A] tracking-tight text-balance">
                 Đăng nhập
               </h2>
             </div>
