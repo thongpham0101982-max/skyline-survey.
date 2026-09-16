@@ -642,10 +642,11 @@ export function ObservationClient(props: ObservationClientProps) {
   const [surpriseCampusId, setSurpriseCampusId] = useState<string>("")
   const [surpriseClassId, setSurpriseClassId] = useState<string>("")
   const [surpriseClassName, setSurpriseClassName] = useState<string>("")
-  const [surpriseSubjectId, setSurpriseSubjectId] = useState<string>(() => isMamNonTeacher ? getKhacChuyenDeSubjectId(subjects) : "")
-  const [surpriseSubjectName, setSurpriseSubjectName] = useState<string>(() => isMamNonTeacher ? "Chủ đề/Chuyên đề" : "")
-  const [surpriseLevel, setSurpriseLevel] = useState<string>(() => isMamNonTeacher ? "Mầm non" : "Phổ thông K-12")
-  const [surpriseGrade, setSurpriseGrade] = useState<string>(() => isMamNonTeacher ? "Mầm non" : "Khối 10")
+  const isPreschoolPageExplicit = props.isPreschoolPage === true;
+  const [surpriseSubjectId, setSurpriseSubjectId] = useState<string>(() => isPreschoolPageExplicit ? getKhacChuyenDeSubjectId(subjects) : "")
+  const [surpriseSubjectName, setSurpriseSubjectName] = useState<string>(() => isPreschoolPageExplicit ? "Chủ đề/Chuyên đề" : "")
+  const [surpriseLevel, setSurpriseLevel] = useState<string>(() => isPreschoolPageExplicit ? "Mầm non" : "Phổ thông K-12")
+  const [surpriseGrade, setSurpriseGrade] = useState<string>(() => isPreschoolPageExplicit ? "Mầm non" : "Khối 10")
   const [surpriseTopic, setSurpriseTopic] = useState<string>("")
   const [surpriseDate, setSurpriseDate] = useState<string>(() => new Date().toISOString().split("T")[0])
   const [surprisePeriod, setSurprisePeriod] = useState<string>("Tiết 1")
@@ -1201,10 +1202,10 @@ export function ObservationClient(props: ObservationClientProps) {
 
   // Auto-sync ranking when surprise scores change
   useEffect(() => {
-    const isMN = surpriseLevel === "Mầm non" || isMamNonTeacher;
+    const isMN = surpriseLevel === "Mầm non";
     const rankInfo = isMN ? getMamNonRankingDetails(surpriseScoresMN) : getK12RankingDetails(surpriseScoresK12);
     setSurpriseOverall(rankInfo.rating);
-  }, [surpriseScoresK12, surpriseScoresMN, surpriseLevel, isMamNonTeacher]);
+  }, [surpriseScoresK12, surpriseScoresMN, surpriseLevel]);
 
   // Auto-sync ranking when evalModal scores change
   useEffect(() => {

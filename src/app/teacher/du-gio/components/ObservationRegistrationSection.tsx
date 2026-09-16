@@ -691,7 +691,7 @@ export function ObservationRegistrationSection(props: any) {
             <div className="flex flex-col gap-6 text-xs font-semibold bg-gradient-to-b from-rose-50/30 via-white to-amber-50/20 p-5 sm:p-7 rounded-3xl border border-rose-200/80 shadow-sm animate-in fade-in duration-300">
               {/* Header Banner */}
               <div className={`p-5 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white ${
-                isMamNonTeacher || surpriseLevel === "Mầm non"
+                surpriseLevel === "Mầm non"
                   ? "bg-gradient-to-r from-amber-700 via-amber-800 to-[#003B3A] border-amber-500/40"
                   : "bg-gradient-to-r from-rose-900 via-[#003B3A] to-rose-950 border-rose-700/40"
               }`}>
@@ -702,14 +702,14 @@ export function ObservationRegistrationSection(props: any) {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h4 className="text-sm sm:text-base font-black tracking-wide">
-                        {isMamNonTeacher || surpriseLevel === "Mầm non" ? "DỰ GIỜ ĐỘT XUẤT MẦM NON" : "DỰ GIỜ ĐỘT XUẤT"}
+                        {surpriseLevel === "Mầm non" ? "DỰ GIỜ ĐỘT XUẤT MẦM NON" : "DỰ GIỜ ĐỘT XUẤT"}
                       </h4>
                       <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-amber-950 uppercase">
-                        {isAdminUser ? "Ban ĐHCM / GĐCS / Quản lý" : (isMamNonTeacher ? "TTCM / BGH Mầm non" : "Tổ trưởng chuyên môn (TTCM)")}
+                        {isAdminUser ? "Ban ĐHCM / GĐCS / Quản lý" : (surpriseLevel === "Mầm non" ? "TTCM / BGH Mầm non" : "Tổ trưởng chuyên môn (TTCM)")}
                       </span>
                     </div>
                     <p className="text-[11px] text-rose-100/90 font-medium mt-0.5">
-                      {isMamNonTeacher || surpriseLevel === "Mầm non"
+                      {surpriseLevel === "Mầm non"
                         ? "Đánh giá hoạt động học / chuyên đề Mầm non (18 tiêu chí - Tổng 10 điểm). Tự động ghi nhận không cần duyệt trước."
                         : "Đánh giá trực tiếp tiết dạy đột xuất (11 tiêu chí - Tổng 20 điểm). Hệ thống tự động ghi nhận dữ liệu đánh giá mà không cần phê duyệt trước."}
                     </p>
@@ -791,6 +791,13 @@ export function ObservationRegistrationSection(props: any) {
                             const tDept = departments.find((d: any) => d.id === tObj.departmentId) || tObj.departmentRel;
                             if (tDept && isPreschoolDepartment(tDept.name || tDept.code || "")) {
                               setSurpriseLevel("Mầm non");
+                              const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
+                              setSurpriseSubjectId(khacChuyenDeId);
+                              setSurpriseSubjectName("Chủ đề/Chuyên đề");
+                            } else {
+                              if (surpriseLevel === "Mầm non") {
+                                setSurpriseLevel("Phổ thông K-12");
+                              }
                             }
                           }
                         }
@@ -843,14 +850,14 @@ export function ObservationRegistrationSection(props: any) {
                   {/* Tiết dự */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
-                      {isMamNonTeacher ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}
+                      {surpriseLevel === "Mầm non" ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}
                     </label>
                     <select
                       value={surprisePeriod}
                       onChange={e => setSurprisePeriod(e.target.value)}
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
                     >
-                      {isMamNonTeacher && (
+                      {surpriseLevel === "Mầm non" && (
                         <>
                           <option value="HĐ Học sáng">Hoạt động học có chủ đích (08:30 - 09:15)</option>
                           <option value="HĐ Tiếng Anh">Làm quen Tiếng Anh (09:15 - 09:45)</option>
@@ -891,7 +898,7 @@ export function ObservationRegistrationSection(props: any) {
                             if (clsObj.campusId && !surpriseCampusId) setSurpriseCampusId(clsObj.campusId);
 
                             // Tự động nhận diện Tổ chuyên môn theo Khối của lớp Mầm non
-                            if (isMamNonTeacher || clsObj.level === "Mầm non") {
+                            if (clsObj.level === "Mầm non") {
                               const gClean = (clsObj.grade || clsObj.className || "").toLowerCase();
                               let matchedDept = null;
                               if (gClean.includes("nha tre") || gClean.includes("nhà trẻ")) {
@@ -1006,7 +1013,7 @@ export function ObservationRegistrationSection(props: any) {
                   </label>
                   <input
                     type="text"
-                    placeholder={isMamNonTeacher || surpriseLevel === "Mầm non" 
+                    placeholder={surpriseLevel === "Mầm non" 
                       ? "VD: Chủ đề: Bản thân và gia đình, Hoạt động góc, STEAM, Khám phá khoa học..." 
                       : "VD: Bài 12: Phân tích số liệu và biểu đồ thống kê..."}
                     value={surpriseTopic}
@@ -1377,7 +1384,7 @@ export function ObservationRegistrationSection(props: any) {
 
                 {/* Quick Comment Presets for Surprise Observation */}
                 <QuickCommentPresets
-                  isPreschool={isMamNonTeacher || surpriseLevel === "Mầm non"}
+                  isPreschool={surpriseLevel === "Mầm non"}
                   onAddStrength={(text) => setSurpriseStrengths(prev => prev ? `${prev}\n• ${text}` : `• ${text}`)}
                   onAddImprovement={(text) => setSurpriseImprovements(prev => prev ? `${prev}\n• ${text}` : `• ${text}`)}
                 />
@@ -1422,7 +1429,7 @@ export function ObservationRegistrationSection(props: any) {
 
                 {/* Overall Rating & Automatic Reason */}
                 {(() => {
-                  const isMN = surpriseLevel === "Mầm non" || isMamNonTeacher;
+                  const isMN = surpriseLevel === "Mầm non";
                   const rankInfo = isMN 
                     ? getMamNonRankingDetails(effectiveScoresMN)
                     : getK12RankingDetails(effectiveScoresK12);
