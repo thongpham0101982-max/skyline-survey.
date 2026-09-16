@@ -191,13 +191,18 @@ export async function GET(request: Request) {
     })
     const isLocked = Boolean(lock)
 
-    // Get existing grade entries
+    const studentIds = students.map(s => s.id)
+
+    // Get existing grade entries for this class and its active students
     const entries = await prisma.subjectGradeEntry.findMany({
       where: {
         academicYearId: targetAcademicYearId,
-        classId,
         subjectId,
-        evaluationPeriod
+        evaluationPeriod,
+        OR: [
+          { classId },
+          { studentId: { in: studentIds } }
+        ]
       }
     })
 
@@ -230,10 +235,23 @@ export async function POST(request: Request) {
     const userRole = ((session?.user as any)?.role || "").toUpperCase().trim()
     const isPrivileged = ["ADMIN", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "BAN_GIAM_HIEU", "BGH", "CM", "TO_TRUONG"].includes(userRole) || (userRole && userRole !== "TEACHER")
 
+    let targetYearId = academicYearId
+    if (!targetYearId && classId) {
+      const cls = await prisma.class.findUnique({ where: { id: classId }, select: { academicYearId: true } })
+      targetYearId = cls?.academicYearId || ""
+    }
+    if (!targetYearId) {
+      const activeYear = await prisma.academicYear.findFirst({ where: { isDefault: true } })
+      targetYearId = activeYear?.id || ""
+    }
+    if (!targetYearId) {
+      return NextResponse.json({ success: false, error: "Không xác định được năm học" }, { status: 400 })
+    }
+
     // Check lock status before saving
     const lock = await prisma.gradebookLock.findFirst({
       where: {
-        academicYearId,
+        academicYearId: targetYearId,
         evaluationPeriod,
         OR: [
           { classId, subjectId },
@@ -257,49 +275,60 @@ export async function POST(request: Request) {
       if (teacher) teacherId = teacher.id
     }
 
-    // Save or update each grade entry
+    // Deduplicate entries by studentId to prevent duplicate student submissions in payload
+    const cleanEntriesMap = new Map<string, any>()
     for (const entry of entries) {
-      const { studentId, componentScores, compositeScore, remark } = entry
-      if (!studentId) continue
+      if (entry && entry.studentId) {
+        cleanEntriesMap.set(String(entry.studentId).trim(), entry)
+      }
+    }
+    const cleanEntries = Array.from(cleanEntriesMap.values())
 
-      const parsedComposite = compositeScore !== "" && compositeScore !== null && compositeScore !== undefined ? parseFloat(compositeScore) : null
+    // Upsert each grade entry atomically using transaction and compound unique key
+    await prisma.$transaction(
+      cleanEntries.map(entry => {
+        const { studentId, componentScores, compositeScore, remark } = entry
+        const parsedComposite =
+          compositeScore !== "" && compositeScore !== null && compositeScore !== undefined
+            ? parseFloat(compositeScore)
+            : null
+        const safeComposite = (parsedComposite !== null && !isNaN(parsedComposite)) ? parsedComposite : null
 
-      const existing = await prisma.subjectGradeEntry.findFirst({
-        where: {
-          academicYearId,
-          classId,
-          subjectId,
-          evaluationPeriod,
-          studentId
+        let compScoresStr = "{}"
+        if (componentScores) {
+          compScoresStr = typeof componentScores === "string" ? componentScores : JSON.stringify(componentScores)
         }
-      })
 
-      if (existing) {
-        await prisma.subjectGradeEntry.update({
-          where: { id: existing.id },
-          data: {
-            componentScores: JSON.stringify(componentScores || {}),
-            compositeScore: isNaN(parsedComposite as any) ? null : parsedComposite,
+        return prisma.subjectGradeEntry.upsert({
+          where: {
+            studentId_subjectId_evaluationPeriod_academicYearId: {
+              studentId,
+              subjectId,
+              evaluationPeriod,
+              academicYearId: targetYearId
+            }
+          },
+          update: {
+            classId, // Always keep classId up to date if student transferred
+            componentScores: compScoresStr,
+            compositeScore: safeComposite,
             remark: remark || "",
-            teacherId: teacherId || existing.teacherId
-          }
-        })
-      } else {
-        await prisma.subjectGradeEntry.create({
-          data: {
-            academicYearId,
+            ...(teacherId ? { teacherId } : {})
+          },
+          create: {
+            academicYearId: targetYearId,
             classId,
             subjectId,
             evaluationPeriod,
             studentId,
             teacherId,
-            componentScores: JSON.stringify(componentScores || {}),
-            compositeScore: isNaN(parsedComposite as any) ? null : parsedComposite,
+            componentScores: compScoresStr,
+            compositeScore: safeComposite,
             remark: remark || ""
           }
         })
-      }
-    }
+      })
+    )
 
     return NextResponse.json({ success: true, message: "Lưu sổ điểm thành công" })
 
