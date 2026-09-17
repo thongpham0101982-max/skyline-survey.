@@ -652,7 +652,7 @@ export async function GET(req: Request) {
       return NextResponse.json(candidates)
     }
 
-        if (action === "getPsychologicalSupportStudents") {
+            if (action === "getPsychologicalSupportStudents") {
       const academicYearId = searchParams.get("academicYearId")
       const classIdParam = searchParams.get("classId")
       if (!academicYearId) {
@@ -670,7 +670,13 @@ export async function GET(req: Request) {
           ]
         },
         include: {
-          campus: true
+          campus: true,
+          teachingAssignments: {
+            include: {
+              teacher: true,
+              subject: true
+            }
+          }
         }
       })
 
@@ -691,7 +697,13 @@ export async function GET(req: Request) {
         include: {
           class: {
             include: {
-              campus: true
+              campus: true,
+              teachingAssignments: {
+                include: {
+                  teacher: true,
+                  subject: true
+                }
+              }
             }
           },
           campus: true
@@ -703,45 +715,40 @@ export async function GET(req: Request) {
 
       const studentIds = students.map(s => s.id)
       const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+      const studentNames = students.map(s => s.studentName).filter(Boolean)
 
       // Fetch psychological targets for these students
       const targets = await prisma.learningSupportTarget.findMany({
         where: {
           studentId: { in: studentIds },
           academicYearId,
-          OR: [
-            { supportType: "PSYCHOLOGICAL" },
-            { reason: { contains: "tâm lý" } },
-            { reason: { contains: "Tâm lý" } },
-            { notes: { contains: "tâm lý" } },
-            { notes: { contains: "Tâm lý" } }
-          ]
+          supportType: "PSYCHOLOGICAL"
         },
         include: {
           assignments: {
             include: {
-              teacher: { select: { id: true, teacherName: true, email: true } },
-              subject: { select: { id: true, subjectName: true } }
+              teacher: true
             }
           },
           evaluations: {
             orderBy: { createdAt: "desc" }
           },
-          createdBy: {
-            select: { id: true, teacherName: true, email: true }
-          }
+          createdBy: true
         }
       })
 
-      // Fetch input assessment records for students in these classes
+      // Fetch InputAssessmentStudent records for these students
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           OR: [
             { studentCode: { in: studentCodes } },
-            { enrollmentCode: { in: studentCodes } }
+            { enrollmentCode: { in: studentCodes } },
+            { fullName: { in: studentNames } }
           ]
         },
         include: {
+          period: true,
+          batch: true,
           scores: {
             include: {
               subject: true
@@ -750,7 +757,28 @@ export async function GET(req: Request) {
         }
       })
 
-      const cleanString = (str) => {
+      // Fetch InputAssessmentTeacherAssignments for TLY
+      const psychTeacherAssignments = await prisma.inputAssessmentTeacherAssignment.findMany({
+        where: {
+          subject: {
+            code: "TLY"
+          }
+        },
+        include: {
+          user: true
+        }
+      })
+
+      const OFFICIAL_DIMENSIONS = [
+        { id: 1, title: "Cảm xúc và điều hòa cảm xúc (4 mục)", maxScore: 16 },
+        { id: 2, title: "Hành vi - Kiểm soát bản thân (3 mục)", maxScore: 12 },
+        { id: 3, title: "Quan hệ xã hội & tương tác nhóm (3 mục)", maxScore: 12 },
+        { id: 4, title: "Học tập & khả năng tự định hướng / Chú ý (4 mục)", maxScore: 16 },
+        { id: 5, title: "Tự nhận thức / Ngôn ngữ & Tư duy (3 mục)", maxScore: 12 },
+        { id: 6, title: "Động lực & định hướng tương lai (3 mục)", maxScore: 12 }
+      ]
+
+      const cleanString = (str: string) => {
         if (!str) return ""
         return str.toLowerCase()
           .normalize("NFD")
@@ -762,70 +790,177 @@ export async function GET(req: Request) {
 
       for (const student of students) {
         const studentTargets = targets.filter(t => t.studentId === student.id)
+        const primaryTarget = studentTargets[0] || null
+
         const assessment = inputAssessments.find(a => 
           a.studentCode === student.studentCode || 
           a.enrollmentCode === student.studentCode ||
           cleanString(a.fullName) === cleanString(student.studentName)
         )
 
-        const hasTarget = studentTargets.length > 0
-        const hasPsychAssessment = !!assessment && (
-          assessment.psychologyScore != null ||
-          assessment.scores?.some(s => s.subject?.code === 'TLY' || s.subject?.name?.toLowerCase().includes('tâm lý')) ||
-          (assessment.directorNote && assessment.directorNote.toLowerCase().includes('tâm lý')) ||
-          (assessment.admissionResult && assessment.admissionResult.toLowerCase().includes('tâm lý'))
+        // Find score for subject TLY
+        const psychScoreRecord = assessment?.scores?.find(sc => 
+          sc.subject?.code === "TLY" || 
+          sc.subject?.name?.toLowerCase().includes("tâm lý")
         )
 
-        if (hasTarget || hasPsychAssessment) {
-          const primaryTarget = studentTargets[0] || null
-          const counselorName = primaryTarget?.assignments?.[0]?.teacher?.teacherName || 
-            primaryTarget?.createdBy?.teacherName || 
-            "Chuyên viên Tham vấn Tâm lý"
-          const counselorEmail = primaryTarget?.assignments?.[0]?.teacher?.email || 
-            primaryTarget?.createdBy?.email || ""
-
-          const psychScoreObj = assessment?.scores?.find(s => s.subject?.code === 'TLY' || s.subject?.name?.toLowerCase().includes('tâm lý'))
-          let parsedScores = []
-          let parsedComments = []
-          if (psychScoreObj) {
-            try {
-              parsedScores = JSON.parse(psychScoreObj.scores || "[]")
-              parsedComments = JSON.parse(psychScoreObj.comments || "[]")
-            } catch (e) {}
-          }
-
-          result.push({
-            id: primaryTarget?.id || `psych_${student.id}`,
-            targetId: primaryTarget?.id || null,
-            studentId: student.id,
-            studentCode: student.studentCode,
-            studentName: student.studentName,
-            gender: student.gender,
-            dateOfBirth: student.dateOfBirth,
-            classId: student.classId,
-            className: student.class?.className || "",
-            campusId: student.campusId || student.class?.campusId || "",
-            campusName: student.campus?.campusName || student.class?.campus?.campusName || "Sky-Line",
-            counselorName,
-            counselorEmail,
-            startDate: primaryTarget?.startDate || student.createdAt,
-            reason: primaryTarget?.reason || (assessment?.directorNote ? "Theo dõi tâm lý & thích ứng đầu vào" : "Theo dõi tâm lý học đường"),
-            notes: primaryTarget?.notes || "",
-            status: primaryTarget?.status || "ĐANG HỖ TRỢ",
-            terminationStatus: primaryTarget?.terminationStatus || "ACTIVE",
-            evaluations: primaryTarget?.evaluations || [],
-            psychologyAssessment: {
-              hasAssessment: hasPsychAssessment,
-              psychologyScore: assessment?.psychologyScore ?? (parsedScores[6] ?? null),
-              directorNote: assessment?.directorNote || "",
-              admissionResult: assessment?.admissionResult || "",
-              conclusion: parsedComments[0] || "",
-              recommendation: parsedComments[1] || "",
-              detailedScores: parsedScores,
-              detailedComments: parsedComments
-            }
-          })
+        // Only include students who have a psychological score OR a psychological support target
+        if (!psychScoreRecord && !primaryTarget) {
+          continue
         }
+
+        // 1. Resolve Teacher: get the real teacher assigned to the Psychology subject
+        let counselorName = ""
+        let counselorRole = "GV Phụ trách Môn Tâm lý"
+
+        // Priority 1: From the actual StudentAssessmentScore record
+        if (psychScoreRecord?.teacherName && psychScoreRecord.teacherName.trim()) {
+          counselorName = psychScoreRecord.teacherName.trim()
+        }
+
+        // Priority 2: From InputAssessmentTeacherAssignment matching period, batch, grade
+        if (!counselorName && assessment) {
+          const matchIata = psychTeacherAssignments.find(a => 
+            a.periodId === assessment.periodId &&
+            (!a.batchId || a.batchId === assessment.batchId) &&
+            (!a.grade || a.grade === student.class?.grade || a.grade === assessment.grade)
+          )
+          if (matchIata?.user?.fullName) {
+            counselorName = matchIata.user.fullName.trim()
+          }
+        }
+
+        // Priority 3: From class teaching assignments for subject Tâm lý
+        if (!counselorName) {
+          const classPsychTa = student.class?.teachingAssignments?.find(ta => 
+            ta.subject?.code === "TLY" || 
+            ta.subject?.name?.toLowerCase().includes("tâm lý")
+          )
+          if (classPsychTa?.teacher?.teacherName || classPsychTa?.teacher?.fullName) {
+            counselorName = (classPsychTa.teacher.teacherName || classPsychTa.teacher.fullName).trim()
+          }
+        }
+
+        // Priority 4: From LearningSupportTarget assignments
+        if (!counselorName && primaryTarget?.assignments?.[0]?.teacher) {
+          const t = primaryTarget.assignments[0].teacher
+          counselorName = (t.teacherName || t.fullName || "").trim()
+          if (counselorName) counselorRole = "GV Tham vấn / Hỗ trợ Tâm lý"
+        }
+
+        if (!counselorName) {
+          counselorName = "Chưa phân công"
+          counselorRole = "Môn Tâm lý"
+        }
+
+        // 2. Parse scores and comments strictly from the teacher's evaluation
+        let parsedScores: any[] = []
+        let parsedComments: any[] = []
+        if (psychScoreRecord?.scores) {
+          try {
+            const raw = JSON.parse(psychScoreRecord.scores)
+            parsedScores = Array.isArray(raw) ? raw : [raw]
+          } catch {
+            parsedScores = []
+          }
+        }
+        if (psychScoreRecord?.comments) {
+          try {
+            const raw = JSON.parse(psychScoreRecord.comments)
+            parsedComments = Array.isArray(raw) ? raw : [raw]
+          } catch {
+            parsedComments = []
+          }
+        }
+
+        // 6 Dimensions scores from official schema
+        const dimensionScores = OFFICIAL_DIMENSIONS.map((dim, idx) => ({
+          ...dim,
+          score: parsedScores[idx] !== undefined && parsedScores[idx] !== null && parsedScores[idx] !== "" ? Number(parsedScores[idx]) : null
+        }))
+
+        // Total score is at index 6 in the official schema
+        const totalScore = parsedScores[6] !== undefined && parsedScores[6] !== null && parsedScores[6] !== "" 
+          ? Number(parsedScores[6]) 
+          : (assessment?.psychologyScore ?? null)
+
+        const teacherLevelComment = (parsedComments[0] || "").trim()
+        const teacherConclusion = (parsedComments[1] || "").trim()
+
+        // 3. Resolve "Vấn đề / Lý do hỗ trợ" strictly from teacher evaluation or target reason
+        let displayReason = ""
+        if (teacherLevelComment) {
+          displayReason = teacherLevelComment
+          if (teacherConclusion && teacherConclusion !== teacherLevelComment) {
+            displayReason += ` - ${teacherConclusion}`
+          }
+        } else if (primaryTarget?.reason) {
+          displayReason = primaryTarget.reason
+        } else if (teacherConclusion) {
+          displayReason = teacherConclusion
+        } else {
+          displayReason = "Chưa có nhận xét tâm lý"
+        }
+
+        // 4. Resolve status strictly based on real evaluation / target
+        let displayStatus = "BÌNH THƯỜNG"
+        if (primaryTarget?.status) {
+          displayStatus = primaryTarget.status
+        } else if (totalScore !== null && totalScore < 0) {
+          displayStatus = "CẦN THEO DÕI"
+        } else if (teacherLevelComment && (
+          teacherLevelComment.toLowerCase().includes("thấp") || 
+          teacherLevelComment.toLowerCase().includes("hạn chế") || 
+          teacherLevelComment.toLowerCase().includes("khó khăn") || 
+          teacherLevelComment.toLowerCase().includes("chú ý") ||
+          teacherLevelComment.toLowerCase().includes("chưa")
+        )) {
+          displayStatus = "CẦN THEO DÕI"
+        } else if (totalScore === 0 || teacherLevelComment.toLowerCase().includes("bình thường") || teacherLevelComment.toLowerCase().includes("đạt")) {
+          displayStatus = "ĐÃ ỔN ĐỊNH"
+        } else {
+          displayStatus = "ĐANG THEO DÕI"
+        }
+
+        // 5. Start Date: actual date teacher evaluated
+        const startDate = psychScoreRecord?.updatedAt || primaryTarget?.startDate || assessment?.enrollmentDate || student.createdAt
+
+        result.push({
+          id: primaryTarget?.id || `psych_${student.id}`,
+          targetId: primaryTarget?.id || null,
+          studentId: student.id,
+          studentCode: student.studentCode,
+          studentName: student.studentName,
+          gender: student.gender,
+          dateOfBirth: student.dateOfBirth,
+          classId: student.classId,
+          className: student.class?.className || "",
+          campusId: student.campusId || student.class?.campusId || "",
+          campusName: student.campus?.campusName || student.class?.campus?.campusName || "Sky-Line",
+          counselorName,
+          counselorRole,
+          startDate,
+          reason: displayReason,
+          notes: primaryTarget?.notes || "",
+          totalScore,
+          status: displayStatus,
+          terminationStatus: primaryTarget?.terminationStatus || "ACTIVE",
+          evaluations: primaryTarget?.evaluations || [],
+          psychologyAssessment: {
+            hasAssessment: !!psychScoreRecord,
+            evaluatorName: counselorName,
+            evaluatorRole: counselorRole,
+            evaluatedAt: psychScoreRecord?.updatedAt || null,
+            totalScore,
+            levelComment: teacherLevelComment,
+            conclusion: teacherConclusion,
+            dimensionScores,
+            rawScores: parsedScores,
+            rawComments: parsedComments,
+            directorNote: assessment?.directorNote || "",
+            admissionResult: assessment?.admissionResult || ""
+          }
+        })
       }
 
       return NextResponse.json(result)

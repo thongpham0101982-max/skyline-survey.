@@ -2,20 +2,19 @@
 // @ts-nocheck
 
 import { useState, useMemo } from "react"
-import { 
+import {
   Brain, Heart, Search, Filter, Download, Printer, Eye, Sparkles, 
-  CheckCircle2, AlertCircle, Clock, ChevronRight, User, ShieldCheck, 
-  HelpCircle, TrendingUp, AlertTriangle, Layers, FileText
+  User, Clock, CheckCircle2, AlertCircle, TrendingUp, AlertTriangle,
+  ChevronRight, ArrowUpDown, Calendar, HelpCircle, FileText
 } from "lucide-react"
 import * as XLSX from "xlsx"
-import toast from "react-hot-toast"
-import { formatDateSafe, getTrackingLevelBadge } from "../client"
+import { formatDateSafe } from "../client"
 import { PsychologicalDetailModal } from "./PsychologicalDetailModal"
 
 interface Props {
   students: any[]
   homeroomClasses: any[]
-  academicYearName?: string
+  academicYearName: string
   academicYearId?: string
   teacher?: any
   onRefresh?: () => void
@@ -29,145 +28,144 @@ export function PsychologicalEvaluationLogTab({
   teacher,
   onRefresh
 }: Props) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedClassFilter, setSelectedClassFilter] = useState("ALL")
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState("ALL")
-  
-  // Selected student for detail modal
-  const [selectedStudentForModal, setSelectedStudentForModal] = useState<any | null>(null)
+  const [selectedClassFilter, setSelectedClassFilter] = useState<string>("ALL")
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL")
+  const [searchTerm, setSearchTerm] = useState<string>("")
+  const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<any | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
-  // Filter list of students based on search, class, and status
+  // 1. Statistics Summary Cards
+  const stats = useMemo(() => {
+    const total = students.length
+    const needAttention = students.filter(s => 
+      s.status === "CẦN THEO DÕI" || s.status === "CẦN CAN THIỆP" || (s.totalScore !== null && s.totalScore < 0)
+    ).length
+    const stable = students.filter(s => 
+      s.status === "ĐÃ ỔN ĐỊNH" || s.status === "BÌNH THƯỜNG" || s.status === "HOÀN THÀNH" || (s.totalScore === 0)
+    ).length
+    const supporting = students.filter(s => s.status === "ĐANG HỖ TRỢ" || s.status === "ĐANG THEO DÕI").length
+
+    return { total, needAttention, stable, supporting }
+  }, [students])
+
+  // 2. Filter students
   const filteredStudents = useMemo(() => {
-    return students.filter(s => {
-      const q = searchTerm.trim().toLowerCase()
-      if (q) {
-        const matchName = (s.studentName || "").toLowerCase().includes(q)
-        const matchCode = (s.studentCode || "").toLowerCase().includes(q)
-        const matchReason = (s.reason || "").toLowerCase().includes(q)
-        const matchCounselor = (s.counselorName || "").toLowerCase().includes(q)
-        if (!matchName && !matchCode && !matchReason && !matchCounselor) return false
+    return students.filter(item => {
+      // Class filter
+      if (selectedClassFilter !== "ALL" && item.classId !== selectedClassFilter) {
+        return false
       }
 
-      if (selectedClassFilter !== "ALL") {
-        if (s.classId !== selectedClassFilter && s.className !== selectedClassFilter) {
-          return false
-        }
-      }
-
+      // Status filter
       if (selectedStatusFilter !== "ALL") {
-        const status = (s.status || "").toUpperCase()
-        if (selectedStatusFilter === "ACTIVE" && !status.includes("HỖ TRỢ") && !status.includes("THEO DÕI") && status !== "ACTIVE") {
-          return false
+        if (selectedStatusFilter === "NEED_ATTENTION") {
+          if (item.status !== "CẦN THEO DÕI" && item.status !== "CẦN CAN THIỆP" && (item.totalScore === null || item.totalScore >= 0)) return false
+        } else if (selectedStatusFilter === "STABLE") {
+          if (item.status !== "ĐÃ ỔN ĐỊNH" && item.status !== "BÌNH THƯỜNG" && item.status !== "HOÀN THÀNH") return false
+        } else if (selectedStatusFilter === "SUPPORTING") {
+          if (item.status !== "ĐANG HỖ TRỢ" && item.status !== "ĐANG THEO DÕI") return false
         }
-        if (selectedStatusFilter === "COMPLETED" && !status.includes("HOÀN THÀNH") && !status.includes("ỔN ĐỊNH")) {
-          return false
-        }
-        if (selectedStatusFilter === "CRITICAL" && !status.includes("CAN THIỆP") && !status.includes("CHUYÊN SÂU")) {
-          return false
-        }
+      }
+
+      // Search term
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase().trim()
+        const matchName = (item.studentName || "").toLowerCase().includes(q)
+        const matchCode = (item.studentCode || "").toLowerCase().includes(q)
+        const matchClass = (item.className || "").toLowerCase().includes(q)
+        const matchReason = (item.reason || "").toLowerCase().includes(q)
+        const matchTeacher = (item.counselorName || "").toLowerCase().includes(q)
+        return matchName || matchCode || matchClass || matchReason || matchTeacher
       }
 
       return true
     })
-  }, [students, searchTerm, selectedClassFilter, selectedStatusFilter])
+  }, [students, selectedClassFilter, selectedStatusFilter, searchTerm])
 
-  // Statistics
-  const stats = useMemo(() => {
-    const total = students.length
-    const active = students.filter(s => (s.status || "").includes("HỖ TRỢ") || s.status === "ACTIVE" || (s.status || "").includes("THEO DÕI")).length
-    const critical = students.filter(s => (s.status || "").includes("CAN THIỆP") || (s.reason || "").toLowerCase().includes("chuyên sâu")).length
-    const completed = students.filter(s => (s.status || "").includes("HOÀN THÀNH") || (s.status || "").includes("ỔN ĐỊNH")).length
-    return { total, active, critical, completed }
-  }, [students])
-
-  // Export to Excel
+  // Export Excel
   const handleExportExcel = () => {
-    if (filteredStudents.length === 0) {
-      toast.error("Không có dữ liệu học sinh để xuất Excel")
-      return
-    }
+    if (filteredStudents.length === 0) return
 
-    const rows = filteredStudents.map((s, idx) => {
-      const latestEval = s.evaluations && s.evaluations.length > 0 ? s.evaluations[0] : null
-      return {
-        "STT": idx + 1,
-        "Mã HS": s.studentCode || "N/A",
-        "Họ và tên": s.studentName || "N/A",
-        "Giới tính": s.gender === "FEMALE" ? "Nữ" : (s.gender === "MALE" ? "Nam" : "N/A"),
-        "Lớp": s.className || "N/A",
-        "Cơ sở": s.campusName || "Sky-Line",
-        "GV / Chuyên viên tham vấn": s.counselorName || "Chuyên viên Tâm lý",
-        "Bắt đầu theo dõi": formatDateSafe(s.startDate),
-        "Vấn đề / Lý do hỗ trợ": s.reason || "Theo dõi tâm lý học đường",
-        "Trạng thái": s.status || "Đang hỗ trợ",
-        "Điểm trắc nghiệm đầu vào": s.psychologyAssessment?.psychologyScore != null ? s.psychologyAssessment.psychologyScore : "Chưa có",
-        "Đánh giá gần nhất": latestEval ? `[${latestEval.periodName}]: ${latestEval.trackingLevel} - ${latestEval.comment}` : "Chưa có lượt đánh giá",
-        "Số lượt đánh giá": (s.evaluations || []).length
-      }
-    })
+    const exportData = filteredStudents.map((s, idx) => ({
+      "STT": idx + 1,
+      "Họ và tên": s.studentName,
+      "Mã học sinh": s.studentCode,
+      "Giới tính": s.gender === "FEMALE" ? "Nữ" : "Nam",
+      "Lớp": s.className,
+      "Cơ sở": s.campusName,
+      "GV Phụ trách Tâm lý": s.counselorName,
+      "Vai trò": s.counselorRole,
+      "Ngày đánh giá": formatDateSafe(s.startDate),
+      "Đánh giá của GV Tâm lý": s.reason,
+      "Tổng điểm khảo sát": s.totalScore != null ? `${s.totalScore} đ` : "Chưa có",
+      "Trạng thái": s.status
+    }))
 
-    const ws = XLSX.utils.json_to_sheet(rows)
+    const ws = XLSX.utils.json_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Nhat_Ky_Danh_Gia_Tam_Ly")
-    XLSX.writeFile(wb, `Nhat_Ky_Danh_Gia_Tam_Ly_Lop_Chu_Nhiem_${new Date().toISOString().slice(0, 10)}.xlsx`)
-    toast.success("Đã xuất file Excel Nhật ký đánh giá Tâm lý thành công!")
+    XLSX.utils.book_append_sheet(wb, ws, "Nhat_ky_danh_gia_tam_ly")
+    XLSX.writeFile(wb, `Nhat_ky_danh_gia_tam_ly_${academicYearName.replace(/\s+/g, "_")}.xlsx`)
+  }
+
+  const handleOpenDetail = (student: any) => {
+    setSelectedStudentForDetail(student)
+    setIsDetailModalOpen(true)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Overview Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200/80 p-5 rounded-3xl shadow-xs transition-all hover:scale-[1.01]">
+    <div className="space-y-5">
+      {/* 4 KPI Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="bg-gradient-to-br from-purple-900 to-indigo-900 text-white p-5 rounded-3xl shadow-sm space-y-2">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-black text-purple-700 uppercase tracking-wider">HS Hỗ trợ Tâm lý (Lớp CN)</p>
-              <p className="text-3xl font-black text-purple-950 mt-1">{stats.total}</p>
+              <p className="text-[11px] font-bold text-purple-200 uppercase tracking-wider">HS Đánh giá / Theo dõi Tâm lý</p>
+              <p className="text-3xl font-black text-white mt-1">{stats.total}</p>
             </div>
-            <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20 text-purple-600">
+            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-xs text-purple-200">
               <Brain className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[10px] text-purple-600 mt-2 font-semibold">Tự động đổ theo các lớp Thầy/Cô được phân công chủ nhiệm</p>
+          <p className="text-[10px] text-purple-200/80 font-medium">Học sinh lớp chủ nhiệm có dữ liệu đánh giá môn Tâm lý</p>
         </div>
 
-        <div className="bg-gradient-to-br from-sky-50 to-blue-50 border border-sky-200/80 p-5 rounded-3xl shadow-xs transition-all hover:scale-[1.01]">
+        <div className="bg-gradient-to-br from-rose-50 to-amber-50 border border-rose-200/80 p-5 rounded-3xl shadow-xs">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-black text-sky-700 uppercase tracking-wider">Đang theo dõi & Hỗ trợ</p>
-              <p className="text-3xl font-black text-sky-950 mt-1">{stats.active}</p>
-            </div>
-            <div className="p-3 bg-sky-500/10 rounded-2xl border border-sky-500/20 text-sky-600">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-          </div>
-          <p className="text-[10px] text-sky-600 mt-2 font-semibold">Học sinh đang có tiến trình đồng hành định kỳ hàng tháng</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/80 p-5 rounded-3xl shadow-xs transition-all hover:scale-[1.01]">
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-[11px] font-black text-rose-700 uppercase tracking-wider">Cần can thiệp chuyên sâu</p>
-              <p className="text-3xl font-black text-rose-950 mt-1">{stats.critical}</p>
+              <p className="text-[11px] font-black text-rose-700 uppercase tracking-wider">Cần theo dõi & Can thiệp</p>
+              <p className="text-3xl font-black text-rose-950 mt-1">{stats.needAttention}</p>
             </div>
             <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-rose-600">
               <AlertCircle className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[10px] text-rose-600 mt-2 font-semibold">Các trường hợp cần phối hợp chặt chẽ với Phụ huynh</p>
+          <p className="text-[10px] text-rose-600 mt-2 font-semibold">Điểm khảo sát âm hoặc GV ghi nhận cần lưu ý tập trung, hành vi</p>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/80 p-5 rounded-3xl shadow-xs transition-all hover:scale-[1.01]">
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200/80 p-5 rounded-3xl shadow-xs">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">Đã ổn định / Hoàn thành</p>
-              <p className="text-3xl font-black text-emerald-950 mt-1">{stats.completed}</p>
+              <p className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">Đã ổn định / Bình thường</p>
+              <p className="text-3xl font-black text-emerald-950 mt-1">{stats.stable}</p>
             </div>
             <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-emerald-600">
               <CheckCircle2 className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[10px] text-emerald-600 mt-2 font-semibold">Đã đạt mục tiêu tâm lý & thích ứng tốt với môi trường</p>
+          <p className="text-[10px] text-emerald-600 mt-2 font-semibold">Các chỉ số tâm lý phát triển bình thường theo đánh giá GV</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-sky-50 to-indigo-50 border border-sky-200/80 p-5 rounded-3xl shadow-xs">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[11px] font-black text-sky-700 uppercase tracking-wider">Đang theo dõi / Hỗ trợ</p>
+              <p className="text-3xl font-black text-sky-950 mt-1">{stats.supporting}</p>
+            </div>
+            <div className="p-3 bg-sky-500/10 rounded-2xl border border-sky-500/20 text-sky-600">
+              <TrendingUp className="h-5 w-5" />
+            </div>
+          </div>
+          <p className="text-[10px] text-sky-600 mt-2 font-semibold">Đang tiếp tục đồng hành định kỳ hàng tháng</p>
         </div>
       </div>
 
@@ -201,9 +199,9 @@ export function PsychologicalEvaluationLogTab({
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20"
               >
                 <option value="ALL">Tất cả trạng thái</option>
-                <option value="ACTIVE">Đang hỗ trợ / Đang theo dõi</option>
-                <option value="CRITICAL">Cần can thiệp chuyên sâu</option>
-                <option value="COMPLETED">Đã ổn định / Hoàn thành</option>
+                <option value="NEED_ATTENTION">🔴 Cần theo dõi & can thiệp</option>
+                <option value="STABLE">🟢 Đã ổn định / Bình thường</option>
+                <option value="SUPPORTING">🔵 Đang hỗ trợ / Đang theo dõi</option>
               </select>
             </div>
           </div>
@@ -216,7 +214,7 @@ export function PsychologicalEvaluationLogTab({
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Tìm tên, mã HS, vấn đề..."
+                placeholder="Tìm tên, mã HS, GV, nhận xét..."
                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
@@ -251,10 +249,10 @@ export function PsychologicalEvaluationLogTab({
                 <th className="py-3.5 px-4 text-center w-12">STT</th>
                 <th className="py-3.5 px-4 min-w-[200px]">Học sinh</th>
                 <th className="py-3.5 px-4 min-w-[140px]">Lớp & Cơ sở</th>
-                <th className="py-3.5 px-4 min-w-[170px]">GV / Chuyên viên tham vấn</th>
-                <th className="py-3.5 px-4 min-w-[120px]">Bắt đầu theo dõi</th>
-                <th className="py-3.5 px-4 min-w-[220px]">Vấn đề / Lý do hỗ trợ</th>
-                <th className="py-3.5 px-4 text-center min-w-[120px]">Trạng thái</th>
+                <th className="py-3.5 px-4 min-w-[180px]">GV Phụ trách Môn Tâm lý</th>
+                <th className="py-3.5 px-4 min-w-[120px]">Ngày đánh giá</th>
+                <th className="py-3.5 px-4 min-w-[250px]">Kết quả đánh giá của GV Tâm lý</th>
+                <th className="py-3.5 px-4 text-center min-w-[130px]">Trạng thái</th>
                 <th className="py-3.5 px-4 text-center min-w-[160px]">Xem chi tiết kết quả</th>
               </tr>
             </thead>
@@ -263,12 +261,15 @@ export function PsychologicalEvaluationLogTab({
                 <tr>
                   <td colSpan={8} className="py-14 text-center text-slate-400 space-y-2">
                     <Brain className="h-10 w-10 text-purple-300 mx-auto opacity-70" />
-                    <p className="font-bold text-slate-600 text-sm">Không có học sinh hỗ trợ tâm lý nào phù hợp bộ lọc</p>
+                    <p className="font-bold text-slate-600 text-sm">Không có học sinh đánh giá tâm lý nào phù hợp bộ lọc</p>
                     <p className="text-xs text-slate-400">Dữ liệu được lọc tự động theo các lớp Thầy/Cô được phân công chủ nhiệm.</p>
                   </td>
                 </tr>
               ) : (
                 filteredStudents.map((item, idx) => {
+                  const isNegative = item.totalScore !== null && item.totalScore < 0
+                  const isAttention = item.status === "CẦN THEO DÕI" || item.status === "CẦN CAN THIỆP" || isNegative
+
                   return (
                     <tr 
                       key={item.id || idx}
@@ -313,22 +314,24 @@ export function PsychologicalEvaluationLogTab({
                         </div>
                       </td>
 
-                      {/* 4. GV / Chuyên viên tham vấn */}
+                      {/* 4. GV Phụ trách Môn Tâm lý */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">
                           <div className="p-1.5 bg-purple-100 text-purple-700 rounded-lg shrink-0">
                             <User className="h-3.5 w-3.5" />
                           </div>
                           <div>
-                            <span className="font-bold text-slate-800 block text-xs">
-                              {item.counselorName || "Chuyên viên Tâm lý"}
+                            <span className="font-bold text-slate-900 block text-xs">
+                              {item.counselorName}
                             </span>
-                            <span className="text-[10px] text-slate-400">Tâm lý học đường</span>
+                            <span className="text-[10px] text-purple-600 font-semibold">
+                              {item.counselorRole || "GV Môn Tâm lý"}
+                            </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* 5. Bắt đầu theo dõi */}
+                      {/* 5. Bắt đầu theo dõi / Ngày đánh giá */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-1.5 text-slate-600">
                           <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
@@ -338,15 +341,19 @@ export function PsychologicalEvaluationLogTab({
                         </div>
                       </td>
 
-                      {/* 6. Vấn đề / Lý do hỗ trợ */}
+                      {/* 6. Kết quả đánh giá của GV Tâm lý */}
                       <td className="py-3.5 px-4">
-                        <div className="max-w-[260px]">
-                          <p className="font-semibold text-slate-800 line-clamp-2 leading-snug">
-                            {item.reason || "Theo dõi tâm lý & thích ứng học đường"}
+                        <div className="max-w-[280px]">
+                          <p className="font-semibold text-slate-800 line-clamp-2 leading-snug" title={item.reason}>
+                            {item.reason}
                           </p>
-                          {item.psychologyAssessment?.psychologyScore != null && (
-                            <span className="inline-block mt-1 bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.2 rounded text-[10px] font-bold">
-                              Điểm đầu vào: {item.psychologyAssessment.psychologyScore} đ
+                          {item.totalScore != null && (
+                            <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border ${
+                              isNegative
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : "bg-purple-50 text-purple-700 border-purple-200"
+                            }`}>
+                              Tổng điểm khảo sát: {item.totalScore} đ
                             </span>
                           )}
                         </div>
@@ -354,24 +361,33 @@ export function PsychologicalEvaluationLogTab({
 
                       {/* 7. Trạng thái */}
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          {item.status || "ĐANG HỖ TRỢ"}
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black border shadow-2xs ${
+                          isAttention
+                            ? "bg-rose-50 text-rose-800 border-rose-200"
+                            : item.status === "ĐÃ ỔN ĐỊNH" || item.status === "BÌNH THƯỜNG" || item.status === "HOÀN THÀNH"
+                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                            : "bg-sky-50 text-sky-800 border-sky-200"
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            isAttention
+                              ? "bg-rose-500 animate-pulse"
+                              : item.status === "ĐÃ ỔN ĐỊNH" || item.status === "BÌNH THƯỜNG" || item.status === "HOÀN THÀNH"
+                              ? "bg-emerald-500"
+                              : "bg-sky-500 animate-pulse"
+                          }`} />
+                          {item.status}
                         </span>
                       </td>
 
-                      {/* 8. Xem chi tiết kết quả đánh giá (Hành động) */}
+                      {/* 8. Xem chi tiết kết quả đánh giá */}
                       <td className="py-3.5 px-4 text-center">
                         <button
                           type="button"
-                          onClick={() => {
-                            setSelectedStudentForModal(item)
-                            setIsDetailModalOpen(true)
-                          }}
-                          className="bg-gradient-to-r from-purple-700 to-indigo-600 hover:from-purple-800 hover:to-indigo-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm shadow-purple-600/20 inline-flex items-center gap-1.5 cursor-pointer transform active:scale-95"
+                          onClick={() => handleOpenDetail(item)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer group-hover:scale-105"
                         >
                           <Eye className="h-3.5 w-3.5" />
-                          Xem chi tiết
+                          <span>Xem chi tiết</span>
                         </button>
                       </td>
                     </tr>
@@ -383,22 +399,20 @@ export function PsychologicalEvaluationLogTab({
         </div>
       </div>
 
-      {/* Detail Modal */}
-      {selectedStudentForModal && (
-        <PsychologicalDetailModal
-          isOpen={isDetailModalOpen}
-          onClose={() => {
-            setIsDetailModalOpen(false)
-            setSelectedStudentForModal(null)
-          }}
-          studentData={selectedStudentForModal}
-          academicYearName={academicYearName}
-          academicYearId={academicYearId}
-          onEvaluationSaved={() => {
-            if (onRefresh) onRefresh()
-          }}
-        />
-      )}
+      {/* Detail Modal Component */}
+      <PsychologicalDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false)
+          setSelectedStudentForDetail(null)
+        }}
+        studentData={selectedStudentForDetail}
+        academicYearName={academicYearName}
+        academicYearId={academicYearId}
+        onEvaluationSaved={() => {
+          if (onRefresh) onRefresh()
+        }}
+      />
     </div>
   )
 }

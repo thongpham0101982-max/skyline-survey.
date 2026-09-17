@@ -211,6 +211,11 @@ model Student {
   status                 String                      @default("ACTIVE")
   dateOfBirth            DateTime?
   gender                 String?
+  studentType            String                      @default("CHINH_KHOA")
+  studentTypeNote        String?
+  convertedAt            DateTime?
+  conversionReason       String?
+  convertedBy            String?
   parents                ParentStudentLink[]
   academicYear           AcademicYear                @relation(fields: [academicYearId], references: [id])
   campus                 Campus                      @relation(fields: [campusId], references: [id])
