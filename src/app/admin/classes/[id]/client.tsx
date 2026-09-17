@@ -32,6 +32,11 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
   const chinhKhoaCount = useMemo(() => (students || []).filter((s: any) => s.studentType !== "GIAO_LUU").length, [students]);
   const giaoLuuCount = useMemo(() => (students || []).filter((s: any) => s.studentType === "GIAO_LUU").length, [students]);
 
+  const displayStudents = useMemo(() => {
+    if (!students || students.length === 0) return []
+    return isAlphaSorted ? sortVietnameseStudents(students) : students
+  }, [students, isAlphaSorted])
+
   const filteredStudents = useMemo(() => {
     let list = displayStudents;
     if (studentTypeFilter === "CHINH_KHOA") {
@@ -41,12 +46,6 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
     }
     return list;
   }, [displayStudents, studentTypeFilter]);
-
-
-  const displayStudents = useMemo(() => {
-    if (!students || students.length === 0) return []
-    return isAlphaSorted ? sortVietnameseStudents(students) : students
-  }, [students, isAlphaSorted])
 
   const handleSyncSurveys = async () => {
     if (!confirm("Thực hiện đồng bộ tất cả học sinh trong lớp với Danh sách khảo sát đang mở?")) return
@@ -510,7 +509,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
 
       <div className="flex flex-wrap justify-between items-center mb-6 border-b border-slate-100 pb-4 gap-4">
         <div className="flex items-center gap-4">
-           <h2 className="text-lg font-bold text-slate-800">Danh sách học sinh ({displayStudents.length})</h2>
+           <h2 className="text-lg font-bold text-slate-800">Danh sách học sinh ({filteredStudents.length}{studentTypeFilter !== "ALL" ? ` / ${displayStudents.length}` : ""})</h2>
            {selectedIds.length > 0 && (
              <button onClick={handleDeleteMany} disabled={submitting} className="flex items-center gap-2 text-red-600 hover:bg-red-100 font-semibold text-sm transition-colors text-xs">
                 <Trash2 className="w-4 h-4" /> Xóa {selectedIds.length} HS đã chọn
