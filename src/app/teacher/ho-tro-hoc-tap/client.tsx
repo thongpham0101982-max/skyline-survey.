@@ -145,9 +145,34 @@ interface Props {
   subjects: any[]
 }
 
-const getCompactScore = (val: any) => {
-  if (val == null) return "Chưa có";
+const parseScoreNumber = (val: any): number | null => {
+  if (val == null || val === "" || val === "—") return null;
+  if (typeof val === "number") return isNaN(val) ? null : val;
   if (Array.isArray(val)) {
+    const item = val.find(x => x !== null && x !== undefined && x !== "");
+    return parseScoreNumber(item);
+  }
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(trimmed.replace(/'/g, '"'));
+        if (Array.isArray(parsed)) {
+          const item = parsed.find(x => x !== null && x !== undefined && x !== "");
+          return parseScoreNumber(item);
+        }
+      } catch {}
+    }
+    const num = parseFloat(trimmed);
+    return isNaN(num) ? null : num;
+  }
+  return null;
+};
+
+const getCompactScore = (val: any) => {
+  if (val == null || val === "Chưa có") return "Chưa có";
+  if (Array.isArray(val)) {
+    if (val.length === 1) return String(val[0]);
     const sum = val.reduce((a: number, b: number) => a + Number(b || 0), 0);
     return `${sum} (Tổng)`;
   }
@@ -155,6 +180,7 @@ const getCompactScore = (val: any) => {
     try {
       const parsed = JSON.parse(val);
       if (Array.isArray(parsed)) {
+        if (parsed.length === 1) return String(parsed[0]);
         const sum = parsed.reduce((a: number, b: number) => a + Number(b || 0), 0);
         return `${sum} (Tổng)`;
       }
@@ -165,6 +191,7 @@ const getCompactScore = (val: any) => {
       try {
         const parsed = JSON.parse(val.replace(/'/g, '"'));
         if (Array.isArray(parsed)) {
+          if (parsed.length === 1) return String(parsed[0]);
           const sum = parsed.reduce((a: number, b: number) => a + Number(b || 0), 0);
           return `${sum} (Tổng)`;
         }
@@ -172,8 +199,7 @@ const getCompactScore = (val: any) => {
     }
   }
   return String(val);
-}
-
+};
 
 const normalizeSubjectNameClient = (sub: string, className?: string): string => {
   const clean = (sub || "").trim().replace(/^môn\s+/i, "");
@@ -203,65 +229,166 @@ const normalizeSubjectNameClient = (sub: string, className?: string): string => 
   return clean;
 };
 
+const getScoreDetailsForSubject = (s: any, subjectName: string): string => {
+  const subLower = (subjectName || "").toLowerCase().normalize("NFC");
+  if (subLower.includes("anh") || subLower.includes("tav") || subLower.includes("english")) {
+    let wScore: number | null = parseScoreNumber(s.writtenEnglishScore);
+    let oScore: number | null = parseScoreNumber(s.oralEnglishScore);
+
+    (s.scores || []).forEach((sc: any) => {
+      const sName = (sc.subject?.name || sc.subjectName || "").toLowerCase().normalize("NFC");
+      const sCode = (sc.subject?.code || "").toLowerCase();
+      const val = parseScoreNumber(sc.scores);
+      if (val !== null) {
+        if (sName.includes("anh") || sName.includes("english") || sCode.includes("eng") || sCode.includes("tav") || sCode.includes("esl")) {
+          if (sName.includes("viết") || sName.includes("written") || sName.includes("writing") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt") || sCode === "tav") {
+            if (wScore === null) wScore = val;
+          } else if (sName.includes("vấn đáp") || sName.includes("nói") || sName.includes("oral") || sName.includes("speaking") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd") || sCode === "tavd") {
+            if (oScore === null) oScore = val;
+          }
+        }
+      }
+    });
+
+    const parts: string[] = [];
+    if (wScore !== null) parts.push(`Viết: ${wScore}`);
+    if (oScore !== null) parts.push(`Nói: ${oScore}`);
+    if (parts.length > 0) return `Chi tiết: ${parts.join(" • ")}`;
+  }
+  return "";
+};
+
 const getScoreForSubject = (s: any, subjectName: string) => {
   let scoreDisplay = "Chưa có";
-  const subLower = (subjectName || "").toLowerCase();
-  if (subLower.includes("toán")) {
-    if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
-    else {
-      const sc = s.scores?.find((x: any) => x.subject?.name?.toLowerCase().includes("toán"));
-      if (sc?.scores) scoreDisplay = `${sc.scores}`;
+  const subLower = (subjectName || "").toLowerCase().normalize("NFC");
+
+  if (subLower.includes("anh") || subLower.includes("tav") || subLower.includes("english")) {
+    // 1. Explicit total score if calculated on candidate
+    if (s.totalEnglishScore != null) {
+      const n = Number(s.totalEnglishScore);
+      return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, "");
     }
-  } else if (subLower.includes("tiếng việt")) {
-    if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
-    else if (s.vietnameseScore != null) scoreDisplay = `${s.vietnameseScore}`;
-    else {
-      const sc = s.scores?.find((x: any) => {
-        const n = (x.subject?.name || x.subject?.code || "").toLowerCase();
-        return n.includes("tiếng việt") || n.includes("văn");
-      });
-      if (sc?.scores) scoreDisplay = `${sc.scores}`;
+
+    // 2. Look for explicit total score subject in s.scores
+    const explicitTotal = s.scores?.find((x: any) => {
+      const n = (x.subject?.name || x.subjectName || "").toLowerCase().normalize("NFC");
+      const c = (x.subject?.code || "").toLowerCase();
+      return n.includes("tổng điểm") || c === "eng_total" || c === "tong_diem_tieng_anh";
+    });
+    if (explicitTotal?.scores) {
+      const val = parseScoreNumber(explicitTotal.scores);
+      if (val !== null) return Number.isInteger(val) ? String(val) : val.toFixed(1).replace(/\.0$/, "");
     }
-  } else if (subLower.includes("ngữ văn") || subLower.includes("văn")) {
-    if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
-    else {
-      const sc = s.scores?.find((x: any) => {
-        const n = (x.subject?.name || x.subject?.code || "").toLowerCase();
-        return n.includes("ngữ văn") || n.includes("văn") || n.includes("tiếng việt");
-      });
-      if (sc?.scores) scoreDisplay = `${sc.scores}`;
-    }
-  } else if (subLower.includes("anh") || subLower.includes("tav") || subLower.includes("english")) {
-    const write = s.writtenEnglishScore;
-    const oral = s.oralEnglishScore;
-    if (write != null || oral != null) {
-      if (write != null && oral != null) {
-        scoreDisplay = `${write} viết, ${oral} nói`;
-      } else if (write != null) {
-        scoreDisplay = `${write} viết`;
-      } else {
-        scoreDisplay = `${oral} nói`;
+
+    // 3. Extract written and oral scores
+    let wScore: number | null = parseScoreNumber(s.writtenEnglishScore);
+    let oScore: number | null = parseScoreNumber(s.oralEnglishScore);
+
+    (s.scores || []).forEach((sc: any) => {
+      const sName = (sc.subject?.name || sc.subjectName || "").toLowerCase().normalize("NFC");
+      const sCode = (sc.subject?.code || "").toLowerCase();
+      const val = parseScoreNumber(sc.scores);
+      if (val !== null) {
+        if (sName.includes("anh") || sName.includes("english") || sCode.includes("eng") || sCode.includes("tav") || sCode.includes("esl")) {
+          if (sName.includes("viết") || sName.includes("written") || sName.includes("writing") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt") || sCode === "tav") {
+            if (wScore === null) wScore = val;
+          } else if (sName.includes("vấn đáp") || sName.includes("nói") || sName.includes("oral") || sName.includes("speaking") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd") || sCode === "tavd") {
+            if (oScore === null) oScore = val;
+          }
+        }
       }
+    });
+
+    if (wScore !== null && oScore !== null) {
+      const total = Math.round((wScore + oScore) * 10) / 10;
+      return Number.isInteger(total) ? String(total) : total.toFixed(1).replace(/\.0$/, "");
+    }
+    if (wScore !== null) return Number.isInteger(wScore) ? String(wScore) : wScore.toFixed(1).replace(/\.0$/, "");
+    if (oScore !== null) return Number.isInteger(oScore) ? String(oScore) : oScore.toFixed(1).replace(/\.0$/, "");
+
+    // 4. Fallback: generic English subject in scores
+    const genericSc = s.scores?.find((x: any) => {
+      const n = (x.subject?.name || x.subjectName || "").toLowerCase().normalize("NFC");
+      const c = (x.subject?.code || "").toLowerCase();
+      return n.includes("anh") || n.includes("english") || c.includes("eng") || c.includes("tav") || c.includes("esl");
+    });
+    if (genericSc?.scores) {
+      const val = parseScoreNumber(genericSc.scores);
+      if (val !== null) return Number.isInteger(val) ? String(val) : val.toFixed(1).replace(/\.0$/, "");
+      return getCompactScore(genericSc.scores);
+    }
+
+    return "Chưa có";
+  }
+
+  if (subLower.includes("toán")) {
+    if (s.mathScore != null) {
+      const val = parseScoreNumber(s.mathScore);
+      scoreDisplay = val !== null ? `${val}` : `${s.mathScore}`;
     } else {
       const sc = s.scores?.find((x: any) => {
-        const n = (x.subject?.name || x.subject?.code || "").toLowerCase();
-        return n.includes("anh") || n.includes("tav") || n.includes("english");
+        const n = (x.subject?.name || x.subjectName || "").toLowerCase().normalize("NFC");
+        const c = (x.subject?.code || "").toLowerCase();
+        return n.includes("toán") || c.includes("math") || c.includes("toa");
       });
-      if (sc?.scores) scoreDisplay = `${sc.scores}`;
+      if (sc?.scores) {
+        const val = parseScoreNumber(sc.scores);
+        scoreDisplay = val !== null ? `${val}` : `${sc.scores}`;
+      }
+    }
+  } else if (subLower.includes("tiếng việt")) {
+    if (s.literatureScore != null) {
+      const val = parseScoreNumber(s.literatureScore);
+      scoreDisplay = val !== null ? `${val}` : `${s.literatureScore}`;
+    } else if (s.vietnameseScore != null) {
+      const val = parseScoreNumber(s.vietnameseScore);
+      scoreDisplay = val !== null ? `${val}` : `${s.vietnameseScore}`;
+    } else {
+      const sc = s.scores?.find((x: any) => {
+        const n = (x.subject?.name || x.subjectName || "").toLowerCase().normalize("NFC");
+        const c = (x.subject?.code || "").toLowerCase();
+        return n.includes("tiếng việt") || n.includes("văn") || c.includes("lit") || c.includes("vie");
+      });
+      if (sc?.scores) {
+        const val = parseScoreNumber(sc.scores);
+        scoreDisplay = val !== null ? `${val}` : `${sc.scores}`;
+      }
+    }
+  } else if (subLower.includes("ngữ văn") || subLower.includes("văn")) {
+    if (s.literatureScore != null) {
+      const val = parseScoreNumber(s.literatureScore);
+      scoreDisplay = val !== null ? `${val}` : `${s.literatureScore}`;
+    } else {
+      const sc = s.scores?.find((x: any) => {
+        const n = (x.subject?.name || x.subjectName || "").toLowerCase().normalize("NFC");
+        const c = (x.subject?.code || "").toLowerCase();
+        return n.includes("ngữ văn") || n.includes("văn") || n.includes("tiếng việt") || c.includes("lit") || c.includes("nva");
+      });
+      if (sc?.scores) {
+        const val = parseScoreNumber(sc.scores);
+        scoreDisplay = val !== null ? `${val}` : `${sc.scores}`;
+      }
     }
   } else if (subLower.includes("tâm lý")) {
     if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
     else {
-      const sc = s.scores?.find((x: any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
+      const sc = s.scores?.find((x: any) => {
+        const n = (x.subject?.name || x.subjectName || "").toLowerCase().normalize("NFC");
+        const c = (x.subject?.code || "").toLowerCase();
+        return n.includes("tâm lý") || c.includes("tly");
+      });
       if (sc?.scores) scoreDisplay = `${sc.scores}`;
     }
   } else {
     if (s.scores && s.scores.length > 0) {
       const sc = s.scores.find((x: any) => {
-        const n = x.subject?.name?.toLowerCase() || "";
+        const n = (x.subject?.name || x.subjectName || "").toLowerCase().normalize("NFC");
         return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
       });
-      if (sc?.scores) scoreDisplay = `${sc.scores}`;
+      if (sc?.scores) {
+        const val = parseScoreNumber(sc.scores);
+        scoreDisplay = val !== null ? `${val}` : `${sc.scores}`;
+      }
     }
   }
   return getCompactScore(scoreDisplay);
@@ -1292,6 +1419,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           )
         );
 
+        const scoreDetails = getScoreDetailsForSubject(s, sub);
         rows.push({
           rowId,
           studentId: s.id,
@@ -1303,6 +1431,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           enrollmentDate: s.enrollmentDate,
           subject: sub,
           score,
+          scoreDetails,
           isMatchedTeacher,
           existingTarget,
           rawStudent: s
@@ -4018,7 +4147,10 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                     </span>
                                   </td>
                                   <td className="px-5 py-3.5 whitespace-nowrap">
-                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200">
+                                    <span 
+                                      title={row.scoreDetails || `Điểm KS: ${row.score}`}
+                                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 cursor-help"
+                                    >
                                       {row.score}
                                     </span>
                                   </td>
@@ -4129,7 +4261,10 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                             </span>
                           </td>
                           <td className="px-4 py-3.5 whitespace-nowrap">
-                            <span className="text-xs font-black text-slate-800 bg-slate-100/90 border border-slate-200 px-2.5 py-1 rounded-xl shadow-2xs">
+                            <span 
+                              title={row.scoreDetails || `Điểm KS: ${row.score}`}
+                              className="text-xs font-black text-slate-800 bg-slate-100/90 border border-slate-200 px-2.5 py-1 rounded-xl shadow-2xs cursor-help"
+                            >
                               {row.score}
                             </span>
                           </td>
@@ -6025,6 +6160,13 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
                                 <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.oralEnglishScore != null ? entrance.oralEnglishScore : "N/A"}</span>
                               </div>
                             </div>
+
+                            {entrance.totalEnglishScore != null && (
+                              <div className="bg-gradient-to-r from-indigo-50 to-sky-50 p-3 rounded-xl border border-indigo-100 text-center flex items-center justify-between px-5">
+                                <span className="text-xs text-indigo-700 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh</span>
+                                <span className="text-base font-extrabold text-indigo-800">{entrance.totalEnglishScore}/100</span>
+                              </div>
+                            )}
 
                             {/* Detail Subjects scores if any */}
                             {entrance.scores && entrance.scores.length > 0 && (

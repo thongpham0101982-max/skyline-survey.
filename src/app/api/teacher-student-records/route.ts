@@ -583,6 +583,49 @@ export async function GET(req: Request) {
           // Include if it is Homeroom class OR if there is at least one matched subject
           if (!isHomeroom && matchedSubjects.length === 0) return null
 
+          // Resolve scores from assessment.scores if root fields are null
+          let mathScore = assessment.mathScore
+          let literatureScore = assessment.literatureScore
+          let writtenEnglishScore = assessment.writtenEnglishScore
+          let oralEnglishScore = assessment.oralEnglishScore
+          let psychologyScore = assessment.psychologyScore
+
+          if (assessment.scores && assessment.scores.length > 0) {
+            assessment.scores.forEach((sc: any) => {
+              const sName = (sc.subject?.name || sc.subjectName || "").toLowerCase().normalize("NFC")
+              const sCode = (sc.subject?.code || "").toLowerCase()
+              let val: any = null
+              try {
+                if (sc.scores) {
+                  const parsed = JSON.parse(sc.scores)
+                  const vArr = Array.isArray(parsed) ? parsed : [parsed]
+                  val = vArr.find((x: any) => x !== undefined && x !== "" && x !== null)
+                }
+              } catch {
+                val = sc.scores
+              }
+              if (val !== null && val !== undefined && val !== "") {
+                const numVal = parseFloat(val)
+                const finalVal = isNaN(numVal) ? val : numVal
+                if (sName.includes("toán") || sCode.includes("math") || sCode.includes("toa")) {
+                  if (mathScore == null) mathScore = finalVal
+                } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("nva") || sCode.includes("van")) {
+                  if (literatureScore == null) literatureScore = finalVal
+                } else if (sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("tav") || sCode.includes("esl")) {
+                  if (sName.includes("viết") || sName.includes("written") || sCode.includes("vt") || sCode === "tav") {
+                    if (writtenEnglishScore == null) writtenEnglishScore = finalVal
+                  } else if (sName.includes("vấn đáp") || sName.includes("nói") || sName.includes("oral") || sCode.includes("vd") || sCode === "tavd") {
+                    if (oralEnglishScore == null) oralEnglishScore = finalVal
+                  }
+                }
+              }
+            })
+          }
+
+          const wNum = parseFloat(writtenEnglishScore)
+          const oNum = parseFloat(oralEnglishScore)
+          const totalEnglishScore = (!isNaN(wNum) || !isNaN(oNum)) ? (isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum) : null
+
           return {
             id: s.id,
             studentName: s.studentName,
@@ -595,11 +638,12 @@ export async function GET(req: Request) {
             admissionResult: assessment.admissionResult,
             directorNote: assessment.directorNote,
             enrollmentDate: assessment.enrollmentDate,
-            mathScore: assessment.mathScore,
-            literatureScore: assessment.literatureScore,
-            writtenEnglishScore: assessment.writtenEnglishScore,
-            oralEnglishScore: assessment.oralEnglishScore,
-            psychologyScore: assessment.psychologyScore,
+            mathScore,
+            literatureScore,
+            writtenEnglishScore,
+            oralEnglishScore,
+            totalEnglishScore,
+            psychologyScore,
             scores: assessment.scores
           }
         })
@@ -1100,8 +1144,55 @@ export async function GET(req: Request) {
           }
 
           if (generalSurvey) {
+            let mathScore = generalSurvey.mathScore
+            let literatureScore = generalSurvey.literatureScore
+            let writtenEnglishScore = generalSurvey.writtenEnglishScore
+            let oralEnglishScore = generalSurvey.oralEnglishScore
+            let psychologyScore = generalSurvey.psychologyScore
+
+            if (generalSurvey.scores && generalSurvey.scores.length > 0) {
+              generalSurvey.scores.forEach((sc: any) => {
+                const sName = (sc.subject?.name || sc.subjectName || "").toLowerCase().normalize("NFC")
+                const sCode = (sc.subject?.code || "").toLowerCase()
+                let val: any = null
+                try {
+                  if (sc.scores) {
+                    const parsed = JSON.parse(sc.scores)
+                    const vArr = Array.isArray(parsed) ? parsed : [parsed]
+                    val = vArr.find((x: any) => x !== undefined && x !== "" && x !== null)
+                  }
+                } catch {
+                  val = sc.scores
+                }
+                if (val !== null && val !== undefined && val !== "") {
+                  const numVal = parseFloat(val)
+                  const finalVal = isNaN(numVal) ? val : numVal
+                  if (sName.includes("toán") || sCode.includes("math") || sCode.includes("toa")) {
+                    if (mathScore == null) mathScore = finalVal
+                  } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("nva") || sCode.includes("van")) {
+                    if (literatureScore == null) literatureScore = finalVal
+                  } else if (sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("tav") || sCode.includes("esl")) {
+                    if (sName.includes("viết") || sName.includes("written") || sCode.includes("vt") || sCode === "tav") {
+                      if (writtenEnglishScore == null) writtenEnglishScore = finalVal
+                    } else if (sName.includes("vấn đáp") || sName.includes("nói") || sName.includes("oral") || sCode.includes("vd") || sCode === "tavd") {
+                      if (oralEnglishScore == null) oralEnglishScore = finalVal
+                    }
+                  }
+                }
+              })
+            }
+
+            const wNum = parseFloat(writtenEnglishScore)
+            const oNum = parseFloat(oralEnglishScore)
+            const totalEnglishScore = (!isNaN(wNum) || !isNaN(oNum)) ? (isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum) : null
+
             entranceSurvey = {
               ...generalSurvey,
+              mathScore,
+              literatureScore,
+              writtenEnglishScore,
+              oralEnglishScore,
+              totalEnglishScore,
               type: "K12",
               scores: (generalSurvey.scores || []).map((s: any) => ({
                 subjectName: s?.subject?.name || s?.subjectName || "",
