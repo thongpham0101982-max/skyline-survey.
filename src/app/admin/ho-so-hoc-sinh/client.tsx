@@ -210,6 +210,7 @@ export function StudentProfilesAdminClient({
   }
   
   // Tab states
+  const [selectedStudentType, setSelectedStudentType] = useState<string>("all")
   const [activeTab, setActiveTab] = useState("cv")
   const [entranceSubTab, setEntranceSubTab] = useState<"results" | "admin" | "academic">("results")
   const [loadingProfile, setLoadingProfile] = useState(false)
@@ -363,8 +364,16 @@ export function StudentProfilesAdminClient({
     window.open(`/admin/ho-so-hoc-sinh/print?${params.toString()}`, "_blank")
   }
 
-  // Filter students by local search query
-  const filteredStudentsList = students
+  // Filter students by local search query & studentType
+  const filteredStudentsList = useMemo(() => {
+    let list = students || [];
+    if (selectedStudentType === "GIAO_LUU") {
+      list = list.filter((s: any) => s.studentType === "GIAO_LUU");
+    } else if (selectedStudentType === "CHINH_KHOA") {
+      list = list.filter((s: any) => s.studentType !== "GIAO_LUU");
+    }
+    return list;
+  }, [students, selectedStudentType]);
 
     const tabs = [
     { id: "cv", label: "Xem chi tiết HSHS", icon: User },
@@ -511,6 +520,7 @@ export function StudentProfilesAdminClient({
             </select>
           </div>
 
+
           {/* Class selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -526,6 +536,23 @@ export function StudentProfilesAdminClient({
               {filteredClassesList.map(c => (
                 <option key={c.id} value={c.id}>{c.className}</option>
               ))}
+            </select>
+          </div>
+
+          {/* Student Type selector */}
+          <div className="flex flex-col space-y-1.5">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              <Sparkles className="w-3.5 h-3.5 text-[#00A99D]" />
+              Diện học sinh
+            </label>
+            <select
+              value={selectedStudentType}
+              onChange={(e) => setSelectedStudentType(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D]"
+            >
+              <option value="all">Tất cả diện HS</option>
+              <option value="CHINH_KHOA">Chính khóa</option>
+              <option value="GIAO_LUU">Giao lưu</option>
             </select>
           </div>
 
@@ -639,7 +666,14 @@ export function StudentProfilesAdminClient({
                         {s.studentName.split(" ").pop()?.charAt(0) || "H"}
                       </div>
                       <div className="min-w-0 truncate">
-                        <div className="truncate font-black text-slate-800 text-xs">{s.studentName}</div>
+                        <div className="truncate font-black text-slate-800 text-xs flex items-center gap-1.5">
+                          <span>{s.studentName}</span>
+                          {s.studentType === "GIAO_LUU" && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-extrabold bg-purple-100 text-purple-700 border border-purple-200 flex-shrink-0" title="Học sinh giao lưu">
+                              GL
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-slate-400 font-bold mt-0.5">{s.className || s.classCode || "Chưa xếp lớp"}</div>
                       </div>
                     </div>
@@ -704,6 +738,16 @@ export function StudentProfilesAdminClient({
                       {selectedStudent?.className && (
                         <span className="bg-teal-50 text-[#007A72] border border-teal-200/80 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
                           Lớp {selectedStudent.className}
+                        </span>
+                      )}
+                      {selectedStudent?.studentType === "GIAO_LUU" ? (
+                        <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 border border-purple-300 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                          <Sparkles className="w-3 h-3 text-purple-600" />
+                          Học sinh Giao lưu
+                        </span>
+                      ) : (
+                        <span className="bg-sky-50 text-sky-700 border border-sky-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                          Chính khóa
                         </span>
                       )}
                     </div>

@@ -352,6 +352,12 @@ export async function createTransferInAction(data: any) {
         throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức!`);
       }
 
+      // Determine studentType based on admissionResult
+      const isGiaoLuu1 = (assessmentStudent.admissionResult || "").includes("Giao lưu") || 
+                         (assessmentStudent.admissionResult || "").includes("giao luu") ||
+                         (assessmentStudent.directorNote || "").includes("Học giao lưu") ||
+                         (assessmentStudent.directorNote || "").includes("Học Giao lưu");
+
       // Create new student
       const newStudent = await tx.student.create({
         data: {
@@ -362,7 +368,9 @@ export async function createTransferInAction(data: any) {
           classId: data.classId,
           campusId: data.campusId,
           academicYearId: data.academicYearId,
-          status: "ACTIVE"
+          status: "ACTIVE",
+          studentType: isGiaoLuu1 ? "GIAO_LUU" : "CHINH_KHOA",
+          studentTypeNote: isGiaoLuu1 ? "Học giao lưu theo kết quả khảo sát đầu vào" : null
         }
       });
 
@@ -638,6 +646,12 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
         throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức!`);
       }
 
+      // Determine studentType based on admissionResult
+      const isGiaoLuu2 = (candidate.admissionResult || "").includes("Giao lưu") || 
+                         (candidate.admissionResult || "").includes("giao luu") ||
+                         (candidate.directorNote || "").includes("Học giao lưu") ||
+                         (candidate.directorNote || "").includes("Học Giao lưu");
+
       // 1. Create official student in Student table
       const newStudent = await tx.student.create({
         data: {
@@ -648,7 +662,9 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
           classId: data.classId,
           campusId: data.campusId,
           academicYearId: data.academicYearId,
-          status: "ACTIVE"
+          status: "ACTIVE",
+          studentType: isGiaoLuu2 ? "GIAO_LUU" : "CHINH_KHOA",
+          studentTypeNote: isGiaoLuu2 ? "Học giao lưu theo kết quả khảo sát đầu vào" : null
         }
       });
 
@@ -977,6 +993,12 @@ export async function completeBatchEnrollmentAction(ids: string[], isPreschool: 
             throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức cho năm học này!`);
           }
 
+          // Determine studentType based on admissionResult
+          const isGiaoLuu3 = (candidate.admissionResult || "").includes("Giao lưu") || 
+                             (candidate.admissionResult || "").includes("giao luu") ||
+                             (candidate.directorNote || "").includes("Học giao lưu") ||
+                             (candidate.directorNote || "").includes("Học Giao lưu");
+
           // 1. Create official student in Student table
           const newStudent = await tx.student.create({
             data: {
@@ -987,7 +1009,9 @@ export async function completeBatchEnrollmentAction(ids: string[], isPreschool: 
               classId: data.classId,
               campusId: data.campusId,
               academicYearId: data.academicYearId,
-              status: "ACTIVE"
+              status: "ACTIVE",
+              studentType: isGiaoLuu3 ? "GIAO_LUU" : "CHINH_KHOA",
+              studentTypeNote: isGiaoLuu3 ? "Học giao lưu theo kết quả khảo sát đầu vào" : null
             }
           });
 

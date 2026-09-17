@@ -692,6 +692,12 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                             {student.studentName.split(" ").pop()?.charAt(0) || "HS"}
                           </div>
                           <span className="truncate max-w-[220px]">{student.studentName}</span>
+                          {student.studentType === "GIAO_LUU" && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-black bg-purple-100 text-purple-700 border border-purple-200 shrink-0" title="Học sinh giao lưu">
+                              <Sparkles className="w-2.5 h-2.5 text-purple-600" />
+                              Giao lưu
+                            </span>
+                          )}
                         </div>
                       </td>
                       {showAllRegistered && <td className="px-6 py-3.5 text-slate-600 font-bold">{student.campusName}</td>}

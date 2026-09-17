@@ -40,7 +40,9 @@ export async function getStudentsByClassAction(classId: string, examId: string) 
     studentName: s.studentName,
     gender: s.gender || "Chưa xác định",
     dateOfBirth: s.dateOfBirth ? s.dateOfBirth.toISOString() : null,
-    isRegistered: registeredStudentIds.has(s.id)
+    isRegistered: registeredStudentIds.has(s.id),
+    studentType: s.studentType || "CHINH_KHOA",
+    studentTypeNote: s.studentTypeNote || ""
   }))
 }
 
@@ -126,6 +128,8 @@ export async function getAllRegisteredStudentsAction(examId: string) {
     className: r.student.class?.className || "N/A",
     campusId: r.student.campusId,
     campusName: r.student.campus?.campusName || "N/A",
-    grade: r.student.class?.grade || "N/A"
+    grade: r.student.class?.grade || "N/A",
+    studentType: r.student.studentType || "CHINH_KHOA",
+    studentTypeNote: r.student.studentTypeNote || ""
   }))
 }

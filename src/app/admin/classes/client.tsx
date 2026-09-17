@@ -612,8 +612,17 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             {eduSystems.map((es: any) => <option key={es.id} value={es.code}>{es.code} - {es.name}</option>)}
           </select>
         </div>
-        <div className="ml-auto text-sm text-slate-500">
-          Tổng: <span className="font-bold text-slate-800">{filteredClasses.length}</span> lớp
+        <div className="ml-auto flex items-center gap-3 text-sm text-slate-500">
+          <div>Tổng: <span className="font-bold text-slate-800">{filteredClasses.length}</span> lớp</div>
+          {(() => {
+            const totalGL = filteredClasses.reduce((acc: number, cur: any) => acc + (cur.giaoLuuCount || 0), 0);
+            return totalGL > 0 ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-xs font-bold shadow-2xs" title="Tổng số học sinh diện Giao lưu trong các lớp đang lọc">
+                <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+                {totalGL} HS Giao lưu
+              </span>
+            ) : null;
+          })()}
         </div>
       </div>
 
@@ -711,7 +720,19 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                  <td className="p-2 p-2 border border-slate-200">
                    {c.educationSystem ? (<span className={"text-xs px-2.5 py-1 rounded-full font-bold " + getEduBadgeColor(c.educationSystem)}>{c.educationSystem}</span>) : <span className="text-slate-300">--</span>}
                  </td>
-                 <td className="p-2 p-2 border border-slate-200"><span className="flex items-center text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full w-max text-xs font-medium"><Users className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> {c.studentCount}</span></td>
+                 <td className="p-2 p-2 border border-slate-200">
+                    <div className="flex flex-col gap-1">
+                      <span className="flex items-center text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full w-max text-xs font-semibold">
+                        <Users className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> {c.studentCount}
+                      </span>
+                      {c.giaoLuuCount > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200/80 rounded-md px-1.5 py-0.2 w-max" title="Học sinh giao lưu">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                          {c.chinhKhoaCount} CK • {c.giaoLuuCount} GL
+                        </span>
+                      )}
+                    </div>
+                  </td>
                  <td className="p-2 p-2 text-slate-700 font-medium border border-slate-200">{c.homeroomTeacher}</td>
                  <td className="p-2 p-2 text-right space-x-2 border border-slate-200">
                     <button onClick={() => handleOpenEditModal(c)} className="p-1.5 text-blue-500 hover:bg-blue-100 text-xs font-semibold" title="Sửa"><Edit className="w-4 h-4" /></button>

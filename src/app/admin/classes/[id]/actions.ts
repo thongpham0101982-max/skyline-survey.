@@ -56,7 +56,9 @@ export async function importStudentsAction(classId: string, data: any[]) {
               classId: cls.id,
               campusId: cls.campusId,
               academicYearId: cls.academicYearId,
-              status: "ACTIVE"
+              status: "ACTIVE",
+              studentType: item.studentType || "CHINH_KHOA",
+              studentTypeNote: item.studentType === "GIAO_LUU" ? "Import diện giao lưu" : null
             }
           });
           if (item.vnEduCode) {
@@ -142,7 +144,9 @@ export async function addStudentAction(classId: string, data: any) {
         classId: cls.id,
         campusId: cls.campusId,
         academicYearId: cls.academicYearId,
-        status: "ACTIVE"
+        status: "ACTIVE",
+        studentType: data.studentType === "GIAO_LUU" ? "GIAO_LUU" : "CHINH_KHOA",
+        studentTypeNote: data.studentTypeNote || (data.studentType === "GIAO_LUU" ? "Học giao lưu" : null)
       }
     })
     const session = await auth()
@@ -405,5 +409,119 @@ export async function syncAssessmentStudentInfoWithMasterAction(studentCode: str
     }
   } catch (e) {
     console.error("Auto sync assessment student error:", e);
+  }
+}
+
+export async function convertStudentTypeAction(data: {
+  studentId: string;
+  classId: string;
+  targetType: "CHINH_KHOA" | "GIAO_LUU";
+  reason: string;
+  syncSurvey?: boolean;
+}) {
+  try {
+    const session = await auth();
+    if (!session) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
+
+    const student = await prisma.student.findUnique({
+      where: { id: data.studentId },
+      include: { class: true }
+    });
+    if (!student) return { success: false, error: "Không tìm thấy học sinh" };
+
+    const oldType = student.studentType || "CHINH_KHOA";
+    if (oldType === data.targetType) {
+      return { success: false, error: `Học sinh hiện đã thuộc diện ${data.targetType === "CHINH_KHOA" ? "Chính khóa" : "Giao lưu"}` };
+    }
+
+    const userName = (session.user as any)?.fullName || (session.user as any)?.name || session.user?.email || "BGH";
+    const now = new Date();
+    const formattedDate = new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    }).format(now);
+
+    const oldTypeLabel = oldType === "GIAO_LUU" ? "Giao lưu" : "Chính khóa";
+    const newTypeLabel = data.targetType === "GIAO_LUU" ? "Giao lưu" : "Chính khóa";
+
+    await prisma.student.update({
+      where: { id: data.studentId },
+      data: {
+        studentType: data.targetType,
+        convertedAt: now,
+        conversionReason: data.reason,
+        convertedBy: userName,
+        studentTypeNote: `Chuyển từ ${oldTypeLabel} sang ${newTypeLabel} ngày ${formattedDate}. Lý do: ${data.reason}`
+      }
+    });
+
+    // Đồng bộ với bản ghi khảo sát tuyển sinh đầu vào
+    if (data.syncSurvey) {
+      const candidateCondition = {
+        OR: [
+          { enrollmentCode: student.studentCode },
+          { studentCode: student.studentCode },
+          { enrollmentClassId: student.classId, fullName: student.studentName }
+        ]
+      };
+
+      const newAdmissionResult = data.targetType === "CHINH_KHOA" ? "Đạt" : "Đạt - Giao lưu";
+      const historyEntry = `\n• ${formattedDate} | ${userName} | ${oldTypeLabel} ➔ ${newTypeLabel} | Lý do: ${data.reason}`;
+
+      // Cập nhật K12
+      const k12Candidates = await prisma.inputAssessmentStudent.findMany({ where: candidateCondition });
+      for (const cand of k12Candidates) {
+        const newNote = (cand.directorNote || "").includes("--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---")
+          ? cand.directorNote + historyEntry
+          : (cand.directorNote ? cand.directorNote + "\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---" + historyEntry : "--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---" + historyEntry);
+
+        await prisma.inputAssessmentStudent.update({
+          where: { id: cand.id },
+          data: {
+            admissionResult: newAdmissionResult,
+            directorNote: newNote
+          }
+        });
+      }
+
+      // Cập nhật Mầm non
+      const preschoolCandidates = await prisma.preschoolInputAssessmentStudent.findMany({ where: candidateCondition });
+      for (const cand of preschoolCandidates) {
+        const newNote = (cand.directorNote || "").includes("--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---")
+          ? cand.directorNote + historyEntry
+          : (cand.directorNote ? cand.directorNote + "\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---" + historyEntry : "--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---" + historyEntry);
+
+        await prisma.preschoolInputAssessmentStudent.update({
+          where: { id: cand.id },
+          data: {
+            admissionResult: newAdmissionResult,
+            directorNote: newNote
+          }
+        });
+      }
+    }
+
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "CONVERT_STUDENT_TYPE",
+      "Student",
+      student.id,
+      null,
+      { studentCode: student.studentCode, from: oldType, to: data.targetType, reason: data.reason }
+    );
+
+    revalidatePath(`/admin/classes/${data.classId}`);
+    revalidatePath(`/admin/classes`);
+    revalidatePath(`/admin/ho-so-hoc-sinh`);
+    revalidatePath(`/admin/student-info`);
+
+    return {
+      success: true,
+      message: `Đã chuyển đổi học sinh ${student.studentName} sang diện ${newTypeLabel} thành công!`
+    };
+  } catch (e: any) {
+    console.error("Error converting student type:", e);
+    return { success: false, error: e.message };
   }
 }

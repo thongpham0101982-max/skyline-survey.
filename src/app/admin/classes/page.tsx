@@ -15,7 +15,11 @@ export default async function AdminClassesPage() {
     where: classWhere,
     include: {
       campus: true,
-      _count: { select: { students: { where: { status: 'ACTIVE' } } } }
+      _count: { select: { students: { where: { status: 'ACTIVE' } } } },
+      students: {
+        where: { status: 'ACTIVE' },
+        select: { studentType: true }
+      }
     },
     orderBy: [{ campus: { campusName: "asc" } }, { level: "asc" }, { grade: "asc" }, { className: "asc" }]
   })
@@ -56,6 +60,8 @@ export default async function AdminClassesPage() {
     academicYearId: c.academicYearId,
     educationSystem: c.educationSystem || "",
     studentCount: c._count.students,
+    chinhKhoaCount: (c.students || []).filter((s: any) => s.studentType !== 'GIAO_LUU').length,
+    giaoLuuCount: (c.students || []).filter((s: any) => s.studentType === 'GIAO_LUU').length,
     homeroomTeacherId: c.homeroomTeacherId,
     homeroomTeacher: c.homeroomTeacherId 
       ? c.homeroomTeacherId.split(",").map(id => teacherMap[id.trim()]).filter(Boolean).join(", ") 

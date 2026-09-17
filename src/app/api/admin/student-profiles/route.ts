@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
     if (academicYearId) where.academicYearId = academicYearId
     if (campusId) where.campusId = campusId
     if (classId) where.classId = classId
+    if (studentType && studentType !== "ALL") where.studentType = studentType
     if (search) {
       where.OR = [
         { studentName: { contains: search } },

@@ -1,9 +1,9 @@
 "use client"
 import Link from "next/link"
 import { useState, useRef, useMemo } from "react"
-import { Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save, Send, RefreshCw, ArrowUpDown, Layers, ExternalLink, FileCode } from "lucide-react"
+import { Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save, Send, RefreshCw, ArrowUpDown, Layers, ExternalLink, FileCode, ArrowRightLeft, Sparkles, CheckCircle2, AlertCircle } from "lucide-react"
 import * as xlsx from "xlsx"
-import { importStudentsAction, addStudentAction, updateStudentAction, deleteStudentsAction, assignSurveyToStudentAction, syncClassStudentsWithSurveysAction } from "./actions"
+import { importStudentsAction, addStudentAction, updateStudentAction, deleteStudentsAction, assignSurveyToStudentAction, syncClassStudentsWithSurveysAction, convertStudentTypeAction } from "./actions"
 import { sortVietnameseStudents } from "@/lib/vietnameseSort"
 
 export function AdminClassStudentsClient({ classId, initialStudents, activeSurveys = [] }: any) {
@@ -18,9 +18,30 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedSurveyId, setSelectedSurveyId] = useState("")
   const [assigningStudent, setAssigningStudent] = useState<any>(null)
-  const [formData, setFormData] = useState({ studentCode: "", vnEduCode: "", studentName: "", gender: "Nam", dateOfBirth: "", status: "ACTIVE" })
+  const [formData, setFormData] = useState({ studentCode: "", vnEduCode: "", studentName: "", gender: "Nam", dateOfBirth: "", status: "ACTIVE", studentType: "CHINH_KHOA", studentTypeNote: "" })
+  const [studentTypeFilter, setStudentTypeFilter] = useState<"ALL" | "CHINH_KHOA" | "GIAO_LUU">("ALL")
+  const [showConvertModal, setShowConvertModal] = useState(false)
+  const [convertingStudent, setConvertingStudent] = useState<any>(null)
+  const [convertTargetType, setConvertTargetType] = useState<"CHINH_KHOA" | "GIAO_LUU">("CHINH_KHOA")
+  const [convertReason, setConvertReason] = useState("")
+  const [convertSyncSurvey, setConvertSyncSurvey] = useState(true)
+  const [convertingLoading, setConvertingLoading] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const chinhKhoaCount = useMemo(() => (students || []).filter((s: any) => s.studentType !== "GIAO_LUU").length, [students]);
+  const giaoLuuCount = useMemo(() => (students || []).filter((s: any) => s.studentType === "GIAO_LUU").length, [students]);
+
+  const filteredStudents = useMemo(() => {
+    let list = displayStudents;
+    if (studentTypeFilter === "CHINH_KHOA") {
+      list = list.filter((s: any) => s.studentType !== "GIAO_LUU");
+    } else if (studentTypeFilter === "GIAO_LUU") {
+      list = list.filter((s: any) => s.studentType === "GIAO_LUU");
+    }
+    return list;
+  }, [displayStudents, studentTypeFilter]);
+
 
   const displayStudents = useMemo(() => {
     if (!students || students.length === 0) return []
@@ -42,10 +63,10 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
 
   const handleDownloadTemplate = () => {
     const ws = xlsx.utils.json_to_sheet([
-      { "STT": 1, "Mã học sinh *": "HS-10A1-001", "Mã VNEdu": "2500839484", "Họ và Tên *": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "20/05/2010" },
-      { "STT": 2, "Mã học sinh *": "HS-10A1-002", "Mã VNEdu": "2500839485", "Họ và Tên *": "Trần Thị B", "Giới tính": "Nữ", "Ngày sinh": "15/12/2010" }
+      { "STT": 1, "Mã học sinh *": "HS-10A1-001", "Mã VNEdu": "2500839484", "Họ và Tên *": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "20/05/2010", "Loại học sinh": "Chính khóa" },
+      { "STT": 2, "Mã học sinh *": "HS-10A1-002", "Mã VNEdu": "2500839485", "Họ và Tên *": "Bagdan Khabibov", "Giới tính": "Nam", "Ngày sinh": "15/12/2010", "Loại học sinh": "Giao lưu" }
     ])
-    ws["!cols"] = [{ wch: 5 }, { wch: 25 }, { wch: 30 }, { wch: 12 }, { wch: 18 }]
+    ws["!cols"] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 }]
     const wb = xlsx.utils.book_new()
     xlsx.utils.book_append_sheet(wb, ws, "Danh_sach_HS")
     xlsx.writeFile(wb, "Form_Mau_Them_Hoc_Sinh.xlsx")
@@ -158,7 +179,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
   }
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.checked) setSelectedIds(displayStudents.map((s: any) => s.id))
+    if (e.target.checked) setSelectedIds(filteredStudents.map((s: any) => s.id))
     else setSelectedIds([])
   }
 
@@ -221,6 +242,38 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
     }
   }
 
+  const openConvertModal = (s: any, targetType: "CHINH_KHOA" | "GIAO_LUU") => {
+    setConvertingStudent(s);
+    setConvertTargetType(targetType);
+    setConvertReason("");
+    setConvertSyncSurvey(true);
+    setShowConvertModal(true);
+  };
+
+  const handleConvertStudentType = async () => {
+    if (!convertingStudent) return;
+    if (!convertReason.trim()) {
+      alert("Vui lòng nhập lý do hoặc căn cứ quyết định chuyển đổi diện học sinh!");
+      return;
+    }
+    setConvertingLoading(true);
+    const res = await convertStudentTypeAction({
+      studentId: convertingStudent.id,
+      classId,
+      targetType: convertTargetType,
+      reason: convertReason.trim(),
+      syncSurvey: convertSyncSurvey
+    });
+    setConvertingLoading(false);
+    if (res.success) {
+      alert(res.message);
+      setShowConvertModal(false);
+      window.location.reload();
+    } else {
+      alert("Lỗi chuyển đổi: " + res.error);
+    }
+  };
+
   const openEdit = (s: any) => {
     setEditingStudent(s)
     setFormData({
@@ -228,14 +281,17 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
       vnEduCode: s.vnEduCode !== "—" ? s.vnEduCode || "" : "",
       studentName: s.studentName,
       gender: s.gender || "Nam",
-      dateOfBirth: s.dateOfBirth ? new Date(s.dateOfBirth).toISOString().split("T")[0] : "", status: s.status || "ACTIVE"
+      dateOfBirth: s.dateOfBirth ? new Date(s.dateOfBirth).toISOString().split("T")[0] : "",
+      status: s.status || "ACTIVE",
+      studentType: s.studentType || "CHINH_KHOA",
+      studentTypeNote: s.studentTypeNote || ""
     })
     setShowAddModal(true)
   }
 
   const openAdd = () => {
     setEditingStudent(null)
-    setFormData({ studentCode: "", vnEduCode: "", studentName: "", gender: "Nam", dateOfBirth: "" })
+    setFormData({ studentCode: "", vnEduCode: "", studentName: "", gender: "Nam", dateOfBirth: "", status: "ACTIVE", studentType: "CHINH_KHOA", studentTypeNote: "" })
     setShowAddModal(true)
   }
 
@@ -266,6 +322,141 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                    {submitting ? "Đang xử lý..." : "Xác nhận Gán"}
                  </button>
                </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      
+      {/* Modal Chuyển đổi Loại Học sinh */}
+      {showConvertModal && convertingStudent && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-purple-50/40">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shadow-xs">
+                  <ArrowRightLeft className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-sm">Chuyển Diện Học Sinh</h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Thay đổi phân loại Chính khóa / Giao lưu</p>
+                </div>
+              </div>
+              <button onClick={() => setShowConvertModal(false)} className="p-1.5 hover:bg-white rounded-xl text-slate-400 hover:text-slate-600 transition-colors shadow-2xs">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Thông tin học sinh */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-medium">Học sinh:</span>
+                  <span className="text-xs font-bold text-slate-800">{convertingStudent.studentName} ({convertingStudent.studentCode})</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-medium">Diện hiện tại:</span>
+                  <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                    convertingStudent.studentType === "GIAO_LUU"
+                      ? "bg-purple-100 text-purple-800 border border-purple-200"
+                      : "bg-sky-100 text-sky-800 border border-sky-200"
+                  }`}>
+                    {convertingStudent.studentType === "GIAO_LUU" ? "Học sinh Giao lưu" : "Học sinh Chính khóa"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                  <span className="text-xs text-slate-500 font-medium">Chuyển sang:</span>
+                  <span className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full ${
+                    convertTargetType === "CHINH_KHOA"
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300 ring-2 ring-emerald-400/20"
+                      : "bg-purple-100 text-purple-800 border border-purple-300 ring-2 ring-purple-400/20"
+                  }`}>
+                    ➔ {convertTargetType === "CHINH_KHOA" ? "Học sinh Chính khóa" : "Học sinh Giao lưu"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Tùy chọn chuyển đổi */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Diện học sinh đích *
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setConvertTargetType("CHINH_KHOA")}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      convertTargetType === "CHINH_KHOA"
+                        ? "border-emerald-500 bg-emerald-50/50 text-emerald-900 ring-2 ring-emerald-500/20 font-bold"
+                        : "border-slate-200 hover:bg-slate-50 text-slate-600 font-medium"
+                    }`}
+                  >
+                    <div className="text-xs font-bold">Chính khóa</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Học tập chính thức theo chương trình</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConvertTargetType("GIAO_LUU")}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      convertTargetType === "GIAO_LUU"
+                        ? "border-purple-500 bg-purple-50/50 text-purple-900 ring-2 ring-purple-500/20 font-bold"
+                        : "border-slate-200 hover:bg-slate-50 text-slate-600 font-medium"
+                    }`}
+                  >
+                    <div className="text-xs font-bold">Giao lưu</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">Học giao lưu / Trao đổi / Hội nhập</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Lý do chuyển đổi */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Lý do / Căn cứ quyết định chuyển đổi <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={convertReason}
+                  onChange={e => setConvertReason(e.target.value)}
+                  placeholder="Ví dụ: Theo quyết định số 45/QĐ-BGH; Đã hoàn thành chương trình bồi dưỡng tiếng Việt; Đạt cam kết học tập chính thức..."
+                  className="w-full border border-slate-200 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 font-medium"
+                />
+              </div>
+
+              {/* Tùy chọn đồng bộ kết quả khảo sát đầu vào */}
+              <div className="bg-amber-50/80 p-3 rounded-xl border border-amber-200/80 flex items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  id="convertSyncSurvey"
+                  checked={convertSyncSurvey}
+                  onChange={e => setConvertSyncSurvey(e.target.checked)}
+                  className="w-4 h-4 rounded text-purple-600 mt-0.5 cursor-pointer"
+                />
+                <label htmlFor="convertSyncSurvey" className="text-xs text-amber-900 cursor-pointer select-none">
+                  <span className="font-bold">Đồng bộ cập nhật hồ sơ khảo sát đầu vào:</span> Tự động ghi nhận chuyển đổi kết quả tuyển sinh sang <span className="font-bold">{convertTargetType === "CHINH_KHOA" ? "Đạt (Chính khóa)" : "Đạt - Giao lưu"}</span> và lưu nhật ký duyệt vào hệ thống.
+                </label>
+              </div>
+
+              {/* Nút hành động */}
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowConvertModal(false)}
+                  disabled={convertingLoading}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConvertStudentType}
+                  disabled={convertingLoading || !convertReason.trim()}
+                  className="flex-[2] py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-purple-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  {convertingLoading ? "Đang xử lý..." : "Xác nhận chuyển đổi"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -369,7 +560,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           <thead className="uppercase text-[10px] tracking-wider text-slate-500 font-bold">
             <tr>
               <th className="px-4 py-3 border-r border-slate-200 w-10 text-center">
-                <input type="checkbox" className="w-4 h-4 rounded" checked={displayStudents.length > 0 && selectedIds.length === displayStudents.length} onChange={handleSelectAll} />
+                <input type="checkbox" className="w-4 h-4 rounded" checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length} onChange={handleSelectAll} />
               </th>
               <th className="px-6 py-4 border-r border-slate-200 w-16 text-center">STT</th>
               <th className="px-6 py-4 border-r border-slate-200">Mã HS</th>
@@ -382,21 +573,22 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
               </th>
               <th className="px-6 py-4 border-r border-slate-200">Giới tính</th>
               <th className="px-6 py-4 border-r border-slate-200">Ngày sinh</th>
+              <th className="px-6 py-4 border-r border-slate-200 text-center">Diện HS</th>
               <th className="px-6 py-4 border-r border-slate-200 text-center">Đối tượng</th>
               <th className="px-6 py-4 border-r border-slate-200">Trạng thái</th>
               <th className="p-2 text-center border border-slate-200">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {displayStudents.length === 0 ? (
+            {filteredStudents.length === 0 ? (
               <tr>
-                <td colSpan={10} className="text-center py-10 text-slate-400 font-medium text-xs">
+                <td colSpan={11} className="text-center py-10 text-slate-400 font-medium text-xs">
                   <UserCircle2 className="w-12 h-12 mx-auto mb-4 opacity-20" />
                   Chưa có học sinh nào. Hãy import hoặc thêm mới.
                 </td>
               </tr>
             ) : (
-              displayStudents.map((student: any, idx: number) => {
+              filteredStudents.map((student: any, idx: number) => {
                 const isSurvey = student.enrollmentType === "KS" || student.isSurveyStudent || (student.studentTransfers && student.studentTransfers.some((t: any) => t.type === 'IN'));
                 const enrollmentLabel = isSurvey ? "KS" : (student.enrollmentType || "Trực tiếp");
 
@@ -448,6 +640,33 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   <td className="px-6 py-4 text-slate-600 border-r border-slate-200">
                     {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "Chưa cập nhật"}
                   </td>
+                  {/* Diện học sinh (Chính khóa / Giao lưu) */}
+                  <td className="px-6 py-4 border-r border-slate-200 text-center">
+                    {student.studentType === "GIAO_LUU" ? (
+                      <div className="inline-flex flex-col items-center gap-0.5">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-300 shadow-2xs">
+                          <Sparkles className="w-3 h-3 text-purple-600" />
+                          GIAO LƯU
+                        </span>
+                        {student.studentTypeNote && (
+                          <span className="text-[9px] text-slate-400 max-w-[120px] truncate" title={student.studentTypeNote}>
+                            {student.studentTypeNote}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="inline-flex flex-col items-center gap-0.5">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                          Chính khóa
+                        </span>
+                        {student.convertedAt && (
+                          <span className="text-[9px] text-emerald-600 font-semibold" title={`Chuyển từ Giao lưu: ${student.conversionReason || ""}`}>
+                            Đã chuyển từ GL
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4 border-r border-slate-200 text-center">
                     <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
                       isSurvey 
@@ -464,6 +683,25 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   </td>
                   <td className="p-2 text-center border border-slate-200">
                      <div className="flex justify-center gap-1">
+                        {/* Nút chuyển đổi Diện học sinh */}
+                        {student.studentType === "GIAO_LUU" ? (
+                          <button
+                            onClick={() => openConvertModal(student, "CHINH_KHOA")}
+                            className="p-1.5 px-2 text-purple-700 hover:text-white bg-purple-50 hover:bg-purple-600 border border-purple-200 rounded-lg transition-all text-xs font-bold flex items-center gap-1 shadow-2xs"
+                            title="Chuyển học sinh sang diện Chính khóa"
+                          >
+                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                            <span className="text-[10px]">Sang Chính khóa</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => openConvertModal(student, "GIAO_LUU")}
+                            className="p-2 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors text-xs"
+                            title="Chuyển học sinh sang diện Giao lưu"
+                          >
+                            <ArrowRightLeft className="w-4 h-4" />
+                          </button>
+                        )}
                         <button onClick={() => { setAssigningStudent(student); setSelectedSurveyId(""); setShowAssignModal(true); }} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors text-xs" title="Gán khảo sát">
                           <Send className="w-4 h-4" />
                         </button>

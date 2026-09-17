@@ -45,7 +45,7 @@ export default async function AdminClassDetailPage({ params }: any) {
           { enrollmentCode: { in: studentCodes } }
         ]
       },
-      select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true }
+      select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true, admissionResult: true }
     }),
     prisma.preschoolInputAssessmentStudent.findMany({
       where: {
@@ -55,7 +55,7 @@ export default async function AdminClassDetailPage({ params }: any) {
           { enrollmentCode: { in: studentCodes } }
         ]
       },
-      select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true }
+      select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true, admissionResult: true }
     }),
     prisma.studentCodeMapping.findMany({
       where: {
@@ -84,7 +84,8 @@ export default async function AdminClassDetailPage({ params }: any) {
       ...student,
       vnEduCode,
       enrollmentType: isFromSurvey ? "KS" : "Trực tiếp",
-      isSurveyStudent: isFromSurvey
+      isSurveyStudent: isFromSurvey,
+      candidateAdmissionResult: matchedCandidate?.admissionResult || null
     };
   });
 
