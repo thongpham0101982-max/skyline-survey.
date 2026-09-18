@@ -365,7 +365,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
           </div>
           <h3 className="text-lg font-bold text-slate-800">Chưa có dữ liệu con em</h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
-            Tài khoản chưa có thông tin học sinh liên kết. Quý Phụ huynh vui lòng chuyển sang trang Tổng quan để liên kết học sinh.
+            Tài khoản chưa có thông tin học sinh liên kết. Quý Phụ huynh vui lòng liên hệ Ban Giám hiệu hoặc GVCN để được hỗ trợ đồng bộ dữ liệu.
           </p>
         </div>
       ) : (

@@ -74,7 +74,7 @@ export async function GET(req: Request) {
           allStudents = autoMatchedStudents
           // Auto-link in ParentStudent for future fast queries
           for (const st of autoMatchedStudents) {
-            await prisma.parentStudent.create({
+            await prisma.parentStudentLink.create({
               data: {
                 parentId: parent.id,
                 studentId: st.id
