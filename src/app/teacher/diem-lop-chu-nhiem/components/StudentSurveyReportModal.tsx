@@ -112,7 +112,7 @@ export function StudentSurveyReportModal({
     listToExport.forEach((st: any) => {
       const headerData = [
         [schoolTitle],
-        [`Cơ sở: ${currentClass?.campus?.campusName || currentClass?.campus?.name || currentClass?.campusName || "Sky-Line"}`],
+        ["HỆ THỐNG GIÁO DỤC SKY-LINE - Nơi Khởi nguồn hạnh phúc"],
         [""],
         [`${reportMainTitle} - ${reportYearTitle}`],
         [""],
@@ -175,14 +175,8 @@ export function StudentSurveyReportModal({
               <GraduationCap className="w-6 h-6 text-teal-200" />
             </div>
             <div>
-              <div className="text-xs sm:text-[13px] font-black text-[#005B58] tracking-tight uppercase leading-tight">
+              <div className="text-xs sm:text-sm font-black text-[#005B58] tracking-tight uppercase leading-tight">
                 {schoolTitle}
-              </div>
-              <div className="text-[10px] font-bold text-teal-800 leading-tight">
-                Cơ sở: {currentClass?.campus?.campusName || currentClass?.campus?.name || currentClass?.campusName || "Sky-Line System"}
-              </div>
-              <div className="text-[9px] text-slate-500 font-medium">
-                Ban Đảm bảo Chất lượng & Đào tạo Sky-Line
               </div>
             </div>
           </div>
@@ -192,7 +186,7 @@ export function StudentSurveyReportModal({
               HỆ THỐNG GIÁO DỤC SKY-LINE
             </div>
             <div className="text-[9px] font-bold text-teal-700 italic">
-              Nơi khởi đầu của những ước mơ
+              Nơi Khởi nguồn hạnh phúc
             </div>
             <div className="text-[9px] text-slate-500 font-medium mt-0.5">
               Mã lớp: <span className="font-bold text-slate-800">{currentClass?.className}</span>

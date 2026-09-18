@@ -4,54 +4,22 @@ export const revalidate = 0
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { getParentProfileWithStudents, resolveHomeroomTeacher } from "@/lib/parentData"
 import { ParentSurveysClient } from "./client"
 
 async function getParentSurveysData(userId: string) {
   if (!userId) return { childrenList: [], parentTasks: [], studentTasks: [], defaultYearName: "" }
 
-  let parent = null
+  let parent: any = null
   try {
-    parent = await prisma.parent.findUnique({
-      where: { userId },
-      include: {
-        students: {
-          include: {
-            student: {
-              include: {
-                class: {
-                  include: {
-                    campus: true,
-                    academicYear: true,
-                    teachers: {
-                      include: {
-                        teacher: true
-                      }
-                    }
-                  }
-                },
-                academicYear: true,
-                surveyForms: {
-                  select: {
-                    id: true,
-                    status: true,
-                    surveyPeriodId: true,
-                    parentId: true,
-                    submissionDateTime: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    })
+    parent = await getParentProfileWithStudents(userId)
   } catch (e) {
-    console.error("Error loading parent surveys profile:", e)
+    console.error("Error loading parent surveys profile with getParentProfileWithStudents:", e)
   }
 
   if (!parent) return { childrenList: [], parentTasks: [], studentTasks: [], defaultYearName: "" }
 
-  let defaultYear = null
+  let defaultYear: any = null
   try {
     defaultYear = await getDefaultAcademicYear(prisma)
   } catch (e) {
@@ -96,38 +64,19 @@ async function getParentSurveysData(userId: string) {
   }
 
   const rawChildren = (parent.students || [])
-    .map(s => s.student)
+    .map((s: any) => s.student)
     .filter(Boolean)
 
-  const filteredChildren = rawChildren.filter(child =>
+  const filteredChildren = rawChildren.filter((child: any) =>
     !defaultYear || child.academicYearId === defaultYear.id || child.class?.academicYearId === defaultYear.id
   )
 
   const children = filteredChildren.length > 0 ? filteredChildren : rawChildren
 
-  // Lookup homeroom teacher name for each child
+  // Lookup homeroom teacher name for each child using shared helper
   const childrenWithGVCN = await Promise.all(
-    children.map(async (child) => {
-      let gvcnName = "Chưa phân công"
-      if (child.class) {
-        if (child.class.homeroomTeacherId) {
-          const teacher = await prisma.teacher.findFirst({
-            where: {
-              OR: [
-                { id: child.class.homeroomTeacherId },
-                { teacherCode: child.class.homeroomTeacherId },
-                { userId: child.class.homeroomTeacherId }
-              ]
-            },
-            select: { teacherName: true }
-          }).catch(() => null)
-          if (teacher?.teacherName) gvcnName = teacher.teacherName
-        }
-        if (gvcnName === "Chưa phân công" && child.class.teachers && child.class.teachers.length > 0) {
-          const hrAss = child.class.teachers.find((t: any) => t.roleInClass === 'HOMEROOM' || t.roleInClass === 'GVCN') || child.class.teachers[0]
-          if (hrAss?.teacher?.teacherName) gvcnName = hrAss.teacher.teacherName
-        }
-      }
+    children.map(async (child: any) => {
+      const gvcnName = await resolveHomeroomTeacher(child)
       return {
         ...child,
         gvcnName

@@ -19,6 +19,7 @@ import {
   Layers,
   TrendingUp,
   Save,
+  Printer,
   Check
 } from "lucide-react"
 import {
@@ -148,10 +149,10 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
     loadData()
 
-    // Realtime Auto-Sync Polling every 4 seconds
+    // Smart Auto-Sync Polling (every 25 seconds)
     const intervalId = setInterval(() => {
       loadData()
-    }, 4000)
+    }, 25000)
 
     const handleFocus = () => loadData()
     window.addEventListener("focus", handleFocus)
@@ -454,6 +455,15 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
                 {/* Checkpoint selector */}
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => typeof window !== 'undefined' && window.print()}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all shadow-2xs active:scale-95 mr-2 print:hidden"
+                    title="In phiếu hoặc lưu PDF"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-slate-500" />
+                    <span>In / Tải PDF</span>
+                  </button>
                   <span className="text-xs font-bold text-slate-600">Mốc kiểm tra:</span>
                   <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
                     {[

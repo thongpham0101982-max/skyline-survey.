@@ -4,6 +4,7 @@ export const revalidate = 0
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { getParentProfileWithStudents, resolveHomeroomTeacher } from "@/lib/parentData"
 import { 
   Users, 
   ArrowRight, 
@@ -14,6 +15,7 @@ import {
   Clock, 
   Sparkles, 
   UserCheck, 
+  AlertCircle,
   ShieldCheck, 
   School,
   FileSpreadsheet,
@@ -34,55 +36,15 @@ export default async function ParentDashboard() {
     )
   }
 
-  let parent = null
-  let defaultYear = null
+  let parent: any = null
+  let defaultYear: any = null
   let parentSurveys: any[] = []
   let studentSurveys: any[] = []
 
   try {
-    parent = await prisma.parent.findUnique({
-      where: { userId },
-      include: {
-        students: {
-          include: {
-            student: {
-              include: {
-                class: { 
-                  include: { 
-                    campus: true,
-                    academicYear: true,
-                    teachers: {
-                      include: {
-                        teacher: true
-                      }
-                    }
-                  } 
-                },
-                academicYear: true,
-                surveyForms: { 
-                  select: { 
-                    id: true, 
-                    status: true, 
-                    surveyPeriodId: true,
-                    parentId: true,
-                    submissionDateTime: true
-                  } 
-                },
-                advisoryStatuses: {
-                  orderBy: { createdAt: 'desc' },
-                  take: 1
-                },
-                goals: {
-                  take: 3
-                }
-              }
-            }
-          }
-        }
-      }
-    })
+    parent = await getParentProfileWithStudents(userId)
   } catch (e) {
-    console.error("Error fetching parent profile:", e)
+    console.error("Error fetching parent profile via getParentProfileWithStudents:", e)
   }
 
   try {
@@ -123,38 +85,19 @@ export default async function ParentDashboard() {
   }
 
   const rawChildren = (parent?.students || [])
-    .map(s => s.student)
-    .filter((child): child is NonNullable<typeof child> => Boolean(child))
+    .map((s: any) => s.student)
+    .filter((child: any): child is NonNullable<typeof child> => Boolean(child))
 
-  const filteredChildren = rawChildren.filter(child =>
+  const filteredChildren = rawChildren.filter((child: any) =>
     !defaultYear || child.academicYearId === defaultYear.id || child.class?.academicYearId === defaultYear.id
   )
 
   const children = filteredChildren.length > 0 ? filteredChildren : rawChildren
 
-  // Lookup homeroom teacher name for each child
+  // Lookup homeroom teacher name for each child using shared helper
   const childrenWithGVCN = await Promise.all(
-    children.map(async (child) => {
-      let gvcnName = "Chưa phân công"
-      if (child.class) {
-        if (child.class.homeroomTeacherId) {
-          const teacher = await prisma.teacher.findFirst({
-            where: {
-              OR: [
-                { id: child.class.homeroomTeacherId },
-                { teacherCode: child.class.homeroomTeacherId },
-                { userId: child.class.homeroomTeacherId }
-              ]
-            },
-            select: { teacherName: true }
-          }).catch(() => null)
-          if (teacher?.teacherName) gvcnName = teacher.teacherName
-        }
-        if (gvcnName === "Chưa phân công" && child.class.teachers && child.class.teachers.length > 0) {
-          const hrAss = child.class.teachers.find((t: any) => t.roleInClass === 'HOMEROOM' || t.roleInClass === 'GVCN') || child.class.teachers[0]
-          if (hrAss?.teacher?.teacherName) gvcnName = hrAss.teacher.teacherName
-        }
-      }
+    children.map(async (child: any) => {
+      const gvcnName = await resolveHomeroomTeacher(child)
       return {
         ...child,
         gvcnName
@@ -173,7 +116,7 @@ export default async function ParentDashboard() {
   let totalStudentTasks = 0
   let completedStudentTasks = 0
 
-  childrenWithGVCN.forEach(child => {
+  childrenWithGVCN.forEach((child: any) => {
     // Parent survey forms for this child
     parentSurveys.forEach(period => {
       totalParentTasks++
@@ -188,9 +131,37 @@ export default async function ParentDashboard() {
     })
   })
 
+  const pendingParentSurveysCount = totalParentTasks - completedParentTasks
+
   return (
     <div className="max-w-7xl mx-auto space-y-8 font-sans text-slate-800 pb-16 pt-2 animate-in fade-in duration-500">
       
+      {/* Smart Survey Reminder Alert Banner */}
+      {pendingParentSurveysCount > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in slide-in-from-top-3">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/20">
+              <ClipboardList className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-black text-amber-900">
+                Quý Phụ huynh có {pendingParentSurveysCount} phiếu khảo sát đang mở cần đóng góp ý kiến
+              </p>
+              <p className="text-[11px] text-amber-800 font-medium mt-0.5">
+                Ý kiến của Quý Phụ huynh giúp Sky-Line liên tục nâng cao chất lượng giáo dục và chăm sóc học sinh.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/parent/surveys"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shadow-md shadow-amber-500/25 active:scale-95 transition-all shrink-0"
+          >
+            <span>Làm khảo sát ngay</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
       {/* 1. Header Banner Sky-Line Identity */}
       <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#48BFE3] p-6 sm:p-8 lg:p-10 text-white shadow-2xl">
         <div className="absolute right-0 top-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
