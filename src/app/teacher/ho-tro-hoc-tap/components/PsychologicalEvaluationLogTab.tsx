@@ -13,7 +13,8 @@ import { PsychologicalDetailModal } from "./PsychologicalDetailModal"
 
 interface Props {
   students: any[]
-  homeroomClasses: any[]
+  homeroomClasses?: any[]
+  assignedClasses?: any[]
   academicYearName: string
   academicYearId?: string
   teacher?: any
@@ -23,6 +24,7 @@ interface Props {
 export function PsychologicalEvaluationLogTab({
   students = [],
   homeroomClasses = [],
+  assignedClasses = [],
   academicYearName = "2026-2027",
   academicYearId = "",
   teacher,
@@ -33,6 +35,21 @@ export function PsychologicalEvaluationLogTab({
   const [searchTerm, setSearchTerm] = useState<string>("")
   const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<any | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+
+  // Derive all classes available for filtering from assignedClasses, homeroomClasses, and students
+  const availableClasses = useMemo(() => {
+    const map = new Map<string, { id: string; className: string }>()
+    const rawList = (assignedClasses && assignedClasses.length > 0) ? assignedClasses : homeroomClasses
+    rawList.forEach((c: any) => {
+      if (c?.id) map.set(c.id, { id: c.id, className: c.className || "Lớp" })
+    })
+    students.forEach((s: any) => {
+      if (s?.classId && !map.has(s.classId)) {
+        map.set(s.classId, { id: s.classId, className: s.className || "Lớp" })
+      }
+    })
+    return Array.from(map.values()).sort((a, b) => a.className.localeCompare(b.className))
+  }, [assignedClasses, homeroomClasses, students])
 
   // 1. Statistics Summary Cards
   const stats = useMemo(() => {
@@ -126,7 +143,7 @@ export function PsychologicalEvaluationLogTab({
               <Brain className="h-5 w-5" />
             </div>
           </div>
-          <p className="text-[10px] text-purple-200/80 font-medium">Học sinh lớp chủ nhiệm có dữ liệu đánh giá môn Tâm lý</p>
+          <p className="text-[10px] text-purple-200/80 font-medium">Học sinh lớp phân công giảng dạy & chủ nhiệm có dữ liệu đánh giá / hỗ trợ Tâm lý</p>
         </div>
 
         <div className="bg-gradient-to-br from-rose-50 to-amber-50 border border-rose-200/80 p-5 rounded-3xl shadow-xs">
@@ -175,18 +192,21 @@ export function PsychologicalEvaluationLogTab({
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Class filter dropdown */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-600">Lớp chủ nhiệm:</span>
+              <span className="text-xs font-bold text-slate-600">Lớp phân công / phụ trách:</span>
               <select
                 value={selectedClassFilter}
                 onChange={e => setSelectedClassFilter(e.target.value)}
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20"
               >
-                <option value="ALL">Tất cả lớp chủ nhiệm ({homeroomClasses.length} lớp)</option>
-                {homeroomClasses.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.className}
-                  </option>
-                ))}
+                <option value="ALL">Tất cả lớp ({availableClasses.length} lớp)</option>
+                {availableClasses.map(c => {
+                  const studentCount = students.filter(s => s.classId === c.id).length
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {c.className} {studentCount > 0 ? `(${studentCount} HS)` : ""}
+                    </option>
+                  )
+                })}
               </select>
             </div>
 

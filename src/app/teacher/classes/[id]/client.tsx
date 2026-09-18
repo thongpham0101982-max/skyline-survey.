@@ -279,7 +279,15 @@ export function ClassDetailClient({
                     return (
                       <tr key={student.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors text-xs font-semibold">
                         <td className="p-4 font-black text-slate-800 border-r border-slate-100">{student.studentCode}</td>
-                        <td className="p-4 font-black text-slate-700 border-r border-slate-100">{student.studentName}</td>
+                        <td className="p-4 font-black text-slate-700 border-r border-slate-100 flex items-center justify-between">
+                          <span>{student.studentName}</span>
+                          {student.studentType === "GIAO_LUU" && (
+                            <span className="ml-2 inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[9px] font-black bg-purple-100 text-purple-800 border border-purple-300">
+                              <Sparkles className="w-2.5 h-2.5 text-purple-600" />
+                              Giao lưu
+                            </span>
+                          )}
+                        </td>
                         <td className="p-4 border-r border-slate-100 text-slate-500">{student.parents?.length || 0} tài khoản</td>
                         <td className="p-4">
                           {hasSubmitted ? (
@@ -495,13 +503,14 @@ export function ClassDetailClient({
                     <th className="p-4 border-r border-slate-100">Họ và Tên</th>
                     <th className="p-4 border-r border-slate-100">Ngày sinh</th>
                     <th className="p-4 border-r border-slate-100">Giới tính</th>
+                    <th className="p-4 border-r border-slate-100 text-center font-bold">Diện Học sinh</th>
                     <th className="p-4">Biến động / Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
                   {processedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center p-12 text-slate-400 text-xs font-semibold">
+                      <td colSpan={6} className="text-center p-12 text-slate-400 text-xs font-semibold">
                         Không tìm thấy học sinh nào phù hợp bộ lọc.
                       </td>
                     </tr>
@@ -545,6 +554,18 @@ export function ClassDetailClient({
                             }`}>
                               {translateGender(student.gender)}
                             </span>
+                          </td>
+                          <td className="p-4 border-r border-slate-100 text-center">
+                            {student.studentType === "GIAO_LUU" ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-800 border border-purple-300 shadow-2xs">
+                                <Sparkles className="w-3 h-3 text-purple-600" />
+                                Giao lưu
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                Chính khóa
+                              </span>
+                            )}
                           </td>
                           <td className="p-4">
                             <span className={`px-2.5 py-1 rounded-lg border font-black text-[10px] ${statusColor}`}>

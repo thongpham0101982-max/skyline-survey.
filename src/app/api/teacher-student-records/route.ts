@@ -93,7 +93,10 @@ export async function GET(req: Request) {
 
   try {
     const teacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
+      include: {
+        departmentRel: true
+      }
     })
     if (!teacher) {
       return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 })
@@ -652,47 +655,104 @@ export async function GET(req: Request) {
       return NextResponse.json(candidates)
     }
 
-            if (action === "getPsychologicalSupportStudents") {
-      const academicYearId = searchParams.get("academicYearId")
+    if (action === "getPsychologicalSupportStudents") {
+      let academicYearId = searchParams.get("academicYearId")
       const classIdParam = searchParams.get("classId")
+      if (!academicYearId) {
+        const activeYear = await prisma.academicYear.findFirst({
+          where: { status: "ACTIVE", isOff: false }
+        }) || await prisma.academicYear.findFirst({ orderBy: { startDate: "desc" } })
+        academicYearId = activeYear?.id
+      }
       if (!academicYearId) {
         return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 })
       }
 
-      // Find all homeroom classes for this teacher in the given academic year
-      const homeroomClasses = await prisma.class.findMany({
+      // 1. Homeroom classes of this teacher in the given academic year
+      const hrClasses = await prisma.class.findMany({
         where: {
           academicYearId,
-          ...(classIdParam && classIdParam !== "ALL" ? { id: classIdParam } : {}),
           OR: [
             { homeroomTeacherId: teacher.id },
             { homeroomTeacherId: { contains: teacher.id } }
           ]
         },
+        select: { id: true }
+      })
+
+      // 2. Teaching assignments of this teacher in the given academic year
+      const teachingAssignments = await prisma.teachingAssignment.findMany({
+        where: {
+          teacherId: teacher.id,
+          academicYearId
+        },
+        select: { classId: true }
+      })
+
+      // 3. Learning support assignments for this teacher in the given academic year
+      const supportAssignments = await prisma.learningSupportAssignment.findMany({
+        where: {
+          teacherId: teacher.id,
+          target: {
+            academicYearId,
+            supportType: "PSYCHOLOGICAL"
+          }
+        },
         include: {
-          campus: true,
-          teachingAssignments: {
-            include: {
-              teacher: true,
-              subject: true
+          target: {
+            select: {
+              studentId: true,
+              student: { select: { classId: true } }
             }
           }
         }
       })
 
-      const homeroomClassIds = homeroomClasses.map(c => c.id)
-      if (homeroomClassIds.length === 0) {
+      const deptName = (teacher.departmentRel?.name || "").toLowerCase()
+      const isPsychSpecialist = 
+        deptName.includes("tlhn") || 
+        deptName.includes("tâm lý") || 
+        deptName.includes("tư vấn") ||
+        ["ADMIN", "BGH", "BGH_MN", "TVAN"].includes(session.user?.role) ||
+        ["TTCM", "QLCM", "HT", "HP"].includes(teacher.position)
+
+      let targetClassIds = Array.from(new Set([
+        ...hrClasses.map(c => c.id),
+        ...teachingAssignments.map(ta => ta.classId),
+        ...supportAssignments.map(sa => sa.target?.student?.classId).filter(Boolean)
+      ]))
+
+      // If user is admin or psych specialist and has no specific classes assigned:
+      if ((targetClassIds.length === 0 && isPsychSpecialist) || session.user?.role === "ADMIN") {
+        const allClassesWithPsych = await prisma.learningSupportTarget.findMany({
+          where: {
+            academicYearId,
+            supportType: "PSYCHOLOGICAL"
+          },
+          select: {
+            student: { select: { classId: true } }
+          }
+        })
+        const psychClassIds = allClassesWithPsych.map(t => t.student?.classId).filter(Boolean)
+        targetClassIds = Array.from(new Set(psychClassIds))
+      }
+
+      if (classIdParam && classIdParam !== "ALL") {
+        targetClassIds = targetClassIds.filter(id => id === classIdParam)
+        if (targetClassIds.length === 0) {
+          targetClassIds = [classIdParam]
+        }
+      }
+
+      if (targetClassIds.length === 0) {
         return NextResponse.json([])
       }
 
-      // Fetch all students in these homeroom classes
+      // Fetch all students in these target classes
       const students = await prisma.student.findMany({
         where: {
-          classId: { in: homeroomClassIds },
-          academicYearId,
-          NOT: {
-            studentCode: { startsWith: "2" }
-          }
+          classId: { in: targetClassIds },
+          academicYearId
         },
         include: {
           class: {
@@ -712,6 +772,31 @@ export async function GET(req: Request) {
           studentName: "asc"
         }
       })
+
+      // Also include any students explicitly assigned to this teacher who might be in another class
+      const assignedTargetStudentIds = supportAssignments.map(sa => sa.target?.studentId).filter(Boolean)
+      const existingStudentIds = new Set(students.map(s => s.id))
+      const extraStudentIds = assignedTargetStudentIds.filter(id => !existingStudentIds.has(id))
+      if (extraStudentIds.length > 0) {
+        const extraStudents = await prisma.student.findMany({
+          where: { id: { in: extraStudentIds }, academicYearId },
+          include: {
+            class: {
+              include: {
+                campus: true,
+                teachingAssignments: {
+                  include: {
+                    teacher: true,
+                    subject: true
+                  }
+                }
+              }
+            },
+            campus: true
+          }
+        })
+        students.push(...extraStudents)
+      }
 
       const studentIds = students.map(s => s.id)
       const studentCodes = students.map(s => s.studentCode).filter(Boolean)
@@ -834,10 +919,23 @@ export async function GET(req: Request) {
         if (!counselorName) {
           const classPsychTa = student.class?.teachingAssignments?.find(ta => 
             ta.subject?.code === "TLY" || 
-            ta.subject?.name?.toLowerCase().includes("tâm lý")
+            ta.subject?.subjectCode === "TLY" ||
+            (ta.subject?.name || "").toLowerCase().includes("tâm lý") ||
+            (ta.subject?.subjectName || "").toLowerCase().includes("tâm lý")
           )
           if (classPsychTa?.teacher?.teacherName || classPsychTa?.teacher?.fullName) {
             counselorName = (classPsychTa.teacher.teacherName || classPsychTa.teacher.fullName).trim()
+          }
+        }
+
+        // Priority 3.5: If logged in teacher is assigned to teach Tâm lý for this class
+        if (!counselorName && teacher?.teacherName) {
+          const isCurrentTeacherPsych = student.class?.teachingAssignments?.some(ta =>
+            ta.teacherId === teacher.id &&
+            (ta.subject?.code === "TLY" || ta.subject?.subjectCode === "TLY" || (ta.subject?.subjectName || "").toLowerCase().includes("tâm lý"))
+          )
+          if (isCurrentTeacherPsych) {
+            counselorName = teacher.teacherName.trim()
           }
         }
 

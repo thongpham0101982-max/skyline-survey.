@@ -142,6 +142,7 @@ interface Props {
   teacher: any
   academicYears: any[]
   homeroomClasses: any[]
+  initialAssignedClasses?: any[]
   subjects: any[]
 }
 
@@ -419,6 +420,7 @@ export function TeacherSupportClient({
   teacher,
   academicYears,
   homeroomClasses,
+  initialAssignedClasses = [],
   subjects
 }: Props) {
   const router = useRouter()
@@ -450,7 +452,7 @@ export function TeacherSupportClient({
 
   // Propose Form States
   const [proposeClassId, setProposeClassId] = useState("")
-  const [assignedClasses, setAssignedClasses] = useState<any[]>([])
+  const [assignedClasses, setAssignedClasses] = useState<any[]>(initialAssignedClasses || [])
   const [classStudents, setClassStudents] = useState<any[]>([])
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [loadingClassesOfTeacher, setLoadingClassesOfTeacher] = useState(false)
@@ -2335,6 +2337,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         <PsychologicalEvaluationLogTab
           students={psychologicalStudents}
           homeroomClasses={homeroomClasses}
+          assignedClasses={assignedClasses}
           academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
           academicYearId={selectedYearId}
           teacher={teacher}

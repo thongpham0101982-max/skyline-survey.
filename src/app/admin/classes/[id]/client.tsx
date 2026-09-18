@@ -62,8 +62,8 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
 
   const handleDownloadTemplate = () => {
     const ws = xlsx.utils.json_to_sheet([
-      { "STT": 1, "Mã học sinh *": "HS-10A1-001", "Mã VNEdu": "2500839484", "Họ và Tên *": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "20/05/2010", "Loại học sinh": "Chính khóa" },
-      { "STT": 2, "Mã học sinh *": "HS-10A1-002", "Mã VNEdu": "2500839485", "Họ và Tên *": "Bagdan Khabibov", "Giới tính": "Nam", "Ngày sinh": "15/12/2010", "Loại học sinh": "Giao lưu" }
+      { "STT": 1, "Mã học sinh *": "HS-10A1-001", "Mã VNEdu": "2500839484", "Họ và Tên *": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "20/05/2010", "Diện Học sinh": "Chính khóa" },
+      { "STT": 2, "Mã học sinh *": "HS-10A1-002", "Mã VNEdu": "2500839485", "Họ và Tên *": "Bagdan Khabibov", "Giới tính": "Nam", "Ngày sinh": "15/12/2010", "Diện Học sinh": "Giao lưu" }
     ])
     ws["!cols"] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 }]
     const wb = xlsx.utils.book_new()
@@ -147,12 +147,15 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           const vnEduCode = String(findVal(row, ["mã vnedu", "mã vnedu", "vnedu", "vneducode", "ma vnedu"]) || "").trim();
           const studentName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "studentname", "full name"]) || "").trim() || "Unnamed";
           const gender = String(findVal(row, ["giới tính", "gioi tinh", "gender"]) || "Nam").trim();
+          const rawType = String(findVal(row, ["diện học sinh", "dien hoc sinh", "diện hs", "loại học sinh", "loai hoc sinh", "studenttype"]) || "").trim();
+          const studentType = (rawType.toLowerCase().includes("giao lưu") || rawType.toLowerCase().includes("giao luu")) ? "GIAO_LUU" : "CHINH_KHOA";
 
           return {
             studentCode,
             vnEduCode,
             studentName,
             gender,
+            studentType,
             dateOfBirth: parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : null
           }
         })
@@ -572,7 +575,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
               </th>
               <th className="px-6 py-4 border-r border-slate-200">Giới tính</th>
               <th className="px-6 py-4 border-r border-slate-200">Ngày sinh</th>
-              <th className="px-6 py-4 border-r border-slate-200 text-center">Diện HS</th>
+              <th className="px-6 py-4 border-r border-slate-200 text-center font-bold">Diện Học sinh</th>
               <th className="px-6 py-4 border-r border-slate-200 text-center">Đối tượng</th>
               <th className="px-6 py-4 border-r border-slate-200">Trạng thái</th>
               <th className="p-2 text-center border border-slate-200">Thao tác</th>
