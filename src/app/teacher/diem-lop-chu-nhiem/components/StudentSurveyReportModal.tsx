@@ -96,11 +96,18 @@ export function StudentSurveyReportModal({
     }
   }
 
-  // Print trigger
+  // Print trigger with clean PDF document title
   const handlePrint = (mode: "single" | "all") => {
     setPrintMode(mode)
+    const originalTitle = document.title
+    document.title = mode === "all"
+      ? `Bao_Cao_Khao_Sat_${currentClass?.className || "Lop"}_${selectedPeriod}`
+      : `Phieu_Diem_${currentStudent?.studentName?.replace(/\s+/g, "_")}_${currentClass?.className}_${selectedPeriod}`
     setTimeout(() => {
       window.print()
+      setTimeout(() => {
+        document.title = originalTitle
+      }, 1000)
     }, 150)
   }
 
@@ -367,46 +374,131 @@ export function StudentSurveyReportModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto"
+      className="student-report-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      {/* Print Specific Stylesheet for Guaranteed 1-Page A4 Portrait Output */}
+      {/* Strict Print Stylesheet: ONLY print the result document, HIDE entire page behind */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
         @media print {
-          body {
-            background: white !important;
-            color: black !important;
+          /* 1. Reset Root & Body */
+          html, body {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
+            background: white !important;
+            color: black !important;
+            overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          .no-print-layout {
-            display: none !important;
+
+          /* 2. Hide ALL page contents by default (No background screen, no navbar, no sidebar) */
+          body * {
+            visibility: hidden !important;
           }
+
+          /* 3. Neutralize layout ancestors of the modal */
+          html, body, body *:has(.student-report-modal-backdrop) {
+            position: static !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            transform: none !important;
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+            background: transparent !important;
+          }
+
+          /* 4. Teleport modal backdrop to top (Zero dark tint, zero backdrop blur) */
+          .student-report-modal-backdrop {
+            visibility: visible !important;
+            opacity: 1 !important;
+            transform: none !important;
+            overflow: visible !important;
+            max-height: none !important;
+            max-width: none !important;
+            box-shadow: none !important;
+            border: none !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            z-index: 999999999 !important;
+            background: white !important;
+            backdrop-filter: none !important;
+          }
+
+          .student-report-modal-backdrop > div {
+            visibility: visible !important;
+            opacity: 1 !important;
+            transform: none !important;
+            overflow: visible !important;
+            max-height: none !important;
+            max-width: none !important;
+            box-shadow: none !important;
+            border: none !important;
+            position: relative !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
+          }
+
+          /* 5. Make ONLY the printable report container and its children visible */
+          #print-report-container,
+          #print-report-container * {
+            visibility: visible !important;
+          }
+
+          /* 6. Completely hide modal controls, buttons, toolbars */
+          .no-print-layout,
+          .no-print-layout * {
+            display: none !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            visibility: hidden !important;
+          }
+
+          /* 7. Guaranteed 1-Page A4 Portrait Layout */
           .student-report-page {
             box-shadow: none !important;
             border: none !important;
             margin: 0 auto !important;
-            padding: 6mm 10mm !important;
+            padding: 4mm 8mm !important;
             width: 100% !important;
             max-width: 100% !important;
             height: auto !important;
-            max-height: 280mm !important;
+            max-height: 275mm !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
             page-break-after: always !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             overflow: hidden !important;
+            background: white !important;
           }
+
+          .student-report-page:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+
           @page {
             size: A4 portrait;
-            margin: 6mm 8mm;
+            margin: 4mm 6mm;
           }
         }
       `
@@ -513,7 +605,7 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* Modal Scrollable Content */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 print:p-0 print:m-0 print:overflow-visible">
+        <div id="print-report-container" className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 print:p-0 print:m-0 print:overflow-visible">
           {printMode === "all" ? (
             <div className="space-y-4 print:space-y-0">
               {students.map((st) => renderStudentReportCard(st))}
