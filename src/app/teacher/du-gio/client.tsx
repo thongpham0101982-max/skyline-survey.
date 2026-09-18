@@ -1967,7 +1967,9 @@ export function ObservationClient(props: ObservationClientProps) {
   // [PHASE 2] Automatic Debounced Local Draft Saving (1.5s debounce)
   useEffect(() => {
     if (!evalModal?.slot?.id || !evalModal?.registration?.id || typeof window === "undefined") return;
-    const isReadOnlyMode = !!evalModal.registration.evaluation && !isApprovedForReEval;
+    const isApprovedForReEval = evalModal.registration.evaluation?.reEvaluationStatus === "APPROVED";
+    const isDraft = evalModal.registration.evaluation?.reEvaluationStatus === "DRAFT";
+    const isReadOnlyMode = !!evalModal.registration.evaluation && !isApprovedForReEval && !isDraft;
     if (isReadOnlyMode) return;
 
     const hasContent = (evalK12Scores.some(s => s > 0)) ||
@@ -1986,13 +1988,14 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [
     evalModal?.slot?.id,
     evalModal?.registration?.id,
+    evalModal?.registration?.evaluation?.reEvaluationStatus,
+    evalModal?.registration?.evaluation,
     evalK12Scores,
     evalCriteria,
     evalStrengths,
     evalImprovements,
     evalGeneral,
     evalOverall,
-    isApprovedForReEval,
     handleSaveLocalDraft
   ]);
 

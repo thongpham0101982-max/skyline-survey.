@@ -161,86 +161,86 @@ export function StudentSurveyReportModal({
     XLSX.writeFile(wb, fileName)
   }
 
-  // Render a single student's printable report card
+  // Render a single student's printable report card - OPTIMIZED FOR 1-PAGE A4 PORTRAIT
   const renderStudentReportCard = (student: any) => {
     return (
       <div
         key={student.studentId}
-        className="student-report-page bg-white p-6 sm:p-10 font-sans text-slate-900 mx-auto max-w-[750px] shadow-lg rounded-2xl border border-teal-100 print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none"
+        className="student-report-page bg-white p-4 sm:p-7 font-sans text-slate-900 mx-auto max-w-[700px] shadow-lg rounded-2xl border border-teal-100 print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:h-auto"
       >
-        {/* Top Header with School Info */}
-        <div className="flex items-start justify-between border-b-2 border-[#008c82] pb-5 gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#003B3A] via-[#005B58] to-[#008c82] text-white flex items-center justify-center p-2.5 shadow-md shrink-0">
-              <GraduationCap className="w-9 h-9 text-teal-200" />
+        {/* Top Header with School Info - Compact */}
+        <div className="flex items-start justify-between border-b-2 border-[#008c82] pb-2.5 gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#003B3A] via-[#005B58] to-[#008c82] text-white flex items-center justify-center p-2 shadow-xs shrink-0">
+              <GraduationCap className="w-6 h-6 text-teal-200" />
             </div>
             <div>
-              <div className="text-xs sm:text-sm font-black text-[#005B58] tracking-tight uppercase">
+              <div className="text-xs sm:text-[13px] font-black text-[#005B58] tracking-tight uppercase leading-tight">
                 {schoolTitle}
               </div>
-              <div className="text-[11px] font-bold text-teal-800">
+              <div className="text-[10px] font-bold text-teal-800 leading-tight">
                 Cơ sở: {currentClass?.campus?.campusName || currentClass?.campus?.name || currentClass?.campusName || "Sky-Line System"}
               </div>
-              <div className="text-[10px] text-slate-500 font-medium">
+              <div className="text-[9px] text-slate-500 font-medium">
                 Ban Đảm bảo Chất lượng & Đào tạo Sky-Line
               </div>
             </div>
           </div>
 
           <div className="text-right hidden sm:block shrink-0">
-            <div className="text-[11px] font-extrabold uppercase text-slate-800 tracking-wider">
+            <div className="text-[10px] font-extrabold uppercase text-slate-800 tracking-wider">
               HỆ THỐNG GIÁO DỤC SKY-LINE
             </div>
-            <div className="text-[10px] font-bold text-teal-700 italic">
+            <div className="text-[9px] font-bold text-teal-700 italic">
               Nơi khởi đầu của những ước mơ
             </div>
-            <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+            <div className="text-[9px] text-slate-500 font-medium mt-0.5">
               Mã lớp: <span className="font-bold text-slate-800">{currentClass?.className}</span>
             </div>
           </div>
         </div>
 
-        {/* Report Main Title */}
-        <div className="text-center my-6 space-y-1">
-          <h2 className="text-lg sm:text-2xl font-black text-[#003B3A] uppercase tracking-tight">
+        {/* Report Main Title - Compact */}
+        <div className="text-center my-2.5 space-y-0.5">
+          <h2 className="text-base sm:text-lg font-black text-[#003B3A] uppercase tracking-tight">
             {reportMainTitle}
           </h2>
-          <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-teal-50 border border-teal-200 text-xs sm:text-sm font-extrabold text-[#008c82]">
-            <Calendar className="w-3.5 h-3.5 text-[#008c82]" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-[11px] font-extrabold text-[#008c82]">
+            <Calendar className="w-3 h-3 text-[#008c82]" />
             <span>{reportYearTitle}</span>
           </div>
         </div>
 
-        {/* Student & Class Information Box */}
-        <div className="bg-gradient-to-r from-teal-50/70 via-sky-50/50 to-teal-50/70 p-4 sm:p-5 rounded-2xl border border-teal-200/80 mb-6 shadow-2xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 text-xs">
-            <div className="flex items-center justify-between border-b border-teal-100 pb-1.5">
-              <span className="text-slate-600 font-bold flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-teal-600" />
+        {/* Student & Class Information Box - Compact 2-column Grid */}
+        <div className="bg-gradient-to-r from-teal-50/70 via-sky-50/50 to-teal-50/70 py-2 px-3.5 rounded-xl border border-teal-200/80 mb-2.5 shadow-2xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-[11px]">
+            <div className="flex items-center justify-between border-b border-teal-100/60 pb-0.5">
+              <span className="text-slate-600 font-bold flex items-center gap-1">
+                <User className="w-3 h-3 text-teal-600" />
                 Họ và tên học sinh:
               </span>
-              <strong className="text-sm font-black text-[#003B3A]">{student.studentName}</strong>
+              <strong className="font-black text-[#003B3A]">{student.studentName}</strong>
             </div>
 
-            <div className="flex items-center justify-between border-b border-teal-100 pb-1.5">
-              <span className="text-slate-600 font-bold flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-teal-600" />
+            <div className="flex items-center justify-between border-b border-teal-100/60 pb-0.5">
+              <span className="text-slate-600 font-bold flex items-center gap-1">
+                <Users className="w-3 h-3 text-teal-600" />
                 Lớp:
               </span>
-              <strong className="text-sm font-black text-teal-900">{currentClass?.className}</strong>
+              <strong className="font-black text-teal-900">{currentClass?.className}</strong>
             </div>
 
-            <div className="flex items-center justify-between border-b border-teal-100 pb-1.5">
+            <div className="flex items-center justify-between border-b border-teal-100/60 pb-0.5">
               <span className="text-slate-600 font-bold">Mã số học sinh:</span>
               <span className="font-extrabold text-slate-800 tracking-wider">{student.studentCode}</span>
             </div>
 
-            <div className="flex items-center justify-between border-b border-teal-100 pb-1.5">
+            <div className="flex items-center justify-between border-b border-teal-100/60 pb-0.5">
               <span className="text-slate-600 font-bold">Giáo viên chủ nhiệm (GVCN):</span>
               <span className="font-extrabold text-slate-800">{teacherName}</span>
             </div>
 
-            <div className="flex items-center justify-between border-b border-teal-100 pb-1.5 sm:border-b-0">
+            <div className="flex items-center justify-between border-b border-teal-100/60 pb-0.5 sm:border-b-0">
               <span className="text-slate-600 font-bold">Ngày sinh:</span>
               <span className="font-semibold text-slate-700">
                 {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "-"}
@@ -254,25 +254,25 @@ export function StudentSurveyReportModal({
           </div>
         </div>
 
-        {/* Section Heading */}
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wide flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-teal-600" />
+        {/* Section Heading - Compact */}
+        <div className="flex items-center justify-between mb-1.5">
+          <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wide flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5 text-teal-600" />
             Chi tiết Kết Quả Khảo Sát
           </h3>
-          <span className="text-[11px] font-bold text-teal-800 italic">
+          <span className="text-[10px] font-bold text-teal-800 italic">
             {subjects.length} môn học
           </span>
         </div>
 
-        {/* BEAUTIFUL BLUE/TEAL TABLE: CHỈ GỒM STT | MÔN HỌC | ĐIỂM KS */}
-        <div className="overflow-x-auto rounded-xl border border-teal-600/30 shadow-xs mb-6 print:border-slate-300">
-          <table className="w-full text-left border-collapse text-xs">
+        {/* BEAUTIFUL BLUE/TEAL TABLE: CHỈ GỒM STT | MÔN HỌC | ĐIỂM KS - COMPACT ROW HEIGHT */}
+        <div className="overflow-x-auto rounded-lg border border-teal-600/30 shadow-xs mb-2.5 print:border-slate-300">
+          <table className="w-full text-left border-collapse text-[11px]">
             <thead>
               <tr className="bg-gradient-to-r from-[#005B58] to-[#008c82] text-white font-black print:bg-[#005B58]">
-                <th className="py-2.5 px-3 text-center w-16 border-r border-teal-700">STT</th>
-                <th className="py-2.5 px-4 border-r border-teal-700">Môn học</th>
-                <th className="py-2.5 px-4 text-center w-36">Điểm KS</th>
+                <th className="py-1.5 px-2.5 text-center w-12 border-r border-teal-700">STT</th>
+                <th className="py-1.5 px-3 border-r border-teal-700">Môn học</th>
+                <th className="py-1.5 px-3 text-center w-28">Điểm KS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-100">
@@ -284,21 +284,21 @@ export function StudentSurveyReportModal({
                 return (
                   <tr
                     key={sub.id}
-                    className={`transition-colors ${isEven ? "bg-white" : "bg-teal-50/25"} hover:bg-teal-50/60`}
+                    className={`transition-colors ${isEven ? "bg-white" : "bg-teal-50/20"} hover:bg-teal-50/50`}
                   >
-                    <td className="py-2.5 px-3 text-center font-bold text-slate-500 border-r border-teal-100">
+                    <td className="py-1 px-2.5 text-center font-bold text-slate-500 border-r border-teal-100">
                       {idx + 1}
                     </td>
 
-                    <td className="py-2.5 px-4 font-extrabold text-[#003B3A] border-r border-teal-100">
-                      <div>{sub.name}</div>
-                      {sub.code && <div className="text-[10px] font-normal text-slate-400">{sub.code}</div>}
+                    <td className="py-1 px-3 font-extrabold text-[#003B3A] border-r border-teal-100">
+                      <span>{sub.name}</span>
+                      {sub.code && <span className="text-[9px] font-normal text-slate-400 ml-1.5">({sub.code})</span>}
                     </td>
 
-                    <td className="py-2.5 px-4 text-center font-black text-sm">
+                    <td className="py-1 px-3 text-center font-black">
                       {score !== null && !isNaN(score) ? (
                         <span
-                          className={`inline-block px-3 py-0.5 rounded-lg border text-xs font-black shadow-2xs ${
+                          className={`inline-block px-2.5 py-0.2 rounded-md border text-[11px] font-black shadow-2xs ${
                             score >= 8.0
                               ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                               : score >= 6.5
@@ -311,7 +311,7 @@ export function StudentSurveyReportModal({
                           {score.toFixed(1)}
                         </span>
                       ) : (
-                        <span className="text-slate-400 font-extrabold text-sm">-</span>
+                        <span className="text-slate-400 font-bold text-xs">-</span>
                       )}
                     </td>
                   </tr>
@@ -321,49 +321,49 @@ export function StudentSurveyReportModal({
           </table>
         </div>
 
-        {/* Teacher's General Remarks */}
-        <div className="border border-teal-200 rounded-xl p-4 bg-teal-50/20 mb-8 space-y-1.5">
-          <div className="text-xs font-black text-[#005B58] uppercase flex items-center gap-1.5">
+        {/* Teacher's Remarks - Compact */}
+        <div className="border border-teal-200 rounded-xl p-2.5 bg-teal-50/20 mb-3 space-y-0.5">
+          <div className="text-[11px] font-black text-[#005B58] uppercase flex items-center gap-1.5">
             <span>Ý kiến & Nhận xét của Giáo viên Chủ nhiệm (GVCN):</span>
           </div>
-          <div className="text-xs text-slate-700 leading-relaxed font-medium min-h-[44px] pt-1">
+          <div className="text-[10.5px] text-slate-700 leading-snug font-medium min-h-[36px] pt-0.5">
             <p>
               Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh <strong className="text-teal-900">{student.studentName}</strong>. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.
             </p>
           </div>
         </div>
 
-        {/* Signature Section (3 Columns) */}
-        <div className="pt-2 text-xs">
-          <div className="text-right text-slate-600 italic mb-4">
+        {/* Signature Section (3 Columns) - Compact Height */}
+        <div className="pt-0.5 text-[11px]">
+          <div className="text-right text-slate-600 italic mb-1.5 text-[10px]">
             Đà Nẵng, ngày ...... tháng ...... năm 20......
           </div>
 
-          <div className="grid grid-cols-3 text-center gap-4">
-            <div className="space-y-1">
-              <div className="font-extrabold text-slate-800 uppercase text-[11px]">
+          <div className="grid grid-cols-3 text-center gap-3">
+            <div className="space-y-0.5">
+              <div className="font-extrabold text-slate-800 uppercase text-[10.5px]">
                 Phụ Huynh Học Sinh
               </div>
-              <div className="text-[10px] text-slate-500 italic">(Ký và ghi rõ họ tên)</div>
-              <div className="h-16"></div>
+              <div className="text-[9px] text-slate-500 italic">(Ký và ghi rõ họ tên)</div>
+              <div className="h-10 sm:h-12"></div>
             </div>
 
-            <div className="space-y-1">
-              <div className="font-extrabold text-slate-800 uppercase text-[11px]">
+            <div className="space-y-0.5">
+              <div className="font-extrabold text-slate-800 uppercase text-[10.5px]">
                 Giáo Viên Chủ Nhiệm
               </div>
-              <div className="text-[10px] text-slate-500 italic">(Ký và ghi rõ họ tên)</div>
-              <div className="h-16 flex items-end justify-center">
-                <span className="font-black text-slate-900 text-xs">{teacherName}</span>
+              <div className="text-[9px] text-slate-500 italic">(Ký và ghi rõ họ tên)</div>
+              <div className="h-10 sm:h-12 flex items-end justify-center">
+                <span className="font-black text-slate-900 text-[11px]">{teacherName}</span>
               </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="font-extrabold text-slate-800 uppercase text-[11px]">
+            <div className="space-y-0.5">
+              <div className="font-extrabold text-slate-800 uppercase text-[10.5px]">
                 Ban Giám Hiệu
               </div>
-              <div className="text-[10px] text-slate-500 italic">(Ký và đóng dấu)</div>
-              <div className="h-16"></div>
+              <div className="text-[9px] text-slate-500 italic">(Ký và đóng dấu)</div>
+              <div className="h-10 sm:h-12"></div>
             </div>
           </div>
         </div>
@@ -378,7 +378,7 @@ export function StudentSurveyReportModal({
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      {/* Print Specific Stylesheet for Clean A4 Output */}
+      {/* Print Specific Stylesheet for Guaranteed 1-Page A4 Portrait Output */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
@@ -398,18 +398,21 @@ export function StudentSurveyReportModal({
             box-shadow: none !important;
             border: none !important;
             margin: 0 auto !important;
-            padding: 8mm 12mm !important;
+            padding: 6mm 10mm !important;
             width: 100% !important;
             max-width: 100% !important;
             height: auto !important;
-            min-height: 100vh !important;
+            max-height: 280mm !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
             page-break-after: always !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
+            overflow: hidden !important;
           }
           @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 6mm 8mm;
           }
         }
       `
@@ -479,7 +482,7 @@ export function StudentSurveyReportModal({
             <button
               onClick={() => handlePrint("single")}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#008c82] hover:bg-[#00746b] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-              title="In phiếu điểm cho học sinh hiện tại"
+              title="In phiếu điểm cho học sinh hiện tại (chuẩn 1 trang A4)"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>In Phiếu Điểm (PDF)</span>
@@ -489,7 +492,7 @@ export function StudentSurveyReportModal({
             <button
               onClick={() => handlePrint("all")}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-              title="In phiếu điểm toàn bộ học sinh trong lớp (mỗi học sinh 1 trang A4)"
+              title="In phiếu điểm toàn bộ học sinh trong lớp (mỗi học sinh đúng 1 trang A4)"
             >
               <Users className="w-3.5 h-3.5" />
               <span>In Cả Lớp ({students.length} HS)</span>
@@ -516,9 +519,9 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* Modal Scrollable Content */}
-        <div className="p-4 sm:p-8 overflow-y-auto flex-1 space-y-6 print:p-0 print:m-0 print:overflow-visible">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 print:p-0 print:m-0 print:overflow-visible">
           {printMode === "all" ? (
-            <div className="space-y-6 print:space-y-0">
+            <div className="space-y-4 print:space-y-0">
               {students.map((st) => renderStudentReportCard(st))}
             </div>
           ) : (
