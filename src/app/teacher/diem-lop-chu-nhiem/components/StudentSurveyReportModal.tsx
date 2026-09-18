@@ -11,7 +11,8 @@ import {
   Calendar,
   User,
   Users,
-  BookOpen
+  BookOpen,
+  ExternalLink
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
@@ -96,7 +97,7 @@ export function StudentSurveyReportModal({
     }
   }
 
-  // Generate clean, self-contained HTML for an individual student scorecard
+  // Generate clean HTML for an individual student scorecard (strictly 1 A4 portrait page)
   const generateStudentHtml = (student: any) => {
     const dob = student.dateOfBirth
       ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN")
@@ -134,7 +135,7 @@ export function StudentSurveyReportModal({
         <div class="header-row">
           <div class="school-brand">
             <div class="school-logo">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
                 <path d="M6 12v5c3 3 9 3 12 0v-5"/>
               </svg>
@@ -190,13 +191,13 @@ export function StudentSurveyReportModal({
           <div class="section-count">${subjects.length} môn học</div>
         </div>
 
-        <!-- 3-Column Table -->
+        <!-- 3-Column Table: STT | Môn học | Điểm KS -->
         <table>
           <thead>
             <tr>
-              <th class="text-center" style="width: 42px;">STT</th>
+              <th class="text-center" style="width: 40px;">STT</th>
               <th>Môn học</th>
-              <th class="text-center" style="width: 85px;">Điểm KS</th>
+              <th class="text-center" style="width: 80px;">Điểm KS</th>
             </tr>
           </thead>
           <tbody>
@@ -239,6 +240,333 @@ export function StudentSurveyReportModal({
     `
   }
 
+  // Generate full HTML page for printing / viewing
+  const getFullPrintHtml = (list: any[], docTitle: string) => {
+    const bodyCards = list.map((st) => generateStudentHtml(st)).join("")
+    return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>${docTitle}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 6mm 10mm 6mm 10mm;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #0f172a;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+    .page-card {
+      width: 100%;
+      max-width: 190mm;
+      margin: 0 auto;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      page-break-after: always !important;
+      break-after: page !important;
+      background: #ffffff;
+      padding: 2mm 0;
+      box-sizing: border-box;
+    }
+    .page-card:last-child {
+      page-break-after: auto !important;
+      break-after: auto !important;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #008c82;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .school-brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .school-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: #005B58;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    .school-title {
+      font-size: 11.5px;
+      font-weight: 900;
+      color: #005B58;
+      text-transform: uppercase;
+      letter-spacing: -0.2px;
+      line-height: 1.2;
+    }
+    .system-info {
+      text-align: right;
+    }
+    .system-title {
+      font-size: 9.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #1e293b;
+      letter-spacing: 0.5px;
+    }
+    .system-slogan {
+      font-size: 9px;
+      font-weight: 700;
+      color: #008c82;
+      font-style: italic;
+    }
+    .class-badge {
+      font-size: 8.5px;
+      color: #64748b;
+      margin-top: 1px;
+    }
+    .class-badge b {
+      color: #0f172a;
+    }
+    .report-heading {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .report-title {
+      font-size: 14.5px;
+      font-weight: 900;
+      color: #003B3A;
+      text-transform: uppercase;
+      letter-spacing: -0.2px;
+      margin: 0 0 3px 0;
+    }
+    .year-badge {
+      display: inline-block;
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      color: #008c82;
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 1.5px 8px;
+      border-radius: 9999px;
+    }
+    .info-box {
+      background: #f8fafc;
+      border: 1px solid #ccfbf1;
+      border-radius: 7px;
+      padding: 5px 10px;
+      margin-bottom: 7px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px 16px;
+    }
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px dashed #e2e8f0;
+      padding-bottom: 2px;
+      font-size: 10px;
+    }
+    .info-row:nth-last-child(-n+2) {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .info-label {
+      color: #475569;
+      font-weight: 600;
+    }
+    .info-val {
+      font-weight: 800;
+      color: #0f172a;
+    }
+    .info-val-highlight {
+      font-weight: 900;
+      color: #003B3A;
+    }
+    .info-val-blue {
+      font-weight: 900;
+      color: #0284c7;
+      text-transform: uppercase;
+    }
+    .section-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .section-title {
+      font-size: 10.5px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: #003B3A;
+      letter-spacing: 0.3px;
+    }
+    .section-count {
+      font-size: 9px;
+      font-weight: 700;
+      color: #008c82;
+      font-style: italic;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      margin-bottom: 7px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    th {
+      background: #005B58;
+      color: #ffffff;
+      font-weight: 800;
+      padding: 4px 8px;
+      text-align: left;
+      border-right: 1px solid #004745;
+    }
+    th.text-center {
+      text-align: center;
+    }
+    td {
+      padding: 2.8px 8px;
+      border-bottom: 1px solid #f1f5f9;
+      border-right: 1px solid #f1f5f9;
+      color: #1e293b;
+    }
+    tr:nth-child(even) td {
+      background: #fcfdfe;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    td.stt {
+      text-align: center;
+      font-weight: 700;
+      color: #64748b;
+      width: 38px;
+    }
+    td.subj-name {
+      font-weight: 800;
+      color: #003B3A;
+    }
+    td.subj-code {
+      font-size: 8.5px;
+      font-weight: normal;
+      color: #94a3b8;
+      margin-left: 4px;
+    }
+    td.score {
+      text-align: center;
+      width: 80px;
+    }
+    .score-badge {
+      display: inline-block;
+      min-width: 30px;
+      padding: 0.5px 5px;
+      border-radius: 4px;
+      font-weight: 900;
+      font-size: 9.5px;
+      border: 1px solid transparent;
+    }
+    .score-good {
+      background: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
+    }
+    .score-fair {
+      background: #f0f9ff;
+      color: #0284c7;
+      border-color: #bae6fd;
+    }
+    .score-avg {
+      background: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+    .score-weak {
+      background: #fef2f2;
+      color: #b91c1c;
+      border-color: #fecaca;
+    }
+    .score-empty {
+      color: #94a3b8;
+      font-weight: bold;
+    }
+    .remarks-box {
+      border: 1px solid #99f6e4;
+      background: #f0fdfa;
+      border-radius: 7px;
+      padding: 4px 8px;
+      margin-bottom: 7px;
+    }
+    .remarks-header {
+      font-size: 9.5px;
+      font-weight: 900;
+      color: #005B58;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .remarks-content {
+      font-size: 9px;
+      color: #334155;
+      line-height: 1.35;
+    }
+    .signature-section {
+      font-size: 9.5px;
+    }
+    .signature-date {
+      text-align: right;
+      font-style: italic;
+      color: #475569;
+      margin-bottom: 2px;
+      font-size: 9px;
+    }
+    .signature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      text-align: center;
+    }
+    .sig-title {
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #1e293b;
+      font-size: 9.5px;
+    }
+    .sig-sub {
+      font-size: 8px;
+      font-style: italic;
+      color: #64748b;
+    }
+    .sig-space {
+      height: 32px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .sig-name {
+      font-weight: 900;
+      color: #0f172a;
+      font-size: 9.5px;
+    }
+  </style>
+</head>
+<body>
+  ${bodyCards}
+</body>
+</html>`
+  }
+
   // Pure Isolated Iframe Print: Guaranteed 100% no screen capture, exactly 1 A4 portrait page
   const handlePrint = (mode: "single" | "all") => {
     setIsPrinting(true)
@@ -247,7 +575,7 @@ export function StudentSurveyReportModal({
       ? `Bao_Cao_Khao_Sat_${currentClass?.className || "Lop"}_${selectedPeriod}`
       : `Phieu_Diem_${currentStudent?.studentName?.replace(/\s+/g, "_")}_${currentClass?.className}_${selectedPeriod}`
 
-    const bodyHtml = listToPrint.map((st) => generateStudentHtml(st)).join("")
+    const htmlContent = getFullPrintHtml(listToPrint, docTitle)
 
     // Remove old print iframe if present
     const oldIframe = document.getElementById("student-report-print-iframe")
@@ -258,11 +586,11 @@ export function StudentSurveyReportModal({
     const iframe = document.createElement("iframe")
     iframe.id = "student-report-print-iframe"
     iframe.style.position = "fixed"
+    iframe.style.left = "-9999px"
     iframe.style.top = "0"
-    iframe.style.left = "0"
-    iframe.style.width = "1px"
-    iframe.style.height = "1px"
-    iframe.style.opacity = "0.01"
+    iframe.style.width = "210mm"
+    iframe.style.height = "297mm"
+    iframe.style.opacity = "0"
     iframe.style.border = "none"
     iframe.style.zIndex = "-9999"
     document.body.appendChild(iframe)
@@ -274,330 +602,7 @@ export function StudentSurveyReportModal({
     }
 
     iframeDoc.open()
-    iframeDoc.write(`
-      <!DOCTYPE html>
-      <html lang="vi">
-      <head>
-        <meta charset="utf-8">
-        <title>${docTitle}</title>
-        <style>
-          @page {
-            size: A4 portrait;
-            margin: 6mm 10mm 6mm 10mm;
-          }
-          * {
-            box-sizing: border-box;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          html, body {
-            margin: 0;
-            padding: 0;
-            background: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #0f172a;
-            font-size: 11px;
-            line-height: 1.35;
-          }
-          .page-card {
-            width: 100%;
-            max-width: 190mm;
-            margin: 0 auto;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            page-break-after: always !important;
-            break-after: page !important;
-            background: #ffffff;
-            padding: 2mm 0;
-            box-sizing: border-box;
-          }
-          .page-card:last-child {
-            page-break-after: auto !important;
-            break-after: auto !important;
-          }
-          .header-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 2px solid #008c82;
-            padding-bottom: 6px;
-            margin-bottom: 8px;
-          }
-          .school-brand {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-          .school-logo {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background: #005B58;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-          }
-          .school-title {
-            font-size: 12px;
-            font-weight: 900;
-            color: #005B58;
-            text-transform: uppercase;
-            letter-spacing: -0.2px;
-            line-height: 1.2;
-          }
-          .system-info {
-            text-align: right;
-          }
-          .system-title {
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #1e293b;
-            letter-spacing: 0.5px;
-          }
-          .system-slogan {
-            font-size: 9px;
-            font-weight: 700;
-            color: #008c82;
-            font-style: italic;
-          }
-          .class-badge {
-            font-size: 9px;
-            color: #64748b;
-            margin-top: 1px;
-          }
-          .class-badge b {
-            color: #0f172a;
-          }
-          .report-heading {
-            text-align: center;
-            margin-bottom: 8px;
-          }
-          .report-title {
-            font-size: 15px;
-            font-weight: 900;
-            color: #003B3A;
-            text-transform: uppercase;
-            letter-spacing: -0.2px;
-            margin: 0 0 3px 0;
-          }
-          .year-badge {
-            display: inline-block;
-            background: #f0fdfa;
-            border: 1px solid #99f6e4;
-            color: #008c82;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 1.5px 8px;
-            border-radius: 9999px;
-          }
-          .info-box {
-            background: #f8fafc;
-            border: 1px solid #ccfbf1;
-            border-radius: 8px;
-            padding: 5px 10px;
-            margin-bottom: 8px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 3px 16px;
-          }
-          .info-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px dashed #e2e8f0;
-            padding-bottom: 2px;
-            font-size: 10px;
-          }
-          .info-row:nth-last-child(-n+2) {
-            border-bottom: none;
-            padding-bottom: 0;
-          }
-          .info-label {
-            color: #475569;
-            font-weight: 600;
-          }
-          .info-val {
-            font-weight: 800;
-            color: #0f172a;
-          }
-          .info-val-highlight {
-            font-weight: 900;
-            color: #003B3A;
-          }
-          .info-val-blue {
-            font-weight: 900;
-            color: #0284c7;
-            text-transform: uppercase;
-          }
-          .section-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 5px;
-          }
-          .section-title {
-            font-size: 10.5px;
-            font-weight: 900;
-            text-transform: uppercase;
-            color: #003B3A;
-            letter-spacing: 0.3px;
-          }
-          .section-count {
-            font-size: 9px;
-            font-weight: 700;
-            color: #008c82;
-            font-style: italic;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 10px;
-            margin-bottom: 8px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            overflow: hidden;
-          }
-          th {
-            background: #005B58;
-            color: #ffffff;
-            font-weight: 800;
-            padding: 4.5px 8px;
-            text-align: left;
-            border-right: 1px solid #004745;
-          }
-          th.text-center {
-            text-align: center;
-          }
-          td {
-            padding: 3px 8px;
-            border-bottom: 1px solid #f1f5f9;
-            border-right: 1px solid #f1f5f9;
-            color: #1e293b;
-          }
-          tr:nth-child(even) td {
-            background: #fcfdfe;
-          }
-          tr:last-child td {
-            border-bottom: none;
-          }
-          td.stt {
-            text-align: center;
-            font-weight: 700;
-            color: #64748b;
-            width: 38px;
-          }
-          td.subj-name {
-            font-weight: 800;
-            color: #003B3A;
-          }
-          td.subj-code {
-            font-size: 8.5px;
-            font-weight: normal;
-            color: #94a3b8;
-            margin-left: 4px;
-          }
-          td.score {
-            text-align: center;
-            width: 80px;
-          }
-          .score-badge {
-            display: inline-block;
-            min-width: 32px;
-            padding: 0.5px 5px;
-            border-radius: 4px;
-            font-weight: 900;
-            font-size: 10px;
-            border: 1px solid transparent;
-          }
-          .score-good {
-            background: #ecfdf5;
-            color: #047857;
-            border-color: #a7f3d0;
-          }
-          .score-fair {
-            background: #f0f9ff;
-            color: #0284c7;
-            border-color: #bae6fd;
-          }
-          .score-avg {
-            background: #fffbeb;
-            color: #b45309;
-            border-color: #fde68a;
-          }
-          .score-weak {
-            background: #fef2f2;
-            color: #b91c1c;
-            border-color: #fecaca;
-          }
-          .score-empty {
-            color: #94a3b8;
-            font-weight: bold;
-          }
-          .remarks-box {
-            border: 1px solid #99f6e4;
-            background: #f0fdfa;
-            border-radius: 8px;
-            padding: 5px 8px;
-            margin-bottom: 8px;
-          }
-          .remarks-header {
-            font-size: 10px;
-            font-weight: 900;
-            color: #005B58;
-            text-transform: uppercase;
-            margin-bottom: 2px;
-          }
-          .remarks-content {
-            font-size: 9.5px;
-            color: #334155;
-            line-height: 1.35;
-          }
-          .signature-section {
-            font-size: 10px;
-          }
-          .signature-date {
-            text-align: right;
-            font-style: italic;
-            color: #475569;
-            margin-bottom: 3px;
-            font-size: 9.5px;
-          }
-          .signature-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            text-align: center;
-          }
-          .sig-title {
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #1e293b;
-            font-size: 9.5px;
-          }
-          .sig-sub {
-            font-size: 8px;
-            font-style: italic;
-            color: #64748b;
-          }
-          .sig-space {
-            height: 34px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-          }
-          .sig-name {
-            font-weight: 900;
-            color: #0f172a;
-            font-size: 10px;
-          }
-        </style>
-      </head>
-      <body>
-        ${bodyHtml}
-      </body>
-      </html>
-    `)
+    iframeDoc.write(htmlContent)
     iframeDoc.close()
 
     setTimeout(() => {
@@ -608,6 +613,22 @@ export function StudentSurveyReportModal({
         iframe.remove()
       }, 3000)
     }, 250)
+  }
+
+  // Open clean printable HTML scorecard in a new browser tab
+  const handleOpenHtmlTab = (mode: "single" | "all") => {
+    const listToPrint = mode === "all" ? students : [currentStudent]
+    const docTitle = mode === "all"
+      ? `Bao_Cao_Khao_Sat_${currentClass?.className || "Lop"}_${selectedPeriod}`
+      : `Phieu_Diem_${currentStudent?.studentName?.replace(/\s+/g, "_")}_${currentClass?.className}_${selectedPeriod}`
+
+    const htmlContent = getFullPrintHtml(listToPrint, docTitle)
+    const printWin = window.open("", "_blank")
+    if (printWin) {
+      printWin.document.open()
+      printWin.document.write(htmlContent)
+      printWin.document.close()
+    }
   }
 
   // Excel Export: ONLY STT, Môn học, Điểm KS (No ĐTB, no Môn đạt, no Xếp loại)
@@ -957,10 +978,10 @@ export function StudentSurveyReportModal({
               onClick={() => handlePrint("single")}
               disabled={isPrinting}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-[#008c82] hover:bg-[#00746b] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
-              title="In phiếu điểm cho học sinh hiện tại (chuẩn 1 trang A4, không chụp màn hình)"
+              title="In trực tiếp phiếu điểm học sinh (chuẩn 1 trang A4 dọc, không dính nền web)"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>{isPrinting ? "Đang chuẩn bị in..." : "In Phiếu Điểm (PDF)"}</span>
+              <span>{isPrinting ? "Đang xử lý..." : "In Phiếu Điểm (PDF)"}</span>
             </button>
 
             {/* Print Entire Class (1 Page per student) */}
@@ -968,10 +989,20 @@ export function StudentSurveyReportModal({
               onClick={() => handlePrint("all")}
               disabled={isPrinting}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
-              title="In phiếu điểm toàn bộ học sinh trong lớp (mỗi học sinh đúng 1 trang A4)"
+              title="In toàn bộ phiếu điểm học sinh trong lớp (mỗi học sinh đúng 1 trang A4)"
             >
               <Users className="w-3.5 h-3.5" />
               <span>In Cả Lớp ({students.length} HS)</span>
+            </button>
+
+            {/* Open Clean HTML Tab */}
+            <button
+              onClick={() => handleOpenHtmlTab("single")}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              title="Mở phiếu điểm HTML độc lập trong tab mới"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Xem Tab In HTML</span>
             </button>
 
             {/* Export Excel */}
