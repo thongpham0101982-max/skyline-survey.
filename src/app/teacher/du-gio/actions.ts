@@ -686,7 +686,9 @@ export async function getObservationSlots(filters: {
       where.AND = andConditions
     }
 
-    const slots = await prisma.observationSlot.findMany({
+    const slotsCacheKey = `slots_${JSON.stringify(filters)}_${isAdmin ? 'admin' : (currentTeacher?.id || 'guest')}`;
+    const filteredSlots = await getCachedSlots(slotsCacheKey, async () => {
+      const slots = await prisma.observationSlot.findMany({
       where,
       include: {
         teacher: {
@@ -783,6 +785,8 @@ export async function getObservationSlots(filters: {
       
       return true;
     })
+      return filteredSlots;
+    });
 
     return { success: true, slots: filteredSlots }
   } catch (e: any) {
