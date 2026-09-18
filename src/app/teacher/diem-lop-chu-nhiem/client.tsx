@@ -1127,9 +1127,15 @@ export function HomeroomGradesClient({
 
       {/* MODAL: CHI TIẾT ĐIỂM THÀNH PHẦN & NHẬN XÉT CỦA GVBM */}
       {selectedCellDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200 animate-scaleUp">
-            <div className="bg-gradient-to-r from-slate-900 to-teal-950 p-4 text-white flex items-center justify-between">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedCellDetail(null); }}
+        >
+          <div 
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl border border-slate-200 animate-scaleUp my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-slate-900 to-teal-950 p-4 text-white flex items-center justify-between shrink-0">
               <div>
                 <span className="text-[10px] font-extrabold text-teal-400 uppercase tracking-widest block">
                   Chi Tiết Điểm Môn Học
@@ -1146,7 +1152,7 @@ export function HomeroomGradesClient({
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-xs">
+            <div className="p-4 sm:p-6 space-y-4 text-xs overflow-y-auto flex-1">
               <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                 <div>
                   <div className="text-slate-500 font-semibold">Môn học:</div>
@@ -1198,7 +1204,7 @@ export function HomeroomGradesClient({
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
               <button
                 onClick={() => setSelectedCellDetail(null)}
                 className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all shadow-xs"

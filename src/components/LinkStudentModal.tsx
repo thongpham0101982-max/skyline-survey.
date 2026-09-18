@@ -100,9 +100,12 @@ export function LinkStudentModal({ onSuccess, buttonText = "Bổ sung mã Học 
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200 overflow-y-auto"
+          onClick={(e) => { if (e.target === e.currentTarget) handleFinish(); }}
+        >
           <div 
-            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative space-y-5 animate-in zoom-in-95 duration-200 font-sans"
+            className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col p-4 sm:p-6 shadow-2xl border border-slate-100 relative space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-200 font-sans my-auto overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}

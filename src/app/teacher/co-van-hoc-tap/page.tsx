@@ -116,6 +116,30 @@ export default function TeacherAdvisoryPage() {
     }
   }, [showConsultationModal, consultationForm.studentId, academicYearId])
 
+  // Lock body scroll and handle Escape key when any modal is open
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(showConsultationModal || selectedUnlockForModal || showReviewModal)
+    if (isAnyModalOpen) {
+      const originalOverflow = document.body.style.overflow
+      document.body.style.overflow = "hidden"
+      return () => {
+        document.body.style.overflow = originalOverflow
+      }
+    }
+  }, [showConsultationModal, selectedUnlockForModal, showReviewModal])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (showConsultationModal) setShowConsultationModal(false)
+        if (selectedUnlockForModal) setSelectedUnlockForModal(null)
+        if (showReviewModal) setShowReviewModal(false)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [showConsultationModal, selectedUnlockForModal, showReviewModal])
+
   // 3.1. Consultation Tracking Modes & State for Homeroom Teacher
   const [consultationTabMode, setConsultationTabMode] = useState<"BY_STUDENT" | "ALL_LOGS">("BY_STUDENT")
   const [teacherStudentFilterStatus, setTeacherStudentFilterStatus] = useState<"ALL" | "CONSULTED" | "NOT_CONSULTED">("ALL")
@@ -3558,36 +3582,46 @@ export default function TeacherAdvisoryPage() {
 
       {/* ----------------- MODAL GHI CHÚ ĐỒNG HÀNH MỞ KHÓA MỤC TIÊU ----------------- */}
       {selectedUnlockForModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150 border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
+        <div 
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={(e) => { if (e.target === e.currentTarget) setSelectedUnlockForModal(null); }}
+        >
+          <div 
+            className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto animate-in fade-in zoom-in duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header - Fixed */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3.5 sm:py-4 bg-white shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-xl bg-teal-50 text-teal-700 shrink-0">
                   <Key className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-base font-black text-[#003B3A]">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-black text-[#003B3A] truncate">
                     Đồng Hành & Hỗ Trợ Mục Tiêu
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[11px] text-slate-500 font-medium truncate">
                     Học sinh: {selectedUnlockForModal.studentName} ({selectedUnlockForModal.studentCode})
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedUnlockForModal(null)}
-                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors shrink-0 cursor-pointer"
+                title="Đóng (Esc)"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="space-y-3 text-xs font-semibold text-slate-700">
+            {/* Body - Scrollable */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3 sm:space-y-4 text-xs font-semibold text-slate-700">
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-[11px] text-slate-500 font-bold block mb-0.5">Mục tiêu mở khóa:</span>
-                <p className="text-xs font-black text-slate-900">{selectedUnlockForModal.targetText}</p>
+                <p className="text-xs font-black text-slate-900 break-words">{selectedUnlockForModal.targetText}</p>
                 {selectedUnlockForModal.sevenDayAction && (
-                  <p className="text-[11px] text-teal-800 font-bold mt-1.5">
+                  <p className="text-[11px] text-teal-800 font-bold mt-1.5 break-words">
                     🚀 Việc thử 7 ngày: {selectedUnlockForModal.sevenDayAction}
                   </p>
                 )}
@@ -3598,7 +3632,7 @@ export default function TeacherAdvisoryPage() {
                 <select
                   value={supportStatusInput}
                   onChange={(e) => setSupportStatusInput(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50 focus:bg-white focus:border-teal-500 outline-none transition-colors"
                 >
                   <option value="NEED_ACTION">🟡 Cần hành động / Cần trao đổi</option>
                   <option value="IN_PROGRESS">🔵 Đang hỗ trợ & nhắc nhở</option>
@@ -3614,16 +3648,17 @@ export default function TeacherAdvisoryPage() {
                   value={teacherNoteInput}
                   onChange={(e) => setTeacherNoteInput(e.target.value)}
                   placeholder="Nhập lời khuyên, kế hoạch nhắc nhở hoặc hướng dẫn cho học sinh..."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none"
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none transition-colors"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            {/* Footer - Fixed */}
+            <div className="flex items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-100 bg-slate-50/80 shrink-0">
               <button
                 type="button"
                 onClick={() => setSelectedUnlockForModal(null)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Đóng
               </button>
@@ -3631,7 +3666,7 @@ export default function TeacherAdvisoryPage() {
                 type="button"
                 disabled={savingUnlockNote}
                 onClick={handleSaveTeacherUnlockNote}
-                className="px-5 py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md"
+                className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md transition-all cursor-pointer disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 <span>{savingUnlockNote ? "Đang lưu..." : "Lưu Ghi Chú Hỗ Trợ"}</span>
@@ -4002,213 +4037,227 @@ export default function TeacherAdvisoryPage() {
 
       {/* ----------------- MODAL THÊM MỚI / CHỈNH SỬA NHẬT KÝ THAM VẤN ----------------- */}
       {showConsultationModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150 border border-slate-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
+        <div 
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowConsultationModal(false); }}
+        >
+          <div 
+            className="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full max-h-[92vh] sm:max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto animate-in fade-in zoom-in duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header - Fixed */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3.5 sm:py-4 bg-white shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 rounded-xl bg-teal-50 text-teal-700 shrink-0">
                   <MessageSquare className="w-5 h-5" />
                 </div>
-                <div>
-                  <h3 className="text-base font-black text-[#003B3A]">
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-black text-[#003B3A] truncate">
                     {editingConsultationId ? "Chỉnh Sửa Nhật Ký Tham Vấn" : "Thêm Mới Nhật Ký Tham Vấn Cố Vấn Học Tập"}
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">Theo mẫu Excel Sổ quan sát GVCN</p>
+                  <p className="text-[11px] text-slate-500 font-medium truncate">Theo mẫu Excel Sổ quan sát GVCN</p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowConsultationModal(false)}
-                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors shrink-0 cursor-pointer"
+                title="Đóng (Esc)"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-700">
-              
-              {/* Ngày gặp */}
-              <div>
-                <label className="block mb-1 font-bold text-slate-800">📅 Ngày gặp (*):</label>
-                <input
-                  type="date"
-                  value={consultationForm.meetingDate}
-                  onChange={(e) => setConsultationForm({ ...consultationForm, meetingDate: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50"
-                />
-              </div>
-
-              {/* Học sinh */}
-              <div>
-                <label className="block mb-1 font-bold text-slate-800">👤 Học sinh (*):</label>
-                <select
-                  value={consultationForm.studentId}
-                  onChange={(e) => setConsultationForm({ ...consultationForm, studentId: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50"
-                >
-                  {students.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.studentName} ({s.studentCode})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* KHỐI XEM VÀ THAM CHIẾU MỤC TIÊU NĂM HỌC THEO KHỐI */}
-              <div className="sm:col-span-2 bg-gradient-to-r from-teal-50/90 to-sky-50/70 border-2 border-teal-200/90 rounded-2xl p-4 space-y-2.5 shadow-2xs">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200/60 pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="p-1.5 rounded-lg bg-teal-600 text-white font-black text-xs">🎯</span>
-                    <div>
-                      <h4 className="text-xs font-black text-teal-950 uppercase tracking-tight">
-                        Mục tiêu học tập & rèn luyện của học sinh (Theo khối):
-                      </h4>
-                      <p className="text-[10px] text-teal-700 font-medium">
-                        Bám sát mục tiêu cá nhân đã đăng ký để cố vấn chính xác cho học sinh
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-black text-teal-800 bg-white px-2.5 py-1 rounded-full border border-teal-300 shadow-2xs">
-                    {consultationStudentGoals.length} mục tiêu đã đăng ký
-                  </span>
+            {/* Body - Scrollable */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs font-semibold text-slate-700">
+                
+                {/* Ngày gặp */}
+                <div>
+                  <label className="block mb-1 font-bold text-slate-800">📅 Ngày gặp (*):</label>
+                  <input
+                    type="date"
+                    value={consultationForm.meetingDate}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, meetingDate: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50 focus:bg-white focus:border-teal-500 outline-none transition-colors"
+                  />
                 </div>
 
-                {loadingStudentGoals ? (
-                  <div className="text-xs text-teal-800 font-bold py-3 text-center animate-pulse">
-                    Đang nạp mục tiêu của học sinh...
-                  </div>
-                ) : consultationStudentGoals.length === 0 ? (
-                  <div className="p-2.5 rounded-xl bg-white/70 border border-teal-100 text-center text-xs text-slate-500 italic">
-                    Học sinh này chưa điền hoặc chưa nộp phiếu mục tiêu năm học.
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    {consultationStudentGoals.map((g: any, gIdx: number) => (
-                      <div key={g.id || gIdx} className="bg-white p-2.5 rounded-xl border border-teal-200/70 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs hover:border-teal-300 transition-all">
-                        <div className="space-y-0.5">
-                          <div className="flex items-center gap-1.5 font-black text-slate-900 text-xs">
-                            <span className="px-2 py-0.5 text-[10px] bg-teal-100 text-teal-900 rounded-md font-extrabold shrink-0 border border-teal-300">
-                              {g.category}
-                            </span>
-                            <span className="leading-snug">{g.targetText}</span>
-                          </div>
-                          {g.actions && g.actions[0]?.actionText && (
-                            <span className="text-[11px] text-slate-600 block pl-1 italic">
-                              ⚡ Kế hoạch/Hành động: {g.actions[0].actionText}
-                            </span>
-                          )}
-                        </div>
+                {/* Học sinh */}
+                <div>
+                  <label className="block mb-1 font-bold text-slate-800">👤 Học sinh (*):</label>
+                  <select
+                    value={consultationForm.studentId}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, studentId: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50 focus:bg-white focus:border-teal-500 outline-none transition-colors"
+                  >
+                    {students.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {s.studentName} ({s.studentCode})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const prefix = consultationForm.content ? consultationForm.content + " • " : ""
-                              setConsultationForm(prev => ({
-                                ...prev,
-                                content: prefix + ("Trao đổi về mục tiêu: " + g.targetText)
-                              }))
-                            }}
-                            className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-all shadow-2xs cursor-pointer"
-                            title="Gán mục tiêu này vào nội dung trao đổi"
-                          >
-                            + Gán trao đổi
-                          </button>
-                          {g.actions && g.actions[0]?.actionText && (
+                {/* KHỐI XEM VÀ THAM CHIẾU MỤC TIÊU NĂM HỌC THEO KHỐI */}
+                <div className="sm:col-span-2 bg-gradient-to-r from-teal-50/90 to-sky-50/70 border-2 border-teal-200/90 rounded-2xl p-3 sm:p-4 space-y-2.5 shadow-2xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200/60 pb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="p-1.5 rounded-lg bg-teal-600 text-white font-black text-xs">🎯</span>
+                      <div>
+                        <h4 className="text-xs font-black text-teal-950 uppercase tracking-tight">
+                          Mục tiêu học tập & rèn luyện của học sinh (Theo khối):
+                        </h4>
+                        <p className="text-[10px] text-teal-700 font-medium">
+                          Bám sát mục tiêu cá nhân đã đăng ký để cố vấn chính xác cho học sinh
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black text-teal-800 bg-white px-2.5 py-1 rounded-full border border-teal-300 shadow-2xs shrink-0">
+                      {consultationStudentGoals.length} mục tiêu đã đăng ký
+                    </span>
+                  </div>
+
+                  {loadingStudentGoals ? (
+                    <div className="text-xs text-teal-800 font-bold py-3 text-center animate-pulse">
+                      Đang nạp mục tiêu của học sinh...
+                    </div>
+                  ) : consultationStudentGoals.length === 0 ? (
+                    <div className="p-2.5 rounded-xl bg-white/70 border border-teal-100 text-center text-xs text-slate-500 italic">
+                      Học sinh này chưa điền hoặc chưa nộp phiếu mục tiêu năm học.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-36 sm:max-h-48 overflow-y-auto pr-1">
+                      {consultationStudentGoals.map((g: any, gIdx: number) => (
+                        <div key={g.id || gIdx} className="bg-white p-2.5 rounded-xl border border-teal-200/70 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs hover:border-teal-300 transition-all">
+                          <div className="space-y-0.5 min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5 font-black text-slate-900 text-xs">
+                              <span className="px-2 py-0.5 text-[10px] bg-teal-100 text-teal-900 rounded-md font-extrabold shrink-0 border border-teal-300">
+                                {g.category}
+                              </span>
+                              <span className="leading-snug break-words">{g.targetText}</span>
+                            </div>
+                            {g.actions && g.actions[0]?.actionText && (
+                              <span className="text-[11px] text-slate-600 block pl-1 italic break-words">
+                                ⚡ Kế hoạch/Hành động: {g.actions[0].actionText}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5 shrink-0 self-start sm:self-center">
                             <button
                               type="button"
                               onClick={() => {
-                                const prefix = consultationForm.nextActions ? consultationForm.nextActions + " • " : ""
+                                const prefix = consultationForm.content ? consultationForm.content + " • " : ""
                                 setConsultationForm(prev => ({
                                   ...prev,
-                                  nextActions: prefix + ("Theo dõi hành động: " + g.actions[0].actionText)
+                                  content: prefix + ("Trao đổi về mục tiêu: " + g.targetText)
                                 }))
                               }}
-                              className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-2xs cursor-pointer"
-                              title="Gán hành động này vào kế hoạch tiếp theo"
+                              className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                              title="Gán mục tiêu này vào nội dung trao đổi"
                             >
-                              + Gán hành động
+                              + Gán trao đổi
                             </button>
-                          )}
+                            {g.actions && g.actions[0]?.actionText && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const prefix = consultationForm.nextActions ? consultationForm.nextActions + " • " : ""
+                                  setConsultationForm(prev => ({
+                                    ...prev,
+                                    nextActions: prefix + ("Theo dõi hành động: " + g.actions[0].actionText)
+                                  }))
+                                }}
+                                className="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-2xs cursor-pointer active:scale-95"
+                                title="Gán hành động này vào kế hoạch tiếp theo"
+                              >
+                                + Gán hành động
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              {/* Nội dung trao đổi */}
-              <div className="sm:col-span-2">
-                <label className="block mb-1 font-bold text-slate-800">💬 Nội dung trao đổi (*):</label>
-                <textarea
-                  rows={2}
-                  value={consultationForm.content}
-                  onChange={(e) => setConsultationForm({ ...consultationForm, content: e.target.value })}
-                  placeholder="Ví dụ: Trao đổi về mục tiêu tuần, tình hình học môn Toán..."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs"
-                />
-              </div>
+                {/* Nội dung trao đổi */}
+                <div className="sm:col-span-2">
+                  <label className="block mb-1 font-bold text-slate-800">💬 Nội dung trao đổi (*):</label>
+                  <textarea
+                    rows={2}
+                    value={consultationForm.content}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, content: e.target.value })}
+                    placeholder="Ví dụ: Trao đổi về mục tiêu tuần, tình hình học môn Toán..."
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none transition-colors"
+                  />
+                </div>
 
-              {/* Khó khăn ghi nhận */}
-              <div className="sm:col-span-2">
-                <label className="block mb-1 font-bold text-slate-800">⚠️ Khó khăn ghi nhận:</label>
-                <textarea
-                  rows={2}
-                  value={consultationForm.difficulties}
-                  onChange={(e) => setConsultationForm({ ...consultationForm, difficulties: e.target.value })}
-                  placeholder="Ví dụ: Chưa sắp xếp được thời gian tự học buổi tối..."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs"
-                />
-              </div>
+                {/* Khó khăn ghi nhận */}
+                <div className="sm:col-span-2">
+                  <label className="block mb-1 font-bold text-slate-800">⚠️ Khó khăn ghi nhận:</label>
+                  <textarea
+                    rows={2}
+                    value={consultationForm.difficulties}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, difficulties: e.target.value })}
+                    placeholder="Ví dụ: Chưa sắp xếp được thời gian tự học buổi tối..."
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none transition-colors"
+                  />
+                </div>
 
-              {/* Hành động tiếp theo */}
-              <div className="sm:col-span-2">
-                <label className="block mb-1 font-bold text-slate-800">🚀 Hành động tiếp theo:</label>
-                <textarea
-                  rows={2}
-                  value={consultationForm.nextActions}
-                  onChange={(e) => setConsultationForm({ ...consultationForm, nextActions: e.target.value })}
-                  placeholder="Ví dụ: Cùng lập thời gian biểu buổi tối, kiểm tra lại sau 1 tuần..."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs"
-                />
-              </div>
+                {/* Hành động tiếp theo */}
+                <div className="sm:col-span-2">
+                  <label className="block mb-1 font-bold text-slate-800">🚀 Hành động tiếp theo:</label>
+                  <textarea
+                    rows={2}
+                    value={consultationForm.nextActions}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, nextActions: e.target.value })}
+                    placeholder="Ví dụ: Cùng lập thời gian biểu buổi tối, kiểm tra lại sau 1 tuần..."
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none transition-colors"
+                  />
+                </div>
 
-              {/* Thời hạn */}
-              <div>
-                <label className="block mb-1 font-bold text-slate-800">⏰ Thời hạn:</label>
-                <input
-                  type="date"
-                  value={consultationForm.deadline}
-                  onChange={(e) => setConsultationForm({ ...consultationForm, deadline: e.target.value })}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50"
-                />
-              </div>
+                {/* Thời hạn */}
+                <div>
+                  <label className="block mb-1 font-bold text-slate-800">⏰ Thời hạn:</label>
+                  <input
+                    type="date"
+                    value={consultationForm.deadline}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, deadline: e.target.value })}
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50 focus:bg-white focus:border-teal-500 outline-none transition-colors"
+                  />
+                </div>
 
-              {/* Ghi chú */}
-              <div>
-                <label className="block mb-1 font-bold text-slate-800">📝 Ghi chú:</label>
-                <input
-                  type="text"
-                  value={consultationForm.notes}
-                  onChange={(e) => setConsultationForm({ ...consultationForm, notes: e.target.value })}
-                  placeholder="Nhập ghi chú bổ sung..."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs"
-                />
-              </div>
+                {/* Ghi chú */}
+                <div>
+                  <label className="block mb-1 font-bold text-slate-800">📝 Ghi chú:</label>
+                  <input
+                    type="text"
+                    value={consultationForm.notes}
+                    onChange={(e) => setConsultationForm({ ...consultationForm, notes: e.target.value })}
+                    placeholder="Nhập ghi chú bổ sung..."
+                    className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs focus:border-teal-500 outline-none transition-colors"
+                  />
+                </div>
 
+              </div>
             </div>
 
-            {/* Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            {/* Buttons - Fixed */}
+            <div className="flex items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-100 bg-slate-50/80 shrink-0">
               <button
+                type="button"
                 onClick={() => setShowConsultationModal(false)}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Hủy
               </button>
               <button
+                type="button"
                 onClick={handleSaveConsultation}
                 disabled={saving}
-                className="px-6 py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md"
+                className="px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md transition-all cursor-pointer disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 <span>{saving ? "Đang lưu..." : "Lưu Nhật Ký Tham Vấn"}</span>
@@ -4218,24 +4267,32 @@ export default function TeacherAdvisoryPage() {
           </div>
         </div>
       )}
+
       {/* ========================================================================= */}
       {/* MODAL: XÉT DUYỆT YÊU CẦU MỞ PHIẾU ĐIỀU CHỈNH CỦA HỌC SINH */}
       {/* ========================================================================= */}
       {showReviewModal && selectedRequestForReview && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border-2 border-slate-200 space-y-5 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold ${
+        <div 
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowReviewModal(false); }}
+        >
+          <div 
+            className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl max-h-[92vh] sm:max-h-[90vh] flex flex-col shadow-2xl border-2 border-slate-200 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header - Fixed */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-4 sm:px-6 py-3.5 sm:py-4 bg-white shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center font-bold shrink-0 ${
                   reviewActionType === "APPROVED" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"
                 }`}>
                   {reviewActionType === "APPROVED" ? <CheckCircle2 className="w-5 h-5" /> : <X className="w-5 h-5" />}
                 </div>
-                <div>
-                  <h3 className="font-black text-base text-slate-900 uppercase">
+                <div className="min-w-0">
+                  <h3 className="font-black text-sm sm:text-base text-slate-900 uppercase truncate">
                     {reviewActionType === "APPROVED" ? "Phê Duyệt Mở Lại Phiếu" : "Từ Chối Mở Lại Phiếu"}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-xs text-slate-500 font-medium truncate">
                     Học sinh: <strong>{selectedRequestForReview.studentName}</strong> ({selectedRequestForReview.studentCode})
                   </p>
                 </div>
@@ -4243,42 +4300,47 @@ export default function TeacherAdvisoryPage() {
               <button
                 type="button"
                 onClick={() => setShowReviewModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm transition-all"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-sm transition-all shrink-0 cursor-pointer"
+                title="Đóng"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
-              <span className="font-black text-slate-600 uppercase text-[10px] block">Lý do học sinh gửi xin mở lại:</span>
-              <p className="font-bold text-slate-800 italic pl-2">
-                "{selectedRequestForReview.reason}"
-              </p>
+            {/* Body - Scrollable */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1 text-xs">
+                <span className="font-black text-slate-600 uppercase text-[10px] block">Lý do học sinh gửi xin mở lại:</span>
+                <p className="font-bold text-slate-800 italic pl-2 break-words">
+                  "{selectedRequestForReview.reason}"
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 block">
+                  {reviewActionType === "APPROVED" 
+                    ? "Lời nhắn / dặn dò học sinh (tùy chọn):" 
+                    : "Lý do từ chối (học sinh sẽ nhận được nội dung này) *:"}
+                </label>
+                <textarea
+                  rows={3}
+                  value={teacherResponseNote}
+                  onChange={(e) => setTeacherResponseNote(e.target.value)}
+                  placeholder={reviewActionType === "APPROVED" 
+                    ? "Ví dụ: Đã mở lại phiếu, em nhớ cập nhật mục tiêu bổ sung trước thứ Sáu nhé..." 
+                    : "Ví dụ: Phiếu mục tiêu hiện tại đã phù hợp, Thầy/Cô sẽ trao đổi thêm với em trong buổi tư vấn tuần này..."}
+                  className="w-full p-3 sm:p-3.5 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none text-xs font-medium"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-800 block">
-                {reviewActionType === "APPROVED" 
-                  ? "Lời nhắn / dặn dò học sinh (tùy chọn):" 
-                  : "Lý do từ chối (học sinh sẽ nhận được nội dung này) *:"}
-              </label>
-              <textarea
-                rows={3}
-                value={teacherResponseNote}
-                onChange={(e) => setTeacherResponseNote(e.target.value)}
-                placeholder={reviewActionType === "APPROVED" 
-                  ? "Ví dụ: Đã mở lại phiếu, em nhớ cập nhật mục tiêu bổ sung trước thứ Sáu nhé..." 
-                  : "Ví dụ: Phiếu mục tiêu hiện tại đã phù hợp, Thầy/Cô sẽ trao đổi thêm với em trong buổi tư vấn tuần này..."}
-                className="w-full p-3.5 rounded-2xl border-2 border-slate-200 focus:border-teal-500 focus:outline-none text-xs font-medium"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+            {/* Footer - Fixed */}
+            <div className="flex items-center justify-end gap-2.5 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-100 bg-slate-50/80 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowReviewModal(false)}
                 disabled={savingReview}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
+                className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
               >
                 Đóng
               </button>
@@ -4286,7 +4348,7 @@ export default function TeacherAdvisoryPage() {
                 type="button"
                 onClick={() => handleReviewAdjustment(reviewActionType)}
                 disabled={savingReview}
-                className={`px-6 py-2.5 rounded-xl text-xs font-black text-white shadow-md transition-all flex items-center gap-2 cursor-pointer hover:scale-105 active:scale-95 ${
+                className={`px-5 sm:px-6 py-2 sm:py-2.5 rounded-xl text-xs font-black text-white shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95 ${
                   reviewActionType === "APPROVED" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
                 }`}
               >

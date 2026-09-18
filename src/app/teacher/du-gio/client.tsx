@@ -5536,9 +5536,9 @@ export function ObservationClient(props: ObservationClientProps) {
 
       {/* Register Details Modal */}
       {registerDetailSlot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 bg-[#003B3A] text-white flex items-center justify-between shrink-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget) setRegisterDetailSlot(null); }}>
+          <div className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] my-auto animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 sm:px-6 py-4 sm:py-5 bg-[#003B3A] text-white flex items-center justify-between shrink-0">
               <div>
                 <h3 className="font-black text-base">Xác nhận Đăng ký Dự giờ</h3>
                 <p className="text-white/70 text-xs font-medium mt-0.5">Kiểm tra thông tin tiết dạy trước khi gửi đăng ký</p>
@@ -5551,7 +5551,7 @@ export function ObservationClient(props: ObservationClientProps) {
               </button>
             </div>
             
-            <div className="p-6 space-y-4 text-xs font-semibold">
+            <div className="p-4 sm:p-6 space-y-4 text-xs font-semibold overflow-y-auto flex-1">
               <div className="bg-teal-50/40 p-4 rounded-2xl border border-teal-100 space-y-1">
                 <span className="text-[10px] font-black text-[#008B82] uppercase tracking-wider">Chủ đề bài dạy</span>
                 <h4 className="text-sm font-black text-[#003B3A] leading-snug">{registerDetailSlot.topic}</h4>
@@ -5609,8 +5609,8 @@ export function ObservationClient(props: ObservationClientProps) {
         const isDraft = evalModal.registration.evaluation?.reEvaluationStatus === "DRAFT";
         const isReadOnly = !!evalModal.registration.evaluation && !isApprovedForReEval && !isDraft;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget && !savingEvaluation) setEvalModal(null); }}>
+            <div className="bg-white w-full max-w-3xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] my-auto animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
               <div className="px-6 py-5 bg-gradient-to-r from-[#003B3A] to-[#007068] text-white flex items-center justify-between shrink-0">
                 <div>
                   <div className="flex items-center gap-2.5 flex-wrap">
