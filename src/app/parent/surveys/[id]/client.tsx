@@ -1,6 +1,5 @@
 "use client"
 // @ts-nocheck
-﻿"use client"
 import { useState, useCallback, useRef, useEffect } from "react"
 import { submitSurveyAction } from "./actions"
 import { CheckCircle2, ChevronLeft, ChevronRight, Send, Star, AlertCircle, X, Edit3 } from "lucide-react"
@@ -412,7 +411,7 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
           <div className="bg-[#48BFE3] text-white px-3 py-1 rounded-lg text-[11px] font-black shadow-lg shadow-teal-100">{progress}%</div>
         </div>
         <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-          <div className="h-full bg-gradient-to-r from-red-600 via-[#48BFE3] to-red-400 rounded-full transition-all duration-700 ease-out shadow-lg" style={{ width: `${progress}%` }} />
+          <div className="h-full bg-gradient-to-r from-[#003B3A] via-[#1E8B87] to-[#48BFE3] rounded-full transition-all duration-700 ease-out shadow-lg" style={{ width: `${progress}%` }} />
         </div>
       </div>
 

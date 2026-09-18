@@ -844,19 +844,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Tổng quan</span>}
               </Link>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setIsOpen(false);
-                  if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('openLinkStudentModal'));
-                  }
-                }}
-                className={`w-full text-left group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold text-amber-300 hover:text-white hover:bg-white/10` }
-              >
-                <UserPlus className="w-4 h-4 mr-2.5 text-amber-400 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Thêm tài khoản Học sinh</span>}
-              </button>
 
               <Link 
                 href="/parent/surveys" 

@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ClipboardList, KeyRound } from "lucide-react"
+import { Home, ClipboardList, Compass, GraduationCap, KeyRound } from "lucide-react"
 import { ChangePasswordModal } from "@/components/ChangePasswordModal"
 
 export function ParentMobileBottomNav() {
@@ -12,6 +12,8 @@ export function ParentMobileBottomNav() {
 
   const isHome = pathname === "/parent"
   const isSurveys = pathname.includes("/parent/surveys")
+  const isAdvisory = pathname.includes("/parent/children/advisory")
+  const isProfile = pathname.includes("/parent/children/profile")
 
   return (
     <>
@@ -19,32 +21,57 @@ export function ParentMobileBottomNav() {
         <Link
           href="/parent"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isHome ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+            isHome ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
-          <div className={`p-1 rounded-lg ${isHome ? "bg-[#0284C7]/10" : ""}`}>
+          <div className={`p-1.5 rounded-xl transition-all ${isHome ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
             <Home className="w-4 h-4" />
           </div>
-          <span>Trang chủ</span>
+          <span>Tổng quan</span>
         </Link>
 
         <Link
           href="/parent/surveys"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isSurveys ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+            isSurveys ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
-          <div className={`p-1 rounded-lg ${isSurveys ? "bg-[#0284C7]/10" : ""}`}>
+          <div className={`p-1.5 rounded-xl transition-all ${isSurveys ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
             <ClipboardList className="w-4 h-4" />
           </div>
           <span>Khảo sát</span>
         </Link>
 
-        <button
-          onClick={() => setIsPasswordModalOpen(true)}
-          className="flex flex-col items-center gap-1 text-slate-500 hover:text-[#0284C7] font-medium text-[10px] transition-colors cursor-pointer"
+        <Link
+          href="/parent/children/advisory"
+          className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
+            isAdvisory ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
+          }`}
         >
-          <div className="p-1 rounded-lg">
+          <div className={`p-1.5 rounded-xl transition-all ${isAdvisory ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
+            <Compass className="w-4 h-4" />
+          </div>
+          <span>Cố vấn</span>
+        </Link>
+
+        <Link
+          href="/parent/children/profile"
+          className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
+            isProfile ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl transition-all ${isProfile ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
+            <GraduationCap className="w-4 h-4" />
+          </div>
+          <span>Hồ sơ</span>
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setIsPasswordModalOpen(true)}
+          className="flex flex-col items-center gap-1 text-slate-500 hover:text-[#003B3A] font-medium text-[10px] transition-colors cursor-pointer"
+        >
+          <div className="p-1.5 rounded-xl">
             <KeyRound className="w-4 h-4" />
           </div>
           <span>Đổi MK</span>
