@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 "use server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -124,6 +124,14 @@ export async function submitSurveyAction(data: any) {
   if (!parent) throw new Error("Parent not found")
 
   const { surveyPeriodId, studentId, responses } = data
+
+  // Verify parent has link to student (prevent IDOR)
+  const isLinked = await prisma.parentStudentLink.findFirst({
+    where: { parentId: parent.id, studentId }
+  })
+  if (!isLinked) {
+    return { error: "Bạn không có quyền thực hiện khảo sát cho học sinh này." }
+  }
 
   // 1. Kiểm tra trạng thái và khoảng thời gian hoạt động của đợt khảo sát
   const period = await prisma.surveyPeriod.findUnique({ where: { id: surveyPeriodId } })

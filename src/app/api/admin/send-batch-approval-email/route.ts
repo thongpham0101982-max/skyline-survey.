@@ -392,7 +392,7 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Open Sans', 'Segoe UI', 
 
         await sendEmail({
           to: currentGdcsEmail,
-          subject: `[Sky-Line] Yêu cầu xét duyệt Đợt khảo sát: ${batchName} (${periodName})`,
+          subject: `[Sky-line SMS] Yêu cầu xét duyệt Đợt khảo sát: ${batchName} (${periodName})`,
           html: currentHtml,
           replyTo: "bankhaothi@skylineschool.edu.vn"
         });
@@ -407,7 +407,7 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Open Sans', 'Segoe UI', 
 
     await sendEmail({
       to: gdcsEmail,
-      subject: `[Sky-Line] Yêu cầu xét duyệt Đợt khảo sát: ${batchName} (${periodName})`,
+      subject: `[Sky-line SMS] Yêu cầu xét duyệt Đợt khảo sát: ${batchName} (${periodName})`,
       html: emailHtml,
       replyTo: "bankhaothi@skylineschool.edu.vn"
     });

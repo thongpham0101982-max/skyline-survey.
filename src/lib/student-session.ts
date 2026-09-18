@@ -2,7 +2,7 @@ import { createHmac } from 'crypto'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-const SECRET = 'skyline-student-survey-secure-key-2025'
+const SECRET = process.env.STUDENT_SESSION_SECRET || process.env.AUTH_SECRET || 'skyline-student-survey-secure-key-2025'
 const COOKIE = 'hs_token'
 
 export interface StudentSession {

@@ -460,7 +460,7 @@ export async function sendTeamsDirectToUserEmail(
   if (!userEmail || !userEmail.includes("@")) return false;
 
   const linkUrl = `${BASE_URL}/teacher/du-gio?tab=dang-ky&slotId=${slot.id}`;
-  const teamsChatDeepLink = `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(userEmail)}&message=${encodeURIComponent(`[Skyline Dự Giờ] Thầy/Cô ${senderTeacherName} vừa mở tiết dạy dự giờ mới: ${slot.subjectName} - ${slot.topic}. Đăng ký tại: ${linkUrl}`)}`;
+  const teamsChatDeepLink = `https://teams.microsoft.com/l/chat/0/0?users=${encodeURIComponent(userEmail)}&message=${encodeURIComponent(`[Sky-line SMS - Dự Giờ] Thầy/Cô ${senderTeacherName} vừa mở tiết dạy dự giờ mới: ${slot.subjectName} - ${slot.topic}. Đăng ký tại: ${linkUrl}`)}`;
 
   const card = {
     "type": "message",

@@ -326,7 +326,7 @@ export async function POST(req: NextRequest) {
         try {
           const mailRes = await sendEmail({
             to: targetEmail,
-            subject: `[Sky-Line Preschool] Phân công Khảo sát Năng lực Đầu vào - Bé ${gradeLabel}`,
+            subject: `[Sky-line SMS - Mầm Non] Phân công Khảo sát Năng lực Đầu vào - Bé ${gradeLabel}`,
             html: emailHtml,
             replyTo: "bankhaothi@skylineschool.edu.vn"
           });

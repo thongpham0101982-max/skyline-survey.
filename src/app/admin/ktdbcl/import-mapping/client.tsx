@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { 
   FileText, Upload, Settings, Play, RefreshCw, 
-  CheckCircle2, AlertCircle, Search, Trash2, Info
+  CheckCircle2, AlertCircle, Search, Trash2, Info, Download
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
@@ -69,6 +69,24 @@ export function ImportMappingClient({
   useEffect(() => {
     loadExistingMappings()
   }, [selectedYearId])
+
+  const handleDownloadTemplate = () => {
+    const ws = XLSX.utils.json_to_sheet([
+      { "STT": 1, "Mã HS": "0601012081", "Họ và Tên": "Châu Mỹ An", "Mã VNEdu": "2301855126" },
+      { "STT": 2, "Mã HS": "0601012300", "Họ và Tên": "Nguyễn Bảo An", "Mã VNEdu": "2301855127" }
+    ])
+    ws["!cols"] = [{ wch: 6 }, { wch: 20 }, { wch: 28 }, { wch: 22 }]
+    const range = XLSX.utils.decode_range(ws["!ref"] || "A1:D1");
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      const cellB = ws[XLSX.utils.encode_cell({ r: R, c: 1 })];
+      if (cellB) { cellB.t = "s"; cellB.z = "@"; }
+      const cellD = ws[XLSX.utils.encode_cell({ r: R, c: 3 })];
+      if (cellD) { cellD.t = "s"; cellD.z = "@"; }
+    }
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "Mau_Anh_Xa_VNEdu")
+    XLSX.writeFile(wb, "Form_Mau_Anh_Xa_Ma_VNEdu.xlsx")
+  }
 
   // Handle Drag/Drop File Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -357,12 +375,22 @@ export function ImportMappingClient({
             className="hidden" 
             id="excel-mapping-upload" 
           />
-          <label 
-            htmlFor="excel-mapping-upload"
-            className="mt-4 inline-flex bg-[#48BFE3] hover:bg-[#008d83] text-white text-xs font-bold py-2 px-6 rounded-xl shadow-xs cursor-pointer"
-          >
-            Chọn File Excel
-          </label>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <button 
+              type="button"
+              onClick={handleDownloadTemplate}
+              className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 px-5 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 text-slate-500" />
+              Tải File Mẫu Ánh Xạ
+            </button>
+            <label 
+              htmlFor="excel-mapping-upload"
+              className="inline-flex items-center bg-[#48BFE3] hover:bg-[#008d83] text-white text-xs font-bold py-2 px-6 rounded-xl shadow-xs cursor-pointer transition-colors"
+            >
+              Chọn File Excel
+            </label>
+          </div>
         </div>
       </div>
 

@@ -475,9 +475,7 @@ export async function GET(req: any) {
             }),
             academicYearId
                 ? prisma.academicYear.findUnique({ where: { id: academicYearId } })
-                : (prisma.academicYear.findFirst({ where: { isCurrent: true } }) || 
-                   prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }) || 
-                   prisma.academicYear.findFirst({ orderBy: { startDate: 'desc' } })),
+                : prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }),
             prisma.inputAssessmentTeacherAssignment.count({
                 where: { userId: session.user.id }
             })

@@ -62,7 +62,7 @@ export async function importStudentsAction(classId: string, data: any[]) {
             }
           });
           if (item.vnEduCode) {
-            await upsertCodeMapping(cls.academicYearId, sCode, item.vnEduCode);
+            await upsertStudentVnEduMapping(cls.academicYearId, sCode, item.vnEduCode);
           }
         }
         count++
@@ -91,27 +91,183 @@ export async function importStudentsAction(classId: string, data: any[]) {
 }
 
 
-async function upsertCodeMapping(academicYearId: string, databaseCode: string, vnEduCode?: string) {
-  if (!vnEduCode || !databaseCode) return;
-  const markCode = String(vnEduCode).trim().toUpperCase();
-  if (!markCode) return;
+export async function upsertStudentVnEduMapping(academicYearId: string, databaseCode: string, vnEduCode?: string | null) {
+  const sCode = String(databaseCode || "").trim().toUpperCase();
+  if (!sCode) return { success: false, error: "Mã học sinh không hợp lệ" };
+
+  const markCode = vnEduCode !== undefined && vnEduCode !== null ? String(vnEduCode).trim().toUpperCase() : "";
+
+  // Nếu người dùng xóa mã vnEdu (để trống)
+  if (!markCode) {
+    try {
+      await prisma.studentCodeMapping.deleteMany({
+        where: {
+          academicYearId,
+          databaseCode: sCode
+        }
+      });
+      return { success: true, vnEduCode: null };
+    } catch (e: any) {
+      console.error("Error clearing code mapping:", e);
+      return { success: false, error: e.message };
+    }
+  }
+
+  // Kiểm tra ràng buộc 1 - 1 xuyên suốt:
+  // Mã VNEdu này đã được gán cho một học sinh (databaseCode) khác chưa?
+  const existingMapping = await prisma.studentCodeMapping.findFirst({
+    where: {
+      markFileCode: markCode,
+      databaseCode: { not: sCode }
+    }
+  });
+
+  if (existingMapping) {
+    const otherStudent = await prisma.student.findFirst({
+      where: { studentCode: existingMapping.databaseCode },
+      select: { studentName: true, studentCode: true }
+    });
+    const otherName = otherStudent ? `${otherStudent.studentName} (${otherStudent.studentCode})` : existingMapping.databaseCode;
+    return {
+      success: false,
+      error: `Mã VNEdu '${markCode}' đã được gán cho học sinh ${otherName}! Mỗi học sinh chỉ có 1 Mã VNEdu duy nhất.`
+    };
+  }
+
   try {
+    // Upsert cho năm học hiện tại
     await prisma.studentCodeMapping.upsert({
       where: {
         academicYearId_databaseCode: {
           academicYearId,
-          databaseCode: databaseCode.trim().toUpperCase()
+          databaseCode: sCode
         }
       },
       update: { markFileCode: markCode },
       create: {
         academicYearId,
-        databaseCode: databaseCode.trim().toUpperCase(),
+        databaseCode: sCode,
         markFileCode: markCode
       }
     });
-  } catch (e) {
+
+    // Đồng bộ xuyên suốt: Cập nhật cho tất cả các năm học khác mà học sinh này đã có bản ghi mapping
+    const otherYearMappings = await prisma.studentCodeMapping.findMany({
+      where: {
+        databaseCode: sCode,
+        academicYearId: { not: academicYearId }
+      }
+    });
+
+    for (const otherMap of otherYearMappings) {
+      await prisma.studentCodeMapping.update({
+        where: { id: otherMap.id },
+        data: { markFileCode: markCode }
+      }).catch(err => console.error("Error syncing mapping to other academic year:", err));
+    }
+
+    return { success: true, vnEduCode: markCode };
+  } catch (e: any) {
     console.error("Error upserting code mapping:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+export async function updateStudentVnEduCodeAction(classId: string, studentId: string, studentCode: string, vnEduCode: string) {
+  try {
+    const cls = await prisma.class.findUnique({ where: { id: classId } });
+    if (!cls) return { success: false, error: "Lớp học không tồn tại" };
+
+    const res = await upsertStudentVnEduMapping(cls.academicYearId, studentCode, vnEduCode);
+    if (!res.success) {
+      return res;
+    }
+
+    const session = await auth();
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "UPDATE_STUDENT_VNEDU_CODE",
+      "StudentCodeMapping",
+      studentId,
+      null,
+      { studentCode, vnEduCode: res.vnEduCode, classId }
+    );
+
+    revalidatePath(`/admin/classes/${classId}`);
+    return { success: true, vnEduCode: res.vnEduCode };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function importVnEduMappingAction(classId: string, mappings: { studentCode: string; vnEduCode: string }[]) {
+  try {
+    const cls = await prisma.class.findUnique({ where: { id: classId } });
+    if (!cls) return { success: false, error: "Lớp học không tồn tại" };
+
+    if (!mappings || mappings.length === 0) {
+      return { success: false, error: "Dữ liệu trống hoặc không có dòng nào hợp lệ." };
+    }
+
+    let successCount = 0;
+    let skippedCount = 0;
+    const warnings: string[] = [];
+    const seenMarkCodes = new Set<string>();
+    const seenStudentCodes = new Set<string>();
+
+    for (const item of mappings) {
+      const sCode = String(item.studentCode || "").trim().toUpperCase();
+      const vCode = String(item.vnEduCode || "").trim().toUpperCase();
+
+      if (!sCode) {
+        skippedCount++;
+        continue;
+      }
+
+      if (seenStudentCodes.has(sCode)) {
+        warnings.push(`Mã HS ${sCode} bị lặp lại nhiều lần trong file.`);
+        skippedCount++;
+        continue;
+      }
+      seenStudentCodes.add(sCode);
+
+      if (!vCode) {
+        skippedCount++;
+        continue;
+      }
+
+      if (seenMarkCodes.has(vCode)) {
+        warnings.push(`Mã VNEdu '${vCode}' bị trùng lặp cho nhiều học sinh trong file.`);
+        skippedCount++;
+        continue;
+      }
+      seenMarkCodes.add(vCode);
+
+      const res = await upsertStudentVnEduMapping(cls.academicYearId, sCode, vCode);
+      if (res.success) {
+        successCount++;
+      } else {
+        skippedCount++;
+        warnings.push(`HS ${sCode}: ${res.error}`);
+      }
+    }
+
+    const session = await auth();
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "IMPORT_VNEDU_MAPPINGS",
+      "StudentCodeMapping",
+      classId,
+      null,
+      { successCount, skippedCount, warningsCount: warnings.length }
+    );
+
+    revalidatePath(`/admin/classes/${classId}`);
+    return { success: true, successCount, skippedCount, warnings };
+  } catch (e: any) {
+    return { success: false, error: e.message };
   }
 }
 
@@ -133,6 +289,28 @@ export async function addStudentAction(classId: string, data: any) {
     })
     if (existing) {
       return { success: false, error: `Mã học sinh '${studentCode}' đã tồn tại trong hệ thống. Vui lòng nhập mã khác!` }
+    }
+
+    // Nếu có nhập mã VNEdu, kiểm tra trước khi tạo học sinh
+    if (data.vnEduCode) {
+      const vCode = String(data.vnEduCode).trim().toUpperCase();
+      const existingMapping = await prisma.studentCodeMapping.findFirst({
+        where: {
+          markFileCode: vCode,
+          databaseCode: { not: studentCode }
+        }
+      });
+      if (existingMapping) {
+        const otherStudent = await prisma.student.findFirst({
+          where: { studentCode: existingMapping.databaseCode },
+          select: { studentName: true, studentCode: true }
+        });
+        const otherName = otherStudent ? `${otherStudent.studentName} (${otherStudent.studentCode})` : existingMapping.databaseCode;
+        return {
+          success: false,
+          error: `Mã VNEdu '${vCode}' đã được gán cho học sinh ${otherName}! Mỗi học sinh chỉ có 1 Mã VNEdu duy nhất.`
+        };
+      }
     }
 
     const student = await prisma.student.create({
@@ -161,7 +339,7 @@ export async function addStudentAction(classId: string, data: any) {
     )
     await syncAssessmentStudentInfoWithMasterAction(studentCode, data.studentName, data.gender, data.dateOfBirth);
     if (data.vnEduCode) {
-      await upsertCodeMapping(cls.academicYearId, studentCode, data.vnEduCode);
+      await upsertStudentVnEduMapping(cls.academicYearId, studentCode, data.vnEduCode);
     }
     revalidatePath(`/admin/classes/${classId}`)
     return { success: true }
@@ -192,6 +370,15 @@ export async function updateStudentAction(classId: string, studentId: string, da
     if (existing && existing.id !== studentId) {
       return { success: false, error: `Mã học sinh '${studentCode}' đã tồn tại trên một học sinh khác!` }
     }
+
+    // Cập nhật mã VNEdu nếu có trong payload
+    if (data.vnEduCode !== undefined) {
+      const mapRes = await upsertStudentVnEduMapping(oldStudent.academicYearId, studentCode, data.vnEduCode);
+      if (!mapRes.success) {
+        return { success: false, error: mapRes.error };
+      }
+    }
+
     await prisma.student.update({
       where: { id: studentId },
       data: {

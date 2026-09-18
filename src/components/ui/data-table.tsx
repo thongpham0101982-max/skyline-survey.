@@ -85,12 +85,12 @@ export function DataTable<T extends Record<string, any>>({
         <div className="overflow-x-auto custom-scrollbar">
           <table className="w-full border-collapse text-left text-xs tabular-nums">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200/80">
+              <tr className="bg-slate-50/90 border-b border-slate-200/70">
                 {columns.map((col, idx) => (
                   <th
                     key={idx}
                     className={cn(
-                      "px-4 py-3 font-extrabold uppercase tracking-wider text-slate-500 text-[11px] whitespace-nowrap",
+                      "px-4 py-3 font-medium text-slate-500 text-xs tracking-normal whitespace-nowrap",
                       col.className
                     )}
                   >

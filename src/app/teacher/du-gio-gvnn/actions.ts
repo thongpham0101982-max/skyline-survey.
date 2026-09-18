@@ -611,7 +611,7 @@ export async function createForeignObservationWithEvaluation(data: {
 
         // 1. Send evaluation email to Foreign Teacher (Host)
         if (hostEmail) {
-          const emailSubject = `[Skyline - ESL Observation] Lesson Evaluation Completed: ${data.topic || "English Lesson"}`;
+          const emailSubject = `[Sky-line SMS - ESL Observation] Lesson Evaluation Completed: ${data.topic || "English Lesson"}`;
           const emailHtml = renderForeignObservationEvaluationForHost({
             hostTeacherName: hostTeacher.teacherName,
             observerName: evaluatorName,
@@ -649,7 +649,7 @@ export async function createForeignObservationWithEvaluation(data: {
 
         // 2. Send confirmation copy to Observer / Evaluator
         if (evaluatorEmail && evaluatorEmail !== hostEmail) {
-          const observerSubject = `[Skyline - ESL Observation] Evaluation Confirmation: ${hostTeacher.teacherName} - ${data.topic || "English Lesson"}`;
+          const observerSubject = `[Sky-line SMS - ESL Observation] Evaluation Confirmation: ${hostTeacher.teacherName} - ${data.topic || "English Lesson"}`;
           const observerHtml = renderForeignObservationEvaluationForObserver({
             hostTeacherName: hostTeacher.teacherName,
             observerName: evaluatorName,

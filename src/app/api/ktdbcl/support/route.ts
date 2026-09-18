@@ -920,7 +920,7 @@ export async function POST(req: Request) {
         try {
           await sendEmail({
             to: group.gvcnEmail,
-            subject: `[Sky-Line Bồi Dưỡng] Thông Báo Khẩn & Phối Hợp GVCN Lớp ${group.className} (${periodName || "Định kỳ"})`,
+            subject: `[Sky-line SMS - Bồi Dưỡng] Thông Báo Khẩn & Phối Hợp GVCN Lớp ${group.className} (${periodName || "Định kỳ"})`,
             html: emailHtml
           })
           sentCount++
@@ -1224,7 +1224,7 @@ export async function POST(req: Request) {
           await sendEmail({
             to: rec.email,
             // cc removed per policy
-            subject: `[Sky-Line Survey] Danh sách Học sinh diện Cam kết & Theo dõi đầu vào - ${targetCampusTitle} (${yearName})`,
+            subject: `[Sky-line SMS] Danh sách Học sinh diện Cam kết & Theo dõi đầu vào - ${targetCampusTitle} (${yearName})`,
             html: emailHtml
           })
           sentSuccessCount++
@@ -1781,7 +1781,7 @@ export async function POST(req: Request) {
         try {
           await sendEmail({
             to: rec.email,
-            subject: `[Sky-Line Survey] Nhắc lịch đánh giá định kỳ ${monthName} - Phụ đạo, bồi dưỡng Học sinh`,
+            subject: `[Sky-line SMS] Nhắc lịch đánh giá định kỳ ${monthName} - Phụ đạo, bồi dưỡng Học sinh`,
             html: emailHtml
           })
           sentSuccessCount++
@@ -2273,7 +2273,7 @@ export async function POST(req: Request) {
           await sendEmail({
             to: rec.email,
             // cc removed per policy
-            subject: `[Sky-Line Survey] Danh sách Học sinh diện Cam kết & Theo dõi đầu vào - ${subTitle} (${yearName})`,
+            subject: `[Sky-line SMS] Danh sách Học sinh diện Cam kết & Theo dõi đầu vào - ${subTitle} (${yearName})`,
             html: emailHtml
           })
           sentSuccessCount++

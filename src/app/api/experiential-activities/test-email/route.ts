@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
       from: fromAddr,
       to: emailTo,
       replyTo: replyTo || undefined,
-      subject: `[THỬ NGHIỆM] [Sky-Line HĐTN] Kế hoạch Hoạt động Trải nghiệm: ${activityName}`,
+      subject: `[Sky-line SMS - THỬ NGHIỆM] Kế hoạch Hoạt động Trải nghiệm: ${activityName}`,
       html: testHtml
     });
 

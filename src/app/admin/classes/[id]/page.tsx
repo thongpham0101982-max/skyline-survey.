@@ -59,14 +59,57 @@ export default async function AdminClassDetailPage({ params }: any) {
     }),
     prisma.studentCodeMapping.findMany({
       where: {
-        academicYearId: classInfo.academicYearId,
         databaseCode: { in: studentCodes }
-      }
+      },
+      orderBy: { updatedAt: "desc" }
     })
   ]);
 
   const allCandidates = [...generalCandidates, ...preschoolCandidates];
-  const vnEduMap = new Map(codeMappings.map(m => [m.databaseCode, m.markFileCode]));
+  
+  // Ánh xạ mã vnEdu xuyên suốt: ưu tiên năm học hiện tại, sau đó đến năm học gần nhất
+  const vnEduMap = new Map<string, string>();
+  const syncToCurrentYear: { databaseCode: string; markFileCode: string }[] = [];
+
+  for (const sCode of studentCodes) {
+    const studentMaps = codeMappings.filter(m => m.databaseCode === sCode);
+    if (studentMaps.length > 0) {
+      const currentYearMap = studentMaps.find(m => m.academicYearId === classInfo.academicYearId);
+      if (currentYearMap) {
+        vnEduMap.set(sCode, currentYearMap.markFileCode);
+      } else {
+        // Chưa có ở năm học hiện tại -> kế thừa mã từ năm học khác
+        const latestMap = studentMaps[0];
+        vnEduMap.set(sCode, latestMap.markFileCode);
+        syncToCurrentYear.push({
+          databaseCode: sCode,
+          markFileCode: latestMap.markFileCode
+        });
+      }
+    }
+  }
+
+  // Tự động đồng bộ các mapping được kế thừa vào năm học hiện tại
+  if (syncToCurrentYear.length > 0) {
+    Promise.all(
+      syncToCurrentYear.map(item =>
+        prisma.studentCodeMapping.upsert({
+          where: {
+            academicYearId_databaseCode: {
+              academicYearId: classInfo.academicYearId,
+              databaseCode: item.databaseCode
+            }
+          },
+          update: { markFileCode: item.markFileCode },
+          create: {
+            academicYearId: classInfo.academicYearId,
+            databaseCode: item.databaseCode,
+            markFileCode: item.markFileCode
+          }
+        }).catch(() => {})
+      )
+    ).catch(() => {});
+  }
 
   const studentsWithEnrollmentType = (classInfo.students || []).map(student => {
     const hasTransferIn = student.studentTransfers && student.studentTransfers.some((t: any) => t.type === 'IN');

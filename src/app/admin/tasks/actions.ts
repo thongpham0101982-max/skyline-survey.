@@ -265,6 +265,12 @@ export async function confirmTaskAssignment(taskId: string) {
     })
     if (!task) return { success: false, error: "Không tìm thấy công việc" }
 
+    const userRole = (session.user as any).role
+    const isAuthorized = !task.assignedToUserId || task.assignedToUserId === userId || task.assignedById === userId || userRole === "ADMIN" || userRole === "SUPERADMIN"
+    if (!isAuthorized) {
+      return { success: false, error: "Bạn không có quyền xác nhận công việc này" }
+    }
+
     await prisma.workTask.update({
       where: { id: taskId },
       data: {
@@ -345,6 +351,12 @@ export async function rejectTaskAssignment(taskId: string, reason: string) {
       }
     })
     if (!task) return { success: false, error: "Không tìm thấy công việc" }
+
+    const userRole = (session.user as any).role
+    const isAuthorized = !task.assignedToUserId || task.assignedToUserId === userId || task.assignedById === userId || userRole === "ADMIN" || userRole === "SUPERADMIN"
+    if (!isAuthorized) {
+      return { success: false, error: "Bạn không có quyền phản hồi công việc này" }
+    }
 
     await prisma.workTask.update({
       where: { id: taskId },

@@ -1,9 +1,23 @@
 "use client"
 import Link from "next/link"
 import { useState, useRef, useMemo } from "react"
-import { Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save, Send, RefreshCw, ArrowUpDown, Layers, ExternalLink, FileCode, ArrowRightLeft, Sparkles, CheckCircle2, AlertCircle } from "lucide-react"
+import { 
+  Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save, Send, 
+  RefreshCw, ArrowUpDown, Layers, ExternalLink, FileCode, ArrowRightLeft, 
+  Sparkles, CheckCircle2, AlertCircle, Check, FileSpreadsheet 
+} from "lucide-react"
 import * as xlsx from "xlsx"
-import { importStudentsAction, addStudentAction, updateStudentAction, deleteStudentsAction, assignSurveyToStudentAction, syncClassStudentsWithSurveysAction, convertStudentTypeAction } from "./actions"
+import { 
+  importStudentsAction, 
+  addStudentAction, 
+  updateStudentAction, 
+  deleteStudentsAction, 
+  assignSurveyToStudentAction, 
+  syncClassStudentsWithSurveysAction, 
+  convertStudentTypeAction,
+  updateStudentVnEduCodeAction,
+  importVnEduMappingAction
+} from "./actions"
 import { sortVietnameseStudents } from "@/lib/vietnameseSort"
 
 export function AdminClassStudentsClient({ classId, initialStudents, activeSurveys = [] }: any) {
@@ -27,7 +41,14 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
   const [convertSyncSurvey, setConvertSyncSurvey] = useState(true)
   const [convertingLoading, setConvertingLoading] = useState(false)
 
+  // State cho Ánh xạ VNEdu
+  const [uploadingMapping, setUploadingMapping] = useState(false)
+  const [editingVnEduId, setEditingVnEduId] = useState<string | null>(null)
+  const [tempVnEduValue, setTempVnEduValue] = useState<string>("")
+  const [savingVnEdu, setSavingVnEdu] = useState(false)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputMappingRef = useRef<HTMLInputElement>(null)
 
   const chinhKhoaCount = useMemo(() => (students || []).filter((s: any) => s.studentType !== "GIAO_LUU").length, [students]);
   const giaoLuuCount = useMemo(() => (students || []).filter((s: any) => s.studentType === "GIAO_LUU").length, [students]);
@@ -60,16 +81,180 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
     setSyncingSurveys(false)
   }
 
+  // Tải file mẫu thêm học sinh
   const handleDownloadTemplate = () => {
     const ws = xlsx.utils.json_to_sheet([
       { "STT": 1, "Mã học sinh *": "HS-10A1-001", "Mã VNEdu": "2500839484", "Họ và Tên *": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "20/05/2010", "Diện Học sinh": "Chính khóa" },
       { "STT": 2, "Mã học sinh *": "HS-10A1-002", "Mã VNEdu": "2500839485", "Họ và Tên *": "Bagdan Khabibov", "Giới tính": "Nam", "Ngày sinh": "15/12/2010", "Diện Học sinh": "Giao lưu" }
     ])
-    ws["!cols"] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 10 }, { wch: 15 }, { wch: 15 }]
+    ws["!cols"] = [{ wch: 6 }, { wch: 20 }, { wch: 20 }, { wch: 28 }, { wch: 12 }, { wch: 16 }, { wch: 16 }]
     const wb = xlsx.utils.book_new()
     xlsx.utils.book_append_sheet(wb, ws, "Danh_sach_HS")
     xlsx.writeFile(wb, "Form_Mau_Them_Hoc_Sinh.xlsx")
   }
+
+  // Xuất file Excel ánh xạ VNEdu cho danh sách học sinh của lớp hiện tại
+  const handleExportVnEduTemplate = () => {
+    if (!displayStudents || displayStudents.length === 0) {
+      alert("Lớp học chưa có học sinh nào để xuất file ánh xạ.");
+      return;
+    }
+
+    const excelData = displayStudents.map((s: any, idx: number) => ({
+      "STT": idx + 1,
+      "Mã HS": String(s.studentCode || "").trim(),
+      "Họ và Tên": s.studentName || "",
+      "Mã VNEdu": s.vnEduCode ? String(s.vnEduCode).trim() : ""
+    }));
+
+    const ws = xlsx.utils.json_to_sheet(excelData);
+    ws["!cols"] = [
+      { wch: 6 },  // STT
+      { wch: 20 }, // Mã HS
+      { wch: 30 }, // Họ và Tên
+      { wch: 22 }  // Mã VNEdu
+    ];
+
+    // Thiết lập định dạng text (chuỗi) cho cột Mã HS (B) và Mã VNEdu (D) để không bị mất số 0 ở đầu
+    const range = xlsx.utils.decode_range(ws["!ref"] || "A1:D1");
+    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+      const cellB = ws[xlsx.utils.encode_cell({ r: R, c: 1 })]; // Cột B: Mã HS
+      if (cellB) { cellB.t = "s"; cellB.z = "@"; }
+      const cellD = ws[xlsx.utils.encode_cell({ r: R, c: 3 })]; // Cột D: Mã VNEdu
+      if (cellD) { cellD.t = "s"; cellD.z = "@"; }
+    }
+
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, "Anh_Xa_VNEdu");
+    xlsx.writeFile(wb, `Danh_Sach_Anh_Xa_VNEdu_${classId.slice(-6)}.xlsx`);
+  };
+
+  // Import file Excel ánh xạ VNEdu (STT, Mã HS, Mã VNEdu)
+  const handleFileMappingUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingMapping(true);
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const buffer = evt.target?.result;
+        const wb = xlsx.read(buffer, { type: "array" });
+        let ws = null;
+        let headerRowIndex = -1;
+
+        for (const sheetName of wb.SheetNames) {
+          const currentWs = wb.Sheets[sheetName];
+          const rawData = xlsx.utils.sheet_to_json(currentWs, { header: 1 }) as any[][];
+          if (!rawData || rawData.length === 0) continue;
+
+          for (let i = 0; i < Math.min(15, rawData.length); i++) {
+            const row = rawData[i];
+            const rowText = row.map(c => String(c || "").toLowerCase().trim()).join(" ");
+            if (
+              (rowText.includes("mã hs") || rowText.includes("mã học sinh") || rowText.includes("studentcode") || rowText.includes("ma hs")) &&
+              (rowText.includes("vnedu") || rowText.includes("mã sở") || rowText.includes("sở"))
+            ) {
+              headerRowIndex = i;
+              ws = currentWs;
+              break;
+            }
+          }
+          if (ws) break;
+        }
+
+        // Fallback: tìm theo mã hs nếu chưa thấy cả 2 từ khóa
+        if (!ws) {
+          for (const sheetName of wb.SheetNames) {
+            const currentWs = wb.Sheets[sheetName];
+            const rawData = xlsx.utils.sheet_to_json(currentWs, { header: 1 }) as any[][];
+            if (!rawData || rawData.length === 0) continue;
+
+            for (let i = 0; i < Math.min(15, rawData.length); i++) {
+              const row = rawData[i];
+              const rowText = row.map(c => String(c || "").toLowerCase().trim()).join(" ");
+              if (rowText.includes("mã hs") || rowText.includes("mã học sinh") || rowText.includes("ma hs")) {
+                headerRowIndex = i;
+                ws = currentWs;
+                break;
+              }
+            }
+            if (ws) break;
+          }
+        }
+
+        if (!ws || headerRowIndex === -1) {
+          alert("Không tìm thấy dòng tiêu đề cột chứa 'Mã HS' và 'Mã VNEdu' trong file Excel. Vui lòng kiểm tra lại file mẫu.");
+          setUploadingMapping(false);
+          return;
+        }
+
+        const data = xlsx.utils.sheet_to_json(ws, { range: headerRowIndex }) as any[];
+
+        const findVal = (row: any, keywords: string[]) => {
+          const keys = Object.keys(row);
+          for (const key of keys) {
+            const k = key.toLowerCase().trim();
+            if (keywords.some(kw => k.includes(kw.toLowerCase()))) return row[key];
+          }
+          return null;
+        };
+
+        const mappings: { studentCode: string; vnEduCode: string }[] = [];
+        for (const row of data) {
+          const sCode = String(findVal(row, ["mã học sinh", "mã hs", "ma hs", "studentcode", "mã csdl", "databasecode"]) || "").trim();
+          const vCode = String(findVal(row, ["mã vnedu", "mã vn edu", "vnedu", "vneducode", "ma vnedu", "mã sở", "mã skl"]) || "").trim();
+          if (sCode && vCode) {
+            mappings.push({ studentCode: sCode, vnEduCode: vCode });
+          }
+        }
+
+        if (mappings.length === 0) {
+          alert("Không tìm thấy dữ liệu ánh xạ hợp lệ (cần có cả cột Mã HS và Mã VNEdu có dữ liệu trên cùng dòng).");
+          setUploadingMapping(false);
+          return;
+        }
+
+        const res = await importVnEduMappingAction(classId, mappings);
+        if (res.success) {
+          let msg = `Đã cập nhật ánh xạ thành công cho ${res.successCount} học sinh! Bỏ qua/giữ nguyên: ${res.skippedCount}.`;
+          if (res.warnings && res.warnings.length > 0) {
+            msg += `\n\nCảnh báo / Lỗi:\n${res.warnings.slice(0, 10).join("\n")}`;
+            if (res.warnings.length > 10) {
+              msg += `\n... và ${res.warnings.length - 10} cảnh báo khác.`;
+            }
+          }
+          alert(msg);
+          window.location.reload();
+        } else {
+          alert("Lỗi: " + res.error);
+        }
+      } catch (err: any) {
+        console.error(err);
+        alert("Lỗi khi xử lý file Excel ánh xạ: " + err.message);
+      } finally {
+        setUploadingMapping(false);
+        if (fileInputMappingRef.current) fileInputMappingRef.current.value = "";
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  // Lưu nhanh mã VNEdu trực tiếp trên bảng
+  const handleSaveQuickVnEdu = async (student: any) => {
+    setSavingVnEdu(true);
+    const res = await updateStudentVnEduCodeAction(classId, student.id, student.studentCode, tempVnEduValue);
+    if (res.success) {
+      setStudents((prev: any[]) =>
+        prev.map((s: any) =>
+          s.id === student.id ? { ...s, vnEduCode: res.vnEduCode } : s
+        )
+      );
+      setEditingVnEduId(null);
+    } else {
+      alert("Lỗi lưu Mã VNEdu: " + ((res as any).error || "Không rõ nguyên nhân"));
+    }
+    setSavingVnEdu(false);
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -544,9 +729,22 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           <button onClick={openAdd} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3.5 rounded-md transition-colors shadow-sm text-xs">
             <Plus className="w-4 h-4 mr-1.5" /> Thêm Học Sinh
           </button>
-          <Link href="/admin/ktdbcl/import-mapping" className="flex items-center bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold py-2 px-3 rounded-md transition-colors border border-purple-200 text-xs" title="Chuyển tới trang Quản lý Ánh xạ Mã Học sinh - Mã vnEdu">
-            <FileCode className="w-4 h-4 mr-1.5" /> Import Ánh Xạ
-          </Link>
+          <button 
+            onClick={handleExportVnEduTemplate} 
+            className="flex items-center bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold py-2 px-3 rounded-md transition-colors border border-indigo-200 text-xs" 
+            title="Xuất file Excel gồm STT, Mã HS, Họ Tên, Mã VNEdu để điền hoặc lưu trữ"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-1.5 text-indigo-600" /> Xuất Mẫu Ánh Xạ VNEdu
+          </button>
+          <input type="file" ref={fileInputMappingRef} onChange={handleFileMappingUpload} accept=".xlsx, .xls, .csv" className="hidden" />
+          <button 
+            onClick={() => fileInputMappingRef.current?.click()} 
+            disabled={uploadingMapping} 
+            className="flex items-center bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-3 rounded-md transition-colors shadow-sm disabled:opacity-50 text-xs"
+            title="Nhập file Excel chứa STT, Mã HS, Mã VNEdu để cập nhật ánh xạ hàng loạt cho lớp"
+          >
+            <Upload className="w-4 h-4 mr-1.5" /> {uploadingMapping ? "Đang import..." : "Import Ánh Xạ VNEdu"}
+          </button>
           <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-100 font-semibold py-2 px-3 rounded-md transition-colors text-xs">
             <Download className="w-4 h-4 mr-1.5" /> Tải File Mẫu
           </button>
@@ -611,17 +809,66 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   <td className="px-6 py-4 text-slate-900 font-bold border-r border-slate-200 text-center">{idx + 1}</td>
                   <td className="px-6 py-4 text-slate-500 font-mono text-xs border-r border-slate-200">{student.studentCode}</td>
                   <td className="px-6 py-4 border-r border-slate-200">
-                    {student.vnEduCode ? (
-                      <span className="text-slate-700 font-mono text-xs font-semibold">{student.vnEduCode}</span>
+                    {editingVnEduId === student.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <input 
+                          type="text" 
+                          value={tempVnEduValue} 
+                          onChange={e => setTempVnEduValue(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === "Enter") handleSaveQuickVnEdu(student);
+                            if (e.key === "Escape") setEditingVnEduId(null);
+                          }}
+                          placeholder="Nhập mã vnEdu..."
+                          autoFocus
+                          disabled={savingVnEdu}
+                          className="w-32 px-2 py-1 text-xs border-2 border-indigo-400 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono shadow-sm bg-white"
+                        />
+                        <button 
+                          onClick={() => handleSaveQuickVnEdu(student)}
+                          disabled={savingVnEdu}
+                          className="p-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition-colors disabled:opacity-50"
+                          title="Lưu (Enter)"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => setEditingVnEduId(null)}
+                          disabled={savingVnEdu}
+                          className="p-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded transition-colors"
+                          title="Hủy (Esc)"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ) : student.vnEduCode ? (
+                      <div className="flex items-center gap-1.5 group">
+                        <span className="text-slate-800 font-mono text-xs font-bold tracking-tight bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          {student.vnEduCode}
+                        </span>
+                        <button 
+                          onClick={() => {
+                            setEditingVnEduId(student.id);
+                            setTempVnEduValue(student.vnEduCode || "");
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all cursor-pointer"
+                          title="Sửa nhanh Mã VNEdu"
+                        >
+                          <Edit2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     ) : (
-                      <Link 
-                        href="/admin/ktdbcl/import-mapping" 
-                        className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full transition-colors"
-                        title="Chưa có ánh xạ Mã vnEdu trên hệ thống. Nhấp để chuyển sang trang Import Ánh xạ Mã"
+                      <button 
+                        onClick={() => {
+                          setEditingVnEduId(student.id);
+                          setTempVnEduValue("");
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-full transition-colors cursor-pointer shadow-xs"
+                        title="Nhấp để nhập nhanh Mã VNEdu thủ công"
                       >
                         <span>Chưa ánh xạ</span>
-                        <ExternalLink className="w-2.5 h-2.5" />
-                      </Link>
+                        <Edit2 className="w-2.5 h-2.5 text-amber-600" />
+                      </button>
                     )}
                   </td>
                   <td className="px-6 py-4 font-semibold text-slate-800 border-r border-slate-200 flex items-center justify-between">

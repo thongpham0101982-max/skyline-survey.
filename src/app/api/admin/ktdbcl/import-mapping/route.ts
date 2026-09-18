@@ -42,6 +42,24 @@ export async function POST(req: NextRequest) {
       if (!dbCode || !mfCode) continue
 
       try {
+        // Kiểm tra xem mã VNEdu đã được gán cho học sinh khác chưa
+        const existingMapping = await prisma.studentCodeMapping.findFirst({
+          where: {
+            markFileCode: mfCode,
+            databaseCode: { not: dbCode }
+          }
+        })
+
+        if (existingMapping) {
+          const otherStudent = await prisma.student.findFirst({
+            where: { studentCode: existingMapping.databaseCode },
+            select: { studentName: true, studentCode: true }
+          })
+          const otherName = otherStudent ? `${otherStudent.studentName} (${otherStudent.studentCode})` : existingMapping.databaseCode
+          errors.push(`Mã VNEdu '${mfCode}' đã được gán cho học sinh ${otherName}! Mỗi học sinh chỉ có 1 Mã VNEdu duy nhất.`)
+          continue
+        }
+
         await prisma.studentCodeMapping.upsert({
           where: {
             academicYearId_databaseCode: {
@@ -58,6 +76,21 @@ export async function POST(req: NextRequest) {
             markFileCode: mfCode
           }
         })
+
+        // Đồng bộ xuyên suốt: cập nhật sang các năm học khác của học sinh này
+        const otherYearMappings = await prisma.studentCodeMapping.findMany({
+          where: {
+            databaseCode: dbCode,
+            academicYearId: { not: academicYearId }
+          }
+        })
+        for (const otherMap of otherYearMappings) {
+          await prisma.studentCodeMapping.update({
+            where: { id: otherMap.id },
+            data: { markFileCode: mfCode }
+          }).catch(() => {})
+        }
+
         successCount++
       } catch (err: any) {
         errors.push(`Lỗi khớp mã CSDL ${dbCode} với mã File ${mfCode}: ${err.message}`)

@@ -134,12 +134,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
+        // Load campus assignments for scoping
+        let campusIds: string[] = []
+        try {
+          const assignments = await prisma.userCampusAssignment.findMany({
+            where: { userId: user.id },
+            select: { campusId: true }
+          })
+          campusIds = assignments.map((a: any) => a.campusId)
+        } catch (e) {
+          console.error('[AUTH] Error loading campus assignments:', e)
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.fullName,
           role: user.role,
-          campusIds: user.campusAssignments?.map((a: any) => a.campusId) || []
+          campusIds
         }
       },
     }),

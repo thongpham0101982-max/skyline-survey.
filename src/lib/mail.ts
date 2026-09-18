@@ -25,6 +25,49 @@ export interface SendEmailResult {
   [key: string]: any;
 }
 
+/**
+ * Normalizes email subjects across the project to adhere to the standard Sky-line SMS branding.
+ * - Replaces [Sky-Line SIS] or [Sky-line SIS] with [Sky-line SMS]
+ * - Unifies prefixes: [Skyline - Dự Giờ] -> [Sky-line SMS - Dự Giờ], [Sky-Line HĐTN] -> [Sky-line SMS - HĐTN], etc.
+ * - Ensures every outgoing email subject starts with [Sky-line SMS]
+ */
+export function formatEmailSubject(rawSubject?: string): string {
+  if (!rawSubject || typeof rawSubject !== "string") {
+    return "[Sky-line SMS] Thông báo từ Hệ thống";
+  }
+
+  let s = rawSubject.trim();
+
+  // 1. Direct replacement of any variant of Sky-Line SIS
+  s = s.replace(/\[Sky-?Line\s+SIS\]/gi, "[Sky-line SMS]");
+
+  // 2. Standardize known subsystem prefixes to [Sky-line SMS - ...]
+  s = s.replace(/\[Sky-?line\s*[-–]?\s*Dự\s*Giờ\s*Đột\s*Xuất\]/gi, "[Sky-line SMS - Dự Giờ Đột Xuất]");
+  s = s.replace(/\[Sky-?line\s*[-–]?\s*Dự\s*Giờ\]/gi, "[Sky-line SMS - Dự Giờ]");
+  s = s.replace(/\[Skyline\s*-\s*ESL\s*Observation\]/gi, "[Sky-line SMS - ESL Observation]");
+  s = s.replace(/\[Sky-?Line\s+HĐTN\]/gi, "[Sky-line SMS - HĐTN]");
+  s = s.replace(/\[Sky-?Line\s+Bồi\s+Dưỡng\]/gi, "[Sky-line SMS - Bồi Dưỡng]");
+  s = s.replace(/\[Sky-?Line\s+Preschool\]/gi, "[Sky-line SMS - Mầm Non]");
+  s = s.replace(/\[Sky-?Line-?Approval\]/gi, "[Sky-line SMS - Xét Duyệt]");
+  s = s.replace(/\[Sky-?Line\s+Survey\]/gi, "[Sky-line SMS]");
+  s = s.replace(/\[Skyline\s+School\]/gi, "[Sky-line SMS]");
+  s = s.replace(/\[Skyline\s+Test\]/gi, "[Sky-line SMS - Test]");
+
+  // 3. If it starts with [Sky-Line] or [Skyline], change to [Sky-line SMS]
+  s = s.replace(/^\[Sky-?Line\]\s*/i, "[Sky-line SMS] ");
+  s = s.replace(/^\[Skyline\]\s*/i, "[Sky-line SMS] ");
+
+  // 4. Ensure exact casing if it starts with [Sky-line SMS]
+  if (/^\[Sky-?Line\s+SMS\]/i.test(s)) {
+    s = s.replace(/^\[Sky-?Line\s+SMS\]\s*/i, "[Sky-line SMS] ");
+  } else if (!/^\[Sky-line SMS/i.test(s)) {
+    // If it doesn't already have [Sky-line SMS prefix, prepend it
+    s = `[Sky-line SMS] ${s}`;
+  }
+
+  return s;
+}
+
 export async function sendEmail({
   to,
   cc,
@@ -141,10 +184,12 @@ export async function sendEmail({
         .trim()
     : undefined);
 
+  const resolvedSubject = formatEmailSubject(subject);
+
   const mailOptions: any = {
     from: resolvedFrom,
     to: validTo,
-    subject,
+    subject: resolvedSubject,
     html,
   };
 

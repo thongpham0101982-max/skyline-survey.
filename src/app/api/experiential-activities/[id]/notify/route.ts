@@ -156,7 +156,7 @@ export async function POST(
         from: fromAddr,
         to: emailToTest,
         replyTo: replyTo || undefined,
-        subject: `[THỬ NGHIỆM] [Sky-Line HĐTN] Kế hoạch Hoạt động Trải nghiệm: ${activity.name}`,
+        subject: `[Sky-line SMS - THỬ NGHIỆM] Kế hoạch Hoạt động Trải nghiệm: ${activity.name}`,
         html: testHtml
       });
 

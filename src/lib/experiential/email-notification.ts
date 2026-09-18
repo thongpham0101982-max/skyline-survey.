@@ -362,7 +362,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       ccList.delete(recipient.email.toLowerCase().trim());
       const ccArray = Array.from(ccList);
 
-      const emailSubject = `[Sky-Line HĐTN] Kế hoạch & Phân công Hoạt động Trải nghiệm: ${activityName}`;
+      const emailSubject = `[Sky-line SMS - HĐTN] Kế hoạch & Phân công Hoạt động Trải nghiệm: ${activityName}`;
 
       const emailHtml = `
 <!DOCTYPE html>

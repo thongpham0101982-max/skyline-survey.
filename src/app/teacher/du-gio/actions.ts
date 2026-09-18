@@ -1031,7 +1031,7 @@ export async function createObservationSlot(data: {
               const targetEmail = getTeacherResolvedEmail(m);
               if (!targetEmail || !targetEmail.includes("@") || targetEmail === creatorEmail) return null;
 
-              const emailSubject = `[Skyline Dự Giờ] Thông báo tiết dạy từ ${currentTeacher.teacherName}`;
+              const emailSubject = `[Sky-line SMS - Dự Giờ] Thông báo tiết dạy từ ${currentTeacher.teacherName}`;
               const emailHtml = renderObservationSlotCreatedForTcm({
                 recipientName: m.teacherName,
                 creatorName: currentTeacher.teacherName,
@@ -1209,7 +1209,7 @@ export async function registerObservation(slotId: string) {
             sendEmail({
               from: "HỆ THỐNG DỰ GIỜ SKY-LINE",
               to: hostEmail,
-              subject: `[Skyline Dự Giờ] Thầy/Cô ${currentTeacher.teacherName} đăng ký dự giờ tiết dạy: "${slot.topic}"`,
+              subject: `[Sky-line SMS - Dự Giờ] Thầy/Cô ${currentTeacher.teacherName} đăng ký dự giờ tiết dạy: "${slot.topic}"`,
               html: emailHtml
             })
               .then(res => console.log("[registerObservation] Email sent successfully to host:", hostEmail, res?.messageId))
@@ -1241,7 +1241,7 @@ export async function registerObservation(slotId: string) {
             sendEmail({
               from: "HỆ THỐNG DỰ GIỜ SKY-LINE",
               to: observerEmail,
-              subject: `[Skyline Dự Giờ] Đăng ký dự giờ thành công tiết dạy của Thầy/Cô ${hostTeacher?.teacherName || ""}`,
+              subject: `[Sky-line SMS - Dự Giờ] Đăng ký dự giờ thành công tiết dạy của Thầy/Cô ${hostTeacher?.teacherName || ""}`,
               html: observerHtml
             })
               .then(res => console.log("[registerObservation] Confirmation email sent to observer:", observerEmail, res?.messageId))
@@ -1540,7 +1540,7 @@ export async function approveRegistration(registrationId: string) {
           await sendEmail({
             from: "BAN KHẢO THÍ & ĐBCL SKY-LINE",
             to: observerEmail,
-            subject: `[Skyline Dự Giờ] Xác nhận tham dự tiết dạy: "${hostSlot.topic}" - GV ${currentTeacher.teacherName}`,
+            subject: `[Sky-line SMS - Dự Giờ] Xác nhận tham dự tiết dạy: "${hostSlot.topic}" - GV ${currentTeacher.teacherName}`,
             html: emailHtml
           })
             .then(res => console.log("[approveRegistration] Email sent to observer:", observerEmail, res?.messageId))
@@ -1713,8 +1713,8 @@ export async function submitEvaluation(data: {
       if (hostTeacher && hostEmail && hostEmail.includes("@")) {
         const linkUrl = SKYLINE_SSM_LOGIN_URL;
         const emailSubject = isSurprise
-          ? `[Skyline Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`
-          : `[Skyline Dự Giờ] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`;
+          ? `[Sky-line SMS - Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`
+          : `[Sky-line SMS - Dự Giờ] Kết quả đánh giá tiết dạy: "${slotFull?.topic}" - Người dự: ${currentTeacher.teacherName}`;
 
         const observerDeptName = currentTeacher.departmentRel?.name || 
           currentTeacher.departmentAssignments?.map((da: any) => da.department?.name).filter(Boolean).join(", ") || 
@@ -1821,8 +1821,8 @@ export async function submitEvaluation(data: {
       if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
         const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
         const observerSubject = isSurprise
-          ? `[Skyline Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`
-          : `[Skyline Dự Giờ] Xác nhận hoàn tất đánh giá tiết dạy: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`;
+          ? `[Sky-line SMS - Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`
+          : `[Sky-line SMS - Dự Giờ] Xác nhận hoàn tất đánh giá tiết dạy: "${slotFull?.topic}" - GV dạy: ${hostTeacher?.teacherName || "Giáo viên"}`;
 
         const observerHtml = renderObservationEvaluationCompletedForObserver({
           observerName: currentTeacher.teacherName,
@@ -2369,7 +2369,7 @@ export async function requestObservationSlot(data: {
 
         // 2. Email Notification to Host Teacher
         if (hostEmail && hostEmail.includes("@")) {
-          const emailSubject = `[Skyline - Dự Giờ] Thầy/Cô ${observerTeacher.teacherName} gửi đề xuất xin dự giờ tiết dạy: "${data.topic || "Tiết học"}"`;
+          const emailSubject = `[Sky-line SMS - Dự Giờ] Thầy/Cô ${observerTeacher.teacherName} gửi đề xuất xin dự giờ tiết dạy: "${data.topic || "Tiết học"}"`;
           const emailHtml = renderObservationRequestForHost({
             hostName: hostTeacher.teacherName,
             hostCode: hostTeacher.teacherCode || undefined,
@@ -2398,7 +2398,7 @@ export async function requestObservationSlot(data: {
 
         // 3. Email Confirmation to Observer Teacher (Skipped if self-observation)
         if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
-          const observerSubject = `[Skyline - Dự Giờ] Đã gửi thành công đề xuất xin dự giờ tới Thầy/Cô ${hostTeacher.teacherName}`;
+          const observerSubject = `[Sky-line SMS - Dự Giờ] Đã gửi thành công đề xuất xin dự giờ tới Thầy/Cô ${hostTeacher.teacherName}`;
           const observerHtml = renderObservationRequestSubmittedForObserver({
             observerName: observerTeacher.teacherName,
             hostName: hostTeacher.teacherName,
@@ -2487,7 +2487,7 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
           const obsTeacher = reg.teacher;
           const obsEmail = getTeacherResolvedEmail(obsTeacher);
           if (obsEmail && obsEmail.includes("@")) {
-            const emailSubject = `[Skyline - Dự Giờ] Đề xuất dự giờ của bạn đã được Thầy/Cô ${hostTeacher?.teacherName} đồng ý`;
+            const emailSubject = `[Sky-line SMS - Dự Giờ] Đề xuất dự giờ của bạn đã được Thầy/Cô ${hostTeacher?.teacherName} đồng ý`;
             const linkUrl = SKYLINE_SSM_LOGIN_URL;
             const emailHtml = renderObservationRequestResponseForObserver({
               observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
@@ -2536,7 +2536,7 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
           const obsTeacher = reg.teacher;
           const obsEmail = getTeacherResolvedEmail(obsTeacher);
           if (obsEmail && obsEmail.includes("@")) {
-            const emailSubject = `[Skyline Dự Giờ] Phản hồi đề xuất dự giờ: "${slot.topic}" - GV: ${hostTeacher?.teacherName}`;
+            const emailSubject = `[Sky-line SMS - Dự Giờ] Phản hồi đề xuất dự giờ: "${slot.topic}" - GV: ${hostTeacher?.teacherName}`;
             const emailHtml = renderObservationRequestResponseForObserver({
               observerName: obsTeacher?.teacherName || "Quý Thầy/Cô",
               hostName: hostTeacher?.teacherName || "Giáo viên dạy",
@@ -2687,7 +2687,7 @@ export async function processExpiredSlotsNotifications() {
             ? observerTeachers.map(t => `• ${t.teacherName} (${t.teacherCode}) - ${t.email || ''}`).join("<br/>")
             : "<em style='color: #94a3b8;'>Chưa có Giáo viên nào đăng ký dự giờ tiết này.</em>";
 
-          const hostSubject = `[Skyline - Dự Giờ] Hết hạn đăng ký: Tiết dạy "${slot.topic}" - Môn ${slot.subjectName}`;
+          const hostSubject = `[Sky-line SMS - Dự Giờ] Hết hạn đăng ký: Tiết dạy "${slot.topic}" - Môn ${slot.subjectName}`;
           const hostHtml = renderObservationExpiredNotification({
             recipientName: hostTeacher.teacherName,
             isHost: true,
@@ -2712,7 +2712,7 @@ export async function processExpiredSlotsNotifications() {
       for (const observer of observerTeachers) {
         const observerEmail = getTeacherResolvedEmail(observer);
         if (observerEmail && observerEmail.includes("@")) {
-          const obsSubject = `[Skyline - Dự Giờ] Nhắc lịch dự giờ: "${slot.topic}" - GV ${hostTeacher?.teacherName || "Giáo viên"}`;
+          const obsSubject = `[Sky-line SMS - Dự Giờ] Nhắc lịch dự giờ: "${slot.topic}" - GV ${hostTeacher?.teacherName || "Giáo viên"}`;
           const obsHtml = renderObservationExpiredNotification({
             recipientName: observer.teacherName,
             isHost: false,
@@ -2813,7 +2813,7 @@ export async function sendPendingEvaluationReminder(registrationId: string) {
 
     const linkUrl = SKYLINE_SSM_LOGIN_URL;
 
-    const emailSubject = `[Skyline - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
+    const emailSubject = `[Sky-line SMS - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
     const emailHtml = renderObservationPendingEvaluationReminder({
       observerName: observer.teacherName,
       hostName: hostTeacher?.teacherName || "Giáo viên đứng lớp",
@@ -2931,7 +2931,7 @@ export async function sendBatchPendingEvaluationReminders() {
           year: "numeric"
         });
 
-        const emailSubject = `[Skyline - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
+        const emailSubject = `[Sky-line SMS - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
         const emailHtml = renderObservationPendingEvaluationReminder({
           observerName: observer.teacherName,
           hostName: hostTeacher?.teacherName || "Giáo viên đứng lớp",
@@ -3107,7 +3107,7 @@ export async function approveReEvaluation(data: {
 
       const accessUrl = SKYLINE_SSM_LOGIN_URL
 
-      const emailSubject = `[Skyline Dự Giờ] Phê duyệt mở lại phiếu đánh giá tiết dạy - ${slot.topic || "Tiết dự giờ"}`
+      const emailSubject = `[Sky-line SMS - Dự Giờ] Phê duyệt mở lại phiếu đánh giá tiết dạy - ${slot.topic || "Tiết dự giờ"}`
       const emailHtml = renderObservationReEvaluationApproved({
         teacherName: gvbm?.teacherName || "Giáo viên",
         hostName: hostTeacher?.teacherName || undefined,
@@ -3196,7 +3196,7 @@ export async function rejectReEvaluation(data: {
     const gvbmEmail = getTeacherResolvedEmail(gvbm)
 
     if (gvbmEmail && gvbmEmail.includes("@")) {
-      const emailSubject = `[Skyline Dự Giờ] Phản hồi yêu cầu mở lại phiếu đánh giá - ${slot.topic || "Tiết dự giờ"}`
+      const emailSubject = `[Sky-line SMS - Dự Giờ] Phản hồi yêu cầu mở lại phiếu đánh giá - ${slot.topic || "Tiết dự giờ"}`
       const emailHtml = renderObservationReEvaluationRejected({
         teacherName: gvbm?.teacherName || "Giáo viên",
         topic: slot.topic || "Tiết dự giờ",
@@ -3404,7 +3404,7 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
     try {
       const evaluatorEmail = getTeacherResolvedEmail(evaluator);
       if (evaluatorEmail && evaluatorEmail.includes("@")) {
-        const emailSubject = `[Skyline Dự Giờ] GV ${hostTeacher?.teacherName} đã tiếp thu góp ý & gửi phản hồi: "${slot?.topic || "Tiết dạy"}"`;
+        const emailSubject = `[Sky-line SMS - Dự Giờ] GV ${hostTeacher?.teacherName} đã tiếp thu góp ý & gửi phản hồi: "${slot?.topic || "Tiết dạy"}"`;
         const emailHtml = renderObservationTeacherAcknowledged({
           evaluatorName: evaluator?.teacherName || "Người dự giờ",
           hostName: hostTeacher?.teacherName || "Giáo viên dạy",
@@ -3763,7 +3763,7 @@ export async function createSurpriseObservation(data: {
         // 1. Email thông báo cho Giáo viên được dự (Host Teacher)
         if (hostEmail && hostEmail.includes("@")) {
           const linkUrl = SKYLINE_SSM_LOGIN_URL;
-          const emailSubject = `[Skyline Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${data.topic}" - Người dự: ${currentTeacher.teacherName}`;
+          const emailSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Kết quả đánh giá tiết dạy: "${data.topic}" - Người dự: ${currentTeacher.teacherName}`;
           const observerDeptName = currentTeacher.departmentRel?.name || 
             currentTeacher.departmentAssignments?.map((da: any) => da.department?.name).filter(Boolean).join(", ") || 
             undefined;
@@ -3847,7 +3847,7 @@ export async function createSurpriseObservation(data: {
         // 2. Email xác nhận & bản lưu cho Người dự giờ (Observer / TTCM / Ban ĐHCM)
         if (observerEmail && observerEmail.includes("@") && observerEmail !== hostEmail) {
           const observerLinkUrl = SKYLINE_SSM_LOGIN_URL;
-          const observerSubject = `[Skyline Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${data.topic}" - GV dạy: ${hostTeacher.teacherName}`;
+          const observerSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Xác nhận biên bản & đánh giá đột xuất: "${data.topic}" - GV dạy: ${hostTeacher.teacherName}`;
           const observerHtml = renderObservationEvaluationCompletedForObserver({
             observerName: currentTeacher.teacherName,
             hostName: hostTeacher.teacherName,

@@ -116,6 +116,7 @@ export interface UserWelcomeCardProps {
   userName?: string
   userInitial?: string
   academicYear?: string
+  showAcademicYear?: boolean
   greetingTitle?: string
   greetingSubtitle?: string
   motto?: string
@@ -127,8 +128,9 @@ export function UserWelcomeCard({
   userName: customUserName,
   userInitial: customInitial,
   academicYear = "2026-2027",
+  showAcademicYear = false,
   greetingTitle,
-  greetingSubtitle = "Chúc Thầy/Cô một ngày làm việc tràn đầy cảm hứng và hiệu quả cao!",
+  greetingSubtitle = "Chúc Thầy/Cô một ngày làm việc tràn đầy cảm hứng và niềm vui sư phạm!",
   motto = "Học để sống hạnh phúc ♡",
   showPasswordChange = true,
   className = ""
@@ -137,8 +139,8 @@ export function UserWelcomeCard({
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [currentDateStr, setCurrentDateStr] = useState("")
 
-  const effectiveUserName = customUserName || session?.user?.name || "KT&ĐBCL"
-  const effectiveInitial = (customInitial || effectiveUserName.charAt(0) || "K").toUpperCase()
+  const effectiveUserName = customUserName || session?.user?.name || "Thầy/Cô"
+  const effectiveInitial = (customInitial || effectiveUserName.charAt(0) || "S").toUpperCase()
   const effectiveTitle = greetingTitle || `Xin chào, ${effectiveUserName}!`
 
   const updateDateTime = useCallback(() => {
@@ -150,7 +152,7 @@ export function UserWelcomeCard({
     const year = now.getFullYear()
     const hours = String(now.getHours()).padStart(2, "0")
     const minutes = String(now.getMinutes()).padStart(2, "0")
-    setCurrentDateStr(`${dayName}, Ngày ${date} Tháng ${month}, ${year} ${hours}:${minutes}`)
+    setCurrentDateStr(`${dayName}, Ngày ${date} Tháng ${month}, ${year} • ${hours}:${minutes}`)
   }, [])
 
   useEffect(() => {
@@ -162,10 +164,10 @@ export function UserWelcomeCard({
   return (
     <>
       <div
-        className={`bg-gradient-to-r from-sky-100/90 via-sky-50 to-blue-100/70 border border-sky-200/80 rounded-3xl p-4 sm:p-6 md:p-7 shadow-xs relative overflow-hidden ${className}`}
+        className={`bg-gradient-to-r from-sky-50/80 via-white to-sky-50/60 border border-sky-100/90 rounded-2xl p-5 sm:p-6 shadow-2xs relative overflow-hidden ${className}`}
       >
         {/* Vector minh họa trường học Sky-Line & học sinh */}
-        <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-2/5 md:w-1/3 opacity-35 sm:opacity-75 pointer-events-none">
+        <div className="absolute right-0 top-0 bottom-0 w-1/2 sm:w-2/5 md:w-1/3 opacity-30 sm:opacity-50 pointer-events-none">
           <SchoolCampusArtwork />
         </div>
 
@@ -173,7 +175,7 @@ export function UserWelcomeCard({
         {motto && (
           <div className="hidden sm:block absolute top-4 right-6 z-10">
             <span
-              className="text-base md:text-lg font-bold text-[#0284C7] italic tracking-wide"
+              className="text-sm md:text-base text-sky-600/80 italic tracking-wide select-none"
               style={{ fontFamily: "'Dancing Script', 'Caveat', 'Segoe Script', cursive" }}
             >
               {motto}
@@ -184,26 +186,26 @@ export function UserWelcomeCard({
         {/* Nội dung chính bên trái */}
         <div className="relative z-10 max-w-2xl">
           {/* Avatar & Lời chào */}
-          <div className="flex items-start sm:items-center gap-3.5 mb-3">
+          <div className="flex items-start sm:items-center gap-3.5 mb-2.5">
             <div className="relative shrink-0">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#0284C7] to-[#38BDF8] text-white flex items-center justify-center font-black text-xl shadow-md border-2 border-white">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-tr from-sky-500 to-sky-400 text-white flex items-center justify-center font-medium text-base sm:text-lg shadow-2xs border border-white">
                 {effectiveInitial}
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                <h1 className="text-lg sm:text-xl font-medium text-slate-800 tracking-normal leading-snug">
                   {effectiveTitle}
                 </h1>
                 {motto && (
-                  <span className="sm:hidden text-xs font-bold text-[#0284C7] italic">
+                  <span className="sm:hidden text-xs text-sky-600/80 italic">
                     • {motto}
                   </span>
                 )}
               </div>
               {greetingSubtitle && (
-                <p className="text-xs sm:text-sm font-medium text-slate-600 mt-1">
+                <p className="text-xs sm:text-sm font-normal text-slate-500 mt-0.5 leading-relaxed">
                   {greetingSubtitle}
                 </p>
               )}
@@ -211,17 +213,17 @@ export function UserWelcomeCard({
           </div>
 
           {/* Badges & Nút thao tác nhanh */}
-          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap mt-4 pt-3 border-t border-sky-200/50">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap mt-3.5 pt-2.5 border-t border-slate-100">
             {/* Pill Ngày Giờ */}
-            <div className="bg-white/90 backdrop-blur-xs border border-sky-200/80 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-700 shadow-2xs">
-              <CalendarDays className="w-3.5 h-3.5 text-[#0284C7]" />
-              <span className="capitalize">{currentDateStr || "Đang tải thời gian..."}</span>
+            <div className="bg-white border border-slate-200/70 rounded-full px-3 py-1 flex items-center gap-1.5 text-xs font-normal text-slate-600 shadow-2xs">
+              <CalendarDays className="w-3.5 h-3.5 text-sky-500" />
+              <span className="capitalize">{currentDateStr || "Đang cập nhật..."}</span>
             </div>
 
-            {/* Pill Năm Học */}
-            {academicYear && (
-              <div className="bg-white/90 backdrop-blur-xs border border-sky-200/80 rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-700 shadow-2xs">
-                <GraduationCap className="w-3.5 h-3.5 text-[#007A72]" />
+            {/* Pill Năm Học (chỉ hiện khi được yêu cầu, mặc định ẩn vì đã có ở header) */}
+            {showAcademicYear && academicYear && (
+              <div className="bg-white border border-slate-200/70 rounded-full px-3 py-1 flex items-center gap-1.5 text-xs font-normal text-slate-600 shadow-2xs">
+                <GraduationCap className="w-3.5 h-3.5 text-teal-600" />
                 <span>Năm học: {academicYear}</span>
               </div>
             )}
@@ -231,9 +233,9 @@ export function UserWelcomeCard({
               <button
                 type="button"
                 onClick={() => setIsPasswordModalOpen(true)}
-                className="bg-white/90 hover:bg-white border border-sky-200/80 hover:border-[#0284C7] rounded-full px-3 py-1.5 flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-[#0284C7] shadow-2xs transition-all cursor-pointer group"
+                className="bg-white hover:bg-slate-50 border border-slate-200/70 hover:border-sky-300 rounded-full px-3 py-1 flex items-center gap-1.5 text-xs font-medium text-sky-700 shadow-2xs transition-all cursor-pointer group"
               >
-                <KeyRound className="w-3.5 h-3.5 text-[#0284C7] group-hover:rotate-12 transition-transform" />
+                <KeyRound className="w-3.5 h-3.5 text-sky-500 group-hover:rotate-12 transition-transform" />
                 <span>Đổi mật khẩu</span>
                 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
               </button>

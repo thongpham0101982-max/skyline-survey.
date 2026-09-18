@@ -43,7 +43,7 @@ export interface SkylineEmailOptions {
 const THEMES = {
   teal: {
     bg: "#008B82",
-    gradientStart: "#004D47",
+    gradientStart: "#003B3A",
     gradientEnd: "#008B82",
     accent: "#008B82",
     badgeBg: "rgba(255, 255, 255, 0.18)",
@@ -89,6 +89,27 @@ const THEMES = {
 };
 
 /**
+ * Helper to safely convert simple markdown to HTML (for custom user messages in emails)
+ */
+export function formatMarkdownToHtml(markdown?: string): string {
+  if (!markdown) return "";
+  let html = markdown
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // Bold **text** or __text__
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong style="color: #003B3A; font-weight: 800;">$1</strong>');
+  html = html.replace(/__(.*?)__/g, '<strong style="color: #003B3A; font-weight: 800;">$1</strong>');
+  // Italic *text* or _text_
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+  // Newlines
+  html = html.replace(/\r\n/g, "<br/>").replace(/\n/g, "<br/>");
+  return html;
+}
+
+/**
  * Base Sky-Line Email Layout
  * Renders bulletproof HTML with Outlook fallback support and modern responsive styling.
  */
@@ -96,7 +117,7 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
   const {
     headerBadge,
     headerTitle,
-    headerSubtitle = "Hệ thống Quản lý Dự giờ Chuyên môn Skyline",
+    headerSubtitle = "Hệ thống Quản trị Giáo dục Sky-line SMS",
     headerTheme = "teal",
     recipientName,
     greetingPrefix = "Kính gửi Thầy/Cô",
@@ -277,12 +298,12 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
           <!-- Card Footer -->
           <tr>
             <td bgcolor="#F8FAFC" style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 20px 24px; text-align: center; font-size: 11px; color: #64748B; line-height: 1.6;">
-              <div style="font-weight: 800; color: #004D47; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+              <div style="font-weight: 800; color: #003B3A; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
                 BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC SKY-LINE
               </div>
-              <div>Hệ thống Quản lý Hoạt động & Dự giờ Chuyên môn Skyline</div>
+              <div style="color: #475569; font-weight: 600;">Hệ thống Quản trị Giáo dục Sky-line SMS</div>
               <div style="margin-top: 6px; color: #94A3B8;">
-                Email thông báo tự động từ Ban Khảo thí & ĐBCL Sky-Line (<a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #008B82; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a>)
+                Email thông báo tự động từ Hệ thống Sky-line SMS (<a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #008B82; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a>)
               </div>
               <div style="margin-top: 6px; font-size: 10px; color: #CBD5E1;">
                 © ${currentYear} Sky-Line Education System. All rights reserved.
@@ -301,13 +322,80 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
 }
 
 // =========================================================================
-// PRESET TEMPLATES FOR DỰ GIỜ
+// PRESET TEMPLATES FOR GRADE ENTRY & MONITORING (KHẢO THÍ & ĐBCL)
 // =========================================================================
 
-/**
- * 1. Email confirmation for Observer (Biên nhận gửi đề xuất xin dự giờ) - The one from user's screenshot!
- */
 export const SKYLINE_SSM_LOGIN_URL = "https://ssm.skylineschool.edu.vn/login";
+export const SKYLINE_SSM_GRADE_URL = "https://ssm.skylineschool.edu.vn/teacher/so-diem-nhan-xet";
+
+export interface GradeReminderEmailParams {
+  teacherName: string;
+  subjectName: string;
+  className: string;
+  evaluationPeriod: string;
+  sentTime?: string;
+  customMessage?: string;
+  directLink?: string;
+}
+
+/**
+ * Standard Sky-Line Grade Entry Reminder Email (Nhắc nhở vào Sổ điểm & Nhận xét)
+ * Matches authentic Sky-Line brand palette (Teal #008B82, Deep Navy #003B3A),
+ * with Outlook-compatible button, responsive layout, and markdown parsing.
+ */
+export function renderGradeReminderEmail(params: GradeReminderEmailParams): string {
+  const {
+    teacherName,
+    subjectName,
+    className,
+    evaluationPeriod,
+    sentTime,
+    customMessage,
+    directLink
+  } = params;
+
+  const appUrl = process.env.NEXTAUTH_URL || "https://ssm.skylineschool.edu.vn";
+  const targetLink = directLink || `${appUrl}/teacher/so-diem-nhan-xet`;
+  const currentTime = sentTime || new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+
+  const formattedCustomMessage = customMessage ? formatMarkdownToHtml(customMessage) : "";
+
+  return renderSkylineEmail({
+    headerBadge: "📋 SỔ ĐIỂM & ĐÁNH GIÁ",
+    headerTitle: "NHẮC NHỞ HOÀN THÀNH NHẬP ĐIỂM & NHẬN XÉT",
+    headerSubtitle: `Hệ thống Quản trị Giáo dục Sky-line SMS • Kỳ ${evaluationPeriod}`,
+    headerTheme: "teal",
+    recipientName: teacherName,
+    greetingPrefix: "Kính gửi Thầy/Cô",
+    introMessage: `Bộ phận Khảo thí & Đảm bảo Chất lượng Giáo dục ghi nhận tiến độ vào <strong>Sổ điểm và Nhận xét</strong> chuyên môn cho lớp phân công của Thầy/Cô hiện chưa hoàn tất:`,
+    detailsTitle: "THÔNG TIN PHÂN CÔNG GIẢNG DẠY",
+    details: [
+      { icon: "📚", label: "Môn học", value: subjectName, highlight: true },
+      { icon: "🏫", label: "Lớp giảng dạy", value: className, highlight: true },
+      { icon: "⏱️", label: "Kỳ khảo sát / đánh giá", value: evaluationPeriod, color: "#008B82", highlight: true },
+      { icon: "⏰", label: "Thời gian gửi thông báo", value: currentTime, color: "#475569" }
+    ],
+    noticeBox: formattedCustomMessage ? {
+      type: "warning",
+      title: "Lời nhắn & Yêu cầu từ Ban Khảo thí",
+      content: formattedCustomMessage
+    } : {
+      type: "info",
+      title: "Yêu cầu thực hiện",
+      content: `Kính đề nghị Thầy/Cô đăng nhập hệ thống <strong>Sky-line SMS</strong> để kiểm tra và hoàn thành việc nhập điểm, nhận xét định kỳ cho môn <strong>${subjectName}</strong> - Lớp <strong>${className}</strong>.`
+    },
+    button: {
+      text: "👉 TRUY CẬP CỔNG NHẬP ĐIỂM GIÁO VIÊN",
+      url: targetLink,
+      color: "#008B82"
+    },
+    secondaryNote: "Lưu ý quan trọng: Sau thời hạn quy định, Hệ thống Sky-line SMS sẽ tự động thực hiện Khóa sổ điểm để phục vụ công tác tổng hợp số liệu, thống kê & phân tích chất lượng của Ban Khảo thí & ĐBCL."
+  });
+}
+
+// =========================================================================
+// PRESET TEMPLATES FOR DỰ GIỜ
+// =========================================================================
 
 export function renderObservationRequestSubmittedForObserver(params: {
   observerName: string;

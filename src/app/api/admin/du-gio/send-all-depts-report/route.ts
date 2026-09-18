@@ -211,7 +211,7 @@ export async function POST(req: Request) {
     const baseUrl = `${protocol}://${host}`;
     const reportLink = `${baseUrl}/admin/tong-hop-du-gio`;
 
-    const emailSubject = `[Skyline School] Báo cáo Thống kê Tiến độ Các Tổ Chuyên Môn - Ban ĐHCM (${monthLabel})`;
+    const emailSubject = `[Sky-line SMS] Báo cáo Thống kê Tiến độ Các Tổ Chuyên Môn - Ban ĐHCM (${monthLabel})`;
 
     // 6. Generate HTML
     const deptRowsHtml = deptSummaries.map((dept, idx) => {

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const result = await sendEmail({
     from: "BAN KHẢO THÍ & ĐBCL SKY-LINE",
     to: toEmail,
-    subject: "[Skyline Test] Thử nghiệm gửi thư từ Ban Khảo thí lúc " + new Date().toISOString(),
+    subject: "[Sky-line SMS - Test] Thử nghiệm gửi thư từ Ban Khảo thí lúc " + new Date().toISOString(),
     html: `
       <div style="font-family: Arial, sans-serif; padding: 24px; border: 2px solid #008B82; border-radius: 12px; background: #ffffff;">
         <h2 style="color: #008B82; margin-top: 0;">🎉 THỬ NGHIỆM GỬI EMAIL THÀNH CÔNG!</h2>

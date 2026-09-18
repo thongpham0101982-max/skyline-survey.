@@ -370,7 +370,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
     for (const email of recipientEmails) {
       await sendEmail({
         to: email,
-        subject: `[Sky-Line] Thông báo phân công khảo sát - Đợt ${batchCode}`,
+        subject: `[Sky-line SMS] Thông báo phân công khảo sát - Đợt ${batchCode}`,
         html: emailHtml,
         replyTo: "bankhaothi@skylineschool.edu.vn"
       });

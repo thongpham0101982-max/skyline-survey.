@@ -488,7 +488,7 @@ export async function POST(req) {
       try {
         await sendEmail({
           to: gdcsEmail,
-          subject: `[Sky-Line-Approval] Yêu cầu duyệt kết quả khảo sát đầu vào - Học sinh ${student.fullName} (${campusName})`,
+          subject: `[Sky-line SMS - Xét Duyệt] Yêu cầu duyệt kết quả khảo sát đầu vào - Học sinh ${student.fullName} (${campusName})`,
           html: emailHtml,
           replyTo: "bankhaothi@skylineschool.edu.vn"
         });

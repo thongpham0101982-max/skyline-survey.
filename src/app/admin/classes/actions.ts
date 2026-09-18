@@ -43,6 +43,16 @@ export async function deleteClasses(ids: string[]) {
   const session = await getAdminSession();
   if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
   try {
+    const studentCount = await prisma.student.count({
+      where: { classId: { in: ids } }
+    });
+    if (studentCount > 0) {
+      return { 
+        success: false, 
+        error: `Không thể xóa: Có ${studentCount} học sinh đang thuộc các lớp được chọn. Vui lòng chuyển học sinh sang lớp khác trước khi xóa.` 
+      };
+    }
+
     await prisma.class.deleteMany({
       where: { id: { in: ids } }
     })

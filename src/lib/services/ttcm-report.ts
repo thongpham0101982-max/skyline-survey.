@@ -349,7 +349,7 @@ export async function sendReportForDepartment(
     const baseUrl = options.baseUrl || process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
     const reportLink = `${baseUrl}/admin/tong-hop-du-gio?deptId=${departmentId}`;
 
-    const emailSubject = `[Skyline School] Báo cáo Tiết dạy & Dự giờ - ${deptDisplayName} (${monthLabel})`;
+    const emailSubject = `[Sky-line SMS] Báo cáo Tiết dạy & Dự giờ - ${deptDisplayName} (${monthLabel})`;
 
     // Generate HTML
     const teacherRowsHtml = deptTeachers

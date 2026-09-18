@@ -166,17 +166,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+    font-weight: 500;
     color: #ffffff;
-    background-color: #48BFE3;
+    background-color: #0284C7;
     transition: all 0.2s ease;
     border-radius: 12px;
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
   .btn-skyline-primary:hover {
-    background-color: #38A8CB;
+    background-color: #0369A1;
   }
   .btn-skyline-primary:active {
     transform: scale(0.98);
@@ -186,17 +186,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+    font-weight: 500;
     color: #ffffff;
-    background-color: #003B3A;
+    background-color: #0F2942;
     transition: all 0.2s ease;
     border-radius: 12px;
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
   .btn-skyline-dark:hover {
-    background-color: #002B2A;
+    background-color: #0A1D30;
   }
   .btn-skyline-dark:active {
     transform: scale(0.98);
@@ -206,14 +206,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+    font-weight: 500;
     color: #ffffff;
     background-color: #D97706;
     transition: all 0.2s ease;
     border-radius: 12px;
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
   .btn-skyline-accent:hover {
     background-color: #B45309;
@@ -226,7 +226,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
+    font-weight: 500;
     color: #334155;
     background-color: #ffffff;
     border: 1px solid #E2E8F0;
@@ -240,14 +240,23 @@
     color: #0F172A;
   }
 
-  /* Card chuẩn Quản trị */
+  /* Card chuẩn Quản trị & Bảng */
   .admin-card {
     background-color: #ffffff;
-    border: 1px solid #E2E8F0;
+    border: 1px solid rgba(226, 232, 240, 0.7);
     border-radius: 16px;
     padding: 1.25rem;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
-    transition: box-shadow 0.2s ease;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+    transition: all 0.2s ease;
+  }
+
+  /* Khung tiêu đề bảng dữ liệu chuẩn hóa */
+  .table-title-frame {
+    background-color: rgba(248, 250, 252, 0.85);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+    padding: 0.875rem 1.25rem;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
   }
   .admin-card:hover {
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);

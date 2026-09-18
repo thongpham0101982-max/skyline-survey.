@@ -60,9 +60,47 @@ export async function POST(request: Request) {
     const weightsStr = weights ? (typeof weights === "string" ? weights : JSON.stringify(weights)) : null
     // Batch assignment mode
     if (batchSubjectIds && Array.isArray(batchSubjectIds) && batchSubjectIds.length > 0) {
+      const { keepExistingTemplates = false } = body
       const results = []
       for (const subId of batchSubjectIds) {
         const targetSubId = subId && subId !== "ALL" ? subId : null
+
+        let colCount = Number(columnCount)
+        let colNames = columnNamesStr
+        let colTypes = columnTypesStr
+        let colMaxScores = columnMaxScoresStr
+        let hasComp = Boolean(hasCompositeColumn)
+        let compColName = compositeColumnName || "Điểm thành phần"
+        let hasRem = Boolean(hasRemarkColumn)
+        let form = formula
+        let formCust = formulaCustom || null
+        let wt = weightsStr
+        let round = roundingRule || "ROUND_1"
+
+        if (keepExistingTemplates && targetSubId) {
+          const refConfig = await prisma.subjectGradeConfig.findFirst({
+            where: {
+              academicYearId,
+              grade,
+              subjectId: targetSubId,
+              evaluationPeriod: "ALL"
+            }
+          })
+          if (refConfig) {
+            colCount = refConfig.columnCount
+            colNames = refConfig.columnNames
+            colTypes = refConfig.columnTypes
+            colMaxScores = refConfig.columnMaxScores
+            hasComp = refConfig.hasCompositeColumn
+            compColName = refConfig.compositeColumnName || "Điểm thành phần"
+            hasRem = refConfig.hasRemarkColumn
+            form = refConfig.formula || "AVERAGE"
+            formCust = refConfig.formulaCustom
+            wt = refConfig.weights
+            round = refConfig.roundingRule || "ROUND_1"
+          }
+        }
+
         const existing = await prisma.subjectGradeConfig.findFirst({
           where: {
             academicYearId,
@@ -76,17 +114,17 @@ export async function POST(request: Request) {
           const updated = await prisma.subjectGradeConfig.update({
             where: { id: existing.id },
             data: {
-              columnCount: Number(columnCount),
-              columnNames: columnNamesStr,
-              columnTypes: columnTypesStr,
-              columnMaxScores: columnMaxScoresStr,
-              hasCompositeColumn: Boolean(hasCompositeColumn),
-              compositeColumnName: compositeColumnName || "Điểm thành phần",
-              hasRemarkColumn: Boolean(hasRemarkColumn),
-              formula,
-              formulaCustom: formulaCustom || null,
-              weights: weightsStr,
-              roundingRule: roundingRule || "ROUND_1"
+              columnCount: colCount,
+              columnNames: colNames,
+              columnTypes: colTypes,
+              columnMaxScores: colMaxScores,
+              hasCompositeColumn: hasComp,
+              compositeColumnName: compColName,
+              hasRemarkColumn: hasRem,
+              formula: form,
+              formulaCustom: formCust,
+              weights: wt,
+              roundingRule: round
             }
           })
           results.push(updated)
@@ -97,17 +135,17 @@ export async function POST(request: Request) {
               grade,
               subjectId: targetSubId,
               evaluationPeriod,
-              columnCount: Number(columnCount),
-              columnNames: columnNamesStr,
-              columnTypes: columnTypesStr,
-              columnMaxScores: columnMaxScoresStr,
-              hasCompositeColumn: Boolean(hasCompositeColumn),
-              compositeColumnName: compositeColumnName || "Điểm thành phần",
-              hasRemarkColumn: Boolean(hasRemarkColumn),
-              formula,
-              formulaCustom: formulaCustom || null,
-              weights: weightsStr,
-              roundingRule: roundingRule || "ROUND_1"
+              columnCount: colCount,
+              columnNames: colNames,
+              columnTypes: colTypes,
+              columnMaxScores: colMaxScores,
+              hasCompositeColumn: hasComp,
+              compositeColumnName: compColName,
+              hasRemarkColumn: hasRem,
+              formula: form,
+              formulaCustom: formCust,
+              weights: wt,
+              roundingRule: round
             }
           })
           results.push(created)

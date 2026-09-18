@@ -53,7 +53,7 @@ export function PageHeader({
                       {crumb.label}
                     </Link>
                   ) : (
-                    <span className={`truncate max-w-[200px] sm:max-w-none ${isLast ? "font-bold text-slate-800" : "text-slate-500"}`}>
+                    <span className={`truncate max-w-[200px] sm:max-w-none ${isLast ? "font-medium text-slate-700" : "font-normal text-slate-400"}`}>
                       {crumb.label}
                     </span>
                   )}
@@ -65,7 +65,7 @@ export function PageHeader({
 
         {/* Title and Badges */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+          <h1 className="text-xl sm:text-2xl font-medium text-slate-800 tracking-normal leading-snug">
             {title}
           </h1>
           {badge}
@@ -73,7 +73,7 @@ export function PageHeader({
 
         {/* Description */}
         {description && (
-          <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm font-normal text-slate-500 mt-1 leading-relaxed">
             {description}
           </p>
         )}

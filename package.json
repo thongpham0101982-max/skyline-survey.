@@ -7,6 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
     "deploy": "git add . && git commit -m \"Auto sync to Vercel\" && git push origin main"
   },
   "dependencies": {
@@ -51,7 +52,9 @@
     "prisma": "^5.20.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
   },
   "prisma": {
     "seed": "node --import tsx/esm prisma/seed.ts"

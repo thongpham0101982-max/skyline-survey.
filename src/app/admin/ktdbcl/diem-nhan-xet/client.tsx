@@ -24,7 +24,7 @@ const INTL_OPTIONS = [
   { code: "U", label: "U - Unsatisfactory (Chưa đạt)" }
 ]
 
-import { Lock, Unlock, useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import * as XLSX from "xlsx"
 import { 
   FileSpreadsheet, 
@@ -57,7 +57,9 @@ import {
   Filter,
   X,
   CheckSquare,
-  Square
+  Square,
+  Lock,
+  Unlock
 } from "lucide-react"
 import { GradeAnalyticsTab } from "./analytics-tab"
 import { GradeProgressTab } from "./progress-tab"
@@ -135,7 +137,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   const [batchGrade, setBatchGrade] = useState("Khối 12")
   const [batchSelectedSubjectIds, setBatchSelectedSubjectIds] = useState<string[]>([])
   const [batchSaving, setBatchSaving] = useState(false)
-  const [batchTemplateType, setBatchTemplateType] = useState<"CURRENT" | "2_COL_TEST" | "3_COL_STANDARD">("CURRENT")
+  const [batchTemplateType, setBatchTemplateType] = useState<"KEEP_EXISTING" | "CURRENT" | "2_COL_TEST" | "3_COL_STANDARD">("KEEP_EXISTING")
 
   // --- TAB 1: SAVED CONFIGS FILTER STATES ---
   const [listFilterPeriod, setListFilterPeriod] = useState("ALL")
@@ -331,6 +333,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           grade: batchGrade,
           evaluationPeriod: batchPeriod,
           batchSubjectIds: batchSelectedSubjectIds,
+          keepExistingTemplates: batchTemplateType === "KEEP_EXISTING",
           ...payloadColumns
         })
       })
@@ -2777,7 +2780,27 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                   <Sliders className="w-3.5 h-3.5 text-teal-600" />
                   4. Áp dụng Mẫu Cột điểm & Công thức cho các môn được chọn:
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 pt-1 text-xs">
+                  <label
+                    onClick={() => setBatchTemplateType("KEEP_EXISTING")}
+                    className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
+                      batchTemplateType === "KEEP_EXISTING"
+                        ? "bg-teal-50 border-teal-500 text-teal-950 ring-2 ring-teal-400/40 shadow-sm"
+                        : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
+                    }`}
+                  >
+                    <div className="font-bold flex items-center gap-1.5 text-teal-800">
+                      <input type="radio" checked={batchTemplateType === "KEEP_EXISTING"} onChange={() => {}} className="pointer-events-none" />
+                      Kế thừa mẫu từng môn
+                    </div>
+                    <div className="text-[10.5px] text-teal-700 font-semibold mt-0.5">
+                      (Khuyên dùng)
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      Giữ nguyên cấu hình riêng (Toán, Văn, Anh, ESL...). Môn mới áp mẫu form.
+                    </div>
+                  </label>
+
                   <label
                     onClick={() => setBatchTemplateType("CURRENT")}
                     className={`p-2.5 rounded-lg border cursor-pointer transition-all ${

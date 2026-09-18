@@ -316,7 +316,7 @@ export async function POST(req) {
           try {
              const mailRes = await sendEmail({
                 to: targetEmail,
-                subject: `[Sky-Line] Thông báo Phân công Khảo sát Năng lực Học sinh Phổ thông`,
+                subject: `[Sky-line SMS] Thông báo Phân công Khảo sát Năng lực Học sinh Phổ thông`,
                 html: emailHtml,
                 replyTo: "bankhaothi@skylineschool.edu.vn"
              });

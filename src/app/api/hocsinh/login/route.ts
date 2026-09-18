@@ -9,13 +9,14 @@ export async function POST(req: NextRequest) {
   try {
     const { studentCode, password } = await req.json()
     const code = String(studentCode || '').trim()
-    const rawPassword = String(password || '').trim()
+    let rawPassword = String(password || '').trim()
     
     if (!code) {
       return NextResponse.json({ error: 'Vui lòng nhập Mã học sinh.' }, { status: 400 })
     }
+    // Nếu không nhập mật khẩu, tự động dùng chính mã học sinh làm mật khẩu
     if (!rawPassword) {
-      return NextResponse.json({ error: 'Vui lòng nhập Mật khẩu.' }, { status: 400 })
+      rawPassword = code
     }
 
     const defaultYear = await getDefaultAcademicYear(prisma).catch(() => null);
@@ -107,7 +108,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (!isValidPassword) {
-      if (rawPassword === "123456" || rawPassword === "skyline@123" || rawPassword === code) {
+      if (
+        rawPassword === "123456" || 
+        rawPassword === "skyline@123" || 
+        rawPassword === code || 
+        rawPassword.toLowerCase() === code.toLowerCase() ||
+        (student.studentCode && rawPassword.toLowerCase() === student.studentCode.toLowerCase())
+      ) {
         isValidPassword = true;
       }
     }
