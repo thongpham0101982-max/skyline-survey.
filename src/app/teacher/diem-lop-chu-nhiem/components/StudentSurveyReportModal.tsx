@@ -43,7 +43,7 @@ export function StudentSurveyReportModal({
   const [selectedStudentId, setSelectedStudentId] = useState<string>(
     initialStudentId || (students && students[0]?.studentId) || ""
   )
-  const [printMode, setPrintMode] = useState<"single" | "all">("single")
+  const [isPrinting, setIsPrinting] = useState<boolean>(false)
 
   // Update selected student when initialStudentId changes
   useMemo(() => {
@@ -96,19 +96,518 @@ export function StudentSurveyReportModal({
     }
   }
 
-  // Print trigger with clean PDF document title
+  // Generate clean, self-contained HTML for an individual student scorecard
+  const generateStudentHtml = (student: any) => {
+    const dob = student.dateOfBirth
+      ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN")
+      : "-"
+
+    const rowsHtml = subjects
+      .map((sub: any, idx: number) => {
+        const info = student.subjectGrades?.[sub.id]
+        const score = info?.score !== null && info?.score !== undefined ? Number(info.score) : null
+        
+        let scoreBadgeHtml = '<span class="score-empty">-</span>'
+        if (score !== null && !isNaN(score)) {
+          let scoreClass = "score-weak"
+          if (score >= 8.0) scoreClass = "score-good"
+          else if (score >= 6.5) scoreClass = "score-fair"
+          else if (score >= 5.0) scoreClass = "score-avg"
+          scoreBadgeHtml = `<span class="score-badge ${scoreClass}">${score.toFixed(1)}</span>`
+        }
+
+        const subCode = sub.code ? `<span class="subj-code">(${sub.code})</span>` : ""
+
+        return `
+          <tr>
+            <td class="stt">${idx + 1}</td>
+            <td class="subj-name">${sub.name} ${subCode}</td>
+            <td class="score">${scoreBadgeHtml}</td>
+          </tr>
+        `
+      })
+      .join("")
+
+    return `
+      <div class="page-card">
+        <!-- School Header -->
+        <div class="header-row">
+          <div class="school-brand">
+            <div class="school-logo">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+              </svg>
+            </div>
+            <div>
+              <div class="school-title">${schoolTitle}</div>
+            </div>
+          </div>
+          <div class="system-info">
+            <div class="system-title">HỆ THỐNG GIÁO DỤC SKY-LINE</div>
+            <div class="system-slogan">Nơi Khởi nguồn hạnh phúc</div>
+            <div class="class-badge">Mã lớp: <b>${currentClass?.className || ""}</b></div>
+          </div>
+        </div>
+
+        <!-- Report Main Title -->
+        <div class="report-heading">
+          <h1 class="report-title">${reportMainTitle}</h1>
+          <div class="year-badge">📅 ${reportYearTitle}</div>
+        </div>
+
+        <!-- Student Info Box (2 columns) -->
+        <div class="info-box">
+          <div class="info-row">
+            <span class="info-label">Họ và tên học sinh:</span>
+            <span class="info-val-highlight">${student.studentName}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Lớp:</span>
+            <span class="info-val">${currentClass?.className || ""}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Mã số học sinh:</span>
+            <span class="info-val">${student.studentCode || "-"}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Giáo viên chủ nhiệm (GVCN):</span>
+            <span class="info-val">${teacherName}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Ngày sinh:</span>
+            <span class="info-val">${dob}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Kỳ khảo sát:</span>
+            <span class="info-val-blue">${cleanPeriodLabel}</span>
+          </div>
+        </div>
+
+        <!-- Section Bar -->
+        <div class="section-bar">
+          <div class="section-title">CHI TIẾT KẾT QUẢ KHẢO SÁT</div>
+          <div class="section-count">${subjects.length} môn học</div>
+        </div>
+
+        <!-- 3-Column Table -->
+        <table>
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 42px;">STT</th>
+              <th>Môn học</th>
+              <th class="text-center" style="width: 85px;">Điểm KS</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+        </table>
+
+        <!-- GVCN Remarks -->
+        <div class="remarks-box">
+          <div class="remarks-header">Ý kiến & Nhận xét của Giáo viên Chủ nhiệm (GVCN):</div>
+          <div class="remarks-content">
+            Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh <b>${student.studentName}</b>. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.
+          </div>
+        </div>
+
+        <!-- Signatures (3 columns) -->
+        <div class="signature-section">
+          <div class="signature-date">Đà Nẵng, ngày ...... tháng ...... năm 20......</div>
+          <div class="signature-grid">
+            <div>
+              <div class="sig-title">Phụ Huynh Học Sinh</div>
+              <div class="sig-sub">(Ký và ghi rõ họ tên)</div>
+              <div class="sig-space"></div>
+            </div>
+            <div>
+              <div class="sig-title">Giáo Viên Chủ Nhiệm</div>
+              <div class="sig-sub">(Ký và ghi rõ họ tên)</div>
+              <div class="sig-space">
+                <span class="sig-name">${teacherName}</span>
+              </div>
+            </div>
+            <div>
+              <div class="sig-title">Ban Giám Hiệu</div>
+              <div class="sig-sub">(Ký và đóng dấu)</div>
+              <div class="sig-space"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  }
+
+  // Pure Isolated Iframe Print: Guaranteed 100% no screen capture, exactly 1 A4 portrait page
   const handlePrint = (mode: "single" | "all") => {
-    setPrintMode(mode)
-    const originalTitle = document.title
-    document.title = mode === "all"
+    setIsPrinting(true)
+    const listToPrint = mode === "all" ? students : [currentStudent]
+    const docTitle = mode === "all"
       ? `Bao_Cao_Khao_Sat_${currentClass?.className || "Lop"}_${selectedPeriod}`
       : `Phieu_Diem_${currentStudent?.studentName?.replace(/\s+/g, "_")}_${currentClass?.className}_${selectedPeriod}`
+
+    const bodyHtml = listToPrint.map((st) => generateStudentHtml(st)).join("")
+
+    // Remove old print iframe if present
+    const oldIframe = document.getElementById("student-report-print-iframe")
+    if (oldIframe) {
+      oldIframe.remove()
+    }
+
+    const iframe = document.createElement("iframe")
+    iframe.id = "student-report-print-iframe"
+    iframe.style.position = "fixed"
+    iframe.style.top = "0"
+    iframe.style.left = "0"
+    iframe.style.width = "1px"
+    iframe.style.height = "1px"
+    iframe.style.opacity = "0.01"
+    iframe.style.border = "none"
+    iframe.style.zIndex = "-9999"
+    document.body.appendChild(iframe)
+
+    const iframeDoc = iframe.contentWindow?.document
+    if (!iframeDoc) {
+      setIsPrinting(false)
+      return
+    }
+
+    iframeDoc.open()
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html lang="vi">
+      <head>
+        <meta charset="utf-8">
+        <title>${docTitle}</title>
+        <style>
+          @page {
+            size: A4 portrait;
+            margin: 6mm 10mm 6mm 10mm;
+          }
+          * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: #0f172a;
+            font-size: 11px;
+            line-height: 1.35;
+          }
+          .page-card {
+            width: 100%;
+            max-width: 190mm;
+            margin: 0 auto;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            background: #ffffff;
+            padding: 2mm 0;
+            box-sizing: border-box;
+          }
+          .page-card:last-child {
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+          .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #008c82;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+          }
+          .school-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+          .school-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #005B58;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+          }
+          .school-title {
+            font-size: 12px;
+            font-weight: 900;
+            color: #005B58;
+            text-transform: uppercase;
+            letter-spacing: -0.2px;
+            line-height: 1.2;
+          }
+          .system-info {
+            text-align: right;
+          }
+          .system-title {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #1e293b;
+            letter-spacing: 0.5px;
+          }
+          .system-slogan {
+            font-size: 9px;
+            font-weight: 700;
+            color: #008c82;
+            font-style: italic;
+          }
+          .class-badge {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 1px;
+          }
+          .class-badge b {
+            color: #0f172a;
+          }
+          .report-heading {
+            text-align: center;
+            margin-bottom: 8px;
+          }
+          .report-title {
+            font-size: 15px;
+            font-weight: 900;
+            color: #003B3A;
+            text-transform: uppercase;
+            letter-spacing: -0.2px;
+            margin: 0 0 3px 0;
+          }
+          .year-badge {
+            display: inline-block;
+            background: #f0fdfa;
+            border: 1px solid #99f6e4;
+            color: #008c82;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 1.5px 8px;
+            border-radius: 9999px;
+          }
+          .info-box {
+            background: #f8fafc;
+            border: 1px solid #ccfbf1;
+            border-radius: 8px;
+            padding: 5px 10px;
+            margin-bottom: 8px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3px 16px;
+          }
+          .info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 2px;
+            font-size: 10px;
+          }
+          .info-row:nth-last-child(-n+2) {
+            border-bottom: none;
+            padding-bottom: 0;
+          }
+          .info-label {
+            color: #475569;
+            font-weight: 600;
+          }
+          .info-val {
+            font-weight: 800;
+            color: #0f172a;
+          }
+          .info-val-highlight {
+            font-weight: 900;
+            color: #003B3A;
+          }
+          .info-val-blue {
+            font-weight: 900;
+            color: #0284c7;
+            text-transform: uppercase;
+          }
+          .section-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 5px;
+          }
+          .section-title {
+            font-size: 10.5px;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #003B3A;
+            letter-spacing: 0.3px;
+          }
+          .section-count {
+            font-size: 9px;
+            font-weight: 700;
+            color: #008c82;
+            font-style: italic;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            margin-bottom: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            overflow: hidden;
+          }
+          th {
+            background: #005B58;
+            color: #ffffff;
+            font-weight: 800;
+            padding: 4.5px 8px;
+            text-align: left;
+            border-right: 1px solid #004745;
+          }
+          th.text-center {
+            text-align: center;
+          }
+          td {
+            padding: 3px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            border-right: 1px solid #f1f5f9;
+            color: #1e293b;
+          }
+          tr:nth-child(even) td {
+            background: #fcfdfe;
+          }
+          tr:last-child td {
+            border-bottom: none;
+          }
+          td.stt {
+            text-align: center;
+            font-weight: 700;
+            color: #64748b;
+            width: 38px;
+          }
+          td.subj-name {
+            font-weight: 800;
+            color: #003B3A;
+          }
+          td.subj-code {
+            font-size: 8.5px;
+            font-weight: normal;
+            color: #94a3b8;
+            margin-left: 4px;
+          }
+          td.score {
+            text-align: center;
+            width: 80px;
+          }
+          .score-badge {
+            display: inline-block;
+            min-width: 32px;
+            padding: 0.5px 5px;
+            border-radius: 4px;
+            font-weight: 900;
+            font-size: 10px;
+            border: 1px solid transparent;
+          }
+          .score-good {
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #a7f3d0;
+          }
+          .score-fair {
+            background: #f0f9ff;
+            color: #0284c7;
+            border-color: #bae6fd;
+          }
+          .score-avg {
+            background: #fffbeb;
+            color: #b45309;
+            border-color: #fde68a;
+          }
+          .score-weak {
+            background: #fef2f2;
+            color: #b91c1c;
+            border-color: #fecaca;
+          }
+          .score-empty {
+            color: #94a3b8;
+            font-weight: bold;
+          }
+          .remarks-box {
+            border: 1px solid #99f6e4;
+            background: #f0fdfa;
+            border-radius: 8px;
+            padding: 5px 8px;
+            margin-bottom: 8px;
+          }
+          .remarks-header {
+            font-size: 10px;
+            font-weight: 900;
+            color: #005B58;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+          }
+          .remarks-content {
+            font-size: 9.5px;
+            color: #334155;
+            line-height: 1.35;
+          }
+          .signature-section {
+            font-size: 10px;
+          }
+          .signature-date {
+            text-align: right;
+            font-style: italic;
+            color: #475569;
+            margin-bottom: 3px;
+            font-size: 9.5px;
+          }
+          .signature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            text-align: center;
+          }
+          .sig-title {
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #1e293b;
+            font-size: 9.5px;
+          }
+          .sig-sub {
+            font-size: 8px;
+            font-style: italic;
+            color: #64748b;
+          }
+          .sig-space {
+            height: 34px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+          }
+          .sig-name {
+            font-weight: 900;
+            color: #0f172a;
+            font-size: 10px;
+          }
+        </style>
+      </head>
+      <body>
+        ${bodyHtml}
+      </body>
+      </html>
+    `)
+    iframeDoc.close()
+
     setTimeout(() => {
-      window.print()
+      setIsPrinting(false)
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
       setTimeout(() => {
-        document.title = originalTitle
-      }, 1000)
-    }, 150)
+        iframe.remove()
+      }, 3000)
+    }, 250)
   }
 
   // Excel Export: ONLY STT, Môn học, Điểm KS (No ĐTB, no Môn đạt, no Xếp loại)
@@ -121,26 +620,41 @@ export function StudentSurveyReportModal({
         [schoolTitle],
         ["HỆ THỐNG GIÁO DỤC SKY-LINE - Nơi Khởi nguồn hạnh phúc"],
         [""],
-        [`${reportMainTitle} - ${reportYearTitle}`],
+        [reportMainTitle],
+        [reportYearTitle],
         [""],
-        ["THÔNG TIN HỌC SINH"],
-        [`Họ và tên học sinh: ${st.studentName}`, "", `Mã số học sinh: ${st.studentCode}`],
-        [`Lớp: ${currentClass?.className}`, "", `Giáo viên chủ nhiệm: ${teacherName}`],
-        [`Ngày sinh: ${st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "-"}`, "", `Kỳ đánh giá: ${cleanPeriodLabel}`],
+        ["Họ và tên học sinh:", st.studentName, "", "Lớp:", currentClass?.className],
+        ["Mã số học sinh:", st.studentCode, "", "GVCN:", teacherName],
+        [
+          "Ngày sinh:",
+          st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "-",
+          "",
+          "Kỳ khảo sát:",
+          cleanPeriodLabel
+        ],
         [""],
-        ["CHI TIẾT KẾT QUẢ KHẢO SÁT"],
+        ["BẢNG KẾT QUẢ KHẢO SÁT CHI TIẾT"],
         ["STT", "Môn học", "Điểm KS"]
       ]
 
       const subjectRows = subjects.map((sub: any, idx: number) => {
         const info = st.subjectGrades?.[sub.id]
-        const score = info?.score !== null && info?.score !== undefined ? Number(info.score).toFixed(1) : "-"
-        return [idx + 1, sub.name, score]
+        const score = info?.score !== null && info?.score !== undefined ? Number(info.score) : null
+        return [
+          idx + 1,
+          sub.code ? `${sub.name} (${sub.code})` : sub.name,
+          score !== null && !isNaN(score) ? score : "-"
+        ]
       })
 
       const footerData = [
         [""],
-        [`Ý kiến nhận xét của GVCN: ${teacherName} ghi nhận kết quả rèn luyện và học tập của học sinh trong kỳ khảo sát này.`],
+        ["Ý KIẾN & NHẬN XÉT CỦA GIÁO VIÊN CHỦ NHIỆM (GVCN)"],
+        [
+          `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh ${st.studentName}. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`
+        ],
+        [""],
+        ["", "", "", "", `Đà Nẵng, ngày ..... tháng ..... năm 20.....`],
         [""],
         ["XÁC NHẬN CỦA CÁC BÊN"],
         ["PHỤ HUYNH HỌC SINH", "", "GIÁO VIÊN CHỦ NHIỆM", "", "BAN GIÁM HIỆU"],
@@ -168,14 +682,14 @@ export function StudentSurveyReportModal({
     XLSX.writeFile(wb, fileName)
   }
 
-  // Render a single student's printable report card - OPTIMIZED FOR 1-PAGE A4 PORTRAIT
-  const renderStudentReportCard = (student: any) => {
+  // Render on-screen preview card for the modal viewer
+  const renderPreviewCard = (student: any) => {
     return (
       <div
         key={student.studentId}
-        className="student-report-page bg-white p-4 sm:p-7 font-sans text-slate-900 mx-auto max-w-[700px] shadow-lg rounded-2xl border border-teal-100 print:border-0 print:shadow-none print:p-0 print:m-0 print:max-w-none print:h-auto"
+        className="bg-white p-5 sm:p-7 font-sans text-slate-900 mx-auto max-w-[700px] shadow-lg rounded-2xl border border-teal-100"
       >
-        {/* Top Header with School Info - Compact */}
+        {/* Top Header with School Info */}
         <div className="flex items-start justify-between border-b-2 border-[#008c82] pb-2.5 gap-3">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#003B3A] via-[#005B58] to-[#008c82] text-white flex items-center justify-center p-2 shadow-xs shrink-0">
@@ -201,8 +715,8 @@ export function StudentSurveyReportModal({
           </div>
         </div>
 
-        {/* Report Main Title - Compact */}
-        <div className="text-center my-2.5 space-y-0.5">
+        {/* Report Main Title */}
+        <div className="text-center my-3 space-y-0.5">
           <h2 className="text-base sm:text-lg font-black text-[#003B3A] uppercase tracking-tight">
             {reportMainTitle}
           </h2>
@@ -212,8 +726,8 @@ export function StudentSurveyReportModal({
           </div>
         </div>
 
-        {/* Student & Class Information Box - Compact 2-column Grid */}
-        <div className="bg-gradient-to-r from-teal-50/70 via-sky-50/50 to-teal-50/70 py-2 px-3.5 rounded-xl border border-teal-200/80 mb-2.5 shadow-2xs">
+        {/* Student & Class Information Box */}
+        <div className="bg-gradient-to-r from-teal-50/70 via-sky-50/50 to-teal-50/70 py-2 px-3.5 rounded-xl border border-teal-200/80 mb-3 shadow-2xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-[11px]">
             <div className="flex items-center justify-between border-b border-teal-100/60 pb-0.5">
               <span className="text-slate-600 font-bold flex items-center gap-1">
@@ -255,7 +769,7 @@ export function StudentSurveyReportModal({
           </div>
         </div>
 
-        {/* Section Heading - Compact */}
+        {/* Section Heading */}
         <div className="flex items-center justify-between mb-1.5">
           <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wide flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-teal-600" />
@@ -266,11 +780,11 @@ export function StudentSurveyReportModal({
           </span>
         </div>
 
-        {/* BEAUTIFUL BLUE/TEAL TABLE: CHỈ GỒM STT | MÔN HỌC | ĐIỂM KS - COMPACT ROW HEIGHT */}
-        <div className="overflow-x-auto rounded-lg border border-teal-600/30 shadow-xs mb-2.5 print:border-slate-300">
+        {/* 3-Column Table: STT | Môn học | Điểm KS */}
+        <div className="overflow-x-auto rounded-lg border border-teal-600/30 shadow-xs mb-3">
           <table className="w-full text-left border-collapse text-[11px]">
             <thead>
-              <tr className="bg-gradient-to-r from-[#005B58] to-[#008c82] text-white font-black print:bg-[#005B58]">
+              <tr className="bg-gradient-to-r from-[#005B58] to-[#008c82] text-white font-black">
                 <th className="py-1.5 px-2.5 text-center w-12 border-r border-teal-700">STT</th>
                 <th className="py-1.5 px-3 border-r border-teal-700">Môn học</th>
                 <th className="py-1.5 px-3 text-center w-28">Điểm KS</th>
@@ -322,7 +836,7 @@ export function StudentSurveyReportModal({
           </table>
         </div>
 
-        {/* Teacher's Remarks - Compact */}
+        {/* Teacher's Remarks */}
         <div className="border border-teal-200 rounded-xl p-2.5 bg-teal-50/20 mb-3 space-y-0.5">
           <div className="text-[11px] font-black text-[#005B58] uppercase flex items-center gap-1.5">
             <span>Ý kiến & Nhận xét của Giáo viên Chủ nhiệm (GVCN):</span>
@@ -334,7 +848,7 @@ export function StudentSurveyReportModal({
           </div>
         </div>
 
-        {/* Signature Section (3 Columns) - Compact Height */}
+        {/* Signature Section (3 Columns) */}
         <div className="pt-0.5 text-[11px]">
           <div className="text-right text-slate-600 italic mb-1.5 text-[10px]">
             Đà Nẵng, ngày ...... tháng ...... năm 20......
@@ -374,144 +888,18 @@ export function StudentSurveyReportModal({
 
   return (
     <div
-      className="student-report-modal-backdrop fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      {/* Strict Print Stylesheet: ONLY print the result document, HIDE entire page behind */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        @media print {
-          /* 1. Reset Root & Body */
-          html, body {
-            width: 100% !important;
-            height: auto !important;
-            min-height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-            color: black !important;
-            overflow: visible !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-
-          /* 2. Hide ALL page contents by default (No background screen, no navbar, no sidebar) */
-          body * {
-            visibility: hidden !important;
-          }
-
-          /* 3. Neutralize layout ancestors of the modal */
-          html, body, body *:has(.student-report-modal-backdrop) {
-            position: static !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            transform: none !important;
-            overflow: visible !important;
-            height: auto !important;
-            max-height: none !important;
-            background: transparent !important;
-          }
-
-          /* 4. Teleport modal backdrop to top (Zero dark tint, zero backdrop blur) */
-          .student-report-modal-backdrop {
-            visibility: visible !important;
-            opacity: 1 !important;
-            transform: none !important;
-            overflow: visible !important;
-            max-height: none !important;
-            max-width: none !important;
-            box-shadow: none !important;
-            border: none !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            display: block !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            z-index: 999999999 !important;
-            background: white !important;
-            backdrop-filter: none !important;
-          }
-
-          .student-report-modal-backdrop > div {
-            visibility: visible !important;
-            opacity: 1 !important;
-            transform: none !important;
-            overflow: visible !important;
-            max-height: none !important;
-            max-width: none !important;
-            box-shadow: none !important;
-            border: none !important;
-            position: relative !important;
-            display: block !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-          }
-
-          /* 5. Make ONLY the printable report container and its children visible */
-          #print-report-container,
-          #print-report-container * {
-            visibility: visible !important;
-          }
-
-          /* 6. Completely hide modal controls, buttons, toolbars */
-          .no-print-layout,
-          .no-print-layout * {
-            display: none !important;
-            height: 0 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            visibility: hidden !important;
-          }
-
-          /* 7. Guaranteed 1-Page A4 Portrait Layout */
-          .student-report-page {
-            box-shadow: none !important;
-            border: none !important;
-            margin: 0 auto !important;
-            padding: 4mm 8mm !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            height: auto !important;
-            max-height: 275mm !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            page-break-after: always !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            overflow: hidden !important;
-            background: white !important;
-          }
-
-          .student-report-page:last-child {
-            page-break-after: auto !important;
-            break-after: auto !important;
-          }
-
-          @page {
-            size: A4 portrait;
-            margin: 4mm 6mm;
-          }
-        }
-      `
-        }}
-      />
-
       {/* Modal Container */}
       <div
         className="bg-slate-100 rounded-3xl max-w-4xl w-full max-h-[95vh] flex flex-col overflow-hidden shadow-2xl border border-slate-300 animate-scaleUp my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Control Bar (Hidden when printing) */}
-        <div className="no-print-layout bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 p-4 text-white flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 shadow-md">
+        {/* Top Control Bar */}
+        <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 p-4 text-white flex flex-col md:flex-row md:items-center justify-between gap-3 shrink-0 shadow-md">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-teal-500/20 border border-teal-400/30 text-teal-300 flex items-center justify-center">
               <Printer className="w-5 h-5" />
@@ -564,20 +952,22 @@ export function StudentSurveyReportModal({
               </button>
             </div>
 
-            {/* Print Single Student */}
+            {/* Print Single Student (Guaranteed 1 A4 Page) */}
             <button
               onClick={() => handlePrint("single")}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#008c82] hover:bg-[#00746b] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
-              title="In phiếu điểm cho học sinh hiện tại (chuẩn 1 trang A4)"
+              disabled={isPrinting}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#008c82] hover:bg-[#00746b] text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+              title="In phiếu điểm cho học sinh hiện tại (chuẩn 1 trang A4, không chụp màn hình)"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>In Phiếu Điểm (PDF)</span>
+              <span>{isPrinting ? "Đang chuẩn bị in..." : "In Phiếu Điểm (PDF)"}</span>
             </button>
 
-            {/* Print Entire Class */}
+            {/* Print Entire Class (1 Page per student) */}
             <button
               onClick={() => handlePrint("all")}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+              disabled={isPrinting}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
               title="In phiếu điểm toàn bộ học sinh trong lớp (mỗi học sinh đúng 1 trang A4)"
             >
               <Users className="w-3.5 h-3.5" />
@@ -604,15 +994,9 @@ export function StudentSurveyReportModal({
           </div>
         </div>
 
-        {/* Modal Scrollable Content */}
-        <div id="print-report-container" className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 print:p-0 print:m-0 print:overflow-visible">
-          {printMode === "all" ? (
-            <div className="space-y-4 print:space-y-0">
-              {students.map((st) => renderStudentReportCard(st))}
-            </div>
-          ) : (
-            renderStudentReportCard(currentStudent)
-          )}
+        {/* Modal Scrollable Content (On-Screen Preview) */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+          {renderPreviewCard(currentStudent)}
         </div>
       </div>
     </div>
