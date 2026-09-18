@@ -120,7 +120,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
              <UserMenu session={session} />
           </div>
         </header>
-        <div className="p-4 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-hidden overflow-y-auto text-sm font-normal">
+        <div className="p-4 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-sm font-normal">
           {children}
         </div>
         

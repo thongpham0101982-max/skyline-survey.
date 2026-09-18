@@ -2,6 +2,20 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
+import { auth } from "@/lib/auth"
+
+async function checkParentAdminAuth() {
+  const session = await auth()
+  if (!session || !session.user) {
+    return { error: "Unauthorized: Vui lòng đăng nhập" }
+  }
+  const role = ((session.user as any)?.role || "").toUpperCase()
+  const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "GDCS", "GIAO_VU", "GIAO_VU_CS"].includes(role)
+  if (!isAllowed) {
+    return { error: "Forbidden: Bạn không có quyền quản lý phụ huynh" }
+  }
+  return { session }
+}
 
 export async function getClassStudentsWithParentsAction(classId: string) {
   if (!classId) return []
@@ -35,6 +49,9 @@ export async function getClassStudentsWithParentsAction(classId: string) {
 }
 
 export async function generateParentAccountsAction(classId: string) {
+  const authCheck = await checkParentAdminAuth()
+  if (authCheck.error) return { success: false, error: authCheck.error }
+
   if (!classId) return { success: false, error: "Thiếu thông tin lớp học" }
 
   const students = await prisma.student.findMany({
@@ -144,6 +161,9 @@ export async function searchStudentsForLinkingAction(query: string) {
 }
 
 export async function linkParentStudentAction(parentId: string, studentId: string, relationship = "Phụ huynh") {
+  const authCheck = await checkParentAdminAuth()
+  if (authCheck.error) return { success: false, error: authCheck.error }
+
   try {
     if (!parentId || !studentId) return { success: false, error: "Thiếu dữ liệu liên kết" }
 
@@ -168,6 +188,9 @@ export async function linkParentStudentAction(parentId: string, studentId: strin
 }
 
 export async function unlinkParentStudentAction(parentId: string, studentId: string) {
+  const authCheck = await checkParentAdminAuth()
+  if (authCheck.error) return { success: false, error: authCheck.error }
+
   try {
     if (!parentId || !studentId) return { success: false, error: "Thiếu dữ liệu hủy liên kết" }
 
@@ -184,8 +207,16 @@ export async function unlinkParentStudentAction(parentId: string, studentId: str
 }
 
 export async function resetParentPasswordAction(parentId: string, defaultPassword: string) {
+  const authCheck = await checkParentAdminAuth()
+  if (authCheck.error) return { success: false, error: authCheck.error }
+
   try {
     if (!parentId || !defaultPassword) return { success: false, error: "Thiếu thông tin khôi phục mật khẩu" }
+
+    const cleanPass = defaultPassword.trim()
+    if (cleanPass.length < 6) {
+      return { success: false, error: "Mật khẩu khôi phục phải có ít nhất 6 ký tự" }
+    }
 
     const parent = await prisma.parent.findUnique({
       where: { id: parentId },
@@ -194,7 +225,7 @@ export async function resetParentPasswordAction(parentId: string, defaultPasswor
 
     if (!parent || !parent.userId) return { success: false, error: "Không tìm thấy hồ sơ Phụ huynh" }
 
-    const hashedPassword = await bcrypt.hash(defaultPassword.trim(), 10)
+    const hashedPassword = await bcrypt.hash(cleanPass, 10)
 
     await prisma.user.update({
       where: { id: parent.userId },
@@ -209,6 +240,9 @@ export async function resetParentPasswordAction(parentId: string, defaultPasswor
 }
 
 export async function deleteParentAccountsAction(studentIds: string[]) {
+  const authCheck = await checkParentAdminAuth()
+  if (authCheck.error) return { success: false, error: authCheck.error }
+
   try {
     if (!studentIds || studentIds.length === 0) return { success: true }
 

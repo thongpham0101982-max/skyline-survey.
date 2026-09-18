@@ -8,18 +8,27 @@ export async function GET() {
   try {
     const session = await auth()
     if (!session?.user?.id) {
-      return NextResponse.json({ notifications: [], unreadCount: 0 })
+      return NextResponse.json(
+        { notifications: [], unreadCount: 0 },
+        { headers: { "Cache-Control": "private, no-cache, no-store, must-revalidate" } }
+      )
     }
 
-    const notifications = await prisma.notification.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    })
+    const [notifications, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+      }),
+      prisma.notification.count({
+        where: { userId: session.user.id, isRead: false },
+      })
+    ])
 
-    const unreadCount = notifications.filter((n: any) => !n.isRead).length
-
-    return NextResponse.json({ notifications, unreadCount })
+    return NextResponse.json(
+      { notifications, unreadCount },
+      { headers: { "Cache-Control": "private, no-cache, no-store, must-revalidate" } }
+    )
   } catch (error) {
     console.error("[API /api/notifications GET Error]:", error)
     return NextResponse.json({ notifications: [], unreadCount: 0, error: "Internal error" }, { status: 500 })

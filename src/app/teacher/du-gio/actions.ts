@@ -1343,6 +1343,15 @@ export async function deleteObservationSlot(slotId: string) {
       return { success: false, error: "Thầy/Cô chỉ có thể hủy tiết dạy do chính mình khởi tạo" }
     }
 
+    if (!isAdmin) {
+      const hasEvaluations = await prisma.observationEvaluation.count({
+        where: { registration: { slotId } }
+      });
+      if (hasEvaluations > 0) {
+        return { success: false, error: "Tiết dạy đã có phiếu đánh giá dự giờ. Không thể xóa." };
+      }
+    }
+
     // Delete evaluations & registrations linked to this slot first
     await prisma.observationEvaluation.deleteMany({
       where: { registration: { slotId } }
@@ -1399,6 +1408,13 @@ export async function deleteMultipleObservationSlots(slotIds: string[]) {
       });
       if (foreignSlotsCount > 0) {
         return { success: false, error: "Thầy/Cô chỉ có thể xóa các tiết dạy do chính mình khởi tạo" }
+      }
+
+      const hasEvaluations = await prisma.observationEvaluation.count({
+        where: { registration: { slotId: { in: slotIds } } }
+      });
+      if (hasEvaluations > 0) {
+        return { success: false, error: "Một hoặc nhiều tiết dạy đã có phiếu đánh giá dự giờ. Không thể xóa." };
       }
     }
 
@@ -1707,8 +1723,7 @@ export async function submitEvaluation(data: {
       const slotFull = await prisma.observationSlot.findUnique({
         where: { id: data.slotId },
         include: {
-          teacher: { include: { user: true, campus: true } },
-          campus: true
+          teacher: { include: { user: true, campus: true } }
         }
       });
       const hostTeacher = slotFull?.teacher;
@@ -2474,6 +2489,17 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
 
     if (!slot) {
       return { success: false, error: "Không tìm thấy thông tin tiết dự giờ." }
+    }
+
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id }
+    });
+    const roleCode = (session.user as any)?.role || "TEACHER";
+    const isObsAdmin = await checkIsObservationAdmin(roleCode, session.user.id);
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "SUPER_ADMIN", "BAN_DHCM"].includes(roleCode) || isObsAdmin;
+
+    if (!isAdmin && (!currentTeacher || currentTeacher.id !== slot.teacherId)) {
+      return { success: false, error: "Chỉ giáo viên được mời dự giờ hoặc Quản trị viên mới có quyền phê duyệt/từ chối yêu cầu này." };
     }
 
     const hostTeacher = slot.teacher;

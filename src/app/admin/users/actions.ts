@@ -3,14 +3,37 @@ import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import bcrypt from "bcryptjs"
 import { getAdminSession } from "@/lib/session"
+import { z } from "zod"
+
+export const CreateUserSchema = z.object({
+  employeeCode: z.string().trim().min(2, "Mã NV / Tên đăng nhập phải có ít nhất 2 ký tự"),
+  fullName: z.string().trim().min(2, "Họ và tên không được để trống"),
+  password: z.string().min(6, "Mật khẩu khởi tạo phải có ít nhất 6 ký tự"),
+  roleCode: z.string().trim().min(1, "Vui lòng chọn vai trò người dùng"),
+  campusIds: z.array(z.string()).optional()
+});
+
+export const UpdateUserSchema = z.object({
+  employeeCode: z.string().trim().min(2, "Mã NV / Tên đăng nhập phải có ít nhất 2 ký tự"),
+  fullName: z.string().trim().min(2, "Họ và tên không được để trống"),
+  password: z.string().optional().refine(val => !val || val.trim() === "" || val.trim().length >= 6, {
+    message: "Mật khẩu mới nếu thay đổi phải có ít nhất 6 ký tự"
+  }),
+  roleCode: z.string().trim().min(1, "Vui lòng chọn vai trò người dùng"),
+  campusIds: z.array(z.string()).optional()
+});
 
 export async function createUser(data: any) {
   const session = await getAdminSession();
   if (!session.userId || !session.isFullAccess) {
     return { success: false, error: "Forbidden: Bạn không có quyền thực hiện hành động này." };
   }
+  const validated = CreateUserSchema.safeParse(data);
+  if (!validated.success) {
+    return { success: false, error: validated.error.errors[0]?.message || "Dữ liệu không hợp lệ" };
+  }
   try {
-    const passwordHash = await bcrypt.hash(data.password, 10);
+    const passwordHash = await bcrypt.hash(validated.data.password, 10);
     await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
@@ -64,14 +87,18 @@ export async function updateUser(id: string, data: any) {
   if (!session.userId || !session.isFullAccess) {
     return { success: false, error: "Forbidden: Bạn không có quyền thực hiện hành động này." };
   }
+  const validated = UpdateUserSchema.safeParse(data);
+  if (!validated.success) {
+    return { success: false, error: validated.error.errors[0]?.message || "Dữ liệu không hợp lệ" };
+  }
   try {
     const updateData: any = {
-      email: data.employeeCode,
-      fullName: data.fullName,
-      role: data.roleCode
+      email: validated.data.employeeCode,
+      fullName: validated.data.fullName,
+      role: validated.data.roleCode
     }
-    if (data.password && data.password.trim() !== "") {
-      updateData.passwordHash = await bcrypt.hash(data.password, 10);
+    if (validated.data.password && validated.data.password.trim() !== "") {
+      updateData.passwordHash = await bcrypt.hash(validated.data.password, 10);
     }
 
     await prisma.$transaction(async (tx) => {

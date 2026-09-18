@@ -60,7 +60,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await auth()
-    const userName = (session?.user as any)?.name || (session?.user as any)?.fullName || "Quản trị viên Khảo thí"
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "Unauthorized: Vui lòng đăng nhập" }, { status: 401 })
+    }
+    const role = ((session.user as any)?.role || "").toUpperCase().trim()
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "KHAO_THI", "TB_DHCM", "GDCS"].includes(role)
+    if (!isAllowed) {
+      return NextResponse.json({ success: false, error: "Forbidden: Bạn không có quyền khóa/mở khóa sổ điểm" }, { status: 403 })
+    }
+
+    const userName = (session.user as any)?.name || (session.user as any)?.fullName || "Quản trị viên Khảo thí"
     
     const body = await request.json()
     const {

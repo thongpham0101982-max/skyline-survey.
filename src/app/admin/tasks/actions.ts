@@ -452,7 +452,31 @@ export async function updateTask(id: string, data: any) {
 
 export async function updateTaskProgress(id: string, progress: string) {
   try {
-    await prisma.workTask.update({ where: { id }, data: { progress } })
+    const session = await auth()
+    if (!session?.user) return { success: false, error: "Chưa đăng nhập" }
+    const userId = (session.user as any).id
+    const userRole = (session.user as any).role
+
+    const VALID_PROGRESS = ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED", "OVERDUE"]
+    if (!VALID_PROGRESS.includes(progress)) {
+      return { success: false, error: "Trạng thái tiến độ không hợp lệ" }
+    }
+
+    const task = await prisma.workTask.findUnique({ where: { id } })
+    if (!task) return { success: false, error: "Không tìm thấy công việc" }
+
+    const isAuthorized = !task.assignedToUserId || task.assignedToUserId === userId || task.assignedById === userId || userRole === "ADMIN" || userRole === "SUPERADMIN"
+    if (!isAuthorized) {
+      return { success: false, error: "Bạn không có quyền cập nhật tiến độ công việc này" }
+    }
+
+    await prisma.workTask.update({ 
+      where: { id }, 
+      data: { 
+        progress,
+        updatedAt: new Date()
+      } 
+    })
     revalidatePath("/admin/tasks")
     return { success: true }
   } catch (e: any) {
@@ -464,9 +488,21 @@ export async function respondToTask(id: string, data: { progress: string; staffN
   try {
     const session = await auth()
     if (!session?.user) return { success: false, error: "Chưa đăng nhập" }
+    const userId = (session.user as any).id
+    const userRole = (session.user as any).role
+
+    const VALID_PROGRESS = ["PENDING", "IN_PROGRESS", "COMPLETED", "CANCELLED", "OVERDUE"]
+    if (data.progress && !VALID_PROGRESS.includes(data.progress)) {
+      return { success: false, error: "Trạng thái tiến độ không hợp lệ" }
+    }
 
     const task = await prisma.workTask.findUnique({ where: { id } })
     if (!task) return { success: false, error: "Không tìm thấy công việc" }
+
+    const isAuthorized = !task.assignedToUserId || task.assignedToUserId === userId || task.assignedById === userId || userRole === "ADMIN" || userRole === "SUPERADMIN"
+    if (!isAuthorized) {
+      return { success: false, error: "Bạn không có quyền phản hồi công việc này" }
+    }
 
     await prisma.workTask.update({
       where: { id },
@@ -816,6 +852,19 @@ export async function checkAndNotifyOverdueTasks() {
 
 export async function deleteTask(id: string) {
   try {
+    const session = await auth()
+    if (!session?.user) return { success: false, error: "Chưa đăng nhập" }
+    const userId = (session.user as any).id
+    const userRole = (session.user as any).role
+
+    const task = await prisma.workTask.findUnique({ where: { id } })
+    if (!task) return { success: false, error: "Không tìm thấy công việc" }
+
+    const isAuthorized = task.assignedById === userId || userRole === "ADMIN" || userRole === "SUPERADMIN"
+    if (!isAuthorized) {
+      return { success: false, error: "Chỉ người giao việc hoặc Quản trị viên mới có quyền xóa công việc này" }
+    }
+
     await prisma.workTask.delete({ where: { id } })
     revalidatePath("/admin/tasks")
     return { success: true }
@@ -826,11 +875,21 @@ export async function deleteTask(id: string) {
 
 export async function deleteTasks(ids: string[]) {
   try {
-    await prisma.workTask.deleteMany({
-      where: {
-        id: { in: ids }
-      }
-    })
+    const session = await auth()
+    if (!session?.user) return { success: false, error: "Chưa đăng nhập" }
+    const userId = (session.user as any).id
+    const userRole = (session.user as any).role
+
+    if (userRole === "ADMIN" || userRole === "SUPERADMIN") {
+      await prisma.workTask.deleteMany({
+        where: { id: { in: ids } }
+      })
+    } else {
+      // Non-admins can only delete tasks they personally assigned
+      await prisma.workTask.deleteMany({
+        where: { id: { in: ids }, assignedById: userId }
+      })
+    }
     revalidatePath("/admin/tasks")
     return { success: true }
   } catch (e: any) {

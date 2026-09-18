@@ -1132,7 +1132,7 @@ export async function GET(req: Request) {
         // Fetch career orientation
         let orientation: any = null
         try {
-          orientation = await prisma.studentCareerOrientation.findUnique({
+          orientation = await prisma.studentCareerOrientation.findFirst({
             where: { studentId }
           })
         } catch (err) {

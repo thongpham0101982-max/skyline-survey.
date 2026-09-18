@@ -21,6 +21,40 @@ export async function POST(req: NextRequest) {
       include: { surveyPeriod: { include: { questions: true } } }
     })
     if (!form) return NextResponse.json({ error: 'Phiếu khảo sát không hợp lệ hoặc đã nộp' }, { status: 404 })
+    const questions = form.surveyPeriod.questions || []
+    for (const q of questions) {
+      if (q.isActive === false || !q.isRequired) continue
+      const val = answers[q.id]
+      const type = q.questionType?.toUpperCase() || ''
+      const isRating = ['RATING', 'NPS', 'LIKERT', 'SATISFACTION', 'SCALE_0_4'].includes(type)
+      const isText = ['TEXT', 'OPEN_ENDED', 'COMMENT', 'ESSAY'].includes(type)
+      const isChoice = ['CHOICE', 'MULTIPLE_CHOICE', 'DROPDOWN', 'RADIO', 'SINGLE_CHOICE'].includes(type)
+      const isCheck = ['CHECKBOX', 'MULTI_SELECT'].includes(type)
+      const isGrid = ['MC_GRID', 'CB_GRID', 'GRID'].includes(type)
+
+      let isValid = true
+      if (val === undefined || val === null) {
+        isValid = false
+      } else if (isRating) {
+        isValid = !isNaN(Number(val))
+      } else if (isText) {
+        isValid = typeof val === 'string' && val.trim().length > 0
+      } else if (isChoice) {
+        isValid = String(val).trim().length > 0
+      } else if (isCheck) {
+        isValid = Array.isArray(val) ? val.length > 0 : String(val).trim().length > 0
+      } else if (isGrid) {
+        isValid = typeof val === 'object' && Object.keys(val).length > 0
+      } else {
+        isValid = String(val).trim().length > 0
+      }
+
+      if (!isValid) {
+        return NextResponse.json({ 
+          error: `Câu hỏi "${q.questionText}" là bắt buộc, vui lòng trả lời đầy đủ trước khi nộp bài.` 
+        }, { status: 400 })
+      }
+    }
 
     const responseData: any[] = []
     for (const [questionId, value] of Object.entries(answers)) {

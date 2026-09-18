@@ -79,9 +79,20 @@ async function syncAdditionalCampuses(userId: string, additionalCampusIds: strin
 
 export async function createTeacherAction(data: any) {
   try {
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" }
+    const role = (session.user as any)?.role || ""
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "GDCS", "GĐCS", "NS", "GIAO_VU", "GIAO_VU_CS"].includes(role)
+    if (!isAllowed) return { success: false, error: "Bạn không có quyền thêm mới giáo viên" }
+
     const teacherCode = data.teacherCode?.replace(/-/g, '').trim().toUpperCase()
     if (!teacherCode) {
       return { success: false, error: "Mã GV không được để trống!" }
+    }
+
+    const teacherName = String(data.teacherName || "").trim()
+    if (!teacherName || teacherName.length < 2) {
+      return { success: false, error: "Họ và tên giáo viên không được để trống và phải có ít nhất 2 ký tự!" }
     }
 
     // Check if Teacher already exists with this code
@@ -107,7 +118,7 @@ export async function createTeacherAction(data: any) {
       userId = existingUser.id
     } else {
       const user = await prisma.user.create({
-        data: { fullName: data.teacherName, email: teacherCode, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
+        data: { fullName: teacherName, email: teacherCode, passwordHash: hashedPassword, role: "TEACHER", status: "ACTIVE" }
       })
       userId = user.id
     }
@@ -127,10 +138,9 @@ export async function createTeacherAction(data: any) {
       }
     })
 
-    const session = await auth()
     await logActivity(
-      session?.user?.id || "SYSTEM",
-      session?.user?.email || "SYSTEM",
+      session.user.id,
+      session.user.email || "SYSTEM",
       "CREATE_TEACHER",
       "Teacher",
       teacher.id,
@@ -173,9 +183,21 @@ export async function createTeacherAction(data: any) {
 
 export async function updateTeacherAction(data: any) {
   try {
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" }
+    const role = (session.user as any)?.role || ""
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "GDCS", "GĐCS", "NS", "GIAO_VU", "GIAO_VU_CS"].includes(role)
+    if (!isAllowed) return { success: false, error: "Bạn không có quyền cập nhật thông tin giáo viên" }
+
     const { id, teacherName, dateOfBirth, campusId } = data
     const updateData: any = {}
-    if (teacherName) updateData.teacherName = teacherName
+    if (teacherName !== undefined) {
+      const cleanName = String(teacherName).trim()
+      if (cleanName.length < 2) {
+        return { success: false, error: "Họ và tên giáo viên phải có ít nhất 2 ký tự!" }
+      }
+      updateData.teacherName = cleanName
+    }
     if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth ? new Date(dateOfBirth) : null
     if (campusId !== undefined) updateData.campusId = campusId
     if (data.status !== undefined) updateData.status = data.status
@@ -205,10 +227,9 @@ export async function updateTeacherAction(data: any) {
 
     const oldTeacher = await prisma.teacher.findUnique({ where: { id } })
     await prisma.teacher.update({ where: { id }, data: updateData })
-    const session = await auth()
     await logActivity(
-      session?.user?.id || "SYSTEM",
-      session?.user?.email || "SYSTEM",
+      session.user.id,
+      session.user.email || "SYSTEM",
       "UPDATE_TEACHER",
       "Teacher",
       id,
@@ -268,21 +289,56 @@ export async function updateTeacherAction(data: any) {
 
 export async function deleteTeacherAction(id: string) {
   try {
-    await prisma.$executeRawUnsafe(`UPDATE Class SET homeroomTeacherId = NULL WHERE homeroomTeacherId = ?`, id)
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" }
+    const role = (session.user as any)?.role || ""
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN"].includes(role)
+    if (!isAllowed) return { success: false, error: "Chỉ Quản trị viên cấp cao mới có quyền xóa hồ sơ giáo viên" }
+
     const teacher = await prisma.teacher.findUnique({ where: { id } })
     if (!teacher) return { success: false, error: "Không tìm thấy giáo viên" }
+
+    // Ràng buộc 1: Kiểm tra phân công giảng dạy
+    const assignmentCount = await prisma.teachingAssignment.count({ where: { teacherId: id } })
+    if (assignmentCount > 0) {
+      return {
+        success: false,
+        error: `Không thể xóa giáo viên: Đang có ${assignmentCount} phân công giảng dạy liên kết. Vui lòng chuyển giao/hủy phân công hoặc đổi trạng thái sang INACTIVE.`
+      }
+    }
+
+    // Ràng buộc 2: Kiểm tra tiết dự giờ chủ trì
+    const slotCount = await prisma.observationSlot.count({ where: { teacherId: id } })
+    if (slotCount > 0) {
+      return {
+        success: false,
+        error: `Không thể xóa giáo viên: Đang có ${slotCount} tiết dự giờ do giáo viên chủ trì. Vui lòng hủy/xóa các tiết dự giờ này trước.`
+      }
+    }
+
+    // Ràng buộc 3: Kiểm tra đăng ký dự giờ
+    const regCount = await prisma.observationRegistration.count({ where: { teacherId: id } })
+    if (regCount > 0) {
+      return {
+        success: false,
+        error: `Không thể xóa giáo viên: Đang có ${regCount} đăng ký tham gia dự giờ.`
+      }
+    }
+
+    await prisma.$executeRawUnsafe(`UPDATE Class SET homeroomTeacherId = NULL WHERE homeroomTeacherId = ?`, id)
     await prisma.teacher.delete({ where: { id } })
-    const session = await auth()
     await logActivity(
-      session?.user?.id || "SYSTEM",
-      session?.user?.email || "SYSTEM",
+      session.user.id,
+      session.user.email || "SYSTEM",
       "DELETE_TEACHER",
       "Teacher",
       id,
       teacher,
       null
     )
-    await prisma.user.delete({ where: { id: teacher.userId } }).catch(() => {})
+    if (teacher.userId) {
+      await prisma.user.delete({ where: { id: teacher.userId } }).catch(() => {})
+    }
     revalidatePath("/admin/teachers")
     revalidatePath("/admin/classes")
     return { success: true }
@@ -292,6 +348,12 @@ export async function deleteTeacherAction(id: string) {
 }
 
 export async function importTeachersAction(rows: any[], academicYearId?: string) {
+  const session = await auth()
+  if (!session || !session.user) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" }
+  const role = (session.user as any)?.role || ""
+  const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "GDCS", "GĐCS", "NS"].includes(role)
+  if (!isAllowed) return { success: false, error: "Bạn không có quyền nhập danh sách giáo viên" }
+
   const defaultCampusId = await getDefaultCampusId()
   let created = 0, skipped = 0
   const errors: string[] = []
@@ -417,10 +479,9 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
     }
   }
 
-  const session = await auth()
   await logActivity(
-    session?.user?.id || "SYSTEM",
-    session?.user?.email || "SYSTEM",
+    session.user.id,
+    session.user.email || "SYSTEM",
     "IMPORT_TEACHERS",
     "Teacher",
     "BATCH",
@@ -433,14 +494,31 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
 }
 
 export async function resetTeacherPasswordAction(teacherId: string) {
-  const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } })
-  if (!teacher) return { success: false }
-  const hashedPassword = await bcrypt.hash(teacher.teacherCode, 10)
-  await prisma.user.update({ where: { id: teacher.userId }, data: { passwordHash: hashedPassword } })
-  return { success: true }
+  try {
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" }
+    const role = (session.user as any)?.role || ""
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "GDCS", "GĐCS"].includes(role)
+    if (!isAllowed) return { success: false, error: "Bạn không có quyền đặt lại mật khẩu giáo viên" }
+
+    const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } })
+    if (!teacher) return { success: false, error: "Không tìm thấy giáo viên" }
+    const hashedPassword = await bcrypt.hash(teacher.teacherCode, 10)
+    await prisma.user.update({ where: { id: teacher.userId }, data: { passwordHash: hashedPassword } })
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
 }
+
 export async function assignTeachersToRoleAction(teacherIds: string[], roleCode: string) {
   try {
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" }
+    const role = (session.user as any)?.role || ""
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN"].includes(role)
+    if (!isAllowed) return { success: false, error: "Bạn không có quyền phân quyền hàng loạt" }
+
     const teachers = await prisma.teacher.findMany({
       where: { id: { in: teacherIds } },
       select: { id: true, userId: true, teacherCode: true, teacherName: true, campusId: true }

@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized: Vui lòng đăng nhập" }, { status: 401 })
+    }
+    const userRole = ((session.user as any)?.role || "").toUpperCase().trim()
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN"].includes(userRole)
+    if (!isAllowed) {
+      return NextResponse.json({ error: "Forbidden: Thao tác xóa dữ liệu học tập chỉ dành cho Quản trị viên cấp cao" }, { status: 403 })
+    }
+
     const body = await req.json().catch(() => ({}))
     const academicYearName = body.academicYear || "2025-2026"
 

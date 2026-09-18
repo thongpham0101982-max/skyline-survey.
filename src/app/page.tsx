@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic"
 export const revalidate = 0
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/db"
 import { getDefaultRouteForRole, getRoleReadableModules } from "@/lib/permissions"
 
 export default async function Home() {
@@ -13,7 +14,6 @@ export default async function Home() {
 
   let role = (session.user as any)?.role || "PARENT"
   try {
-    const { prisma } = require("@/lib/db")
     if (session.user.id) {
       const dbUser = await prisma.user.findUnique({
         where: { id: session.user.id },
@@ -38,7 +38,6 @@ export default async function Home() {
   } else {
     // Check if user has a teacher profile and is not a management role
     try {
-      const { prisma } = require("@/lib/db")
       const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
       const adminRoles = ["ADMIN", "NS", "GDCS", "GĐCS", "BGH_MN", "BGH MN", "GIAO_VU", "ĐBCL", "KHAO_THI", "CTHS", "TVAN"]
       if (teacher && !adminRoles.includes(upperRole)) {

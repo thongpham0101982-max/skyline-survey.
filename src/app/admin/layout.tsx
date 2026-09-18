@@ -116,7 +116,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <UserMenu session={session} permissionModules={readableModules} />
           </div>
         </header>
-        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-hidden overflow-y-auto text-xs font-semibold">
+        <div className="p-3.5 sm:p-6 md:p-8 pb-24 md:pb-12 flex-1 overflow-x-auto overflow-y-auto text-xs font-semibold">
           {children}
         </div>
         

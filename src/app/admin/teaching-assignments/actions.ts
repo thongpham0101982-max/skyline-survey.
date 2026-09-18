@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache"
 
 export async function saveAssignment(data: { teacherId: string, classIds: string[], subjectId: string, academicYearId: string, semesters: number[] }) {
   try {
-    // Delete existing exact matches to recreate
+    // Delete existing assignments for the specified class, subject, semester and academic year
     await prisma.teachingAssignment.deleteMany({
       where: {
-        teacherId: data.teacherId,
         classId: { in: data.classIds },
         subjectId: data.subjectId,
-        academicYearId: data.academicYearId
+        academicYearId: data.academicYearId,
+        semester: { in: data.semesters }
       }
     })
 

@@ -8,6 +8,10 @@ export const dynamic = "force-dynamic"
 export async function GET(request: Request) {
   try {
     const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "Unauthorized: Vui lòng đăng nhập" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
 
     const academicYearId = searchParams.get("academicYearId") || ""

@@ -154,6 +154,29 @@ export async function submitSurveyAction(data: any) {
   const student = await prisma.student.findUnique({ where: { id: studentId } })
   if (!student) return { error: "Student not found" }
 
+  // Validate that all required questions are answered
+  const periodQuestions = await prisma.surveyQuestion.findMany({
+    where: { surveyPeriodId, isActive: true, isRequired: true }
+  })
+  for (const q of periodQuestions) {
+    const answered = Array.isArray(responses) ? responses.find((r: any) => r.questionId === q.id) : null
+    let hasValue = false
+    if (answered && answered.value !== undefined && answered.value !== null) {
+      if (typeof answered.value === 'string') {
+        hasValue = answered.value.trim().length > 0
+      } else if (Array.isArray(answered.value)) {
+        hasValue = answered.value.length > 0
+      } else if (typeof answered.value === 'object') {
+        hasValue = Object.keys(answered.value).length > 0
+      } else {
+        hasValue = !isNaN(Number(answered.value))
+      }
+    }
+    if (!hasValue) {
+      return { error: `Vui lòng hoàn thành câu hỏi bắt buộc: "${q.questionText}"` }
+    }
+  }
+
   let npsScoreRaw: number | null = null;
   let npsCategory: string | null = null;
 

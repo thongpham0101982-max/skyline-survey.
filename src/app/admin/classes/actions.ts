@@ -53,6 +53,16 @@ export async function deleteClasses(ids: string[]) {
       };
     }
 
+    const assignmentCount = await prisma.teachingAssignment.count({
+      where: { classId: { in: ids } }
+    });
+    if (assignmentCount > 0) {
+      return { 
+        success: false, 
+        error: `Không thể xóa: Có ${assignmentCount} phân công giảng dạy đang liên kết với các lớp được chọn. Vui lòng xóa/chuyển giao phân công trước khi xóa lớp.` 
+      };
+    }
+
     await prisma.class.deleteMany({
       where: { id: { in: ids } }
     })
@@ -66,16 +76,40 @@ export async function deleteClasses(ids: string[]) {
 export async function updateClass(id: string, data: any) {
   const session = await getAdminSession();
   if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
+
+  const cleanName = String(data.className || "").trim();
+  if (cleanName.length < 2) {
+    return { success: false, error: "Tên lớp không được để trống và phải có ít nhất 2 ký tự!" };
+  }
+  if (!data.campusId) {
+    return { success: false, error: "Cơ sở không được để trống!" };
+  }
+
   try {
+    const currentClass = await prisma.class.findUnique({ where: { id }, select: { academicYearId: true } });
+    if (currentClass?.academicYearId) {
+      const duplicate = await prisma.class.findFirst({
+        where: {
+          id: { not: id },
+          className: cleanName,
+          campusId: data.campusId,
+          academicYearId: currentClass.academicYearId
+        }
+      });
+      if (duplicate) {
+        return { success: false, error: `Lớp "${cleanName}" đã tồn tại trong cùng năm học và cơ sở!` };
+      }
+    }
+
     await prisma.class.update({
       where: { id },
       data: {
-        className: data.className,
-        level: data.level,
-        grade: data.grade,
+        className: cleanName,
+        level: data.level || "",
+        grade: data.grade || "",
         campusId: data.campusId,
         educationSystem: data.educationSystem || "",
-        homeroomTeacherId: data.homeroomTeacherId
+        homeroomTeacherId: data.homeroomTeacherId || null
       }
     })
     revalidatePath("/admin/classes")
@@ -88,7 +122,30 @@ export async function updateClass(id: string, data: any) {
 export async function createClassAction(data: any) {
   const session = await getAdminSession();
   if (!session.userId) return { success: false, error: "Unauthorized: Vui lòng đăng nhập" };
+
+  const cleanName = String(data.className || "").trim();
+  if (cleanName.length < 2) {
+    return { success: false, error: "Tên lớp không được để trống và phải có ít nhất 2 ký tự!" };
+  }
+  if (!data.academicYearId) {
+    return { success: false, error: "Vui lòng chọn năm học cho lớp!" };
+  }
+  if (!data.campusId) {
+    return { success: false, error: "Vui lòng chọn cơ sở cho lớp!" };
+  }
+
   try {
+    const duplicate = await prisma.class.findFirst({
+      where: {
+        className: cleanName,
+        campusId: data.campusId,
+        academicYearId: data.academicYearId
+      }
+    });
+    if (duplicate) {
+      return { success: false, error: `Lớp "${cleanName}" đã tồn tại trong năm học và cơ sở này!` };
+    }
+
     // Auto-generate classCode
     const academicYear = await prisma.academicYear.findUnique({
       where: { id: data.academicYearId }
@@ -128,7 +185,7 @@ export async function createClassAction(data: any) {
     await prisma.class.create({
       data: {
         classCode: generatedClassCode,
-        className: data.className,
+        className: cleanName,
         level: data.level || "",
         grade: data.grade || "",
         campusId: data.campusId,

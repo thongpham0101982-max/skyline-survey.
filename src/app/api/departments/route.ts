@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getDivisionByCode } from "@/config/divisions";
+import { getAdminSession } from "@/lib/session";
+import { z } from "zod";
+
+async function checkDeptPermission() {
+  const session = await getAdminSession();
+  if (!session || !session.userId) {
+    return { error: "Unauthorized: Vui lòng đăng nhập", status: 401 };
+  }
+  const canManage = session.isFullAccess || session.isSuperAdmin || session.isHeadOfAcademic || session.isGDCS || session.isTBP;
+  if (!canManage) {
+    return { error: "Forbidden: Bạn không có quyền quản lý cơ cấu tổ chức", status: 403 };
+  }
+  return { session };
+}
+
+const DepartmentInputSchema = z.object({
+  code: z.string().trim().min(2, "Mã Tổ phải có ít nhất 2 ký tự").max(50, "Mã Tổ tối đa 50 ký tự"),
+  name: z.string().trim().min(2, "Tên Tổ phải có ít nhất 2 ký tự").max(100, "Tên Tổ tối đa 100 ký tự"),
+  description: z.string().trim().max(500).optional().nullable(),
+  divisionCode: z.string().trim().optional().nullable(),
+  blockCM: z.string().trim().optional().nullable(),
+  teamsWebhookUrl: z.string().trim().url("Webhook URL không hợp lệ").optional().nullable().or(z.literal("")),
+});
 
 export async function GET() {
   try {
@@ -44,6 +67,11 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const perm = await checkDeptPermission();
+    if (perm.error) {
+      return NextResponse.json({ error: perm.error }, { status: perm.status });
+    }
+
     const body = await req.json();
     const { action, code, name, description, blockCM, divisionCode, teamsWebhookUrl, departmentIds, teacherId, targetDivisionCode } = body;
 
@@ -109,13 +137,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // Standard Create Department
-    if (!code || !name) {
-      return NextResponse.json({ error: "Mã Tổ và Tên Tổ là bắt buộc" }, { status: 400 });
+    // Standard Create Department with Zod validation
+    const parsed = DepartmentInputSchema.safeParse({
+      code,
+      name,
+      description,
+      divisionCode,
+      blockCM,
+      teamsWebhookUrl
+    });
+
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    const trimmedCode = String(code).trim().toUpperCase();
-    const trimmedName = String(name).trim();
+    const trimmedCode = parsed.data.code.toUpperCase();
+    const trimmedName = parsed.data.name;
 
     const existing = await prisma.department.findFirst({
       where: {
@@ -133,17 +171,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Tên Tổ "${trimmedName}" đã tồn tại.` }, { status: 400 });
     }
 
-    const divMeta = divisionCode ? getDivisionByCode(divisionCode) : undefined;
-    const finalBlockCM = blockCM ? String(blockCM).trim() : (divMeta?.defaultBlockCM || null);
+    const divMeta = parsed.data.divisionCode ? getDivisionByCode(parsed.data.divisionCode) : undefined;
+    const finalBlockCM = parsed.data.blockCM || (divMeta?.defaultBlockCM || null);
 
     const department = await prisma.department.create({
       data: {
         code: trimmedCode,
         name: trimmedName,
-        description: description ? String(description).trim() : null,
-        divisionCode: divisionCode ? String(divisionCode).trim() : null,
+        description: parsed.data.description || null,
+        divisionCode: parsed.data.divisionCode || null,
         blockCM: finalBlockCM,
-        teamsWebhookUrl: teamsWebhookUrl ? String(teamsWebhookUrl).trim() : null,
+        teamsWebhookUrl: parsed.data.teamsWebhookUrl || null,
         status: "ACTIVE"
       }
     });
@@ -157,6 +195,11 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const perm = await checkDeptPermission();
+    if (perm.error) {
+      return NextResponse.json({ error: perm.error }, { status: perm.status });
+    }
+
     const body = await req.json();
     const { id, code, name, description, blockCM, divisionCode, teamsWebhookUrl } = body;
 
@@ -164,12 +207,22 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Thiếu ID Tổ chuyên môn" }, { status: 400 });
     }
 
-    if (!code || !name) {
-      return NextResponse.json({ error: "Mã Tổ và Tên Tổ là bắt buộc" }, { status: 400 });
+    const parsed = DepartmentInputSchema.safeParse({
+      code,
+      name,
+      description,
+      divisionCode,
+      blockCM,
+      teamsWebhookUrl
+    });
+
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]?.message || "Dữ liệu không hợp lệ";
+      return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    const trimmedCode = String(code).trim().toUpperCase();
-    const trimmedName = String(name).trim();
+    const trimmedCode = parsed.data.code.toUpperCase();
+    const trimmedName = parsed.data.name;
 
     const duplicate = await prisma.department.findFirst({
       where: {
@@ -188,18 +241,18 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: `Tên Tổ "${trimmedName}" đã được sử dụng ở tổ khác.` }, { status: 400 });
     }
 
-    const divMeta = divisionCode ? getDivisionByCode(divisionCode) : undefined;
-    const finalBlockCM = blockCM ? String(blockCM).trim() : (divMeta?.defaultBlockCM || null);
+    const divMeta = parsed.data.divisionCode ? getDivisionByCode(parsed.data.divisionCode) : undefined;
+    const finalBlockCM = parsed.data.blockCM || (divMeta?.defaultBlockCM || null);
 
     const department = await prisma.department.update({
       where: { id },
       data: {
         code: trimmedCode,
         name: trimmedName,
-        description: description ? String(description).trim() : null,
-        divisionCode: divisionCode ? String(divisionCode).trim() : null,
+        description: parsed.data.description || null,
+        divisionCode: parsed.data.divisionCode || null,
         blockCM: finalBlockCM,
-        teamsWebhookUrl: teamsWebhookUrl ? String(teamsWebhookUrl).trim() : null
+        teamsWebhookUrl: parsed.data.teamsWebhookUrl || null
       }
     });
 
@@ -212,6 +265,11 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const perm = await checkDeptPermission();
+    if (perm.error) {
+      return NextResponse.json({ error: perm.error }, { status: perm.status });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const ids = searchParams.get("ids");

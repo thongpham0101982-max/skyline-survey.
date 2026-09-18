@@ -143,9 +143,40 @@ export function NotificationBell() {
   }
 
   useEffect(() => {
-    fetchNotifs()
-    const interval = setInterval(fetchNotifs, 15000)
-    return () => clearInterval(interval)
+    let timer: any = null
+
+    const schedulePoll = () => {
+      if (timer) clearInterval(timer)
+      // Only poll when document is visible to save server resources & DB connections
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchNotifs()
+        timer = setInterval(fetchNotifs, 30000)
+      }
+    }
+
+    schedulePoll()
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        schedulePoll()
+      } else if (timer) {
+        clearInterval(timer)
+        timer = null
+      }
+    }
+
+    const handleFocus = () => {
+      fetchNotifs()
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", handleFocus)
+
+    return () => {
+      if (timer) clearInterval(timer)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleFocus)
+    }
   }, [])
 
   useEffect(() => {

@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export async function GET(request: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "Unauthorized: Vui lòng đăng nhập" }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const academicYearId = searchParams.get("academicYearId") || ""
     const grade = searchParams.get("grade") || ""
@@ -30,6 +36,16 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "Unauthorized: Vui lòng đăng nhập" }, { status: 401 })
+    }
+    const role = ((session.user as any)?.role || "").toUpperCase().trim()
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "KHAO_THI", "TB_DHCM"].includes(role)
+    if (!isAllowed) {
+      return NextResponse.json({ success: false, error: "Forbidden: Bạn không có quyền cấu hình sổ điểm" }, { status: 403 })
+    }
+
     const body = await request.json()
     const {
       academicYearId,
@@ -214,6 +230,16 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await auth()
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: "Unauthorized: Vui lòng đăng nhập" }, { status: 401 })
+    }
+    const role = ((session.user as any)?.role || "").toUpperCase().trim()
+    const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "KHAO_THI"].includes(role)
+    if (!isAllowed) {
+      return NextResponse.json({ success: false, error: "Forbidden: Bạn không có quyền xóa cấu hình sổ điểm" }, { status: 403 })
+    }
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
     if (!id) {

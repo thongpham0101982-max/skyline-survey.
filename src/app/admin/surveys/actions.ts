@@ -1,6 +1,20 @@
 "use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { auth } from "@/lib/auth"
+
+async function checkSurveyAdminAuth() {
+  const session = await auth()
+  if (!session || !session.user) {
+    return { error: "Unauthorized: Vui lòng đăng nhập" }
+  }
+  const role = ((session.user as any)?.role || "").toUpperCase()
+  const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "TB_DHCM", "GDCS"].includes(role)
+  if (!isAllowed) {
+    return { error: "Forbidden: Bạn không có quyền quản lý đợt khảo sát" }
+  }
+  return { session }
+}
 
 export async function createSurveyPeriodAction(data: {
   name: string
@@ -10,9 +24,17 @@ export async function createSurveyPeriodAction(data: {
   targetAudience?: string
   campusId?: string
 }) {
+  const authCheck = await checkSurveyAdminAuth()
+  if (authCheck.error) return { error: authCheck.error }
+
   const { name, startDate, endDate, academicYearId, targetAudience, campusId } = data
   if (!name || !startDate || !endDate || !academicYearId) {
     return { error: "Thiếu thông tin bắt buộc" }
+  }
+
+  const cleanName = name.trim()
+  if (cleanName.length < 3) {
+    return { error: "Tên đợt khảo sát phải có ít nhất 3 ký tự" }
   }
 
   if (new Date(startDate) >= new Date(endDate)) {
@@ -26,7 +48,7 @@ export async function createSurveyPeriodAction(data: {
     await prisma.surveyPeriod.create({
       data: {
         code,
-        name,
+        name: cleanName,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
         academicYearId,
@@ -45,7 +67,14 @@ export async function createSurveyPeriodAction(data: {
 }
 
 export async function updateSurveyPeriodAction(data: any) {
+  const authCheck = await checkSurveyAdminAuth()
+  if (authCheck.error) return { error: authCheck.error }
+
   if (!data.id) return { error: "Thiếu ID" }
+
+  if (data.name !== undefined && (!data.name || data.name.trim().length < 3)) {
+    return { error: "Tên đợt khảo sát phải có ít nhất 3 ký tự" }
+  }
 
   if (data.startDate || data.endDate) {
     const existing = await prisma.surveyPeriod.findUnique({ where: { id: data.id } })
@@ -59,7 +88,7 @@ export async function updateSurveyPeriodAction(data: any) {
   }
 
   const payload: any = {}
-  if (data.name) payload.name = data.name
+  if (data.name) payload.name = data.name.trim()
   if (data.startDate) payload.startDate = new Date(data.startDate)
   if (data.endDate) payload.endDate = new Date(data.endDate)
   if (data.status) payload.status = data.status
@@ -82,7 +111,17 @@ export async function updateSurveyPeriodAction(data: any) {
 }
 
 export async function deleteSurveyPeriodAction(id: string) {
+  const authCheck = await checkSurveyAdminAuth()
+  if (authCheck.error) return { error: authCheck.error }
+
   try {
+    const submittedCount = await prisma.surveyForm.count({
+      where: { surveyPeriodId: id, status: { in: ["SUBMITTED", "submitted", "COMPLETED", "completed"] } }
+    })
+    if (submittedCount > 0) {
+      return { error: `Không thể xóa đợt khảo sát đã có ${submittedCount} phiếu khảo sát đã nộp kết quả!` }
+    }
+
     await prisma.surveyPeriod.delete({ where: { id } })
     revalidatePath("/admin/surveys")
     return { success: true }
@@ -92,7 +131,17 @@ export async function deleteSurveyPeriodAction(id: string) {
 }
 
 export async function deleteMultipleSurveysAction(ids: string[]) {
+  const authCheck = await checkSurveyAdminAuth()
+  if (authCheck.error) return { error: authCheck.error }
+
   try {
+    const submittedCount = await prisma.surveyForm.count({
+      where: { surveyPeriodId: { in: ids }, status: { in: ["SUBMITTED", "submitted", "COMPLETED", "completed"] } }
+    })
+    if (submittedCount > 0) {
+      return { error: `Không thể xóa: Có ${submittedCount} phiếu khảo sát đã nộp kết quả thuộc các đợt được chọn!` }
+    }
+
     await prisma.surveyPeriod.deleteMany({
       where: { id: { in: ids } }
     })

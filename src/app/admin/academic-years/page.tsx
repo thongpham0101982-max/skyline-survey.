@@ -2,12 +2,43 @@ import { PageHeader } from "@/components/PageHeader"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { AcademicYearsClient } from "./client"
+import { auth } from "@/lib/auth"
+
+async function checkAcademicAdminAuth() {
+  const session = await auth()
+  if (!session || !session.user) {
+    throw new Error("Unauthorized: Vui lòng đăng nhập")
+  }
+  const role = ((session.user as any)?.role || "").toUpperCase()
+  const isAllowed = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN"].includes(role)
+  if (!isAllowed) {
+    throw new Error("Forbidden: Bạn không có quyền chỉnh sửa cấu hình năm học")
+  }
+  return session
+}
 
 async function createAcademicYear(formData: FormData) {
   "use server"
-  const name = formData.get("name") as string
-  const startDate = new Date(formData.get("startDate") as string)
-  const endDate = new Date(formData.get("endDate") as string)
+  await checkAcademicAdminAuth()
+
+  const rawName = formData.get("name") as string
+  const name = rawName ? rawName.trim() : ""
+  if (!name || name.length < 4) {
+    throw new Error("Tên năm học không hợp lệ (ví dụ: 2025-2026)")
+  }
+
+  const startDateStr = formData.get("startDate") as string
+  const endDateStr = formData.get("endDate") as string
+  if (!startDateStr || !endDateStr) {
+    throw new Error("Vui lòng chọn ngày bắt đầu và kết thúc năm học")
+  }
+
+  const startDate = new Date(startDateStr)
+  const endDate = new Date(endDateStr)
+  if (startDate >= endDate) {
+    throw new Error("Ngày bắt đầu năm học phải trước ngày kết thúc")
+  }
+
   const theme = (formData.get("theme") as string || "").trim()
   const defaultPillars = "[{\"id\":\"TRI_TUE\",\"name\":\"Trí tuệ\",\"icon\":\"Brain\",\"color\":\"blue\",\"focus\":\"Phát triển tư duy độc lập, phản biện, sáng tạo khoa học và học tập xuất sắc\"},{\"id\":\"THE_CHAT\",\"name\":\"Thể chất\",\"icon\":\"Activity\",\"color\":\"emerald\",\"focus\":\"Rèn luyện thể lực bền bỉ, phát triển chiều cao và lối sống năng động lành mạnh\"},{\"id\":\"TAM_HON\",\"name\":\"Tâm hồn\",\"icon\":\"Heart\",\"color\":\"rose\",\"focus\":\"Nuôi dưỡng lòng nhân ái, sự trung thực, bản sắc văn hóa Việt và lòng biết ơn\"},{\"id\":\"KY_NANG\",\"name\":\"Kỹ năng\",\"icon\":\"Compass\",\"color\":\"amber\",\"focus\":\"Thành thạo kỹ năng tự lập, sinh tồn, giao tiếp, hợp tác và giải quyết vấn đề\"},{\"id\":\"HOI_NHAP\",\"name\":\"Hội nhập\",\"icon\":\"Globe\",\"color\":\"purple\",\"focus\":\"Năng lực song ngữ quốc tế, tư duy công dân toàn cầu và làm chủ công nghệ số\"}]";
 
@@ -34,14 +65,19 @@ async function createAcademicYear(formData: FormData) {
     })
   } catch(e) {
     console.error("Error creating academic year:", e)
+    throw e
   }
   revalidatePath("/admin/academic-years")
 }
 
 async function updateAcademicYear(data: any) {
   "use server"
+  await checkAcademicAdminAuth()
+
+  if (!data?.id) throw new Error("Thiếu ID năm học")
+
   const payload: any = {}
-  if (data.name) payload.name = data.name
+  if (data.name) payload.name = data.name.trim()
   if (data.startDate) payload.startDate = data.startDate
   if (data.endDate) payload.endDate = data.endDate
   if (data.status) payload.status = data.status
@@ -53,8 +89,11 @@ async function updateAcademicYear(data: any) {
   revalidatePath("/hocsinh/portal")
 }
 
-async function deleteAcademicYear(id) {
+async function deleteAcademicYear(id: string) {
   "use server"
+  await checkAcademicAdminAuth()
+
+  if (!id) throw new Error("Thiếu ID năm học để xóa")
   try {
     await prisma.$transaction(async (tx) => {
       // 1. TaskComments and TaskAttachments of WorkTasks of this year

@@ -1,53 +1,60 @@
 @echo off
-chcp 65001 >nul
-title CẬP NHẬT HỆ THỐNG SKYLINE SURVEY (SSM SERVER)
+title CAP NHAT HE THONG SKYLINE SURVEY (SSM SERVER)
 
 echo =======================================================
-echo       CẬP NHẬT VÀ KHỞI ĐỘNG LẠI MÁY CHỦ SSM
+echo       CAP NHAT VA KHOI DONG LAI MAY CHU SSM
 echo =======================================================
 echo.
 
 cd /d "%~dp0"
 
-echo [1/4] Đang kéo mã nguồn mới nhất từ GitHub (git pull)...
+echo [1/5] Dang keo ma nguon moi nhat tu GitHub (git pull)...
 git pull origin main
 if %ERRORLEVEL% neq 0 (
-    echo [Lỗi] Không thể pull từ GitHub. Vui lòng kiểm tra kết nối mạng.
+    echo [Loi] Khong the pull tu GitHub. Vui long kiem tra ket noi mang.
     pause
     exit /b 1
 )
 
 echo.
-echo [2/4] Đang cập nhật Prisma Client...
+echo [2/5] Dang tam dung tien trinh dang chay tren port 3000...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (
+    echo Dung PID: %%a
+    taskkill /F /T /PID %%a >nul 2>&1
+)
+ping 127.0.0.1 -n 3 >nul
+
+echo.
+echo [3/5] Dang cap nhat Prisma Client...
 call npx prisma generate
 
 echo.
-echo [3/4] Đang tiến hành Build dự án Next.js (npm run build)...
+echo [4/5] Dang build du an Next.js (npm run build)...
 call npm run build
 if %ERRORLEVEL% neq 0 (
-    echo [Lỗi] Quá trình Build thất bại!
+    echo [Loi] Build that bai! Dang khoi phuc server...
+    if exist "%~dp0chay-ngam.vbs" (
+        wscript.exe "%~dp0chay-ngam.vbs"
+    ) else (
+        start "" "%~dp0start-server.bat"
+    )
     pause
     exit /b 1
 )
 
 echo.
-echo [4/4] Đang khởi động lại dịch vụ máy chủ...
-where pm2 >nul 2>&1
-if %ERRORLEVEL% equ 0 (
-    echo Đang reload dịch vụ PM2 (skyline-portal)...
-    call pm2 reload skyline-portal || call pm2 restart ecosystem.config.js
-    call pm2 save
+echo [5/5] Dang khoi dong lai may chu...
+if exist "%~dp0chay-ngam.vbs" (
+    wscript.exe "%~dp0chay-ngam.vbs"
 ) else (
-    echo Khởi động lại qua script start-server.bat...
-    call "%~dp0tat-server.bat"
     start "" "%~dp0start-server.bat"
 )
 
 echo.
 echo =======================================================
-echo   CẬP NHẬT THÀNH CÔNG!
-echo   Hệ thống SSM đã được cập nhật phiên bản mới nhất.
-echo   Địa chỉ truy cập: https://ssm.skylineschool.edu.vn
+echo   CAP NHAT THANH CONG!
+echo   Dia chi truy cap: http://192.168.10.239:3000
+echo   Domain: https://ssm.skylineschool.edu.vn
 echo =======================================================
 echo.
 pause
