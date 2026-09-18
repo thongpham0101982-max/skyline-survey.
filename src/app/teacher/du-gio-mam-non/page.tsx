@@ -27,7 +27,21 @@ export default async function PreschoolObservationPage(props: {
   const deptId = searchParams.deptId || "all"
   const classId = searchParams.classId || "all"
 
-  const refDataResult = await getObservationData(academicYearId)
+  const [refDataResult, slotsResult] = await Promise.all([
+    getObservationData(academicYearId),
+    getObservationSlots({
+      academicYearId,
+      level,
+      grade,
+      classId,
+      period,
+      date,
+      month,
+      campusId,
+      deptId
+    })
+  ]);
+
   if (!refDataResult.success) {
     return (
       <div className="p-6 text-red-500 font-bold text-xs font-semibold">
@@ -36,22 +50,16 @@ export default async function PreschoolObservationPage(props: {
     )
   }
 
-  const slotsResult = await getObservationSlots({
-    academicYearId,
-    level,
-    grade,
-    classId,
-    period,
-    date,
-    month,
-    campusId,
-    deptId
-  })
+  const currentTeacherId = refDataResult.currentTeacher?.id;
+  const loadedSlots = slotsResult.success ? (slotsResult.slots || []) : [];
+  const myPersonalSlots = currentTeacherId
+    ? loadedSlots.filter((s: any) => s.teacherId === currentTeacherId || s.registrations?.some((r: any) => r.teacherId === currentTeacherId))
+    : [];
 
   return (
     <ObservationClient
       isPreschoolPage={true}
-      initialSlots={slotsResult.success ? (slotsResult.slots || []) : []}
+      initialSlots={loadedSlots}
       currentTeacher={refDataResult.currentTeacher}
       subjects={refDataResult.subjects || []}
       departments={refDataResult.departments || []}
@@ -62,7 +70,7 @@ export default async function PreschoolObservationPage(props: {
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
       initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}
-      initialPersonalSlots={refDataResult.myPersonalSlots || []}
+      initialPersonalSlots={myPersonalSlots}
     />
   )
 }

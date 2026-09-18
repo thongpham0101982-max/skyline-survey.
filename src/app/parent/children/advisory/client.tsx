@@ -28,10 +28,16 @@ import {
   matchCategoryKey
 } from "@/lib/advisory/advisoryWeights"
 
-export default function ParentAdvisoryClient({ initialProfile }: { initialProfile?: any }) {
+export default function ParentAdvisoryClient({ 
+  initialChildren = [], 
+  initialProfile = null 
+}: { 
+  initialChildren?: any[]
+  initialProfile?: any 
+}) {
   const [academicYearId, setAcademicYearId] = useState("")
-  const [childrenList, setChildrenList] = useState<any[]>([])
-  const [selectedStudentId, setSelectedStudentId] = useState("")
+  const [childrenList, setChildrenList] = useState<any[]>(initialChildren)
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(initialChildren[0]?.id || "")
   
   const [profile, setProfile] = useState<any>(initialProfile || null)
   const [goalsData, setGoalsData] = useState<any>(null)
@@ -48,7 +54,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
   const [parentMessage, setParentMessage] = useState("")
   const [signed, setSigned] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(initialChildren.length === 0)
 
   useEffect(() => {
     let year = ""
@@ -59,32 +65,28 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
     async function loadChildren(yId: string) {
       try {
-        setLoading(true)
         const res = await fetch("/api/parent/children?academicYearId=" + yId + "&_t=" + Date.now(), { cache: "no-store" })
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
             setChildrenList(data)
-            setSelectedStudentId(data[0].id)
-          } else {
+            setSelectedStudentId(prev => {
+              if (prev && data.some((c: any) => c.id === prev)) return prev
+              return data[0].id
+            })
+          } else if (!initialChildren.length) {
             setChildrenList([])
             setSelectedStudentId("")
-            setLoading(false)
           }
-        } else {
-          setChildrenList([])
-          setSelectedStudentId("")
-          setLoading(false)
         }
       } catch (e) {
         console.error("Error loading parent children:", e)
-        setChildrenList([])
-        setSelectedStudentId("")
-        setLoading(false)
       }
     }
 
-    loadChildren(year)
+    if (year) {
+      loadChildren(year)
+    }
 
     const handleYearChange = () => {
       if (typeof window !== "undefined") {
@@ -104,7 +106,9 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
   useEffect(() => {
     if (!selectedStudentId) {
-      setLoading(false)
+      if (childrenList.length === 0) {
+        setLoading(false)
+      }
       return
     }
 
@@ -354,21 +358,23 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
         </div>
       )}
 
-      {loading ? (
-        <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
-          <Compass className="w-8 h-8 mx-auto text-teal-500 animate-spin" />
-          <p>Đang liên thông dữ liệu Cố vấn học tập Của Học Sinh...</p>
-        </div>
-      ) : childrenList.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
-          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
-            <Users className="w-8 h-8" />
+      {childrenList.length === 0 ? (
+        loading ? (
+          <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
+            <Compass className="w-8 h-8 mx-auto text-teal-500 animate-spin" />
+            <p>Đang liên thông dữ liệu Cố vấn học tập Của Học Sinh...</p>
           </div>
-          <h3 className="text-lg font-bold text-slate-800">Chưa có dữ liệu con em</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
-            Tài khoản chưa có thông tin học sinh liên kết. Quý Phụ huynh vui lòng liên hệ Ban Giám hiệu hoặc GVCN để được hỗ trợ đồng bộ dữ liệu.
-          </p>
-        </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
+            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+              <Users className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">Chưa có dữ liệu con em</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
+              Tài khoản chưa có thông tin học sinh liên kết. Quý Phụ huynh vui lòng liên hệ Ban Giám hiệu hoặc GVCN để được hỗ trợ đồng bộ dữ liệu.
+            </p>
+          </div>
+        )
       ) : (
         <div className="space-y-6">
           

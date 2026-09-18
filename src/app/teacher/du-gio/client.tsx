@@ -1435,24 +1435,28 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const refreshSlots = async () => {
-    const [res, refRes] = await Promise.all([
-      getObservationSlots({ 
-        schoolBlock: filterSchoolBlock, 
-        campusId: filterCampusId, 
-        divisionCode: filterDivisionCode,
-        deptId: filterDeptId, 
-        level: filterLevel, 
-        grade: filterGrade, 
-        classId: filterClassId, 
-        period: filterPeriod, 
-        date: filterDate,
-        month: filterMonth,
-        academicYearId: filterAcademicYearId
-      }),
-      getObservationData(filterAcademicYearId)
-    ]);
-    if (res.success && res.slots) setSlots(res.slots);
-    if (refRes.success && refRes.myPersonalSlots) setPersonalSlots(refRes.myPersonalSlots);
+    const res = await getObservationSlots({ 
+      schoolBlock: filterSchoolBlock, 
+      campusId: filterCampusId, 
+      divisionCode: filterDivisionCode,
+      deptId: filterDeptId, 
+      level: filterLevel, 
+      grade: filterGrade, 
+      classId: filterClassId, 
+      period: filterPeriod, 
+      date: filterDate,
+      month: filterMonth,
+      academicYearId: filterAcademicYearId
+    });
+    if (res.success && res.slots) {
+      setSlots(res.slots);
+      if (currentTeacher?.id) {
+        const myPersonal = res.slots.filter((s: any) =>
+          s.teacherId === currentTeacher.id || s.registrations?.some((r: any) => r.teacherId === currentTeacher.id)
+        );
+        setPersonalSlots(myPersonal);
+      }
+    }
   }
 
 

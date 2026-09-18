@@ -1,8 +1,14 @@
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
+import { auth } from "@/lib/auth"
+import { getParentChildren } from "@/lib/parentData"
 import ParentAdvisoryClient from "./client"
 
-export default function ParentAdvisoryPage() {
-  return <ParentAdvisoryClient />
+export default async function ParentAdvisoryPage() {
+  const session = await auth()
+  const userId = (session?.user as any)?.id || ""
+  const children = userId ? await getParentChildren(userId) : []
+
+  return <ParentAdvisoryClient initialChildren={children} />
 }

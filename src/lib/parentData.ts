@@ -167,3 +167,55 @@ export async function resolveHomeroomTeacher(child: any) {
   }
   return gvcnName
 }
+
+export async function getParentChildren(userId: string, academicYearId?: string) {
+  if (!userId) return []
+
+  const parent = await getParentProfileWithStudents(userId)
+  if (!parent) return []
+
+  let allStudents = (parent.students || []).map((s: any) => s.student).filter(Boolean)
+
+  const uniqueStudentsMap = new Map<string, any>()
+
+  for (const st of allStudents) {
+    const code = st.studentCode || st.id
+    const matchesYear = academicYearId ? (st.academicYearId === academicYearId || st.class?.academicYearId === academicYearId) : true
+
+    if (!uniqueStudentsMap.has(code)) {
+      if (matchesYear || !academicYearId) {
+        uniqueStudentsMap.set(code, st)
+      }
+    } else {
+      const existing = uniqueStudentsMap.get(code)
+      const existingMatches = academicYearId ? (existing.academicYearId === academicYearId || existing.class?.academicYearId === academicYearId) : false
+      if (!existingMatches && matchesYear) {
+        uniqueStudentsMap.set(code, st)
+      }
+    }
+  }
+
+  let filteredStudents = Array.from(uniqueStudentsMap.values())
+
+  if (filteredStudents.length === 0 && allStudents.length > 0) {
+    const fallbackMap = new Map<string, any>()
+    for (const st of allStudents) {
+      const code = st.studentCode || st.id
+      if (!fallbackMap.has(code)) fallbackMap.set(code, st)
+    }
+    filteredStudents = Array.from(fallbackMap.values())
+  }
+
+  const result = await Promise.all(
+    filteredStudents.map(async (st: any) => {
+      const homeroomTeacherName = await resolveHomeroomTeacher(st)
+      return {
+        ...st,
+        homeroomTeacherName,
+        gvcnName: homeroomTeacherName
+      }
+    })
+  )
+
+  return JSON.parse(JSON.stringify(result))
+}

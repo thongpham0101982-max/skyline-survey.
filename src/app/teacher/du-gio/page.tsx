@@ -52,10 +52,16 @@ export default async function ObservationPage(props: {
     )
   }
 
+  const currentTeacherId = refDataResult.currentTeacher?.id;
+  const loadedSlots = slotsResult.success ? (slotsResult.slots || []) : [];
+  const myPersonalSlots = currentTeacherId
+    ? loadedSlots.filter((s: any) => s.teacherId === currentTeacherId || s.registrations?.some((r: any) => r.teacherId === currentTeacherId))
+    : [];
+
   return (
     <ObservationClient
       isPreschoolPage={false}
-      initialSlots={slotsResult.success ? (slotsResult.slots || []) : []}
+      initialSlots={loadedSlots}
       currentTeacher={refDataResult.currentTeacher}
       subjects={refDataResult.subjects || []}
       departments={refDataResult.departments || []}
@@ -67,7 +73,7 @@ export default async function ObservationPage(props: {
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
       initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}
-      initialPersonalSlots={refDataResult.myPersonalSlots || []}
+      initialPersonalSlots={myPersonalSlots}
     />
   )
 }

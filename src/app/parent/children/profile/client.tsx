@@ -33,12 +33,16 @@ import {
   HelpCircle
 } from "lucide-react"
 
-export default function ParentStudentProfilePage() {
-  const [childrenList, setChildrenList] = useState<any[]>([])
-  const [selectedStudentId, setSelectedStudentId] = useState("")
+export default function ParentStudentProfilePage({ 
+  initialChildren = [] 
+}: { 
+  initialChildren?: any[] 
+}) {
+  const [childrenList, setChildrenList] = useState<any[]>(initialChildren)
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(initialChildren[0]?.id || "")
   const [academicYearId, setAcademicYearId] = useState("")
   const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(initialChildren.length === 0)
   const [activeTab, setActiveTab] = useState<
     "advisory" | "hshs_detail" | "moet" | "entrance" | "achievements" | "orientation" | "experiences" | "comments" | "support"
   >("hshs_detail")
@@ -52,33 +56,29 @@ export default function ParentStudentProfilePage() {
 
     async function loadChildren(targetYearId: string) {
       try {
-        setLoading(true)
         const url = targetYearId ? `/api/parent/children?academicYearId=${targetYearId}` : "/api/parent/children"
         const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
             setChildrenList(data)
-            setSelectedStudentId(data[0].id)
-          } else {
+            setSelectedStudentId(prev => {
+              if (prev && data.some((c: any) => c.id === prev)) return prev
+              return data[0].id
+            })
+          } else if (!initialChildren.length) {
             setChildrenList([])
             setSelectedStudentId("")
-            setLoading(false)
           }
-        } else {
-          setChildrenList([])
-          setSelectedStudentId("")
-          setLoading(false)
         }
       } catch (e) {
         console.error("Error loading parent children:", e)
-        setChildrenList([])
-        setSelectedStudentId("")
-        setLoading(false)
       }
     }
 
-    loadChildren(year)
+    if (year) {
+      loadChildren(year)
+    }
 
     const handleYearChange = () => {
       if (typeof window !== "undefined") {
@@ -96,7 +96,9 @@ export default function ParentStudentProfilePage() {
 
   useEffect(() => {
     if (!selectedStudentId) {
-      setLoading(false)
+      if (childrenList.length === 0) {
+        setLoading(false)
+      }
       return
     }
 
@@ -168,26 +170,28 @@ export default function ParentStudentProfilePage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
-          <GraduationCap className="w-8 h-8 mx-auto text-[#48BFE3] animate-bounce" />
-          <p>Đang tải Hồ sơ Năng lực Học sinh...</p>
-        </div>
-      ) : childrenList.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
-          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
-            <Users className="w-8 h-8" />
+      {childrenList.length === 0 ? (
+        loading ? (
+          <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
+            <GraduationCap className="w-8 h-8 mx-auto text-[#48BFE3] animate-bounce" />
+            <p>Đang tải Hồ sơ Năng lực Học sinh...</p>
           </div>
-          <h3 className="text-lg font-bold text-slate-800">Chưa có dữ liệu con em</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
-            Tài khoản chưa có thông tin học sinh liên kết. Quý Phụ huynh vui lòng liên hệ Ban Giám hiệu hoặc GVCN để được hỗ trợ đồng bộ dữ liệu.
-          </p>
-          <div className="pt-2 flex justify-center">
-            <Link href="/parent" className="px-5 py-2.5 rounded-2xl bg-[#003B3A] text-white text-xs font-bold hover:bg-[#004D4A] transition-all">
-              Chuyển sang trang Tổng quan
-            </Link>
+        ) : (
+          <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
+            <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+              <Users className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">Chưa có dữ liệu con em</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
+              Tài khoản chưa có thông tin học sinh liên kết. Quý Phụ huynh vui lòng liên hệ Ban Giám hiệu hoặc GVCN để được hỗ trợ đồng bộ dữ liệu.
+            </p>
+            <div className="pt-2 flex justify-center">
+              <Link href="/parent" className="px-5 py-2.5 rounded-2xl bg-[#003B3A] text-white text-xs font-bold hover:bg-[#004D4A] transition-all">
+                Chuyển sang trang Tổng quan
+              </Link>
+            </div>
           </div>
-        </div>
+        )
       ) : (
         <div className="space-y-6">
           {/* TAB BAR MATCHING EXACT SCREENSHOT (2 Rows rounded pill container) */}

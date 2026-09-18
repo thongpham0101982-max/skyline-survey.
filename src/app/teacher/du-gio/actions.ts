@@ -194,6 +194,45 @@ async function checkIsObservationAdmin(roleCode: string, userId?: string): Promi
 }
 
 
+// Fast In-Memory Cache for Observation System
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+const observationRefCache = new Map<string, CacheEntry<any>>();
+const REF_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const observationSlotsCache = new Map<string, CacheEntry<any>>();
+const SLOTS_CACHE_TTL = 60 * 1000; // 60 seconds
+
+export function invalidateObservationSlotsCache() {
+  observationSlotsCache.clear();
+}
+
+export function invalidateObservationRefCache() {
+  observationRefCache.clear();
+}
+
+async function getCachedRef<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const cached = observationRefCache.get(key);
+  if (cached && Date.now() - cached.timestamp < REF_CACHE_TTL) {
+    return cached.data;
+  }
+  const fresh = await fetcher();
+  observationRefCache.set(key, { data: fresh, timestamp: Date.now() });
+  return fresh;
+}
+
+async function getCachedSlots<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const cached = observationSlotsCache.get(key);
+  if (cached && Date.now() - cached.timestamp < SLOTS_CACHE_TTL) {
+    return cached.data;
+  }
+  const fresh = await fetcher();
+  observationSlotsCache.set(key, { data: fresh, timestamp: Date.now() });
+  return fresh;
+}
+
 export async function getObservationData(academicYearId?: string) {
   try {
     const session = await auth()
@@ -446,92 +485,6 @@ export async function getObservationData(academicYearId?: string) {
     })).filter((item: any) => item.slot != null);
 
     let myPersonalSlots: any[] = [];
-    if (currentTeacher?.id && !currentTeacher.id.startsWith("admin-")) {
-      const yearSlotCondition: any = selectedYear
-        ? {
-            OR: [
-              { academicYearId: selectedYear.id },
-              {
-                AND: [
-                  { academicYearId: null },
-                  {
-                    date: {
-                      gte: selectedYear.startDate,
-                      lte: selectedYear.endDate
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        : {};
-
-      myPersonalSlots = await prisma.observationSlot.findMany({
-        where: {
-          status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] },
-          AND: [
-            yearSlotCondition,
-            {
-              OR: [
-                { teacherId: currentTeacher.id },
-                { registrations: { some: { teacherId: currentTeacher.id } } }
-              ]
-            }
-          ]
-        },
-        include: {
-          teacher: {
-            select: {
-              id: true,
-              teacherName: true,
-              teacherCode: true,
-              email: true,
-              departmentId: true,
-              departmentRel: true,
-              departmentAssignments: {
-                include: { department: true }
-              },
-              campusId: true,
-              campus: {
-                select: { campusName: true }
-              }
-            }
-          },
-          registrations: {
-            include: {
-              teacher: {
-                select: {
-                  id: true,
-                  teacherName: true,
-                  teacherCode: true,
-                  departmentId: true,
-                  campusId: true,
-                  campus: {
-                    select: {
-                      id: true,
-                      campusName: true,
-                      campusCode: true
-                    }
-                  },
-                  position: true,
-                  departmentAssignments: {
-                    select: { departmentId: true, position: true }
-                  },
-                  email: true
-                }
-              },
-              evaluation: true
-            }
-          }
-        },
-        orderBy: {
-          date: "desc"
-        }
-      }).catch(err => {
-        console.error("Error fetching myPersonalSlots:", err);
-        return [];
-      });
-    }
 
     return {
       success: true,
@@ -862,6 +815,7 @@ export async function createObservationSlot(data: {
   selectedMemberIds?: string[]
 }) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -1101,6 +1055,7 @@ export async function createObservationSlot(data: {
 
 export async function registerObservation(slotId: string) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -1265,6 +1220,7 @@ export async function registerObservation(slotId: string) {
 
 export async function cancelObservation(targetId: string) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -1318,6 +1274,7 @@ export async function cancelObservation(targetId: string) {
 
 export async function deleteObservationSlot(slotId: string) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -1378,6 +1335,7 @@ export async function deleteObservationSlot(slotId: string) {
 
 export async function deleteMultipleObservationSlots(slotIds: string[]) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -1479,6 +1437,7 @@ export async function getCreatedCountInMonth(dateString: string) {
 
 export async function approveRegistration(registrationId: string) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
     const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
@@ -1642,6 +1601,7 @@ export async function submitEvaluation(data: {
   overallRating: string
 }) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
     const currentTeacher = await prisma.teacher.findUnique({ 
@@ -1923,6 +1883,7 @@ export async function updateObservationSlot(slotId: string, data: {
   selectedMemberIds?: string[]
 }) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -2020,6 +1981,8 @@ export async function updateTeacherObservationTargets(
   }
 ) {
   try {
+    invalidateObservationSlotsCache();
+    invalidateObservationRefCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -2222,6 +2185,7 @@ export async function requestObservationSlot(data: {
   academicYearId?: string
 }) {
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -2474,6 +2438,7 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
   // Ensure DB columns exist
   await ensureDbColumns();
   try {
+    invalidateObservationSlotsCache();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -3029,6 +2994,7 @@ export async function requestReEvaluation(data: {
   reason: string
 }) {
   try {
+    invalidateObservationSlotsCache();
     await ensureDbColumns();
     const session = await auth()
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
@@ -3087,6 +3053,7 @@ export async function approveReEvaluation(data: {
   adminNote?: string
 }) {
   try {
+    invalidateObservationSlotsCache();
     await ensureDbColumns();
     const session = await auth()
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
@@ -3185,6 +3152,7 @@ export async function rejectReEvaluation(data: {
   adminNote: string
 }) {
   try {
+    invalidateObservationSlotsCache();
     await ensureDbColumns();
     const session = await auth()
     if (!session || !session.user) return { success: false, error: "Unauthorized" }
@@ -3327,6 +3295,7 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
   feedback?: string;
 }) {
   try {
+    invalidateObservationSlotsCache();
     await ensureDbColumns();
     const session = await auth();
     if (!session || !session.user) return { success: false, error: "Unauthorized" };
