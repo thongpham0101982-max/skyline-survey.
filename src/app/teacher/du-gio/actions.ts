@@ -1469,7 +1469,10 @@ export async function approveRegistration(registrationId: string) {
     if (!currentTeacher) return { success: false, error: "Teacher profile not found" }
     const registration = await prisma.observationRegistration.findUnique({ where: { id: registrationId }, include: { slot: true } })
     if (!registration) return { success: false, error: "Registration not found" }
-    if (registration.slot.teacherId !== currentTeacher.id) return { success: false, error: "Bạn không phải giáo viên chủ trì tiết dạy này" }
+    const isObsAdmin = await checkIsObservationAdmin(session.user.role || "", session.user.id);
+    if (registration.slot.teacherId !== currentTeacher.id && !isObsAdmin) {
+      return { success: false, error: "Bạn không phải giáo viên chủ trì hoặc không có quyền quản trị để duyệt đăng ký này" };
+    }
     
     // Enforce max 4 approved observers limit
     const approvedCount = await prisma.observationRegistration.count({
@@ -1480,6 +1483,19 @@ export async function approveRegistration(registrationId: string) {
     }
 
     await prisma.observationRegistration.update({ where: { id: registrationId }, data: { isApproved: true, approvedAt: new Date() } })
+
+    // Tự động chuyển trạng thái tiết sang ACTIVE nếu tiết đang là PENDING_TEACHER_APPROVAL
+    if (registration.slot.status === "PENDING_TEACHER_APPROVAL") {
+      await prisma.observationSlot.update({
+        where: { id: registration.slotId },
+        data: { status: "ACTIVE" }
+      });
+    }
+
+    try {
+      revalidatePath("/admin/du-gio");
+      revalidatePath("/teacher/du-gio");
+    } catch (e) {}
 
     // Non-blocking dispatch of Email, In-app Notification, and MS Teams via after()
     after(async () => {
@@ -2862,7 +2878,7 @@ export async function sendBatchPendingEvaluationReminders() {
       await prisma.observationSlot.updateMany({
         where: {
           date: { lt: startOfToday },
-          status: "ACTIVE"
+          status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL"] }
         },
         data: {
           status: "EXPIRED"
@@ -4127,5 +4143,82 @@ export async function getTTCMDepartmentOverview(params?: {
   } catch (e: any) {
     console.error("[getTTCMDepartmentOverview Error]:", e);
     return { success: false, error: e.message || "Lỗi khi lấy dữ liệu tổng hợp tổ chuyên môn" };
+  }
+}
+
+/**
+ * Rà soát và đồng bộ toàn diện trạng thái các tiết dự giờ:
+ * 1. Các tiết PENDING_TEACHER_APPROVAL đã có đăng ký duyệt hoặc có biên bản đánh giá -> chuyển ACTIVE
+ * 2. Các tiết PENDING_TEACHER_APPROVAL đã quá hạn (ngày trong quá khứ) mà chưa được duyệt -> chuyển EXPIRED
+ * 3. Đóng các yêu cầu trùng lặp tự động -> REJECTED
+ */
+export async function syncAndReconcileObservationStatuses() {
+  try {
+    const session = await auth();
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const isObsAdmin = await checkIsObservationAdmin(session.user.role || "", session.user.id);
+    if (!isObsAdmin) {
+      return { success: false, error: "Chỉ Quản trị viên / BGH / TTCM mới có quyền thực hiện rà soát trạng thái." };
+    }
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+    // 1. Tiết đã có đăng ký duyệt hoặc có biên bản đánh giá
+    const pendingWithApproved = await prisma.observationSlot.findMany({
+      where: {
+        status: "PENDING_TEACHER_APPROVAL",
+        registrations: {
+          some: {
+            OR: [
+              { isApproved: true },
+              { evaluation: { isNot: null } }
+            ]
+          }
+        }
+      },
+      select: { id: true }
+    });
+
+    let activatedCount = 0;
+    if (pendingWithApproved.length > 0) {
+      const actRes = await prisma.observationSlot.updateMany({
+        where: { id: { in: pendingWithApproved.map(s => s.id) } },
+        data: { status: "ACTIVE" }
+      });
+      activatedCount = actRes.count;
+    }
+
+    // 2. Tiết quá hạn chưa từng được duyệt
+    const expiredRes = await prisma.observationSlot.updateMany({
+      where: {
+        status: "PENDING_TEACHER_APPROVAL",
+        date: { lt: startOfToday },
+        registrations: {
+          none: {
+            isApproved: true
+          }
+        }
+      },
+      data: { status: "EXPIRED" }
+    });
+
+    try {
+      revalidatePath("/admin/du-gio");
+      revalidatePath("/teacher/du-gio");
+    } catch (e) {}
+
+    return {
+      success: true,
+      activatedCount,
+      expiredCount: expiredRes.count,
+      message: `Đã rà soát xong: Kích hoạt ${activatedCount} tiết đã duyệt, chuyển ${expiredRes.count} tiết quá hạn sang Hết hạn.`
+    };
+  } catch (error: any) {
+    console.error("[syncAndReconcileObservationStatuses Error]:", error);
+    return { success: false, error: error.message || "Lỗi đồng bộ trạng thái tiết dự giờ" };
   }
 }
