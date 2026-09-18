@@ -31,7 +31,37 @@ export async function GET(req: Request) {
       }
     }
 
-    // 2. Thiết lập điều kiện lọc học sinh (loại trừ Mầm non theo chuẩn phân hệ Cố vấn học tập)
+    // 2. Chuẩn bị tìm kiếm đa trường (Tên HS, Mã HS, Tên Lớp, Tên GVCN)
+    let matchingClassIds: string[] = []
+    let homeroomTeacherIds: string[] = []
+    let homeroomClassNames: string[] = []
+
+    if (search) {
+      // Tìm giáo viên khớp tên, email hoặc SĐT
+      const matchedTeachers = await prisma.teacher.findMany({
+        where: {
+          OR: [
+            { teacherName: { contains: search } },
+            { email: { contains: search } },
+            { phone: { contains: search } }
+          ]
+        },
+        select: { id: true, homeroomClass: true }
+      }).catch(() => [])
+
+      if (matchedTeachers.length > 0) {
+        homeroomTeacherIds = matchedTeachers.map(t => t.id)
+        homeroomClassNames = matchedTeachers.map(t => t.homeroomClass).filter(Boolean) as string[]
+
+        const assignments = await prisma.teacherClassAssignment.findMany({
+          where: { teacherId: { in: homeroomTeacherIds } },
+          select: { classId: true }
+        }).catch(() => [])
+        matchingClassIds = assignments.map(a => a.classId)
+      }
+    }
+
+    // Thiết lập điều kiện lọc học sinh (loại trừ Mầm non theo chuẩn phân hệ Cố vấn học tập)
     const classConditions: any = {
       NOT: [
         { level: "Mam non" },
@@ -71,7 +101,11 @@ export async function GET(req: Request) {
     if (search) {
       whereStudent.OR = [
         { studentName: { contains: search } },
-        { studentCode: { contains: search } }
+        { studentCode: { contains: search } },
+        { class: { className: { contains: search } } },
+        ...(matchingClassIds.length > 0 ? [{ classId: { in: matchingClassIds } }] : []),
+        ...(homeroomTeacherIds.length > 0 ? [{ class: { homeroomTeacherId: { in: homeroomTeacherIds } } }] : []),
+        ...(homeroomClassNames.length > 0 ? [{ class: { className: { in: homeroomClassNames } } }] : [])
       ]
     }
 
@@ -110,18 +144,44 @@ export async function GET(req: Request) {
       return !isMamNon
     })
 
-    const studentIds = students.map(s => s.id)
+    const studentCodes = students.map(s => s.studentCode).filter(Boolean)
 
-    // 3. Lấy toàn bộ nhật ký tham vấn của các học sinh này
+    // Lấy toàn bộ các ID học sinh (kể cả ID ở năm học trước) có cùng studentCode để tránh mất dữ liệu liên năm
+    const relatedStudentRecords = await prisma.student.findMany({
+      where: { studentCode: { in: studentCodes } },
+      select: { id: true, studentCode: true }
+    }).catch(() => [])
+
+    const allStudentIds = Array.from(new Set([
+      ...students.map(s => s.id),
+      ...relatedStudentRecords.map(s => s.id)
+    ]))
+
+    const studentIdToCodeMap: Record<string, string> = {}
+    relatedStudentRecords.forEach(s => {
+      studentIdToCodeMap[s.id] = s.studentCode
+    })
+    students.forEach(s => {
+      studentIdToCodeMap[s.id] = s.studentCode
+    })
+
+    // 3. Lấy toàn bộ nhật ký tham vấn của các học sinh này trong năm học được chọn
     let consultationLogs: any[] = []
-    if (studentIds.length > 0) {
+    if (allStudentIds.length > 0) {
       try {
         consultationLogs = await prisma.academicConsultationLog.findMany({
           where: {
-            studentId: { in: studentIds },
+            studentId: { in: allStudentIds },
             ...(academicYearId ? { academicYearId } : {})
           },
           include: {
+            student: {
+              select: {
+                id: true,
+                studentCode: true,
+                studentName: true
+              }
+            },
             teacher: {
               select: {
                 id: true,
@@ -138,13 +198,23 @@ export async function GET(req: Request) {
       }
     }
 
-    // 4. Nhóm nhật ký tư vấn theo studentId
-    const studentConsultationMap: Record<string, any[]> = {}
+    // 4. Nhóm nhật ký tư vấn theo studentCode và studentId
+    const studentCodeToLogsMap: Record<string, any[]> = {}
+    const studentIdToLogsMap: Record<string, any[]> = {}
+
     consultationLogs.forEach(log => {
-      if (!studentConsultationMap[log.studentId]) {
-        studentConsultationMap[log.studentId] = []
+      if (!studentIdToLogsMap[log.studentId]) {
+        studentIdToLogsMap[log.studentId] = []
       }
-      studentConsultationMap[log.studentId].push(log)
+      studentIdToLogsMap[log.studentId].push(log)
+
+      const code = log.student?.studentCode || studentIdToCodeMap[log.studentId]
+      if (code) {
+        if (!studentCodeToLogsMap[code]) {
+          studentCodeToLogsMap[code] = []
+        }
+        studentCodeToLogsMap[code].push(log)
+      }
     })
 
     // 5. Lấy thông tin GVCN
@@ -180,7 +250,7 @@ export async function GET(req: Request) {
 
     // 6. Xây dựng danh sách học sinh kèm chi tiết tư vấn
     const studentRows = students.map(st => {
-      const logs = studentConsultationMap[st.id] || []
+      const logs = (st.studentCode ? studentCodeToLogsMap[st.studentCode] : null) || studentIdToLogsMap[st.id] || []
       const isConsulted = logs.length > 0
       const sessionCount = logs.length
       const latestLog = logs[0] || null
@@ -284,16 +354,16 @@ export async function GET(req: Request) {
       clsGroup.students.push(st)
     })
 
-    // Tính % hoàn thành tư vấn cho từng lớp
+    // Tính % hoàn thành tư vấn cho từng lớp và sắp xếp tự nhiên theo cơ sở và tên lớp
     const classList = Object.values(classGroupMap).map((cls: any) => {
       cls.consultedPercent = cls.totalStudents > 0
         ? Math.round((cls.consultedCount / cls.totalStudents) * 1000) / 10
         : 0
       return cls
     }).sort((a: any, b: any) => {
-      // Sắp xếp theo campusName, sau đó tên lớp
-      if (a.campusName !== b.campusName) return a.campusName.localeCompare(b.campusName)
-      return a.className.localeCompare(b.className)
+      // Sắp xếp theo campusName, sau đó tên lớp theo Natural Sort (1.1, 1.2, ..., 10.1, 11.1)
+      if (a.campusName !== b.campusName) return a.campusName.localeCompare(b.campusName, "vi", { numeric: true })
+      return a.className.localeCompare(b.className, "vi", { numeric: true })
     })
 
     // Lọc theo trạng thái tư vấn nếu người dùng chọn
@@ -304,15 +374,24 @@ export async function GET(req: Request) {
       filteredClasses = classList.filter(c => c.consultedCount > 0)
       filteredStudents = studentRows.filter(s => s.isConsulted)
     } else if (status === "NOT_CONSULTED") {
+      // Chưa có lượt tư vấn nào (0%)
+      filteredClasses = classList.filter(c => c.consultedCount === 0)
+      filteredStudents = studentRows.filter(s => !s.isConsulted)
+    } else if (status === "UNFINISHED") {
+      // Còn học sinh chưa hoàn thành tư vấn (< 100%)
       filteredClasses = classList.filter(c => c.unconsultedCount > 0)
       filteredStudents = studentRows.filter(s => !s.isConsulted)
+    } else if (status === "COMPLETED") {
+      // Đã hoàn thành 100%
+      filteredClasses = classList.filter(c => c.totalStudents > 0 && c.unconsultedCount === 0)
+      filteredStudents = studentRows.filter(s => s.isConsulted)
     }
 
     // 8. Thống kê KPI tổng quan toàn trường / cơ sở
     const totalStudents = students.length
     const totalConsulted = studentRows.filter(s => s.isConsulted).length
     const totalUnconsulted = totalStudents - totalConsulted
-    const totalSessions = consultationLogs.length
+    const totalSessions = studentRows.reduce((sum, s) => sum + s.sessionCount, 0)
     const overallPercent = totalStudents > 0 ? Math.round((totalConsulted / totalStudents) * 1000) / 10 : 0
 
     return jsonResponse({

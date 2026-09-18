@@ -413,11 +413,12 @@ function AdminAdvisoryDashboardContent() {
   }
 
   // Load Consultation Summary Data
-  async function loadConsultationSummary(overrideYearId?: string) {
+  async function loadConsultationSummary(overrideYearId?: string, overrideSearch?: string) {
     const yearId = overrideYearId !== undefined ? overrideYearId : selectedAcademicYearId
+    const query = overrideSearch !== undefined ? overrideSearch : consultationSearchQuery
     setLoadingConsultations(true)
     try {
-      const url = "/api/admin/advisory/consultations/summary?campusId=" + selectedCampusId + "&academicYearId=" + yearId + "&status=" + consultationStatusFilter + "&search=" + encodeURIComponent(consultationSearchQuery) + "&_t=" + Date.now()
+      const url = "/api/admin/advisory/consultations/summary?campusId=" + selectedCampusId + "&academicYearId=" + yearId + "&status=" + consultationStatusFilter + "&search=" + encodeURIComponent(query) + "&_t=" + Date.now()
       const res = await fetch(url, { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
@@ -1137,10 +1138,7 @@ function AdminAdvisoryDashboardContent() {
                 {/* Academic Year */}
                 <select
                   value={selectedAcademicYearId}
-                  onChange={e => {
-                    setSelectedAcademicYearId(e.target.value)
-                    loadConsultationSummary(e.target.value)
-                  }}
+                  onChange={e => setSelectedAcademicYearId(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-black border border-slate-300 outline-none"
                 >
                   {academicYears.map(y => (
@@ -1167,21 +1165,36 @@ function AdminAdvisoryDashboardContent() {
                   className="px-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-black border border-slate-300 outline-none"
                 >
                   <option value="ALL">Tất cả trạng thái tư vấn</option>
-                  <option value="CONSULTED">Đã được tư vấn</option>
-                  <option value="NOT_CONSULTED">Còn học sinh chưa tư vấn</option>
+                  <option value="CONSULTED">Đã có HS được tư vấn</option>
+                  <option value="NOT_CONSULTED">Chưa có lượt tư vấn nào (0%)</option>
+                  <option value="UNFINISHED">Còn HS chưa hoàn thành tư vấn</option>
+                  <option value="COMPLETED">Đã hoàn thành tư vấn 100%</option>
                 </select>
 
                 {/* Search */}
-                <div className="relative min-w-56">
+                <div className="relative min-w-64">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
-                    placeholder="Tìm theo Tên, Mã HS hoặc GVCN..."
+                    placeholder="Tìm theo Tên, Mã HS, Lớp hoặc GVCN..."
                     value={consultationSearchQuery}
                     onChange={e => setConsultationSearchQuery(e.target.value)}
                     onKeyDown={e => e.key === "Enter" && loadConsultationSummary()}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold border border-slate-300 outline-none"
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold border border-slate-300 outline-none"
                   />
+                  {consultationSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConsultationSearchQuery("")
+                        loadConsultationSummary(undefined, "")
+                      }}
+                      className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 transition-colors"
+                      title="Xóa từ khóa tìm kiếm"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
                 <button
