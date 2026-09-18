@@ -7,7 +7,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  GraduationCap,
   Calendar,
   User,
   Users,
@@ -15,6 +14,8 @@ import {
   ExternalLink
 } from "lucide-react"
 import * as XLSX from "xlsx"
+
+const SKYLINE_LOGO_BASE64 = "data:image/png;base64,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"
 
 interface StudentSurveyReportModalProps {
   isOpen: boolean
@@ -97,7 +98,7 @@ export function StudentSurveyReportModal({
     }
   }
 
-  // Generate clean HTML for an individual student scorecard (strictly 1 A4 portrait page)
+  // Generate clean HTML for an individual student scorecard (proportional & spacious 1 A4 portrait page)
   const generateStudentHtml = (student: any) => {
     const dob = student.dateOfBirth
       ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN")
@@ -131,15 +132,11 @@ export function StudentSurveyReportModal({
 
     return `
       <div class="page-card">
-        <!-- School Header -->
+        <!-- School Header with Official Sky-Line Logo -->
         <div class="header-row">
           <div class="school-brand">
-            <div class="school-logo">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
-                <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-              </svg>
-            </div>
+            <img src="${SKYLINE_LOGO_BASE64}" alt="Sky-Line" class="school-logo-img" />
+            <div class="school-divider"></div>
             <div>
               <div class="school-title">${schoolTitle}</div>
             </div>
@@ -191,13 +188,13 @@ export function StudentSurveyReportModal({
           <div class="section-count">${subjects.length} môn học</div>
         </div>
 
-        <!-- 3-Column Table: STT | Môn học | Điểm KS -->
+        <!-- 3-Column Table: Spacious & Legible -->
         <table>
           <thead>
             <tr>
-              <th class="text-center" style="width: 40px;">STT</th>
+              <th class="text-center" style="width: 46px;">STT</th>
               <th>Môn học</th>
-              <th class="text-center" style="width: 80px;">Điểm KS</th>
+              <th class="text-center" style="width: 95px;">Điểm KS</th>
             </tr>
           </thead>
           <tbody>
@@ -251,7 +248,7 @@ export function StudentSurveyReportModal({
   <style>
     @page {
       size: A4 portrait;
-      margin: 6mm 10mm 6mm 10mm;
+      margin: 8mm 12mm 8mm 12mm;
     }
     * {
       box-sizing: border-box;
@@ -265,11 +262,11 @@ export function StudentSurveyReportModal({
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       color: #0f172a;
       font-size: 11px;
-      line-height: 1.35;
+      line-height: 1.38;
     }
     .page-card {
       width: 100%;
-      max-width: 190mm;
+      max-width: 186mm;
       margin: 0 auto;
       page-break-inside: avoid !important;
       break-inside: avoid !important;
@@ -288,95 +285,96 @@ export function StudentSurveyReportModal({
       align-items: center;
       justify-content: space-between;
       border-bottom: 2px solid #008c82;
-      padding-bottom: 6px;
-      margin-bottom: 8px;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
     }
     .school-brand {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
-    .school-logo {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      background: #005B58;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
+    .school-logo-img {
+      height: 38px;
+      width: auto;
+      max-width: 155px;
+      object-fit: contain;
+    }
+    .school-divider {
+      width: 1.5px;
+      height: 28px;
+      background: #cbd5e1;
     }
     .school-title {
-      font-size: 11.5px;
+      font-size: 12px;
       font-weight: 900;
       color: #005B58;
       text-transform: uppercase;
-      letter-spacing: -0.2px;
-      line-height: 1.2;
+      letter-spacing: -0.1px;
+      line-height: 1.25;
     }
     .system-info {
       text-align: right;
     }
     .system-title {
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 800;
       text-transform: uppercase;
       color: #1e293b;
       letter-spacing: 0.5px;
     }
     .system-slogan {
-      font-size: 9px;
+      font-size: 9.5px;
       font-weight: 700;
       color: #008c82;
       font-style: italic;
     }
     .class-badge {
-      font-size: 8.5px;
+      font-size: 9px;
       color: #64748b;
-      margin-top: 1px;
+      margin-top: 1.5px;
     }
     .class-badge b {
       color: #0f172a;
     }
     .report-heading {
       text-align: center;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .report-title {
-      font-size: 14.5px;
+      font-size: 15px;
       font-weight: 900;
       color: #003B3A;
       text-transform: uppercase;
       letter-spacing: -0.2px;
-      margin: 0 0 3px 0;
+      margin: 0 0 4px 0;
     }
     .year-badge {
       display: inline-block;
       background: #f0fdfa;
       border: 1px solid #99f6e4;
       color: #008c82;
-      font-size: 9.5px;
+      font-size: 10px;
       font-weight: 800;
-      padding: 1.5px 8px;
+      padding: 2px 10px;
       border-radius: 9999px;
     }
     .info-box {
       background: #f8fafc;
       border: 1px solid #ccfbf1;
-      border-radius: 7px;
-      padding: 5px 10px;
-      margin-bottom: 7px;
+      border-radius: 8px;
+      padding: 6px 12px;
+      margin-bottom: 9px;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 3px 16px;
+      gap: 4px 18px;
     }
     .info-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px dashed #e2e8f0;
-      padding-bottom: 2px;
-      font-size: 10px;
+      padding-bottom: 2.5px;
+      font-size: 10.5px;
     }
     .info-row:nth-last-child(-n+2) {
       border-bottom: none;
@@ -403,17 +401,17 @@ export function StudentSurveyReportModal({
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
     .section-title {
-      font-size: 10.5px;
+      font-size: 11px;
       font-weight: 900;
       text-transform: uppercase;
       color: #003B3A;
       letter-spacing: 0.3px;
     }
     .section-count {
-      font-size: 9px;
+      font-size: 9.5px;
       font-weight: 700;
       color: #008c82;
       font-style: italic;
@@ -421,9 +419,9 @@ export function StudentSurveyReportModal({
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 10px;
-      margin-bottom: 7px;
-      border: 1px solid #cbd5e1;
+      font-size: 10.5px;
+      margin-bottom: 10px;
+      border: 1px solid #94a3b8;
       border-radius: 6px;
       overflow: hidden;
     }
@@ -431,21 +429,23 @@ export function StudentSurveyReportModal({
       background: #005B58;
       color: #ffffff;
       font-weight: 800;
-      padding: 4px 8px;
+      padding: 5.5px 10px;
       text-align: left;
       border-right: 1px solid #004745;
+      font-size: 11px;
     }
     th.text-center {
       text-align: center;
     }
     td {
-      padding: 2.8px 8px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 4.5px 10px;
+      border-bottom: 1px solid #e2e8f0;
       border-right: 1px solid #f1f5f9;
       color: #1e293b;
+      font-size: 10.5px;
     }
     tr:nth-child(even) td {
-      background: #fcfdfe;
+      background: #f8fafc;
     }
     tr:last-child td {
       border-bottom: none;
@@ -453,30 +453,30 @@ export function StudentSurveyReportModal({
     td.stt {
       text-align: center;
       font-weight: 700;
-      color: #64748b;
-      width: 38px;
+      color: #475569;
+      width: 46px;
     }
     td.subj-name {
       font-weight: 800;
       color: #003B3A;
     }
     td.subj-code {
-      font-size: 8.5px;
+      font-size: 9px;
       font-weight: normal;
-      color: #94a3b8;
-      margin-left: 4px;
+      color: #64748b;
+      margin-left: 5px;
     }
     td.score {
       text-align: center;
-      width: 80px;
+      width: 95px;
     }
     .score-badge {
       display: inline-block;
-      min-width: 30px;
-      padding: 0.5px 5px;
+      min-width: 34px;
+      padding: 1px 7px;
       border-radius: 4px;
       font-weight: 900;
-      font-size: 9.5px;
+      font-size: 10.5px;
       border: 1px solid transparent;
     }
     .score-good {
@@ -506,31 +506,31 @@ export function StudentSurveyReportModal({
     .remarks-box {
       border: 1px solid #99f6e4;
       background: #f0fdfa;
-      border-radius: 7px;
-      padding: 4px 8px;
-      margin-bottom: 7px;
+      border-radius: 8px;
+      padding: 6px 12px;
+      margin-bottom: 10px;
     }
     .remarks-header {
-      font-size: 9.5px;
+      font-size: 10.5px;
       font-weight: 900;
       color: #005B58;
       text-transform: uppercase;
-      margin-bottom: 2px;
+      margin-bottom: 2.5px;
     }
     .remarks-content {
-      font-size: 9px;
+      font-size: 10px;
       color: #334155;
-      line-height: 1.35;
+      line-height: 1.4;
     }
     .signature-section {
-      font-size: 9.5px;
+      font-size: 10.5px;
     }
     .signature-date {
       text-align: right;
       font-style: italic;
       color: #475569;
-      margin-bottom: 2px;
-      font-size: 9px;
+      margin-bottom: 3px;
+      font-size: 10px;
     }
     .signature-grid {
       display: grid;
@@ -541,15 +541,15 @@ export function StudentSurveyReportModal({
       font-weight: 800;
       text-transform: uppercase;
       color: #1e293b;
-      font-size: 9.5px;
+      font-size: 10px;
     }
     .sig-sub {
-      font-size: 8px;
+      font-size: 8.5px;
       font-style: italic;
       color: #64748b;
     }
     .sig-space {
-      height: 32px;
+      height: 42px;
       display: flex;
       align-items: flex-end;
       justify-content: center;
@@ -557,7 +557,7 @@ export function StudentSurveyReportModal({
     .sig-name {
       font-weight: 900;
       color: #0f172a;
-      font-size: 9.5px;
+      font-size: 10.5px;
     }
   </style>
 </head>
@@ -708,14 +708,17 @@ export function StudentSurveyReportModal({
     return (
       <div
         key={student.studentId}
-        className="bg-white p-5 sm:p-7 font-sans text-slate-900 mx-auto max-w-[700px] shadow-lg rounded-2xl border border-teal-100"
+        className="bg-white p-5 sm:p-7 font-sans text-slate-900 mx-auto max-w-[720px] shadow-lg rounded-2xl border border-teal-100"
       >
-        {/* Top Header with School Info */}
-        <div className="flex items-start justify-between border-b-2 border-[#008c82] pb-2.5 gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-[#003B3A] via-[#005B58] to-[#008c82] text-white flex items-center justify-center p-2 shadow-xs shrink-0">
-              <GraduationCap className="w-6 h-6 text-teal-200" />
-            </div>
+        {/* Top Header with Sky-Line Logo */}
+        <div className="flex items-start justify-between border-b-2 border-[#008c82] pb-3 gap-3">
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="Sky-Line"
+              className="h-10 w-auto object-contain shrink-0"
+            />
+            <div className="w-[1.5px] h-8 bg-slate-200 hidden sm:block"></div>
             <div>
               <div className="text-xs sm:text-sm font-black text-[#005B58] tracking-tight uppercase leading-tight">
                 {schoolTitle}
@@ -737,7 +740,7 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* Report Main Title */}
-        <div className="text-center my-3 space-y-0.5">
+        <div className="text-center my-3.5 space-y-0.5">
           <h2 className="text-base sm:text-lg font-black text-[#003B3A] uppercase tracking-tight">
             {reportMainTitle}
           </h2>
@@ -748,8 +751,8 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* Student & Class Information Box */}
-        <div className="bg-gradient-to-r from-teal-50/70 via-sky-50/50 to-teal-50/70 py-2 px-3.5 rounded-xl border border-teal-200/80 mb-3 shadow-2xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-[11px]">
+        <div className="bg-gradient-to-r from-teal-50/70 via-sky-50/50 to-teal-50/70 py-2.5 px-4 rounded-xl border border-teal-200/80 mb-3.5 shadow-2xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-[11px]">
             <div className="flex items-center justify-between border-b border-teal-100/60 pb-0.5">
               <span className="text-slate-600 font-bold flex items-center gap-1">
                 <User className="w-3 h-3 text-teal-600" />
@@ -791,7 +794,7 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* Section Heading */}
-        <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center justify-between mb-2">
           <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wide flex items-center gap-1.5">
             <BookOpen className="w-3.5 h-3.5 text-teal-600" />
             Chi tiết Kết Quả Khảo Sát
@@ -802,13 +805,13 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* 3-Column Table: STT | Môn học | Điểm KS */}
-        <div className="overflow-x-auto rounded-lg border border-teal-600/30 shadow-xs mb-3">
+        <div className="overflow-x-auto rounded-lg border border-teal-600/30 shadow-xs mb-3.5">
           <table className="w-full text-left border-collapse text-[11px]">
             <thead>
               <tr className="bg-gradient-to-r from-[#005B58] to-[#008c82] text-white font-black">
-                <th className="py-1.5 px-2.5 text-center w-12 border-r border-teal-700">STT</th>
-                <th className="py-1.5 px-3 border-r border-teal-700">Môn học</th>
-                <th className="py-1.5 px-3 text-center w-28">Điểm KS</th>
+                <th className="py-2 px-3 text-center w-12 border-r border-teal-700">STT</th>
+                <th className="py-2 px-3.5 border-r border-teal-700">Môn học</th>
+                <th className="py-2 px-3.5 text-center w-28">Điểm KS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-teal-100">
@@ -822,19 +825,19 @@ export function StudentSurveyReportModal({
                     key={sub.id}
                     className={`transition-colors ${isEven ? "bg-white" : "bg-teal-50/20"} hover:bg-teal-50/50`}
                   >
-                    <td className="py-1 px-2.5 text-center font-bold text-slate-500 border-r border-teal-100">
+                    <td className="py-1.5 px-3 text-center font-bold text-slate-500 border-r border-teal-100">
                       {idx + 1}
                     </td>
 
-                    <td className="py-1 px-3 font-extrabold text-[#003B3A] border-r border-teal-100">
+                    <td className="py-1.5 px-3.5 font-extrabold text-[#003B3A] border-r border-teal-100">
                       <span>{sub.name}</span>
-                      {sub.code && <span className="text-[9px] font-normal text-slate-400 ml-1.5">({sub.code})</span>}
+                      {sub.code && <span className="text-[9.5px] font-normal text-slate-400 ml-1.5">({sub.code})</span>}
                     </td>
 
-                    <td className="py-1 px-3 text-center font-black">
+                    <td className="py-1.5 px-3.5 text-center font-black">
                       {score !== null && !isNaN(score) ? (
                         <span
-                          className={`inline-block px-2.5 py-0.2 rounded-md border text-[11px] font-black shadow-2xs ${
+                          className={`inline-block px-2.5 py-0.5 rounded-md border text-[11px] font-black shadow-2xs ${
                             score >= 8.0
                               ? "bg-emerald-50 text-emerald-700 border-emerald-300"
                               : score >= 6.5
@@ -858,11 +861,11 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* Teacher's Remarks */}
-        <div className="border border-teal-200 rounded-xl p-2.5 bg-teal-50/20 mb-3 space-y-0.5">
+        <div className="border border-teal-200 rounded-xl p-3 bg-teal-50/20 mb-3.5 space-y-0.5">
           <div className="text-[11px] font-black text-[#005B58] uppercase flex items-center gap-1.5">
             <span>Ý kiến & Nhận xét của Giáo viên Chủ nhiệm (GVCN):</span>
           </div>
-          <div className="text-[10.5px] text-slate-700 leading-snug font-medium min-h-[36px] pt-0.5">
+          <div className="text-[10.5px] text-slate-700 leading-snug font-medium min-h-[38px] pt-0.5">
             <p>
               Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh <strong className="text-teal-900">{student.studentName}</strong>. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.
             </p>
@@ -870,8 +873,8 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* Signature Section (3 Columns) */}
-        <div className="pt-0.5 text-[11px]">
-          <div className="text-right text-slate-600 italic mb-1.5 text-[10px]">
+        <div className="pt-1 text-[11px]">
+          <div className="text-right text-slate-600 italic mb-2 text-[10px]">
             Đà Nẵng, ngày ...... tháng ...... năm 20......
           </div>
 
@@ -881,7 +884,7 @@ export function StudentSurveyReportModal({
                 Phụ Huynh Học Sinh
               </div>
               <div className="text-[9px] text-slate-500 italic">(Ký và ghi rõ họ tên)</div>
-              <div className="h-10 sm:h-12"></div>
+              <div className="h-12"></div>
             </div>
 
             <div className="space-y-0.5">
@@ -889,7 +892,7 @@ export function StudentSurveyReportModal({
                 Giáo Viên Chủ Nhiệm
               </div>
               <div className="text-[9px] text-slate-500 italic">(Ký và ghi rõ họ tên)</div>
-              <div className="h-10 sm:h-12 flex items-end justify-center">
+              <div className="h-12 flex items-end justify-center">
                 <span className="font-black text-slate-900 text-[11px]">{teacherName}</span>
               </div>
             </div>
@@ -899,7 +902,7 @@ export function StudentSurveyReportModal({
                 Ban Giám Hiệu
               </div>
               <div className="text-[9px] text-slate-500 italic">(Ký và đóng dấu)</div>
-              <div className="h-10 sm:h-12"></div>
+              <div className="h-12"></div>
             </div>
           </div>
         </div>
