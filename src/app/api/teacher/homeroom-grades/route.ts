@@ -45,6 +45,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "Không tìm thấy lớp học" }, { status: 404 })
     }
 
+    let homeroomTeacher = null
+    if (targetClass.homeroomTeacherId) {
+      homeroomTeacher = await prisma.teacher.findUnique({
+        where: { id: targetClass.homeroomTeacherId }
+      }).catch(() => null)
+    }
+
     const targetYearId = academicYearId || targetClass.academicYearId || ""
 
     // 2. Identify teacher & verify homeroom permission (allow ADMIN/BGH preview)
@@ -561,7 +568,9 @@ export async function GET(request: Request) {
         id: targetClass.id,
         className: targetClass.className,
         grade: targetClass.grade,
-        campusName: targetClass.campus?.name || "Cơ sở",
+        campusName: targetClass.campus?.campusName || targetClass.campus?.name || "Cơ sở",
+        campusCode: targetClass.campus?.campusCode || "",
+        homeroomTeacherName: homeroomTeacher?.teacherName || teacher?.teacherName || "",
         totalStudents: students.length,
         academicYearName: targetClass.academicYear?.name || ""
       },

@@ -24,7 +24,8 @@ import {
   ShieldAlert,
   Info,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Printer
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -37,6 +38,7 @@ import {
   Legend
 } from "recharts"
 import * as XLSX from "xlsx"
+import { StudentSurveyReportModal } from "./components/StudentSurveyReportModal"
 
 const EVAL_PERIODS = [
   { code: "KSĐN", label: "Khảo sát đầu năm (KSĐN)", short: "KSĐN" },
@@ -78,6 +80,19 @@ export function HomeroomGradesClient({
     subject: any
     gradeInfo: any
   } | null>(null)
+
+  // Student Report Modal state
+  const [reportModalOpen, setReportModalOpen] = useState(false)
+  const [reportSelectedStudentId, setReportSelectedStudentId] = useState<string>("")
+
+  const handleOpenReport = (studentId?: string) => {
+    if (studentId) {
+      setReportSelectedStudentId(studentId)
+    } else if (filteredStudents.length > 0) {
+      setReportSelectedStudentId(filteredStudents[0].studentId)
+    }
+    setReportModalOpen(true)
+  }
 
   // Fetch homeroom grades data
   const fetchData = async () => {
@@ -502,15 +517,26 @@ export function HomeroomGradesClient({
         </div>
 
         {/* Action button */}
-        <div>
+        <div className="flex items-center gap-2 flex-wrap">
           {activeTab === "matrix" && (
-            <button
-              onClick={handleExportMatrixExcel}
-              className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all w-full sm:w-auto"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Xuất Excel Bảng Điểm
-            </button>
+            <>
+              <button
+                onClick={() => handleOpenReport()}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-teal-50 text-teal-700 border border-teal-300 hover:bg-teal-100 rounded-xl text-xs font-black transition-all w-full sm:w-auto shadow-2xs cursor-pointer"
+                title="Xem và in bảng điểm chi tiết theo từng học sinh hoặc toàn bộ lớp"
+              >
+                <Printer className="w-3.5 h-3.5 text-teal-600" />
+                <span>Xuất Báo Cáo Học Sinh (In / PDF)</span>
+              </button>
+
+              <button
+                onClick={handleExportMatrixExcel}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all w-full sm:w-auto cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Xuất Excel Bảng Điểm</span>
+              </button>
+            </>
           )}
 
           {activeTab === "comparative" && (
@@ -603,15 +629,18 @@ export function HomeroomGradesClient({
                         <th className="py-3 px-3 text-center border-r border-slate-700 bg-amber-950 min-w-[95px]">
                           Số môn &lt; Chuẩn
                         </th>
-                        <th className="py-3 px-3 min-w-[140px] bg-slate-900">
+                        <th className="py-3 px-3 min-w-[140px] bg-slate-900 border-r border-slate-700">
                           Diện theo dõi / Cam kết
+                        </th>
+                        <th className="py-3 px-3 text-center bg-teal-900 min-w-[110px]">
+                          Phiếu điểm
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {filteredStudents.length === 0 ? (
                         <tr>
-                          <td colSpan={(data?.subjects?.length || 0) + 8} className="py-12 text-center text-slate-400 font-semibold">
+                          <td colSpan={(data?.subjects?.length || 0) + 9} className="py-12 text-center text-slate-400 font-semibold">
                             Không tìm thấy học sinh nào phù hợp
                           </td>
                         </tr>
@@ -691,6 +720,18 @@ export function HomeroomGradesClient({
                                 {!st.isEntranceCommitted && st.learningCommitments.length === 0 && (
                                   <span className="text-slate-300 text-[11px]">-</span>
                                 )}
+                              </td>
+
+                              {/* Student Report Card Trigger */}
+                              <td className="py-2.5 px-2 text-center border-r border-slate-200">
+                                <button
+                                  onClick={() => handleOpenReport(st.studentId)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all shadow-2xs cursor-pointer"
+                                  title={`Xem và in phiếu điểm của học sinh ${st.studentName}`}
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-teal-600" />
+                                  <span>Phiếu điểm</span>
+                                </button>
                               </td>
                             </tr>
                           )
@@ -1215,6 +1256,20 @@ export function HomeroomGradesClient({
           </div>
         </div>
       )}
+
+      {/* MODAL: BÁO CÁO KẾT QUẢ KHẢO SÁT THEO HỌC SINH */}
+      <StudentSurveyReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        initialStudentId={reportSelectedStudentId}
+        students={filteredStudents}
+        subjects={data?.subjects || []}
+        currentClass={currentClass}
+        teacherName={data?.classInfo?.homeroomTeacherName || teacherName}
+        academicYearName={data?.classInfo?.academicYearName || academicYears.find(y => y.id === selectedYearId)?.name || ""}
+        selectedPeriod={selectedPeriod}
+        periodLabel={EVAL_PERIODS.find(p => p.code === selectedPeriod)?.label || selectedPeriod}
+      />
     </div>
   )
 }
