@@ -26,7 +26,20 @@ export default async function AdminPreschoolObservationPage(props: {
   const deptId = searchParams.deptId || "all"
   const classId = searchParams.classId || "all"
 
-  const refDataResult = await getObservationData(academicYearId)
+  const [refDataResult, slotsResult] = await Promise.all([
+    getObservationData(academicYearId),
+    getObservationSlots({
+      academicYearId,
+      level,
+      grade,
+      classId,
+      period,
+      date,
+      campusId,
+      deptId
+    })
+  ]);
+
   if (!refDataResult.success) {
     return (
       <div className="p-6 text-red-500 font-bold text-xs font-semibold">
@@ -34,17 +47,6 @@ export default async function AdminPreschoolObservationPage(props: {
       </div>
     )
   }
-
-  const slotsResult = await getObservationSlots({
-    academicYearId,
-    level,
-    grade,
-    classId,
-    period,
-    date,
-    campusId,
-    deptId
-  })
 
   return (
     <ObservationClient

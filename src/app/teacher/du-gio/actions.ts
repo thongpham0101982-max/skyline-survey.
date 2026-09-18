@@ -205,11 +205,11 @@ const REF_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const observationSlotsCache = new Map<string, CacheEntry<any>>();
 const SLOTS_CACHE_TTL = 60 * 1000; // 60 seconds
 
-export function invalidateObservationSlotsCache() {
+export async function invalidateObservationSlotsCache() {
   observationSlotsCache.clear();
 }
 
-export function invalidateObservationRefCache() {
+export async function invalidateObservationRefCache() {
   observationRefCache.clear();
 }
 
