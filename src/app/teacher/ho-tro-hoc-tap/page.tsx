@@ -48,6 +48,12 @@ export default async function TeacherSupportPage() {
       id: true,
       className: true,
       students: {
+        where: {
+          academicYearId: activeYearId,
+          NOT: {
+            studentCode: { startsWith: "2" }
+          }
+        },
         select: {
           id: true,
           studentName: true,

@@ -117,6 +117,7 @@ export async function GET(req: Request) {
         include: {
           students: {
             where: {
+              ...(academicYearId ? { academicYearId } : {}),
               NOT: {
                 studentCode: { startsWith: "2" }
               }
@@ -708,6 +709,7 @@ export async function GET(req: Request) {
         }
       })
 
+      const roleParam = searchParams.get("role")
       const deptName = (teacher.departmentRel?.name || "").toLowerCase()
       const isPsychSpecialist = 
         deptName.includes("tlhn") || 
@@ -721,6 +723,14 @@ export async function GET(req: Request) {
         ...teachingAssignments.map(ta => ta.classId),
         ...supportAssignments.map(sa => sa.target?.student?.classId).filter(Boolean)
       ]))
+
+      // If viewing in HOMEROOM mode, strictly only query homeroom classes of this teacher
+      if (roleParam === "HOMEROOM") {
+        targetClassIds = hrClasses.map(c => c.id)
+      } else if (roleParam === "ASSIGNED") {
+        const hrIds = new Set(hrClasses.map(c => c.id))
+        targetClassIds = teachingAssignments.map(ta => ta.classId).filter(id => !hrIds.has(id))
+      }
 
       // If user is admin or psych specialist and has no specific classes assigned:
       if ((targetClassIds.length === 0 && isPsychSpecialist) || session.user?.role === "ADMIN") {
@@ -773,8 +783,8 @@ export async function GET(req: Request) {
         }
       })
 
-      // Also include any students explicitly assigned to this teacher who might be in another class
-      const assignedTargetStudentIds = supportAssignments.map(sa => sa.target?.studentId).filter(Boolean)
+      // Also include any students explicitly assigned to this teacher who might be in another class (non-homeroom only)
+      const assignedTargetStudentIds = roleParam === "HOMEROOM" ? [] : supportAssignments.map(sa => sa.target?.studentId).filter(Boolean)
       const existingStudentIds = new Set(students.map(s => s.id))
       const extraStudentIds = assignedTargetStudentIds.filter(id => !existingStudentIds.has(id))
       if (extraStudentIds.length > 0) {

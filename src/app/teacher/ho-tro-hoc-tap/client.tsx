@@ -443,7 +443,9 @@ export function TeacherSupportClient({
 
   // Filters for teacher page
   const [searchQuery, setSearchQuery] = useState("")
-  const [roleFilter, setRoleFilter] = useState<"ALL" | "HOMEROOM" | "ASSIGNED">("ALL")
+  const [roleFilter, setRoleFilter] = useState<"ALL" | "HOMEROOM" | "ASSIGNED">(
+    homeroomClasses && homeroomClasses.length > 0 ? "HOMEROOM" : "ALL"
+  )
 
   // Modal Open States
   const [isProposeModalOpen, setIsProposeModalOpen] = useState(false)
@@ -688,7 +690,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     if (!selectedYearId || !teacher?.id) return
     setLoadingPsychological(true)
     try {
-      const res = await fetch(`/api/teacher-student-records?action=getPsychologicalSupportStudents&teacherId=${teacher.id}&academicYearId=${selectedYearId}&_=${Date.now()}`)
+      const res = await fetch(`/api/teacher-student-records?action=getPsychologicalSupportStudents&teacherId=${teacher.id}&academicYearId=${selectedYearId}&role=${roleFilter}&_=${Date.now()}`)
       const data = await res.json()
       if (!data.error && Array.isArray(data)) {
         setPsychologicalStudents(data)
@@ -729,7 +731,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     fetchAssignedClasses()
     fetchEntranceCommitments()
     fetchPsychologicalStudents()
-  }, [selectedYearId])
+  }, [selectedYearId, roleFilter])
 
   // Local storage year sync listener
   useEffect(() => {
@@ -1453,26 +1455,38 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
   }, [flattenedCommitmentRows]);
 
-  // 3. Extract Available Classes
+  // 3. Extract Available Classes - strictly restricted by role
   const availableClasses = useMemo(() => {
     const map = new Map<string, string>();
+    if (roleFilter === "HOMEROOM") {
+      homeroomClasses.forEach((c: any) => {
+        if (c?.id) map.set(c.id, c.className || c.name || "Lớp");
+      });
+      return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+    }
+    if (roleFilter === "ASSIGNED") {
+      const hrIds = new Set(homeroomClasses.map((c: any) => c.id));
+      assignedClasses.forEach((c: any) => {
+        if (!hrIds.has(c.id)) map.set(c.id, c.className || c.name || "Lớp");
+      });
+      return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+    }
     assignedClasses.forEach((c: any) => {
-      map.set(c.id, c.className || c.name);
+      map.set(c.id, c.className || c.name || "Lớp");
     });
-    entranceCommitmentStudents.forEach((s: any) => {
-      if (s.classId && s.className) {
-        map.set(s.classId, s.className);
-      }
-    });
-    targets.forEach((t: any) => {
-      const cid = t.student?.classId || t.student?.class?.id;
-      const cname = t.student?.class?.className || t.student?.className;
-      if (cid && cname) {
-        map.set(cid, cname);
-      }
+    homeroomClasses.forEach((c: any) => {
+      map.set(c.id, c.className || c.name || "Lớp");
     });
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [assignedClasses, entranceCommitmentStudents, targets]);
+  }, [roleFilter, homeroomClasses, assignedClasses]);
+
+  // Reset classFilter if it does not belong to availableClasses under current role
+  useEffect(() => {
+    if (classFilter !== "ALL") {
+      const exists = availableClasses.some((c: any) => c.id === classFilter || c.name === classFilter);
+      if (!exists) setClassFilter("ALL");
+    }
+  }, [roleFilter, availableClasses, classFilter]);
 
   // 4. Filtered Flattened Commitment Rows for Tab 1
   const filteredFlattenedCommitments = useMemo(() => {
@@ -1486,8 +1500,9 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         if (!matchName && !matchCode && !matchClass && !matchSub) return false;
       }
 
-      if (roleFilter === "HOMEROOM" && !row.isHomeroom) return false;
-      if (roleFilter === "ASSIGNED" && row.isHomeroom) return false;
+      const isHRRow = homeroomClasses.some(c => c.id === row.classId || c.students?.some((s: any) => s.id === row.studentId));
+      if (roleFilter === "HOMEROOM" && !isHRRow) return false;
+      if (roleFilter === "ASSIGNED" && isHRRow) return false;
 
       if (classFilter !== "ALL" && row.classId !== classFilter && row.className !== classFilter) {
         return false;
@@ -1551,7 +1566,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       seenKeys.add(dedupeKey);
 
       if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false;
-      if (roleFilter === "ASSIGNED" && !isAssignedToMe && !isCreatedByMe) return false;
+      if (roleFilter === "ASSIGNED" && isHomeroomStudent && !isAssignedToMe && !isCreatedByMe) return false;
 
       if (classFilter !== "ALL") {
         const studentClassId = t.student?.classId || t.student?.class?.id;
@@ -2341,6 +2356,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
           academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
           academicYearId={selectedYearId}
           teacher={teacher}
+          roleFilter={roleFilter}
           onRefresh={fetchPsychologicalStudents}
         />
       ) : activeSubTab === "assigned" ? (

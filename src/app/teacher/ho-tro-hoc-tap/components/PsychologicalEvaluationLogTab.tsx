@@ -18,6 +18,7 @@ interface Props {
   academicYearName: string
   academicYearId?: string
   teacher?: any
+  roleFilter?: "ALL" | "HOMEROOM" | "ASSIGNED"
   onRefresh?: () => void
 }
 
@@ -28,6 +29,7 @@ export function PsychologicalEvaluationLogTab({
   academicYearName = "2026-2027",
   academicYearId = "",
   teacher,
+  roleFilter = "ALL",
   onRefresh
 }: Props) {
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>("ALL")
@@ -36,38 +38,57 @@ export function PsychologicalEvaluationLogTab({
   const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<any | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
-  // Derive all classes available for filtering from assignedClasses, homeroomClasses, and students
+  // Role-filtered students: in HOMEROOM mode, strictly only keep students of homeroomClasses
+  const roleFilteredStudents = useMemo(() => {
+    if (roleFilter === "HOMEROOM") {
+      const hrIds = new Set(homeroomClasses.map((c: any) => c.id));
+      return students.filter(s => hrIds.has(s.classId));
+    }
+    if (roleFilter === "ASSIGNED") {
+      const hrIds = new Set(homeroomClasses.map((c: any) => c.id));
+      return students.filter(s => !hrIds.has(s.classId));
+    }
+    return students;
+  }, [students, roleFilter, homeroomClasses]);
+
+  // Derive classes available for filtering strictly under current role
   const availableClasses = useMemo(() => {
     const map = new Map<string, { id: string; className: string }>()
+    if (roleFilter === "HOMEROOM") {
+      homeroomClasses.forEach((c: any) => {
+        if (c?.id) map.set(c.id, { id: c.id, className: c.className || "Lớp" })
+      })
+      return Array.from(map.values()).sort((a, b) => a.className.localeCompare(b.className))
+    }
     const rawList = (assignedClasses && assignedClasses.length > 0) ? assignedClasses : homeroomClasses
     rawList.forEach((c: any) => {
       if (c?.id) map.set(c.id, { id: c.id, className: c.className || "Lớp" })
     })
-    students.forEach((s: any) => {
+    roleFilteredStudents.forEach((s: any) => {
       if (s?.classId && !map.has(s.classId)) {
         map.set(s.classId, { id: s.classId, className: s.className || "Lớp" })
       }
     })
     return Array.from(map.values()).sort((a, b) => a.className.localeCompare(b.className))
-  }, [assignedClasses, homeroomClasses, students])
+  }, [roleFilter, assignedClasses, homeroomClasses, roleFilteredStudents])
 
-  // 1. Statistics Summary Cards
+  // 1. Statistics Summary Cards (strictly on roleFilteredStudents)
   const stats = useMemo(() => {
-    const total = students.length
-    const needAttention = students.filter(s => 
+    const total = roleFilteredStudents.length
+    const needAttention = roleFilteredStudents.filter(s => 
       s.status === "CẦN THEO DÕI" || s.status === "CẦN CAN THIỆP" || (s.totalScore !== null && s.totalScore < 0)
     ).length
-    const stable = students.filter(s => 
+    const stable = roleFilteredStudents.filter(s => 
       s.status === "ĐÃ ỔN ĐỊNH" || s.status === "BÌNH THƯỜNG" || s.status === "HOÀN THÀNH" || (s.totalScore === 0)
     ).length
-    const supporting = students.filter(s => s.status === "ĐANG HỖ TRỢ" || s.status === "ĐANG THEO DÕI").length
+    const supporting = roleFilteredStudents.filter(s => s.status === "ĐANG HỖ TRỢ" || s.status === "ĐANG THEO DÕI").length
 
     return { total, needAttention, stable, supporting }
-  }, [students])
+  }, [roleFilteredStudents])
 
   // 2. Filter students
   const filteredStudents = useMemo(() => {
-    return students.filter(item => {
+    return roleFilteredStudents.filter(item => {
       // Class filter
       if (selectedClassFilter !== "ALL" && item.classId !== selectedClassFilter) {
         return false
