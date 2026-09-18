@@ -5868,15 +5868,12 @@ export function ObservationClient(props: ObservationClientProps) {
                           <div className="space-y-2.5">
                             {sec.requirements.map((req, rSubIdx) => {
                               const globalIdx = reqStartIdx + rSubIdx;
-                              const currentScore = evalCriteria[globalIdx] !== undefined ? evalCriteria[globalIdx] : 0;
+                              const currentScore = evalK12Scores[globalIdx] !== undefined ? evalK12Scores[globalIdx] : 0;
                               const isMaxReached = currentScore === req.max;
                               const options = [];
                               for (let v = 0; v <= req.max; v += 0.25) {
                                 options.push(Math.round(v * 100) / 100);
                               }
-
-                              const currentScore = evalK12Scores[globalIdx] || 0;
-                              const isMaxReached = currentScore === req.max;
 
                               return (
                                 <div

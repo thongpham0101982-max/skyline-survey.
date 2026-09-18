@@ -632,7 +632,7 @@ export function HomeroomGradesClient({
                         <th className="py-3 px-3 min-w-[140px] bg-slate-900 border-r border-slate-700">
                           Diện theo dõi / Cam kết
                         </th>
-                        <th className="py-3 px-3 text-center bg-teal-900 min-w-[110px]">
+                        <th className="py-3 px-3 text-center bg-teal-900 min-w-[110px] sticky right-0 z-20 shadow-md">
                           Phiếu điểm
                         </th>
                       </tr>
@@ -655,7 +655,17 @@ export function HomeroomGradesClient({
                                 {st.studentCode}
                               </td>
                               <td className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
-                                {st.studentName}
+                                <div className="flex items-center justify-between gap-2">
+                                  <span>{st.studentName}</span>
+                                  <button
+                                    onClick={() => handleOpenReport(st.studentId)}
+                                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all shadow-2xs cursor-pointer shrink-0"
+                                    title={`Xem phiếu điểm của học sinh ${st.studentName}`}
+                                  >
+                                    <Printer className="w-3 h-3 text-teal-600" />
+                                    <span>Phiếu điểm</span>
+                                  </button>
+                                </div>
                               </td>
                               <td className="py-2.5 px-3 text-center text-slate-600 border-r border-slate-200 whitespace-nowrap text-[11px]">
                                 {st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "-"}
@@ -723,7 +733,7 @@ export function HomeroomGradesClient({
                               </td>
 
                               {/* Student Report Card Trigger */}
-                              <td className="py-2.5 px-2 text-center border-r border-slate-200">
+                              <td className="py-2.5 px-2 text-center border-l border-slate-200 sticky right-0 z-10 bg-white/95 shadow-xs">
                                 <button
                                   onClick={() => handleOpenReport(st.studentId)}
                                   className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all shadow-2xs cursor-pointer"
