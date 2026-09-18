@@ -88,31 +88,30 @@ export default function StudentGoalPortalPage() {
             return "K1"
           }
 
+          const ayId = data.academicYearId || (typeof window !== "undefined" ? localStorage.getItem("selectedAcademicYear") || "" : "")
+          if (ayId) setAcademicYearId(ayId)
+
           let parsedGrade = parseGradeLevel(data.grade, data.className)
 
           setStudentGrade(parsedGrade)
           setGradeLevel(parsedGrade)
           localStorage.setItem("currentStudent", JSON.stringify(data))
 
-          fetchGoalsForStudent(sId, parsedGrade)
-          fetchUnlockData(sId)
-          fetchAdjustmentRequest(sId)
+          fetchGoalsForStudent(sId, parsedGrade, ayId)
+          fetchUnlockData(sId, ayId)
+          fetchAdjustmentRequest(sId, ayId)
         }
       })
       .catch(console.error)
       .finally(() => setLoading(false))
-
-    if (typeof window !== "undefined") {
-      const storedYear = localStorage.getItem("selectedAcademicYear") || ""
-      setAcademicYearId(storedYear)
-    }
   }, [])
 
-  async function fetchGoalsForStudent(sId: string, gLevel: string) {
+  async function fetchGoalsForStudent(sId: string, gLevel: string, ayIdParam?: string) {
     if (!sId) return
     try {
       setLoading(true)
-      const res = await fetch(`/api/advisory/goals?studentId=${sId}&academicYearId=${academicYearId}&gradeLevel=${gLevel}&_t=${Date.now()}`, { cache: "no-store" })
+      const curAY = ayIdParam !== undefined ? ayIdParam : academicYearId
+      const res = await fetch(`/api/advisory/goals?studentId=${sId}&academicYearId=${curAY}&gradeLevel=${gLevel}&_t=${Date.now()}`, { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
         setPresets(data.presets || [])

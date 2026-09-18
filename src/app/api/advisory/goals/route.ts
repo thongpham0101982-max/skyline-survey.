@@ -127,6 +127,12 @@ export async function GET(req: Request) {
     const targetClassId = searchParams.get("classId")
     const queryYearId = searchParams.get("academicYearId")
     if (targetClassId) {
+      const targetClass = await prisma.class.findUnique({
+        where: { id: targetClassId },
+        select: { id: true, academicYearId: true }
+      }).catch(() => null)
+      const effectiveYearId = queryYearId || targetClass?.academicYearId
+
       const classStudents = await prisma.student.findMany({
         where: {
           classId: targetClassId,
@@ -135,22 +141,47 @@ export async function GET(req: Request) {
         select: { id: true, studentCode: true, studentName: true }
       })
       const studentIdsInClass = classStudents.map(s => s.id)
-      
+      const studentCodesInClass = classStudents.map(s => s.studentCode).filter(Boolean) as string[]
+
+      // Tìm thêm các studentId khác có cùng studentCode (trong trường hợp học sinh có nhiều bản ghi theo các năm)
+      const sameCodeStudents = studentCodesInClass.length > 0 ? await prisma.student.findMany({
+        where: { studentCode: { in: studentCodesInClass } },
+        select: { id: true, studentCode: true }
+      }).catch(() => []) : []
+
+      const allStudentIds = Array.from(new Set([...studentIdsInClass, ...sameCodeStudents.map(s => s.id)]))
+
       const goalsInClass = await prisma.studentGoal.findMany({
         where: {
-          studentId: { in: studentIdsInClass },
-          ...(queryYearId ? { academicYearId: queryYearId } : {})
+          studentId: { in: allStudentIds }
         },
-        select: { studentId: true }
+        select: { studentId: true, academicYearId: true }
       }).catch(() => [])
-      
-      const submittedStudentIds = Array.from(new Set(goalsInClass.map(g => g.studentId)))
-      const submittedStudentCodes = Array.from(new Set(
-        classStudents
-          .filter(s => submittedStudentIds.includes(s.id))
-          .map(s => s.studentCode)
-          .filter(Boolean)
-      ))
+
+      const idToCodeMap = new Map<string, string>()
+      classStudents.forEach(s => { if (s.studentCode) idToCodeMap.set(s.id, s.studentCode) })
+      sameCodeStudents.forEach(s => { if (s.studentCode) idToCodeMap.set(s.id, s.studentCode) })
+
+      const submittedStudentCodesSet = new Set<string>()
+      const submittedStudentIdsSet = new Set<string>()
+
+      for (const g of goalsInClass) {
+        if (!effectiveYearId || g.academicYearId === effectiveYearId || studentIdsInClass.includes(g.studentId)) {
+          submittedStudentIdsSet.add(g.studentId)
+          const code = idToCodeMap.get(g.studentId)
+          if (code) submittedStudentCodesSet.add(code)
+        }
+      }
+
+      // Đảm bảo tất cả học sinh trong lớp có studentCode đã nộp đều được đánh dấu nộp
+      classStudents.forEach(s => {
+        if (s.studentCode && submittedStudentCodesSet.has(s.studentCode)) {
+          submittedStudentIdsSet.add(s.id)
+        }
+      })
+
+      const submittedStudentCodes = Array.from(submittedStudentCodesSet)
+      const submittedStudentIds = Array.from(submittedStudentIdsSet)
 
       return jsonResponse({
         classId: targetClassId,
@@ -311,9 +342,18 @@ export async function POST(req: Request) {
     }
 
     let yearId = academicYearId
-    if (!yearId) {
+    const targetStudent = await prisma.student.findUnique({
+      where: { id: targetStudentId },
+      select: { id: true, academicYearId: true, class: { select: { academicYearId: true } } }
+    }).catch(() => null)
+
+    if (targetStudent?.academicYearId) {
+      yearId = targetStudent.academicYearId
+    } else if (targetStudent?.class?.academicYearId) {
+      yearId = targetStudent.class.academicYearId
+    } else if (!yearId || yearId === "AY-2026") {
       const defaultAY = await getDefaultAcademicYear(prisma)
-      yearId = defaultAY?.id || ""
+      yearId = defaultAY?.id || yearId || ""
     }
 
     await ensureTablesExist()
