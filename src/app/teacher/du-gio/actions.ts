@@ -2053,12 +2053,12 @@ export async function updateTeacherObservationTargets(
 
     const isSelf = currentTeacher && currentTeacher.id === teacherId
 
-    if (!isSuperAdmin && !isTBP && !isTTCM && !isSelf && !isGDCS) {
-      return { success: false, error: "Bạn không có quyền cấu hình chỉ tiêu" }
+    if (!isSuperAdmin && !isTBP && !isTTCM && !isGDCS) {
+      return { success: false, error: "Bạn không có quyền cấu hình chỉ tiêu. Chỉ TTCM, Ban ĐHCM hoặc Quản trị viên mới được phân bổ chỉ tiêu." }
     }
 
     // If they are TBP, verify that the teacher belongs to their division
-    if (isTBP && !isSuperAdmin && !isSelf) {
+    if (isTBP && !isSuperAdmin) {
       const myDivCodes = new Set<string>();
       currentTeacher?.divisionAssignments?.forEach((da: any) => myDivCodes.add(da.divisionCode));
       if (["BAN_DHCM", "TB_DHCM"].includes(currentTeacher?.position || "") || ["BAN_DHCM", "TB_DHCM"].includes(roleCode)) {
@@ -2275,6 +2275,10 @@ export async function requestObservationSlot(data: {
 
     if (!hostTeacher) {
       return { success: false, error: "Không tìm thấy thông tin Giáo viên dạy." };
+    }
+
+    if (observerTeacher && hostTeacher && observerTeacher.id === hostTeacher.id) {
+      return { success: false, error: "Thầy/Cô không thể tự gửi đề xuất dự giờ chính mình." };
     }
 
     const periodMap: Record<string, { start: string; end: string }> = {

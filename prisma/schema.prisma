@@ -1124,6 +1124,13 @@ model ObservationSlot {
   registrations  ObservationRegistration[]
   academicYearId String?
   academicYear   AcademicYear?             @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+
+  @@index([academicYearId])
+  @@index([campusId])
+  @@index([teacherId])
+  @@index([date])
+  @@index([status])
+  @@index([level])
 }
 
 model ObservationRegistration {
@@ -1139,6 +1146,8 @@ model ObservationRegistration {
   evaluation ObservationEvaluation?
 
   @@unique([slotId, teacherId])
+  @@index([teacherId])
+  @@index([isApproved])
 }
 
 model ObservationEvaluation {

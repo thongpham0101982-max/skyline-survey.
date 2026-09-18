@@ -1964,6 +1964,38 @@ export function ObservationClient(props: ObservationClientProps) {
     setHasEvalDraft(true);
   }, [evalModal?.slot?.id, evalModal?.registration?.id, evalK12Scores, evalCriteria, evalStrengths, evalImprovements, evalGeneral, evalOverall]);
 
+  // [PHASE 2] Automatic Debounced Local Draft Saving (1.5s debounce)
+  useEffect(() => {
+    if (!evalModal?.slot?.id || !evalModal?.registration?.id || typeof window === "undefined") return;
+    const isReadOnlyMode = !!evalModal.registration.evaluation && !isApprovedForReEval;
+    if (isReadOnlyMode) return;
+
+    const hasContent = (evalK12Scores.some(s => s > 0)) ||
+      (evalCriteria.some(c => c > 0)) ||
+      evalStrengths.trim().length > 0 ||
+      evalImprovements.trim().length > 0 ||
+      evalGeneral.trim().length > 0;
+
+    if (!hasContent) return;
+
+    const timer = setTimeout(() => {
+      handleSaveLocalDraft();
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [
+    evalModal?.slot?.id,
+    evalModal?.registration?.id,
+    evalK12Scores,
+    evalCriteria,
+    evalStrengths,
+    evalImprovements,
+    evalGeneral,
+    evalOverall,
+    isApprovedForReEval,
+    handleSaveLocalDraft
+  ]);
+
   const calculateK12Ranking = (scores: number[]) => {
     return getK12RankingDetails(scores).rating;
   }
@@ -5704,49 +5736,121 @@ export function ObservationClient(props: ObservationClientProps) {
                     </div>
                   </div>
                 )}
+{/* [PHASE 2] Prominent Local Draft Recovery Banner */}
+                {hasEvalDraft && !isReadOnly && !evalModal.registration.evaluation && (
+                  <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3 text-xs text-amber-950 font-medium">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
+                        ⚡
+                      </div>
+                      <div>
+                        <p className="font-extrabold text-amber-900 text-xs sm:text-sm flex items-center gap-1.5">
+                          <span>Phát hiện bản nháp đang lưu trên thiết bị!</span>
+                          <span className="px-2 py-0.5 bg-amber-200/80 text-amber-900 rounded-full text-[10px] font-black uppercase">Chưa gửi</span>
+                        </p>
+                        <p className="text-[11px] text-amber-800 mt-0.5">
+                          {evalDraftSavedAt ? `Lưu lần cuối lúc: ${evalDraftSavedAt.toLocaleTimeString("vi-VN")} ngày ${evalDraftSavedAt.toLocaleDateString("vi-VN")}` : "Tiến độ chấm điểm trước đó đã được tự động bảo lưu."}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                      <button
+                        type="button"
+                        onClick={handleRestoreDraft}
+                        className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Khôi phục bản nháp</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof window !== "undefined" && evalModal) {
+                            const draftKey = `skyline_eval_draft_${evalModal.slot.id}_${evalModal.registration.id}`;
+                            localStorage.removeItem(draftKey);
+                            setHasEvalDraft(false);
+                            setEvalDraftSavedAt(null);
+                            showToast("Đã xóa bản nháp!", "info");
+                          }
+                        }}
+                        className="px-3 py-2 bg-white hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        title="Hủy bỏ và không sử dụng bản nháp này"
+                      >
+                        Bỏ qua
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Score Summary Box */}
                 {evalModal.slot.level !== "Mầm non" ? (
                   <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="text-xs font-black text-teal-900 uppercase tracking-wide">Tổng điểm tự động:</span>
-                        <span className="text-base font-black text-teal-950 bg-white px-4 py-1.5 rounded-xl shadow-xs border border-teal-200">
-                          {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00 điểm
-                        </span>
-                        <span className="text-xs font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                          Xếp loại: {calculateK12Ranking(evalK12Scores)}
-                        </span>
-                      </div>
-                      {!isReadOnly && (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const maxArr = K12_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
-                              setEvalK12Scores(maxArr);
-                              setEvalOverall(calculateK12Ranking(maxArr));
-                            }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95"
-                            title="Chấm điểm tối đa 20/20 cho toàn bộ 11 tiêu chí"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>Chấm nhanh Max (20/20)</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const zeroArr = Array(11).fill(0);
-                              setEvalK12Scores(zeroArr);
-                              setEvalOverall(calculateK12Ranking(zeroArr));
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
-                            title="Đặt lại toàn bộ về 0 điểm"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-                            <span>Đặt lại 0đ</span>
-                          </button>
+                    <div className="flex flex-col gap-3 p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="text-xs font-black text-teal-900 uppercase tracking-wide">Tổng điểm tự động:</span>
+                          <span className="text-base font-black text-teal-950 bg-white px-4 py-1.5 rounded-xl shadow-xs border border-teal-200">
+                            {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00 điểm
+                          </span>
+                          <span className="text-xs font-black text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                            Xếp loại: {calculateK12Ranking(evalK12Scores)}
+                          </span>
                         </div>
-                      )}
+                        {!isReadOnly && (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const maxArr = K12_SECTIONS.flatMap(s => s.requirements.map(r => r.max));
+                                setEvalK12Scores(maxArr);
+                                setEvalOverall(calculateK12Ranking(maxArr));
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95"
+                              title="Chấm điểm tối đa 20/20 cho toàn bộ 11 tiêu chí"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Chấm nhanh Max (20/20)</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const zeroArr = Array(11).fill(0);
+                                setEvalK12Scores(zeroArr);
+                                setEvalOverall(calculateK12Ranking(zeroArr));
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
+                              title="Đặt lại toàn bộ về 0 điểm"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                              <span>Đặt lại 0đ</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* [PHASE 2] K-12 Mandatory Criteria & Progress Tracker */}
+                      <div className="w-full pt-3 border-t border-teal-200/60 flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-extrabold text-teal-900">Tiêu chí chuẩn Giỏi (buộc đạt Max):</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border flex items-center gap-1 ${(evalK12Scores[0] || 0) >= 1.5 ? "bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold" : "bg-white text-slate-600 border-slate-200"}`}>
+                              {(evalK12Scores[0] || 0) >= 1.5 ? "✓" : "○"} Y1 (1.5đ)
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border flex items-center gap-1 ${(evalK12Scores[2] || 0) >= 2.0 ? "bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold" : "bg-white text-slate-600 border-slate-200"}`}>
+                              {(evalK12Scores[2] || 0) >= 2.0 ? "✓" : "○"} Y3 (2.0đ)
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border flex items-center gap-1 ${(evalK12Scores[5] || 0) >= 2.0 ? "bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold" : "bg-white text-slate-600 border-slate-200"}`}>
+                              {(evalK12Scores[5] || 0) >= 2.0 ? "✓" : "○"} Y6 (2.0đ)
+                            </span>
+                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-bold border flex items-center gap-1 ${(evalK12Scores[6] || 0) >= 3.0 ? "bg-emerald-100 text-emerald-800 border-emerald-300 font-extrabold" : "bg-white text-slate-600 border-slate-200"}`}>
+                              {(evalK12Scores[6] || 0) >= 3.0 ? "✓" : "○"} Y7 (3.0đ)
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 self-start md:self-auto text-teal-800 font-semibold text-[11px]">
+                          <span>Tiến độ: <strong>{evalK12Scores.filter(s => s > 0).length}/11</strong> tiêu chí đã chấm</span>
+                        </div>
+                      </div>
                     </div>
 
                     {K12_SECTIONS.map((sec, sIdx) => {
@@ -5764,6 +5868,8 @@ export function ObservationClient(props: ObservationClientProps) {
                           <div className="space-y-2.5">
                             {sec.requirements.map((req, rSubIdx) => {
                               const globalIdx = reqStartIdx + rSubIdx;
+                              const currentScore = evalCriteria[globalIdx] !== undefined ? evalCriteria[globalIdx] : 0;
+                              const isMaxReached = currentScore === req.max;
                               const options = [];
                               for (let v = 0; v <= req.max; v += 0.25) {
                                 options.push(Math.round(v * 100) / 100);
@@ -6108,6 +6214,13 @@ export function ObservationClient(props: ObservationClientProps) {
                 {!isReadOnly && (
                   <QuickCommentPresets
                     isPreschool={evalModal.slot.level === "Mầm non"}
+                    evalK12Scores={evalK12Scores}
+                    evalCriteria={evalCriteria}
+                    onAutoFillFeedback={(s, i) => {
+                      setEvalStrengths(s);
+                      setEvalImprovements(i);
+                      handleSaveLocalDraft();
+                    }}
                     onAddStrength={(text) => {
                       setEvalStrengths(prev => prev ? `${prev}\n• ${text}` : `• ${text}`);
                       handleSaveLocalDraft();
@@ -6376,7 +6489,13 @@ export function ObservationClient(props: ObservationClientProps) {
 
               {/* Modal Footer */}
               <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-between gap-3 shrink-0">
-                <div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  {evalDraftSavedAt && !isReadOnly && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shadow-2xs animate-in fade-in">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Đã tự lưu nháp ({evalDraftSavedAt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })})
+                    </span>
+                  )}
                   {isReadOnly && !isDraft && evalModal.registration.teacherId === currentTeacher?.id && (
                     <>
                       {evalModal.registration.evaluation?.reEvaluationStatus === "REQUESTED" ? (

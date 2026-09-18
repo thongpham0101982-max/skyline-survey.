@@ -34,6 +34,23 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const roleCode = (session.user as any)?.role || "";
+    const isAdmin = [
+      "ADMIN",
+      "ADMINISTRATOR",
+      "KT_DBCL",
+      "GDCS",
+      "GĐCS",
+      "GD_CS",
+      "GĐ_CS",
+      "GIAO_VU_CS",
+      "SUPER_ADMIN",
+      "BGH"
+    ].includes(roleCode);
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Bạn không có quyền quản trị tính năng này" }, { status: 403 });
+    }
+
     // Fetch configs
     const configs = await prisma.assessmentConfig.findMany({
       where: {
@@ -113,6 +130,23 @@ export async function POST(req: Request) {
     const session = await auth();
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const roleCode = (session.user as any)?.role || "";
+    const isAdmin = [
+      "ADMIN",
+      "ADMINISTRATOR",
+      "KT_DBCL",
+      "GDCS",
+      "GĐCS",
+      "GD_CS",
+      "GĐ_CS",
+      "GIAO_VU_CS",
+      "SUPER_ADMIN",
+      "BGH"
+    ].includes(roleCode);
+    if (!isAdmin) {
+      return NextResponse.json({ error: "Bạn không có quyền quản trị tính năng này" }, { status: 403 });
     }
 
     const body = await req.json();

@@ -10,7 +10,7 @@ import {
   BookOpen, User, Award, ThumbsUp, MessageSquare, GraduationCap,
   Eye, Settings, Sparkles, Filter, TrendingUp, BarChart3, School,
   Baby, Building2, Star, CheckCheck, Clock, Mail, Send, FileSpreadsheet,
-  UserCheck, AlertTriangle, ArrowRight, BookMarked, Grid3X3, Table2, ArrowLeftRight, MapPin, RefreshCw
+  UserCheck, AlertTriangle, ArrowRight, BookMarked, Grid3X3, Table2, ArrowLeftRight, MapPin, RefreshCw, ListChecks, Info, HelpCircle, ShieldCheck, Target, Printer
 } from "lucide-react"
 
 interface TeacherInfo {
@@ -162,24 +162,32 @@ export function AdminTongHopClient({
   const [activeDetailTab, setActiveDetailTab] = useState<"lich-su" | "lich-su-du" | "tien-do-to" | "phan-tich" | "to-cm">("lich-su")
 
   // Top-level Navigation Tab state ("tong-hop" | "ma-tran")
-  const [mainTab, setMainTab] = useState<"tong-hop" | "ma-tran">(() => {
-    return searchParams.get("tab") === "ma-tran" ? "ma-tran" : "tong-hop"
+  const [mainTab, setMainTab] = useState<"tong-hop" | "ma-tran" | "dbcl" | "kho-tieu-bieu">(() => {
+    const t = searchParams.get("tab"); return t === "ma-tran" ? "ma-tran" : t === "dbcl" ? "dbcl" : t === "kho-tieu-bieu" ? "kho-tieu-bieu" : "tong-hop"
   })
 
   useEffect(() => {
     const tabParam = searchParams.get("tab")
     if (tabParam === "ma-tran") {
       setMainTab("ma-tran")
+    } else if (tabParam === "dbcl") {
+      setMainTab("dbcl")
+    } else if (tabParam === "kho-tieu-bieu") {
+      setMainTab("kho-tieu-bieu")
     } else if (tabParam === "tong-hop") {
       setMainTab("tong-hop")
     }
   }, [searchParams])
 
-  const handleSwitchMainTab = (tab: "tong-hop" | "ma-tran") => {
+  const handleSwitchMainTab = (tab: "tong-hop" | "ma-tran" | "dbcl" | "kho-tieu-bieu") => {
     setMainTab(tab)
     const params = new URLSearchParams(window.location.search)
     if (tab === "ma-tran") {
       params.set("tab", "ma-tran")
+    } else if (tab === "dbcl") {
+      params.set("tab", "dbcl")
+    } else if (tab === "kho-tieu-bieu") {
+      params.set("tab", "kho-tieu-bieu")
     } else {
       params.delete("tab")
     }
@@ -193,6 +201,17 @@ export function AdminTongHopClient({
   const [ttcmMatrixCampus, setTtcmMatrixCampus] = useState<string>("all")
   const [ttcmMatrixObservedCampus, setTtcmMatrixObservedCampus] = useState<string>("all")
   const [ttcmSearchQuery, setTtcmSearchQuery] = useState<string>("")
+  // QA Dashboard Filters
+  const [qaCampusFilter, setQaCampusFilter] = useState<string>("all")
+  const [qaBlockFilter, setQaBlockFilter] = useState<string>("all")
+  const [qaMonthFilter, setQaMonthFilter] = useState<string>("all")
+  // Exemplary Lessons Filters
+  const [exemplarySearchQuery, setExemplarySearchQuery] = useState("")
+  const [exemplarySubjectFilter, setExemplarySubjectFilter] = useState("all")
+  const [exemplaryGradeFilter, setExemplaryGradeFilter] = useState("all")
+  const [exemplaryCampusFilter, setExemplaryCampusFilter] = useState("all")
+
+
   const [ttcmViewMode, setTtcmViewMode] = useState<"pivot-matrix" | "detailed-list">("pivot-matrix")
 
   // Target Config modal state
@@ -1572,6 +1591,55 @@ export function AdminTongHopClient({
       const wsTTCM = XLSX.utils.aoa_to_sheet(ttcmRows);
       XLSX.utils.book_append_sheet(wb, wsTTCM, "Ma_Tran_TTCM");
 
+      // 7. Sheet Báo cáo ĐBCL & Phân tích chuyên môn
+      const qaHeaders = [
+        ["BÁO CÁO ĐẢM BẢO CHẤT LƯỢNG (ĐBCL) & PHÂN TÍCH CHUYÊN MÔN DỰ GIỜ"],
+        [`Kỳ báo cáo: ${periodText}`, `Năm học: ${yearName}`, `Thời gian xuất: ${new Date().toLocaleString("vi-VN")}`],
+        [],
+        ["I. TỔNG HỢP CHỈ SỐ CHẤT LƯỢNG TOÀN TRƯỜNG"],
+        ["Tổng tiết dạy có dự giờ", qaAnalytics.totalObservedSlots, "Tổng số phiếu đánh giá", qaAnalytics.totalEvaluations],
+        ["Tiết dự giờ đột xuất", qaAnalytics.surpriseObservedSlots, "Tỷ lệ dự giờ đột xuất", `${qaAnalytics.surpriseRate}%`],
+        ["Tỷ lệ Đạt chuẩn K-12 (Giỏi + Khá)", `${qaAnalytics.k12.passRate}%`, "Điểm trung bình K-12", `${qaAnalytics.k12.avgScore}/20`],
+        [],
+        ["II. CƠ CẤU PHỔ ĐIỂM XẾP LOẠI K-12"],
+        ["Xếp loại", "Số lượng phiếu", "Tỷ lệ (%)", "Quy chuẩn điểm"],
+        ["Giỏi", qaAnalytics.k12.gioi, `${qaAnalytics.k12.gioiPct}%`, "Từ 18.0 - 20.0 điểm"],
+        ["Khá", qaAnalytics.k12.kha, `${qaAnalytics.k12.khaPct}%`, "Từ 14.0 - 17.5 điểm"],
+        ["Trung bình", qaAnalytics.k12.tb, `${qaAnalytics.k12.tbPct}%`, "Từ 10.0 - 13.5 điểm"],
+        ["Chưa đạt", qaAnalytics.k12.khongDat, `${qaAnalytics.k12.khongDatPct}%`, "Dưới 10.0 điểm"],
+        [],
+        ["III. PHÂN TÍCH 11 TIÊU CHÍ SƯ PHẠM K-12 (BỘ GD&ĐT)"],
+        ["Mã", "Tên tiêu chí", "Nhóm chuẩn sư phạm", "Điểm tối đa", "Điểm TB", "Tỷ lệ đạt (%)", "Số tiết bị trừ điểm", "Tỷ lệ trừ điểm (%)"],
+        ...qaAnalytics.k12CriteriaStats.map(c => [
+          c.id, c.name, c.standardName, c.max, c.avg, `${c.pct}%`, c.lowCount, `${c.lowPct}%`
+        ]),
+        [],
+        ["IV. TOP 3 THẾ MẠNH & TOP 3 TRỌNG TÂM BỒI DƯỠNG"],
+        ["Nhóm", "Mã", "Tên tiêu chí", "Điểm TB / Tối đa", "Tỷ lệ đạt (%)", "Khuyến nghị giải pháp hành động"],
+        ...qaAnalytics.bestPractices.map(bp => [
+          "Thế mạnh nổi bật", bp.id, bp.name, `${bp.avg}/${bp.max}`, `${bp.pct}%`, "Tiếp tục nhân rộng mô hình và chia sẻ trong sinh hoạt chuyên môn"
+        ]),
+        ...qaAnalytics.recommendations.map(fa => [
+          "Trọng tâm bồi dưỡng", fa.id, fa.name, `${fa.avg}/${fa.max}`, `${fa.pct}%`, fa.advice
+        ]),
+        [],
+        ["V. TỔNG HỢP THEO TỪNG CƠ SỞ"],
+        ["STT", "Cơ sở", "Tổng tiết dự", "Tiết đột xuất", "Điểm TB K-12", "Tỷ lệ Giỏi (%)", "Tỷ lệ Đạt chuẩn (%)"],
+        ...qaAnalytics.campusList.map((c, idx) => [
+          idx + 1,
+          c.name,
+          c.totalSlots,
+          c.surpriseSlots,
+          c.k12Count > 0 ? Number((c.k12Sum / c.k12Count).toFixed(2)) : "-",
+          c.totalEvals > 0 ? `${Math.round((c.gioiCount / c.totalEvals) * 100)}%` : "0%",
+          c.totalEvals > 0 ? `${Math.round(((c.gioiCount + c.khaCount) / c.totalEvals) * 100)}%` : "0%"
+        ])
+      ];
+
+      const wsQA = XLSX.utils.aoa_to_sheet(qaHeaders);
+      XLSX.utils.book_append_sheet(wb, wsQA, "Bao_Cao_DBCL");
+
+
       const sanitizedMonth = selectedMonth === "all" ? "Tat_Ca_Thang" : `Thang_${selectedMonth.replace("-", "_")}`;
       const fileName = `Bao_Cao_Tong_Hop_Du_Gio_${sanitizedMonth}.xlsx`;
 
@@ -2006,6 +2074,337 @@ export function AdminTongHopClient({
   const selectedTeacher = teachersList.find(t => t.id === selectedTeacherId) || null;
   const currentStats = selectedTeacher ? (teacherStats[selectedTeacher.id] || { taughtCount: 0, observedCount: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 }) : { taughtCount: 0, observedCount: 0, taughtSurpriseCount: 0, observedSurpriseCount: 0 };
 
+
+  // =========================================================================
+  // GIAI ĐOẠN 3: PHÂN TÍCH CHUYÊN MÔN CHUYÊN SÂU & BÁO CÁO ĐBCL (QA ANALYTICS)
+  // =========================================================================
+
+  // =========================================================================
+  // GIAI ĐOẠN 4: KHO TIẾT DẠY TIÊU BIỂU & BÀI GIẢNG XUẤT SẮC (EXEMPLARY LESSONS)
+  // =========================================================================
+  const exemplaryLessons = useMemo(() => {
+    const list: any[] = [];
+    (initialSlots || []).forEach((slot: any) => {
+      const bestEvalReg = slot.registrations?.find((r: any) => {
+        const ev = r.evaluation;
+        if (!ev || ev.reEvaluationStatus === "DRAFT") return false;
+        return ev.overallRating === "Giỏi" || (typeof ev.totalScore === "number" && ev.totalScore >= 18.5) || ev.overallRating === "Tốt";
+      });
+
+      if (bestEvalReg) {
+        const ev = bestEvalReg.evaluation;
+        const teacher = teachersList.find(t => t.id === slot.teacherId);
+        list.push({
+          slot,
+          evaluation: ev,
+          teacherName: teacher?.teacherName || slot.teacher?.teacherName || "Giáo viên",
+          teacherCode: teacher?.teacherCode || "",
+          position: teacher?.position || "",
+          deptName: teacher?.departmentRel?.name || "",
+          totalScore: ev.totalScore,
+          overallRating: ev.overallRating,
+          strengths: ev.strengths || ev.generalComments || "",
+          lessonPlanName: slot.lessonPlanName || null,
+          lessonPlanData: slot.lessonPlanData || null
+        });
+      }
+    });
+
+    return list.filter(item => {
+      const s = item.slot;
+      const matchQuery = !exemplarySearchQuery ||
+        s.topic?.toLowerCase().includes(exemplarySearchQuery.toLowerCase()) ||
+        item.teacherName.toLowerCase().includes(exemplarySearchQuery.toLowerCase()) ||
+        s.subjectName?.toLowerCase().includes(exemplarySearchQuery.toLowerCase());
+      const matchSubject = exemplarySubjectFilter === "all" || s.subjectName === exemplarySubjectFilter;
+      const matchGrade = exemplaryGradeFilter === "all" || s.grade === exemplaryGradeFilter;
+      const matchCampus = exemplaryCampusFilter === "all" || s.campusId === exemplaryCampusFilter;
+      return matchQuery && matchSubject && matchGrade && matchCampus;
+    });
+  }, [initialSlots, teachersList, exemplarySearchQuery, exemplarySubjectFilter, exemplaryGradeFilter, exemplaryCampusFilter]);
+
+  // Distinct subjects and grades for filters
+  const distinctSubjects = useMemo(() => {
+    const set = new Set<string>();
+    (initialSlots || []).forEach((s: any) => {
+      if (s.subjectName) set.add(s.subjectName);
+    });
+    return Array.from(set).sort();
+  }, [initialSlots]);
+
+  const distinctGrades = useMemo(() => {
+    const set = new Set<string>();
+    (initialSlots || []).forEach((s: any) => {
+      if (s.grade) set.add(s.grade);
+    });
+    return Array.from(set).sort();
+  }, [initialSlots]);
+
+  const qaAnalytics = useMemo(() => {
+    // 1. Lọc danh sách slots theo các bộ lọc ĐBCL
+    const slots = (initialSlots || []).filter((slot: any) => {
+      if (qaMonthFilter !== "all") {
+        if (!slot.date) return false;
+        const d = new Date(slot.date);
+        if (isNaN(d.getTime())) return false;
+        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (ym !== qaMonthFilter) return false;
+      }
+      if (qaCampusFilter !== "all" && slot.campusId !== qaCampusFilter) {
+        return false;
+      }
+      if (qaBlockFilter === "k12" && slot.level === "Mầm non") return false;
+      if (qaBlockFilter === "mam-non" && slot.level !== "Mầm non") return false;
+      return true;
+    });
+
+    let totalObservedSlots = 0;
+    let surpriseObservedSlots = 0;
+    let totalEvaluations = 0;
+    let totalK12Evaluations = 0;
+    let totalMNEvaluations = 0;
+
+    // Rating breakdown K12
+    let k12Gioi = 0;
+    let k12Kha = 0;
+    let k12TB = 0;
+    let k12KhongDat = 0;
+    let k12ScoresSum = 0;
+
+    // Rating breakdown MN
+    let mnTot = 0;
+    let mnKha = 0;
+    let mnDat = 0;
+    let mnChuaDat = 0;
+
+    // Criteria arrays
+    const k12CriteriaSums = new Array(11).fill(0);
+    const k12CriteriaLowCounts = new Array(11).fill(0);
+    let k12CriteriaCount = 0;
+
+    const mnCriteriaSums = new Array(5).fill(0);
+    const mnCriteriaLowCounts = new Array(5).fill(0);
+    let mnCriteriaCount = 0;
+
+    // Campus breakdown map
+    const campusStatsMap = new Map<string, {
+      id: string;
+      name: string;
+      totalSlots: number;
+      surpriseSlots: number;
+      totalEvals: number;
+      k12Count: number;
+      k12Sum: number;
+      gioiCount: number;
+      khaCount: number;
+      otherCount: number;
+    }>();
+
+    (campuses || []).forEach(c => {
+      campusStatsMap.set(c.id, {
+        id: c.id,
+        name: c.campusName,
+        totalSlots: 0,
+        surpriseSlots: 0,
+        totalEvals: 0,
+        k12Count: 0,
+        k12Sum: 0,
+        gioiCount: 0,
+        khaCount: 0,
+        otherCount: 0
+      });
+    });
+
+    slots.forEach((slot: any) => {
+      const hasEvals = slot.registrations?.some(
+        (r: any) => r.evaluation && r.evaluation.reEvaluationStatus !== "DRAFT"
+      );
+      if (!hasEvals) return;
+
+      const inc = slot.isDoublePeriod ? 2 : 1;
+      totalObservedSlots += inc;
+      const isSurprise = isSurpriseSlot(slot);
+      if (isSurprise) surpriseObservedSlots += inc;
+
+      const cStat = campusStatsMap.get(slot.campusId);
+      if (cStat) {
+        cStat.totalSlots += inc;
+        if (isSurprise) cStat.surpriseSlots += inc;
+      }
+
+      slot.registrations?.forEach((reg: any) => {
+        const ev = reg.evaluation;
+        if (!ev || ev.reEvaluationStatus === "DRAFT") return;
+
+        totalEvaluations++;
+        if (cStat) cStat.totalEvals++;
+
+        const isMN = slot.level === "Mầm non";
+        if (!isMN) {
+          totalK12Evaluations++;
+          const score = typeof ev.totalScore === "number" ? ev.totalScore : 0;
+          k12ScoresSum += score;
+          if (cStat) {
+            cStat.k12Count++;
+            cStat.k12Sum += score;
+          }
+
+          const rating = ev.overallRating || "";
+          if (rating === "Giỏi" || score >= 18) {
+            k12Gioi++;
+            if (cStat) cStat.gioiCount++;
+          } else if (rating === "Khá" || (score >= 14 && score < 18)) {
+            k12Kha++;
+            if (cStat) cStat.khaCount++;
+          } else if (rating === "Trung bình" || (score >= 10 && score < 14)) {
+            k12TB++;
+            if (cStat) cStat.otherCount++;
+          } else {
+            k12KhongDat++;
+            if (cStat) cStat.otherCount++;
+          }
+
+          // 11 criteria
+          if (ev.score1 !== null && ev.score1 !== undefined) {
+            k12CriteriaCount++;
+            for (let i = 1; i <= 11; i++) {
+              const val = typeof ev["score" + i] === "number" ? ev["score" + i] : 0;
+              k12CriteriaSums[i - 1] += val;
+              if (val < maxScoresK12[i - 1] * 0.7) {
+                k12CriteriaLowCounts[i - 1]++;
+              }
+            }
+          }
+        } else {
+          totalMNEvaluations++;
+          const rating = ev.overallRating || "";
+          if (rating === "Tốt") {
+            mnTot++;
+            if (cStat) cStat.gioiCount++;
+          } else if (rating === "Khá") {
+            mnKha++;
+            if (cStat) cStat.khaCount++;
+          } else if (rating === "Đạt") {
+            mnDat++;
+            if (cStat) cStat.otherCount++;
+          } else {
+            mnChuaDat++;
+            if (cStat) cStat.otherCount++;
+          }
+
+          // 5 criteria MN
+          if (ev.criterion1 !== null && ev.criterion1 !== undefined) {
+            mnCriteriaCount++;
+            for (let i = 1; i <= 5; i++) {
+              const val = typeof ev["criterion" + i] === "number" ? ev["criterion" + i] : 0;
+              mnCriteriaSums[i - 1] += val;
+              if (val <= 2) {
+                mnCriteriaLowCounts[i - 1]++;
+              }
+            }
+          }
+        }
+      });
+    });
+
+    // 11 criteria summary
+    const k12CriteriaStats = maxScoresK12.map((max, idx) => {
+      const avg = k12CriteriaCount > 0 ? (k12CriteriaSums[idx] / k12CriteriaCount) : 0;
+      const pct = Math.round((avg / max) * 100);
+      const lowCount = k12CriteriaLowCounts[idx];
+      const lowPct = k12CriteriaCount > 0 ? Math.round((lowCount / k12CriteriaCount) * 100) : 0;
+      const standardGroup = idx < 2 ? 1 : idx < 5 ? 2 : idx < 9 ? 3 : 4;
+      const standardName = standardGroup === 1 ? "1. Kế hoạch & Chuẩn bị dạy học"
+        : standardGroup === 2 ? "2. Hoạt động & Nội dung kiến thức"
+        : standardGroup === 3 ? "3. Phương pháp & Tổ chức học tập"
+        : "4. Kiểm tra đánh giá & Hiệu quả";
+
+      return {
+        id: "Y" + (idx + 1),
+        name: k12Labels[idx],
+        max,
+        avg: Number(avg.toFixed(2)),
+        pct,
+        lowCount,
+        lowPct,
+        standardGroup,
+        standardName
+      };
+    });
+
+    // Top 3 strengths and Top 3 focus areas
+    const sortedByPct = [...k12CriteriaStats].sort((a, b) => b.pct - a.pct);
+    const bestPractices = sortedByPct.slice(0, 3);
+    const focusAreas = [...k12CriteriaStats].sort((a, b) => a.pct - b.pct).slice(0, 3);
+
+    // QA Recommendations based on focus areas
+    const recommendations = focusAreas.map(fa => {
+      let advice = "";
+      if (fa.id === "Y11") {
+        advice = "Tăng cường dự giờ đồng đẳng và tổ chức thao giảng các chuyên đề ứng dụng CNTT, gamification để bài dạy thêm sinh động, sáng tạo.";
+      } else if (fa.id === "Y5") {
+        advice = "Tổ chức tập huấn tích hợp giáo dục STEM/STEAM và liên hệ thực tế đời sống vào kế hoạch bài dạy theo chương trình GDPT 2018.";
+      } else if (fa.id === "Y9") {
+        advice = "Đẩy mạnh các phương pháp dạy học kích thích tư duy phản biện (Socratic questioning, bản đồ tư duy, tranh biện nhóm).";
+      } else if (fa.id === "Y7") {
+        advice = "Rèn luyện kỹ năng quản lý lớp học và kỹ thuật chia nhóm học tập cộng tác thực chất, tránh hình thức đọc chép.";
+      } else if (fa.id === "Y10") {
+        advice = "Tập huấn sâu về đánh giá thường xuyên (formative assessment), kỹ thuật đặt câu hỏi phân hóa học sinh theo Thông tư 22/27.";
+      } else if (fa.id === "Y8") {
+        advice = "Rà soát cấu trúc phân phối thời gian bài giảng, dành tối thiểu 50% thời lượng cho học sinh thực hành và làm việc.";
+      } else {
+        advice = "Đưa tiêu chí này vào nội dung trọng tâm sinh hoạt chuyên môn định kỳ và kiểm tra chéo giữa các tổ bộ môn.";
+      }
+      return { ...fa, advice };
+    });
+
+    // Campus list
+    const campusList = Array.from(campusStatsMap.values()).filter(c => c.totalSlots > 0 || c.totalEvals > 0);
+
+    // K12 rates
+    const k12AvgScore = totalK12Evaluations > 0 ? (k12ScoresSum / totalK12Evaluations).toFixed(2) : "0.00";
+    const k12PassRate = totalK12Evaluations > 0 ? Math.round(((k12Gioi + k12Kha) / totalK12Evaluations) * 100) : 0;
+    const mnPassRate = totalMNEvaluations > 0 ? Math.round(((mnTot + mnKha + mnDat) / totalMNEvaluations) * 100) : 0;
+    const surpriseRate = totalObservedSlots > 0 ? Math.round((surpriseObservedSlots / totalObservedSlots) * 100) : 0;
+
+    return {
+      totalObservedSlots,
+      surpriseObservedSlots,
+      surpriseRate,
+      totalEvaluations,
+      totalK12Evaluations,
+      totalMNEvaluations,
+      k12: {
+        gioi: k12Gioi,
+        kha: k12Kha,
+        tb: k12TB,
+        khongDat: k12KhongDat,
+        gioiPct: totalK12Evaluations > 0 ? Math.round((k12Gioi / totalK12Evaluations) * 100) : 0,
+        khaPct: totalK12Evaluations > 0 ? Math.round((k12Kha / totalK12Evaluations) * 100) : 0,
+        tbPct: totalK12Evaluations > 0 ? Math.round((k12TB / totalK12Evaluations) * 100) : 0,
+        khongDatPct: totalK12Evaluations > 0 ? Math.round((k12KhongDat / totalK12Evaluations) * 100) : 0,
+        avgScore: k12AvgScore,
+        passRate: k12PassRate
+      },
+      mn: {
+        tot: mnTot,
+        kha: mnKha,
+        dat: mnDat,
+        chuaDat: mnChuaDat,
+        totPct: totalMNEvaluations > 0 ? Math.round((mnTot / totalMNEvaluations) * 100) : 0,
+        khaPct: totalMNEvaluations > 0 ? Math.round((mnKha / totalMNEvaluations) * 100) : 0,
+        datPct: totalMNEvaluations > 0 ? Math.round((mnDat / totalMNEvaluations) * 100) : 0,
+        chuaDatPct: totalMNEvaluations > 0 ? Math.round((mnChuaDat / totalMNEvaluations) * 100) : 0,
+        passRate: mnPassRate
+      },
+      k12CriteriaStats,
+      bestPractices,
+      focusAreas,
+      recommendations,
+      campusList
+    };
+  }, [initialSlots, campuses, maxScoresK12, k12Labels, qaMonthFilter, qaCampusFilter, qaBlockFilter]);
+
   const teacherAvgScore = useMemo(() => {
     if (teacherEvaluations.length === 0) return null;
     if (isPreschoolTeacher) return null;
@@ -2015,6 +2414,725 @@ export function AdminTongHopClient({
     if (scores.length === 0) return null;
     return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2);
   }, [teacherEvaluations, isPreschoolTeacher]);
+
+
+
+  // Full-width view for Kho Tiết Dạy Tiêu Biểu & Bài Giảng Mẫu
+  const renderExemplaryLessons = () => {
+    return (
+      <div className="space-y-5 animate-in fade-in duration-200">
+        {/* Header & Bộ lọc Kho Học Liệu */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <BookMarked className="w-3 h-3 text-amber-600" />
+                Kho Học Liệu Số & Bài Giảng Xuất Sắc
+              </span>
+              <span className="text-xs font-semibold text-slate-500">• Hệ sinh thái Chuyên môn Số</span>
+            </div>
+            <h2 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
+              Kho Tiết Dạy Tiêu Biểu & Bài Giảng Mẫu Sky-Line
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Tuyển tập các tiết dạy xếp loại Giỏi (từ 18.5 đến 20đ) kèm kế hoạch bài dạy và điểm sáng sư phạm để tham khảo
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Tìm kiếm */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Tìm tên bài, giáo viên, môn học..."
+                value={exemplarySearchQuery}
+                onChange={(e) => setExemplarySearchQuery(e.target.value)}
+                className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-amber-500 outline-none w-52 sm:w-64"
+              />
+            </div>
+
+            {/* Lọc Môn */}
+            <select
+              value={exemplarySubjectFilter}
+              onChange={(e) => setExemplarySubjectFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer"
+            >
+              <option value="all">Tất cả môn</option>
+              {distinctSubjects.map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+
+            {/* Lọc Khối */}
+            <select
+              value={exemplaryGradeFilter}
+              onChange={(e) => setExemplaryGradeFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer"
+            >
+              <option value="all">Tất cả khối</option>
+              {distinctGrades.map(gr => (
+                <option key={gr} value={gr}>{gr}</option>
+              ))}
+            </select>
+
+            {/* Lọc Cơ sở */}
+            <select
+              value={exemplaryCampusFilter}
+              onChange={(e) => setExemplaryCampusFilter(e.target.value)}
+              className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer"
+            >
+              <option value="all">Tất cả cơ sở</option>
+              {campuses.map(c => (
+                <option key={c.id} value={c.id}>{c.campusName}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* 3 Thẻ Chỉ Số Kho Tiết Dạy Tiêu Biểu */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Tiết dạy xuất sắc đã tuyển chọn
+              </div>
+              <div className="text-2xl font-black text-amber-900 mt-1">
+                {exemplaryLessons.length} <span className="text-xs font-normal text-slate-500">tiết dạy</span>
+              </div>
+              <div className="text-[10.5px] text-slate-500 mt-0.5">
+                Đạt loại Giỏi & Tốt từ các đợt dự giờ
+              </div>
+            </div>
+            <div className="p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-200">
+              <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Môn học có bài giảng mẫu
+              </div>
+              <div className="text-2xl font-black text-teal-900 mt-1">
+                {distinctSubjects.length} <span className="text-xs font-normal text-slate-500">môn học</span>
+              </div>
+              <div className="text-[10.5px] text-slate-500 mt-0.5">
+                Trải rộng từ Mầm non đến K-12
+              </div>
+            </div>
+            <div className="p-3 bg-teal-50 text-teal-700 rounded-xl border border-teal-200">
+              <BookOpen className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Chia sẻ chuyên môn liên cơ sở
+              </div>
+              <div className="text-2xl font-black text-indigo-900 mt-1">
+                {campuses.length} <span className="text-xs font-normal text-slate-500">cơ sở</span>
+              </div>
+              <div className="text-[10.5px] text-slate-500 mt-0.5">
+                Giao lưu học tập kinh nghiệm toàn trường
+              </div>
+            </div>
+            <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-200">
+              <Building2 className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Danh sách Tiết dạy Tiêu biểu (Grid Cards) */}
+        {exemplaryLessons.length === 0 ? (
+          <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-2">
+            <BookMarked className="w-10 h-10 text-slate-300 mx-auto" />
+            <p className="text-xs font-bold text-slate-700 uppercase">Không tìm thấy tiết dạy tiêu biểu nào phù hợp</p>
+            <p className="text-[11px] text-slate-500">Hãy thử thay đổi điều kiện tìm kiếm hoặc bộ lọc môn học/cơ sở.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {exemplaryLessons.map((item, idx) => {
+              const s = item.slot;
+              const dateStr = s.date ? new Date(s.date).toLocaleDateString("vi-VN") : "";
+              const scoreDisplay = item.totalScore !== null && item.totalScore !== undefined
+                ? `${item.totalScore}đ`
+                : item.overallRating;
+
+              return (
+                <div
+                  key={s.id || idx}
+                  className="bg-white rounded-2xl border border-slate-200 hover:border-amber-400/80 shadow-2xs hover:shadow-md transition-all p-5 flex flex-col justify-between space-y-4 group"
+                >
+                  {/* Card Header */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-bold">
+                        {s.subjectName} • {s.grade}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10.5px] font-black flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                        {scoreDisplay} ({item.overallRating})
+                      </span>
+                    </div>
+
+                    <h3 className="font-bold text-sm text-slate-900 line-clamp-2 group-hover:text-amber-900 transition-colors">
+                      {s.topic}
+                    </h3>
+
+                    {/* Teacher info */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-slate-100 text-xs text-slate-600">
+                      <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 text-[11px] shrink-0">
+                        {item.teacherName.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-800 truncate">{item.teacherName}</p>
+                        <p className="text-[10.5px] text-slate-500 truncate">{s.campusName || "Cơ sở Sky-Line"} &bull; {dateStr}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Highlights from real evaluations */}
+                  {item.strengths && (
+                    <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100/70 text-[11px] text-slate-700 space-y-1">
+                      <div className="font-bold text-amber-900 flex items-center gap-1 text-[10px] uppercase tracking-wider">
+                        <Sparkles className="w-3 h-3 text-amber-600" />
+                        Điểm sáng sư phạm nổi bật:
+                      </div>
+                      <p className="line-clamp-3 italic text-slate-600">
+                        "{item.strengths}"
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Card Footer: Actions */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {s.className || "Lớp chuẩn"} • {s.room || "Phòng học"}
+                    </span>
+                    {item.lessonPlanName ? (
+                      <span className="px-2 py-1 rounded bg-teal-50 text-teal-800 border border-teal-200 text-[10.5px] font-semibold">
+                        Có giáo án đính kèm
+                      </span>
+                    ) : (
+                      <span className="text-[10.5px] text-slate-500 font-medium">
+                        Bài giảng mẫu
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Full-width view for Dashboard Báo cáo ĐBCL & Phân tích Chuyên môn
+  const renderQADashboard = () => {
+    const activeYearObj = academicYears?.find((y: any) => y.id === filterAcademicYearId) || academicYears?.[0];
+    const yearName = activeYearObj?.name || "Năm học 2025 - 2026";
+    const periodText = qaMonthFilter === "all" ? "Toàn bộ năm học" : `Tháng ${qaMonthFilter.split("-")[1]}/${qaMonthFilter.split("-")[0]}`;
+
+    return (
+      <div className="space-y-5 animate-in fade-in duration-200">
+        {/* 1. Header Báo cáo ĐBCL & Bộ lọc linh hoạt */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-indigo-600" />
+                Báo cáo ĐBCL & Khảo thí
+              </span>
+              <span className="text-xs font-semibold text-slate-500">• {yearName}</span>
+            </div>
+            <h2 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
+              Báo cáo Đảm bảo Chất lượng & Năng lực Giảng dạy
+            </h2>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Phổ điểm xếp loại, kiểm định 11 tiêu chí K-12, phát hiện điểm nghẽn & giải pháp bồi dưỡng sư phạm
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Bộ lọc Tháng */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs">
+              <Calendar className="w-3.5 h-3.5 text-slate-500" />
+              <select
+                value={qaMonthFilter}
+                onChange={(e) => setQaMonthFilter(e.target.value)}
+                className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
+              >
+                <option value="all">Tất cả các tháng</option>
+                {availableMonths.map(m => (
+                  <option key={m} value={m}>Tháng {m.split("-")[1]}/{m.split("-")[0]}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Bộ lọc Khối */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs">
+              <GraduationCap className="w-3.5 h-3.5 text-slate-500" />
+              <select
+                value={qaBlockFilter}
+                onChange={(e) => setQaBlockFilter(e.target.value)}
+                className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
+              >
+                <option value="all">Tất cả các khối</option>
+                <option value="k12">Khối Phổ thông K-12</option>
+                <option value="mam-non">Khối Mầm non</option>
+              </select>
+            </div>
+
+            {/* Bộ lọc Cơ sở */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs">
+              <Building2 className="w-3.5 h-3.5 text-slate-500" />
+              <select
+                value={qaCampusFilter}
+                onChange={(e) => setQaCampusFilter(e.target.value)}
+                className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
+              >
+                <option value="all">Tất cả các cơ sở</option>
+                {campuses.map(c => (
+                  <option key={c.id} value={c.id}>{c.campusName}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Nút In Báo cáo */}
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs shadow-2xs transition-all cursor-pointer"
+              title="In báo cáo ĐBCL hoặc xuất file PDF"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-600" />
+              <span>In Báo Cáo</span>
+            </button>
+          </div>
+        </div>
+
+        {/* 2. 4 Thẻ KPI ĐBCL Trọng Yếu */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+              <span>Phiếu đánh giá</span>
+              <Award className="w-4 h-4 text-teal-600 stroke-2" />
+            </div>
+            <div className="text-2xl font-bold text-slate-900 mt-1">
+              {qaAnalytics.totalEvaluations} <span className="text-xs font-normal text-slate-500">phiếu</span>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              Từ {qaAnalytics.totalObservedSlots} tiết dự giờ thực tế
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+              <span>Tỷ lệ Đạt chuẩn ĐBCL</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-2" />
+            </div>
+            <div className="text-2xl font-bold text-emerald-600 mt-1">
+              {qaAnalytics.k12.passRate}% <span className="text-xs font-normal text-slate-500">xếp Giỏi & Khá</span>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              {qaAnalytics.k12.gioi} tiết Giỏi • {qaAnalytics.k12.kha} tiết Khá
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+              <span>Điểm TB Hệ Thống (K-12)</span>
+              <TrendingUp className="w-4 h-4 text-indigo-600 stroke-2" />
+            </div>
+            <div className="text-2xl font-bold text-indigo-700 mt-1">
+              {qaAnalytics.k12.avgScore} <span className="text-xs font-normal text-slate-500">/ 20 điểm</span>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              Đánh giá qua thang điểm 11 tiêu chí
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+              <span>Tỷ lệ Dự giờ Đột xuất</span>
+              <Sparkles className="w-4 h-4 text-amber-500 stroke-2" />
+            </div>
+            <div className="text-2xl font-bold text-amber-600 mt-1">
+              {qaAnalytics.surpriseRate}% <span className="text-xs font-normal text-slate-500">kiểm định đột xuất</span>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-0.5">
+              {qaAnalytics.surpriseObservedSlots} tiết đánh giá thực tế không báo trước
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Phổ Điểm Xếp Loại & Cơ Cấu Theo Cơ Sở */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Phổ điểm K12 & MN */}
+          <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-teal-700" />
+                <span>Phổ điểm & Cơ cấu Xếp loại Toàn hệ thống</span>
+              </h3>
+              <span className="text-[11px] font-semibold text-slate-500">{periodText}</span>
+            </div>
+
+            {/* Thanh tỷ lệ phổ điểm K-12 */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                <span>Khối Phổ thông K-12 ({qaAnalytics.totalK12Evaluations} phiếu)</span>
+                <span className="text-teal-700">ĐTB: {qaAnalytics.k12.avgScore}/20đ</span>
+              </div>
+              <div className="w-full h-3.5 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+                <div style={{ width: `${qaAnalytics.k12.gioiPct}%` }} className="bg-teal-600 h-full transition-all" title={`Giỏi: ${qaAnalytics.k12.gioi} (${qaAnalytics.k12.gioiPct}%)`} />
+                <div style={{ width: `${qaAnalytics.k12.khaPct}%` }} className="bg-emerald-500 h-full transition-all" title={`Khá: ${qaAnalytics.k12.kha} (${qaAnalytics.k12.khaPct}%)`} />
+                <div style={{ width: `${qaAnalytics.k12.tbPct}%` }} className="bg-amber-400 h-full transition-all" title={`Trung bình: ${qaAnalytics.k12.tb} (${qaAnalytics.k12.tbPct}%)`} />
+                <div style={{ width: `${qaAnalytics.k12.khongDatPct}%` }} className="bg-rose-500 h-full transition-all" title={`Chưa đạt: ${qaAnalytics.k12.khongDat} (${qaAnalytics.k12.khongDatPct}%)`} />
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 pt-1">
+                <div className="p-2 bg-teal-50/60 border border-teal-100 rounded-lg text-center">
+                  <div className="text-[10px] text-teal-800 font-bold">Giỏi (≥18đ)</div>
+                  <div className="text-base font-black text-teal-900 mt-0.5">{qaAnalytics.k12.gioi}</div>
+                  <div className="text-[10px] text-teal-700 font-semibold">{qaAnalytics.k12.gioiPct}%</div>
+                </div>
+                <div className="p-2 bg-emerald-50/60 border border-emerald-100 rounded-lg text-center">
+                  <div className="text-[10px] text-emerald-800 font-bold">Khá (14-17.5đ)</div>
+                  <div className="text-base font-black text-emerald-900 mt-0.5">{qaAnalytics.k12.kha}</div>
+                  <div className="text-[10px] text-emerald-700 font-semibold">{qaAnalytics.k12.khaPct}%</div>
+                </div>
+                <div className="p-2 bg-amber-50/60 border border-amber-100 rounded-lg text-center">
+                  <div className="text-[10px] text-amber-800 font-bold">TB (10-13.5đ)</div>
+                  <div className="text-base font-black text-amber-900 mt-0.5">{qaAnalytics.k12.tb}</div>
+                  <div className="text-[10px] text-amber-700 font-semibold">{qaAnalytics.k12.tbPct}%</div>
+                </div>
+                <div className="p-2 bg-rose-50/60 border border-rose-100 rounded-lg text-center">
+                  <div className="text-[10px] text-rose-800 font-bold">Dưới chuẩn (&lt;10đ)</div>
+                  <div className="text-base font-black text-rose-900 mt-0.5">{qaAnalytics.k12.khongDat}</div>
+                  <div className="text-[10px] text-rose-700 font-semibold">{qaAnalytics.k12.khongDatPct}%</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mầm non */}
+            {qaAnalytics.totalMNEvaluations > 0 && (
+              <div className="space-y-2 pt-3 border-t border-slate-100">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                  <span>Khối Mầm non ({qaAnalytics.totalMNEvaluations} phiếu)</span>
+                  <span className="text-indigo-600">Đạt chuẩn: {qaAnalytics.mn.passRate}%</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="p-2 bg-indigo-50/60 border border-indigo-100 rounded-lg text-center">
+                    <div className="text-[10px] text-indigo-800 font-bold">Tốt</div>
+                    <div className="text-base font-black text-indigo-900 mt-0.5">{qaAnalytics.mn.tot}</div>
+                    <div className="text-[10px] text-indigo-700 font-semibold">{qaAnalytics.mn.totPct}%</div>
+                  </div>
+                  <div className="p-2 bg-sky-50/60 border border-sky-100 rounded-lg text-center">
+                    <div className="text-[10px] text-sky-800 font-bold">Khá</div>
+                    <div className="text-base font-black text-sky-900 mt-0.5">{qaAnalytics.mn.kha}</div>
+                    <div className="text-[10px] text-sky-700 font-semibold">{qaAnalytics.mn.khaPct}%</div>
+                  </div>
+                  <div className="p-2 bg-amber-50/60 border border-amber-100 rounded-lg text-center">
+                    <div className="text-[10px] text-amber-800 font-bold">Đạt</div>
+                    <div className="text-base font-black text-amber-900 mt-0.5">{qaAnalytics.mn.dat}</div>
+                    <div className="text-[10px] text-amber-700 font-semibold">{qaAnalytics.mn.datPct}%</div>
+                  </div>
+                  <div className="p-2 bg-rose-50/60 border border-rose-100 rounded-lg text-center">
+                    <div className="text-[10px] text-rose-800 font-bold">Chưa đạt</div>
+                    <div className="text-base font-black text-rose-900 mt-0.5">{qaAnalytics.mn.chuaDat}</div>
+                    <div className="text-[10px] text-rose-700 font-semibold">{qaAnalytics.mn.chuaDatPct}%</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Phân bổ theo từng Cơ sở */}
+          <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-indigo-600" />
+                <span>Chất lượng Giảng dạy Theo Từng Cơ Sở</span>
+              </h3>
+              <span className="text-[11px] font-semibold text-slate-500">{qaAnalytics.campusList.length} cơ sở</span>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-600">
+                    <th className="py-2 pr-2">Cơ sở</th>
+                    <th className="py-2 px-2 text-center">Số tiết</th>
+                    <th className="py-2 px-2 text-center">Đột xuất</th>
+                    <th className="py-2 px-2 text-center">ĐTB K-12</th>
+                    <th className="py-2 px-2 text-center">Tỷ lệ Giỏi</th>
+                    <th className="py-2 pl-2 text-right">Đạt chuẩn</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {qaAnalytics.campusList.map(c => {
+                    const cAvg = c.k12Count > 0 ? (c.k12Sum / c.k12Count).toFixed(2) : "-";
+                    const cGioiPct = c.totalEvals > 0 ? Math.round((c.gioiCount / c.totalEvals) * 100) : 0;
+                    const cPassPct = c.totalEvals > 0 ? Math.round(((c.gioiCount + c.khaCount) / c.totalEvals) * 100) : 0;
+                    const cSurprisePct = c.totalSlots > 0 ? Math.round((c.surpriseSlots / c.totalSlots) * 100) : 0;
+
+                    return (
+                      <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-2.5 pr-2 font-bold text-slate-800">{c.name}</td>
+                        <td className="py-2.5 px-2 text-center font-semibold text-slate-700">{c.totalSlots}</td>
+                        <td className="py-2.5 px-2 text-center">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            {c.surpriseSlots} ({cSurprisePct}%)
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-2 text-center font-bold text-indigo-700">{cAvg}đ</td>
+                        <td className="py-2.5 px-2 text-center font-bold text-teal-700">{cGioiPct}%</td>
+                        <td className="py-2.5 pl-2 text-right font-black text-emerald-600">{cPassPct}%</td>
+                      </tr>
+                    );
+                  })}
+                  {qaAnalytics.campusList.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="py-4 text-center text-slate-400">Chưa có dữ liệu dự giờ theo cơ sở</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Đối sánh Chuyên Môn: Top 3 Thế Mạnh & Top 3 Điểm Nghẽn */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Top 3 Thế Mạnh */}
+          <div className="bg-gradient-to-br from-teal-50/60 to-white rounded-2xl border border-teal-200 shadow-2xs p-5 space-y-3">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-teal-100">
+              <div className="p-2 bg-teal-600 text-white rounded-xl shadow-xs">
+                <Award className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="font-black text-sm text-teal-950">Top 3 Thế Mạnh Nổi Bật (Best Practices)</h4>
+                <p className="text-[11px] text-teal-800 font-medium">Các tiêu chuẩn sư phạm đạt kết quả cao nhất toàn trường</p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              {qaAnalytics.bestPractices.map((bp, idx) => (
+                <div key={bp.id} className="p-3 bg-white/90 rounded-xl border border-teal-100 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-teal-100 text-teal-900 font-black text-[10px] flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      {bp.id}: {bp.name.split(":")[1] || bp.name}
+                    </span>
+                    <span className="font-black text-teal-700 text-xs">
+                      {bp.avg}/{bp.max}đ ({bp.pct}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-teal-600 rounded-full" style={{ width: `${bp.pct}%` }} />
+                  </div>
+                  <p className="text-[10.5px] text-slate-500 font-medium italic">
+                    Chuẩn: {bp.standardName} • Tỷ lệ trừ điểm thấp: {bp.lowPct}%
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top 3 Điểm Nghẽn & Khuyến Nghị */}
+          <div className="bg-gradient-to-br from-amber-50/60 to-white rounded-2xl border border-amber-200 shadow-2xs p-5 space-y-3">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-amber-100">
+              <div className="p-2 bg-amber-500 text-slate-950 rounded-xl shadow-xs">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="font-black text-sm text-amber-950">Top 3 Trọng Tâm Bồi Dưỡng (Key Focus Areas)</h4>
+                <p className="text-[11px] text-amber-800 font-medium">Tiêu chí có tỷ lệ bị trừ điểm nhiều nhất & Khuyến nghị ĐBCL</p>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              {qaAnalytics.recommendations.map((fa, idx) => (
+                <div key={fa.id} className="p-3 bg-white/90 rounded-xl border border-amber-100 shadow-2xs space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded-full bg-amber-100 text-amber-900 font-black text-[10px] flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      {fa.id}: {fa.name.split(":")[1] || fa.name}
+                    </span>
+                    <span className="font-black text-amber-700 text-xs">
+                      {fa.avg}/{fa.max}đ ({fa.pct}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500 rounded-full" style={{ width: `${fa.pct}%` }} />
+                  </div>
+                  <div className="p-2 bg-amber-50/50 rounded-lg border border-amber-200/50 text-[11px] text-slate-700 font-medium">
+                    <span className="font-bold text-amber-900">Khuyến nghị: </span>
+                    {fa.advice}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 5. Bảng Chi Tiết 11 Tiêu Chí K-12 Toàn Hệ Thống */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <ListChecks className="w-4 h-4 text-teal-700" />
+                <span>Kiểm Định Chi Tiết 11 Tiêu Chí Sư Phạm K-12 (Bộ GD&ĐT)</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Đánh giá toàn diện 4 tiêu chuẩn sư phạm cốt lõi qua {qaAnalytics.totalK12Evaluations} lượt đánh giá thực tế
+              </p>
+            </div>
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs">
+              Thang điểm 20.0
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-600 bg-slate-50/50">
+                  <th className="py-2.5 px-3">Mã</th>
+                  <th className="py-2.5 px-3">Nội dung tiêu chí kiểm định</th>
+                  <th className="py-2.5 px-3">Chuẩn sư phạm</th>
+                  <th className="py-2.5 px-3 text-center">Tối đa</th>
+                  <th className="py-2.5 px-3 text-center">Điểm TB</th>
+                  <th className="py-2.5 px-3 text-center">Tỷ lệ đạt (%)</th>
+                  <th className="py-2.5 px-3 text-center">Tiết bị trừ điểm</th>
+                  <th className="py-2.5 px-3 text-right">Đánh giá ĐBCL</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {qaAnalytics.k12CriteriaStats.map(c => {
+                  const isTop = c.pct >= 96;
+                  const isWeak = c.pct < 93;
+                  return (
+                    <tr key={c.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-2.5 px-3 font-black text-teal-800">{c.id}</td>
+                      <td className="py-2.5 px-3 font-semibold text-slate-900 max-w-xs">
+                        {c.name.split(":")[1] || c.name}
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-500 font-medium text-[11px]">{c.standardName}</td>
+                      <td className="py-2.5 px-3 text-center font-bold text-slate-600">{c.max}đ</td>
+                      <td className="py-2.5 px-3 text-center font-black text-slate-900">{c.avg}đ</td>
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${isTop ? "bg-teal-600" : isWeak ? "bg-amber-500" : "bg-emerald-500"}`}
+                              style={{ width: `${c.pct}%` }}
+                            />
+                          </div>
+                          <span className="font-bold text-xs">{c.pct}%</span>
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${c.lowCount > 0 ? "bg-rose-50 text-rose-700 border border-rose-200" : "bg-slate-100 text-slate-600"}`}>
+                          {c.lowCount} ({c.lowPct}%)
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        {isTop ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                            Xuất sắc
+                          </span>
+                        ) : isWeak ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                            Cần bồi dưỡng
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            Đạt chuẩn
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 6. Bảng Ma Trận Hiệu Suất Tiến Độ KPI & Chất Lượng Của Các Tổ Chuyên Môn */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-violet-600" />
+                <span>Tiến Độ Thực Hiện KPI & Chất Lượng Giảng Dạy Theo Tổ Chuyên Môn</span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Đối chiếu chỉ tiêu tiết dạy, tiết dự và tỷ lệ đạt chuẩn của {allDepartmentsSummary.length} tổ bộ môn
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExportExcel}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#003B3A] text-white font-semibold text-xs hover:bg-[#002B2A] transition-colors cursor-pointer"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-teal-300" />
+              <span>Xuất Báo Cáo Excel</span>
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-600 bg-slate-50/50">
+                  <th className="py-2.5 px-3">STT</th>
+                  <th className="py-2.5 px-3">Tổ Chuyên Môn</th>
+                  <th className="py-2.5 px-3">Tổ trưởng CM (TTCM)</th>
+                  <th className="py-2.5 px-3 text-center">Số GV</th>
+                  <th className="py-2.5 px-3 text-center">Tổng tiết dạy</th>
+                  <th className="py-2.5 px-3 text-center">Dạy đột xuất</th>
+                  <th className="py-2.5 px-3 text-center">Tổng tiết dự</th>
+                  <th className="py-2.5 px-3 text-center">Số phiếu ĐG</th>
+                  <th className="py-2.5 px-3 text-right">Tỷ lệ Đạt chuẩn</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {allDepartmentsSummary.map((d: any, idx: number) => (
+                  <tr key={d.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="py-2.5 px-3 font-semibold text-slate-500">{idx + 1}</td>
+                    <td className="py-2.5 px-3 font-bold text-slate-900">{d.name}</td>
+                    <td className="py-2.5 px-3 text-slate-700 font-medium">
+                      {d.ttcm?.teacherName || <span className="text-slate-400 italic">Chưa phân công</span>}
+                    </td>
+                    <td className="py-2.5 px-3 text-center font-semibold text-slate-700">{d.teacherCount}</td>
+                    <td className="py-2.5 px-3 text-center font-bold text-teal-800">{d.totalTaught}</td>
+                    <td className="py-2.5 px-3 text-center">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                        {d.taughtSurprise}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-center font-bold text-indigo-700">{d.totalObserved}</td>
+                    <td className="py-2.5 px-3 text-center font-semibold text-slate-700">{d.totalEvals}</td>
+                    <td className="py-2.5 px-3 text-right font-black text-emerald-600">
+                      {d.totalEvals > 0 ? `${d.passRate}%` : <span className="text-slate-400 font-normal">Chưa có</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // Full-width view for Bảng Ma trận dự giờ TTCM theo tháng
   const renderTTCMMatrix = () => {
@@ -2673,6 +3791,38 @@ export function AdminTongHopClient({
               {allTTCMList.length} TTCM
             </span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => handleSwitchMainTab("dbcl")}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${mainTab === "dbcl"
+                ? "bg-white text-slate-900 shadow-2xs font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+              }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Báo cáo ĐBCL & Phân tích CM</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${mainTab === "dbcl" ? "bg-indigo-50 text-indigo-800 border border-indigo-200" : "bg-slate-200 text-slate-600"
+              }`}>
+              {qaAnalytics.totalEvaluations} ĐG
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSwitchMainTab("kho-tieu-bieu")}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${mainTab === "kho-tieu-bieu"
+                ? "bg-white text-slate-900 shadow-2xs font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+              }`}
+          >
+            <BookMarked className="w-3.5 h-3.5 text-amber-600" />
+            <span>Kho Tiết Dạy Tiêu Biểu</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${mainTab === "kho-tieu-bieu" ? "bg-amber-50 text-amber-800 border border-amber-200" : "bg-slate-200 text-slate-600"
+              }`}>
+              {exemplaryLessons.length} Tiết
+            </span>
+          </button>
         </div>
 
         {/* Action Tools: Duy nhất 1 chỗ chọn Năm học, Xuất Excel, Báo cáo */}
@@ -2734,6 +3884,10 @@ export function AdminTongHopClient({
 
       {mainTab === "ma-tran" ? (
         renderTTCMMatrix()
+      ) : mainTab === "dbcl" ? (
+        renderQADashboard()
+      ) : mainTab === "kho-tieu-bieu" ? (
+        renderExemplaryLessons()
       ) : (
         <>
           {/* 2. 4 Thẻ KPI Chuẩn Quản Trị (Phẳng, Nền trắng, Không icon trong số liệu) */}
@@ -3831,6 +4985,89 @@ export function AdminTongHopClient({
                             ))}
                           </div>
                         </div>
+
+                        {/* Digital Pedagogical Badges & CPD Growth Portfolio */}
+                        <div className="p-4 bg-gradient-to-r from-amber-50/60 via-teal-50/40 to-indigo-50/50 rounded-2xl border border-amber-200/70 space-y-3">
+                          <div className="flex items-center justify-between border-b border-amber-200/50 pb-2">
+                            <div className="flex items-center gap-2">
+                              <Award className="w-4 h-4 text-amber-600" />
+                              <h5 className="font-black text-xs text-amber-950 uppercase tracking-wide">
+                                Huy hiệu Năng lực Sư phạm Số & Hồ sơ CPD
+                              </h5>
+                            </div>
+                            <span className="text-[10.5px] font-bold text-amber-800 bg-white px-2 py-0.5 rounded-md border border-amber-200">
+                              Hồ sơ phát triển chuyên môn
+                            </span>
+                          </div>
+
+                          {/* Huy hiệu đạt được */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {/* Badge 1: Nhà Sư Phạm Xuất Sắc */}
+                            {(() => {
+                              const hasExemplary = teacherEvaluations.filter(e => e.evaluation?.overallRating === "Giỏi" || (e.evaluation?.totalScore && e.evaluation.totalScore >= 18)).length >= 1;
+                              return (
+                                <div className={`p-2.5 rounded-xl border flex flex-col items-center text-center ${hasExemplary ? "bg-white border-amber-200 shadow-2xs" : "bg-slate-50/60 border-slate-200 opacity-50"}`}>
+                                  <div className="text-xl">🌟</div>
+                                  <div className="text-[11px] font-bold text-slate-800 mt-1">Sư Phạm Xuất Sắc</div>
+                                  <div className="text-[9.5px] text-slate-500">{hasExemplary ? "Đã đạt loại Giỏi" : "Chưa mở khóa"}</div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Badge 2: Bậc Thầy Tương Tác (Y7) */}
+                            {(() => {
+                              const y7Crit = competencyData.find(c => c.id === "Y7" || c.id === "T3");
+                              const isMaster = y7Crit && y7Crit.pct >= 95;
+                              return (
+                                <div className={`p-2.5 rounded-xl border flex flex-col items-center text-center ${isMaster ? "bg-white border-teal-200 shadow-2xs" : "bg-slate-50/60 border-slate-200 opacity-50"}`}>
+                                  <div className="text-xl">👥</div>
+                                  <div className="text-[11px] font-bold text-slate-800 mt-1">Dạy Học Tích Cực</div>
+                                  <div className="text-[9.5px] text-slate-500">{isMaster ? "Tương tác nhóm ≥95%" : "Cần bồi dưỡng"}</div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Badge 3: Tiên Phong Đổi Mới (Y11/Y9) */}
+                            {(() => {
+                              const y11Crit = competencyData.find(c => c.id === "Y11" || c.id === "T2");
+                              const isInnovator = y11Crit && y11Crit.pct >= 90;
+                              return (
+                                <div className={`p-2.5 rounded-xl border flex flex-col items-center text-center ${isInnovator ? "bg-white border-indigo-200 shadow-2xs" : "bg-slate-50/60 border-slate-200 opacity-50"}`}>
+                                  <div className="text-xl">🚀</div>
+                                  <div className="text-[11px] font-bold text-slate-800 mt-1">Tiên Phong Đổi Mới</div>
+                                  <div className="text-[9.5px] text-slate-500">{isInnovator ? "Sáng tạo & Đổi mới" : "Chưa đạt"}</div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Badge 4: Kỷ Lục KPI */}
+                            {(() => {
+                              const isKPI = currentStats.taughtCount >= (selectedTeacher.requiredTaught || 1) && currentStats.observedCount >= (selectedTeacher.requiredObserved || 1);
+                              return (
+                                <div className={`p-2.5 rounded-xl border flex flex-col items-center text-center ${isKPI ? "bg-white border-emerald-200 shadow-2xs" : "bg-slate-50/60 border-slate-200 opacity-50"}`}>
+                                  <div className="text-xl">🎯</div>
+                                  <div className="text-[11px] font-bold text-slate-800 mt-1">Kỷ Lục Hoàn Thành</div>
+                                  <div className="text-[9.5px] text-slate-500">{isKPI ? "100% KPI Dạy & Dự" : "Đang thực hiện"}</div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+
+                          {/* Kế hoạch Bồi dưỡng Sư phạm Cá nhân (IDP) */}
+                          {sortedWeaknesses.length > 0 && sortedWeaknesses[0].lowPct > 0 && (
+                            <div className="p-3 bg-white/90 rounded-xl border border-amber-200/80 text-[11px] text-slate-700 space-y-1.5">
+                              <div className="font-bold text-amber-900 flex items-center gap-1.5 text-xs">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Kế hoạch Phát triển Sư phạm Cá nhân (IDP Khuyến nghị):</span>
+                              </div>
+                              <p className="text-slate-600">
+                                Dựa trên kết quả dự giờ, thầy/cô nên ưu tiên tham gia sinh hoạt chuyên môn chuyên đề:{" "}
+                                <strong className="text-slate-900">{sortedWeaknesses[0].label}</strong> (tỷ lệ cần cải thiện {sortedWeaknesses[0].lowPct}%) để hoàn thiện kỹ năng và nâng cao hiệu quả tiết dạy.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
                       </>
                     )}
                   </div>
