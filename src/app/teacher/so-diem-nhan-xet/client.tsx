@@ -227,6 +227,11 @@ export function DiemNhanXetTeacherClient({
   const [savingEntries, setSavingEntries] = useState(false)
   const [isSheetLocked, setIsSheetLocked] = useState(false)
   const [sheetLockInfo, setSheetLockInfo] = useState<any>(null)
+  const [unlockRequest, setUnlockRequest] = useState<any>(null)
+  const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false)
+  const [unlockReason, setUnlockReason] = useState("")
+  const [submittingUnlock, setSubmittingUnlock] = useState(false)
+  const [cancellingUnlock, setCancellingUnlock] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch teaching assignments if academic year changes
