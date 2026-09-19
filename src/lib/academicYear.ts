@@ -1,30 +1,28 @@
 // @ts-nocheck
 import { prisma } from './db';
+import { getCachedAcademicYears } from './cache/reference-cache';
 
 export async function getDefaultAcademicYear(prismaClient) {
   const db = prismaClient || prisma;
 
+  let cookieYearId;
   try {
     if (typeof window === 'undefined') {
       const { cookies } = require('next/headers');
       const cookieStore = await cookies();
-      const cookieYearId = cookieStore.get('selectedAcademicYear')?.value;
-
-      if (cookieYearId) {
-        const year = await db.academicYear.findUnique({
-          where: { id: cookieYearId }
-        });
-        if (year) return year;
-      }
+      cookieYearId = cookieStore.get('selectedAcademicYear')?.value;
     }
   } catch (error) {}
 
   try {
-    const years = await db.academicYear.findMany({
-      orderBy: { startDate: 'desc' }
-    });
+    const years = await getCachedAcademicYears(db);
 
     if (!years || years.length === 0) return null;
+
+    if (cookieYearId) {
+      const matched = years.find(y => y.id === cookieYearId);
+      if (matched) return matched;
+    }
 
     return years.find(y => y.status === 'ACTIVE' && !y.isOff)
       || years.find(y => !y.isOff)

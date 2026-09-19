@@ -139,43 +139,49 @@ export async function GET(req: Request) {
       const studentCodes = students.map(s => s.studentCode).filter(Boolean)
       const studentDOBs = students.map(s => s.dateOfBirth).filter(Boolean)
 
-      // Code-based match
-      const k12ByCode = await prisma.inputAssessmentStudent.findMany({
-        where: {
-          OR: [
-            { studentCode: { in: studentCodes } },
-            { enrollmentCode: { in: studentCodes } }
-          ]
-        },
-        select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
-      })
-
-      // DOB-based fallback - fetch candidates born on same dates as our students
-      const k12ByDOB = studentDOBs.length > 0 ? await prisma.inputAssessmentStudent.findMany({
-        where: { dateOfBirth: { in: studentDOBs as any[] } },
-        select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
-      }) : []
+      // Parallel batch query for entrance survey match (K12 & Preschool)
+      const pAny = prisma as any
+      const [k12ByCode, k12ByDOB, preschoolByCode, preschoolByDOB] = await Promise.all([
+        studentCodes.length > 0
+          ? prisma.inputAssessmentStudent.findMany({
+              where: {
+                OR: [
+                  { studentCode: { in: studentCodes } },
+                  { enrollmentCode: { in: studentCodes } }
+                ]
+              },
+              select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
+            })
+          : Promise.resolve([]),
+        studentDOBs.length > 0
+          ? prisma.inputAssessmentStudent.findMany({
+              where: { dateOfBirth: { in: studentDOBs as any[] } },
+              select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
+            })
+          : Promise.resolve([]),
+        pAny.preschoolInputAssessmentStudent && studentCodes.length > 0
+          ? pAny.preschoolInputAssessmentStudent.findMany({
+              where: {
+                OR: [
+                  { studentCode: { in: studentCodes } },
+                  { enrollmentCode: { in: studentCodes } }
+                ]
+              },
+              select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
+            })
+          : Promise.resolve([]),
+        pAny.preschoolInputAssessmentStudent && studentDOBs.length > 0
+          ? pAny.preschoolInputAssessmentStudent.findMany({
+              where: { dateOfBirth: { in: studentDOBs } },
+              select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
+            })
+          : Promise.resolve([])
+      ])
 
       // Merge and deduplicate
       const k12CandidateMap = new Map<string, any>()
       ;[...k12ByCode, ...k12ByDOB].forEach(c => k12CandidateMap.set(c.studentCode + '|' + c.fullName, c))
       const k12Candidates = Array.from(k12CandidateMap.values())
-
-      // Same for preschool
-      const preschoolByCode = await (prisma as any).preschoolInputAssessmentStudent.findMany({
-        where: {
-          OR: [
-            { studentCode: { in: studentCodes } },
-            { enrollmentCode: { in: studentCodes } }
-          ]
-        },
-        select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
-      })
-
-      const preschoolByDOB = studentDOBs.length > 0 ? await (prisma as any).preschoolInputAssessmentStudent.findMany({
-        where: { dateOfBirth: { in: studentDOBs } },
-        select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
-      }) : []
 
       const preschoolCandidateMap = new Map<string, any>()
       ;[...preschoolByCode, ...preschoolByDOB].forEach((c: any) => preschoolCandidateMap.set(c.studentCode + '|' + c.fullName, c))
@@ -1159,6 +1165,12 @@ export async function GET(req: Request) {
           let allParticipants: any[] = []
           try {
             allParticipants = await prisma.activityParticipant.findMany({
+              where: {
+                OR: [
+                  { studentId: student.id },
+                  ...(student.studentCode ? [{ student: { studentCode: student.studentCode } }] : [])
+                ]
+              },
               include: {
                 record: {
                   include: {
@@ -1172,7 +1184,7 @@ export async function GET(req: Request) {
               orderBy: { createdAt: "desc" }
             })
           } catch (err) {
-            console.error("Error fetching all activityParticipants in getStudentRecord:", err)
+            console.error("Error fetching scoped activityParticipants in getStudentRecord:", err)
           }
 
           const activityParticipants = allParticipants.filter(p => {

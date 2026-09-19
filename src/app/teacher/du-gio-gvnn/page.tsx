@@ -24,7 +24,19 @@ export default async function ForeignTeacherObservationPage(props: {
   const date = searchParams.date || ""
   const month = searchParams.month || ""
 
-  const refDataResult = await getForeignObservationData(academicYearId)
+  const [refDataResult, slotsResult] = await Promise.all([
+    getForeignObservationData(academicYearId),
+    getForeignObservationSlots({
+      academicYearId,
+      campusId,
+      deptId,
+      grade,
+      date,
+      month,
+      onlyMySlots: true
+    })
+  ])
+
   if (!refDataResult.success) {
     return (
       <div className="p-6 text-red-500 font-bold text-xs font-semibold">
@@ -32,16 +44,6 @@ export default async function ForeignTeacherObservationPage(props: {
       </div>
     )
   }
-
-  const slotsResult = await getForeignObservationSlots({
-    academicYearId,
-    campusId,
-    deptId,
-    grade,
-    date,
-    month,
-    onlyMySlots: true
-  })
 
   return (
     <ForeignObservationClient

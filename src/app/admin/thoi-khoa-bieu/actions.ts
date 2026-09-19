@@ -1,21 +1,20 @@
 "use server"
 
 import { prisma } from "@/lib/db"
+import { getCachedCampuses, getCachedSubjects, getCachedAcademicYears } from "@/lib/cache/reference-cache"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
 export async function getTimetableMatrixData(campusId?: string, level: string = "TIEU_HOC") {
   try {
-    const campuses = await prisma.campus.findMany({
-      where: { status: "ACTIVE" },
-      orderBy: { campusName: "asc" }
-    })
+    const [campuses, academicYears, subjects] = await Promise.all([
+      getCachedCampuses(),
+      getCachedAcademicYears(),
+      getCachedSubjects()
+    ])
 
     const selectedCampusId = campusId || (campuses[0]?.id || "")
-
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
-    })
+    const activeYear = academicYears.find(y => y.status === "ACTIVE" && !y.isOff) || academicYears[0]
 
     let levelGradeFilter: any = {}
     if (level === "TIEU_HOC") {
@@ -28,28 +27,59 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
 
     const yearFilter = activeYear ? { academicYearId: activeYear.id } : {}
 
-    let rawClasses = await prisma.class.findMany({
-      where: {
-        status: "ACTIVE",
-        ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
-        ...levelGradeFilter,
-        ...yearFilter
-      },
-      select: {
-        id: true,
-        className: true,
-        level: true,
-        grade: true,
-        homeroomTeacherId: true,
-        campusId: true,
-        academicYearId: true
-      },
-      orderBy: [
-        { grade: "asc" },
-        { className: "asc" }
-      ]
-    })
+    // Concurrently fetch rawClasses, teachers, timetableSlots, teachingAssignments
+    const [rawClassesResult, teachers, timetableSlots, teachingAssignments] = await Promise.all([
+      prisma.class.findMany({
+        where: {
+          status: "ACTIVE",
+          ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
+          ...levelGradeFilter,
+          ...yearFilter
+        },
+        select: {
+          id: true,
+          className: true,
+          level: true,
+          grade: true,
+          homeroomTeacherId: true,
+          campusId: true,
+          academicYearId: true
+        },
+        orderBy: [
+          { grade: "asc" },
+          { className: "asc" }
+        ]
+      }),
+      prisma.teacher.findMany({
+        where: { status: "ACTIVE" },
+        select: {
+          id: true,
+          teacherName: true,
+          teacherCode: true,
+          campusId: true,
+          departmentId: true,
+          departmentRel: {
+            select: { name: true, blockCM: true }
+          }
+        },
+        orderBy: { teacherName: "asc" }
+      }),
+      prisma.timetableSlot.findMany({
+        where: {
+          ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
+          level: level
+        }
+      }).catch(() => []),
+      prisma.teachingAssignment.findMany({
+        include: {
+          teacher: { select: { id: true, teacherName: true, teacherCode: true, departmentId: true } },
+          subject: { select: { id: true, subjectName: true, subjectCode: true } },
+          class: { select: { id: true, className: true, level: true, grade: true } }
+        }
+      }).catch(() => [])
+    ])
 
+    let rawClasses = rawClassesResult
     if (rawClasses.length === 0 && selectedCampusId) {
       rawClasses = await prisma.class.findMany({
         where: {
@@ -100,51 +130,6 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       seenClassNames.add(c.className)
       return true
     })
-
-    const subjects = await prisma.subject.findMany({
-      where: { status: "ACTIVE" },
-      orderBy: { subjectName: "asc" }
-    })
-
-    const teachers = await prisma.teacher.findMany({
-      where: { status: "ACTIVE" },
-      select: {
-        id: true,
-        teacherName: true,
-        teacherCode: true,
-        campusId: true,
-        departmentId: true,
-        departmentRel: {
-          select: { name: true, blockCM: true }
-        }
-      },
-      orderBy: { teacherName: "asc" }
-    })
-
-    let timetableSlots: any[] = []
-    try {
-      timetableSlots = await prisma.timetableSlot.findMany({
-        where: {
-          ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
-          level: level
-        }
-      })
-    } catch (e) {
-      console.error("Error fetching timetableSlots:", e)
-    }
-
-    let teachingAssignments: any[] = []
-    try {
-      teachingAssignments = await prisma.teachingAssignment.findMany({
-        include: {
-          teacher: { select: { id: true, teacherName: true, teacherCode: true, departmentId: true } },
-          subject: { select: { id: true, subjectName: true, subjectCode: true } },
-          class: { select: { id: true, className: true, level: true, grade: true } }
-        }
-      })
-    } catch (e) {
-      console.error("Error fetching teachingAssignments:", e)
-    }
 
     return {
       success: true,

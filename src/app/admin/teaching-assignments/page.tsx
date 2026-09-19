@@ -3,13 +3,38 @@ import { prisma } from "@/lib/db"
 import { TeachingClient } from "./client"
 
 export default async function TeachingAssignmentsPage() {
-  const rawTeachers = await prisma.teacher.findMany({
-    orderBy: { teacherName: 'asc' },
-    include: { departmentRel: true, campus: true }
-  })
-  const teachers = rawTeachers
+  // Concurrently fetch all independent datasets with Promise.all
+  const [
+    teachers,
+    years,
+    campuses,
+    departments,
+    subjects,
+    assignments
+  ] = await Promise.all([
+    prisma.teacher.findMany({
+      orderBy: { teacherName: 'asc' },
+      include: { departmentRel: true, campus: true }
+    }),
+    prisma.academicYear.findMany({ orderBy: { startDate: 'desc' } }),
+    prisma.campus.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { campusName: 'asc' }
+    }),
+    prisma.department.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { name: 'asc' }
+    }),
+    prisma.subject.findMany({ orderBy: { subjectName: 'asc' } }),
+    prisma.teachingAssignment.findMany({
+      include: {
+        subject: true,
+        class: true
+      }
+    })
+  ])
 
-  const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
+  const activeYear = years.find(y => y.status === "ACTIVE" && !y.isOff) || years[0]
   const rawClasses = await prisma.class.findMany({ 
     where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
     orderBy: { className: 'asc' } 
@@ -20,23 +45,6 @@ export default async function TeachingAssignmentsPage() {
       return { ...c, level: "Mầm non" }
     }
     return c;
-  })
-  const campuses = await prisma.campus.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { campusName: 'asc' }
-  })
-  const departments = await prisma.department.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { name: 'asc' }
-  })
-  const subjects = await prisma.subject.findMany({ orderBy: { subjectName: 'asc' } })
-  const years = await prisma.academicYear.findMany({ orderBy: { startDate: 'desc' } })
-  
-  const assignments = await prisma.teachingAssignment.findMany({
-    include: {
-      subject: true,
-      class: true
-    }
   })
 
   // Format assignments for easy consumption

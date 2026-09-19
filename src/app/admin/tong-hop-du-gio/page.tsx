@@ -61,7 +61,20 @@ export default async function AdminTongHopPage(props: {
   const campusId = searchParams.campusId || "all"
   const deptId = searchParams.deptId || "all"
 
-  const refDataResult = await getObservationData(academicYearId)
+  const [refDataResult, slotsResult] = await Promise.all([
+    getObservationData(academicYearId),
+    getObservationSlots({
+      academicYearId,
+      level,
+      grade,
+      period,
+      date,
+      campusId,
+      divisionCode,
+      deptId
+    })
+  ])
+
   if (!refDataResult.success) {
     return (
       <div className="p-6 text-red-500 font-bold text-xs font-semibold">
@@ -69,17 +82,6 @@ export default async function AdminTongHopPage(props: {
       </div>
     )
   }
-
-  const slotsResult = await getObservationSlots({
-    academicYearId,
-    level,
-    grade,
-    period,
-    date,
-    campusId,
-    divisionCode,
-    deptId
-  })
 
   return (
     <AdminTongHopClient

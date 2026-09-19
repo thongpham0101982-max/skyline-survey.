@@ -6,16 +6,19 @@ export const metadata = {
 }
 
 export default async function DiemNhanXetAdminPage() {
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
-  })
+  const [academicYears, campuses, subjects] = await Promise.all([
+    prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }),
+    prisma.campus.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { campusName: "asc" },
+      select: { id: true, campusCode: true, campusName: true }
+    }),
+    prisma.subject.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { subjectName: "asc" }
+    })
+  ])
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
-
-  const campuses = await prisma.campus.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { campusName: "asc" },
-    select: { id: true, campusCode: true, campusName: true }
-  })
 
   const classes = await prisma.class.findMany({
     where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
@@ -31,11 +34,6 @@ export default async function DiemNhanXetAdminPage() {
       }
     },
     orderBy: { className: "asc" }
-  })
-
-  const subjects = await prisma.subject.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { subjectName: "asc" }
   })
 
   return (

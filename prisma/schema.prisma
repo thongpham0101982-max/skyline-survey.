@@ -1773,6 +1773,29 @@ model GradebookLock {
   @@index([academicYearId, evaluationPeriod])
 }
 
+model GradebookUnlockRequest {
+  id               String    @id @default(cuid())
+  academicYearId   String
+  evaluationPeriod String
+  classId          String
+  subjectId        String
+  teacherId        String?
+  teacherName      String?
+  teacherEmail     String?
+  reason           String
+  status           String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  requestedAt      DateTime  @default(now())
+  resolvedAt       DateTime?
+  resolvedBy       String?
+  resolvedNote     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([academicYearId, evaluationPeriod, classId, subjectId])
+  @@index([teacherId])
+  @@index([status])
+}
+
 model GradeEntryReminder {
   id               String   @id @default(cuid())
   academicYearId   String

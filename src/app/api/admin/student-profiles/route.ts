@@ -70,9 +70,11 @@ export async function GET(req: NextRequest) {
       ]
     }
 
-    // Fetch students
+    // Fetch students with safe limit if no specific class/search/student is provided
+    const safeTake = (!studentId && (!classId || classId === "all") && !search) ? 100 : undefined
     const students = await prisma.student.findMany({
       where,
+      take: safeTake,
       include: {
         class: {
           include: {

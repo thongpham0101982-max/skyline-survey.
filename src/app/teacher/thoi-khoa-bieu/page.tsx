@@ -25,7 +25,23 @@ export default async function TimetablePage(props: {
 
   try {
     const searchParams = await props.searchParams
-    const initialData = await getTimetableMatrixData(searchParams.campusId, searchParams.level || "TIEU_HOC")
+
+    // Concurrently fetch matrix data and teacher profile
+    const [initialData, teacherById, teacherByEmail] = await Promise.all([
+      getTimetableMatrixData(searchParams.campusId, searchParams.level || "TIEU_HOC"),
+      prisma.teacher.findUnique({ where: { userId: session.user.id } }).catch(() => null),
+      session.user.email
+        ? prisma.teacher.findFirst({
+            where: {
+              OR: [
+                { email: session.user.email },
+                { teacherCode: session.user.email },
+                { teacherCode: session.user.email.split('@')[0] }
+              ]
+            }
+          }).catch(() => null)
+        : Promise.resolve(null)
+    ])
 
     if (!initialData.success) {
       return (
@@ -35,32 +51,27 @@ export default async function TimetablePage(props: {
       )
     }
 
-    let currentTeacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id }
-    }).catch(() => null)
+    const currentTeacher = teacherById || teacherByEmail || null
 
-    if (!currentTeacher && session.user.email) {
-      currentTeacher = await prisma.teacher.findFirst({
-        where: {
-          OR: [
-            { email: session.user.email },
-            { teacherCode: session.user.email },
-            { teacherCode: session.user.email.split('@')[0] }
-          ]
-        }
-      }).catch(() => null)
-    }
-
+    // Extract teacher slots directly from loaded matrix slots when possible
     let mySlots: any[] = []
     if (currentTeacher?.id || currentTeacher?.teacherName) {
-      mySlots = await prisma.timetableSlot.findMany({
-        where: {
-          OR: [
-            ...(currentTeacher.id ? [{ teacherId: currentTeacher.id }] : []),
-            ...(currentTeacher.teacherName ? [{ teacherName: currentTeacher.teacherName }] : [])
-          ]
-        }
-      }).catch(() => [])
+      const allSlots = initialData.timetableSlots || []
+      mySlots = allSlots.filter((s: any) =>
+        (currentTeacher.id && s.teacherId === currentTeacher.id) ||
+        (currentTeacher.teacherName && s.teacherName === currentTeacher.teacherName)
+      )
+      // If campus filter restricted matrix slots, fallback to querying teacher personal slots
+      if (mySlots.length === 0 && searchParams.campusId) {
+        mySlots = await prisma.timetableSlot.findMany({
+          where: {
+            OR: [
+              ...(currentTeacher.id ? [{ teacherId: currentTeacher.id }] : []),
+              ...(currentTeacher.teacherName ? [{ teacherName: currentTeacher.teacherName }] : [])
+            ]
+          }
+        }).catch(() => [])
+      }
     }
 
     return (

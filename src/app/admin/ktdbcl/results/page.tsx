@@ -16,61 +16,44 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
   // Active tab for ExamTabs navigation
   const activeNavTab = params?.tab === 'reports' ? 'reports' : params?.tab === 'profiles' ? 'profiles' : 'results'
 
-  // Fetch exams including related information
-  const exams = await prisma.exam.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      code: true,
-      grade: true,
-      academicYearId: true,
-      startDate: true,
-      endDate: true,
-      category: {
-        select: {
-          name: true
-        }
+  // Concurrently fetch all independent datasets with Promise.all
+  const [
+    exams,
+    academicYears,
+    teachers,
+    campuses,
+    achievementCategories,
+    achievementLevels
+  ] = await Promise.all([
+    prisma.exam.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        grade: true,
+        academicYearId: true,
+        startDate: true,
+        endDate: true,
+        category: { select: { name: true } }
       }
-    }
-  })
+    }),
+    prisma.academicYear.findMany({ orderBy: { startDate: "desc" } }),
+    prisma.teacher.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { teacherName: "asc" },
+      select: { id: true, teacherCode: true, teacherName: true }
+    }),
+    prisma.campus.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { campusName: "asc" },
+      select: { id: true, campusName: true }
+    }),
+    prisma.achievementCategory.findMany({ orderBy: { name: "asc" } }),
+    prisma.achievementLevel.findMany({ orderBy: { name: "asc" } })
+  ])
 
-  // Fetch all academic years
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
-  })
-
-  // Fetch all active teachers for selector
-  const teachers = await prisma.teacher.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { teacherName: "asc" },
-    select: {
-      id: true,
-      teacherCode: true,
-      teacherName: true
-    }
-  })
-
-  // Fetch campuses
-  const campuses = await prisma.campus.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { campusName: "asc" },
-    select: {
-      id: true,
-      campusName: true
-    }
-  })
-
-  // Fetch achievement categories and levels
-  const achievementCategories = await prisma.achievementCategory.findMany({
-    orderBy: { name: "asc" }
-  })
-  const achievementLevels = await prisma.achievementLevel.findMany({
-    orderBy: { name: "asc" }
-  })
-
-  const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
-  // Fetch classes for active academic year
+  const activeYear = academicYears.find(y => y.status === "ACTIVE" && !y.isOff) || academicYears[0]
   const classes = await prisma.class.findMany({
     where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
     orderBy: { className: "asc" },

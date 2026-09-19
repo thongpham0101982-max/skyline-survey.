@@ -10,14 +10,10 @@ export default async function TeacherDiemNhanXetPage() {
   const session = await auth()
   const userId = (session?.user as any)?.id
 
-  let teacher = null
-  if (userId) {
-    teacher = await prisma.teacher.findUnique({ where: { userId } })
-  }
-
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
-  })
+  const [teacher, academicYears] = await Promise.all([
+    userId ? prisma.teacher.findUnique({ where: { userId } }) : Promise.resolve(null),
+    prisma.academicYear.findMany({ orderBy: { startDate: "desc" } })
+  ])
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
 
   let assignments: any[] = []

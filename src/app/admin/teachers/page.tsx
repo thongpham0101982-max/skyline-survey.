@@ -10,77 +10,82 @@ export const metadata = { title: "Quản lý Giáo viên | Cổng Quản trị" 
 export default async function TeacherManagerPage() {
   const session = await getAdminSession()
 
-  const years = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" },
-    select: { id: true, name: true, status: true, isOff: true }
-  })
-  const activeYear = await getDefaultAcademicYear(prisma)
-  const defaultYearId = activeYear?.id || years.find(y => y.status === "ACTIVE" && !y.isOff)?.id || years.find(y => !y.isOff)?.id || years[0]?.id || null
-
-  const departments = await prisma.department.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { name: "asc" },
-    select: { id: true, code: true, name: true, blockCM: true }
-  })
-
-  const subjects = await prisma.subject.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { subjectName: "asc" },
-    select: { id: true, subjectCode: true, subjectName: true }
-  })
-
-  // Filter campuses based on session
   const campusWhere = session.isFullAccess ? { status: "ACTIVE" } : { id: { in: session.allowedCampusIds }, status: "ACTIVE" }
-  const campuses = await prisma.campus.findMany({
-    where: campusWhere,
-    orderBy: { campusName: "asc" },
-    select: { id: true, campusCode: true, campusName: true }
-  })
-
-  // Filter teachers based on session
   const teacherWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
-  const rawTeachers = await prisma.teacher.findMany({
-    where: teacherWhere,
-    orderBy: { teacherName: "asc" },
-    include: {
-      user: {
-        select: {
-          id: true,
-          email: true,
-          status: true,
-          campusAssignments: {
-            include: {
-              campus: { select: { id: true, campusName: true, campusCode: true } }
+  const classWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
+
+  // Concurrently fetch all independent datasets with Promise.all
+  const [
+    years,
+    activeYear,
+    departments,
+    subjects,
+    campuses,
+    rawTeachers,
+    classes,
+    homeroomAssignments
+  ] = await Promise.all([
+    prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" },
+      select: { id: true, name: true, status: true, isOff: true }
+    }),
+    getDefaultAcademicYear(prisma),
+    prisma.department.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { name: "asc" },
+      select: { id: true, code: true, name: true, blockCM: true }
+    }),
+    prisma.subject.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { subjectName: "asc" },
+      select: { id: true, subjectCode: true, subjectName: true }
+    }),
+    prisma.campus.findMany({
+      where: campusWhere,
+      orderBy: { campusName: "asc" },
+      select: { id: true, campusCode: true, campusName: true }
+    }),
+    prisma.teacher.findMany({
+      where: teacherWhere,
+      orderBy: { teacherName: "asc" },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            status: true,
+            campusAssignments: {
+              include: {
+                campus: { select: { id: true, campusName: true, campusCode: true } }
+              }
             }
           }
-        }
-      },
-      departmentRel: { select: { name: true, blockCM: true } },
-      departmentAssignments: {
-        include: {
-          department: { select: { id: true, name: true, blockCM: true, divisionCode: true, code: true } }
-        }
-      },
-      divisionAssignments: true,
-      mainSubjectRel: { select: { subjectName: true } },
-      campus: { select: { campusName: true } }
-    }
-  })
+        },
+        departmentRel: { select: { name: true, blockCM: true } },
+        departmentAssignments: {
+          include: {
+            department: { select: { id: true, name: true, blockCM: true, divisionCode: true, code: true } }
+          }
+        },
+        divisionAssignments: true,
+        mainSubjectRel: { select: { subjectName: true } },
+        campus: { select: { campusName: true } }
+      }
+    }),
+    prisma.class.findMany({
+      where: classWhere,
+      orderBy: [{ academicYear: { startDate: "desc" } }, { className: "asc" }],
+      include: {
+        academicYear: { select: { id: true, name: true } },
+        campus: { select: { campusName: true } }
+      }
+    }),
+    prisma.$queryRaw`
+      SELECT id as classId, homeroomTeacherId, className FROM Class WHERE homeroomTeacherId IS NOT NULL
+    ` as Promise<{ classId: string, homeroomTeacherId: string, className: string }[]>
+  ])
 
-  // Filter classes based on session
-  const classWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
-  const classes = await prisma.class.findMany({
-    where: classWhere,
-    orderBy: [{ academicYear: { startDate: "desc" } }, { className: "asc" }],
-    include: {
-      academicYear: { select: { id: true, name: true } },
-      campus: { select: { campusName: true } }
-    }
-  })
-
-  const homeroomAssignments = await prisma.$queryRaw`
-    SELECT id as classId, homeroomTeacherId, className FROM Class WHERE homeroomTeacherId IS NOT NULL
-  ` as { classId: string, homeroomTeacherId: string, className: string }[]
+  const defaultYearId = activeYear?.id || years.find(y => y.status === "ACTIVE" && !y.isOff)?.id || years.find(y => !y.isOff)?.id || years[0]?.id || null
 
   const classHomeroomMap = new Map<string, any>()
   homeroomAssignments.forEach(a => {

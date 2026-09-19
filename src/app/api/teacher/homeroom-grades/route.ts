@@ -125,21 +125,91 @@ export async function GET(request: Request) {
     else if (num >= 6 && num <= 9) levelCode = "THCS"
     else if (num >= 10 && num <= 12) levelCode = "THPT"
 
-    // 4. Get active students of the homeroom class
-    const students = await prisma.student.findMany({
-      where: {
-        classId,
-        status: "ACTIVE"
-      },
-      orderBy: { studentName: "asc" },
-      select: {
-        id: true,
-        studentCode: true,
-        studentName: true,
-        gender: true,
-        dateOfBirth: true
-      }
-    })
+    // Sibling classes filter
+    const gradeClassesWhere: any = {
+      academicYearId: targetYearId,
+      OR: [
+        { grade: { in: candidateGrades } },
+        { className: { startsWith: gradeNum + "." } },
+        { className: { startsWith: gradeNum + "/" } },
+        { className: { startsWith: gradeNum + "_" } }
+      ]
+    }
+    if (scope === "campus" && targetClass.campusId) {
+      gradeClassesWhere.campusId = targetClass.campusId
+    }
+
+    // 4-9. Concurrently fetch all independent homeroom datasets using Promise.all
+    const [
+      students,
+      classGradeEntries,
+      teachingAssignments,
+      surveyConfigs,
+      benchmarkConfigs,
+      siblingClasses
+    ] = await Promise.all([
+      // 4. Get active students of the homeroom class
+      prisma.student.findMany({
+        where: {
+          classId,
+          status: "ACTIVE"
+        },
+        orderBy: { studentName: "asc" },
+        select: {
+          id: true,
+          studentCode: true,
+          studentName: true,
+          gender: true,
+          dateOfBirth: true
+        }
+      }),
+      // 5. Get all grade entries for this class in this evaluation period
+      prisma.subjectGradeEntry.findMany({
+        where: {
+          academicYearId: targetYearId,
+          classId,
+          evaluationPeriod: { in: targetPeriodFilter }
+        },
+        include: {
+          subject: true
+        }
+      }),
+      // 6. Get teaching assignments for this class to identify teacher per subject
+      prisma.teachingAssignment.findMany({
+        where: {
+          academicYearId: targetYearId,
+          classId
+        },
+        include: {
+          subject: true,
+          teacher: true
+        }
+      }),
+      // 7. STRICTLY FETCH SUBJECTS CONFIGURED IN ADMIN TAB (SubjectGradeConfig) FOR THIS PERIOD & GRADE
+      prisma.subjectGradeConfig.findMany({
+        where: {
+          academicYearId: targetYearId,
+          evaluationPeriod: { in: periodVariants },
+          subjectId: { not: null },
+          status: "ACTIVE"
+        },
+        include: {
+          subject: true
+        }
+      }),
+      // 8. Load Benchmark configurations
+      prisma.subjectBenchmarkConfig.findMany({
+        where: {
+          academicYearId: targetYearId,
+          evaluationPeriod: { in: [...periodVariants, "ALL"] }
+        }
+      }),
+      // 9. Fetch Grade-level (Khối) sibling classes
+      prisma.class.findMany({
+        where: gradeClassesWhere,
+        select: { id: true, className: true, campusId: true }
+      })
+    ])
 
     // Sort students by Vietnamese alphabet
     const getVietnameseSortKey = (fullName: string) => {
@@ -151,47 +221,10 @@ export async function GET(request: Request) {
     }
     students.sort((a, b) => getVietnameseSortKey(a.studentName).localeCompare(getVietnameseSortKey(b.studentName), "vi-VN"))
 
-    // 5. Get all grade entries for this class in this evaluation period
-    const classGradeEntries = await prisma.subjectGradeEntry.findMany({
-      where: {
-        academicYearId: targetYearId,
-        classId,
-        evaluationPeriod: { in: targetPeriodFilter }
-      },
-      include: {
-        subject: true
-      }
-    })
-
-    // 6. Get teaching assignments for this class to identify teacher per subject
-    const teachingAssignments = await prisma.teachingAssignment.findMany({
-      where: {
-        academicYearId: targetYearId,
-        classId
-      },
-      include: {
-        subject: true,
-        teacher: true
-      }
-    })
-
     const subjectTeacherMap: Record<string, string> = {}
     teachingAssignments.forEach(ta => {
       if (ta.subjectId && ta.teacher) {
         subjectTeacherMap[ta.subjectId] = ta.teacher.teacherName
-      }
-    })
-
-    // 7. STRICTLY FETCH SUBJECTS CONFIGURED IN ADMIN TAB (SubjectGradeConfig) FOR THIS PERIOD & GRADE
-    const surveyConfigs = await prisma.subjectGradeConfig.findMany({
-      where: {
-        academicYearId: targetYearId,
-        evaluationPeriod: { in: periodVariants },
-        subjectId: { not: null },
-        status: "ACTIVE"
-      },
-      include: {
-        subject: true
       }
     })
 
@@ -212,14 +245,6 @@ export async function GET(request: Request) {
     })
 
     const subjectsList = Array.from(subjectsMap.values()).sort((a, b) => (a.orderIndex || 99) - (b.orderIndex || 99))
-
-    // 8. Load Benchmark configurations
-    const benchmarkConfigs = await prisma.subjectBenchmarkConfig.findMany({
-      where: {
-        academicYearId: targetYearId,
-        evaluationPeriod: { in: [...periodVariants, "ALL"] }
-      }
-    })
 
     const resolveBenchmark = (subId: string): number => {
       const defaultScore = levelCode === "TIEU_HOC" ? 7.0 : 6.0
@@ -254,25 +279,6 @@ export async function GET(request: Request) {
 
       return defaultScore
     }
-
-    // 9. Fetch Grade-level (Khối) data for comparative analytics
-    const gradeClassesWhere: any = {
-      academicYearId: targetYearId,
-      OR: [
-        { grade: { in: candidateGrades } },
-        { className: { startsWith: gradeNum + "." } },
-        { className: { startsWith: gradeNum + "/" } },
-        { className: { startsWith: gradeNum + "_" } }
-      ]
-    }
-    if (scope === "campus" && targetClass.campusId) {
-      gradeClassesWhere.campusId = targetClass.campusId
-    }
-
-    const siblingClasses = await prisma.class.findMany({
-      where: gradeClassesWhere,
-      select: { id: true, className: true, campusId: true }
-    })
 
     const siblingClassIds = siblingClasses.map(c => c.id)
 

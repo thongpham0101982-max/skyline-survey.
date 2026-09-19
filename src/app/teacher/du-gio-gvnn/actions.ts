@@ -119,53 +119,69 @@ export async function getForeignObservationData(academicYearId?: string) {
       } as any;
     }
 
-    // Load all active departments
-    const allDepartments = await prisma.department.findMany({
-      where: { status: "ACTIVE" },
-      orderBy: { name: "asc" }
-    });
-
-    // Load all active teachers with full relations matching Teacher Management
-    const rawTeachers = await prisma.teacher.findMany({
-      where: { status: "ACTIVE" },
-      include: {
-        departmentRel: {
-          select: { id: true, code: true, name: true, blockCM: true }
-        },
-        departmentAssignments: {
-          include: {
-            department: { select: { id: true, code: true, name: true, blockCM: true } }
-          }
-        },
-        mainSubjectRel: {
-          select: { id: true, subjectName: true }
-        },
-        campus: {
-          select: { id: true, campusCode: true, campusName: true }
-        },
-        classes: {
-          select: {
-            classId: true,
-            class: {
-              select: {
-                id: true,
-                className: true,
-                grade: true,
-                level: true,
-                campusId: true
+    // Concurrently fetch all independent datasets with Promise.all
+    const [allDepartments, rawTeachers, allTargets, campuses, classes] = await Promise.all([
+      prisma.department.findMany({
+        where: { status: "ACTIVE" },
+        orderBy: { name: "asc" }
+      }),
+      prisma.teacher.findMany({
+        where: { status: "ACTIVE" },
+        include: {
+          departmentRel: {
+            select: { id: true, code: true, name: true, blockCM: true }
+          },
+          departmentAssignments: {
+            include: {
+              department: { select: { id: true, code: true, name: true, blockCM: true } }
+            }
+          },
+          mainSubjectRel: {
+            select: { id: true, subjectName: true }
+          },
+          campus: {
+            select: { id: true, campusCode: true, campusName: true }
+          },
+          classes: {
+            select: {
+              classId: true,
+              class: {
+                select: {
+                  id: true,
+                  className: true,
+                  grade: true,
+                  level: true,
+                  campusId: true
+                }
               }
             }
           }
-        }
-      },
-      orderBy: { teacherName: "asc" }
-    });
-
-    const allTargets = activeYearId
-      ? await prisma.teacherAcademicYearTarget.findMany({
-          where: { academicYearId: activeYearId }
-        })
-      : [];
+        },
+        orderBy: { teacherName: "asc" }
+      }),
+      activeYearId
+        ? prisma.teacherAcademicYearTarget.findMany({
+            where: { academicYearId: activeYearId }
+          })
+        : Promise.resolve([]),
+      prisma.campus.findMany({
+        where: { NOT: { status: "INACTIVE" } },
+        orderBy: { campusName: "asc" }
+      }),
+      prisma.class.findMany({
+        where: { status: "ACTIVE" },
+        select: {
+          id: true,
+          classCode: true,
+          className: true,
+          level: true,
+          grade: true,
+          campusId: true,
+          academicYearId: true
+        },
+        orderBy: { className: "asc" }
+      })
+    ]);
 
     const targetsMap = new Map(allTargets.map(t => [t.teacherId, t]));
 
@@ -198,25 +214,6 @@ export async function getForeignObservationData(academicYearId?: string) {
         requiredTaught: target?.requiredTaught || 0,
         taughtUnit: target?.taughtUnit || "tháng"
       };
-    });
-
-    const campuses = await prisma.campus.findMany({
-      where: { NOT: { status: "INACTIVE" } },
-      orderBy: { campusName: "asc" }
-    });
-
-    const classes = await prisma.class.findMany({
-      where: { status: "ACTIVE" },
-      select: {
-        id: true,
-        classCode: true,
-        className: true,
-        level: true,
-        grade: true,
-        campusId: true,
-        academicYearId: true
-      },
-      orderBy: { className: "asc" }
     });
 
     let teacherStats = { taughtCount: 0, observedCount: 0, eslTaughtCount: 0, eslObservedCount: 0 };

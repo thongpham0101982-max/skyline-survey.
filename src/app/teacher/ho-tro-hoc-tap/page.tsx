@@ -24,70 +24,74 @@ export default async function TeacherSupportPage() {
     )
   }
 
-  // Fetch academic years and resolve active academic year
-  const defaultYear = await getDefaultAcademicYear(prisma)
-  const allYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
-  })
+  // Parallelize defaultYear and allYears
+  const [defaultYear, allYears] = await Promise.all([
+    getDefaultAcademicYear(prisma),
+    prisma.academicYear.findMany({ orderBy: { startDate: "desc" } })
+  ])
   const academicYears = defaultYear
     ? [defaultYear, ...allYears.filter(y => y.id !== defaultYear.id)]
     : allYears
 
   const activeYearId = defaultYear?.id || academicYears[0]?.id
 
-  // Find all homeroom classes of this teacher in active year
-  const homeroomClasses = await prisma.class.findMany({
-    where: {
-      academicYearId: activeYearId,
-      OR: [
-        { homeroomTeacherId: teacher.id },
-        { homeroomTeacherId: { contains: teacher.id } }
-      ]
-    },
-    select: {
-      id: true,
-      className: true,
-      students: {
-        where: {
-          academicYearId: activeYearId,
-          NOT: {
-            studentCode: { startsWith: "2" }
-          }
-        },
-        select: {
-          id: true,
-          studentName: true,
-          studentCode: true
-        }
-      }
-    },
-    orderBy: { className: "asc" }
-  })
-
-  // Find teaching assignments in active year
-  const teachingAssignments = await prisma.teachingAssignment.findMany({
-    where: {
-      teacherId: teacher.id,
-      academicYearId: activeYearId
-    },
-    include: {
-      class: {
-        select: {
-          id: true,
-          className: true,
-          educationSystem: true,
-          students: {
-            select: {
-              id: true,
-              studentName: true,
-              studentCode: true
+  // Parallelize homeroom classes, teaching assignments, and subjects
+  const [homeroomClasses, teachingAssignments, subjects] = await Promise.all([
+    prisma.class.findMany({
+      where: {
+        academicYearId: activeYearId,
+        OR: [
+          { homeroomTeacherId: teacher.id },
+          { homeroomTeacherId: { contains: teacher.id } }
+        ]
+      },
+      select: {
+        id: true,
+        className: true,
+        students: {
+          where: {
+            academicYearId: activeYearId,
+            NOT: {
+              studentCode: { startsWith: "2" }
             }
+          },
+          select: {
+            id: true,
+            studentName: true,
+            studentCode: true
           }
         }
       },
-      subject: true
-    }
-  })
+      orderBy: { className: "asc" }
+    }),
+    prisma.teachingAssignment.findMany({
+      where: {
+        teacherId: teacher.id,
+        academicYearId: activeYearId
+      },
+      include: {
+        class: {
+          select: {
+            id: true,
+            className: true,
+            educationSystem: true,
+            students: {
+              select: {
+                id: true,
+                studentName: true,
+                studentCode: true
+              }
+            }
+          }
+        },
+        subject: true
+      }
+    }),
+    prisma.subject.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { subjectName: "asc" }
+    })
+  ])
 
   // Build unified assigned classes (both homeroom and teaching assignments)
   const classMap = new Map()
@@ -122,11 +126,7 @@ export default async function TeacherSupportPage() {
 
   const initialAssignedClasses = Array.from(classMap.values())
 
-  // Find all subjects in the system for proposal selection
-  const subjects = await prisma.subject.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { subjectName: "asc" }
-  })
+  // Subjects already loaded in Promise.all above
 
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">

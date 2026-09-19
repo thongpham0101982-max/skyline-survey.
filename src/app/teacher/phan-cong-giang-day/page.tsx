@@ -33,27 +33,27 @@ export default async function TeachingAssignmentsPage() {
     )
   }
 
-  // 2. Get all academic years
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
-  })
-
-  // 3. Get my teaching assignments
-  const myAssignments = await prisma.teachingAssignment.findMany({
-    where: {
-      teacherId: teacher.id
-    },
-    include: {
-      class: true,
-      subject: true,
-      academicYear: true
-    },
-    orderBy: [
-      { academicYear: { startDate: 'desc' } },
-      { semester: 'asc' },
-      { class: { className: 'asc' } }
-    ]
-  })
+  // 2-3. Parallelize fetching academic years and personal assignments
+  const [academicYears, myAssignments] = await Promise.all([
+    prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" }
+    }),
+    prisma.teachingAssignment.findMany({
+      where: {
+        teacherId: teacher.id
+      },
+      include: {
+        class: true,
+        subject: true,
+        academicYear: true
+      },
+      orderBy: [
+        { academicYear: { startDate: 'desc' } },
+        { semester: 'asc' },
+        { class: { className: 'asc' } }
+      ]
+    })
+  ])
 
   // 4. Get other teachers in the same department and their assignments
   let departmentTeachers: any[] = []
