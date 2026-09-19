@@ -27,7 +27,10 @@ const INTL_OPTIONS = [
 import { useState, useEffect, useMemo, useRef } from "react"
 import * as XLSX from "xlsx"
 import {
-  Lock, 
+  Lock,
+  Unlock,
+  Send,
+  X,
   FileSpreadsheet, 
   Save, 
   Download, 
