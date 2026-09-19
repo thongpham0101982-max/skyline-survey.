@@ -92,8 +92,25 @@
   --card-foreground: #0F172A;
   --popover: #FFFFFF;
   --popover-foreground: #0F172A;
-  --primary: #48BFE3;    /* brand primary */
+  /* SSM BRAND & SEMANTIC DESIGN TOKENS (Sky-Line Deep Pine #003B3A) */
+  --primary: #003B3A;             /* Sky-Line Deep Pine Core */
+  --primary-hover: #004D4B;       /* Deep Pine Hover */
+  --primary-active: #002827;      /* Deep Pine Active */
   --primary-foreground: #FFFFFF;
+  --surface: #FFFFFF;             /* Card / Surface */
+  --surface-secondary: #F1F5F9;   /* Muted surface */
+  --border-strong: #CBD5E1;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --success: #16A34A;
+  --success-background: #F0FDF4;
+  --warning: #D97706;
+  --warning-background: #FFFBEB;
+  --error: #DC2626;
+  --error-background: #FEF2F2;
+  --info: #0284C7;
+  --info-background: #F0F9FF;
   --accent-yellow: #D97706; /* Earthy yellow accent */
   --accent-yellow-light: rgba(217, 119, 6, 0.1);
   --accent-yellow-foreground: #FFFFFF;
@@ -106,16 +123,16 @@
   --destructive: #EF4444;
   --border: #E2E8F0;
   --input: #E2E8F0;
-  --ring: rgba(72, 191, 227, 0.25);
+  --ring: rgba(0, 59, 58, 0.25);
   --radius: 14px;
   --sidebar: #6930C3; /* Premium Dark Teal Sidebar */
   --sidebar-foreground: #E6F6F5;
-  --sidebar-primary: #48BFE3;
+  --sidebar-primary: #003B3A;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: rgba(255, 255, 255, 0.1);
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: rgba(72, 191, 227, 0.2);
+  --sidebar-ring: rgba(0, 59, 58, 0.2);
 }
 
 @layer base {

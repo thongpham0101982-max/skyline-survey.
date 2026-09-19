@@ -1,29 +1,5 @@
 "use client"
 
-const COLUMN_TYPES = [
-  { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
-  { code: "SCORE_CUSTOM", name: "Thang điểm tùy chọn trong thang 10 (Tối đa 1 - 10đ)" },
-  { code: "SCORE_100", name: "Thang điểm 100" },
-  { code: "SCORE_CUSTOM_100", name: "Thang điểm tùy chọn trong thang 100 (Tối đa 1 - 100đ)" },
-  { code: "GRADE_SKL", name: "Mức độ SKL (A - Tốt, B - Khá, C - Đạt, D - Chưa đạt)" },
-  { code: "GRADE_INTL", name: "Mức độ Quốc tế (E - Tốt, S - Đạt, N - Cần cải thiện, U - Chưa đạt)" },
-  { code: "REMARK", name: "Định dạng Nhận xét bằng lời" }
-]
-
-const SKL_OPTIONS = [
-  { code: "A", label: "A - Tốt" },
-  { code: "B", label: "B - Khá" },
-  { code: "C", label: "C - Đạt" },
-  { code: "D", label: "D - Chưa đạt" }
-]
-
-const INTL_OPTIONS = [
-  { code: "E", label: "E - Excellent (Tốt)" },
-  { code: "S", label: "S - Satisfactory (Đạt yêu cầu)" },
-  { code: "N", label: "N - Needs improvement (Cần cải thiện)" },
-  { code: "U", label: "U - Unsatisfactory (Chưa đạt)" }
-]
-
 import { useState, useEffect, useMemo, useRef } from "react"
 import * as XLSX from "xlsx"
 import { 
@@ -78,6 +54,31 @@ import {
   RoundingRule
 } from "@/lib/grading/formula-calculator"
 
+
+const COLUMN_TYPES = [
+  { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
+  { code: "SCORE_CUSTOM", name: "Thang điểm tùy chọn trong thang 10 (Tối đa 1 - 10đ)" },
+  { code: "SCORE_100", name: "Thang điểm 100" },
+  { code: "SCORE_CUSTOM_100", name: "Thang điểm tùy chọn trong thang 100 (Tối đa 1 - 100đ)" },
+  { code: "GRADE_SKL", name: "Mức độ SKL (A - Tốt, B - Khá, C - Đạt, D - Chưa đạt)" },
+  { code: "GRADE_INTL", name: "Mức độ Quốc tế (E - Tốt, S - Đạt, N - Cần cải thiện, U - Chưa đạt)" },
+  { code: "REMARK", name: "Định dạng Nhận xét bằng lời" }
+]
+
+const SKL_OPTIONS = [
+  { code: "A", label: "A - Tốt" },
+  { code: "B", label: "B - Khá" },
+  { code: "C", label: "C - Đạt" },
+  { code: "D", label: "D - Chưa đạt" }
+]
+
+const INTL_OPTIONS = [
+  { code: "E", label: "E - Excellent (Tốt)" },
+  { code: "S", label: "S - Satisfactory (Đạt yêu cầu)" },
+  { code: "N", label: "N - Needs improvement (Cần cải thiện)" },
+  { code: "U", label: "U - Unsatisfactory (Chưa đạt)" }
+]
+
 interface Props {
   academicYears: any[]
   activeYearId: string
@@ -101,10 +102,13 @@ const GRADES = [
 ]
 
 export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, subjects, campuses = [] }: Props) {
+  // Common filters
+  const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
   const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics" | "progress" | "requests">("config")
   const [pendingUnlockCount, setPendingUnlockCount] = useState(0)
 
   const fetchPendingUnlockCount = async () => {
+    if (!selectedYearId) return
     try {
       const res = await fetch(`/api/admin/ktdbcl/gradebook-unlock-requests?academicYearId=${selectedYearId}&status=PENDING`)
       const data = await res.json()
@@ -119,9 +123,6 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   useEffect(() => {
     fetchPendingUnlockCount()
   }, [selectedYearId])
-
-  // Common filters
-  const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
 
   // --- TAB 1: Config Form states ---
   const [configGrade, setConfigGrade] = useState("ALL")

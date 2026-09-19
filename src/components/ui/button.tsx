@@ -1,29 +1,30 @@
 "use client"
 
 import * as React from "react";
-
 import { cva, type VariantProps } from "class-variance-authority"
 import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center font-medium tracking-normal select-none whitespace-nowrap transition-all duration-200 outline-none disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-offset-2",
+  "inline-flex items-center justify-center font-medium tracking-normal select-none whitespace-nowrap transition-all duration-200 outline-none disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer",
   {
     variants: {
       variant: {
-        default: "bg-[#0284C7] text-white hover:bg-[#0369A1] focus-visible:ring-[#0284C7] shadow-xs",
+        default: "bg-[#003B3A] text-white hover:bg-[#004D4B] active:bg-[#002827] focus-visible:ring-[#003B3A] shadow-xs",
+        primary: "bg-[#003B3A] text-white hover:bg-[#004D4B] active:bg-[#002827] focus-visible:ring-[#003B3A] shadow-xs",
         skyline: "bg-[#0F2942] text-white hover:bg-[#1E3A8A] focus-visible:ring-[#0F2942] shadow-xs",
         accent: "bg-[#D97706] text-white hover:bg-[#B45309] focus-visible:ring-[#D97706] shadow-xs",
         secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200/80 focus-visible:ring-slate-300",
         outline: "border border-slate-200/90 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 focus-visible:ring-slate-200 shadow-2xs",
         ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-200",
         destructive: "bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-500 shadow-xs",
-        link: "text-[#0284C7] underline-offset-4 hover:underline p-0 h-auto font-medium",
+        link: "text-[#003B3A] underline-offset-4 hover:underline p-0 h-auto font-medium",
       },
       size: {
         default: "h-9 px-4 py-2 text-xs rounded-xl gap-2",
         xs: "h-7 px-2.5 text-[11px] rounded-lg gap-1.5",
         sm: "h-8 px-3 text-xs rounded-lg gap-1.5",
+        md: "h-9 px-4 py-2 text-xs rounded-xl gap-2",
         lg: "h-11 px-6 text-sm rounded-xl gap-2.5",
         icon: "size-9 p-0 rounded-xl",
         "icon-sm": "size-7 p-0 rounded-lg",

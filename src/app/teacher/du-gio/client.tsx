@@ -4,6 +4,7 @@
 
 import { CreateObservationModal } from './components/CreateObservationModal';
 import { ObservationRegistrationSection } from './components/ObservationRegistrationSection';
+import { ObservationDetailDrawer } from './components/ObservationDetailDrawer';
 import { ReceivedEvaluationsTab } from './components/ReceivedEvaluationsTab';
 import { TTCMDepartmentSummaryTab } from './components/TTCMDepartmentSummaryTab';
 import { PrintObservationEvaluationModal } from './components/PrintObservationEvaluationModal';
@@ -636,6 +637,7 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }, [props.initialPersonalSlots])
   const [activeTab, setActiveTab] = useState(activeTabParam)
+  const [drawerSlot, setDrawerSlot] = useState<any | null>(null);
   
   // Re-evaluation States
   const [reEvalModal, setReEvalModal] = useState<{ registration: any; slot: any } | null>(null)
@@ -4543,7 +4545,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           );
                         })() : (
                           <div className="space-y-1">
-                            <p className="font-black text-[#003B3A] text-xs leading-snug">{slot.topic}</p>
+                            <p className="font-black text-[#003B3A] text-xs leading-snug cursor-pointer hover:underline flex items-center gap-1" onClick={() => setDrawerSlot(slot)} title="Bấm để xem chi tiết tiết dạy">{slot.topic}</p>
                             <div className="flex items-center gap-1.5 flex-wrap text-slate-500 font-medium text-[11px]">
                               <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60 font-bold">
                                 {slot.subjectName}
@@ -4632,6 +4634,15 @@ export function ObservationClient(props: ObservationClientProps) {
                       <td className="p-4 text-right">
                         {canDeleteAnySlot || viewMode === "ADMIN" ? (
                           <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                            {/* Xem chi tiết DetailDrawer */}
+                            <button
+                              type="button"
+                              onClick={() => setDrawerSlot(slot)}
+                              className="p-1.5 rounded-lg bg-[#003B3A]/10 hover:bg-[#003B3A]/20 text-[#003B3A] border border-[#003B3A]/20 transition-all cursor-pointer shadow-2xs"
+                              title="Xem chi tiết tiết dạy (Detail Drawer)"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
                             {/* Chi tiết / In phiếu */}
                             <button
                               type="button"
@@ -4688,6 +4699,15 @@ export function ObservationClient(props: ObservationClientProps) {
                           </div>
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
+                            {/* Xem chi tiết DetailDrawer */}
+                            <button
+                              type="button"
+                              onClick={() => setDrawerSlot(slot)}
+                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all cursor-pointer shadow-2xs"
+                              title="Xem chi tiết tiết dạy (Detail Drawer)"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-[#003B3A]" />
+                            </button>
                             {isHost ? (
                               <div className="flex items-center gap-1.5">
                                 <span className="px-3.5 py-1.5 text-xs font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-200 inline-block shadow-2xs">
@@ -7157,6 +7177,27 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* ======================================================== */}
       {/* MODAL 3: IN PHIẾU ĐÁNH GIÁ DỰ GIỜ A4 CHUẨN SKY-LINE */}
       {/* ======================================================== */}
+      {/* PILOT DETAIL DRAWER (LAYER 5) */}
+      <ObservationDetailDrawer
+        open={!!drawerSlot}
+        onOpenChange={(open) => { if (!open) setDrawerSlot(null); }}
+        slot={drawerSlot}
+        currentTeacher={currentTeacher}
+        userRole={currentTeacher?.user?.role || (isAdminUser ? "ADMIN" : "TEACHER")}
+        onEvaluate={(s, r) => {
+          setDrawerSlot(null);
+          setEvalModal({ slot: s, registration: r });
+        }}
+        onPrint={(s, r) => {
+          setDrawerSlot(null);
+          setPrintModalSlot({ slot: s, registration: r });
+        }}
+        onRegister={(s) => {
+          setDrawerSlot(null);
+          handleRegisterSlot(s);
+        }}
+      />
+
       {printModalSlot && (
         <PrintObservationEvaluationModal
           slot={printModalSlot.slot}

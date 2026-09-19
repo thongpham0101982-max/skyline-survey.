@@ -1272,7 +1272,7 @@ export function TTCMDepartmentSummaryTab({
               <thead>
                 <tr className="border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
                   <th className="py-3 px-4 rounded-l-xl">STT</th>
-                  <th className="py-3 px-4">Giáo Viên</th>
+                  <th className="py-3 px-4 sticky left-0 bg-slate-50 z-10 shadow-xs">Giáo Viên</th>
                   <th className="py-3 px-4">Chức Vụ</th>
                   <th className="py-3 px-4 text-center">Tiết Dạy (Có phiếu / Chỉ tiêu)</th>
                   <th className="py-3 px-4 text-center">Tiết Dự (Đã đánh giá / Chỉ tiêu)</th>
@@ -1312,7 +1312,7 @@ export function TTCMDepartmentSummaryTab({
                     return (
                       <tr key={t.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-3.5 px-4 text-slate-400 font-bold">{idx + 1}</td>
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 sticky left-0 bg-white z-10 shadow-xs">
                           <div className="flex items-center gap-3">
                             <div
                               className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-xs shrink-0 ${getAvatarGradient(t.teacherName)}`}
