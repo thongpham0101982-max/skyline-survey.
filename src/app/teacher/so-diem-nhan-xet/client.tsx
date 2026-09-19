@@ -294,6 +294,67 @@ export function DiemNhanXetTeacherClient({
     fetchGradeSheet()
   }, [selectedClassId, selectedSubjectId, selectedPeriod, selectedYearId])
 
+  const handleOpenUnlockModal = () => {
+    setUnlockReason("")
+    setIsUnlockModalOpen(true)
+  }
+
+  const handleSubmitUnlockRequest = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!unlockReason.trim()) {
+      alert("Vui lòng nhập lý do yêu cầu mở sổ!")
+      return
+    }
+    try {
+      setSubmittingUnlock(true)
+      const res = await fetch("/api/teacher/gradebook-unlock-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          academicYearId: selectedYearId,
+          evaluationPeriod: selectedPeriod,
+          classId: selectedClassId,
+          subjectId: selectedSubjectId,
+          reason: unlockReason.trim()
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setUnlockRequest(data.request)
+        setIsUnlockModalOpen(false)
+        alert(data.message || "Đã gửi yêu cầu mở sổ thành công!")
+      } else {
+        alert("Lỗi: " + (data.error || "Không thể gửi yêu cầu"))
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message)
+    } finally {
+      setSubmittingUnlock(false)
+    }
+  }
+
+  const handleCancelUnlockRequest = async () => {
+    if (!unlockRequest?.id) return
+    if (!confirm("Bạn có chắc chắn muốn hủy yêu cầu mở sổ điểm này?")) return
+    try {
+      setCancellingUnlock(true)
+      const res = await fetch(`/api/teacher/gradebook-unlock-request?requestId=${unlockRequest.id}`, {
+        method: "DELETE"
+      })
+      const data = await res.json()
+      if (data.success) {
+        setUnlockRequest(null)
+        alert("Đã hủy yêu cầu mở sổ thành công.")
+      } else {
+        alert("Lỗi: " + (data.error || "Không thể hủy yêu cầu"))
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message)
+    } finally {
+      setCancellingUnlock(false)
+    }
+  }
+
   const activeColNames = useMemo(() => {
     if (!gradeSheetData.config) return ["Cột 1", "Cột 2", "Cột 3"]
     try {
@@ -724,24 +785,70 @@ export function DiemNhanXetTeacherClient({
           )}
         </div>
 
-        {/* CẢNH BÁO SỔ ĐIỂM ĐÃ BỊ KHÓA */}
+        {/* CẢNH BÁO SỔ ĐIỂM ĐÃ BỊ KHÓA & NÚT YÊU CẦU MỞ SỔ */}
         {isSheetLocked && !hasNoAssignments && (
-          <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl flex items-center gap-3 shadow-sm animate-fadeIn">
-            <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
-              <Lock className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="text-xs font-black text-purple-950 uppercase tracking-wide flex items-center gap-1.5">
-                <span>SỔ ĐIỂM ĐÃ BỊ KHÓA BỞI BAN KHẢO THÍ & ĐBCL</span>
-                {sheetLockInfo?.lockedBy && (
-                  <span className="text-[11px] font-normal text-purple-700">
-                    ({sheetLockInfo.lockedBy})
-                  </span>
+          <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm animate-fadeIn">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0 mt-0.5">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-black text-purple-950 uppercase tracking-wide flex flex-wrap items-center gap-1.5">
+                  <span>SỔ ĐIỂM ĐÃ BỊ KHÓA BỞI BAN KHẢO THÍ & ĐBCL</span>
+                  {sheetLockInfo?.lockedBy && (
+                    <span className="text-[11px] font-normal text-purple-700">
+                      ({sheetLockInfo.lockedBy})
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-purple-800 mt-0.5">
+                  Sổ điểm môn này trong Kỳ {EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod} hiện đang ở trạng thái Khóa. Điểm số được bảo lưu và ở chế độ chỉ xem.
+                </div>
+
+                {/* Status indicator: Pending unlock request */}
+                {unlockRequest && unlockRequest.status === "PENDING" && (
+                  <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-100/90 border border-amber-300 text-amber-900 text-xs font-semibold shadow-xs">
+                    <Clock className="w-4 h-4 text-amber-600 animate-spin shrink-0" />
+                    <span>
+                      Đã gửi yêu cầu mở sổ: <span className="font-normal italic">"{unlockRequest.reason}"</span> ({new Date(unlockRequest.requestedAt).toLocaleDateString("vi-VN")}) - Đang chờ Admin duyệt
+                    </span>
+                  </div>
+                )}
+
+                {/* Status indicator: Rejected unlock request */}
+                {unlockRequest && unlockRequest.status === "REJECTED" && (
+                  <div className="mt-2.5 inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-rose-100/90 border border-rose-300 text-rose-900 text-xs font-medium shadow-xs">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>
+                      Yêu cầu mở sổ bị từ chối bởi {unlockRequest.resolvedBy || "Khảo thí"}: <span className="font-semibold italic">"{unlockRequest.resolvedNote || "Chưa phù hợp"}"</span>
+                    </span>
+                  </div>
                 )}
               </div>
-              <div className="text-xs text-purple-800 mt-0.5">
-                Sổ điểm môn này trong Kỳ {EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod} hiện đang ở trạng thái Khóa. Điểm số được bảo lưu và ở chế độ chỉ xem.
-              </div>
+            </div>
+
+            {/* Unlock Action Button */}
+            <div className="shrink-0 flex items-center gap-2 self-end md:self-center">
+              {(!unlockRequest || unlockRequest.status !== "PENDING") ? (
+                <button
+                  type="button"
+                  onClick={handleOpenUnlockModal}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-md shadow-purple-500/20 active:scale-95 transition-all"
+                >
+                  <Unlock className="w-4 h-4" />
+                  {unlockRequest?.status === "REJECTED" ? "Gửi lại yêu cầu mở sổ" : "Yêu cầu mở sổ"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleCancelUnlockRequest}
+                  disabled={cancellingUnlock}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-amber-900 bg-white border border-amber-300 hover:bg-amber-50 active:scale-95 transition-all"
+                >
+                  {cancellingUnlock ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5 text-amber-700" />}
+                  Hủy yêu cầu
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -936,6 +1043,106 @@ export function DiemNhanXetTeacherClient({
             )}
           </div>
         )}
+      {/* MODAL YÊU CẦU MỞ SỔ ĐIỂM */}
+      {isUnlockModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-scaleUp">
+            {/* Header */}
+            <div className="px-6 py-4 bg-purple-700 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                  <Unlock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black uppercase tracking-wider">Yêu cầu mở khóa sổ điểm</h3>
+                  <p className="text-[11px] text-purple-200">Gửi yêu cầu tới Ban Khảo thí & ĐBCL</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsUnlockModalOpen(false)}
+                className="w-8 h-8 rounded-lg hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmitUnlockRequest} className="p-6 space-y-4">
+              {/* Assignment details summary */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700 space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Lớp giảng dạy:</span>
+                  <span className="font-bold text-slate-900">
+                    {filteredClasses.find(c => c.id === selectedClassId)?.className || "Chưa chọn lớp"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Môn học:</span>
+                  <span className="font-bold text-slate-900">
+                    {assignedSubjects.find(s => s.id === selectedSubjectId)?.subjectName || "Chưa chọn môn"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Kỳ đánh giá:</span>
+                  <span className="font-bold text-[#003B3A]">
+                    {EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-slate-200 pt-1.5 mt-1.5">
+                  <span className="text-slate-500">Giáo viên yêu cầu:</span>
+                  <span className="font-bold text-purple-900">{teacherName}</span>
+                </div>
+              </div>
+
+              {/* Reason textarea */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-800">
+                  Lý do yêu cầu mở sổ <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={unlockReason}
+                  onChange={(e) => setUnlockReason(e.target.value)}
+                  placeholder="Ví dụ: Cần cập nhật bổ sung điểm kiểm tra bù cho học sinh vắng thi, điều chỉnh nhận xét định tính theo yêu cầu BGH..."
+                  className="w-full border border-slate-300 rounded-xl p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none"
+                />
+                <p className="text-[11px] text-slate-500 italic">
+                  * Yêu cầu sẽ được gửi trực tiếp đến Ban Khảo thí & ĐBCL. Bạn sẽ nhận được thông báo ngay khi yêu cầu được phê duyệt.
+                </p>
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsUnlockModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+                >
+                  Đóng
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingUnlock}
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl text-xs font-bold text-white bg-purple-700 hover:bg-purple-800 shadow-md shadow-purple-500/20 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {submittingUnlock ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Đang gửi...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      Gửi yêu cầu mở sổ
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   )

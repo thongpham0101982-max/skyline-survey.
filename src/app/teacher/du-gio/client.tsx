@@ -247,30 +247,53 @@ interface CampusInfo { id: string; campusCode: string; campusName: string }
 interface ClassInfo { id: string; classCode: string; className: string; level: string; grade: string; campusId: string; academicYearId?: string }
 
 export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | "K12", label: string, shortCode: string, badgeClass: string } {
-  const isMN = slot?.level === "Mầm non" ||
-    (slot?.grade || "").toLowerCase().includes("mầm non") ||
-    (slot?.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
-    (slot?.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-  if (isMN) {
-    return { key: "MAM_NON", label: "Dự giờ đánh giá Mầm non", shortCode: "ĐG Mầm non", badgeClass: "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30" };
+  if (!slot) {
+    return { key: "K12", label: "Dự giờ Giáo viên Phổ thông", shortCode: "GV Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
   }
+
   const subj = (slot?.subjectName || "").toLowerCase();
   const top = (slot?.topic || "").toLowerCase();
   const desc = (slot?.description || "").toLowerCase();
-  const deptName = (slot?.teacher?.departmentRel?.name || "").toLowerCase();
+  const teacherName = (slot?.teacher?.teacherName || "").trim();
 
-  const isEsl = subj.includes("esl") ||
-    subj.includes("tiếng anh (esl)") ||
-    subj.includes("tieng anh (esl)") ||
-    subj.includes("foreign") ||
-    top.includes("foreign") ||
-    top.includes("gvnn") ||
-    desc.includes("gvnn") ||
-    slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
-    (deptName.includes("quốc tế") && (subj.includes("esl") || subj.includes("ela") || subj.includes("english")));
-  if (isEsl) {
+  // Inspect evaluation if present
+  const reg = (slot?.registrations || [])[0];
+  const evalComment = reg?.evaluation?.generalComment || "";
+  const isWalkthroughEval = evalComment.includes('"criterionScores"') || evalComment.includes('"teacherVoice"') || evalComment.includes('"targetSkills"');
+
+  // 1. Check Foreign Walkthrough / GVNN first
+  const isForeignEsl = slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
+    isWalkthroughEval ||
+    desc.includes("dự giờ gvnn") ||
+    desc.includes("du gio gvnn") ||
+    (desc.includes("gvnn") && (desc.includes("tiếng anh") || desc.includes("foreign") || desc.includes("esl"))) ||
+    top.includes("walkthrough") ||
+    (top.includes("gvnn") && top.includes("esl")) ||
+    (slot?.teacher?.position === "GVNN");
+
+  if (isForeignEsl) {
     return { key: "GVNN_ESL", label: "Dự giờ GVNN (ESL)", shortCode: "GVNN (ESL)", badgeClass: "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30" };
   }
+
+  // 2. Next check Preschool
+  const isMN = slot?.level === "Mầm non" ||
+    (slot?.grade || "").toLowerCase().includes("mầm non") ||
+    (slot?.grade || "").toLowerCase().includes("mẫu giáo") ||
+    (slot?.grade || "").toLowerCase().includes("nhà trẻ") ||
+    (slot?.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
+    (slot?.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
+    (typeof slot?.className === "string" && (
+      slot.className.includes("READY FOR SKY-LINE") ||
+      slot.className.includes("WINGS") ||
+      slot.className.includes("NEWTON") ||
+      slot.className.includes("MONTESSORI")
+    ));
+
+  if (isMN) {
+    return { key: "MAM_NON", label: "Dự giờ đánh giá Mầm non", shortCode: "ĐG Mầm non", badgeClass: "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30" };
+  }
+
+  // 3. Default to K-12 General Education
   return { key: "K12", label: "Dự giờ Giáo viên Phổ thông", shortCode: "GV Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
 }
 
@@ -951,6 +974,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [teachers, reqDeptId]);
 
   const autoSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isFirstMount = useRef<boolean>(true)
 
   // Create form states
   const [newSubjectId, setNewSubjectId] = useState("")
@@ -1312,7 +1336,9 @@ export function ObservationClient(props: ObservationClientProps) {
     
     setIsSearching(true)
     try {
-      router.push(`${pathname}?${params.toString()}`)
+      if (typeof window !== "undefined") {
+        window.history.replaceState(null, '', `${pathname}?${params.toString()}`);
+      }
       const res = await getObservationSlots({ 
         schoolBlock: filterSchoolBlock, 
         campusId: filterCampusId, 
@@ -1326,20 +1352,33 @@ export function ObservationClient(props: ObservationClientProps) {
         month: filterMonth,
         academicYearId: filterAcademicYearId
       })
-      if (res.success && res.slots) { setSlots(res.slots) }
+      if (res.success && res.slots) { 
+        setSlots(res.slots);
+        if (currentTeacher?.id) {
+          const myPersonal = res.slots.filter((s: any) =>
+            s.teacherId === currentTeacher.id || s.registrations?.some((r: any) => r.teacherId === currentTeacher.id)
+          );
+          setPersonalSlots(myPersonal);
+        }
+      }
     } catch (e) {
       console.error(e)
     } finally {
       setIsSearching(false)
     }
-  }, [filterSchoolBlock, filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, filterAcademicYearId, router, pathname])
+  }, [filterSchoolBlock, filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, filterAcademicYearId, pathname, currentTeacher?.id])
 
   useEffect(() => {
-    if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current)
+    // Prevent redundant fetch on initial component mount
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+    if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current);
     autoSearchTimerRef.current = setTimeout(() => {
-      handleSearch()
-    }, 400)
-    return () => { if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current) }
+      handleSearch();
+    }, 300);
+    return () => { if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current); };
   }, [filterSchoolBlock, filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, handleSearch])
 
   const filterAvailableClasses = useMemo(() => {
@@ -2411,6 +2450,7 @@ export function ObservationClient(props: ObservationClientProps) {
       monthStr: string;
       year: number;
       month: number;
+      // Overall Counts
       taughtCount: number;
       totalTaughtSlots: number;
       observedCount: number;
@@ -2420,7 +2460,46 @@ export function ObservationClient(props: ObservationClientProps) {
       receivedEvalCount: number;
       surpriseTaughtCount: number;
       surpriseObservedCount: number;
+      // Multi-category breakdown: Taught
+      k12Taught: number;
+      mamNonTaught: number;
+      eslTaught: number;
+      // Multi-category breakdown: Observed
+      k12Observed: number;
+      mamNonObserved: number;
+      eslObserved: number;
+      // Multi-category breakdown: Pending
+      k12Pending: number;
+      mamNonPending: number;
+      eslPending: number;
+      // Target & Status
+      targetObserved: number;
+      targetTaught: number;
+      isTargetMet: boolean;
+      // Detailed slots in this month
+      slotsInMonth: any[];
     }> = {};
+
+    // Determine monthly targets for this teacher
+    let monthlyTargetObs = 1;
+    if (currentTeacher?.requiredObserved !== undefined && currentTeacher?.requiredObserved !== null) {
+      if (currentTeacher.observedUnit === "học kỳ") {
+        monthlyTargetObs = Math.max(1, Math.ceil(currentTeacher.requiredObserved / 4));
+      } else if (currentTeacher.observedUnit === "năm") {
+        monthlyTargetObs = Math.max(1, Math.ceil(currentTeacher.requiredObserved / 9));
+      } else {
+        monthlyTargetObs = currentTeacher.requiredObserved;
+      }
+    }
+
+    let monthlyTargetTaught = 0;
+    if (currentTeacher?.requiredTaught !== undefined && currentTeacher?.requiredTaught !== null) {
+      if (currentTeacher.taughtUnit === "học kỳ" || currentTeacher.taughtUnit === "năm") {
+        monthlyTargetTaught = currentTeacher.requiredTaught > 0 ? 1 : 0;
+      } else {
+        monthlyTargetTaught = currentTeacher.requiredTaught;
+      }
+    }
 
     (availableMonths || []).forEach(mKey => {
       if (!mKey || typeof mKey !== "string" || !mKey.includes("-")) return;
@@ -2440,7 +2519,20 @@ export function ObservationClient(props: ObservationClientProps) {
         avgScore: null,
         receivedEvalCount: 0,
         surpriseTaughtCount: 0,
-        surpriseObservedCount: 0
+        surpriseObservedCount: 0,
+        k12Taught: 0,
+        mamNonTaught: 0,
+        eslTaught: 0,
+        k12Observed: 0,
+        mamNonObserved: 0,
+        eslObserved: 0,
+        k12Pending: 0,
+        mamNonPending: 0,
+        eslPending: 0,
+        targetObserved: monthlyTargetObs,
+        targetTaught: monthlyTargetTaught,
+        isTargetMet: false,
+        slotsInMonth: []
       };
     });
 
@@ -2458,6 +2550,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const isHost = slot.teacherId === currentTeacher?.id;
       const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
       const isSurprise = isSurpriseSlot(slot);
+      const cat = getSlotCategoryInfo(slot);
 
       if (isHost) {
         stats[key].totalTaughtSlots += 1;
@@ -2468,7 +2561,27 @@ export function ObservationClient(props: ObservationClientProps) {
           if (isSurprise) {
             stats[key].surpriseTaughtCount += countWeight;
           }
+          if (cat.key === "MAM_NON") stats[key].mamNonTaught += countWeight;
+          else if (cat.key === "GVNN_ESL") stats[key].eslTaught += countWeight;
+          else stats[key].k12Taught += countWeight;
         }
+
+        stats[key].slotsInMonth.push({
+          id: slot.id,
+          date: slot.date,
+          startTime: slot.startTime,
+          topic: slot.topic,
+          className: slot.className,
+          subjectName: slot.subjectName,
+          campusName: slot.campusName,
+          role: "HOST",
+          partnerName: approvedRegs.map((r: any) => r.teacher?.teacherName || "Đồng nghiệp").join(", ") || "Chưa có người dự",
+          category: cat,
+          isSurprise,
+          isDoublePeriod: !!slot.isDoublePeriod,
+          hasEvaluation: hasEval,
+          evaluations: approvedRegs.filter((r: any) => !!r.evaluation).map((r: any) => r.evaluation)
+        });
       }
 
       if (myReg && (myReg.isApproved || isSurprise || !!myReg.evaluation)) {
@@ -2478,9 +2591,33 @@ export function ObservationClient(props: ObservationClientProps) {
           if (isSurprise) {
             stats[key].surpriseObservedCount += countWeight;
           }
+          if (cat.key === "MAM_NON") stats[key].mamNonObserved += countWeight;
+          else if (cat.key === "GVNN_ESL") stats[key].eslObserved += countWeight;
+          else stats[key].k12Observed += countWeight;
         } else {
           stats[key].pendingObservedCount += 1;
+          if (cat.key === "MAM_NON") stats[key].mamNonPending += 1;
+          else if (cat.key === "GVNN_ESL") stats[key].eslPending += 1;
+          else stats[key].k12Pending += 1;
         }
+
+        stats[key].slotsInMonth.push({
+          id: slot.id,
+          date: slot.date,
+          startTime: slot.startTime,
+          topic: slot.topic,
+          className: slot.className,
+          subjectName: slot.subjectName,
+          campusName: slot.campusName,
+          role: "OBSERVER",
+          partnerName: slot.teacher?.teacherName || "Giáo viên đứng lớp",
+          category: cat,
+          isSurprise,
+          isDoublePeriod: !!slot.isDoublePeriod,
+          hasEvaluation: !!myReg.evaluation,
+          evaluation: myReg.evaluation,
+          registration: myReg
+        });
       }
     });
 
@@ -2502,10 +2639,16 @@ export function ObservationClient(props: ObservationClientProps) {
       });
       st.avgScore = cnt > 0 ? (sum / cnt).toFixed(2) : null;
       st.receivedEvalCount = cnt;
+
+      // Target met evaluation
+      st.isTargetMet = (st.observedCount >= st.targetObserved) && (st.pendingObservedCount === 0);
+      
+      // Sort slots in month chronologically
+      st.slotsInMonth.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     });
 
     return Object.values(stats).sort((a, b) => b.year !== a.year ? b.year - a.year : b.month - a.month);
-  }, [slots, personalSlots, availableMonths, currentTeacher?.id]);
+  }, [slots, personalSlots, availableMonths, currentTeacher?.id, currentTeacher?.requiredObserved, currentTeacher?.observedUnit, currentTeacher?.requiredTaught, currentTeacher?.taughtUnit]);
 
   const receivedEvaluations = useMemo(() => {
     const map = new Map<string, any>();

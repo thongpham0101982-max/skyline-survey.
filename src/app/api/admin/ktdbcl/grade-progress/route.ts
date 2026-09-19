@@ -298,6 +298,19 @@ export async function GET(request: Request) {
       },
       orderBy: { remindedAt: "desc" }
     })
+
+    // 7.3 Load pending unlock requests
+    const pendingUnlockRequests = await prisma.gradebookUnlockRequest.findMany({
+      where: {
+        academicYearId: targetYearId,
+        evaluationPeriod: evaluationPeriod === "ALL" ? undefined : evaluationPeriod,
+        status: "PENDING"
+      }
+    })
+    const unlockRequestMap = new Map<string, any>()
+    pendingUnlockRequests.forEach(r => {
+      unlockRequestMap.set(`${r.classId}_${r.subjectId}`, r)
+    })
     const reminderMap = new Map<string, { lastRemindedAt: Date; count: number; remindedBy: string; channel: string }>()
     reminders.forEach(r => {
       const key = `${r.classId}_${r.subjectId}`
@@ -366,10 +379,11 @@ export async function GET(request: Request) {
         }
 
         const specificLock = lockMap.get(`${cls.id}_${sub.id}`)
-        const isLocked = isPeriodLocked || Boolean(specificLock?.isLocked)
+        const isLocked = specificLock !== undefined ? Boolean(specificLock.isLocked) : isPeriodLocked
         const lockedAt = isLocked ? (specificLock?.lockedAt || periodLock?.lockedAt || null) : null
         const lockedBy = isLocked ? (specificLock?.lockedBy || periodLock?.lockedBy || null) : null
         const lockReason = isLocked ? (specificLock?.lockReason || periodLock?.lockReason || null) : null
+        const pendingReq = unlockRequestMap.get(`${cls.id}_${sub.id}`) || null
 
         const remInfo = reminderMap.get(`${cls.id}_${sub.id}`)
         const lastRemindedAt = remInfo?.lastRemindedAt || null
@@ -401,6 +415,8 @@ export async function GET(request: Request) {
           lockedAt,
           lockedBy,
           lockReason,
+          hasPendingUnlockRequest: Boolean(pendingReq),
+          pendingUnlockRequest: pendingReq,
           lastRemindedAt,
           reminderCount
         })

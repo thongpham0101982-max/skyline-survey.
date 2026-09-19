@@ -199,10 +199,16 @@ interface CacheEntry<T> {
   data: T;
   timestamp: number;
 }
-const observationRefCache = new Map<string, CacheEntry<any>>();
+const globalObsCache = (globalThis as any).__skylineObservationCache || {
+  refCache: new Map<string, CacheEntry<any>>(),
+  slotsCache: new Map<string, CacheEntry<any>>()
+};
+(globalThis as any).__skylineObservationCache = globalObsCache;
+
+const observationRefCache: Map<string, CacheEntry<any>> = globalObsCache.refCache;
 const REF_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-const observationSlotsCache = new Map<string, CacheEntry<any>>();
+const observationSlotsCache: Map<string, CacheEntry<any>> = globalObsCache.slotsCache;
 const SLOTS_CACHE_TTL = 60 * 1000; // 60 seconds
 
 export async function invalidateObservationSlotsCache() {
@@ -264,10 +270,12 @@ export async function getObservationData(academicYearId?: string) {
       return { success: false, error: "Teacher profile not found" }
     }
 
-    const rawAcademicYears = await prisma.academicYear.findMany({
-      orderBy: { startDate: "desc" },
-      select: { id: true, name: true, status: true, startDate: true, endDate: true }
-    })
+    const rawAcademicYears = await getCachedRef("academic_years_all", () =>
+      prisma.academicYear.findMany({
+        orderBy: { startDate: "desc" },
+        select: { id: true, name: true, status: true, startDate: true, endDate: true }
+      })
+    )
 
     const selectedYear = academicYearId
       ? rawAcademicYears.find(y => y.id === academicYearId)
@@ -340,62 +348,83 @@ export async function getObservationData(academicYearId?: string) {
       } as any
     }
 
-    const [subjects, departments, rawTeachers, allTargets, campuses, classes, dbEvals] = await Promise.all([
-      prisma.subject.findMany({
-        where: { status: "ACTIVE" },
-        orderBy: { subjectName: "asc" }
-      }),
-      prisma.department.findMany({
-        where: { status: "ACTIVE" },
-        orderBy: { name: "asc" }
-      }),
-      prisma.teacher.findMany({
-        where: { status: "ACTIVE" },
-        select: {
-          id: true,
-          teacherName: true,
-          teacherCode: true,
-          email: true,
-          departmentId: true,
-          departmentRel: {
-            select: { id: true, name: true, code: true }
-          },
-          campusId: true,
-          campus: {
+    const refKey = `du_gio_ref_${activeYearId || 'default'}`;
+    const [refData, dbEvals] = await Promise.all([
+      getCachedRef(refKey, async () => {
+        const [subjects, departments, rawTeachers, allTargets, campuses, classes] = await Promise.all([
+          prisma.subject.findMany({
+            where: { status: "ACTIVE" },
+            orderBy: { subjectName: "asc" }
+          }),
+          prisma.department.findMany({
+            where: { status: "ACTIVE" },
+            orderBy: { name: "asc" }
+          }),
+          prisma.teacher.findMany({
+            where: { status: "ACTIVE" },
             select: {
               id: true,
-              campusName: true,
-              campusCode: true
-            }
-          },
-          position: true,
-          departmentAssignments: {
-            select: {
+              teacherName: true,
+              teacherCode: true,
+              email: true,
               departmentId: true,
+              departmentRel: {
+                select: { id: true, name: true, code: true }
+              },
+              campusId: true,
+              campus: {
+                select: {
+                  id: true,
+                  campusName: true,
+                  campusCode: true
+                }
+              },
               position: true,
-              department: { select: { id: true, name: true, code: true } }
-            }
-          }
-        },
-        orderBy: { teacherName: "asc" }
+              departmentAssignments: {
+                select: {
+                  departmentId: true,
+                  position: true,
+                  department: { select: { id: true, name: true, code: true } }
+                }
+              }
+            },
+            orderBy: { teacherName: "asc" }
+          }),
+          activeYearId ? prisma.teacherAcademicYearTarget.findMany({
+            where: { academicYearId: activeYearId }
+          }) : Promise.resolve([]),
+          prisma.campus.findMany({
+            where: {
+              NOT: { status: "INACTIVE" }
+            },
+            orderBy: { campusName: "asc" }
+          }),
+          prisma.class.findMany({
+            where: {
+              status: "ACTIVE"
+            },
+            select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true, homeroomTeacherId: true },
+            orderBy: { className: "asc" }
+          })
+        ]);
+
+        const targetsMap = new Map(allTargets.map(t => [t.teacherId, t]));
+        const teachers = rawTeachers.map(t => {
+          const target = targetsMap.get(t.id);
+          return {
+            ...t,
+            observerType: target?.observerType || null,
+            observeeType: target?.observeeType || null,
+            requiredObserved: target?.requiredObserved || 0,
+            observedUnit: target?.observedUnit || "tháng",
+            requiredTaught: target?.requiredTaught || 0,
+            taughtUnit: target?.taughtUnit || "tháng"
+          };
+        });
+
+        return { subjects, departments, campuses, classes, teachers };
       }),
-      activeYearId ? prisma.teacherAcademicYearTarget.findMany({
-        where: { academicYearId: activeYearId }
-      }) : Promise.resolve([]),
-      prisma.campus.findMany({
-        where: {
-          NOT: { status: "INACTIVE" }
-        },
-        orderBy: { campusName: "asc" }
-      }),
-      prisma.class.findMany({
-        where: {
-          status: "ACTIVE"
-        },
-        select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true, homeroomTeacherId: true },
-        orderBy: { className: "asc" }
-      }),
-      currentTeacher?.id && !currentTeacher.id.startsWith("admin-")
+      (currentTeacher?.id && !currentTeacher.id.startsWith("admin-"))
         ? prisma.observationEvaluation.findMany({
             where: {
               OR: [
@@ -459,20 +488,7 @@ export async function getObservationData(academicYearId?: string) {
         : Promise.resolve([])
     ]);
 
-    const targetsMap = new Map(allTargets.map(t => [t.teacherId, t]))
-
-    const teachers = rawTeachers.map(t => {
-      const target = targetsMap.get(t.id)
-      return {
-        ...t,
-        observerType: target?.observerType || null,
-        observeeType: target?.observeeType || null,
-        requiredObserved: target?.requiredObserved || 0,
-        observedUnit: target?.observedUnit || "tháng",
-        requiredTaught: target?.requiredTaught || 0,
-        taughtUnit: target?.taughtUnit || "tháng"
-      }
-    })
+    const { subjects, departments, campuses, classes, teachers } = refData;
 
     const myReceivedEvaluations = (dbEvals || []).map((e: any) => ({
       slot: e.registration?.slot,
@@ -519,7 +535,7 @@ export async function getObservationSlots(filters: {
     academicYearId?: string
 }) {
   try {
-    await ensureDbColumns();
+    // ensureDbColumns removed from read path for high performance
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }

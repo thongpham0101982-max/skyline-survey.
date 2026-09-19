@@ -38,6 +38,7 @@ interface Props {
     subjectId: string
     period: string
   }) => void
+  onNavigateToRequests?: () => void
 }
 
 export function GradeProgressTab({
@@ -46,7 +47,8 @@ export function GradeProgressTab({
   campuses = [],
   classes = [],
   subjects = [],
-  onNavigateToGradebook
+  onNavigateToGradebook,
+  onNavigateToRequests
 }: Props) {
   // Filter states
   const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
@@ -1018,7 +1020,26 @@ export function GradeProgressTab({
 
                       {/* Khóa sổ (Badge) */}
                       <td className="py-3 px-3 text-center">
-                        {item.isLocked ? (
+                        {item.hasPendingUnlockRequest ? (
+                          <div className="flex flex-col items-center gap-1">
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs animate-pulse cursor-pointer"
+                              title={`GV ${item.pendingUnlockRequest?.teacherName || ''} yêu cầu mở sổ: ${item.pendingUnlockRequest?.reason || ''}`}
+                              onClick={onNavigateToRequests}
+                            >
+                              <Clock className="w-3 h-3 text-amber-600 animate-spin" />
+                              Chờ mở sổ
+                            </span>
+                            {onNavigateToRequests && (
+                              <button
+                                onClick={onNavigateToRequests}
+                                className="text-[10px] font-bold text-amber-800 hover:text-amber-950 underline"
+                              >
+                                Duyệt ngay
+                              </button>
+                            )}
+                          </div>
+                        ) : item.isLocked ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-300" title={`Khóa bởi ${item.lockedBy || 'Hệ thống'}`}>
                             <Lock className="w-3 h-3 text-purple-700" />
                             Đã khóa

@@ -20,7 +20,8 @@ import {
   User,
   Clock,
   Check,
-  ChevronDown
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { getSlotCategoryInfo } from "../client";
@@ -39,6 +40,21 @@ export interface MonthlyTeacherStatItem {
   receivedEvalCount: number;
   surpriseTaughtCount?: number;
   surpriseObservedCount?: number;
+  // Multi-category Breakdown
+  k12Taught?: number;
+  mamNonTaught?: number;
+  eslTaught?: number;
+  k12Observed?: number;
+  mamNonObserved?: number;
+  eslObserved?: number;
+  k12Pending?: number;
+  mamNonPending?: number;
+  eslPending?: number;
+  // Target & Status
+  targetObserved?: number;
+  targetTaught?: number;
+  isTargetMet?: boolean;
+  slotsInMonth?: any[];
 }
 
 interface TeacherObservationReportTabProps {
@@ -78,6 +94,8 @@ export function TeacherObservationReportTab({
 }: TeacherObservationReportTabProps) {
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<"ALL" | "MAM_NON" | "K12" | "GVNN_ESL">("ALL");
+  const [expandedMonthKey, setExpandedMonthKey] = useState<string | null>(null);
+  const [drillDownCategory, setDrillDownCategory] = useState<"ALL" | "K12" | "MAM_NON" | "GVNN_ESL" | "TAUGHT">("ALL");
 
   // Filter slots based on selected month & category
   const filteredTaughtSlots = useMemo(() => {
@@ -221,6 +239,62 @@ export function TeacherObservationReportTab({
     ];
     const wsOverview = XLSX.utils.aoa_to_sheet(overviewData);
     XLSX.utils.book_append_sheet(wb, wsOverview, "Tổng quan");
+
+    // Sheet 2: Tổng hợp theo tháng (gộp 3 danh mục)
+    const monthlyHeaders = [
+      "STT",
+      "Tháng",
+      "Tổng tiết dạy",
+      "Dạy K-12",
+      "Dạy Mầm non",
+      "Dạy GVNN (ESL)",
+      "Tổng tiết dự (Đã nộp)",
+      "Dự K-12",
+      "Dự Mầm non",
+      "Dự GVNN (ESL)",
+      "Chỉ tiêu dự tháng",
+      "Tỷ lệ hoàn thành",
+      "Phiếu nợ chưa nộp",
+      "Điểm TB dạy",
+      "Đánh giá tháng"
+    ];
+    const monthlyDataRows = (monthlyStatsList || []).map((st, idx) => {
+      const target = st.targetObserved || 1;
+      const pct = Math.round((st.observedCount / target) * 100);
+      const evalStatus = st.pendingObservedCount > 0
+        ? `Nợ ${st.pendingObservedCount} phiếu`
+        : st.observedCount >= target * 1.5
+        ? "Vượt chỉ tiêu"
+        : st.observedCount >= target
+        ? "Đạt chỉ tiêu"
+        : (st.taughtCount > 0 || st.observedCount > 0 ? "Chưa đạt chỉ tiêu" : "Chưa có tiết");
+
+      return [
+        idx + 1,
+        st.monthStr,
+        st.taughtCount,
+        st.k12Taught || 0,
+        st.mamNonTaught || 0,
+        st.eslTaught || 0,
+        st.observedCount,
+        st.k12Observed || 0,
+        st.mamNonObserved || 0,
+        st.eslObserved || 0,
+        target,
+        `${pct}%`,
+        st.pendingObservedCount || 0,
+        st.avgScore ? `${st.avgScore}đ` : "-",
+        evalStatus
+      ];
+    });
+    const wsMonthly = XLSX.utils.aoa_to_sheet([
+      ["BẢNG TỔNG HỢP THEO DÕI KẾT QUẢ DỰ GIỜ & TIẾT DẠY THEO TỪNG THÁNG"],
+      [`Giáo viên: ${currentTeacher?.teacherName || ""} (${currentTeacher?.teacherCode || ""})`, `Năm học: ${academicYearName || ""}`],
+      [],
+      monthlyHeaders,
+      ...monthlyDataRows
+    ]);
+    XLSX.utils.book_append_sheet(wb, wsMonthly, "Tổng hợp theo tháng");
 
     // Sheet 2: Chi tiết tiết dạy
     const taughtRows = filteredTaughtSlots.map((slot, idx) => {
@@ -561,77 +635,405 @@ export function TeacherObservationReportTab({
         </div>
       </div>
 
-      {/* Monthly Breakdown Table */}
+      {/* Monthly Breakdown Table - Unified 3 Categories */}
       {monthlyStatsList.length > 0 && selectedMonth === "all" && (
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center font-black border border-teal-200">
-                <TrendingUp className="w-4 h-4" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#008B82] to-[#003B3A] text-white flex items-center justify-center font-black shadow-sm">
+                <TrendingUp className="w-5 h-5" />
               </div>
-              <h3 className="font-black text-slate-900 text-sm uppercase tracking-wider">
-                Bảng Tiến Độ Dự Giờ & Tiết Dạy Theo Tháng Trong Năm Học
-              </h3>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-black text-slate-900 text-base uppercase tracking-tight">
+                    Bảng Tổng Hợp Theo Dõi Kết Quả Dự Giờ & Tiết Dạy Theo Từng Tháng
+                  </h3>
+                  <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-900 text-[11px] font-bold">
+                    Hợp nhất 3 danh mục
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                  Theo dõi kết quả xuyên suốt giữa <strong>Dự giờ Giáo viên Phổ thông</strong>, <strong>Mầm non</strong> và <strong>GVNN (ESL)</strong> theo tiến độ từng tháng.
+                </p>
+              </div>
             </div>
-            <span className="text-xs font-bold text-slate-400">
-              {monthlyStatsList.length} tháng
-            </span>
+
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+              <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                📅 <strong>{monthlyStatsList.length}</strong> tháng trong năm
+              </span>
+            </div>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-200/80">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-black uppercase text-[10.5px]">
-                  <th className="p-3 text-center w-12">TT</th>
-                  <th className="p-3">Tháng</th>
-                  <th className="p-3 text-center">Tiết Dạy (Có ĐG)</th>
-                  <th className="p-3 text-center">Tiết Dự (Đã nộp)</th>
-                  <th className="p-3 text-center">Phiếu nợ</th>
-                  <th className="p-3 text-center">Điểm TB Dạy</th>
-                  <th className="p-3 text-center">Trạng thái tháng</th>
+                <tr className="bg-[#003B3A] text-white font-black uppercase text-[10.5px] tracking-wider">
+                  <th className="p-3 text-center w-12 border-r border-teal-900/40">TT</th>
+                  <th className="p-3 border-r border-teal-900/40">Tháng</th>
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[200px]">
+                    <div className="flex items-center justify-center gap-1">
+                      <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Tiết Trực Tiếp Dạy</span>
+                    </div>
+                    <div className="text-[9.5px] font-semibold text-teal-200/80 normal-case mt-0.5">
+                      Tổng • K12 • MN • GVNN
+                    </div>
+                  </th>
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[220px]">
+                    <div className="flex items-center justify-center gap-1">
+                      <Eye className="w-3.5 h-3.5 text-cyan-300" />
+                      <span>Tiết Đi Dự Giờ (Đã Nộp)</span>
+                    </div>
+                    <div className="text-[9.5px] font-semibold text-teal-200/80 normal-case mt-0.5">
+                      Tổng • K12 • MN • GVNN
+                    </div>
+                  </th>
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[120px]">
+                    <span>Chỉ Tiêu Tháng</span>
+                  </th>
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[90px]">
+                    <span>Nợ Phiếu</span>
+                  </th>
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[100px]">
+                    <span>Điểm TB Dạy</span>
+                  </th>
+                  <th className="p-3 text-center border-r border-teal-900/40 min-w-[130px]">
+                    <span>Đánh Giá Tháng</span>
+                  </th>
+                  <th className="p-3 text-center w-24">
+                    <span>Chi Tiết</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {monthlyStatsList.map((st, idx) => {
-                  const hasActivity = st.taughtCount > 0 || st.observedCount > 0;
+                  const isExpanded = expandedMonthKey === st.monthKey;
+                  const targetObs = st.targetObserved || 1;
+                  const obsProgressPct = Math.round((st.observedCount / targetObs) * 100);
+                  const hasActivity = st.taughtCount > 0 || st.observedCount > 0 || st.pendingObservedCount > 0;
+                  
+                  // Filter slots inside expanded row
+                  const monthSlots = (st.slotsInMonth || []).filter((item: any) => {
+                    if (drillDownCategory === "ALL") return true;
+                    if (drillDownCategory === "TAUGHT") return item.role === "HOST";
+                    if (drillDownCategory === "K12") return item.category?.key === "K12";
+                    if (drillDownCategory === "MAM_NON") return item.category?.key === "MAM_NON";
+                    if (drillDownCategory === "GVNN_ESL") return item.category?.key === "GVNN_ESL";
+                    return true;
+                  });
+
                   return (
-                    <tr key={st.monthKey} className="hover:bg-slate-50/70 transition">
-                      <td className="p-3 text-center font-bold text-slate-400">{idx + 1}</td>
-                      <td className="p-3 font-bold text-slate-900">{st.monthStr}</td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2.5 py-0.5 rounded-full font-black ${st.taughtCount > 0 ? "bg-amber-100 text-amber-900" : "text-slate-400"}`}>
-                          {st.taughtCount} tiết
-                          {st.surpriseTaughtCount ? ` (${st.surpriseTaughtCount} ĐX)` : ""}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2.5 py-0.5 rounded-full font-black ${st.observedCount > 0 ? "bg-teal-100 text-teal-900" : "text-slate-400"}`}>
-                          {st.observedCount} tiết
-                          {st.surpriseObservedCount ? ` (${st.surpriseObservedCount} ĐX)` : ""}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        {st.pendingObservedCount > 0 ? (
-                          <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-black text-[10px] animate-pulse">
-                            {st.pendingObservedCount} chưa nộp
+                    <React.Fragment key={st.monthKey}>
+                      <tr
+                        onClick={() => {
+                          setExpandedMonthKey(isExpanded ? null : st.monthKey);
+                          setDrillDownCategory("ALL");
+                        }}
+                        className={`hover:bg-teal-50/40 transition cursor-pointer ${isExpanded ? "bg-teal-50/60 font-bold border-l-4 border-l-[#008B82]" : ""}`}
+                      >
+                        <td className="p-3 text-center font-bold text-slate-400">{idx + 1}</td>
+                        <td className="p-3">
+                          <span className="font-extrabold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                            <span>{st.monthStr}</span>
                           </span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </td>
-                      <td className="p-3 text-center font-bold">
-                        {st.avgScore ? `${st.avgScore}đ` : <span className="text-slate-400">-</span>}
-                      </td>
-                      <td className="p-3 text-center">
-                        {hasActivity ? (
-                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10.5px] font-black">
-                            Đã tham gia
-                          </span>
-                        ) : (
-                          <span className="text-slate-400 text-[11px] italic">Chưa có tiết</span>
-                        )}
-                      </td>
-                    </tr>
+                        </td>
+
+                        {/* Tiết dạy & breakdown 3 danh mục */}
+                        <td className="p-3 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className={`px-2.5 py-0.5 rounded-full font-black text-xs ${st.taughtCount > 0 ? "bg-amber-100 text-amber-900 border border-amber-300" : "text-slate-400 bg-slate-50"}`}>
+                              {st.taughtCount > 0 ? `${st.taughtCount} tiết` : "0 tiết"}
+                              {st.surpriseTaughtCount ? ` (${st.surpriseTaughtCount} ĐX)` : ""}
+                            </span>
+                            {st.taughtCount > 0 && (
+                              <div className="flex items-center gap-1 text-[10px] font-bold">
+                                <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200" title="Phổ thông K-12">
+                                  🏫 {st.k12Taught || 0}
+                                </span>
+                                <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200" title="Mầm non">
+                                  🍼 {st.mamNonTaught || 0}
+                                </span>
+                                <span className="px-1.5 py-0.2 rounded bg-sky-50 text-sky-800 border border-sky-200" title="GVNN (ESL)">
+                                  🌐 {st.eslTaught || 0}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Tiết dự & breakdown 3 danh mục */}
+                        <td className="p-3 text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className={`px-2.5 py-0.5 rounded-full font-black text-xs ${st.observedCount > 0 ? "bg-teal-100 text-teal-900 border border-teal-300" : "text-slate-400 bg-slate-50"}`}>
+                              {st.observedCount > 0 ? `${st.observedCount} tiết` : "0 tiết"}
+                              {st.surpriseObservedCount ? ` (${st.surpriseObservedCount} ĐX)` : ""}
+                            </span>
+                            {st.observedCount > 0 && (
+                              <div className="flex items-center gap-1 text-[10px] font-bold">
+                                <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200" title="Dự Phổ thông K-12">
+                                  🏫 {st.k12Observed || 0}
+                                </span>
+                                <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200" title="Dự Mầm non">
+                                  🍼 {st.mamNonObserved || 0}
+                                </span>
+                                <span className="px-1.5 py-0.2 rounded bg-sky-50 text-sky-800 border border-sky-200" title="Dự GVNN (ESL)">
+                                  🌐 {st.eslObserved || 0}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Chỉ tiêu tháng */}
+                        <td className="p-3 text-center">
+                          <div className="flex flex-col items-center">
+                            <span className="font-bold text-slate-800 text-xs">
+                              {st.observedCount} / {targetObs} tiết
+                            </span>
+                            <div className="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                              <div
+                                className={`h-full rounded-full ${obsProgressPct >= 100 ? "bg-emerald-500" : "bg-amber-500"}`}
+                                style={{ width: `${Math.min(100, obsProgressPct)}%` }}
+                              />
+                            </div>
+                            <span className={`text-[10px] font-extrabold mt-0.5 ${obsProgressPct >= 100 ? "text-emerald-700" : "text-amber-700"}`}>
+                              {obsProgressPct}%
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Nợ phiếu */}
+                        <td className="p-3 text-center">
+                          {st.pendingObservedCount > 0 ? (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-black text-[10.5px] animate-pulse border border-rose-300 inline-flex items-center gap-1">
+                              <AlertTriangle className="w-3 h-3" />
+                              <span>{st.pendingObservedCount} nợ</span>
+                            </span>
+                          ) : (
+                            <span className="text-slate-300 font-bold">-</span>
+                          )}
+                        </td>
+
+                        {/* Điểm TB dạy */}
+                        <td className="p-3 text-center font-extrabold">
+                          {st.avgScore ? (
+                            <span className="px-2 py-0.5 rounded-lg bg-violet-50 text-violet-800 border border-violet-200">
+                              ⭐ {st.avgScore}đ
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 font-normal">-</span>
+                          )}
+                        </td>
+
+                        {/* Đánh giá tháng */}
+                        <td className="p-3 text-center">
+                          {st.pendingObservedCount > 0 ? (
+                            <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10.5px] font-black inline-flex items-center gap-1">
+                              🚨 Nợ {st.pendingObservedCount} phiếu
+                            </span>
+                          ) : st.observedCount >= targetObs * 1.5 ? (
+                            <span className="px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-100 to-indigo-100 text-indigo-900 border border-indigo-200 text-[10.5px] font-black inline-flex items-center gap-1">
+                              🌟 Vượt chỉ tiêu
+                            </span>
+                          ) : st.observedCount >= targetObs ? (
+                            <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10.5px] font-black inline-flex items-center gap-1">
+                              ✅ Đạt chỉ tiêu
+                            </span>
+                          ) : hasActivity ? (
+                            <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10.5px] font-black inline-flex items-center gap-1">
+                              ⚠️ Chưa đạt
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[11px] italic">Chưa có tiết</span>
+                          )}
+                        </td>
+
+                        {/* Nút Chi tiết */}
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedMonthKey(isExpanded ? null : st.monthKey);
+                              setDrillDownCategory("ALL");
+                            }}
+                            className={`px-2.5 py-1 rounded-xl text-xs font-black inline-flex items-center gap-1 transition-all cursor-pointer ${
+                              isExpanded
+                                ? "bg-[#003B3A] text-white shadow-xs"
+                                : "bg-slate-100 hover:bg-teal-100 text-slate-700 hover:text-teal-900"
+                            }`}
+                          >
+                            <span>{(st.slotsInMonth || []).length}</span>
+                            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          </button>
+                        </td>
+                      </tr>
+
+                      {/* Expandable Drill-down Accordion */}
+                      {isExpanded && (
+                        <tr className="bg-slate-50/95 border-b-2 border-teal-500/30">
+                          <td colSpan={9} className="p-4 sm:p-5">
+                            <div className="space-y-3 bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm animate-in fade-in duration-200">
+                              {/* Sub-header inside accordion */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2.5 py-1 rounded-lg bg-teal-800 text-white font-black text-xs">
+                                    Chi tiết các tiết trong {st.monthStr}
+                                  </span>
+                                  <span className="text-xs text-slate-500 font-bold">
+                                    (Tổng cộng: {(st.slotsInMonth || []).length} tiết)
+                                  </span>
+                                </div>
+
+                                {/* Category filter pills inside accordion */}
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs font-bold">
+                                  <button
+                                    type="button"
+                                    onClick={() => setDrillDownCategory("ALL")}
+                                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${drillDownCategory === "ALL" ? "bg-teal-700 text-white font-black shadow-2xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                                  >
+                                    Tất cả ({(st.slotsInMonth || []).length})
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDrillDownCategory("K12")}
+                                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${drillDownCategory === "K12" ? "bg-emerald-700 text-white font-black shadow-2xs" : "bg-emerald-50 text-emerald-800 hover:bg-emerald-100"}`}
+                                  >
+                                    🏫 Phổ thông ({(st.slotsInMonth || []).filter((x: any) => x.category?.key === "K12").length})
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDrillDownCategory("MAM_NON")}
+                                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${drillDownCategory === "MAM_NON" ? "bg-amber-700 text-white font-black shadow-2xs" : "bg-amber-50 text-amber-800 hover:bg-amber-100"}`}
+                                  >
+                                    🍼 Mầm non ({(st.slotsInMonth || []).filter((x: any) => x.category?.key === "MAM_NON").length})
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setDrillDownCategory("GVNN_ESL")}
+                                    className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${drillDownCategory === "GVNN_ESL" ? "bg-sky-700 text-white font-black shadow-2xs" : "bg-sky-50 text-sky-800 hover:bg-sky-100"}`}
+                                  >
+                                    🌐 GVNN ESL ({(st.slotsInMonth || []).filter((x: any) => x.category?.key === "GVNN_ESL").length})
+                                  </button>
+                                  {st.taughtCount > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setDrillDownCategory("TAUGHT")}
+                                      className={`px-2.5 py-1 rounded-lg transition cursor-pointer ${drillDownCategory === "TAUGHT" ? "bg-purple-700 text-white font-black shadow-2xs" : "bg-purple-50 text-purple-800 hover:bg-purple-100"}`}
+                                    >
+                                      🎓 Tiết tôi dạy ({st.taughtCount})
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Slots table inside accordion */}
+                              {monthSlots.length === 0 ? (
+                                <div className="py-6 text-center text-slate-400 text-xs italic bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                                  Không có tiết nào trong danh mục đã chọn.
+                                </div>
+                              ) : (
+                                <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+                                  <table className="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                      <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-extrabold uppercase text-[10px]">
+                                        <th className="p-2.5 text-center w-10">STT</th>
+                                        <th className="p-2.5">Ngày & Tiết</th>
+                                        <th className="p-2.5 text-center">Vai Trò</th>
+                                        <th className="p-2.5">Giáo Viên Liên Quan</th>
+                                        <th className="p-2.5">Lớp & Cơ Sở</th>
+                                        <th className="p-2.5">Môn & Tên Bài Dạy / Chủ Đề</th>
+                                        <th className="p-2.5 text-center">Danh Mục</th>
+                                        <th className="p-2.5 text-center">Điểm & Xếp Loại</th>
+                                        <th className="p-2.5 text-center">Trạng Thái</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                                      {monthSlots.map((item: any, slotIdx: number) => {
+                                        const isHostRole = item.role === "HOST";
+                                        const evalScore = isHostRole
+                                          ? (item.evaluations?.length > 0 ? (item.evaluations.reduce((a: number, b: any) => a + (b.totalScore || 0), 0) / item.evaluations.length).toFixed(1) : null)
+                                          : (item.evaluation?.totalScore != null ? item.evaluation.totalScore : null);
+                                        const rating = isHostRole
+                                          ? (item.evaluations?.[0]?.overallRating || "-")
+                                          : (item.evaluation?.overallRating || "-");
+
+                                        return (
+                                          <tr key={item.id || slotIdx} className="hover:bg-slate-50 transition">
+                                            <td className="p-2.5 text-center font-bold text-slate-400">{slotIdx + 1}</td>
+                                            <td className="p-2.5 whitespace-nowrap">
+                                              <span className="font-bold text-slate-900 block">
+                                                {item.date ? new Date(item.date).toLocaleDateString("vi-VN") : ""}
+                                              </span>
+                                              <span className="text-[10.5px] text-teal-700 font-semibold">{item.startTime}</span>
+                                            </td>
+                                            <td className="p-2.5 text-center">
+                                              {isHostRole ? (
+                                                <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-black text-[10px] border border-amber-300">
+                                                  🎓 Tôi giảng dạy
+                                                </span>
+                                              ) : (
+                                                <span className="px-2 py-0.5 rounded-md bg-teal-100 text-teal-900 font-black text-[10px] border border-teal-300">
+                                                  👀 Tôi đi dự
+                                                </span>
+                                              )}
+                                            </td>
+                                            <td className="p-2.5">
+                                              <span className="font-bold text-slate-800 block">{item.partnerName}</span>
+                                              <span className="text-[10.5px] text-slate-400">
+                                                {isHostRole ? "Người dự giờ" : "GV đứng lớp"}
+                                              </span>
+                                            </td>
+                                            <td className="p-2.5 whitespace-nowrap">
+                                              <span className="font-bold text-slate-900 block">{item.className || "Chưa xếp"}</span>
+                                              <span className="text-[10px] text-slate-400">{item.campusName || "Sky-Line"}</span>
+                                            </td>
+                                            <td className="p-2.5">
+                                              <span className="font-bold text-[#003B3A] block">{item.topic}</span>
+                                              <span className="text-[10.5px] text-teal-700 font-semibold">{item.subjectName}</span>
+                                            </td>
+                                            <td className="p-2.5 text-center">
+                                              <span className={`px-2 py-0.5 rounded-full text-[9.5px] font-black border ${item.category?.badgeClass || ""}`}>
+                                                {item.category?.shortCode || item.category?.label}
+                                              </span>
+                                            </td>
+                                            <td className="p-2.5 text-center whitespace-nowrap">
+                                              {evalScore !== null ? (
+                                                <div>
+                                                  <span className="font-black text-slate-900 text-xs">{evalScore}đ</span>
+                                                  {rating !== "-" && (
+                                                    <span className="block text-[10px] font-bold text-emerald-700">{rating}</span>
+                                                  )}
+                                                </div>
+                                              ) : (
+                                                <span className="text-slate-400 text-xs">-</span>
+                                              )}
+                                            </td>
+                                            <td className="p-2.5 text-center whitespace-nowrap">
+                                              {item.hasEvaluation ? (
+                                                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black inline-flex items-center gap-1">
+                                                  <Check className="w-3 h-3" /> Đã nộp phiếu
+                                                </span>
+                                              ) : (
+                                                <span className="px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-black animate-pulse inline-flex items-center gap-1">
+                                                  <AlertTriangle className="w-3 h-3" /> Chưa nộp phiếu
+                                                </span>
+                                              )}
+                                            </td>
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

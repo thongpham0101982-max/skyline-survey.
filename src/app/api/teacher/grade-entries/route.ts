@@ -115,8 +115,8 @@ export async function GET(request: Request) {
       "ALL"
     ].filter(Boolean)))
 
-    // Fetch evaluation configs, students, teaching assignment, homeroom teacher, and lock concurrently
-    const [configs, students, assignment, clsObj, lock] = await Promise.all([
+    // Fetch evaluation configs, students, teaching assignment, homeroom teacher, locks, and unlock request concurrently
+    const [configs, students, assignment, clsObj, locks, unlockRequest] = await Promise.all([
       prisma.subjectGradeConfig.findMany({
         where: {
           academicYearId: targetAcademicYearId,
@@ -145,16 +145,25 @@ export async function GET(request: Request) {
         where: { id: classId },
         select: { homeroomTeacherId: true }
       }),
-      prisma.gradebookLock.findFirst({
+      prisma.gradebookLock.findMany({
         where: {
           academicYearId: targetAcademicYearId,
           evaluationPeriod,
           OR: [
             { classId, subjectId },
             { classId: "ALL", subjectId: "ALL" }
-          ],
-          isLocked: true
+          ]
         }
+      }),
+      prisma.gradebookUnlockRequest.findFirst({
+        where: {
+          academicYearId: targetAcademicYearId,
+          evaluationPeriod,
+          classId,
+          subjectId,
+          status: { not: "CANCELLED" }
+        },
+        orderBy: { requestedAt: "desc" }
       })
     ])
 
@@ -188,7 +197,20 @@ export async function GET(request: Request) {
       assignedTeacher = "Chưa phân công"
     }
 
-    const isLocked = Boolean(lock)
+    // Hierarchical lock check: specific class+subject lock overrides period-wide lock
+    const specificLock = (locks || []).find(l => l.classId === classId && l.subjectId === subjectId)
+    const periodLock = (locks || []).find(l => l.classId === "ALL" && l.subjectId === "ALL" && Boolean(l.isLocked))
+
+    let isLocked = false
+    let lockInfo = null
+    if (specificLock !== undefined) {
+      isLocked = Boolean(specificLock.isLocked)
+      lockInfo = specificLock.isLocked ? specificLock : null
+    } else if (periodLock) {
+      isLocked = true
+      lockInfo = periodLock
+    }
+
     const studentIds = students.map(s => s.id)
 
     // Get existing grade entries for this class and its active students
@@ -211,7 +233,8 @@ export async function GET(request: Request) {
       entries,
       assignedTeacher,
       isLocked,
-      lockInfo: lock || null
+      lockInfo,
+      unlockRequest: unlockRequest || null
     })
 
   } catch (error: any) {
@@ -282,23 +305,32 @@ export async function POST(request: Request) {
       }
     }
 
-    // Check lock status before saving
-    const lock = await prisma.gradebookLock.findFirst({
+    // Check hierarchical lock status before saving
+    const postLocks = await prisma.gradebookLock.findMany({
       where: {
         academicYearId: targetYearId,
         evaluationPeriod,
         OR: [
           { classId, subjectId },
           { classId: "ALL", subjectId: "ALL" }
-        ],
-        isLocked: true
+        ]
       }
     })
 
-    if (lock && !isPrivileged) {
+    const specificLock = (postLocks || []).find(l => l.classId === classId && l.subjectId === subjectId)
+    const periodLock = (postLocks || []).find(l => l.classId === "ALL" && l.subjectId === "ALL" && Boolean(l.isLocked))
+
+    let activeLock = null
+    if (specificLock !== undefined) {
+      if (specificLock.isLocked) activeLock = specificLock
+    } else if (periodLock) {
+      activeLock = periodLock
+    }
+
+    if (activeLock && !isPrivileged) {
       return NextResponse.json({
         success: false,
-        error: `Sổ điểm môn này trong kỳ ${evaluationPeriod} đã bị Khóa bởi ${lock.lockedBy || "Ban Khảo thí & ĐBCL"}. Bạn không thể chỉnh sửa hoặc lưu điểm lúc này.`
+        error: `Sổ điểm môn này trong kỳ ${evaluationPeriod} đã bị Khóa bởi ${activeLock.lockedBy || "Ban Khảo thí & ĐBCL"}. Bạn không thể chỉnh sửa hoặc lưu điểm lúc này.`
       }, { status: 403 })
     }
 

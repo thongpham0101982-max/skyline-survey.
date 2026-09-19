@@ -63,6 +63,7 @@ import {
 } from "lucide-react"
 import { GradeAnalyticsTab } from "./analytics-tab"
 import { GradeProgressTab } from "./progress-tab"
+import { GradeUnlockRequestsTab } from "./requests-tab"
 import { ClipboardCheck } from "lucide-react"
 import { isGradeMatching } from "./grade-utils"
 import {
@@ -100,7 +101,24 @@ const GRADES = [
 ]
 
 export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, subjects, campuses = [] }: Props) {
-  const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics" | "progress">("config")
+  const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics" | "progress" | "requests">("config")
+  const [pendingUnlockCount, setPendingUnlockCount] = useState(0)
+
+  const fetchPendingUnlockCount = async () => {
+    try {
+      const res = await fetch(`/api/admin/ktdbcl/gradebook-unlock-requests?academicYearId=${selectedYearId}&status=PENDING`)
+      const data = await res.json()
+      if (data.success) {
+        setPendingUnlockCount(data.pendingCount || 0)
+      }
+    } catch (e) {
+      console.error("Lỗi lấy số lượng yêu cầu mở sổ:", e)
+    }
+  }
+
+  useEffect(() => {
+    fetchPendingUnlockCount()
+  }, [selectedYearId])
 
   // Common filters
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
