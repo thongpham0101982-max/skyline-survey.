@@ -8,6 +8,9 @@ import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
 import ChildDevStandardForm from "./ChildDevStandardForm";
 import ThinkingSkillsForm from "./ThinkingSkillsForm";
 import PreschoolEvaluationForm from "./PreschoolEvaluationForm";
+import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner";
+import ReportExportDrawer from "@/components/testing/ReportExportDrawer";
+import { FileSpreadsheet } from "lucide-react";
 
 export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [assignments, setAssignments] = useState<any[]>([]);
@@ -155,6 +158,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [stats, setStats] = useState<any>(null);
     const [evaluationTab, setEvaluationTab] = useState<"pending" | "evaluated">("pending");
     const [currentPage, setCurrentPage] = useState<number>(1);
+    const [isExportDrawerOpen, setIsExportDrawerOpen] = useState<boolean>(false);
 
 
     const [academicYear, setAcademicYear] = useState<string | null>(null);
@@ -1066,8 +1070,33 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             <span className="text-[10px] font-black border px-3 py-1.5 rounded-xl shadow-xs bg-[#48BFE3]/5 text-[#48BFE3] border-[#48BFE3]/15">
                                 {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment?.subject?.scoreColumns ?? 1} cột điểm, ${currentAssignment?.subject?.commentColumns ?? 1} cột nhận xét`}
                             </span>
+                            <button
+                                type="button"
+                                onClick={() => setIsExportDrawerOpen(true)}
+                                className="text-[10px] font-black border px-3 py-1.5 rounded-xl shadow-xs bg-[#003B3A] text-white hover:bg-[#004D4B] transition-all flex items-center gap-1.5 cursor-pointer"
+                                aria-label="Mở báo cáo chuẩn hóa Bộ GD&ĐT và Cambridge"
+                            >
+                                <FileSpreadsheet className="w-3.5 h-3.5 text-[#48BFE3]" />
+                                <span>Xuất Báo Cáo Chuẩn</span>
+                            </button>
                         </div>
                     </div>
+
+                    {currentAssignment?.batch?.endDate && (
+                        <div className="px-6 pt-4">
+                            <DeadlineCountdownBanner
+                                deadlineDate={currentAssignment.batch.endDate}
+                                batchName={currentAssignment.batch.name || "Đợt khảo sát"}
+                                pendingCount={pendingStudents.length}
+                                totalCount={students.length}
+                                isPendingFiltered={evaluationTab === "pending"}
+                                onToggleFilterPending={() => {
+                                    setEvaluationTab(evaluationTab === "pending" ? "evaluated" : "pending");
+                                    setCurrentPage(1);
+                                }}
+                            />
+                        </div>
+                    )}
 
                     {/* Evaluation Tabs */}
                     <div className="bg-slate-50/40 px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100">
@@ -1324,9 +1353,21 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 </div>
                             ) : (
                                 <input 
+                                    id={`score-input-${idx}-${colIdx}`}
                                     type="number"
                                     value={st.scoreVals?.[colIdx] || ""}
                                     onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === "Enter" || e.key === "ArrowDown") {
+                                            e.preventDefault();
+                                            const nextEl = document.getElementById(`score-input-${idx + 1}-${colIdx}`);
+                                            if (nextEl) nextEl.focus();
+                                        } else if (e.key === "ArrowUp") {
+                                            e.preventDefault();
+                                            const prevEl = document.getElementById(`score-input-${idx - 1}-${colIdx}`);
+                                            if (prevEl) prevEl.focus();
+                                        }
+                                    }}
                                     disabled={isLocked}
                                     className={`w-full border border-slate-300 rounded-lg py-1 text-center font-bold shadow-sm outline-none transition-all h-[30px] text-[12px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/20 placeholder-slate-300"}`}
                                     placeholder="-"
@@ -1655,6 +1696,27 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
           />
         </div>
       )}
+            <ReportExportDrawer
+                isOpen={isExportDrawerOpen}
+                onClose={() => setIsExportDrawerOpen(false)}
+                assignmentInfo={{
+                    subjectName: currentAssignment?.subject?.name,
+                    className: currentAssignment?.class?.name || (selectedGrade !== "all" ? `Khối ${selectedGrade}` : "Tất cả"),
+                    grade: selectedGrade,
+                    periodName: currentAssignment?.period?.name,
+                    academicYear: academicYear || "2026-2027"
+                }}
+                studentsWithScores={students.map(s => {
+                    const studentScore = s.scores?.[0]?.score;
+                    return {
+                        id: s.id,
+                        studentCode: s.studentCode || s.code || "",
+                        studentName: s.fullName || s.studentName || s.name || "",
+                        score: studentScore !== undefined && studentScore !== null ? studentScore : "",
+                        comment: s.scores?.[0]?.comment || ""
+                    };
+                })}
+            />
         </div>
     );
 }

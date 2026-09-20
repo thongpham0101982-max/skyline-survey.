@@ -249,7 +249,7 @@ interface ClassInfo { id: string; classCode: string; className: string; level: s
 
 export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | "K12", label: string, shortCode: string, badgeClass: string } {
   if (!slot) {
-    return { key: "K12", label: "Dự giờ Giáo viên Phổ thông", shortCode: "GV Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
+    return { key: "K12", label: "Khối Phổ thông", shortCode: "Khối Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
   }
 
   const subj = (slot?.subjectName || "").toLowerCase();
@@ -273,7 +273,7 @@ export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | 
     (slot?.teacher?.position === "GVNN");
 
   if (isForeignEsl) {
-    return { key: "GVNN_ESL", label: "Dự giờ GVNN (ESL)", shortCode: "GVNN (ESL)", badgeClass: "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30" };
+    return { key: "GVNN_ESL", label: "Giáo viên nước ngoài", shortCode: "GV nước ngoài", badgeClass: "bg-sky-100 text-sky-900 border-sky-300 ring-1 ring-sky-400/30" };
   }
 
   // 2. Next check Preschool
@@ -291,11 +291,11 @@ export function getSlotCategoryInfo(slot: any): { key: "MAM_NON" | "GVNN_ESL" | 
     ));
 
   if (isMN) {
-    return { key: "MAM_NON", label: "Dự giờ đánh giá Mầm non", shortCode: "ĐG Mầm non", badgeClass: "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30" };
+    return { key: "MAM_NON", label: "Khối Mầm non", shortCode: "Khối Mầm non", badgeClass: "bg-amber-100 text-amber-900 border-amber-300 ring-1 ring-amber-400/30" };
   }
 
   // 3. Default to K-12 General Education
-  return { key: "K12", label: "Dự giờ Giáo viên Phổ thông", shortCode: "GV Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
+  return { key: "K12", label: "Khối Phổ thông", shortCode: "Khối Phổ thông", badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300 ring-1 ring-emerald-400/30" };
 }
 
 interface ObservationClientProps {
@@ -3226,7 +3226,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
                 {viewMode === "ADMIN" 
                   ? (isMamNonTeacher ? "Quản trị & Điều hành Dự giờ Mầm non" : "Quản trị & Điều hành Tiết dạy Dự giờ Toàn trường")
-                  : (isMamNonTeacher ? "Dự giờ & Đánh giá Hoạt động Mầm non" : "Dự giờ & Đánh giá Tiết dạy Giáo viên")}
+                  : (isMamNonTeacher ? "Dự giờ & Đánh giá Hoạt động Mầm non" : "Dự giờ và Phát triển chuyên môn Giáo viên")}
               </h1>
             </div>
 
@@ -5072,7 +5072,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             </span>
                           </td>
 
-                          {/* Cột Danh mục: Dự giờ đánh giá Mầm non / Dự giờ Giáo viên Phổ thông */}
+                          {/* Cột Danh mục: Khối Mầm non / Khối Phổ thông */}
                           <td className="p-3.5 text-center">
                             {(() => {
                               const cat = getSlotCategoryInfo(slot);
@@ -5358,7 +5358,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-sky-800/80 hover:text-sky-950"
                       }`}
                     >
-                      <span>🌐 GVNN (ESL)</span>
+                      <span>🌐 Giáo viên nước ngoài</span>
                       <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).key === "GVNN_ESL").length})</span>
                     </button>
                     <button
@@ -5454,7 +5454,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             </span>
                           </td>
 
-                          {/* Cột Danh mục (Dự giờ Giáo viên Phổ thông, Dự giờ đánh giá Mầm non, Dự giờ GVNN (ESL)) */}
+                          {/* Cột Danh mục (Khối Phổ thông, Khối Mầm non, Giáo viên nước ngoài) */}
                           <td className="p-3.5 text-center">
                             {(() => {
                               const cat = getSlotCategoryInfo(slot);

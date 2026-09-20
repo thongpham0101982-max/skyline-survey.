@@ -379,7 +379,7 @@ export function TeacherObservationReportTab({
               Báo Cáo Thống Kê Hoạt Động Chuyên Môn Giáo Viên
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-1">
-              Thống kê đầy đủ tiết trực tiếp giảng dạy và tiết tham gia dự giờ xuyên suốt 3 danh mục: Mầm non, Dự giờ Giáo viên Phổ thông, và GVNN (ESL).
+              Thống kê đầy đủ tiết trực tiếp giảng dạy và tiết tham gia dự giờ xuyên suốt 3 danh mục: Mầm non, Khối Phổ thông, và GVNN (ESL).
             </p>
           </div>
 
@@ -601,9 +601,9 @@ export function TeacherObservationReportTab({
               className="bg-transparent text-xs font-black text-slate-800 outline-none cursor-pointer pr-1"
             >
               <option value="ALL">🌟 Tất cả danh mục</option>
-              <option value="K12">🏫 Dự giờ Giáo viên Phổ thông</option>
-              <option value="MAM_NON">🍼 Dự giờ đánh giá Mầm non</option>
-              <option value="GVNN_ESL">🌐 Dự giờ GVNN (ESL)</option>
+              <option value="K12">🏫 Khối Phổ thông</option>
+              <option value="MAM_NON">🍼 Khối Mầm non</option>
+              <option value="GVNN_ESL">🌐 Giáo viên nước ngoài</option>
             </select>
           </div>
 
@@ -653,7 +653,7 @@ export function TeacherObservationReportTab({
                   </span>
                 </div>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
-                  Theo dõi kết quả xuyên suốt giữa <strong>Dự giờ Giáo viên Phổ thông</strong>, <strong>Mầm non</strong> và <strong>GVNN (ESL)</strong> theo tiến độ từng tháng.
+                  Theo dõi kết quả xuyên suốt giữa <strong>Khối Phổ thông</strong>, <strong>Mầm non</strong> và <strong>GVNN (ESL)</strong> theo tiến độ từng tháng.
                 </p>
               </div>
             </div>
@@ -1161,7 +1161,7 @@ export function TeacherObservationReportTab({
                 Danh Sách Tiết Tôi Đi Dự Giờ ({filteredObservedSlots.length} tiết)
               </h3>
               <p className="text-xs text-slate-400 font-medium">
-                Bao gồm các tiết tham gia dự giờ ở Mầm non, Dự giờ Giáo viên Phổ thông, và GVNN (ESL)
+                Bao gồm các tiết tham gia dự giờ ở Mầm non, Khối Phổ thông, và GVNN (ESL)
               </p>
             </div>
           </div>

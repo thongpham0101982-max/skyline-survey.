@@ -1000,6 +1000,62 @@ export default function CreateActivityWizard() {
               </div>
             </div>
 
+            {/* EVIDENCE URLS INPUT WITH LAZY PREVIEW (IMP-002) */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-black text-slate-700">
+                  Đường dẫn Ảnh / Minh chứng hoạt động (Tùy chọn)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, evidenceUrls: [...(formData.evidenceUrls || []), ''] })}
+                  className="text-[11px] font-black text-[#00A99D] hover:underline flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Thêm đường dẫn ảnh
+                </button>
+              </div>
+              <div className="space-y-2">
+                {(formData.evidenceUrls || ['']).map((url, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://... (URL ảnh minh chứng hoạt động)"
+                      value={url}
+                      onChange={e => {
+                        const next = [...(formData.evidenceUrls || [''])];
+                        next[idx] = e.target.value;
+                        setFormData({ ...formData, evidenceUrls: next });
+                      }}
+                      className="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                    />
+                    {idx > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const next = (formData.evidenceUrls || []).filter((_, i) => i !== idx);
+                          setFormData({ ...formData, evidenceUrls: next.length ? next : [''] });
+                        }}
+                        className="p-2 text-slate-400 hover:text-rose-500 rounded-lg transition-colors"
+                        title="Xóa link"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {/* Lazy Preview if URLs present */}
+              {formData.evidenceUrls && formData.evidenceUrls.some(Boolean) && (
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-2 border-t border-slate-200">
+                  {formData.evidenceUrls.filter(Boolean).map((u, i) => (
+                    <div key={i} className="aspect-video rounded-lg overflow-hidden bg-slate-200 border border-slate-300 relative">
+                      <img src={u} alt={`Preview ${i+1}`} loading="lazy" decoding="async" className="w-full h-full object-cover max-w-[800px]" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Navigation Button */}
             <div className="flex justify-end pt-4 border-t border-slate-100">
               <button

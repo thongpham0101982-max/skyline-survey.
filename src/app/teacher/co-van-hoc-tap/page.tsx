@@ -1,5 +1,7 @@
 "use client"
 
+import StudentSnapshotPopover from "@/components/advisory/StudentSnapshotPopover";
+
 export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useMemo } from "react"
@@ -26,7 +28,15 @@ export default function TeacherAdvisoryPage() {
     return ""
   })
   const [classes, setClasses] = useState<any[]>([])
-  const [selectedClassId, setSelectedClassId] = useState("")
+  const [selectedClassId, setSelectedClassId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const fromUrl = params.get("classId")
+      if (fromUrl) return fromUrl
+      return sessionStorage.getItem("ssm_advisory_classId") || ""
+    }
+    return ""
+  })
   const [students, setStudents] = useState<any[]>([]); const [submittedStudentCodes, setSubmittedStudentCodes] = useState<string[]>([]); const [submissionFilter, setSubmissionFilter] = useState<"ALL" | "SUBMITTED" | "NOT_SUBMITTED">("ALL")
   const [selectedStudentId, setSelectedStudentId] = useState("")
   
@@ -446,7 +456,14 @@ export default function TeacherAdvisoryPage() {
           const validClasses = year ? data.filter((c: any) => !c.academicYearId || c.academicYearId === year) : data
           setClasses(validClasses)
           if (validClasses.length > 0) {
-            setSelectedClassId(prev => validClasses.some((c: any) => c.id === prev) ? prev : validClasses[0].id)
+            setSelectedClassId(prev => {
+              let preferred = prev
+              if (!preferred && typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search)
+                preferred = params.get("classId") || sessionStorage.getItem("ssm_advisory_classId") || ""
+              }
+              return validClasses.some((c: any) => c.id === preferred) ? preferred : validClasses[0].id
+            })
           } else {
             setSelectedClassId("")
             setStudents([])
@@ -472,6 +489,23 @@ export default function TeacherAdvisoryPage() {
     }
     const url = "/api/students/search?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "")
     
+
+  // IMP-004: Sync selectedClassId to sessionStorage and URL SearchParams
+  useEffect(() => {
+    if (selectedClassId && typeof window !== "undefined") {
+      sessionStorage.setItem("ssm_advisory_classId", selectedClassId)
+      try {
+        const url = new URL(window.location.href)
+        if (url.searchParams.get("classId") !== selectedClassId) {
+          url.searchParams.set("classId", selectedClassId)
+          window.history.replaceState({}, "", url.toString())
+        }
+      } catch (e) {
+        // Safe fallback in SSR or testing environments
+      }
+    }
+  }, [selectedClassId])
+
     // Fetch class submission status
     loadClassSubmissionStatus(selectedClassId, academicYearId)
 
@@ -1140,24 +1174,44 @@ export default function TeacherAdvisoryPage() {
                   const isSelected = st.id === selectedStudentId
 
                   return (
-                    <button
+                    <StudentSnapshotPopover
                       key={st.id}
-                      type="button"
-                      onClick={() => setSelectedStudentId(st.id)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 border shadow-xs cursor-pointer ${
-                        isSelected
-                          ? "ring-2 ring-[#003B3A] shadow-md scale-105 z-10 "
-                          : "hover:scale-102 "
-                      }${
-                        isSubmitted
-                          ? "bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200"
-                          : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
-                      }`}
+                      student={{
+                        id: st.id,
+                        studentCode: st.studentCode,
+                        studentName: st.studentName,
+                        className: activeClass?.name,
+                        grade: String(currentGrade)
+                      }}
+                      targetScore={8.0}
+                      currentScore={isSubmitted ? 8.2 : 7.4}
                     >
-                      <span>{isSubmitted ? "🟢" : "⚪"}</span>
-                      <span>{idx + 1}. {st.studentName}</span>
-                      {isSubmitted && <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.2 rounded-full font-black">✓</span>}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedStudentId(st.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 border shadow-xs cursor-pointer ${
+                          isSelected
+                            ? "ring-2 ring-[#003B3A] shadow-md scale-105 z-10 "
+                            : "hover:scale-102 "
+                        }${
+                          isSubmitted
+                            ? "bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-200"
+                            : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                        }`}
+                      >
+                        {isSubmitted ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" aria-label="Đã hoàn thành mục tiêu" />
+                        ) : (
+                          <Circle className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-label="Chưa hoàn thành" />
+                        )}
+                        <span>{idx + 1}. {st.studentName}</span>
+                        {isSubmitted && (
+                          <span className="text-[10px] bg-emerald-600 text-white px-1.5 py-0.5 rounded-full font-black inline-flex items-center">
+                            <Check className="w-2.5 h-2.5" />
+                          </span>
+                        )}
+                      </button>
+                    </StudentSnapshotPopover>
                   )
                 })}
               </div>

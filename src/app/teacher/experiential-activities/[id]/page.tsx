@@ -513,6 +513,41 @@ export default function ActivityResultInput() {
           )}
         </div>
         
+        {/* EVIDENCE PHOTOS SECTION WITH LAZY LOADING (IMP-002) */}
+        {activity?.evidenceUrls && Array.isArray(activity.evidenceUrls) && activity.evidenceUrls.filter(Boolean).length > 0 && (
+          <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-black text-slate-800">
+                <Sparkles className="w-3.5 h-3.5 text-[#00A99D]" />
+                <span>Hình ảnh & Minh chứng hoạt động ({activity.evidenceUrls.filter(Boolean).length} tệp)</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium">Tải ảnh tối ưu cho mạng di động</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-1">
+              {activity.evidenceUrls.filter(Boolean).map((url: string, idx: number) => (
+                <a 
+                  key={idx} 
+                  href={url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="group relative block aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-[#00A99D] transition-all shadow-2xs"
+                >
+                  <img 
+                    src={url} 
+                    alt={`Minh chứng ${idx + 1}`}
+                    loading="lazy" 
+                    decoding="async"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 max-w-[800px]"
+                  />
+                  <span className="absolute bottom-1 right-1 text-[9px] font-bold bg-black/60 text-white px-1.5 py-0.5 rounded">
+                    #{idx + 1}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* BANNER WITH CLASS STATS */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">

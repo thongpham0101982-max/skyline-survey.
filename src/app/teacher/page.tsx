@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge"
 import { KPICard } from "@/components/KPICard"
 import { ChangePasswordModal } from "@/components/ChangePasswordModal"
 import { UserWelcomeCard } from "@/components/UserWelcomeCard"
+import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner"
 
 interface MetricData {
   totalClasses: number
@@ -197,8 +198,8 @@ export default function TeacherDashboard() {
       id: "gvbm-observation",
       groupId: "GVBM",
       groupName: "Chuyên môn GVBM",
-      title: "Dự giờ đồng nghiệp",
-      desc: "Đăng ký tiết dạy thao giảng, lập phiếu đánh giá tiết dạy và xem tổng hợp góp ý.",
+      title: "Dự giờ & Phát triển chuyên môn",
+      desc: "Đăng ký tiết dạy thao giảng, lập phiếu đánh giá tiết dạy và xem tổng hợp góp ý chuyên môn.",
       href: "/teacher/du-gio",
       icon: Eye,
       badgeText: `${finalMetrics.totalObservedLessons || 0} tiết`,
@@ -286,6 +287,15 @@ export default function TeacherDashboard() {
         userInitial={userInitial}
         greetingSubtitle={currentDateInfo.timeGreeting}
         showAcademicYear={false}
+      />
+
+      {/* BANNER ĐẾM NGƯỢC HẠN CHỐT CHUẨN HỆ THỐNG */}
+      <DeadlineCountdownBanner
+        deadlineDate="2026-11-02T17:00:00.000Z"
+        batchName="Khảo sát Giữa Học Kỳ 1 (GK1) - Khóa sổ toàn hệ thống"
+        pendingCount={finalMetrics.scoredStudents < finalMetrics.totalStudents ? (finalMetrics.totalStudents - finalMetrics.scoredStudents) : 0}
+        totalCount={finalMetrics.totalStudents}
+        isPendingFiltered={false}
       />
 
       {/* 2. CHỈ SỐ CÔNG TÁC & ĐO LƯỜNG ĐÁNH GIÁ (5 KPI CARDS CHUẨN MỚI) */}

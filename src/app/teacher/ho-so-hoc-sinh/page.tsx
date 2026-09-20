@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { StudentCompetencyPortfolio } from "@/components/competency/StudentCompetencyPortfolio"
+import StudentSnapshotPopover from "@/components/advisory/StudentSnapshotPopover"
 import { 
   Users, Loader2, User, UserCheck, Award, Trophy, Medal, Sparkles, Compass, 
   FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,
@@ -383,15 +384,26 @@ export default function TeacherStudentProfilePage() {
                   </div>
                 ) : (
                   filteredStudentsList.map((s: any) => (
-                    <button
+                    <StudentSnapshotPopover
                       key={s.id}
-                      onClick={() => setSelectedStudentId(s.id)}
-                      className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
-                        selectedStudentId === s.id
-                          ? "bg-teal-50/80 text-[#007A72] border-[#007A72] shadow-xs"
-                          : "bg-slate-50/40 hover:bg-slate-100/60 border-slate-200/60 text-slate-700"
-                      }`}
+                      student={{
+                        id: s.id,
+                        studentCode: s.studentCode,
+                        studentName: s.studentName,
+                        className: s.className || s.classCode,
+                        grade: s.grade
+                      }}
+                      className="w-full"
                     >
+                      <button
+                        type="button"
+                        onClick={() => setSelectedStudentId(s.id)}
+                        className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
+                          selectedStudentId === s.id
+                            ? "bg-teal-50/80 text-[#007A72] border-[#007A72] shadow-xs"
+                            : "bg-slate-50/40 hover:bg-slate-100/60 border-slate-200/60 text-slate-700"
+                        }`}
+                      >
                       <div className="flex items-center gap-3 min-w-0 pr-2">
                         <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs uppercase flex-shrink-0 ${
                           selectedStudentId === s.id ? "bg-[#007A72] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
@@ -407,6 +419,7 @@ export default function TeacherStudentProfilePage() {
                         {s.studentCode}
                       </span>
                     </button>
+                    </StudentSnapshotPopover>
                   ))
                 )}
               </div>

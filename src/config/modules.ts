@@ -237,13 +237,13 @@ export const APP_CATEGORIES = [
   },
   {
     id: "OBSERVATION",
-    name: "Quản lý Dự giờ",
+    name: "DỰ GIỜ & PHÁT TRIỂN CHUYÊN MÔN",
     color: "teal",
     icon: ClipboardCheck,
     modules: [
-      { code: "DU_GIO_K12", name: "Dự giờ Giáo viên Phổ thông", icon: ClipboardCheck, href: "/admin/du-gio" },
-      { code: "DU_GIO_MAM_NON", name: "Dự giờ đánh giá Mầm non", icon: Baby, href: "/admin/du-gio-mam-non" },
-      { code: "DU_GIO_GVNN", name: "Dự giờ GVNN (ESL)", icon: Globe, href: "/admin/du-gio-gvnn" },
+      { code: "DU_GIO_K12", name: "Khối Phổ thông", icon: ClipboardCheck, href: "/admin/du-gio" },
+      { code: "DU_GIO_MAM_NON", name: "Khối Mầm non", icon: Baby, href: "/admin/du-gio-mam-non" },
+      { code: "DU_GIO_GVNN", name: "Giáo viên nước ngoài", icon: Globe, href: "/admin/du-gio-gvnn" },
       {
         code: "TONG_HOP_DU_GIO",
         name: "Tổng hợp kết quả",

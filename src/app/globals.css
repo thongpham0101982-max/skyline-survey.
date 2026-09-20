@@ -561,10 +561,10 @@
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* 14. Focus styling overrides */
+/* 14. Focus styling overrides (Standardized accessible outline) */
 *:focus-visible {
-  outline: none !important;
-  box-shadow: 0 0 0 3px rgba(72, 191, 227, 0.3) !important;
+  outline: 2px solid #08AAA4 !important;
+  outline-offset: 2px;
 }
 
 

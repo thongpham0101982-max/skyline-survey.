@@ -626,53 +626,42 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </div>
                 )}
 
-                {/* 3. Dự giờ GVNN (ESL) */}
-                <Link 
-                  href="/teacher/du-gio-gvnn" 
-                  onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                    pathname.startsWith('/teacher/du-gio-gvnn')
-                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
-                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                    pathname.startsWith('/teacher/du-gio-gvnn')
-                      ? "bg-sky-500/20 border border-sky-500/40 shadow-[0_0_8px_rgba(14,165,233,0.25)]"
-                      : "bg-white/5 border border-white/10 group-hover:border-sky-500/30"
-                  }`}>
-                    <Globe className={`w-4 h-4 transition-all ${
-                      pathname.startsWith('/teacher/du-gio-gvnn') ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
-                    }`} />
+                {/* Danh mục: DỰ GIỜ & PHÁT TRIỂN CHUYÊN MÔN */}
+                {!isCollapsed ? (
+                  <div className="px-3 pt-3 pb-1">
+                    <span className="text-[10px] font-extrabold text-teal-300 uppercase tracking-[0.1em]">
+                      DỰ GIỜ & PHÁT TRIỂN CHUYÊN MÔN
+                    </span>
                   </div>
-                  {!isCollapsed && <span>3. Dự giờ GVNN (ESL)</span>}
-                </Link>
+                ) : (
+                  <div className="w-full text-center py-1 text-teal-300 font-bold text-[9px]">•</div>
+                )}
 
-                {/* 2. Dự giờ Giáo viên (K-12) */}
+                {/* 1. Khối Phổ thông */}
                 {showK12Observation && (
                   <Link 
                     href="/teacher/du-gio" 
                     onClick={() => setIsOpen(false)} 
                     className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                      (pathname === '/teacher/du-gio' || (pathname.startsWith('/teacher/du-gio') && !pathname.startsWith('/teacher/du-gio-mam-non')))
+                      (pathname === '/teacher/du-gio' || (pathname.startsWith('/teacher/du-gio') && !pathname.startsWith('/teacher/du-gio-mam-non') && !pathname.startsWith('/teacher/du-gio-gvnn')))
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
                     }`}
                   >
                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                      (pathname === '/teacher/du-gio' && !pathname.startsWith('/teacher/du-gio-mam-non'))
+                      (pathname === '/teacher/du-gio' && !pathname.startsWith('/teacher/du-gio-mam-non') && !pathname.startsWith('/teacher/du-gio-gvnn'))
                         ? "bg-indigo-500/20 border border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.25)]"
                         : "bg-white/5 border border-white/10 group-hover:border-indigo-500/30"
                     }`}>
                       <ClipboardCheck className={`w-4 h-4 transition-all ${
-                        (pathname === '/teacher/du-gio' && !pathname.startsWith('/teacher/du-gio-mam-non')) ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
+                        (pathname === '/teacher/du-gio' && !pathname.startsWith('/teacher/du-gio-mam-non') && !pathname.startsWith('/teacher/du-gio-gvnn')) ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>2. Dự giờ Giáo viên Phổ thông</span>}
+                    {!isCollapsed && <span>1. Khối Phổ thông</span>}
                   </Link>
                 )}
 
-                {/* 2. Dự giờ đánh giá Mầm non */}
+                {/* 2. Khối Mầm non */}
                 {showPreschoolObservation && (
                   <Link 
                     href="/teacher/du-gio-mam-non" 
@@ -692,9 +681,31 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.startsWith('/teacher/du-gio-mam-non') ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>2. Dự giờ đánh giá Mầm non</span>}
+                    {!isCollapsed && <span>2. Khối Mầm non</span>}
                   </Link>
                 )}
+
+                {/* 3. Giáo viên nước ngoài */}
+                <Link 
+                  href="/teacher/du-gio-gvnn" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    pathname.startsWith('/teacher/du-gio-gvnn')
+                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.startsWith('/teacher/du-gio-gvnn')
+                      ? "bg-sky-500/20 border border-sky-500/40 shadow-[0_0_8px_rgba(14,165,233,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-sky-500/30"
+                  }`}>
+                    <Globe className={`w-4 h-4 transition-all ${
+                      pathname.startsWith('/teacher/du-gio-gvnn') ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
+                    }`} />
+                  </div>
+                  {!isCollapsed && <span>3. Giáo viên nước ngoài</span>}
+                </Link>
 
                 {/* 3. Đánh giá nhận xét: Hướng nghiệp */}
                 <Link 

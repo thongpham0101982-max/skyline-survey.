@@ -119,10 +119,10 @@ export function ForeignObservationHistoryTab({
   const [filterMonth, setFilterMonth] = useState("all");
   const [selectedSlotForModal, setSelectedSlotForModal] = useState<any | null>(null);
 
-  // Base slots: Strictly belonging to category Dự giờ GVNN (ESL), filtered to the logged-in teacher unless showAllForAdmin
+  // Base slots: Strictly belonging to category Giáo viên nước ngoài, filtered to the logged-in teacher unless showAllForAdmin
   const baseSlots = useMemo(() => {
     return slots.filter(slot => {
-      // 1. MUST belong to category Dự giờ GVNN (ESL)
+      // 1. MUST belong to category Giáo viên nước ngoài
       if (!isExactWalkthroughForm(slot)) {
         return false;
       }
@@ -286,7 +286,7 @@ export function ForeignObservationHistoryTab({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-3 py-1 rounded-full bg-[#003B3A] text-white text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-              <span>Dự giờ GVNN (ESL) Walkthrough</span>
+              <span>Giáo viên nước ngoài Walkthrough</span>
             </span>
             <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-900 border border-sky-300 text-xs font-bold">
               Lược sử kết quả đánh giá
