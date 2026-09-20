@@ -1154,6 +1154,25 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
             <ClipboardCheck className="w-4 h-4" />
             4. Thống kê tiến độ nhập điểm
           </button>
+          <button
+            onClick={() => {
+              setActiveTab("requests")
+              fetchPendingUnlockCount()
+            }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
+              activeTab === "requests"
+                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
+                : "text-white/80 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <Unlock className="w-4 h-4" />
+            <span>5. Duyệt yêu cầu mở sổ</span>
+            {pendingUnlockCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-900 shadow-xs animate-pulse">
+                {pendingUnlockCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
@@ -2649,6 +2668,26 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
             if (params.period) setSelectedPeriod(params.period)
             setActiveTab("grades")
           }}
+        />
+      )}
+
+      {/* TAB 5: GRADEBOOK UNLOCK REQUESTS AUDIT */}
+      {activeTab === "requests" && (
+        <GradeUnlockRequestsTab
+          academicYears={academicYears}
+          selectedYearId={selectedYearId}
+          campuses={campuses}
+          classes={classes}
+          subjects={subjects}
+          onNavigateToGradebook={(params) => {
+            if (params.campusId) setSelectedCampusId(params.campusId)
+            if (params.grade) setSelectedGradeFilter(params.grade)
+            if (params.classId) setSelectedClassId(params.classId)
+            if (params.subjectId) setSelectedSubjectId(params.subjectId)
+            if (params.period) setSelectedPeriod(params.period)
+            setActiveTab("grades")
+          }}
+          onRequestsUpdated={fetchPendingUnlockCount}
         />
       )}
     
