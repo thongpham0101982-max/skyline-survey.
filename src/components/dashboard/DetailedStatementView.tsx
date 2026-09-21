@@ -1,7 +1,7 @@
 /* eslint-disable */
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   Printer, FileSpreadsheet, Search, Calendar, Award,
   AlertCircle, User, Building2,
@@ -10,6 +10,7 @@ import {
 import * as XLSX from "xlsx";
 import toast from "react-hot-toast";
 import { isExactWalkthroughForm } from "@/app/teacher/du-gio-gvnn/utils";
+import { ACADEMIC_DIVISIONS, normalizeDivisionCode } from "@/config/divisions";
 
 interface DetailedStatementViewProps {
   initialSlots: any[];
@@ -84,6 +85,64 @@ export function DetailedStatementView({
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCampusId, setSelectedCampusId] = useState<string>("all");
+  const [selectedDivisionCode, setSelectedDivisionCode] = useState<string>("all");
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("all");
+
+  const getDeptDivisionCode = useCallback((dept: any): string => {
+    if (!dept) return "";
+    if (dept.divisionCode) return normalizeDivisionCode(dept.divisionCode);
+    const name = (dept.name || "").toLowerCase();
+    const block = (dept.blockCM || "").toLowerCase();
+    if (name.includes("mầm non") || block.includes("mầm non")) return "BP_MAM_NON";
+    if (name.includes("tiểu học") || name.match(/tổ [1-5]\b/)) return "BP_TIEU_HOC";
+    if (name.includes("trung học") || name.includes("toán") || name.includes("văn") || name.includes("khtn") || name.includes("khxh") || name.includes("lý") || name.includes("hóa") || name.includes("sinh") || name.includes("sử") || name.includes("địa")) return "BP_TRUNG_HOC";
+    if (name.includes("anh") || name.includes("esl") || name.includes("quốc tế") || name.includes("foreign")) return "BP_TA_CTQT";
+    if (name.includes("tin") || name.includes("stem") || name.includes("ict") || name.includes("công nghệ")) return "BP_STEM_ICT";
+    if (name.includes("trải nghiệm") || name.includes("kỹ năng") || name.includes("cố vấn") || name.includes("hướng nghiệp")) return "BP_HDNG_CTHS";
+    if (block.includes("điều hành") || name.includes("điều hành") || name.includes("ban đhcm")) return "BAN_DHCM";
+    if (block.includes("giám đốc") || name.includes("ban gđ") || name.includes("gđcs")) return "BAN_GD";
+    if (name.includes("khảo thí") || name.includes("đbcl")) return "BAN_KT_DBCL";
+    return "BP_TRUNG_HOC";
+  }, []);
+
+  const availableDivisions = useMemo(() => {
+    const presentCodes = new Set<string>();
+    departments.forEach((d: any) => {
+      const code = getDeptDivisionCode(d);
+      if (code) presentCodes.add(code);
+    });
+    return ACADEMIC_DIVISIONS.filter(div => presentCodes.has(div.code) || [
+      "BP_TRUNG_HOC", "BP_TIEU_HOC", "BP_MAM_NON", "BP_STEM_ICT", "BP_TA_CTQT", "BP_HDNG_CTHS", "BAN_DHCM"
+    ].includes(div.code));
+  }, [departments, getDeptDivisionCode]);
+
+  const filteredDepartments = useMemo(() => {
+    if (selectedDivisionCode === "all") return departments;
+    return departments.filter(d => getDeptDivisionCode(d) === selectedDivisionCode);
+  }, [departments, selectedDivisionCode, getDeptDivisionCode]);
+
+  const handleDivisionChange = (divCode: string) => {
+    setSelectedDivisionCode(divCode);
+    if (selectedDepartmentId !== "all") {
+      const dept = departments.find(d => d.id === selectedDepartmentId);
+      if (divCode !== "all" && getDeptDivisionCode(dept) !== divCode) {
+        setSelectedDepartmentId("all");
+      }
+    }
+  };
+
+  const handleDepartmentChange = (deptId: string) => {
+    setSelectedDepartmentId(deptId);
+    if (deptId !== "all") {
+      const dept = departments.find(d => d.id === deptId);
+      if (dept) {
+        const div = getDeptDivisionCode(dept);
+        if (div && selectedDivisionCode === "all") {
+          setSelectedDivisionCode(div);
+        }
+      }
+    }
+  };
 
   React.useEffect(() => {
     if (preSelectedTeacherId) {
@@ -96,15 +155,45 @@ export function DetailedStatementView({
   }, [teachers, selectedTeacherId]);
 
   const filteredTeachers = useMemo(() => {
-    if (!teacherSearch.trim()) return teachers;
-    const q = teacherSearch.toLowerCase();
-    return teachers.filter(
-      (t: any) =>
-        t.teacherName?.toLowerCase().includes(q) ||
-        t.teacherCode?.toLowerCase().includes(q) ||
-        t.email?.toLowerCase().includes(q)
-    );
-  }, [teachers, teacherSearch]);
+    return teachers.filter((t: any) => {
+      if (selectedDepartmentId !== "all") {
+        const primaryMatch = t.departmentId === selectedDepartmentId || t.departmentRel?.id === selectedDepartmentId;
+        const assignedMatch = (t.departmentAssignments || []).some((da: any) => da.departmentId === selectedDepartmentId);
+        if (!primaryMatch && !assignedMatch) return false;
+      }
+
+      if (selectedDivisionCode !== "all") {
+        const tDept = departments.find((d: any) => d.id === t.departmentId || d.id === t.departmentRel?.id);
+        const assignedDepts = (t.departmentAssignments || []).map((da: any) => departments.find((d: any) => d.id === da.departmentId)).filter(Boolean);
+        const allDepts = [tDept, ...assignedDepts].filter(Boolean);
+        const matchDiv = allDepts.some((d: any) => getDeptDivisionCode(d) === selectedDivisionCode);
+        if (!matchDiv && allDepts.length > 0) return false;
+      }
+
+      if (teacherSearch.trim()) {
+        const q = teacherSearch.toLowerCase();
+        const matchSearch =
+          t.teacherName?.toLowerCase().includes(q) ||
+          t.teacherCode?.toLowerCase().includes(q) ||
+          t.email?.toLowerCase().includes(q);
+        if (!matchSearch) return false;
+      }
+
+      return true;
+    });
+  }, [teachers, departments, selectedDepartmentId, selectedDivisionCode, teacherSearch, getDeptDivisionCode]);
+
+  // Auto sync selectedTeacherId when filtered list changes
+  React.useEffect(() => {
+    if (filteredTeachers.length > 0) {
+      const exists = filteredTeachers.some((t: any) => t.id === selectedTeacherId);
+      if (!exists) {
+        const newTeacherId = filteredTeachers[0].id;
+        setSelectedTeacherId(newTeacherId);
+        if (onSelectTeacher) onSelectTeacher(newTeacherId);
+      }
+    }
+  }, [filteredTeachers, selectedTeacherId, onSelectTeacher]);
 
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
@@ -460,7 +549,7 @@ export function DetailedStatementView({
             BẢNG KÊ CHI TIẾT DỰ GIỜ & PHÁT TRIỂN CHUYÊN MÔN
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Giáo viên: <strong className="text-slate-800">{selectedTeacher.teacherName}</strong> ({selectedTeacher.teacherCode}) &bull; Tổ: <span className="font-semibold text-slate-700">{selectedTeacher.departmentRel?.name || "Tổ chuyên môn"}</span> &bull; Cơ sở: <span className="font-semibold text-slate-700">{homeCampusName}</span>
+            Giáo viên: <strong className="text-slate-800">{selectedTeacher?.teacherName || "Chưa chọn"}</strong> ({selectedTeacher?.teacherCode || "GV"}) &bull; Bộ phận: <span className="font-semibold text-purple-800">{(() => { const dept = departments.find((d: any) => d.id === selectedTeacher?.departmentId || d.id === selectedTeacher?.departmentRel?.id); const divCode = getDeptDivisionCode(dept); return ACADEMIC_DIVISIONS.find(d => d.code === divCode)?.name || dept?.blockCM || "Chuyên môn"; })()}</span> &bull; Tổ: <span className="font-semibold text-slate-700">{selectedTeacher?.departmentRel?.name || "Tổ chuyên môn"}</span> &bull; Cơ sở: <span className="font-semibold text-slate-700">{homeCampusName}</span>
           </p>
         </div>
 
@@ -487,13 +576,52 @@ export function DetailedStatementView({
         </div>
       </div>
 
-      {/* 2. Bộ Lọc Điều Khiển (Chọn Giáo Viên, Tháng, Danh Mục, Cơ Sở) */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-3 sm:p-4">
+      {/* 2. Bộ Lọc Điều Khiển (Chọn Bộ Phận -> Tổ Chuyên Môn -> Giáo Viên) */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-3 sm:p-4 space-y-3">
+        {/* Hàng 1: Phân cấp Chọn Bộ Phận -> Tổ Chuyên Môn -> Giáo Viên */}
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          {/* Tìm & Chọn Giáo Viên */}
-          <div className="sm:col-span-5 space-y-1">
+          {/* 1. Chọn Bộ Phận */}
+          <div className="sm:col-span-3 space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-              Chọn Giáo viên / TTCM
+              1. Bộ phận
+            </label>
+            <select
+              value={selectedDivisionCode}
+              onChange={(e) => handleDivisionChange(e.target.value)}
+              className="w-full text-xs font-bold p-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none text-slate-800 cursor-pointer"
+            >
+              <option value="all">Tất cả bộ phận ({availableDivisions.length})</option>
+              {availableDivisions.map((div) => (
+                <option key={div.code} value={div.code}>
+                  {div.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. Chọn Tổ Chuyên Môn */}
+          <div className="sm:col-span-3 space-y-1">
+            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+              2. Tổ chuyên môn
+            </label>
+            <select
+              value={selectedDepartmentId}
+              onChange={(e) => handleDepartmentChange(e.target.value)}
+              className="w-full text-xs font-bold p-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none text-slate-800 cursor-pointer"
+            >
+              <option value="all">Tất cả tổ ({filteredDepartments.length})</option>
+              {filteredDepartments.map((d: any) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Chọn Giáo Viên / TTCM */}
+          <div className="sm:col-span-6 space-y-1">
+            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+              3. Chọn Giáo viên / TTCM ({filteredTeachers.length} GV)
             </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -512,26 +640,32 @@ export function DetailedStatementView({
                   setSelectedTeacherId(e.target.value);
                   if (onSelectTeacher) onSelectTeacher(e.target.value);
                 }}
-                className="text-xs font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none max-w-[200px]"
+                className="text-xs font-bold px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none max-w-[240px] text-slate-800 cursor-pointer"
               >
-                {filteredTeachers.map((t: any) => (
-                  <option key={t.id} value={t.id}>
-                    {t.teacherName} ({t.teacherCode})
-                  </option>
-                ))}
+                {filteredTeachers.map((t: any) => {
+                  const isTeacherTTCM = t.position === "TTCM" || (t.departmentAssignments || []).some((da: any) => da.position === "TTCM");
+                  return (
+                    <option key={t.id} value={t.id}>
+                      {isTeacherTTCM ? "⭐ " : ""}{t.teacherName} ({t.teacherCode || "GV"})
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>
+        </div>
 
+        {/* Hàng 2: Kỳ Báo Cáo + Danh Mục + Cơ Sở */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2 border-t border-slate-100">
           {/* Lọc Theo Tháng */}
-          <div className="sm:col-span-2 space-y-1">
+          <div className="sm:col-span-4 space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
               Kỳ báo cáo (Tháng)
             </label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none"
+              className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none cursor-pointer"
             >
               <option value="all">Toàn bộ năm học</option>
               {availableMonths.map((m) => (
@@ -543,14 +677,14 @@ export function DetailedStatementView({
           </div>
 
           {/* Lọc Danh Mục Chuyên Môn */}
-          <div className="sm:col-span-3 space-y-1">
+          <div className="sm:col-span-4 space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
               Danh mục Chuyên môn
             </label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none"
+              className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none cursor-pointer"
             >
               <option value="all">Tất cả 3 danh mục</option>
               <option value="PHO_THONG">1. Khối Phổ thông (K-12)</option>
@@ -560,14 +694,14 @@ export function DetailedStatementView({
           </div>
 
           {/* Lọc Theo Cơ Sở */}
-          <div className="sm:col-span-2 space-y-1">
+          <div className="sm:col-span-4 space-y-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
               Cơ sở
             </label>
             <select
               value={selectedCampusId}
               onChange={(e) => setSelectedCampusId(e.target.value)}
-              className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none"
+              className="w-full text-xs font-semibold p-2 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#48BFE3] outline-none cursor-pointer"
             >
               <option value="all">Tất cả cơ sở</option>
               {campuses.map((c: any) => (
