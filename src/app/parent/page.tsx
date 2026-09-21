@@ -11,7 +11,8 @@ import {
   GraduationCap, 
   Compass, 
   Sparkles, 
-  HeartHandshake
+  HeartHandshake,
+  Award
 } from "lucide-react"
 import Link from "next/link"
 
@@ -111,8 +112,35 @@ export default async function ParentDashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
+
+          {/* Card 4: Kết Quả Khảo Sát & Trao Đổi GVCN */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
+            <div className="space-y-3.5">
+              <div className="w-14 h-14 rounded-2xl bg-teal-50 text-[#005B58] flex items-center justify-center font-bold shadow-inner border border-teal-100 group-hover:scale-105 transition-transform">
+                <Award className="w-7 h-7 text-[#008c82]" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest block">TÍNH NĂNG MỚI</span>
+                <h3 className="text-lg font-black text-slate-900 group-hover:text-[#005B58] transition-colors mt-0.5">
+                  Kết Quả Khảo Sát & Điểm Số
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Xem phiếu báo điểm các kỳ khảo sát định kỳ của con, theo dõi nhận xét và trực tiếp trao đổi phản hồi cùng Thầy Cô GVCN.
+              </p>
+            </div>
+
+            <Link 
+              href="/parent/grades"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#005B58] to-[#008c82] hover:from-[#004745] hover:to-[#007068] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-teal-900/15 transition-all active:scale-95 text-center"
+            >
+              <span>Xem bảng điểm & Trao đổi</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
           {/* Card 1: Khảo Sát Định Kỳ */}
           <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/90 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between space-y-5 relative overflow-hidden group">
             <div className="space-y-3.5">

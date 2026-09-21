@@ -1,5 +1,5 @@
-﻿"use client";
-// @ts-nocheck
+/* eslint-disable */
+"use client";
 
 import React, { useState, useMemo } from "react";
 import {
