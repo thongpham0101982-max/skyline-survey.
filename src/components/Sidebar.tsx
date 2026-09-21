@@ -867,6 +867,17 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Khảo sát định kỳ</span>}
               </Link>
 
+                            <Link 
+                href="/parent/grades" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                  pathname.startsWith('/parent/grades') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Award className="w-4 h-4 mr-2.5 text-amber-300 shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Kết quả khảo sát</span>}
+              </Link>
+
               <Link 
                 href="/parent/children/profile" 
                 onClick={() => setIsOpen(false)} 
