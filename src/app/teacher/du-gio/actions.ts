@@ -842,7 +842,13 @@ export async function createObservationSlot(data: {
     }
 
     const currentTeacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
+      include: {
+        departmentRel: true,
+        departmentAssignments: { include: { department: true } },
+        user: true,
+        campus: true
+      }
     })
 
     if (!currentTeacher) {
@@ -939,11 +945,21 @@ export async function createObservationSlot(data: {
         // 1. Collect all department IDs for the current teacher's TCM
         const allMyDeptIds = new Set<string>();
         if (newSlot.targetDeptId) allMyDeptIds.add(newSlot.targetDeptId);
+        if (data.targetDeptId) allMyDeptIds.add(data.targetDeptId);
         if (currentTeacher.departmentId) allMyDeptIds.add(currentTeacher.departmentId);
         if (currentTeacher.departmentAssignments && Array.isArray(currentTeacher.departmentAssignments)) {
           currentTeacher.departmentAssignments.forEach((da: any) => {
             if (da.departmentId) allMyDeptIds.add(da.departmentId);
           });
+        }
+
+        // Fallback: check subject department if teacher has no department configured
+        if (allMyDeptIds.size === 0 && (data.subjectId || newSlot.subjectId)) {
+          const subId = data.subjectId || newSlot.subjectId;
+          if (subId) {
+            const sub = await prisma.subject.findUnique({ where: { id: subId } });
+            if (sub?.departmentId) allMyDeptIds.add(sub.departmentId);
+          }
         }
 
         const targetDeptIds = Array.from(allMyDeptIds);
@@ -972,40 +988,60 @@ export async function createObservationSlot(data: {
           });
         }
 
-        if (deptMembers.length === 0) {
+        if (deptMembers.length === 0 && currentTeacher.campusId) {
           deptMembers = await prisma.teacher.findMany({
-            where: { status: "ACTIVE" },
-            take: 50,
+            where: { campusId: currentTeacher.campusId, status: "ACTIVE" },
+            take: 30,
             include: { user: true, departmentRel: true }
           });
         }
 
         // Email Notification from bankhaothi@skylineschool.edu.vn to resolved teacher emails in TCM
-        const emailsList = new Set<string>();
         const creatorEmail = getTeacherResolvedEmail(currentTeacher);
+        const deptName = currentTeacher.departmentRel?.name ||
+          (currentTeacher.departmentAssignments && currentTeacher.departmentAssignments[0]?.department?.name) ||
+          deptMembers.find(m => m.departmentRel?.name)?.departmentRel?.name ||
+          "Tổ Chuyên Môn";
 
-        for (const m of deptMembers) {
-          if (m.id === currentTeacher.id) continue;
-          const email = getTeacherResolvedEmail(m);
-          if (email && email !== creatorEmail) emailsList.add(email);
+        const targetMembers = deptMembers.filter(m => m.id !== currentTeacher.id);
+        const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN", {
+          weekday: "long",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        });
+        const loginUrl = SKYLINE_SSM_LOGIN_URL;
+
+        // In-app notifications for TCM members
+        const notifMembers = targetMembers.filter(m => m.user?.id);
+        if (notifMembers.length > 0) {
+          await prisma.notification.createMany({
+            data: notifMembers.map(m => ({
+              userId: m.user.id,
+              title: "Tiết dạy mới trong Tổ Chuyên Môn 📖",
+              message: `Thầy/Cô ${currentTeacher.teacherName} vừa đăng ký tiết dạy "${newSlot.topic}" môn ${newSlot.subjectName || "Chuyên môn"} vào ${formattedDateVi}. Kính mời Thầy/Cô đăng ký tham gia dự giờ.`,
+              link: `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}`,
+              isRead: false
+            }))
+          }).catch(e => console.error("[createObservationSlot] In-app notif error:", e));
         }
 
-        const memberEmails = Array.from(emailsList).filter(e => typeof e === 'string' && e.includes("@")) as string[];
-        console.log("[Skyline Email] Sending slot creation emails to TCM teachers:", memberEmails);
-
-        if (data.sendEmailNotif !== false && deptMembers.length > 0) {
-          const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
-          const loginUrl = SKYLINE_SSM_LOGIN_URL;
-          const deptName = (currentTeacher as any).departmentRel?.name || (newSlot as any).departmentRel?.name || "";
+        if (data.sendEmailNotif !== false && targetMembers.length > 0) {
+          const sentEmails = new Set<string>();
 
           // Send personalized emails concurrently to each member in TCM
-          const sendTasks = deptMembers
-            .filter(m => m.id !== currentTeacher.id)
+          const sendTasks = targetMembers
             .map(m => {
               const targetEmail = getTeacherResolvedEmail(m);
-              if (!targetEmail || !targetEmail.includes("@") || targetEmail === creatorEmail) return null;
+              if (!targetEmail || !targetEmail.includes("@") || targetEmail.toLowerCase() === creatorEmail?.toLowerCase()) {
+                return null;
+              }
+              if (sentEmails.has(targetEmail.toLowerCase())) {
+                return null;
+              }
+              sentEmails.add(targetEmail.toLowerCase());
 
-              const emailSubject = `[Sky-line SMS - Dự Giờ] Thông báo tiết dạy từ ${currentTeacher.teacherName}`;
+              const emailSubject = `[Sky-line SMS - Tiết Dạy] Thầy/Cô ${currentTeacher.teacherName} đăng ký tiết dạy mới (${newSlot.subjectName || "Chuyên môn"})`;
               const emailHtml = renderObservationSlotCreatedForTcm({
                 recipientName: m.teacherName,
                 creatorName: currentTeacher.teacherName,
@@ -1023,7 +1059,7 @@ export async function createObservationSlot(data: {
                 period: newSlot.startTime ? (newSlot.startTime.startsWith("Tiết") ? newSlot.startTime : `${newSlot.startTime} - ${newSlot.endTime}`) : "Tiết 1",
                 timeStr: `${newSlot.startTime} - ${newSlot.endTime}`,
                 directLink: loginUrl,
-                buttonText: "👉 Xem Chi Tiết & Phê Duyệt Tiết Dự Giờ Ngay"
+                buttonText: "👉 Xem Chi Tiết & Đăng Ký Dự Giờ Ngay"
               });
 
               return sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: targetEmail, subject: emailSubject, html: emailHtml })

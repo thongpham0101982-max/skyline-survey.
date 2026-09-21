@@ -2391,7 +2391,7 @@ export function ObservationClient(props: ObservationClientProps) {
     }
     setSubmitting(false)
     if (res.success) {
-      showToast(editSlotId ? "Cập nhật tiết dạy thành công!" : "Tạo tiết dạy thành công và đã tự động gửi Email thông báo tới các GV trong Tổ chuyên môn!", "success")
+      showToast(editSlotId ? "Cập nhật tiết dạy thành công!" : "Đăng ký tiết dạy thành công và đã tự động gửi Email thông báo tới các GV trong Tổ chuyên môn!", "success")
       setShowCreateModal(false)
       resetCreateForm()
       refreshSlots()
@@ -3331,7 +3331,7 @@ export function ObservationClient(props: ObservationClientProps) {
               className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs transition-all shadow-md shadow-emerald-950/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
             >
               <Plus className="w-4 h-4" />
-              <span>Mở tiết dạy</span>
+              <span>Đăng ký tiết dạy</span>
             </button>
 
             {viewMode === "TEACHER" && (
@@ -3986,7 +3986,7 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
             <div>
               <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
-                {viewMode === "ADMIN" ? "Bảng Điều hành Tiết dạy Dự giờ Toàn trường" : "Danh sách tiết dạy đăng ký dự giờ"}
+                {viewMode === "ADMIN" ? "Bảng Điều hành Tiết dạy Dự giờ Toàn trường" : "Danh sách đăng ký tiết dạy"}
               </h3>
               <p className="text-xs text-slate-400 font-medium">
                 {viewMode === "ADMIN" ? "Quản lý, điều phối, phê duyệt và theo dõi tiến độ dự giờ toàn trường" : "Tìm kiếm, lọc theo tổ chuyên môn và chọn tiết dự giờ phù hợp"}

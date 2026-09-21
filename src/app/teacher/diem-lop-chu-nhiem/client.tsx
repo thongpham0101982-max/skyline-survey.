@@ -5,6 +5,8 @@ import {
   FileSpreadsheet,
   BarChart3,
   Users,
+  MessageSquare,
+  Edit3,
   Award,
   AlertTriangle,
   TrendingUp,
@@ -39,6 +41,7 @@ import {
 } from "recharts"
 import * as XLSX from "xlsx"
 import { StudentSurveyReportModal } from "./components/StudentSurveyReportModal"
+import { HomeroomFeedbackModal } from "./components/HomeroomFeedbackModal"
 
 const EVAL_PERIODS = [
   { code: "KSĐN", label: "Khảo sát đầu năm (KSĐN)", short: "KSĐN" },
@@ -640,7 +643,7 @@ export function HomeroomGradesClient({
                     <tbody className="divide-y divide-slate-200">
                       {filteredStudents.length === 0 ? (
                         <tr>
-                          <td colSpan={(data?.subjects?.length || 0) + 9} className="py-12 text-center text-slate-400 font-semibold">
+                          <td colSpan={(data?.subjects?.length || 0) + 10} className="py-12 text-center text-slate-400 font-semibold">
                             Không tìm thấy học sinh nào phù hợp
                           </td>
                         </tr>

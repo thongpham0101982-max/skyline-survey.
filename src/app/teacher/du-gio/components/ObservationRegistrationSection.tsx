@@ -630,7 +630,7 @@ export function ObservationRegistrationSection(props: any) {
           }`}
         >
           <Calendar className="w-4 h-4" />
-          <span>Đăng ký dự giờ</span>
+          <span>Đăng ký tiết dạy</span>
         </button>
 
         <button
@@ -675,13 +675,13 @@ export function ObservationRegistrationSection(props: any) {
               <div>
                 <h3 className="text-base font-black text-slate-800 tracking-tight">
                   {creationMode === "TEACHER_OPEN"
-                    ? "THÔNG TIN ĐĂNG KÝ DỰ GIỜ"
+                    ? "THÔNG TIN ĐĂNG KÝ TIẾT DẠY"
                     : creationMode === "OBSERVER_REQUEST"
                     ? "THÔNG TIN XIN DỰ GIỜ"
                     : "THÔNG TIN DỰ GIỜ ĐỘT XUẤT"}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Vui lòng khai báo đầy đủ thông tin để gửi đăng ký. Hệ thống sẽ kiểm tra trùng lịch và gửi thông báo cho liên quan.
+                  Vui lòng khai báo đầy đủ thông tin để gửi đăng ký tiết dạy. Hệ thống sẽ kiểm tra trùng lịch và tự động gửi email thông báo tới Giáo viên cùng Tổ chuyên môn.
                 </p>
               </div>
             </div>
@@ -2200,7 +2200,7 @@ export function ObservationRegistrationSection(props: any) {
                 className="w-full mt-2 py-3 bg-[#008B82] hover:bg-[#007068] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md shadow-teal-800/20 text-xs flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                {submitting ? "Đang lưu..." : (editSlotId ? "Cập nhật lịch dạy" : "Khởi tạo lịch dạy mới")}
+                {submitting ? "Đang lưu..." : (editSlotId ? "Cập nhật tiết dạy" : "Đăng ký tiết dạy")}
               </button>
             </form>
           )}

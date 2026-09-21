@@ -570,9 +570,9 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                     <Link
                                       href="/teacher/du-gio"
                                       className="text-[10px] font-bold text-slate-500 hover:text-[#48BFE3] flex items-center gap-0.5 transition-colors"
-                                      title="Đăng ký dự giờ tiết này"
+                                      title="Đăng ký tiết dạy này"
                                     >
-                                      <span>Dự giờ</span>
+                                      <span>Tiết dạy</span>
                                       <ArrowRight className="w-3 h-3" />
                                     </Link>
                                   </div>
@@ -627,9 +627,9 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                     <Link
                                       href="/teacher/du-gio"
                                       className="text-[10px] font-bold text-slate-500 hover:text-[#48BFE3] flex items-center gap-0.5 transition-colors"
-                                      title="Đăng ký dự giờ tiết này"
+                                      title="Đăng ký tiết dạy này"
                                     >
-                                      <span>Dự giờ</span>
+                                      <span>Tiết dạy</span>
                                       <ArrowRight className="w-3 h-3" />
                                     </Link>
                                   </div>
@@ -721,7 +721,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                             href="/teacher/du-gio"
                             className="text-xs font-bold text-[#48BFE3] hover:text-[#003B3A] flex items-center gap-1"
                           >
-                            <span>Đăng ký dự giờ</span>
+                            <span>Đăng ký tiết dạy</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </Link>
                         </div>

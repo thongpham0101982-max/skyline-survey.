@@ -79,7 +79,7 @@ const preschoolLabels = [
 ];
 
 export function AdminTongHopClient({
-  initialSlots, currentTeacher, subjects, departments, teachers: initialTeachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin, isGDCS, academicYears, selectedYearId
+  initialSlots, currentTeacher, subjects, departments, divisions = [], teachers: initialTeachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin, isHeadOfAcademic = false, isTBP = false, isGDCS = false, academicYears, selectedYearId
 }: AdminTongHopClientProps) {
   const router = useRouter()
   const pathname = usePathname()

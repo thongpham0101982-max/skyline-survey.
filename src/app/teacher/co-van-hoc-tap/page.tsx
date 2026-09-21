@@ -9,7 +9,7 @@ import { useState, useEffect, useMemo } from "react"
 import * as XLSX from "xlsx"
 import {
   Compass, Plus, Search, Calendar, User, MessageSquare, AlertTriangle,
-  CheckCircle2, Clock, Filter, Save, Trash2, Heart, Sparkles, AlertCircle,
+  CheckCircle2, Clock, Filter, Save, Trash2, Heart, Sparkles, AlertCircle, Circle,
   TrendingUp, Award, Table, BookOpen, Layers, Info, ChevronRight, ChevronLeft, FileText, X, Edit3, ShieldCheck,
   Key, Flame, Star, CheckSquare, Target, Check, Lock, Eye, Download, ChevronDown, ChevronUp, Users, Building2
 } from "lucide-react"
@@ -505,21 +505,6 @@ export default function TeacherAdvisoryPage() {
       .finally(() => setLoading(false))
   }, [academicYearId])
 
-  // Auto-fetch students when class changes
-  useEffect(() => {
-    if (!selectedClassId) {
-      setStudents([])
-      setSelectedStudentId("")
-      setSubmittedStudentCodes([])
-      setHelpRequests([])
-      setConsultations([])
-      setUnlocksList([])
-      setClassTermEvaluations([])
-      return
-    }
-    const url = "/api/students/search?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "")
-    
-
   // IMP-004: Sync selectedClassId to sessionStorage and URL SearchParams
   useEffect(() => {
     if (selectedClassId && typeof window !== "undefined") {
@@ -535,6 +520,20 @@ export default function TeacherAdvisoryPage() {
       }
     }
   }, [selectedClassId])
+
+  // Auto-fetch students when class changes
+  useEffect(() => {
+    if (!selectedClassId) {
+      setStudents([])
+      setSelectedStudentId("")
+      setSubmittedStudentCodes([])
+      setHelpRequests([])
+      setConsultations([])
+      setUnlocksList([])
+      setClassTermEvaluations([])
+      return
+    }
+    const url = "/api/students/search?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "")
 
     // Fetch class submission status
     loadClassSubmissionStatus(selectedClassId, academicYearId)

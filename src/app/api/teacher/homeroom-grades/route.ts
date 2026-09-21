@@ -428,11 +428,12 @@ export async function GET(request: Request) {
       }
     })
 
-    // 11. Query Commitments (InputAssessmentStudent & StudentLearningCommitment)
+    // 11. Query Commitments & Consultation Logs (Teacher Remarks & Parent Feedback)
     const studentCodes = students.map(s => s.studentCode).filter(Boolean)
     const studentIds = students.map(s => s.id)
+    const periodTags = targetPeriodFilter.map(p => `[GradePeriod: ${p}]`)
 
-    const [inputAssessments, learningCommitments] = await Promise.all([
+    const [inputAssessments, learningCommitments, consultationLogs] = await Promise.all([
       prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes }
@@ -457,6 +458,14 @@ export async function GET(request: Request) {
         include: {
           subject: true
         }
+      }).catch(() => []),
+      prisma.academicConsultationLog.findMany({
+        where: {
+          studentId: { in: studentIds },
+          academicYearId: targetYearId,
+          OR: periodTags.map(tag => ({ notes: { contains: tag } }))
+        },
+        orderBy: { updatedAt: "desc" }
       }).catch(() => [])
     ])
 
@@ -470,6 +479,28 @@ export async function GET(request: Request) {
       const arr = commitmentMap.get(lc.studentId) || []
       arr.push(lc)
       commitmentMap.set(lc.studentId, arr)
+    })
+
+    const exchangeMap = new Map<string, any>()
+    consultationLogs.forEach((log: any) => {
+      if (!exchangeMap.has(log.studentId)) {
+        let teacherRemark = ""
+        let parentFeedback = ""
+        if (log.content) {
+          teacherRemark = log.content.replace(/^Ý KIẾN GVCN:\s*/i, "").trim()
+        }
+        if (log.difficulties) {
+          parentFeedback = log.difficulties.replace(/^Ý KIẾN PHHS:\s*/i, "").trim()
+        }
+        exchangeMap.set(log.studentId, {
+          logId: log.id,
+          teacherRemark,
+          teacherRemarkDate: log.meetingDate || log.createdAt,
+          parentFeedback,
+          parentFeedbackDate: log.updatedAt || log.createdAt,
+          notes: log.notes
+        })
+      }
     })
 
     // 12. Student Grade Matrix & Tracking List
@@ -557,7 +588,13 @@ export async function GET(request: Request) {
         belowBenchmarkCount,
         isEntranceCommitted,
         inputAssessment: inputInfo || null,
-        learningCommitments: commitments
+        learningCommitments: commitments,
+        teacherRemark: exchangeMap.get(st.id)?.teacherRemark || "",
+        teacherRemarkDate: exchangeMap.get(st.id)?.teacherRemarkDate || null,
+        parentFeedback: exchangeMap.get(st.id)?.parentFeedback || "",
+        parentFeedbackDate: exchangeMap.get(st.id)?.parentFeedbackDate || null,
+        exchangeLogId: exchangeMap.get(st.id)?.logId || null,
+        defaultTeacherRemark: `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh ${st.studentName}. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`
       }
     })
 

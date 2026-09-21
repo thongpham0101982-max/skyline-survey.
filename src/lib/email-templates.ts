@@ -579,17 +579,17 @@ export function renderObservationSlotCreatedForTcm(params: {
   buttonText?: string;
 }): string {
   const targetLink = params.directLink || SKYLINE_SSM_LOGIN_URL;
-  const buttonLabel = params.buttonText || "👉 Xem Chi Tiết & Phê Duyệt Tiết Dự Giờ Ngay";
+  const buttonLabel = params.buttonText || "👉 Xem Chi Tiết & Đăng Ký Dự Giờ Ngay";
   const effectivePeriod = params.period || params.timeStr || "Tiết 1";
 
   return renderSkylineEmail({
     headerBadge: "📢 TỔ CHUYÊN MÔN",
-    headerTitle: "THÔNG BÁO TIẾT DẠY ĐĂNG KÝ DỰ GIỜ MỚI (TỔ CHUYÊN MÔN)",
+    headerTitle: "THÔNG BÁO ĐĂNG KÝ TIẾT DẠY MỚI (TỔ CHUYÊN MÔN)",
     headerSubtitle: "Kính mời Quý Thầy/Cô đăng nhập hệ thống để xem chi tiết và đăng ký tham gia",
     headerTheme: "teal",
     recipientName: params.recipientName || "Quý Thầy/Cô trong Tổ Chuyên Môn",
     greetingPrefix: "Kính gửi Thầy/Cô",
-    introMessage: `Thầy/Cô <strong>${params.creatorName || params.teacherName}</strong> thuộc Tổ Chuyên Môn vừa khởi tạo tiết dạy đăng ký dự giờ. Kính mời Thầy/Cô đăng nhập hệ thống để xem chi tiết và đăng ký tham gia dự giờ:`,
+    introMessage: `Thầy/Cô <strong>${params.creatorName || params.teacherName}</strong> thuộc Tổ Chuyên Môn vừa đăng ký tiết dạy mới. Kính mời Thầy/Cô đăng nhập hệ thống để xem chi tiết và đăng ký tham gia dự giờ:`,
     details: [
       {
         icon: "👨‍🏫",
@@ -600,7 +600,7 @@ export function renderObservationSlotCreatedForTcm(params: {
       {
         icon: "📖",
         label: "Tên bài dạy / Chủ đề",
-        value: params.topic || "Tiết dạy đăng ký dự giờ",
+        value: params.topic || "Tiết dạy đã đăng ký",
         highlight: true
       },
       {

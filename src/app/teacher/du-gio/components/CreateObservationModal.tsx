@@ -20,13 +20,13 @@ export function CreateObservationModal(props: any) {
             <div>
               <h3 className="text-base sm:text-lg font-black tracking-tight">
                 {props.creationMode === "TEACHER_OPEN"
-                  ? "Mở Tiết Dạy Dự Giờ Mới"
+                  ? "Đăng Ký Tiết Dạy Mới"
                   : props.creationMode === "OBSERVER_REQUEST"
                   ? "Gửi Yêu Cầu Xin Dự Giờ"
                   : "Lập Biên Bản Dự Giờ Đột Xuất"}
               </h3>
               <p className="text-xs text-teal-100/80 font-medium">
-                Khởi tạo và thiết lập thông tin tiết dạy chuyên môn trên hệ thống Sky-Line
+                Khai báo thông tin tiết dạy và hệ thống sẽ tự động gửi email thông báo tới Giáo viên cùng Tổ chuyên môn
               </p>
             </div>
           </div>
