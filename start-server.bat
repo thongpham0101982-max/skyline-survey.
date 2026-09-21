@@ -9,6 +9,8 @@ echo ====================================================
 
 :: Thu khoi dong bang PM2
 call pm2 start ecosystem.config.js >nul 2>&1
+ping 127.0.0.1 -n 3 >nul
+netstat -aon | findstr ":3000" | findstr "LISTENING" >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     call pm2 save >nul 2>&1
     echo Khoi chay thanh cong qua PM2.

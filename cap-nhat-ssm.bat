@@ -52,19 +52,19 @@ if %ERRORLEVEL% neq 0 (
 echo.
 echo [5/5] Đang khởi động lại dịch vụ máy chủ SSM (PM2 / 24/7)...
 call pm2 restart skyline-portal >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    call pm2 start ecosystem.config.js >nul 2>&1
-    if %ERRORLEVEL% neq 0 (
-        if exist "%~dp0chay-ngam.vbs" (
-            wscript.exe "%~dp0chay-ngam.vbs"
-        ) else if exist "%~dp0start-server.bat" (
-            start "" "%~dp0start-server.bat"
-        ) else (
-            start "Skyline Server" node server.js
-        )
+call pm2 start ecosystem.config.js >nul 2>&1
+ping 127.0.0.1 -n 3 >nul
+netstat -aon | findstr ":3000" | findstr "LISTENING" >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    call pm2 save >nul 2>&1
+) else (
+    echo Đang khởi chạy trực tiếp qua Node.js...
+    if exist "%~dp0start-server.bat" (
+        start "" "%~dp0start-server.bat"
+    ) else (
+        start "Skyline Server 24/7" /min node server.js
     )
 )
-call pm2 save >nul 2>&1
 
 echo.
 echo =======================================================
