@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client"
 
-import React from "react"
+import React, { useMemo } from "react"
 import {
   Filter,
   Search,
@@ -32,6 +32,8 @@ interface Props {
   setSelectedGrade: (grd: string) => void
   selectedClassId: string
   setSelectedClassId: (id: string) => void
+  selectedSemester: string
+  setSelectedSemester: (sem: string) => void
   selectedSubjectId: string
   setSelectedSubjectId: (id: string) => void
   mode: string
@@ -50,12 +52,12 @@ interface Props {
   onNavigateToGradebook: () => void
 }
 
-const PERIODS = [
-  { code: "KSĐN", name: "Khảo sát đầu năm (KSĐN)" },
-  { code: "GK1", name: "Giữa kỳ 1 (GK1)" },
-  { code: "CK1", name: "Cuối kỳ 1 (CK1)" },
-  { code: "GK2", name: "Giữa kỳ 2 (GK2)" },
-  { code: "CK2", name: "Cuối kỳ 2 (CK2)" }
+export const PERIODS = [
+  { code: "KSĐN", name: "Khảo sát đầu năm (KSĐN)", semester: "HK1" },
+  { code: "GK1", name: "Giữa kỳ 1 (GK1)", semester: "HK1" },
+  { code: "CK1", name: "Cuối kỳ 1 (CK1)", semester: "HK1" },
+  { code: "GK2", name: "Giữa kỳ 2 (GK2)", semester: "HK2" },
+  { code: "CK2", name: "Cuối kỳ 2 (CK2)", semester: "HK2" }
 ]
 
 const GRADES = [
@@ -79,6 +81,8 @@ export function ScatterFilterToolbar({
   setSelectedGrade,
   selectedClassId,
   setSelectedClassId,
+  selectedSemester,
+  setSelectedSemester,
   selectedSubjectId,
   setSelectedSubjectId,
   mode,
@@ -96,6 +100,34 @@ export function ScatterFilterToolbar({
   onExportExcel,
   onNavigateToGradebook
 }: Props) {
+  // Lọc danh sách kỳ khảo sát theo học kỳ đã chọn
+  const availablePeriods = useMemo(() => {
+    if (selectedSemester === "HK1") return PERIODS.filter(p => p.semester === "HK1")
+    if (selectedSemester === "HK2") return PERIODS.filter(p => p.semester === "HK2")
+    return PERIODS
+  }, [selectedSemester])
+
+  const handleSemesterChange = (sem: string) => {
+    setSelectedSemester(sem)
+    if (sem === "HK1") {
+      if (!["KSĐN", "GK1", "CK1"].includes(periodY)) {
+        setPeriodY("CK1")
+      }
+    } else if (sem === "HK2") {
+      if (!["GK2", "CK2"].includes(periodY)) {
+        setPeriodY("CK2")
+      }
+    }
+  }
+
+  const handlePeriodYChange = (pCode: string) => {
+    setPeriodY(pCode)
+    const found = PERIODS.find(p => p.code === pCode)
+    if (found && selectedSemester !== "ALL" && found.semester !== selectedSemester) {
+      setSelectedSemester(found.semester)
+    }
+  }
+
   return (
     <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3.5">
       {/* Hàng 1: Tiêu đề bộ lọc, Chế độ tương quan & Nút tác vụ */}
@@ -200,8 +232,8 @@ export function ScatterFilterToolbar({
         </button>
       </div>
 
-      {/* Hàng 3: Các trường lọc chi tiết (Năm học, Cơ sở, Cấp học, Khối, Lớp, Môn, Kỳ) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
+      {/* Hàng 3: Phạm vi hành chính (Năm học, Cơ sở, Cấp học, Khối, Lớp) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
         {/* 1. Năm học */}
         <div>
           <label className="block text-[10px] font-bold text-slate-600 mb-1">Năm học:</label>
@@ -277,10 +309,65 @@ export function ScatterFilterToolbar({
             ))}
           </select>
         </div>
+      </div>
 
-        {/* 6. Môn học trọng tâm */}
+      {/* Hàng 4: Phạm vi Chuyên môn & Tương quan (Học kỳ, Học kỳ / Kỳ khảo sát, Môn học, và Tùy biến theo Mode) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 pt-1 border-t border-slate-100">
+        {/* 6. Học kỳ */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-600 mb-1">Môn học (Trục Y):</label>
+          <label className="block text-[10px] font-bold text-teal-800 mb-1 flex items-center gap-1">
+            <Calendar className="w-3 h-3 text-[#005B58]" />
+            Học kỳ:
+          </label>
+          <select
+            value={selectedSemester}
+            onChange={e => handleSemesterChange(e.target.value)}
+            className="w-full border border-teal-200 rounded-xl px-2 py-1.5 text-xs font-bold text-teal-900 bg-teal-50/30 focus:ring-2 focus:ring-[#005B58] outline-none"
+          >
+            <option value="ALL">-- Tất cả Học kỳ --</option>
+            <option value="HK1">🍂 Học kỳ 1 (HK1)</option>
+            <option value="HK2">🌱 Học kỳ 2 (HK2)</option>
+          </select>
+        </div>
+
+        {/* 7. Học kỳ / Kỳ khảo sát */}
+        <div>
+          <label className="block text-[10px] font-bold text-teal-800 mb-1 flex items-center gap-1">
+            <Calendar className="w-3 h-3 text-[#005B58]" />
+            {mode === "GROWTH" ? "Học kỳ / Kỳ khảo sát (Hiện tại - Trục Y):" : "Học kỳ / Kỳ khảo sát:"}
+          </label>
+          <select
+            value={periodY}
+            onChange={e => handlePeriodYChange(e.target.value)}
+            className="w-full border border-teal-200 rounded-xl px-2 py-1.5 text-xs font-bold text-teal-900 bg-teal-50/40 focus:ring-2 focus:ring-[#005B58] outline-none"
+          >
+            {selectedSemester === "ALL" ? (
+              <>
+                <optgroup label="🍂 Học kỳ 1">
+                  {PERIODS.filter(p => p.semester === "HK1").map(p => (
+                    <option key={p.code} value={p.code}>{p.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="🌱 Học kỳ 2">
+                  {PERIODS.filter(p => p.semester === "HK2").map(p => (
+                    <option key={p.code} value={p.code}>{p.name}</option>
+                  ))}
+                </optgroup>
+              </>
+            ) : (
+              availablePeriods.map(p => (
+                <option key={p.code} value={p.code}>{p.name}</option>
+              ))
+            )}
+          </select>
+        </div>
+
+        {/* 8. Môn học trọng tâm (Trục Y) */}
+        <div>
+          <label className="block text-[10px] font-bold text-slate-700 mb-1 flex items-center gap-1">
+            <BookOpen className="w-3 h-3 text-slate-500" />
+            {mode === "CROSS_SUBJECT" ? "Môn học trọng tâm (Trục Y):" : "Môn học (Trục Y):"}
+          </label>
           <select
             value={selectedSubjectId}
             onChange={e => setSelectedSubjectId(e.target.value)}
@@ -292,40 +379,35 @@ export function ScatterFilterToolbar({
           </select>
         </div>
 
-        {/* 7. Bộ chọn linh hoạt theo Chế độ */}
-        {mode === "GROWTH" ? (
+        {/* 9. Tùy chọn chuyên sâu theo Mode: Kỳ mốc đối sánh (GROWTH) hoặc Môn đối sánh (CROSS_SUBJECT) */}
+        {mode === "GROWTH" && (
           <div>
-            <label className="block text-[10px] font-bold text-slate-600 mb-1">Đối sánh Kỳ:</label>
-            <div className="grid grid-cols-2 gap-1">
-              <select
-                value={periodX}
-                onChange={e => setPeriodX(e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-1 py-1.5 text-[11px] font-bold text-slate-700 bg-white"
-                title="Kỳ gốc (Trục X)"
-              >
-                {PERIODS.map(p => (
-                  <option key={p.code} value={p.code}>{p.code}</option>
-                ))}
-              </select>
-              <select
-                value={periodY}
-                onChange={e => setPeriodY(e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-1 py-1.5 text-[11px] font-bold text-teal-800 bg-teal-50"
-                title="Kỳ khảo sát hiện tại (Trục Y)"
-              >
-                {PERIODS.map(p => (
-                  <option key={p.code} value={p.code}>{p.code}</option>
-                ))}
-              </select>
-            </div>
+            <label className="block text-[10px] font-bold text-amber-800 mb-1 flex items-center gap-1">
+              <ArrowRightLeft className="w-3 h-3 text-amber-600" />
+              Kỳ mốc đối sánh (Trục X):
+            </label>
+            <select
+              value={periodX}
+              onChange={e => setPeriodX(e.target.value)}
+              className="w-full border border-amber-200 rounded-xl px-2 py-1.5 text-xs font-bold text-amber-900 bg-amber-50/50 focus:ring-2 focus:ring-amber-500 outline-none"
+            >
+              {PERIODS.filter(p => p.code !== periodY).map(p => (
+                <option key={p.code} value={p.code}>{p.name}</option>
+              ))}
+            </select>
           </div>
-        ) : mode === "CROSS_SUBJECT" ? (
+        )}
+
+        {mode === "CROSS_SUBJECT" && (
           <div>
-            <label className="block text-[10px] font-bold text-slate-600 mb-1">Môn đối sánh (Trục X):</label>
+            <label className="block text-[10px] font-bold text-indigo-800 mb-1 flex items-center gap-1">
+              <ArrowRightLeft className="w-3 h-3 text-indigo-600" />
+              Môn đối sánh (Trục X):
+            </label>
             <select
               value={compareSubjectId}
               onChange={e => setCompareSubjectId(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 bg-white"
+              className="w-full border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-bold text-indigo-900 bg-indigo-50/50 focus:ring-2 focus:ring-indigo-500 outline-none"
             >
               <option value="">-- Chọn môn đối sánh --</option>
               {subjects.filter(s => s.id !== selectedSubjectId).map(s => (
@@ -333,27 +415,28 @@ export function ScatterFilterToolbar({
               ))}
             </select>
           </div>
-        ) : (
-          <div>
-            <label className="block text-[10px] font-bold text-slate-600 mb-1">Kỳ khảo sát:</label>
-            <select
-              value={periodY}
-              onChange={e => setPeriodY(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 bg-white"
-            >
-              {PERIODS.map(p => (
-                <option key={p.code} value={p.code}>{p.name}</option>
-              ))}
-            </select>
+        )}
+
+        {mode === "FORMATIVE_SUMMATIVE" && (
+          <div className="flex flex-col justify-center bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1">
+            <span className="text-[10px] font-bold text-slate-600">Quy tắc đối sánh:</span>
+            <span className="text-[11px] font-bold text-teal-800">Trục X: ĐGTX • Trục Y: ĐGĐK</span>
+          </div>
+        )}
+
+        {mode === "ADMISSION_PERFORMANCE" && (
+          <div className="flex flex-col justify-center bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1">
+            <span className="text-[10px] font-bold text-slate-600">Quy tắc đối sánh:</span>
+            <span className="text-[11px] font-bold text-teal-800">Trục X: Điểm ĐGNL đầu vào • Trục Y: Khảo sát thực tế</span>
           </div>
         )}
       </div>
 
-      {/* Ô tìm nhanh */}
+      {/* Hàng 5: Ô tìm nhanh */}
       <div className="relative pt-1">
         <input
           type="text"
-          placeholder="Tìm nhanh theo tên học sinh, mã HS, lớp, giáo viên phụ trách..."
+          placeholder="Tìm nhanh theo tên học sinh, mã HS, lớp, giáo viên phụ trách, cơ sở..."
           value={searchKeyword}
           onChange={e => setSearchKeyword(e.target.value)}
           className="w-full border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#005B58] outline-none transition-all"

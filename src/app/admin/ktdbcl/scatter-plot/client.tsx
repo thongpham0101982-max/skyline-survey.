@@ -53,6 +53,7 @@ export function ScatterPlotClient({
   const [selectedGrade, setSelectedGrade] = useState("ALL")
   const [selectedClassId, setSelectedClassId] = useState("ALL")
   const [selectedSubjectId, setSelectedSubjectId] = useState(subjects[0]?.id ?? "")
+  const [selectedSemester, setSelectedSemester] = useState("ALL")
   const [mode, setMode] = useState<"GROWTH" | "FORMATIVE_SUMMATIVE" | "CROSS_SUBJECT" | "ADMISSION_PERFORMANCE">("GROWTH")
   const [periodX, setPeriodX] = useState("KSĐN")
   const [periodY, setPeriodY] = useState("GK1")
@@ -119,6 +120,7 @@ export function ScatterPlotClient({
         gradeFilter: selectedGrade,
         classId: selectedClassId,
         subjectId: selectedSubjectId,
+        semester: selectedSemester,
         mode,
         periodX,
         periodY,
@@ -148,6 +150,7 @@ export function ScatterPlotClient({
     selectedGrade,
     selectedClassId,
     selectedSubjectId,
+    selectedSemester,
     mode,
     periodX,
     periodY,
@@ -266,6 +269,8 @@ export function ScatterPlotClient({
         setSelectedGrade={setSelectedGrade}
         selectedClassId={selectedClassId}
         setSelectedClassId={setSelectedClassId}
+        selectedSemester={selectedSemester}
+        setSelectedSemester={setSelectedSemester}
         selectedSubjectId={selectedSubjectId}
         setSelectedSubjectId={setSelectedSubjectId}
         mode={mode}

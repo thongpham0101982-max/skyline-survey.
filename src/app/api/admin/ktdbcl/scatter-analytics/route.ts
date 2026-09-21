@@ -31,6 +31,7 @@ export async function GET(request: Request) {
     const gradeFilter = searchParams.get("gradeFilter") || "ALL"
     const classId = searchParams.get("classId") || "ALL"
     const subjectId = searchParams.get("subjectId") || ""
+    const semester = searchParams.get("semester") || "ALL"
     const mode = searchParams.get("mode") || "GROWTH" // "GROWTH" | "FORMATIVE_SUMMATIVE" | "CROSS_SUBJECT" | "ADMISSION_PERFORMANCE"
     const periodX = searchParams.get("periodX") || "KSĐN"
     const periodY = searchParams.get("periodY") || "GK1"

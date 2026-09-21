@@ -29,11 +29,11 @@ interface Props {
 }
 
 const EVAL_PERIODS = [
-  { code: "KSĐN", name: "Khảo sát đầu năm (KSĐN)" },
-  { code: "GK1", name: "Giữa kỳ 1 (GK1)" },
-  { code: "CK1", name: "Cuối kỳ 1 (CK1)" },
-  { code: "GK2", name: "Giữa kỳ 2 (GK2)" },
-  { code: "CK2", name: "Cuối kỳ 2 (CK2)" }
+  { code: "KSĐN", name: "Khảo sát đầu năm (KSĐN)", semester: "HK1" },
+  { code: "GK1", name: "Giữa kỳ 1 (GK1)", semester: "HK1" },
+  { code: "CK1", name: "Cuối kỳ 1 (CK1)", semester: "HK1" },
+  { code: "GK2", name: "Giữa kỳ 2 (GK2)", semester: "HK2" },
+  { code: "CK2", name: "Cuối kỳ 2 (CK2)", semester: "HK2" }
 ]
 
 const GRADES = [
@@ -715,19 +715,60 @@ export function GradeAnalyticsTab({
             </select>
           </div>
 
-          {/* 4. Kỳ khảo sát */}
+          {/* 4. Học kỳ / Kỳ khảo sát */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Học kỳ / Kỳ khảo sát:
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-[11px] font-bold text-slate-700">
+                Học kỳ / Kỳ khảo sát:
+              </label>
+              <select
+                value={selectedSemester}
+                onChange={e => {
+                  const sem = e.target.value
+                  setSelectedSemester(sem)
+                  if (sem === "HK1" && !["KSĐN", "GK1", "CK1"].includes(currentPeriod)) {
+                    setCurrentPeriod("CK1")
+                  } else if (sem === "HK2" && !["GK2", "CK2"].includes(currentPeriod)) {
+                    setCurrentPeriod("CK2")
+                  }
+                }}
+                className="text-[10px] font-bold px-1.5 py-0.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:ring-1 focus:ring-[#005B58] outline-none"
+              >
+                <option value="ALL">Cả năm</option>
+                <option value="HK1">HK 1</option>
+                <option value="HK2">HK 2</option>
+              </select>
+            </div>
             <select
               value={currentPeriod}
-              onChange={e => setCurrentPeriod(e.target.value)}
+              onChange={e => {
+                const val = e.target.value
+                setCurrentPeriod(val)
+                const pObj = EVAL_PERIODS.find(p => p.code === val)
+                if (pObj?.semester && selectedSemester !== "ALL" && pObj.semester !== selectedSemester) {
+                  setSelectedSemester(pObj.semester)
+                }
+              }}
               className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
             >
-              {EVAL_PERIODS.map(p => (
-                <option key={p.code} value={p.code}>{p.name}</option>
-              ))}
+              {selectedSemester === "ALL" ? (
+                <>
+                  <optgroup label="🍂 Học kỳ 1">
+                    {EVAL_PERIODS.filter(p => p.semester === "HK1").map(p => (
+                      <option key={p.code} value={p.code}>{p.name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="🌱 Học kỳ 2">
+                    {EVAL_PERIODS.filter(p => p.semester === "HK2").map(p => (
+                      <option key={p.code} value={p.code}>{p.name}</option>
+                    ))}
+                  </optgroup>
+                </>
+              ) : (
+                EVAL_PERIODS.filter(p => selectedSemester === "ALL" || p.semester === selectedSemester).map(p => (
+                  <option key={p.code} value={p.code}>{p.name}</option>
+                ))
+              )}
             </select>
           </div>
 
