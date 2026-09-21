@@ -15,6 +15,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
 
     const academicYearId = searchParams.get("academicYearId") || ""
+    const campusId = searchParams.get("campusId") || "ALL"
     const levelFilter = searchParams.get("levelFilter") || "ALL"
     const gradeFilter = searchParams.get("gradeFilter") || "ALL"
     const systemFilter = searchParams.get("systemFilter") || "ALL"
@@ -35,6 +36,9 @@ export async function GET(request: Request) {
     if (classId && classId !== "ALL") {
       classWhere.id = classId
     }
+    if (campusId && campusId !== "ALL") {
+      classWhere.campusId = campusId
+    }
 
     const classes = await prisma.class.findMany({
       where: classWhere,
@@ -45,6 +49,13 @@ export async function GET(request: Request) {
         level: true,
         educationSystem: true,
         campusId: true,
+        campus: {
+          select: {
+            id: true,
+            campusName: true,
+            campusCode: true
+          }
+        },
         homeroomTeacherId: true
       },
       orderBy: { className: "asc" }
@@ -416,6 +427,9 @@ export async function GET(request: Request) {
           const pct = (cnt: number) => gradedCount > 0 ? Math.round((cnt / gradedCount) * 100) : 0
 
           teacherDistributions.push({
+            campusId: cls.campusId,
+            campusName: cls.campus?.campusName || "",
+            campusCode: cls.campus?.campusCode || "",
             classId: cls.id,
             className: cls.className,
             grade: cls.grade,

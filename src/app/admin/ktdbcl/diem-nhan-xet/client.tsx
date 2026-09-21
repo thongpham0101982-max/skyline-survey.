@@ -2638,6 +2638,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         <GradeAnalyticsTab
           academicYears={academicYears}
           selectedYearId={selectedYearId}
+          campuses={campuses}
           classes={classes}
           subjects={subjects}
           savedConfigs={savedConfigs}

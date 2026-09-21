@@ -19,6 +19,7 @@ import { isGradeMatching } from "./grade-utils"
 interface Props {
   academicYears: any[]
   selectedYearId: string
+  campuses?: any[]
   classes: any[]
   subjects: any[]
   savedConfigs?: any[]
@@ -42,6 +43,7 @@ const GRADES = [
 export function GradeAnalyticsTab({
   academicYears,
   selectedYearId,
+  campuses = [],
   classes = [],
   subjects = [],
   savedConfigs = [],
@@ -51,6 +53,7 @@ export function GradeAnalyticsTab({
   const [activeSubView, setActiveSubView] = useState<"teachers" | "tracking" | "charts">("teachers")
 
   // Filter states
+  const [selectedCampusId, setSelectedCampusId] = useState("ALL")
   const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
   const [selectedClassId, setSelectedClassId] = useState("ALL")
@@ -99,9 +102,15 @@ export function GradeAnalyticsTab({
   const [loadingRowDetail, setLoadingRowDetail] = useState(false)
   const [rowDetailData, setRowDetailData] = useState<any>(null)
 
-  // Filter classes according to selectedLevelFilter & selectedGradeFilter
+  // Filter classes according to selectedCampusId, selectedLevelFilter & selectedGradeFilter
   const filteredClasses = useMemo(() => {
     return classes.filter(c => {
+      if (selectedCampusId !== "ALL") {
+        if (c.campusId !== selectedCampusId && c.campus?.id !== selectedCampusId) {
+          return false
+        }
+      }
+
       if (selectedLevelFilter !== "ALL") {
         const cLevel = (c.level || "").toLowerCase()
         const cGrade = (c.grade || "").toLowerCase()
@@ -128,7 +137,7 @@ export function GradeAnalyticsTab({
 
       return true
     })
-  }, [classes, selectedLevelFilter, selectedGradeFilter])
+  }, [classes, selectedCampusId, selectedLevelFilter, selectedGradeFilter])
 
   // Reset selectedClassId if not in filteredClasses
   useEffect(() => {
@@ -193,6 +202,7 @@ export function GradeAnalyticsTab({
       setLoading(true)
       const params = new URLSearchParams({
         academicYearId: selectedYearId,
+        campusId: selectedCampusId,
         levelFilter: selectedLevelFilter,
         gradeFilter: selectedGradeFilter,
         classId: selectedClassId,
@@ -217,7 +227,7 @@ export function GradeAnalyticsTab({
 
   useEffect(() => {
     fetchAnalytics()
-  }, [selectedYearId, selectedLevelFilter, selectedGradeFilter, selectedClassId, selectedSubjectId, currentPeriod, baselinePeriod])
+  }, [selectedYearId, selectedCampusId, selectedLevelFilter, selectedGradeFilter, selectedClassId, selectedSubjectId, currentPeriod, baselinePeriod])
 
   // Filtered Teacher Distributions
   const displayedTeacherDistributions = useMemo(() => {
@@ -231,7 +241,8 @@ export function GradeAnalyticsTab({
           (item.subjectCode || "").toLowerCase().includes(kw) ||
           (item.teacherName || "").toLowerCase().includes(kw) ||
           (item.teacherCode || "").toLowerCase().includes(kw) ||
-          (item.grade || "").toLowerCase().includes(kw)
+          (item.grade || "").toLowerCase().includes(kw) ||
+          (item.campusName || "").toLowerCase().includes(kw)
         )
       })
     }
@@ -345,6 +356,7 @@ export function GradeAnalyticsTab({
 
     const excelRows = displayedTeacherDistributions.map((it, idx) => ({
       "STT": idx + 1,
+      "Cơ sở": it.campusName || "",
       "Khối": it.grade ? `Khối ${it.grade}` : "",
       "Lớp học": it.className,
       "Giáo viên giảng dạy": it.teacherName,
@@ -385,6 +397,7 @@ export function GradeAnalyticsTab({
 
     const excelRows = displayedTrackingStudents.map((st, idx) => ({
       "STT": idx + 1,
+      "Cơ sở": st.campusName || "",
       "Mã HS": st.studentCode,
       "Họ và tên": st.studentName,
       "Lớp": st.className,
@@ -635,8 +648,27 @@ export function GradeAnalyticsTab({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-          {/* 1. Cấp học */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          {/* 1. Cơ sở */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1">
+              Cơ sở:
+            </label>
+            <select
+              value={selectedCampusId}
+              onChange={e => setSelectedCampusId(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
+            >
+              <option value="ALL">-- Tất cả Cơ sở --</option>
+              {campuses.map((cp: any) => (
+                <option key={cp.id} value={cp.id}>
+                  {cp.campusName || cp.campusCode}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. Cấp học */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Cấp học:
@@ -653,7 +685,7 @@ export function GradeAnalyticsTab({
             </select>
           </div>
 
-          {/* 2. Lớp học (hỗ trợ chế độ "Tất cả") */}
+          {/* 3. Lớp học (hỗ trợ chế độ "Tất cả") */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Lớp học ({filteredClasses.length} lớp):
@@ -670,7 +702,7 @@ export function GradeAnalyticsTab({
             </select>
           </div>
 
-          {/* 3. Kỳ khảo sát */}
+          {/* 4. Kỳ khảo sát */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Học kỳ / Kỳ khảo sát:
@@ -686,7 +718,7 @@ export function GradeAnalyticsTab({
             </select>
           </div>
 
-          {/* 4. Môn học (đúng theo kỳ) */}
+          {/* 5. Môn học (đúng theo kỳ) */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Môn học ({availableSubjectsForPeriod.length} môn):
@@ -703,7 +735,7 @@ export function GradeAnalyticsTab({
             </select>
           </div>
 
-          {/* 5. Tìm nhanh Giáo viên, Lớp, Môn */}
+          {/* 6. Tìm nhanh Giáo viên, Lớp, Môn */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
               Tìm nhanh:
@@ -794,6 +826,9 @@ export function GradeAnalyticsTab({
                           <span className="font-extrabold text-teal-900 bg-teal-50 px-2 py-0.5 rounded-lg border border-teal-200 whitespace-nowrap">
                             {it.className}
                           </span>
+                          {it.campusName && (
+                            <div className="text-[10px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">{it.campusName}</div>
+                          )}
                         </td>
 
                         {/* Giáo viên */}
@@ -1017,9 +1052,12 @@ export function GradeAnalyticsTab({
                       <td className="py-2.5 px-3 font-mono font-medium text-slate-600">{st.studentCode}</td>
                       <td className="py-2.5 px-3 font-bold text-slate-900">{st.studentName}</td>
                       <td className="py-2.5 px-3">
-                        <span className="font-extrabold text-teal-900 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 text-[11px]">
+                        <span className="font-extrabold text-teal-900 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 text-[11px] whitespace-nowrap">
                           {st.className}
                         </span>
+                        {st.campusName && (
+                          <div className="text-[10px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">{st.campusName}</div>
+                        )}
                       </td>
                       <td className="py-2.5 px-3 font-semibold text-slate-800">{st.subjectName}</td>
                       <td className="py-2.5 px-3 text-slate-700">{st.teacherName}</td>
@@ -1232,7 +1270,7 @@ export function GradeAnalyticsTab({
                   </span>
                 </div>
                 <h3 className="font-extrabold text-base text-slate-800 mt-1">
-                  {selectedTeacherRow?.subjectName} - Lớp {selectedTeacherRow?.className}
+                  {selectedTeacherRow?.subjectName} - Lớp {selectedTeacherRow?.className} {selectedTeacherRow?.campusName ? `(${selectedTeacherRow.campusName})` : ""}
                 </h3>
                 <p className="text-xs text-slate-500">
                   GV: <strong className="text-slate-800">{selectedTeacherRow?.teacherName}</strong> | Mức chuẩn quy định: <strong className="text-teal-700">{selectedTeacherRow?.benchmark}đ</strong>
@@ -1318,12 +1356,32 @@ export function GradeAnalyticsTab({
               <span className="text-[11px] text-slate-400 italic">
                 Để chỉnh sửa điểm số, vui lòng chuyển sang Tab &quot;Sổ điểm&quot;
               </span>
-              <button
-                onClick={() => setDetailModalOpen(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
-              >
-                Đóng
-              </button>
+              <div className="flex items-center gap-2">
+                {onNavigateToGradebook && selectedTeacherRow && (
+                  <button
+                    onClick={() => {
+                      setDetailModalOpen(false)
+                      onNavigateToGradebook({
+                        campusId: selectedTeacherRow.campusId,
+                        grade: selectedTeacherRow.grade,
+                        classId: selectedTeacherRow.classId,
+                        subjectId: selectedTeacherRow.subjectId,
+                        period: currentPeriod
+                      })
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 bg-[#005B58] hover:bg-[#004845] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Mở Sổ điểm</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setDetailModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all"
+                >
+                  Đóng
+                </button>
+              </div>
             </div>
           </div>
         </div>
