@@ -12,6 +12,7 @@ import {
   Baby, Building2, Star, CheckCheck, Clock, Mail, Send, FileSpreadsheet,
   UserCheck, AlertTriangle, ArrowRight, BookMarked, Grid3X3, Table2, ArrowLeftRight, MapPin, RefreshCw, ListChecks, Info, HelpCircle, ShieldCheck, Target, Printer
 } from "lucide-react"
+import { DetailedStatementView } from "@/components/dashboard/DetailedStatementView"
 
 interface TeacherInfo {
   id: string;
@@ -3818,6 +3819,22 @@ export function AdminTongHopClient({
 
           <button
             type="button"
+            onClick={() => handleSwitchMainTab("bang-ke")}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${mainTab === "bang-ke"
+                ? "bg-white text-slate-900 shadow-2xs font-bold"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+              }`}
+          >
+            <ClipboardList className="w-3.5 h-3.5 text-teal-600" />
+            <span>Bảng kê chi tiết</span>
+            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${mainTab === "bang-ke" ? "bg-teal-50 text-teal-800 border border-teal-200" : "bg-slate-200 text-slate-600"
+              }`}>
+              {teachersList.length} GV
+            </span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => handleSwitchMainTab("dbcl")}
             className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${mainTab === "dbcl"
                 ? "bg-white text-slate-900 shadow-2xs font-bold"
@@ -3908,6 +3925,24 @@ export function AdminTongHopClient({
 
       {mainTab === "ma-tran" ? (
         renderTTCMMatrix()
+      ) : mainTab === "bang-ke" ? (
+        <DetailedStatementView
+          initialSlots={initialSlots}
+          teachers={teachersList}
+          departments={departments}
+          campuses={campuses}
+          academicYears={academicYears}
+          selectedYearId={filterAcademicYearId}
+          currentTeacher={currentTeacher}
+          isTTCM={isTTCM}
+          isSuperAdmin={isSuperAdmin}
+          isHeadOfAcademic={isHeadOfAcademic}
+          isTBP={isTBP}
+          isGDCS={isGDCS}
+          preSelectedTeacherId={selectedTeacherId}
+          onSelectTeacher={(id) => setSelectedTeacherId(id)}
+          openEvalModal={openEvalModal}
+        />
       ) : mainTab === "dbcl" ? (
         renderQADashboard()
       ) : mainTab === "kho-tieu-bieu" ? (

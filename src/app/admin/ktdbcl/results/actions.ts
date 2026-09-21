@@ -29,9 +29,9 @@ export async function saveExamResultsGridAction(
       where: { examId }
     })
 
-    // 2. Filter rows that have valid achievements (both category and level set, and name is not empty)
+    // 2. Filter rows that have valid achievements (category is selected)
     const validRows = rows.filter(
-      r => r.category !== "" && r.level !== "" && r.name.trim() !== ""
+      r => r.category && r.category.trim() !== ""
     )
 
     const individualRows = validRows.filter(r => r.type === "CA_NHAN")
@@ -39,12 +39,14 @@ export async function saveExamResultsGridAction(
 
     // 3. Save individual achievements
     for (const row of individualRows) {
+      const achName = (row.name && row.name.trim()) ? row.name.trim() : (row.category || "Thành tích")
+      const achLevel = row.level || ""
       await tx.achievement.create({
         data: {
-          name: row.name.trim(),
+          name: achName,
           type: "CA_NHAN",
           category: row.category,
-          level: row.level,
+          level: achLevel,
           academicYearId,
           teacherId: row.teacherId || null,
           teacherName: row.teacherName || null,
@@ -61,18 +63,20 @@ export async function saveExamResultsGridAction(
     // 4. Save team achievements (grouped by name, level, category, teacherId, teacherName)
     const teamGroups: Record<string, typeof teamRows> = {}
     for (const row of teamRows) {
-      const key = `${row.name.trim()}|${row.category}|${row.level}|${row.teacherId || ''}|${row.teacherName || ''}`
+      const achName = (row.name && row.name.trim()) ? row.name.trim() : (row.category || "Thành tích")
+      const achLevel = row.level || ""
+      const key = `${achName}|${row.category}|${achLevel}|${row.teacherId || ''}|${row.teacherName || ''}`
       if (!teamGroups[key]) {
         teamGroups[key] = []
       }
-      teamGroups[key].push(row)
+      teamGroups[key].push({ ...row, name: achName, level: achLevel })
     }
 
     for (const [key, groupedRows] of Object.entries(teamGroups)) {
       const first = groupedRows[0]
       await tx.achievement.create({
         data: {
-          name: first.name.trim(),
+          name: first.name,
           type: "DONG_DOI",
           category: first.category,
           level: first.level,
@@ -386,8 +390,8 @@ export async function upsertExamResultsAction(
   if (!examId || !academicYearId || !changedRows || changedRows.length === 0) return
 
   await prisma.$transaction(async (tx) => {
-    const emptyRows = changedRows.filter(r => r.category === "" || r.level === "" || r.name.trim() === "");
-    const validRows = changedRows.filter(r => r.category !== "" && r.level !== "" && r.name.trim() !== "");
+    const emptyRows = changedRows.filter(r => !r.category || r.category.trim() === "");
+    const validRows = changedRows.filter(r => r.category && r.category.trim() !== "");
     const individualRows = validRows.filter(r => r.type === "CA_NHAN");
     const teamRows = validRows.filter(r => r.type === "DONG_DOI");
 
@@ -396,7 +400,7 @@ export async function upsertExamResultsAction(
       .filter(r => r.achievementId)
       .map(r => ({
         studentId: r.studentId,
-        achievementId: r.achievementId
+        achievementId: r.achievementId as string
       }));
 
     if (targetLinks.length > 0) {
@@ -436,6 +440,8 @@ export async function upsertExamResultsAction(
 
     // 2. Process Individual Rows (Upsert)
     for (const row of individualRows) {
+      const achName = (row.name && row.name.trim()) ? row.name.trim() : (row.category || "Đạt giải");
+      const achLevel = row.level || "";
       if (row.achievementId) {
         const existingAch = await tx.achievement.findUnique({ where: { id: row.achievementId } });
         if (existingAch) {
@@ -443,9 +449,9 @@ export async function upsertExamResultsAction(
             await tx.achievement.update({
               where: { id: row.achievementId },
               data: {
-                name: row.name.trim(),
+                name: achName,
                 category: row.category,
-                level: row.level,
+                level: achLevel,
                 teacherId: row.teacherId,
                 teacherName: row.teacherName,
               }
@@ -463,17 +469,25 @@ export async function upsertExamResultsAction(
              
              await tx.achievement.create({
               data: {
-                name: row.name.trim(), type: "CA_NHAN", category: row.category, level: row.level,
+                name: achName, type: "CA_NHAN", category: row.category, level: achLevel,
                 academicYearId, teacherId: row.teacherId, teacherName: row.teacherName, examId,
                 students: { create: { studentId: row.studentId } }
               }
             });
           }
+        } else {
+          await tx.achievement.create({
+            data: {
+              name: achName, type: "CA_NHAN", category: row.category, level: achLevel,
+              academicYearId, teacherId: row.teacherId, teacherName: row.teacherName, examId,
+              students: { create: { studentId: row.studentId } }
+            }
+          });
         }
       } else {
         await tx.achievement.create({
           data: {
-            name: row.name.trim(), type: "CA_NHAN", category: row.category, level: row.level,
+            name: achName, type: "CA_NHAN", category: row.category, level: achLevel,
             academicYearId, teacherId: row.teacherId, teacherName: row.teacherName, examId,
             students: { create: { studentId: row.studentId } }
           }
@@ -484,9 +498,11 @@ export async function upsertExamResultsAction(
     // 3. Process Team Rows (Group and Upsert)
     const teamGroups: Record<string, typeof teamRows> = {};
     for (const row of teamRows) {
-      const key = `${row.name.trim()}|${row.category}|${row.level}|${row.teacherId || ''}|${row.teacherName || ''}`;
+      const achName = (row.name && row.name.trim()) ? row.name.trim() : (row.category || "Đạt giải");
+      const achLevel = row.level || "";
+      const key = `${achName}|${row.category}|${achLevel}|${row.teacherId || ''}|${row.teacherName || ''}`;
       if (!teamGroups[key]) teamGroups[key] = [];
-      teamGroups[key].push(row);
+      teamGroups[key].push({ ...row, name: achName, level: achLevel });
     }
 
     for (const [key, groupedRows] of Object.entries(teamGroups)) {
@@ -494,7 +510,7 @@ export async function upsertExamResultsAction(
       
       const existingTeamAch = await tx.achievement.findFirst({
         where: {
-          examId, type: "DONG_DOI", name: first.name.trim(), category: first.category, level: first.level,
+          examId, type: "DONG_DOI", name: first.name, category: first.category, level: first.level,
           teacherId: first.teacherId || null
         }
       });
@@ -538,7 +554,7 @@ export async function upsertExamResultsAction(
         }
         await tx.achievement.create({
           data: {
-            name: first.name.trim(), type: "DONG_DOI", category: first.category, level: first.level,
+            name: first.name, type: "DONG_DOI", category: first.category, level: first.level,
             academicYearId, teacherId: first.teacherId, teacherName: first.teacherName, examId,
             students: { create: groupedRows.map(r => ({ studentId: r.studentId })) }
           }

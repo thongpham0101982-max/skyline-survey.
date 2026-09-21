@@ -23,18 +23,19 @@ interface ResultsClientProps {
   classes: any[]
   achievementCategories: any[]
   achievementLevels: any[]
+  initialTab?: 'input' | 'reports' | 'profiles'
 }
 
 
 
 const getSelectStyle = (val: string) => {
-  if (val === "VANG" || val === "NHAT") {
+  if (val === "VANG" || val === "NHAT" || val === "1") {
     return "bg-amber-50/80 border-amber-300 text-amber-700 font-black shadow-2xs";
   }
-  if (val === "BAC" || val === "NHI") {
+  if (val === "BAC" || val === "NHI" || val === "2") {
     return "bg-slate-100/80 border-slate-300 text-slate-700 font-black shadow-2xs";
   }
-  if (val === "DONG" || val === "BA") {
+  if (val === "DONG" || val === "BA" || val === "3") {
     return "bg-orange-50/80 border-orange-300 text-orange-700 font-black shadow-2xs";
   }
   if (val && val !== "") {
@@ -232,7 +233,7 @@ export function ResultsClient({
 
       setGridRows(prev => {
         const newRows = [...prev]
-        const processedCounts = {}
+        const processedCounts: Record<string, number> = {}
 
         data.forEach((row: any) => {
           const rawStudentCode = row["Mã HS"] || row["Mã học sinh"] || row["studentCode"]
@@ -247,7 +248,7 @@ export function ResultsClient({
           if (!category) return;
           importedCount++;
 
-          const studentRowIndexes = []
+          const studentRowIndexes: number[] = []
           newRows.forEach((r, idx) => {
             if (cleanCode(r.studentCode) === cleanCode(studentCode)) {
               studentRowIndexes.push(idx)
@@ -430,16 +431,31 @@ export function ResultsClient({
       const updatedRow = { ...row, [field]: value }
 
       if (field === "category") {
-        updatedRow.level = ""
-        updatedRow.name = ""
+        if (!value) {
+          updatedRow.level = ""
+          updatedRow.name = ""
+        } else {
+          updatedRow.level = ""
+          const catObj = achievementCategories.find((c) => c.code === value)
+          const catLevels = catObj ? achievementLevels.filter((l) => l.categoryId === catObj.id) : []
+          if (catLevels.length === 0) {
+            // Category has no sub-levels (e.g. Chứng nhận, Thành viên, Vắng thi)
+            updatedRow.name = CATEGORY_LABELS[value] || catObj?.name || value
+          } else {
+            updatedRow.name = ""
+          }
+        }
       } else if (field === "level") {
         const cat = row.category
         const lvl = value
 
-        if (cat === "" || lvl === "") {
+        if (!cat) {
           updatedRow.name = ""
-        } else if (row.name === "" || row.name === getAutoName(row.category, row.level) || row.name === getAutoName(cat, lvl)) {
-          updatedRow.name = getAutoName(cat, lvl)
+        } else if (!lvl) {
+          const catObj = achievementCategories.find((c) => c.code === cat)
+          updatedRow.name = CATEGORY_LABELS[cat] || catObj?.name || ""
+        } else {
+          updatedRow.name = LEVEL_LABELS[lvl] || lvl
         }
       }
 
@@ -499,15 +515,16 @@ export function ResultsClient({
 
       const updatedRow = { ...row, type: bulkType, category: bulkCategory };
       
-      if (bulkCategory === "") {
+      if (!bulkCategory) {
         updatedRow.level = "";
         updatedRow.name = "";
       } else {
         updatedRow.level = bulkLevel;
-        if (bulkLevel === "") {
-           updatedRow.name = "";
-        } else if (row.name === "" || row.name === getAutoName(row.category, row.level) || row.name === getAutoName(bulkCategory, bulkLevel)) {
-           updatedRow.name = getAutoName(bulkCategory, bulkLevel);
+        const catObj = achievementCategories.find((c) => c.code === bulkCategory);
+        if (bulkLevel) {
+          updatedRow.name = LEVEL_LABELS[bulkLevel] || bulkLevel;
+        } else {
+          updatedRow.name = CATEGORY_LABELS[bulkCategory] || catObj?.name || bulkCategory;
         }
       }
       
@@ -576,8 +593,9 @@ export function ResultsClient({
   }
 
   const getAutoName = (cat: string, lvl: string) => {
-    if (!cat || !lvl) return ""
-    return LEVEL_LABELS[lvl] || ""
+    if (lvl && LEVEL_LABELS[lvl]) return LEVEL_LABELS[lvl]
+    if (cat && CATEGORY_LABELS[cat]) return CATEGORY_LABELS[cat]
+    return ""
   }
 
   // Save grid
@@ -593,24 +611,24 @@ export function ResultsClient({
       return
     }
 
-    const invalidRow = changedRowsToSave.find(r => r.category !== "" && r.level !== "" && r.name.trim() === "")
-    if (invalidRow) {
-      alert(`Vui lòng nhập Tên thành tích cho học sinh ${invalidRow.studentName}!`)
-      setSavingGrid(false)
-      return
-    }
-
     try {
-      const rowsPayload = changedRowsToSave.map(r => ({
-        achievementId: r.achievementId,
-        studentId: r.studentId,
-        name: r.name,
-        type: r.type,
-        category: r.category,
-        level: r.level,
-        teacherId: r.teacherId === "KHAC" ? null : (r.teacherId || null),
-        teacherName: r.teacherId === "KHAC" ? (r.teacherName || null) : (r.teacherId ? (teachers.find(t => t.id === r.teacherId)?.teacherName || null) : (r.teacherName || null))
-      }))
+      const rowsPayload = changedRowsToSave.map(r => {
+        const catName = CATEGORY_LABELS[r.category] || r.category || "Thành tích"
+        const lvlName = LEVEL_LABELS[r.level] || r.level || ""
+        const autoFallback = lvlName || catName
+        const finalName = (r.name && r.name.trim()) ? r.name.trim() : (r.category ? autoFallback : "")
+
+        return {
+          achievementId: r.achievementId,
+          studentId: r.studentId,
+          name: finalName,
+          type: r.type || "CA_NHAN",
+          category: r.category || "",
+          level: r.level || "",
+          teacherId: r.teacherId === "KHAC" ? null : (r.teacherId || null),
+          teacherName: r.teacherId === "KHAC" ? (r.teacherName || null) : (r.teacherId ? (teachers.find(t => t.id === r.teacherId)?.teacherName || null) : (r.teacherName || null))
+        }
+      })
 
       await upsertExamResultsAction(selectedExamId, yearId, rowsPayload)
       setHasChanges(false)
@@ -675,7 +693,7 @@ export function ResultsClient({
     const maxLens = Object.keys(exportRows[0]).map(key => 
       Math.max(key.length + 4, ...exportRows.map(row => String((row as any)[key] || '').length + 2))
     )
-    ws['!cols'] = maxLens.map(w => ({ w: Math.min(w, 40) }))
+    ws['!cols'] = maxLens.map(w => ({ wch: Math.min(w, 40) }))
 
     XLSX.writeFile(wb, `Bao_Cao_Thanh_Tich_HS_${academicYears.find(y => y.id === yearId)?.name || 'All'}.xlsx`)
   }
@@ -899,7 +917,11 @@ export function ResultsClient({
                           disabled={bulkCategory === ""}
                           className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#48BFE3] font-bold text-white transition-all disabled:opacity-50 disabled:bg-slate-800/40 cursor-pointer"
                         >
-                          <option value="">-- Mức giải --</option>
+                          <option value="">{(() => {
+                            const catObj = achievementCategories.find((c) => c.code === bulkCategory)
+                            const filtered = catObj ? achievementLevels.filter((l) => l.categoryId === catObj.id) : []
+                            return filtered.length > 0 ? "-- Mức giải --" : "-- Không có mức giải --"
+                          })()}</option>
                           {(() => {
                             const catObj = achievementCategories.find((c) => c.code === bulkCategory)
                             const filtered = catObj ? achievementLevels.filter((l) => l.categoryId === catObj.id) : []
@@ -957,10 +979,10 @@ export function ResultsClient({
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
                       {pagedGridRows.map((row, idx) => {
-                        const hasAward = row.category !== "" && row.level !== ""
-                        const isGold = row.level === "VANG" || row.level === "NHAT"
-                        const isSilver = row.level === "BAC" || row.level === "NHI"
-                        const isBronze = row.level === "DONG" || row.level === "BA"
+                        const hasAward = Boolean(row.category)
+                        const isGold = row.level === "VANG" || row.level === "NHAT" || row.level === "1"
+                        const isSilver = row.level === "BAC" || row.level === "NHI" || row.level === "2"
+                        const isBronze = row.level === "DONG" || row.level === "BA" || row.level === "3"
 
                         let rowBg = "hover:bg-slate-50/80 bg-white"
                         if (isGold) rowBg = "bg-amber-50/20 hover:bg-amber-50/40"
@@ -1041,10 +1063,14 @@ export function ResultsClient({
                               <select
                                 value={row.level}
                                 onChange={e => handleCellChange(row.gridRowId, "level", e.target.value)}
-                                disabled={row.category === ""}
+                                disabled={!row.category}
                                 className={`w-full border rounded-lg px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:bg-slate-50/30 ${getSelectStyle(row.level)}`}
                               >
-                                <option value="">-- Không --</option>
+                                <option value="">{(() => {
+                                  const catObj = achievementCategories.find((c) => c.code === row.category)
+                                  const filtered = catObj ? achievementLevels.filter((l) => l.categoryId === catObj.id) : []
+                                  return filtered.length > 0 ? "-- Chọn mức giải --" : "-- Không --"
+                                })()}</option>
                                 {(() => {
                                   const catObj = achievementCategories.find((c) => c.code === row.category)
                                   const filtered = catObj ? achievementLevels.filter((l) => l.categoryId === catObj.id) : []
@@ -1061,8 +1087,8 @@ export function ResultsClient({
                                 type="text"
                                 value={row.name}
                                 onChange={e => handleCellChange(row.gridRowId, "name", e.target.value)}
-                                disabled={row.category === "" || row.level === ""}
-                                placeholder="Tự sinh nếu để trống..."
+                                disabled={!row.category}
+                                placeholder={row.category ? (CATEGORY_LABELS[row.category] || "Tự sinh nếu để trống...") : "Chọn loại giải trước..."}
                                 className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#48BFE3] font-semibold text-slate-800 transition-all"
                               />
                             </td>
@@ -1078,7 +1104,7 @@ export function ResultsClient({
                                       handleCellChange(row.gridRowId, "teacherName", "")
                                     }
                                   }}
-                                  disabled={row.category === "" || row.level === ""}
+                                  disabled={!row.category}
                                   className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#48BFE3] transition-colors"
                                 >
                                   <option value="">-- Chọn GV hệ thống --</option>
@@ -1093,7 +1119,7 @@ export function ResultsClient({
                                     type="text"
                                     value={row.teacherName}
                                     onChange={e => handleCellChange(row.gridRowId, "teacherName", e.target.value)}
-                                    disabled={row.category === "" || row.level === ""}
+                                    disabled={!row.category}
                                     placeholder="Nhập tên GV..."
                                     className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#48BFE3] font-semibold text-slate-800 transition-all"
                                   />
