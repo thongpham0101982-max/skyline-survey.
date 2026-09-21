@@ -62,6 +62,7 @@ export function GradeAnalyticsTab({
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
   const [selectedClassId, setSelectedClassId] = useState("ALL")
   const [selectedSubjectId, setSelectedSubjectId] = useState("ALL")
+  const [selectedSemester, setSelectedSemester] = useState("ALL")
   const [currentPeriod, setCurrentPeriod] = useState("KSĐN")
   const [baselinePeriod, setBaselinePeriod] = useState("KSĐN")
   const [searchKeyword, setSearchKeyword] = useState("")
