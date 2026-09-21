@@ -1171,8 +1171,8 @@ export function TTCMDepartmentSummaryTab({
                   ? Number(departmentKPIs.avgScore).toFixed(1)
                   : "Chưa có"}
               </span>
-              {!isPreschool && departmentKPIs.avgScore !== null && (
-                <span className="text-xs text-slate-400 font-bold">/ 20đ</span>
+              {departmentKPIs.avgScore !== null && (
+                <span className="text-xs text-slate-400 font-bold">/ {isPreschool ? "10đ" : "20đ"}</span>
               )}
             </div>
             <div className="flex items-center gap-1.5 mt-2">

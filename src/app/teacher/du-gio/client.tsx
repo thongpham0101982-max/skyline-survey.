@@ -5832,8 +5832,16 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-black text-base sm:text-lg flex items-center gap-2">
-                        <ClipboardList className="w-5 h-5" /> Phiếu Đánh Giá Tiết Dự Giờ
+                        <ClipboardList className="w-5 h-5" />
+                        {getSlotCategoryInfo(evalModal.slot).key === "MAM_NON"
+                          ? "Phiếu Đánh Giá Mầm Non (10.00đ)"
+                          : getSlotCategoryInfo(evalModal.slot).key === "GVNN_ESL"
+                          ? "Phiếu Dự Giờ Tiết Dạy GVNN (4.00đ)"
+                          : "Phiếu Đánh Giá Tiết Dạy Phổ Thông (20.00đ)"}
                       </h3>
+                      <span className={`px-2 py-0.5 text-[10px] font-black rounded-lg border ${getSlotCategoryInfo(evalModal.slot).badgeClass}`}>
+                        {getSlotCategoryInfo(evalModal.slot).shortCode}
+                      </span>
                       {isSurpriseSlot(evalModal.slot) && (
                         <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-rose-500/90 text-white border border-rose-300/40 shadow-2xs">
                           ⚡ Dự giờ đột xuất
