@@ -1,6 +1,8 @@
 // @ts-nocheck
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { useState, useEffect, useMemo } from "react"
 import * as XLSX from "xlsx"
 import {
@@ -49,6 +51,8 @@ export function GradeAnalyticsTab({
   savedConfigs = [],
   onNavigateToGradebook
 }: Props) {
+  const router = useRouter()
+
   // Sub-view navigation state: "teachers" (View 1) | "tracking" (View 2) | "charts" (View 3)
   const [activeSubView, setActiveSubView] = useState<"teachers" | "tracking" | "charts">("teachers")
 
@@ -608,6 +612,15 @@ export function GradeAnalyticsTab({
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => router.push("/admin/ktdbcl/scatter-plot")}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-[#005B58] border border-teal-200 rounded-xl text-xs font-black transition-all shadow-sm"
+              title="Mở Biểu đồ Phân tán (Scatter Plot) chuyên sâu theo chuẩn Sky-Line & GDPT 2018"
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-teal-700" />
+              <span>Biểu đồ Phân tán (Scatter)</span>
+            </button>
+
             <button
               onClick={handleOpenBenchmarkModal}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition-all shadow-sm"
