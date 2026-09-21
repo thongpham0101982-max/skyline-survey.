@@ -492,12 +492,33 @@ export async function GET(request: Request) {
         if (log.difficulties) {
           parentFeedback = log.difficulties.replace(/^Ý KIẾN PHHS:\s*/i, "").trim()
         }
+
+        let isAcknowledged = false
+        let acknowledgedAt: string | null = null
+        let forwardedGvbm: any = null
+
+        if (log.nextActions) {
+          if (log.nextActions.includes("[ACKNOWLEDGED]")) {
+            isAcknowledged = true
+          }
+          const forwardMatch = log.nextActions.match(/\[GVBM_FORWARD:(.*?)\]/)
+          if (forwardMatch) {
+            try {
+              forwardedGvbm = JSON.parse(forwardMatch[1])
+              isAcknowledged = true
+            } catch (_) {}
+          }
+        }
+
         exchangeMap.set(log.studentId, {
           logId: log.id,
           teacherRemark,
           teacherRemarkDate: log.meetingDate || log.createdAt,
           parentFeedback,
           parentFeedbackDate: log.updatedAt || log.createdAt,
+          isAcknowledged,
+          acknowledgedAt,
+          forwardedGvbm,
           notes: log.notes
         })
       }
@@ -593,6 +614,9 @@ export async function GET(request: Request) {
         teacherRemarkDate: exchangeMap.get(st.id)?.teacherRemarkDate || null,
         parentFeedback: exchangeMap.get(st.id)?.parentFeedback || "",
         parentFeedbackDate: exchangeMap.get(st.id)?.parentFeedbackDate || null,
+        isAcknowledged: Boolean(exchangeMap.get(st.id)?.isAcknowledged),
+        acknowledgedAt: exchangeMap.get(st.id)?.acknowledgedAt || null,
+        forwardedGvbm: exchangeMap.get(st.id)?.forwardedGvbm || null,
         exchangeLogId: exchangeMap.get(st.id)?.logId || null,
         defaultTeacherRemark: `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh ${st.studentName}. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`
       }
@@ -624,12 +648,25 @@ export async function GET(request: Request) {
       subjectComparisons,
       studentMatrix,
       trackingStudents,
+      teachingAssignments: teachingAssignments.map(ta => ({
+        subjectId: ta.subjectId,
+        subjectName: ta.subject?.subjectName || "",
+        subjectCode: ta.subject?.subjectCode || "",
+        teacherId: ta.teacherId,
+        teacherName: ta.teacher?.teacherName || "",
+        userId: ta.teacher?.userId || ""
+      })),
       summary: {
         totalStudents: students.length,
         totalSubjects: subjectsList.length,
         trackingStudentsCount: trackingStudents.length,
         entranceCommittedCount: studentMatrix.filter(s => s.isEntranceCommitted).length,
-        learningCommittedCount: studentMatrix.filter(s => s.learningCommitments.length > 0).length
+        learningCommittedCount: studentMatrix.filter(s => s.learningCommitments.length > 0).length,
+        parentFeedbackSummary: {
+          totalFeedbackCount: studentMatrix.filter(s => Boolean(s.parentFeedback)).length,
+          acknowledgedCount: studentMatrix.filter(s => Boolean(s.parentFeedback) && s.isAcknowledged).length,
+          forwardedCount: studentMatrix.filter(s => Boolean(s.parentFeedback) && Boolean(s.forwardedGvbm)).length
+        }
       }
     })
 

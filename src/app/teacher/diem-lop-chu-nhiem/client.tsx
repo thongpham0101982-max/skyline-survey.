@@ -5,6 +5,7 @@ import {
   FileSpreadsheet,
   BarChart3,
   Users,
+  Send,
   MessageSquare,
   Edit3,
   Award,
@@ -40,8 +41,10 @@ import {
   Legend
 } from "recharts"
 import * as XLSX from "xlsx"
+import toast from "react-hot-toast"
 import { StudentSurveyReportModal } from "./components/StudentSurveyReportModal"
 import { HomeroomFeedbackModal } from "./components/HomeroomFeedbackModal"
+import { ForwardToGvbmModal } from "./components/ForwardToGvbmModal"
 
 const EVAL_PERIODS = [
   { code: "KSĐN", label: "Khảo sát đầu năm (KSĐN)", short: "KSĐN" },
@@ -69,7 +72,7 @@ export function HomeroomGradesClient({
   const [selectedClassId, setSelectedClassId] = useState<string>(homeroomClasses[0]?.id || "")
   const [selectedPeriod, setSelectedPeriod] = useState<string>("KSĐN")
   const [selectedScope, setSelectedScope] = useState<string>("campus") // "campus" | "all"
-  const [activeTab, setActiveTab] = useState<"matrix" | "comparative" | "tracking">("matrix")
+  const [activeTab, setActiveTab] = useState<"matrix" | "comparative" | "tracking" | "feedback">("matrix")
   const [searchTerm, setSearchTerm] = useState("")
   const [trackingFilter, setTrackingFilter] = useState<string>("ALL") // "ALL" | "BELOW_AVG" | "BELOW_BENCHMARK" | "ENTRANCE_COMMITMENT" | "LEARNING_COMMITMENT"
 
@@ -83,6 +86,78 @@ export function HomeroomGradesClient({
     subject: any
     gradeInfo: any
   } | null>(null)
+
+  // Feedback Tab Filter state
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState<string>("HAS_FEEDBACK") // "ALL" | "HAS_FEEDBACK" | "PENDING" | "ACKNOWLEDGED" | "FORWARDED"
+
+  // Forward to GVBM Modal state
+  const [forwardModalOpen, setForwardModalOpen] = useState(false)
+  const [selectedForwardStudent, setSelectedForwardStudent] = useState<any>(null)
+
+  const handleOpenForwardModal = (student: any) => {
+    setSelectedForwardStudent(student)
+    setForwardModalOpen(true)
+  }
+
+  const handleForwarded = (studentId: string, forwardData: any) => {
+    if (!data?.studentMatrix) return
+    setData((prev: any) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        studentMatrix: prev.studentMatrix.map((st: any) => {
+          if (st.studentId === studentId) {
+            return {
+              ...st,
+              isAcknowledged: true,
+              forwardedGvbm: forwardData
+            }
+          }
+          return st
+        })
+      }
+    })
+  }
+
+  const handleAcknowledgeFeedback = async (student: any) => {
+    try {
+      const res = await fetch("/api/teacher/homeroom-grades/forward-gvbm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: student.studentId,
+          classId: selectedClassId,
+          academicYearId: selectedYearId,
+          evaluationPeriod: selectedPeriod,
+          action: "ACKNOWLEDGE"
+        })
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast.success(json.message || "Đã tiếp nhận ý kiến của PHHS!")
+        setData((prev: any) => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            studentMatrix: prev.studentMatrix.map((st: any) => {
+              if (st.studentId === student.studentId) {
+                return {
+                  ...st,
+                  isAcknowledged: true,
+                  acknowledgedAt: json.acknowledgedAt
+                }
+              }
+              return st
+            })
+          }
+        })
+      } else {
+        toast.error(json.error || "Tiếp nhận thất bại")
+      }
+    } catch (e) {
+      toast.error("Lỗi khi tiếp nhận ý kiến PHHS")
+    }
+  }
 
   // Homeroom Feedback Modal state
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
@@ -174,6 +249,34 @@ export function HomeroomGradesClient({
       (s.studentCode || "").toLowerCase().includes(lower)
     )
   }, [data?.studentMatrix, searchTerm])
+
+  // Filtered feedback students for Tab 4
+  const filteredFeedbackStudents = useMemo(() => {
+    if (!data?.studentMatrix) return []
+    let list = data.studentMatrix
+
+    if (feedbackStatusFilter === "HAS_FEEDBACK") {
+      list = list.filter((s: any) => Boolean(s.parentFeedback))
+    } else if (feedbackStatusFilter === "PENDING") {
+      list = list.filter((s: any) => Boolean(s.parentFeedback) && !s.isAcknowledged && !s.forwardedGvbm)
+    } else if (feedbackStatusFilter === "ACKNOWLEDGED") {
+      list = list.filter((s: any) => Boolean(s.parentFeedback) && s.isAcknowledged && !s.forwardedGvbm)
+    } else if (feedbackStatusFilter === "FORWARDED") {
+      list = list.filter((s: any) => Boolean(s.forwardedGvbm))
+    }
+
+    if (searchTerm.trim()) {
+      const lower = searchTerm.toLowerCase().trim()
+      list = list.filter((s: any) =>
+        (s.studentName || "").toLowerCase().includes(lower) ||
+        (s.studentCode || "").toLowerCase().includes(lower) ||
+        (s.parentFeedback || "").toLowerCase().includes(lower) ||
+        (s.teacherRemark || "").toLowerCase().includes(lower)
+      )
+    }
+
+    return list
+  }, [data?.studentMatrix, feedbackStatusFilter, searchTerm])
 
   // Filtered tracking students
   const filteredTracking = useMemo(() => {
@@ -301,6 +404,42 @@ export function HomeroomGradesClient({
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "BangDiemTongHop")
     XLSX.writeFile(wb, `BangDiem_${currentClass?.className || "Lop"}_Ky_${selectedPeriod}.xlsx`)
+  }
+
+  // Export Feedback Excel
+  const handleExportFeedbackExcel = () => {
+    if (!data?.studentMatrix) return
+    const feedbackList = data.studentMatrix.filter((s: any) => Boolean(s.parentFeedback))
+    const rows = feedbackList.map((st: any, idx: number) => {
+      let statusText = "Chờ tiếp nhận"
+      if (st.forwardedGvbm) {
+        statusText = `Đã chuyển GVBM (${st.forwardedGvbm.subjectName} - ${st.forwardedGvbm.teacherName})`
+      } else if (st.isAcknowledged) {
+        statusText = "Đã tiếp nhận"
+      }
+
+      return {
+        "STT": idx + 1,
+        "Mã học sinh": st.studentCode,
+        "Họ và tên": st.studentName,
+        "Lớp": currentClass?.className || "",
+        "ĐTB Lớp": st.gpa !== null ? st.gpa.toFixed(1) : "-",
+        "Số môn < TB": st.belowAverageCount || 0,
+        "Số môn < Chuẩn": st.belowBenchmarkCount || 0,
+        "Ý kiến & Nhận xét GVCN": st.teacherRemark || "",
+        "Ý kiến phản hồi của PHHS": st.parentFeedback || "",
+        "Ngày PHHS gửi": st.parentFeedbackDate ? new Date(st.parentFeedbackDate).toLocaleDateString("vi-VN") : "",
+        "Trạng thái xử lý": statusText,
+        "GVBM tiếp nhận": st.forwardedGvbm?.teacherName || "",
+        "Môn chuyển giao": st.forwardedGvbm?.subjectName || "",
+        "Lời nhắn GVCN gửi GVBM": st.forwardedGvbm?.message || ""
+      }
+    })
+
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "TongHopYkienPHHS")
+    XLSX.writeFile(wb, `YkienPHHS_${currentClass?.className || "Lop"}_${selectedPeriod}.xlsx`)
   }
 
   // Export Comparative Excel
@@ -556,6 +695,23 @@ export function HomeroomGradesClient({
               </span>
             )}
           </button>
+
+          <button
+            onClick={() => setActiveTab("feedback")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-extrabold transition-all ${
+              activeTab === "feedback"
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <MessageSquare className="w-4 h-4 text-sky-600" />
+            <span>Tổng Hợp Ý Kiến PHHS</span>
+            {(data?.summary?.parentFeedbackSummary?.totalFeedbackCount || 0) > 0 && (
+              <span className="px-1.5 py-0.2 bg-sky-100 text-sky-800 rounded-full text-[10px] font-black">
+                {data?.summary?.parentFeedbackSummary?.totalFeedbackCount}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Action button */}
@@ -588,6 +744,16 @@ export function HomeroomGradesClient({
             >
               <Download className="w-3.5 h-3.5" />
               Xuất Báo Cáo Đối Sánh Khối
+            </button>
+          )}
+
+          {activeTab === "feedback" && (
+            <button
+              onClick={handleExportFeedbackExcel}
+              className="flex items-center justify-center gap-1.5 px-4 py-2 bg-sky-50 text-sky-700 border border-sky-300 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all w-full sm:w-auto cursor-pointer shadow-2xs"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Xuất Excel Báo Cáo Ý Kiến PHHS</span>
             </button>
           )}
         </div>
