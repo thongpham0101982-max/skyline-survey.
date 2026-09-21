@@ -3758,6 +3758,30 @@ export function AdminTongHopClient({
     <div className="space-y-5 pb-12">
       <Toaster position="top-right" />
 
+      {/* Executive Header Banner: Điều hành Dự giờ Toàn trường */}
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D40] to-[#003B3A] rounded-2xl p-4 sm:p-5 text-white shadow-xl shadow-teal-950/20 border border-teal-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#48BFE3] to-[#008B82] p-0.5 shadow-md shrink-0">
+            <div className="w-full h-full bg-[#003B3A] rounded-[10px] flex items-center justify-center">
+              <PieChart className="w-5 h-5 text-[#48BFE3]" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider bg-white/10 border border-white/15 text-emerald-200">
+                SKY-LINE • TRUNG TÂM ĐIỀU HÀNH DỰ GIỜ
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase bg-indigo-500 text-white border border-indigo-400/30">
+                👔 QUẢN LÝ CẤP CAO
+              </span>
+            </div>
+            <h1 className="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
+              Điều hành Dự giờ Toàn trường
+            </h1>
+          </div>
+        </div>
+      </div>
+
       {/* 1. Main Top Navigation Bar & Tools (Chuẩn Quản Trị, Không Trùng Lặp) */}
       <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Navigation Tabs */}

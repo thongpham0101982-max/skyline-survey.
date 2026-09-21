@@ -3210,23 +3210,37 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/10 backdrop-blur-md border border-white/15 text-emerald-200">
-                  {viewMode === "ADMIN" ? "SKY-LINE • TRUNG TÂM ĐIỀU HÀNH DỰ GIỜ" : "SKY-LINE • ĐÁNH GIÁ CHUYÊN MÔN"}
+                  {(viewMode === "ADMIN" || props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))
+                    ? "SKY-LINE • TRUNG TÂM ĐIỀU HÀNH DỰ GIỜ"
+                    : ((isTTCM || isTBP || activeMainTab === "ttcm_summary")
+                        ? "SKY-LINE • ĐIỀU HÀNH TỔ CHUYÊN MÔN"
+                        : "SKY-LINE • PHÁT TRIỂN CHUYÊN MÔN")}
                 </span>
                 {isMamNonTeacher && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-400 text-amber-950">
                     BẬC MẦM NON
                   </span>
                 )}
-                {viewMode === "ADMIN" && (
+                {(viewMode === "ADMIN" || props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin"))) ? (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-indigo-500 text-white border border-indigo-400/30">
-                    👔 QUẢN TRỊ
+                    👔 QUẢN LÝ CẤP CAO
+                  </span>
+                ) : (isTTCM || isTBP || activeMainTab === "ttcm_summary") ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-teal-500 text-white border border-teal-400/30">
+                    📌 TỔ TRƯỞNG CHUYÊN MÔN
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-600/80 text-white border border-emerald-400/30">
+                    👩‍🏫 GIÁO VIÊN BỘ MÔN
                   </span>
                 )}
               </div>
               <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
-                {viewMode === "ADMIN" 
-                  ? (isMamNonTeacher ? "Quản trị & Điều hành Dự giờ Mầm non" : "Quản trị & Điều hành Tiết dạy Dự giờ Toàn trường")
-                  : (isMamNonTeacher ? "Dự giờ & Đánh giá Hoạt động Mầm non" : "Dự giờ và Phát triển chuyên môn Giáo viên")}
+                {(viewMode === "ADMIN" || props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))
+                  ? "Điều hành Dự giờ Toàn trường"
+                  : ((isTTCM || isTBP || activeMainTab === "ttcm_summary")
+                      ? "Điều hành Dự giờ Tổ chuyên môn"
+                      : "Tiết dạy & Dự giờ của tôi")}
               </h1>
             </div>
 

@@ -626,7 +626,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </div>
                 )}
 
-                {/* Danh mục: DỰ GIỜ & PHÁT TRIỂN CHUYÊN MÔN */}
+                {/* Danh mục: Dự giờ & Phát triển chuyên môn */}
                 {!isCollapsed ? (
                   <div className="px-3 pt-3 pb-1">
                     <span className="text-[10px] font-extrabold text-teal-300 uppercase tracking-[0.1em]">

@@ -237,7 +237,7 @@ export const APP_CATEGORIES = [
   },
   {
     id: "OBSERVATION",
-    name: "DỰ GIỜ & PHÁT TRIỂN CHUYÊN MÔN",
+    name: "Dự giờ & Phát triển chuyên môn",
     color: "teal",
     icon: ClipboardCheck,
     modules: [
