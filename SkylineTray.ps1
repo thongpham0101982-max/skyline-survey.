@@ -211,6 +211,24 @@ $menuFolder.Add_Click({
 })
 $contextMenu.Items.Add($menuFolder) | Out-Null
 
+# Sao lưu dữ liệu
+$menuBackup = New-Object System.Windows.Forms.ToolStripMenuItem
+$menuBackup.Text = "💾 Sao lưu Dữ liệu (Backup lúc 23h T6)"
+$menuBackup.Add_Click({
+    $notifyIcon.ShowBalloonTip(3000, "Sao lưu Dữ liệu", "Đang khởi chạy tiến trình sao lưu cơ sở dữ liệu...", [System.Windows.Forms.ToolTipIcon]::Info)
+    Start-Process "cmd.exe" -ArgumentList "/c `"$ScriptDir\chay-backup.bat`"" -WindowStyle Hidden -WorkingDirectory $ScriptDir
+})
+$contextMenu.Items.Add($menuBackup) | Out-Null
+
+$menuOpenBackupFolder = New-Object System.Windows.Forms.ToolStripMenuItem
+$menuOpenBackupFolder.Text = "🗄️ Mở Thư mục Sao lưu (data-backups)"
+$menuOpenBackupFolder.Add_Click({
+    $backupPath = Join-Path $ScriptDir "data-backups"
+    if (-not (Test-Path $backupPath)) { New-Item -ItemType Directory -Path $backupPath | Out-Null }
+    [System.Diagnostics.Process]::Start("explorer.exe", "`"$backupPath`"")
+})
+$contextMenu.Items.Add($menuOpenBackupFolder) | Out-Null
+
 # Tự khởi động cùng Windows
 $menuAutoStart = New-Object System.Windows.Forms.ToolStripMenuItem
 $menuAutoStart.Text = "⚙️ Tự khởi động cùng Windows"

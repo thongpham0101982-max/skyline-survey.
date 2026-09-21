@@ -65,3 +65,43 @@ export async function syncPortalAccountsAction() {
   revalidatePath("/admin/maintenance")
   return { success: true, count: createdCount }
 }
+
+export async function getBackupListAction() {
+  const fs = require("fs");
+  const path = require("path");
+  const backupDir = path.join(process.cwd(), "data-backups");
+
+  if (!fs.existsSync(backupDir)) {
+    return [];
+  }
+
+  const files = fs.readdirSync(backupDir);
+  const metaList = files
+    .filter((f: string) => f.startsWith("skyline_backup_") && f.endsWith("_meta.json"))
+    .map((f: string) => {
+      try {
+        const content = JSON.parse(fs.readFileSync(path.join(backupDir, f), "utf8"));
+        return content;
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return metaList;
+}
+
+export async function triggerBackupAction() {
+  const path = require("path");
+  const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
+  try {
+    const backupModule = eval("require")(scriptPath);
+    const result = await backupModule.runBackup({ triggerType: "MANUAL_WEB_ADMIN", force: true });
+    revalidatePath("/admin/maintenance");
+    return { success: true, result };
+  } catch (err: any) {
+    console.error("[triggerBackupAction Error]:", err);
+    return { success: false, error: err.message || "Lỗi tiến trình sao lưu" };
+  }
+}

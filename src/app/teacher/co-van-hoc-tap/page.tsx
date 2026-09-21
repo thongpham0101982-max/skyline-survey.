@@ -1,6 +1,7 @@
 "use client"
 
 import StudentSnapshotPopover from "@/components/advisory/StudentSnapshotPopover";
+import { AcademicComparisonWidget } from "@/components/advisory/AcademicComparisonWidget";
 
 export const dynamic = "force-dynamic"
 
@@ -398,6 +399,35 @@ export default function TeacherAdvisoryPage() {
     } finally {
       setSavingUnlockNote(false)
     }
+  }
+
+  const handleSelectForConsultation = (subjectName: string, delta: number | null, actualScore: number | null, targetScore: number | null) => {
+    setConsultationForm({
+      meetingDate: new Date().toISOString().split("T")[0],
+      studentId: selectedStudentId,
+      content: `Trao đổi kết quả kiểm tra định kỳ (${checkPoint}) môn ${subjectName}. Điểm đạt: ${actualScore ?? "--"}/${targetScore ?? "--"} điểm (Độ lệch: ${delta != null && delta > 0 ? `+${delta}` : delta ?? "--"}).`,
+      difficulties: `Học sinh chưa đạt điểm mục tiêu kỳ vọng ở môn ${subjectName}.`,
+      nextActions: `Phối hợp với GVBM ${subjectName} hỗ trợ củng cố kiến thức và kiểm tra lại phương pháp tự học.`,
+      deadline: "",
+      notes: `Học sinh ghi nhận và cam kết nâng cao kết quả học tập ở các bài kiểm tra tiếp theo.`
+    })
+    setShowConsultationModal(true)
+  }
+
+  const handleApplySuggestedStatus = (status: "DAT" | "TIEN_TRIEN" | "CHUA_DAT", notes: string) => {
+    const updated = singleStudentTrackingRows.map(r => {
+      if (r.categoryKey === "HOC_TAP") {
+        return {
+          ...r,
+          progressStatus: status,
+          teacherNotes: notes
+        }
+      }
+      return r
+    })
+    setSingleStudentTrackingRows(updated)
+    setToastMessage("Đã tự động áp dụng trạng thái đánh giá và nhận xét cho mục tiêu học tập!")
+    setTimeout(() => setToastMessage(""), 4000)
   }
 
   // Rubric Definitions matching Excel
@@ -1471,6 +1501,20 @@ export default function TeacherAdvisoryPage() {
                           )}
                         </div>
                       </div>
+
+                      {/* BẢNG ĐỐI SÁNH ĐIỂM KIỂM TRA ĐỊNH KỲ VỚI MỤC TIÊU HỌC TẬP (DÀNH CHO GVCN) */}
+                      {catObj.key === "HOC_TAP" && selectedStudentId && (
+                        <div className="my-2">
+                          <AcademicComparisonWidget
+                            studentId={selectedStudentId}
+                            academicYearId={academicYearId}
+                            defaultPeriod={checkPoint}
+                            isTeacherView={true}
+                            onSelectForConsultation={handleSelectForConsultation}
+                            onApplySuggestedStatus={handleApplySuggestedStatus}
+                          />
+                        </div>
+                      )}
 
                       {/* Goal items under this category */}
                       {catItems.length === 0 ? (

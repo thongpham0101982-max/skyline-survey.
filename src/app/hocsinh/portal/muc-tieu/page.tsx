@@ -13,6 +13,7 @@ import { GoalMultiSelector } from "@/components/advisory/GoalMultiSelector"
 import { K1GoalForm, K1GoalData } from "@/components/advisory/K1GoalForm"
 import { GoalUnlockWizard } from "@/components/advisory/GoalUnlockWizard"
 import { GoalUnlockCard } from "@/components/advisory/GoalUnlockCard"
+import { AcademicComparisonWidget } from "@/components/advisory/AcademicComparisonWidget"
 import { getGradeCategoryWeights, matchCategoryKey } from "@/lib/advisory/advisoryWeights"
 
 export default function StudentGoalPortalPage() {
@@ -22,6 +23,13 @@ export default function StudentGoalPortalPage() {
   const [gradeLevel, setGradeLevel] = useState("K8")
   const [className, setClassName] = useState("")
   const [academicYearId, setAcademicYearId] = useState("")
+  
+  // Subject Target List (Điểm số mục tiêu theo môn học đối sánh)
+  const [subjectTargetList, setSubjectTargetList] = useState<Array<{ subjectName: string; targetScore: string }>>([
+    { subjectName: "Toán học", targetScore: "8.5" },
+    { subjectName: "Ngữ văn", targetScore: "8.0" },
+    { subjectName: "Tiếng Anh", targetScore: "8.5" }
+  ])
   
   const [activeStage, setActiveStage] = useState<1 | 2 | 3>(1)
   const [loading, setLoading] = useState(true)
@@ -182,6 +190,22 @@ export default function StudentGoalPortalPage() {
           })
 
           setCustomGoals(customMap)
+
+          // Trích xuất mục tiêu điểm môn học nếu có
+          const hocTapRaw = rawGoals.find((g: any) => g.category === "HOC_TAP" && g.smartMeasurable)
+          if (hocTapRaw && hocTapRaw.smartMeasurable) {
+            try {
+              const parsed = JSON.parse(hocTapRaw.smartMeasurable)
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setSubjectTargetList(parsed.map((item: any) => ({
+                  subjectName: item.subjectName || "",
+                  targetScore: String(item.overallTarget || item.targetScore || "8.0")
+                })))
+              }
+            } catch (e) {
+              console.error("Lỗi parse subjectTargets:", e)
+            }
+          }
         }
       }
     } catch (e) {
@@ -359,6 +383,17 @@ export default function StudentGoalPortalPage() {
           })
         }
       })
+
+      // Đính kèm điểm mục tiêu môn học vào mục tiêu HỌC TẬP
+      if (goalListPayload.length > 0 && subjectTargetList.length > 0) {
+        const hocTapGoal = goalListPayload.find(g => g.category === "HOC_TAP")
+        if (hocTapGoal) {
+          hocTapGoal.subjectTargets = subjectTargetList.map(st => ({
+            subjectName: st.subjectName,
+            overallTarget: parseFloat(st.targetScore) || 8.0
+          }))
+        }
+      }
 
       if (goalListPayload.length === 0) {
         alert("Vui lòng chọn hoặc gõ ít nhất 1 mục tiêu cụ thể trước khi lưu phiếu.")
@@ -889,6 +924,85 @@ export default function StudentGoalPortalPage() {
                           + Thêm mục tiêu trong nhóm này
                         </button>
                       )}
+
+                      {/* KHỐI ĐĂNG KÝ MỤC TIÊU ĐIỂM SỐ CÁC MÔN HỌC ĐỂ ĐỐI SÁNH ĐỊNH KỲ */}
+                      {cat.key === "HOC_TAP" && (
+                        <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/90 space-y-3 mt-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <Target className="w-4 h-4 text-teal-700" />
+                              <span className="text-xs font-black text-teal-950 uppercase">
+                                Đăng ký điểm số mục tiêu môn học (Để hệ thống tự động đối sánh khi có điểm kiểm tra định kỳ)
+                              </span>
+                            </div>
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSubjectTargetList([...subjectTargetList, { subjectName: "Môn mới", targetScore: "8.0" }])
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-[11px] font-bold transition-all shadow-xs cursor-pointer"
+                              >
+                                + Thêm môn
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                            {subjectTargetList.map((st, stIdx) => (
+                              <div key={stIdx} className="bg-white p-2.5 rounded-xl border border-teal-200 shadow-2xs space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <input
+                                    type="text"
+                                    readOnly={!canEdit}
+                                    value={st.subjectName}
+                                    onChange={(e) => {
+                                      const next = [...subjectTargetList]
+                                      next[stIdx].subjectName = e.target.value
+                                      setSubjectTargetList(next)
+                                    }}
+                                    className="font-bold text-xs text-slate-800 bg-transparent focus:outline-none w-24 truncate"
+                                    placeholder="Tên môn..."
+                                  />
+                                  {canEdit && subjectTargetList.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setSubjectTargetList(subjectTargetList.filter((_, i) => i !== stIdx))}
+                                      className="text-slate-400 hover:text-rose-500 text-xs font-black px-1"
+                                      title="Xóa môn này"
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-[10px] text-slate-500 font-medium">Mục tiêu:</span>
+                                  <input
+                                    type="number"
+                                    step="0.1"
+                                    min="0"
+                                    max="10"
+                                    readOnly={!canEdit}
+                                    value={st.targetScore}
+                                    onChange={(e) => {
+                                      const next = [...subjectTargetList]
+                                      next[stIdx].targetScore = e.target.value
+                                      setSubjectTargetList(next)
+                                    }}
+                                    className={`w-14 p-1 rounded-lg border text-center font-black text-xs ${
+                                      !canEdit ? "bg-slate-50 text-slate-600 border-slate-200" : "border-teal-300 focus:border-teal-600 bg-teal-50/30"
+                                    }`}
+                                  />
+                                  <span className="text-[10px] text-slate-500 font-bold">đ</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <p className="text-[10px] text-teal-800 italic">
+                            💡 Điểm mục tiêu này sẽ được đối sánh trực tiếp với kết quả thi các đợt KSĐN, GK1, CK1, GK2, CK2 từ Sổ điểm của Thầy Cô bộ môn!
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
@@ -1133,13 +1247,21 @@ export default function StudentGoalPortalPage() {
       {/* STAGE 3: THEO DÕI TIẾN TRÌNH & NHẬT KÝ ĐÁNH GIÁ CỦA GVCN */}
       {/* ========================================================================= */}
       {activeStage === 3 && (
-        <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
-                <History className="w-5 h-5 text-teal-600" />
-                <span>LỊCH SỬ PHIẾU & NHẬT KÝ THEO DÕI ĐÁNH GIÁ CỦA GVCN</span>
-              </h3>
+        <div className="space-y-6">
+          {/* BẢNG ĐỐI SÁNH KẾT QUẢ KIỂM TRA ĐỊNH KỲ VỚI MỤC TIÊU HỌC TẬP */}
+          <AcademicComparisonWidget
+            studentId={studentId}
+            academicYearId={academicYearId}
+            defaultPeriod="GK1"
+          />
+
+          <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
+                  <History className="w-5 h-5 text-teal-600" />
+                  <span>LỊCH SỬ PHIẾU & NHẬT KÝ THEO DÕI ĐÁNH GIÁ CỦA GVCN</span>
+                </h3>
               <p className="text-xs text-slate-500 font-medium">
                 Ghi nhận các mốc đánh giá, nhận xét động viên và đồng hành từ Giáo viên Chủ nhiệm
               </p>
@@ -1196,6 +1318,7 @@ export default function StudentGoalPortalPage() {
               <p className="text-[11px] text-slate-400">Sau khi em nhấn "LƯU & GỬI PHIẾU MỤC TIÊU", Thầy Cô GVCN sẽ theo dõi và gửi nhận xét động viên em tại đây!</p>
             </div>
           )}
+          </div>
         </div>
       )}
       {/* ========================================================================= */}

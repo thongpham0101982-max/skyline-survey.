@@ -48,3 +48,7 @@ next-env.d.ts
 scratch_*
 
 *.db
+/data-backups/
+err.txt
+out.txt
+

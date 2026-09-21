@@ -34,6 +34,43 @@ app.prepare().then(() => {
   })
   .listen(port, hostname, () => {
     console.log(`[Skyline Server] Running 24/7 at http://localhost:${port} and http://192.168.10.239:${port}`);
+    
+    // =========================================================================
+    // TỰ ĐỘNG SAO LƯU DỮ LIỆU ĐỊNH KỲ (BACKUP SCHEDULE: 23:00 THỨ 6 HẰNG TUẦN)
+    // =========================================================================
+    const { fork } = require('child_process');
+    const backupScriptPath = path.join(__dirname, 'scripts', 'backup-db.js');
+    const lockFilePath = path.join(__dirname, 'data-backups', '.last_backup_date');
+
+    setInterval(() => {
+      try {
+        const now = new Date();
+        const dayOfWeek = now.getDay(); // 5 = Thứ Sáu (Friday)
+        const hour = now.getHours();     // 23 = 23h00
+        const minute = now.getMinutes(); // 0-2 phút đầu tiên
+
+        if (dayOfWeek === 5 && hour === 23 && minute <= 2) {
+          const todayStr = now.toISOString().split('T')[0];
+          let alreadyRan = false;
+          if (fs.existsSync(lockFilePath)) {
+            const lastDate = fs.readFileSync(lockFilePath, 'utf8').trim();
+            if (lastDate === todayStr) {
+              alreadyRan = true;
+            }
+          }
+
+          if (!alreadyRan) {
+            console.log(`[Backup Scheduler] Kích hoạt tự động sao lưu định kỳ Thứ 6 lúc 23h (${now.toLocaleString('vi-VN')})...`);
+            const child = fork(backupScriptPath, ['--trigger=IN_APP_CRON']);
+            child.on('exit', (code) => {
+              console.log(`[Backup Scheduler] Tiến trình sao lưu kết thúc với mã thoát: ${code}`);
+            });
+          }
+        }
+      } catch (scheduleErr) {
+        console.error('[Backup Scheduler] Lỗi bộ hẹn giờ sao lưu:', scheduleErr);
+      }
+    }, 60 * 1000); // Kiểm tra mỗi 60 giây
   });
 }).catch((err) => {
   console.error('App prepare error:', err);

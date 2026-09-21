@@ -655,7 +655,19 @@ export function HomeroomGradesClient({
                                 {st.studentCode}
                               </td>
                               <td className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
-                                <span>{st.studentName}</span>
+                                <div className="flex items-center justify-between gap-2">
+                                  <span>{st.studentName}</span>
+                                  <a
+                                    href={`/teacher/co-van-hoc-tap?classId=${selectedClassId}&studentId=${st.studentId}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-1.5 py-0.5 rounded-md bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 text-[10px] font-black inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+                                    title="Xem đối sánh mục tiêu & cố vấn học tập"
+                                  >
+                                    <Target className="w-3 h-3 text-teal-600" />
+                                    <span>Mục tiêu</span>
+                                  </a>
+                                </div>
                               </td>
                               <td className="py-2.5 px-3 text-center text-slate-600 border-r border-slate-200 whitespace-nowrap text-[11px]">
                                 {st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : "-"}
@@ -1073,9 +1085,23 @@ export function HomeroomGradesClient({
                                 {st.studentCode}
                               </td>
                               <td className="py-3 px-3 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
-                                <div>{st.studentName}</div>
-                                <div className="text-[11px] font-normal text-slate-500">
-                                  {st.gender === "female" ? "Nữ" : "Nam"} • {st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : ""}
+                                <div className="flex items-center justify-between gap-2">
+                                  <div>
+                                    <div>{st.studentName}</div>
+                                    <div className="text-[11px] font-normal text-slate-500">
+                                      {st.gender === "female" ? "Nữ" : "Nam"} • {st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : ""}
+                                    </div>
+                                  </div>
+                                  <a
+                                    href={`/teacher/co-van-hoc-tap?classId=${selectedClassId}&studentId=${st.studentId}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="px-2 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 text-[10px] font-black inline-flex items-center gap-1 shadow-2xs shrink-0 cursor-pointer"
+                                    title="Mở hồ sơ cố vấn học tập & đối sánh mục tiêu"
+                                  >
+                                    <Target className="w-3.5 h-3.5 text-teal-600" />
+                                    <span>Cố vấn</span>
+                                  </a>
                                 </div>
                               </td>
 

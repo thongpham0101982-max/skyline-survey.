@@ -378,6 +378,7 @@ export async function POST(req: Request) {
           presetId: item.presetId || null,
           teacherSupportRequest: item.teacherSupportRequest || null,
           parentSupportRequest: item.parentSupportRequest || null,
+          smartMeasurable: item.subjectTargets ? JSON.stringify(item.subjectTargets) : (item.smartMeasurable || null),
           checkpointDate: new Date(),
           achievementLevel: "DANG_TIEN_TRIEN",
           status: "SUBMITTED",
