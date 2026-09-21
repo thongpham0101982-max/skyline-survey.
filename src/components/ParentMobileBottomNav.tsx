@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ClipboardList, Compass, GraduationCap, KeyRound } from "lucide-react"
+import { Home, ClipboardList, Compass, GraduationCap, KeyRound, Award } from "lucide-react"
 import { ChangePasswordModal } from "@/components/ChangePasswordModal"
 
 export function ParentMobileBottomNav() {
@@ -14,6 +14,7 @@ export function ParentMobileBottomNav() {
   const isSurveys = pathname.includes("/parent/surveys")
   const isAdvisory = pathname.includes("/parent/children/advisory")
   const isProfile = pathname.includes("/parent/children/profile")
+  const isGrades = pathname.includes("/parent/grades")
 
   return (
     <>
@@ -54,6 +55,18 @@ export function ParentMobileBottomNav() {
           <span>Cố vấn</span>
         </Link>
 
+
+        <Link
+          href="/parent/grades"
+          className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
+            isGrades ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
+          }`}
+        >
+          <div className={`p-1.5 rounded-xl transition-all ${isGrades ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
+            <Award className="w-4 h-4" />
+          </div>
+          <span>Xem điểm</span>
+        </Link>
         <Link
           href="/parent/children/profile"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
