@@ -162,33 +162,34 @@ export function AdminTongHopClient({
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
   const [activeDetailTab, setActiveDetailTab] = useState<"lich-su" | "lich-su-du" | "tien-do-to" | "phan-tich" | "to-cm">("lich-su")
 
-  // Top-level Navigation Tab state ("tong-hop" | "ma-tran")
-  const [mainTab, setMainTab] = useState<"tong-hop" | "ma-tran" | "dbcl" | "kho-tieu-bieu">(() => {
-    const t = searchParams.get("tab"); return t === "ma-tran" ? "ma-tran" : t === "dbcl" ? "dbcl" : t === "kho-tieu-bieu" ? "kho-tieu-bieu" : "tong-hop"
+  // Top-level Navigation Tab state ("tong-hop" | "ma-tran" | "bang-ke" | "dbcl")
+  const [mainTab, setMainTab] = useState<"tong-hop" | "ma-tran" | "bang-ke" | "dbcl">(() => {
+    const t = searchParams.get("tab");
+    return t === "ma-tran" ? "ma-tran" : t === "bang-ke" ? "bang-ke" : t === "dbcl" ? "dbcl" : "tong-hop";
   })
 
   useEffect(() => {
     const tabParam = searchParams.get("tab")
     if (tabParam === "ma-tran") {
       setMainTab("ma-tran")
+    } else if (tabParam === "bang-ke") {
+      setMainTab("bang-ke")
     } else if (tabParam === "dbcl") {
       setMainTab("dbcl")
-    } else if (tabParam === "kho-tieu-bieu") {
-      setMainTab("kho-tieu-bieu")
-    } else if (tabParam === "tong-hop") {
+    } else {
       setMainTab("tong-hop")
     }
   }, [searchParams])
 
-  const handleSwitchMainTab = (tab: "tong-hop" | "ma-tran" | "dbcl" | "kho-tieu-bieu") => {
+  const handleSwitchMainTab = (tab: "tong-hop" | "ma-tran" | "bang-ke" | "dbcl") => {
     setMainTab(tab)
     const params = new URLSearchParams(window.location.search)
     if (tab === "ma-tran") {
       params.set("tab", "ma-tran")
+    } else if (tab === "bang-ke") {
+      params.set("tab", "bang-ke")
     } else if (tab === "dbcl") {
       params.set("tab", "dbcl")
-    } else if (tab === "kho-tieu-bieu") {
-      params.set("tab", "kho-tieu-bieu")
     } else {
       params.delete("tab")
     }
@@ -206,11 +207,6 @@ export function AdminTongHopClient({
   const [qaCampusFilter, setQaCampusFilter] = useState<string>("all")
   const [qaBlockFilter, setQaBlockFilter] = useState<string>("all")
   const [qaMonthFilter, setQaMonthFilter] = useState<string>("all")
-  // Exemplary Lessons Filters
-  const [exemplarySearchQuery, setExemplarySearchQuery] = useState("")
-  const [exemplarySubjectFilter, setExemplarySubjectFilter] = useState("all")
-  const [exemplaryGradeFilter, setExemplaryGradeFilter] = useState("all")
-  const [exemplaryCampusFilter, setExemplaryCampusFilter] = useState("all")
 
 
   const [ttcmViewMode, setTtcmViewMode] = useState<"pivot-matrix" | "detailed-list">("pivot-matrix")
@@ -2080,50 +2076,6 @@ export function AdminTongHopClient({
   // GIAI ĐOẠN 3: PHÂN TÍCH CHUYÊN MÔN CHUYÊN SÂU & BÁO CÁO ĐBCL (QA ANALYTICS)
   // =========================================================================
 
-  // =========================================================================
-  // GIAI ĐOẠN 4: KHO TIẾT DẠY TIÊU BIỂU & BÀI GIẢNG XUẤT SẮC (EXEMPLARY LESSONS)
-  // =========================================================================
-  const exemplaryLessons = useMemo(() => {
-    const list: any[] = [];
-    (initialSlots || []).forEach((slot: any) => {
-      const bestEvalReg = slot.registrations?.find((r: any) => {
-        const ev = r.evaluation;
-        if (!ev || ev.reEvaluationStatus === "DRAFT") return false;
-        return ev.overallRating === "Giỏi" || (typeof ev.totalScore === "number" && ev.totalScore >= 18.5) || ev.overallRating === "Tốt";
-      });
-
-      if (bestEvalReg) {
-        const ev = bestEvalReg.evaluation;
-        const teacher = teachersList.find(t => t.id === slot.teacherId);
-        list.push({
-          slot,
-          evaluation: ev,
-          teacherName: teacher?.teacherName || slot.teacher?.teacherName || "Giáo viên",
-          teacherCode: teacher?.teacherCode || "",
-          position: teacher?.position || "",
-          deptName: teacher?.departmentRel?.name || "",
-          totalScore: ev.totalScore,
-          overallRating: ev.overallRating,
-          strengths: ev.strengths || ev.generalComments || "",
-          lessonPlanName: slot.lessonPlanName || null,
-          lessonPlanData: slot.lessonPlanData || null
-        });
-      }
-    });
-
-    return list.filter(item => {
-      const s = item.slot;
-      const matchQuery = !exemplarySearchQuery ||
-        s.topic?.toLowerCase().includes(exemplarySearchQuery.toLowerCase()) ||
-        item.teacherName.toLowerCase().includes(exemplarySearchQuery.toLowerCase()) ||
-        s.subjectName?.toLowerCase().includes(exemplarySearchQuery.toLowerCase());
-      const matchSubject = exemplarySubjectFilter === "all" || s.subjectName === exemplarySubjectFilter;
-      const matchGrade = exemplaryGradeFilter === "all" || s.grade === exemplaryGradeFilter;
-      const matchCampus = exemplaryCampusFilter === "all" || s.campusId === exemplaryCampusFilter;
-      return matchQuery && matchSubject && matchGrade && matchCampus;
-    });
-  }, [initialSlots, teachersList, exemplarySearchQuery, exemplarySubjectFilter, exemplaryGradeFilter, exemplaryCampusFilter]);
-
   // Distinct subjects and grades for filters
   const distinctSubjects = useMemo(() => {
     const set = new Set<string>();
@@ -2415,221 +2367,6 @@ export function AdminTongHopClient({
     if (scores.length === 0) return null;
     return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2);
   }, [teacherEvaluations, isPreschoolTeacher]);
-
-
-
-  // Full-width view for Kho Tiết Dạy Tiêu Biểu & Bài Giảng Mẫu
-  const renderExemplaryLessons = () => {
-    return (
-      <div className="space-y-5 animate-in fade-in duration-200">
-        {/* Header & Bộ lọc Kho Học Liệu */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10.5px] font-bold uppercase tracking-wider flex items-center gap-1">
-                <BookMarked className="w-3 h-3 text-amber-600" />
-                Kho Học Liệu Số & Bài Giảng Xuất Sắc
-              </span>
-              <span className="text-xs font-semibold text-slate-500">• Hệ sinh thái Chuyên môn Số</span>
-            </div>
-            <h2 className="text-lg font-black text-slate-900 mt-1 flex items-center gap-2">
-              Kho Tiết Dạy Tiêu Biểu & Bài Giảng Mẫu Sky-Line
-            </h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Tuyển tập các tiết dạy xếp loại Giỏi (từ 18.5 đến 20đ) kèm kế hoạch bài dạy và điểm sáng sư phạm để tham khảo
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Tìm kiếm */}
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Tìm tên bài, giáo viên, môn học..."
-                value={exemplarySearchQuery}
-                onChange={(e) => setExemplarySearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-amber-500 outline-none w-52 sm:w-64"
-              />
-            </div>
-
-            {/* Lọc Môn */}
-            <select
-              value={exemplarySubjectFilter}
-              onChange={(e) => setExemplarySubjectFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer"
-            >
-              <option value="all">Tất cả môn</option>
-              {distinctSubjects.map(sub => (
-                <option key={sub} value={sub}>{sub}</option>
-              ))}
-            </select>
-
-            {/* Lọc Khối */}
-            <select
-              value={exemplaryGradeFilter}
-              onChange={(e) => setExemplaryGradeFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer"
-            >
-              <option value="all">Tất cả khối</option>
-              {distinctGrades.map(gr => (
-                <option key={gr} value={gr}>{gr}</option>
-              ))}
-            </select>
-
-            {/* Lọc Cơ sở */}
-            <select
-              value={exemplaryCampusFilter}
-              onChange={(e) => setExemplaryCampusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 outline-none cursor-pointer"
-            >
-              <option value="all">Tất cả cơ sở</option>
-              {campuses.map(c => (
-                <option key={c.id} value={c.id}>{c.campusName}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* 3 Thẻ Chỉ Số Kho Tiết Dạy Tiêu Biểu */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                Tiết dạy xuất sắc đã tuyển chọn
-              </div>
-              <div className="text-2xl font-black text-amber-900 mt-1">
-                {exemplaryLessons.length} <span className="text-xs font-normal text-slate-500">tiết dạy</span>
-              </div>
-              <div className="text-[10.5px] text-slate-500 mt-0.5">
-                Đạt loại Giỏi & Tốt từ các đợt dự giờ
-              </div>
-            </div>
-            <div className="p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-200">
-              <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                Môn học có bài giảng mẫu
-              </div>
-              <div className="text-2xl font-black text-teal-900 mt-1">
-                {distinctSubjects.length} <span className="text-xs font-normal text-slate-500">môn học</span>
-              </div>
-              <div className="text-[10.5px] text-slate-500 mt-0.5">
-                Trải rộng từ Mầm non đến K-12
-              </div>
-            </div>
-            <div className="p-3 bg-teal-50 text-teal-700 rounded-xl border border-teal-200">
-              <BookOpen className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-2xs flex items-center justify-between">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                Chia sẻ chuyên môn liên cơ sở
-              </div>
-              <div className="text-2xl font-black text-indigo-900 mt-1">
-                {campuses.length} <span className="text-xs font-normal text-slate-500">cơ sở</span>
-              </div>
-              <div className="text-[10.5px] text-slate-500 mt-0.5">
-                Giao lưu học tập kinh nghiệm toàn trường
-              </div>
-            </div>
-            <div className="p-3 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-200">
-              <Building2 className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
-
-        {/* Danh sách Tiết dạy Tiêu biểu (Grid Cards) */}
-        {exemplaryLessons.length === 0 ? (
-          <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center space-y-2">
-            <BookMarked className="w-10 h-10 text-slate-300 mx-auto" />
-            <p className="text-xs font-bold text-slate-700 uppercase">Không tìm thấy tiết dạy tiêu biểu nào phù hợp</p>
-            <p className="text-[11px] text-slate-500">Hãy thử thay đổi điều kiện tìm kiếm hoặc bộ lọc môn học/cơ sở.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {exemplaryLessons.map((item, idx) => {
-              const s = item.slot;
-              const dateStr = s.date ? new Date(s.date).toLocaleDateString("vi-VN") : "";
-              const scoreDisplay = item.totalScore !== null && item.totalScore !== undefined
-                ? `${item.totalScore}đ`
-                : item.overallRating;
-
-              return (
-                <div
-                  key={s.id || idx}
-                  className="bg-white rounded-2xl border border-slate-200 hover:border-amber-400/80 shadow-2xs hover:shadow-md transition-all p-5 flex flex-col justify-between space-y-4 group"
-                >
-                  {/* Card Header */}
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-bold">
-                        {s.subjectName} • {s.grade}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[10.5px] font-black flex items-center gap-1">
-                        <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
-                        {scoreDisplay} ({item.overallRating})
-                      </span>
-                    </div>
-
-                    <h3 className="font-bold text-sm text-slate-900 line-clamp-2 group-hover:text-amber-900 transition-colors">
-                      {s.topic}
-                    </h3>
-
-                    {/* Teacher info */}
-                    <div className="flex items-center gap-2 pt-1 border-t border-slate-100 text-xs text-slate-600">
-                      <div className="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-700 text-[11px] shrink-0">
-                        {item.teacherName.charAt(0)}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-800 truncate">{item.teacherName}</p>
-                        <p className="text-[10.5px] text-slate-500 truncate">{s.campusName || "Cơ sở Sky-Line"} &bull; {dateStr}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Highlights from real evaluations */}
-                  {item.strengths && (
-                    <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100/70 text-[11px] text-slate-700 space-y-1">
-                      <div className="font-bold text-amber-900 flex items-center gap-1 text-[10px] uppercase tracking-wider">
-                        <Sparkles className="w-3 h-3 text-amber-600" />
-                        Điểm sáng sư phạm nổi bật:
-                      </div>
-                      <p className="line-clamp-3 italic text-slate-600">
-                        "{item.strengths}"
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Card Footer: Actions */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {s.className || "Lớp chuẩn"} • {s.room || "Phòng học"}
-                    </span>
-                    {item.lessonPlanName ? (
-                      <span className="px-2 py-1 rounded bg-teal-50 text-teal-800 border border-teal-200 text-[10.5px] font-semibold">
-                        Có giáo án đính kèm
-                      </span>
-                    ) : (
-                      <span className="text-[10.5px] text-slate-500 font-medium">
-                        Bài giảng mẫu
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   // Full-width view for Dashboard Báo cáo ĐBCL & Phân tích Chuyên môn
   const renderQADashboard = () => {
@@ -3849,21 +3586,7 @@ export function AdminTongHopClient({
             </span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => handleSwitchMainTab("kho-tieu-bieu")}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${mainTab === "kho-tieu-bieu"
-                ? "bg-white text-slate-900 shadow-2xs font-bold"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-              }`}
-          >
-            <BookMarked className="w-3.5 h-3.5 text-amber-600" />
-            <span>Kho Tiết Dạy Tiêu Biểu</span>
-            <span className={`px-1.5 py-0.2 rounded text-[10px] font-bold ${mainTab === "kho-tieu-bieu" ? "bg-amber-50 text-amber-800 border border-amber-200" : "bg-slate-200 text-slate-600"
-              }`}>
-              {exemplaryLessons.length} Tiết
-            </span>
-          </button>
+          
         </div>
 
         {/* Action Tools: Duy nhất 1 chỗ chọn Năm học, Xuất Excel, Báo cáo */}
@@ -3907,19 +3630,7 @@ export function AdminTongHopClient({
             <span>Báo cáo cho TTCM</span>
           </button>
 
-          {/* Nút Cấu hình Tự động gửi email cuối tháng */}
-          <button
-            type="button"
-            onClick={() => setIsAutoEmailModalOpen(true)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold shadow-2xs transition-all cursor-pointer ${autoEmailConfig?.enabled
-                ? "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100"
-                : "bg-slate-100 border-slate-300 text-slate-600 hover:bg-slate-200"
-              }`}
-            title="Cấu hình tự động gửi email báo cáo cho TTCM vào ngày cuối cùng của tháng"
-          >
-            <span className={`w-2 h-2 rounded-full ${autoEmailConfig?.enabled ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`} />
-            <span>Tự động gửi cuối tháng: {autoEmailConfig?.enabled ? "BẬT" : "TẮT"}</span>
-          </button>
+          
         </div>
       </div>
 
@@ -3945,8 +3656,6 @@ export function AdminTongHopClient({
         />
       ) : mainTab === "dbcl" ? (
         renderQADashboard()
-      ) : mainTab === "kho-tieu-bieu" ? (
-        renderExemplaryLessons()
       ) : (
         <>
           {/* 2. 4 Thẻ KPI Chuẩn Quản Trị (Phẳng, Nền trắng, Không icon trong số liệu) */}

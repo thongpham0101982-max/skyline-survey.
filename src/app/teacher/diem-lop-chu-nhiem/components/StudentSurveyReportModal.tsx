@@ -3,6 +3,9 @@
 import { useState, useMemo } from "react"
 import {
   Printer,
+  Edit3,
+  MessageSquare,
+  UserCheck,
   FileSpreadsheet,
   X,
   ChevronLeft,
@@ -28,6 +31,7 @@ interface StudentSurveyReportModalProps {
   academicYearName: string
   selectedPeriod: string
   periodLabel: string
+  onOpenEditFeedback?: (student: any) => void
 }
 
 export function StudentSurveyReportModal({
@@ -40,7 +44,8 @@ export function StudentSurveyReportModal({
   teacherName,
   academicYearName,
   selectedPeriod,
-  periodLabel
+  periodLabel,
+  onOpenEditFeedback
 }: StudentSurveyReportModalProps) {
   const [selectedStudentId, setSelectedStudentId] = useState<string>(
     initialStudentId || (students && students[0]?.studentId) || ""
@@ -206,9 +211,19 @@ export function StudentSurveyReportModal({
         <div class="remarks-box">
           <div class="remarks-header">Ý kiến & Nhận xét của Giáo viên Chủ nhiệm (GVCN):</div>
           <div class="remarks-content">
-            Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh <b>${student.studentName}</b>. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.
+            ${student.teacherRemark || `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh <b>${student.studentName}</b>. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`}
           </div>
         </div>
+
+        ${student.parentFeedback ? `
+        <!-- Parent Feedback -->
+        <div class="remarks-box" style="margin-top: 8px; border-color: #7dd3fc; background-color: #f0f9ff;">
+          <div class="remarks-header" style="color: #0369a1;">Ý kiến & Phản hồi của Phụ huynh học sinh (PHHS):</div>
+          <div class="remarks-content" style="font-style: italic; color: #1e293b;">
+            "${student.parentFeedback}"
+          </div>
+        </div>
+        ` : ''}
 
         <!-- Signatures (3 columns) -->
         <div class="signature-section">
@@ -672,8 +687,19 @@ export function StudentSurveyReportModal({
         [""],
         ["Ý KIẾN & NHẬN XÉT CỦA GIÁO VIÊN CHỦ NHIỆM (GVCN)"],
         [
-          `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh ${st.studentName}. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`
-        ],
+          st.teacherRemark || `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh ${st.studentName}. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`
+        ]
+      ]
+
+      if (st.parentFeedback) {
+        footerData.push(
+          [""],
+          ["Ý KIẾN & PHẢN HỒI CỦA PHỤ HUYNH HỌC SINH (PHHS)"],
+          [st.parentFeedback]
+        )
+      }
+
+      footerData.push(
         [""],
         ["", "", "", "", `Đà Nẵng, ngày ..... tháng ..... năm 20.....`],
         [""],
@@ -681,7 +707,7 @@ export function StudentSurveyReportModal({
         ["PHỤ HUYNH HỌC SINH", "", "GIÁO VIÊN CHỦ NHIỆM", "", "BAN GIÁM HIỆU"],
         ["(Ký và ghi rõ họ tên)", "", "(Ký và ghi rõ họ tên)", "", "(Ký và đóng dấu)"],
         ["", "", teacherName, "", ""]
-      ]
+      )
 
       const sheetData = [...headerData, ...subjectRows, ...footerData]
       const ws = XLSX.utils.aoa_to_sheet(sheetData)
@@ -861,16 +887,49 @@ export function StudentSurveyReportModal({
         </div>
 
         {/* Teacher's Remarks */}
-        <div className="border border-teal-200 rounded-xl p-3 bg-teal-50/20 mb-3.5 space-y-0.5">
-          <div className="text-[11px] font-black text-[#005B58] uppercase flex items-center gap-1.5">
-            <span>Ý kiến & Nhận xét của Giáo viên Chủ nhiệm (GVCN):</span>
+        <div className="border border-teal-200 rounded-xl p-3 bg-teal-50/20 mb-3 space-y-0.5">
+          <div className="text-[11px] font-black text-[#005B58] uppercase flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-teal-600" />
+              <span>Ý kiến & Nhận xét của Giáo viên Chủ nhiệm (GVCN):</span>
+            </span>
+            {onOpenEditFeedback && (
+              <button
+                type="button"
+                onClick={() => onOpenEditFeedback(student)}
+                className="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-white hover:bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200 cursor-pointer flex items-center gap-1 transition-colors shadow-2xs"
+                title="Chỉnh sửa nhận xét GVCN"
+              >
+                <Edit3 className="w-2.5 h-2.5" />
+                <span>Chỉnh sửa</span>
+              </button>
+            )}
           </div>
           <div className="text-[10.5px] text-slate-700 leading-snug font-medium min-h-[38px] pt-0.5">
             <p>
-              Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh <strong className="text-teal-900">{student.studentName}</strong>. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.
+              {student.teacherRemark ? (
+                <span>{student.teacherRemark}</span>
+              ) : (
+                <span>
+                  Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh <strong className="text-teal-900">{student.studentName}</strong>. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.
+                </span>
+              )}
             </p>
           </div>
         </div>
+
+        {/* Parent's Feedback (if available) */}
+        {student.parentFeedback && (
+          <div className="border border-sky-200 rounded-xl p-3 bg-sky-50/30 mb-3 space-y-0.5">
+            <div className="text-[11px] font-black text-[#0369a1] uppercase flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5 text-sky-600" />
+              <span>Ý kiến & Phản hồi của Phụ huynh học sinh (PHHS):</span>
+            </div>
+            <div className="text-[10.5px] text-slate-700 leading-snug font-medium pt-0.5 italic">
+              &ldquo;{student.parentFeedback}&rdquo;
+            </div>
+          </div>
+        )}
 
         {/* Signature Section (3 Columns) */}
         <div className="pt-1 text-[11px]">

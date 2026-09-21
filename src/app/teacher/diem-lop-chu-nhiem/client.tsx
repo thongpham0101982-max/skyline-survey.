@@ -84,6 +84,43 @@ export function HomeroomGradesClient({
     gradeInfo: any
   } | null>(null)
 
+  // Homeroom Feedback Modal state
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
+  const [selectedFeedbackStudent, setSelectedFeedbackStudent] = useState<any>(null)
+
+  const handleOpenFeedbackModal = (student: any) => {
+    setSelectedFeedbackStudent(student)
+    setFeedbackModalOpen(true)
+  }
+
+  const handleFeedbackSaved = (updated: {
+    studentId: string
+    teacherRemark: string
+    teacherRemarkDate: any
+    parentFeedback: string
+    parentFeedbackDate: any
+  }) => {
+    if (!data?.studentMatrix) return
+    setData((prev: any) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        studentMatrix: prev.studentMatrix.map((st: any) => {
+          if (st.studentId === updated.studentId) {
+            return {
+              ...st,
+              teacherRemark: updated.teacherRemark,
+              teacherRemarkDate: updated.teacherRemarkDate,
+              parentFeedback: updated.parentFeedback,
+              parentFeedbackDate: updated.parentFeedbackDate
+            }
+          }
+          return st
+        })
+      }
+    })
+  }
+
   // Student Report Modal state
   const [reportModalOpen, setReportModalOpen] = useState(false)
   const [reportSelectedStudentId, setReportSelectedStudentId] = useState<string>("")
@@ -254,6 +291,8 @@ export function HomeroomGradesClient({
       row["Môn < Chuẩn"] = st.belowBenchmarkCount
       row["Cam kết đầu vào"] = st.isEntranceCommitted ? "Có" : "Không"
       row["Cam kết học tập"] = st.learningCommitments.length > 0 ? `${st.learningCommitments.length} môn` : "Không"
+      row["Ý kiến & Nhận xét GVCN"] = st.teacherRemark || ""
+      row["Ý kiến phản hồi PHHS"] = st.parentFeedback || ""
 
       return row
     })
@@ -635,6 +674,12 @@ export function HomeroomGradesClient({
                         <th className="py-3 px-3 min-w-[140px] bg-slate-900 border-r border-slate-700">
                           Diện theo dõi / Cam kết
                         </th>
+                        <th className="py-3 px-3 min-w-[220px] bg-teal-950 border-r border-slate-700 text-left">
+                          <div className="flex items-center gap-1.5">
+                            <MessageSquare className="w-3.5 h-3.5 text-teal-300" />
+                            <span>Ý kiến & Nhận xét GVCN</span>
+                          </div>
+                        </th>
                         <th className="py-3 px-3 text-center bg-teal-900 min-w-[110px] sticky right-0 z-20 shadow-md">
                           Phiếu điểm
                         </th>
@@ -719,7 +764,7 @@ export function HomeroomGradesClient({
                               </td>
 
                               {/* Commitment badges */}
-                              <td className="py-2.5 px-3 space-y-1">
+                              <td className="py-2.5 px-3 space-y-1 border-r border-slate-200">
                                 {st.isEntranceCommitted && (
                                   <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold text-[10px]">
                                     <Target className="w-2.5 h-2.5" />
@@ -735,6 +780,52 @@ export function HomeroomGradesClient({
                                 {!st.isEntranceCommitted && st.learningCommitments.length === 0 && (
                                   <span className="text-slate-300 text-[11px]">-</span>
                                 )}
+                              </td>
+
+                              {/* Teacher Remark & Parent Feedback Column */}
+                              <td className="py-2.5 px-3 border-r border-slate-200">
+                                <div className="space-y-1.5">
+                                  {st.teacherRemark ? (
+                                    <div
+                                      onClick={() => handleOpenFeedbackModal(st)}
+                                      className="group cursor-pointer p-1.5 rounded-xl hover:bg-teal-50/70 border border-slate-100 hover:border-teal-200 transition-all"
+                                      title="Nhấp để xem hoặc chỉnh sửa nhận xét của GVCN"
+                                    >
+                                      <div className="line-clamp-2 text-[11px] font-semibold text-slate-700 leading-snug group-hover:text-teal-900">
+                                        {st.teacherRemark}
+                                      </div>
+                                      <div className="flex items-center gap-1 mt-1 text-[10px] text-teal-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Edit3 className="w-2.5 h-2.5" />
+                                        <span>Chỉnh sửa nhận xét</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenFeedbackModal(st)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold text-teal-700 bg-teal-50/70 hover:bg-teal-100 border border-dashed border-teal-300 transition-all cursor-pointer shadow-2xs"
+                                      title="Nhấp để nhập ý kiến & nhận xét GVCN"
+                                    >
+                                      <Edit3 className="w-2.5 h-2.5" />
+                                      <span>+ Nhận xét GVCN</span>
+                                    </button>
+                                  )}
+
+                                  {/* Parent Feedback Badge */}
+                                  {st.parentFeedback && (
+                                    <div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenFeedbackModal(st)}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-sky-100 hover:bg-sky-200 text-sky-800 border border-sky-300 text-[10px] font-extrabold cursor-pointer transition-colors shadow-2xs"
+                                        title={`Ý kiến phản hồi từ PHHS: ${st.parentFeedback}`}
+                                      >
+                                        <MessageSquare className="w-2.5 h-2.5 text-sky-600" />
+                                        <span>PHHS đã phản hồi</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </td>
 
                               {/* Student Report Card Trigger */}
@@ -1298,6 +1389,22 @@ export function HomeroomGradesClient({
         academicYearName={data?.classInfo?.academicYearName || academicYears.find(y => y.id === selectedYearId)?.name || ""}
         selectedPeriod={selectedPeriod}
         periodLabel={EVAL_PERIODS.find(p => p.code === selectedPeriod)?.label || selectedPeriod}
+        onOpenEditFeedback={(st: any) => {
+          handleOpenFeedbackModal(st);
+        }}
+      />
+
+      {/* MODAL: NHẬN XÉT GVCN & TRAO ĐỔI PHHS */}
+      <HomeroomFeedbackModal
+        isOpen={feedbackModalOpen}
+        onClose={() => setFeedbackModalOpen(false)}
+        student={selectedFeedbackStudent}
+        academicYearId={selectedYearId}
+        selectedPeriod={selectedPeriod}
+        periodLabel={EVAL_PERIODS.find(p => p.code === selectedPeriod)?.label || selectedPeriod}
+        teacherName={data?.classInfo?.homeroomTeacherName || teacherName}
+        onSaved={handleFeedbackSaved}
+        onOpenReport={handleOpenReport}
       />
     </div>
   )
