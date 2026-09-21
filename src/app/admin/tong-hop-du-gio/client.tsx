@@ -3652,7 +3652,6 @@ export function AdminTongHopClient({
           isGDCS={isGDCS}
           preSelectedTeacherId={selectedTeacherId}
           onSelectTeacher={(id) => setSelectedTeacherId(id)}
-          openEvalModal={openEvalModal}
         />
       ) : mainTab === "dbcl" ? (
         renderQADashboard()

@@ -8,6 +8,7 @@ import { signOut } from "next-auth/react"
 // imports updated
 import {
   BarChart3,
+  Award,
   LogOut, 
   LayoutDashboard, 
   Layers, 
