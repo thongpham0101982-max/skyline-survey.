@@ -101,6 +101,29 @@ export function ObservationDetailDrawer({
   const isExpired = slot.status === "EXPIRED" || (slot.date && new Date(slot.date) < new Date(new Date().setHours(0, 0, 0, 0)));
   const isSurprise = slot.requestOrigin === "SURPRISE" || (typeof slot.description === "string" && slot.description.includes("[SURPRISE]"));
 
+  // Phân loại danh mục chuyên môn (Mầm non, Phổ thông K12, hoặc GVNN ESL)
+  const slotSubj = (slot?.subjectName || "").toLowerCase();
+  const slotTopic = (slot?.topic || "").toLowerCase();
+  const slotDesc = (slot?.description || "").toLowerCase();
+  const isForeignEsl = slot?.requestOrigin === "FOREIGN_WALKTHROUGH" ||
+    slotDesc.includes("dự giờ gvnn") ||
+    slotDesc.includes("du gio gvnn") ||
+    (slotDesc.includes("gvnn") && (slotDesc.includes("tiếng anh") || slotDesc.includes("foreign") || slotDesc.includes("esl"))) ||
+    slotTopic.includes("walkthrough") ||
+    (slotTopic.includes("gvnn") && slotTopic.includes("esl")) ||
+    (slot?.teacher?.position === "GVNN");
+
+  const isPreschool = !isForeignEsl && (
+    slot?.level === "Mầm non" ||
+    (slot?.grade || "").toLowerCase().includes("mầm non") ||
+    (slot?.grade || "").toLowerCase().includes("mẫu giáo") ||
+    (slot?.grade || "").toLowerCase().includes("nhà trẻ") ||
+    (slot?.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non") ||
+    (slot?.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non")
+  );
+
+  const slotCatKey: "MAM_NON" | "GVNN_ESL" | "K12" = isForeignEsl ? "GVNN_ESL" : isPreschool ? "MAM_NON" : "K12";
+
   // Check evaluations
   const evaluations = registrations
     .filter((r: any) => r.evaluation)
@@ -360,6 +383,9 @@ export function ObservationDetailDrawer({
                 }
               } catch {}
 
+              const isEslItem = slotCatKey === "GVNN_ESL" || (parsedGeneral?.criterionScores && Array.isArray(parsedGeneral.criterionScores));
+              const isMnItem = slotCatKey === "MAM_NON";
+
               const scores: number[] = parsedGeneral?.scores || [
                 ev.criterion1 || 0,
                 ev.criterion2 || 0,
@@ -368,7 +394,14 @@ export function ObservationDetailDrawer({
                 ev.criterion5 || 0
               ];
 
-              const totalScore = ev.totalScore || scores.reduce((a: number, b: number) => a + b, 0);
+              const totalScore = ev.totalScore != null
+                ? Number(ev.totalScore)
+                : isEslItem
+                ? (parsedGeneral?.criterionScores?.length ? parsedGeneral.criterionScores.reduce((acc: number, cur: any) => acc + (cur.score || 0), 0) / parsedGeneral.criterionScores.length : 3.0)
+                : scores.reduce((a: number, b: number) => a + b, 0);
+
+              const maxScoreLabel = isMnItem ? "10.00đ" : isEslItem ? "4.00đ" : "20.00đ";
+              const ratingText = ev.overallRating || parsedGeneral?.overallRatingText || (isMnItem ? (totalScore >= 9 ? "Tốt" : totalScore >= 8 ? "Khá" : totalScore >= 7 ? "Đạt" : "Không đạt") : isEslItem ? "Effective Practice" : (totalScore >= 17 ? "Giỏi" : totalScore >= 14 ? "Khá" : totalScore >= 12 ? "Trung bình" : "Không xếp loại"));
 
               return (
                 <div key={item.registration.id || eIdx} className="p-4 bg-slate-50/70 rounded-2xl border border-slate-200 space-y-3">
@@ -378,35 +411,73 @@ export function ObservationDetailDrawer({
                       <strong className="text-slate-900 text-xs">{item.observerName}</strong>
                     </div>
                     <div className="text-right">
-                      <span className="text-xs font-mono font-bold text-[#003B3A]">{Number(totalScore).toFixed(1)} / 20.0đ</span>
-                      <Badge variant="success" className="ml-2 font-bold">{ev.overallRating || "Đạt"}</Badge>
+                      <span className="text-xs font-mono font-bold text-[#003B3A]">
+                        {Number(totalScore).toFixed(isEslItem ? 2 : 1)} / {maxScoreLabel}
+                      </span>
+                      <Badge variant="success" className="ml-2 font-bold">{ratingText}</Badge>
                     </div>
                   </div>
 
-                  {/* Criteria score pills */}
-                  {scores.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                      {scores.slice(0, 11).map((sc: number, idx: number) => (
-                        <div key={idx} className="p-1.5 bg-white rounded-lg border border-slate-200 text-center">
-                          <span className="text-[10px] text-slate-400 block font-mono">Y{idx + 1}</span>
-                          <span className="font-bold text-slate-800 text-xs">{Number(sc).toFixed(1)}đ</span>
-                        </div>
-                      ))}
+                  {/* Criteria score breakdown */}
+                  {isEslItem && parsedGeneral?.criterionScores && Array.isArray(parsedGeneral.criterionScores) ? (
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold text-indigo-900 uppercase tracking-wider block">
+                        ESL Rubric Indicators (Thang 4.00đ)
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {parsedGeneral.criterionScores.map((ind: any) => (
+                          <div key={ind.id} className="p-2 bg-white rounded-xl border border-slate-200 text-xs">
+                            <div className="flex items-center justify-between font-bold">
+                              <span className="text-indigo-800 text-[11px]">#{ind.id} {ind.code || "Indicator"}</span>
+                              <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-200">
+                                {ind.score}/4đ
+                              </span>
+                            </div>
+                            {ind.evidence && <p className="text-[10px] text-slate-600 mt-1 line-clamp-2"><strong>MC:</strong> {ind.evidence}</p>}
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  ) : (
+                    scores.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                          {isMnItem ? "Chi tiết điểm 18 yêu cầu Mầm non (Thang 10đ)" : "Chi tiết điểm 11 tiêu chí Phổ thông (Thang 20đ)"}
+                        </span>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                          {scores.slice(0, isMnItem ? 18 : 11).map((sc: number, idx: number) => (
+                            <div key={idx} className="p-1.5 bg-white rounded-lg border border-slate-200 text-center">
+                              <span className="text-[10px] text-slate-400 block font-mono">Y{idx + 1}</span>
+                              <span className="font-bold text-slate-800 text-xs">{Number(sc).toFixed(1)}đ</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
                   )}
 
                   {/* Qualitative comments */}
                   <div className="space-y-1.5 text-xs">
-                    {ev.effectivePoints && (
+                    {(ev.strengths || ev.effectivePoints || parsedGeneral?.summary?.keyStrengths) && (
                       <div className="p-2.5 bg-emerald-50/50 rounded-xl border border-emerald-100">
-                        <span className="font-bold text-emerald-900 block text-[11px]">Ưu điểm bài dạy:</span>
-                        <p className="text-emerald-800 mt-0.5">{ev.effectivePoints}</p>
+                        <span className="font-bold text-emerald-900 block text-[11px]">🌟 Ưu điểm nổi bật:</span>
+                        <p className="text-emerald-800 mt-0.5 whitespace-pre-wrap">
+                          {ev.strengths || ev.effectivePoints || parsedGeneral?.summary?.keyStrengths}
+                        </p>
                       </div>
                     )}
-                    {ev.ineffectivePoints && (
+                    {(ev.improvements || ev.ineffectivePoints || parsedGeneral?.summary?.keyChallenges) && (
                       <div className="p-2.5 bg-amber-50/50 rounded-xl border border-amber-100">
-                        <span className="font-bold text-amber-900 block text-[11px]">Góp ý hoàn thiện:</span>
-                        <p className="text-amber-800 mt-0.5">{ev.ineffectivePoints}</p>
+                        <span className="font-bold text-amber-900 block text-[11px]">⚠️ Góp ý phát triển:</span>
+                        <p className="text-amber-800 mt-0.5 whitespace-pre-wrap">
+                          {ev.improvements || ev.ineffectivePoints || parsedGeneral?.summary?.keyChallenges}
+                        </p>
+                      </div>
+                    )}
+                    {parsedGeneral?.summary?.agreedActions && (
+                      <div className="p-2.5 bg-sky-50/50 rounded-xl border border-sky-100">
+                        <span className="font-bold text-sky-900 block text-[11px]">🤝 Kế hoạch hành động thống nhất:</span>
+                        <p className="text-sky-800 mt-0.5 whitespace-pre-wrap">{parsedGeneral.summary.agreedActions}</p>
                       </div>
                     )}
                   </div>

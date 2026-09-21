@@ -222,7 +222,8 @@ export function ReceivedEvaluationsTab({
           if (altSum > 0) {
             totalScoreSum = altSum / evals.length;
             const hasGvnn = evals.some(e => isGvnnItem(e));
-            maxPossibleScore = (hasGvnn || totalScoreSum <= 4) ? 4 : 20;
+            const hasPreschool = isPreschoolEvaluations || evals.some(e => e.slot?.level === "Mầm non");
+            maxPossibleScore = hasPreschool ? 10 : (hasGvnn || totalScoreSum <= 4) ? 4 : 20;
           }
         }
       } else {
@@ -1266,8 +1267,9 @@ export function ReceivedEvaluationsTab({
                 {filteredList.map((evalItem, idx) => {
                   const rating = evalItem.evaluation?.overallRating || "Đạt";
                   const totalScore = evalItem.evaluation?.totalScore;
+                  const isPreschool = isPreschoolEvaluations || evalItem.slot?.level === "Mầm non" || (evalItem.slot?.grade || "").toLowerCase().includes("mầm non");
                   const isGvnn = isGvnnItem(evalItem);
-                  const maxScoreVal = isPreschoolEvaluations ? "4.0" : isGvnn ? "4.0" : "20";
+                  const maxScoreVal = isPreschool ? "10" : isGvnn ? "4.0" : "20";
                   const slotDate = new Date(evalItem.slot?.date || evalItem.evaluation?.createdAt || new Date());
                   
                   const isHost = evalItem.role === "TEACHER" || evalItem.slot?.teacherId === currentTeacher?.id;
