@@ -26,6 +26,7 @@ import {
   getSchoolwideSurveyNPS
 } from "./tools/adminTools";
 import { AssistantSecurityContext } from "./tools";
+import { searchKnowledgeBase } from "./knowledgeBase";
 
 /**
  * Native Built-In Assistant Engine
@@ -43,19 +44,41 @@ export async function processNativeAssistantQuery(
 
   // 1. Lời chào & Giới thiệu
   if (
-    q.includes("chào") ||
-    q.includes("bạn là ai") ||
-    q.includes("giúp gì") ||
-    q.includes("hướng dẫn") ||
+    q === "chào" ||
+    q === "xin chào" ||
     q === "hello" ||
-    q === "hi"
+    q === "hi" ||
+    q.includes("bạn là ai") ||
+    q.includes("giúp gì")
   ) {
     return `${persona.welcomeMessage}
 
 ---
 ### 💡 Thầy/Cô và các bạn có thể bấm vào các gợi ý nhanh phía dưới hoặc hỏi trực tiếp:
 - **Tra cứu số liệu**: Nhập câu hỏi cụ thể kèm tên lớp, tên môn học hoặc tên học sinh.
-- **Dữ liệu thời gian thực**: Toàn bộ kết quả đều được trích xuất trực tiếp từ cơ sở dữ liệu hệ thống SSM đang vận hành.`;
+- **Hỏi quy chế & chính sách**: Hỏi về điểm chuẩn benchmark, chỉ tiêu dự giờ, quy trình cảnh báo Vàng/Đỏ...
+- **Dữ liệu thời gian thực**: Toàn bộ số liệu đều được trích xuất trực tiếp từ cơ sở dữ liệu hệ thống SSM.`;
+  }
+
+  // 2. Tra cứu Quy định, Cẩm nang & Hướng dẫn (Knowledge Base)
+  // Ưu tiên trả lời nếu người dùng hỏi về khái niệm, quy định hoặc tiêu chuẩn
+  const isAskingPolicyOrGuide =
+    q.includes("quy định") ||
+    q.includes("chính sách") ||
+    q.includes("là gì") ||
+    q.includes("như thế nào") ||
+    q.includes("thế nào") ||
+    q.includes("tiêu chuẩn") ||
+    q.includes("hướng dẫn") ||
+    q.includes("mấy tiết") ||
+    q.includes("ở đâu") ||
+    q.includes("quy trình");
+
+  if (isAskingPolicyOrGuide) {
+    const kbMatch = searchKnowledgeBase(message, role);
+    if (kbMatch) {
+      return kbMatch.content;
+    }
   }
 
   // ==========================================================================
@@ -399,7 +422,13 @@ export async function processNativeAssistantQuery(
     }
   }
 
-  // Fallback: Nếu câu hỏi chưa khớp từ khóa cụ thể
+  // Fallback 1: Tra cứu trong Cẩm nang & Quy chế (Knowledge Base)
+  const fallbackKbMatch = searchKnowledgeBase(message, role);
+  if (fallbackKbMatch) {
+    return fallbackKbMatch.content;
+  }
+
+  // Fallback 2: Nếu câu hỏi hoàn toàn chưa khớp nội dung nào
   return `Tôi đã tiếp nhận câu hỏi của Thầy/Cô: *" ${message} "*.
 
 Hiện tại trong hệ thống SSM, Thầy/Cô có thể tra cứu nhanh các mục dữ liệu sau:

@@ -8,6 +8,7 @@ import {
   AssistantSecurityContext
 } from "@/lib/assistant/tools";
 import { processNativeAssistantQuery } from "@/lib/assistant/nativeEngine";
+import { SCHOOL_KNOWLEDGE_BASE } from "@/lib/assistant/knowledgeBase";
 
 // Simple in-memory rate limiting map
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
@@ -118,6 +119,8 @@ export async function POST(req: Request) {
 - Họ tên người dùng: ${securityContext.userName || "Chưa định danh"}
 - Trang người dùng đang xem: ${currentPath || "Cổng thông tin chung"}
 - QUY TẮC BẢO ĐẢM TÍNH TOÀN VẸN DỮ LIỆU: BẮT BUỘC chỉ sử dụng dữ liệu thực tế được trả về từ các công cụ (Function Tools). TUYỆT ĐỐI KHÔNG BỊA ĐẶT hay phát sinh bất kỳ số liệu, điểm số, môn học hay học sinh nào không có trong database thực tế của web app SSM. Nếu chưa có dữ liệu hoặc danh sách rỗng, hãy trả lời chính xác và trung thực rằng hệ thống chưa ghi nhận dữ liệu.
+- BỘ TRI THỨC VÀ QUY CHẾ SƯ PHẠM (Tham khảo khi trả lời chính sách, quy định):
+${SCHOOL_KNOWLEDGE_BASE.filter(k => k.applicableRoles.includes(resolvedRole) || resolvedRole === "ADMIN").map(k => `### ${k.title}\n${k.content}`).join("\n\n")}
 - Quy tắc định dạng: Định dạng câu trả lời đẹp mắt bằng Markdown, bảng biểu rõ ràng khi có số liệu, dùng biểu tượng cảm xúc (emoji) tích cực và phù hợp với môi trường giáo dục.`;
 
       const functionDeclarations = getFunctionDeclarationsForRole(resolvedRole);
