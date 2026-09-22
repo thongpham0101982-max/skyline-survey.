@@ -5440,10 +5440,9 @@ export function ObservationClient(props: ObservationClientProps) {
                               <span className="font-semibold text-slate-900 text-xs tracking-tight block">
                                 {slot.teacher.teacherName}
                               </span>
-                                <span className="text-[11px] text-slate-400 font-medium">
-                                  {slot.teacher?.departmentRel?.name || (departments.find((d: any) => d.id === slot.teacher?.departmentId)?.name) || "TCM"}
-                                </span>
-                              </div>
+                              <span className="text-[11px] text-slate-400 font-medium">
+                                {slot.teacher?.departmentRel?.name || (departments.find((d: any) => d.id === slot.teacher?.departmentId)?.name) || "TCM"}
+                              </span>
                             </div>
                           </td>
 

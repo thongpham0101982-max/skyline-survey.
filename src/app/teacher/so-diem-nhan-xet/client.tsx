@@ -1,5 +1,5 @@
-import Link from "next/link"
 "use client"
+import Link from "next/link"
 
 const COLUMN_TYPES = [
   { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
