@@ -16,14 +16,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$scDesktop.TargetPath = 'wscript.exe'; " ^
     "$scDesktop.Arguments = '\"\"\"%~dp0SkylineTray.vbs\"\"\"'; " ^
     "$scDesktop.WorkingDirectory = '%~dp0'; " ^
-    "$scDesktop.Description = 'Tien ich quan ly Skyline Survey'; " ^
+    "$scDesktop.Description = 'Tien ich quan ly SQMS'; " ^
     "if (Test-Path $icon) { $scDesktop.IconLocation = $icon }; " ^
     "$scDesktop.Save(); " ^
     "$scStartup = $wsh.CreateShortcut((Join-Path $startup 'SkylineSurveyTray.lnk')); " ^
     "$scStartup.TargetPath = 'wscript.exe'; " ^
     "$scStartup.Arguments = '\"\"\"%~dp0SkylineTray.vbs\"\"\"'; " ^
     "$scStartup.WorkingDirectory = '%~dp0'; " ^
-    "$scStartup.Description = 'Skyline Survey System Tray'; " ^
+    "$scStartup.Description = 'SQMS Tray'; " ^
     "if (Test-Path $icon) { $scStartup.IconLocation = $icon }; " ^
     "$scStartup.Save();"
 

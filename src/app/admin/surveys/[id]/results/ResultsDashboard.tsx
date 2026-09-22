@@ -389,7 +389,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
             <div className="w-12 h-12 flex items-center justify-center text-xs font-semibold">
                <Database className="w-5 h-5 text-slate-300" />
             </div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Skyline Survey BI • Enterprise Edition v5.2</p>
+            <p className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.2em]">SQMS BI • Enterprise Edition v5.2</p>
             <p className="text-[9px] text-slate-300 max-w-md leading-relaxed">Dữ liệu được cập nhật theo thời gian thực từ cơ sở dữ liệu Turso. Hệ thống sử dụng thuật toán phân tích Tableau để xử lý phản hồi của phụ huynh và học sinh.</p>
          </div>
       </footer>

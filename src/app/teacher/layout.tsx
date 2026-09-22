@@ -107,10 +107,10 @@ export default async function TeacherLayout({ children }: { children: React.Reac
               />
               <div className="flex flex-col">
                 <span className="text-xs md:text-sm font-medium text-slate-800 tracking-normal flex items-center gap-1.5">
-                  <span className="text-[#0284C7] font-medium tracking-wide">SKYLINE</span>
+                  <span className="text-[#0284C7] font-medium tracking-wide">SQMS</span>
                   <span className="hidden md:inline text-xs font-normal text-slate-400">• Không gian Giáo viên</span>
                 </span>
-                <span className="md:hidden text-[10px] text-[#0284C7] font-normal leading-none">Skyline Education</span>
+                <span className="md:hidden text-[10px] text-[#0284C7] font-normal leading-none">SQMS</span>
               </div>
             </div>
           </div>

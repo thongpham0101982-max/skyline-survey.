@@ -57,7 +57,7 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                       <Link
                         href="/teacher"
                         onClick={() => setIsOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black text-[#1E8B87] bg-teal-50/70 hover:bg-teal-100/90 transition-all text-left mb-1"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-[#1E8B87] bg-teal-50/70 hover:bg-teal-100/90 transition-all text-left mb-1"
                       >
                         <GraduationCap className="w-4 h-4 text-[#1E8B87] shrink-0" />
                         <span>Giao diện Giáo viên</span>
@@ -75,7 +75,7 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                       <Link
                         href="/admin"
                         onClick={() => setIsOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-black text-slate-700 bg-slate-100/80 hover:bg-slate-200/80 transition-all text-left mb-1"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 bg-slate-100/80 hover:bg-slate-200/80 transition-all text-left mb-1"
                       >
                         <LayoutDashboard className="w-4 h-4 text-slate-500 shrink-0" />
                         <span>Giao diện Quản trị</span>
@@ -92,7 +92,7 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                       <Link
                         href="/admin/xet-duyet-ket-qua"
                         onClick={() => setIsOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:text-[#1E8B87] hover:bg-teal-50/50 transition-all text-left mb-1"
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-[#1E8B87] hover:bg-teal-50/50 transition-all text-left mb-1"
                       >
                         <CheckCircle2 className="w-4 h-4 text-[#1E8B87] shrink-0" />
                         <span>Xét duyệt kết quả</span>
@@ -104,7 +104,7 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                       setIsOpen(false);
                       setIsModalOpen(true);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 transition-all text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 transition-all text-left"
                   >
                     <KeyRound className="w-4 h-4 text-slate-400 shrink-0" />
                     <span>Đổi mật khẩu</span>
@@ -122,7 +122,7 @@ export function UserMenu({ session, permissionModules }: UserMenuProps) {
                         window.location.href = "/login"
                       }
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-rose-600 hover:bg-rose-50/50 hover:text-rose-700 transition-all text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-rose-600 hover:bg-rose-50/50 hover:text-rose-700 transition-all text-left"
                   >
                     <LogOut className="w-4 h-4 text-rose-500 shrink-0" />
                     <span>Đăng xuất</span>

@@ -797,7 +797,7 @@ export function RolesClient({ initialRoles }: any) {
                     <Fragment key={cat.id}>
                       {/* Category Header Row */}
                       <tr className="border-t-2 border-slate-200">
-                        <td colSpan={5} className={`px-4 py-2 font-bold text-[11px] uppercase tracking-wider ${colors.bg} ${colors.text}`}>
+                        <td colSpan={5} className={`px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.bg} ${colors.text}`}>
                           <div className="flex items-center gap-2">
                             <cat.icon className="w-4 h-4" />
                             <span>{cat.name}</span>
@@ -859,7 +859,7 @@ export function RolesClient({ initialRoles }: any) {
                                   </div>
                                   <div>
                                     <div
-                                      className={`font-semibold text-slate-800 text-xs ${hasSub ? "cursor-pointer select-none hover:text-teal-900" : ""}`}
+                                      className={`font-normal text-slate-800 text-xs ${hasSub ? "cursor-pointer select-none hover:text-teal-900" : ""}`}
                                       onClick={hasSub ? () => toggleExpand(m.code) : undefined}
                                     >
                                       {m.name}

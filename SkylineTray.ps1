@@ -73,7 +73,7 @@ function Toggle-AutoStart($enable) {
         $sc.TargetPath = "wscript.exe"
         $sc.Arguments = "`"$ScriptDir\SkylineTray.vbs`""
         $sc.WorkingDirectory = $ScriptDir
-        $sc.Description = "Skyline Survey System Tray"
+        $sc.Description = "SQMS Tray"
         $sc.Save()
     } else {
         if (Test-Path $shortcutPath) {
@@ -98,7 +98,7 @@ $contextMenu.RenderMode = [System.Windows.Forms.ToolStripRenderMode]::System
 
 # Header Title
 $menuTitle = New-Object System.Windows.Forms.ToolStripMenuItem
-$menuTitle.Text = "🏫 SKYLINE SURVEY SYSTEM"
+$menuTitle.Text = "🏫 SQMS"
 $menuTitle.Font = New-Object System.Drawing.Font($contextMenu.Font, [System.Drawing.FontStyle]::Bold)
 $menuTitle.Enabled = $false
 $contextMenu.Items.Add($menuTitle) | Out-Null
@@ -272,14 +272,14 @@ function Update-SystemStatus {
     if ($isRunning) {
         $menuStatus.Text = "Trạng thái: Đang hoạt động 🟢"
         $menuStatus.ForeColor = [System.Drawing.Color]::ForestGreen
-        $notifyIcon.Text = "Skyline Survey (🟢 Đang chạy: $ip:3000)"
+        $notifyIcon.Text = "SQMS (🟢 Đang chạy: $ip:3000)"
         $menuStart.Enabled = $false
         $menuStop.Enabled = $true
         $menuRestart.Enabled = $true
     } else {
         $menuStatus.Text = "Trạng thái: Đã dừng 🔴"
         $menuStatus.ForeColor = [System.Drawing.Color]::Crimson
-        $notifyIcon.Text = "Skyline Survey (🔴 Đã dừng)"
+        $notifyIcon.Text = "SQMS (🔴 Đã dừng)"
         $menuStart.Enabled = $true
         $menuStop.Enabled = $false
         $menuRestart.Enabled = $false
@@ -306,7 +306,7 @@ if (-not (Test-ServerRunning)) {
 
 # Thông báo khi mở tiện ích
 $currentIP = Get-LocalIPAddress
-$notifyIcon.ShowBalloonTip(3000, "Skyline Survey Utility", "Tiện ích khay hệ thống đã sẵn sàng!`nIP: http://$currentIP:3000/login", [System.Windows.Forms.ToolTipIcon]::Info)
+$notifyIcon.ShowBalloonTip(3000, "SQMS Utility", "Tiện ích khay hệ thống đã sẵn sàng!`nIP: http://$currentIP:3000/login", [System.Windows.Forms.ToolTipIcon]::Info)
 
 # Chạy vòng lặp sự kiện Windows Forms
 [System.Windows.Forms.Application]::Run()

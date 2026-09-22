@@ -21,7 +21,7 @@ export function TeacherMobileBottomNav() {
         <Link
           href="/teacher"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isHome ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+            isHome ? "text-[#0284C7] font-medium" : "text-slate-500 hover:text-[#0284C7] font-medium"
           }`}
         >
           <div className={`p-1 rounded-lg ${isHome ? "bg-[#0284C7]/10" : ""}`}>
@@ -33,7 +33,7 @@ export function TeacherMobileBottomNav() {
         <Link
           href="/teacher/surveys"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isSurveys ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+            isSurveys ? "text-[#0284C7] font-medium" : "text-slate-500 hover:text-[#0284C7] font-medium"
           }`}
         >
           <div className={`p-1 rounded-lg ${isSurveys ? "bg-[#0284C7]/10" : ""}`}>
@@ -45,7 +45,7 @@ export function TeacherMobileBottomNav() {
         <Link
           href="/teacher/so-diem-nhan-xet"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isGrading ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+            isGrading ? "text-[#0284C7] font-medium" : "text-slate-500 hover:text-[#0284C7] font-medium"
           }`}
         >
           <div className={`p-1 rounded-lg ${isGrading ? "bg-[#0284C7]/10" : ""}`}>
@@ -57,7 +57,7 @@ export function TeacherMobileBottomNav() {
         <Link
           href="/teacher/classes"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isClasses ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+            isClasses ? "text-[#0284C7] font-medium" : "text-slate-500 hover:text-[#0284C7] font-medium"
           }`}
         >
           <div className={`p-1 rounded-lg ${isClasses ? "bg-[#0284C7]/10" : ""}`}>

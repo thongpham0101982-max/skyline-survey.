@@ -207,13 +207,13 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 >
                   {!isCollapsed ? (
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-extrabold text-[#48BFE3] uppercase tracking-[0.12em] group-hover:text-teal-400 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
+                      <span className="text-[10px] font-medium text-[#48BFE3] uppercase tracking-[0.12em] group-hover:text-teal-400 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
                         {cat.name}
                       </span>
                     </div>
                   ) : (
                     <div className="w-full flex justify-center">
-                      <span className="w-full text-center text-[#48BFE3] block text-[10px] font-bold">{cat.name.charAt(0)}</span>
+                      <span className="w-full text-center text-[#48BFE3] block text-[10px] font-medium">{cat.name.charAt(0)}</span>
                     </div>
                   )}
                   {!isCollapsed && (
@@ -257,7 +257,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                             onClick={() => {
                               if (!hasSubModules) setIsOpen(false);
                             }}
-                            className={`flex-1 group relative flex items-center justify-between ${isCollapsed ? 'px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                            className={`flex-1 group relative flex items-center justify-between ${isCollapsed ? 'px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
                               isActive 
                                 ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                                 : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -276,7 +276,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                               {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{index + 1}. {m.name}</span>}
                             </div>
                             {m.code === "TASKS" && taskCount > 0 && !isCollapsed && (
-                              <span className="text-[9px] font-black text-white min-w-[18px] text-center shadow-lg shadow-red-500/40 bg-red-500 rounded-full px-1.5 py-0.5">
+                              <span className="text-[9px] font-medium text-white min-w-[18px] text-center shadow-lg shadow-red-500/40 bg-red-500 rounded-full px-1.5 py-0.5">
                                 {taskCount}
                               </span>
                             )}
@@ -308,7 +308,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                                   onClick={() => setIsOpen(false)}
                                   className={`block px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
                                     isSubActive
-                                      ? "bg-teal-500/25 text-teal-300 font-bold border border-teal-500/30 shadow-xs"
+                                      ? "bg-teal-500/25 text-teal-300 font-medium border border-teal-500/30 shadow-xs"
                                       : "text-white/65 hover:text-white hover:bg-white/10"
                                   }`}
                                 >
@@ -332,7 +332,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <Link 
                 href="/teacher" 
                 onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-3 ${
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-3 ${
                   pathname === '/teacher' 
                     ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10" 
                     : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
@@ -354,11 +354,11 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <div className="mb-4">
                   <div className="px-3 py-2">
                     {!isCollapsed ? (
-                      <span className="text-[10px] font-extrabold text-[#48BFE3] uppercase tracking-[0.12em]">
+                      <span className="text-[10px] font-medium text-[#48BFE3] uppercase tracking-[0.12em]">
                         A. Công tác GVCN
                       </span>
                     ) : (
-                      <span className="w-full text-center text-[#48BFE3] block text-[10px] font-bold">A</span>
+                      <span className="w-full text-center text-[#48BFE3] block text-[10px] font-medium">A</span>
                     )}
                   </div>
                   
@@ -366,7 +366,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/classes" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       pathname.includes('/teacher/classes') 
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -388,7 +388,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/surveys" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       (pathname.includes('/teacher/surveys') || pathname.includes('/teacher/nps') || pathname.includes('/teacher/feedback')) 
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -410,7 +410,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/co-van-hoc-tap" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       pathname.includes('/teacher/co-van-hoc-tap') 
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -432,7 +432,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/ho-so-hoc-sinh" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       pathname.includes('/teacher/ho-so-hoc-sinh') 
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -454,7 +454,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/ho-tro-hoc-tap" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       pathname.includes('/teacher/ho-tro-hoc-tap') 
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -476,7 +476,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/orientation" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       pathname.includes('/teacher/orientation') 
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -498,7 +498,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/diem-lop-chu-nhiem" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       pathname.includes('/teacher/diem-lop-chu-nhiem') 
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -522,11 +522,11 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <div className="pt-4 border-t border-white/10 mt-2">
                 <div className="px-3 py-2">
                   {!isCollapsed ? (
-                    <span className="text-[10px] font-extrabold text-[#48BFE3] uppercase tracking-[0.12em]">
+                    <span className="text-[10px] font-medium text-[#48BFE3] uppercase tracking-[0.12em]">
                       B. Công tác GVBM
                     </span>
                   ) : (
-                    <span className="w-full text-center text-[#48BFE3] block text-[10px] font-bold">B</span>
+                    <span className="w-full text-center text-[#48BFE3] block text-[10px] font-medium">B</span>
                   )}
                 </div>
 
@@ -537,7 +537,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       <Link 
                         href="/teacher/input-assessments?type=general" 
                         onClick={() => setIsOpen(false)} 
-                        className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                        className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
                           pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
                             ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                             : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -560,7 +560,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                           <Link 
                             href="/teacher/input-assessments?type=preschool" 
                             onClick={() => setIsOpen(false)} 
-                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1 ${
+                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1 ${
                               pathname.includes('/teacher/input-assessments') && typeParam === 'preschool'
                                 ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                                 : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -582,7 +582,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                           <Link 
                             href="/teacher/input-assessments?type=general" 
                             onClick={() => setIsOpen(false)} 
-                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
                               pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
                                 ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                                 : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -604,7 +604,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                           <Link 
                             href="/teacher/input-assessments?type=general" 
                             onClick={() => setIsOpen(false)} 
-                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                            className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
                               pathname.includes('/teacher/input-assessments') && typeParam !== 'preschool'
                                 ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                                 : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -630,12 +630,12 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 {/* Danh mục: Dự giờ & Phát triển chuyên môn */}
                 {!isCollapsed ? (
                   <div className="px-3 pt-3 pb-1">
-                    <span className="text-[10px] font-extrabold text-teal-300 uppercase tracking-[0.1em]">
+                    <span className="text-[10px] font-medium text-teal-300 uppercase tracking-[0.1em]">
                       DỰ GIỜ & PHÁT TRIỂN CHUYÊN MÔN
                     </span>
                   </div>
                 ) : (
-                  <div className="w-full text-center py-1 text-teal-300 font-bold text-[9px]">•</div>
+                  <div className="w-full text-center py-1 text-teal-300 font-medium text-[9px]">•</div>
                 )}
 
                 {/* 1. Khối Phổ thông */}
@@ -643,7 +643,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/du-gio" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       (pathname === '/teacher/du-gio' || (pathname.startsWith('/teacher/du-gio') && !pathname.startsWith('/teacher/du-gio-mam-non') && !pathname.startsWith('/teacher/du-gio-gvnn')))
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -667,7 +667,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   <Link 
                     href="/teacher/du-gio-mam-non" 
                     onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                       pathname.startsWith('/teacher/du-gio-mam-non')
                         ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                         : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -690,7 +690,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <Link 
                   href="/teacher/du-gio-gvnn" 
                   onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                     pathname.startsWith('/teacher/du-gio-gvnn')
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -712,7 +712,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <Link 
                   href="/teacher/orientation" 
                   onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                     pathname.includes('/teacher/orientation')
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -734,7 +734,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <Link 
                   href="/teacher/experiential-activities" 
                   onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                     pathname.startsWith('/teacher/experiential-activities')
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -757,7 +757,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <Link 
                   href="/teacher/so-diem-nhan-xet" 
                   onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
                     pathname.includes('/teacher/so-diem-nhan-xet')
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -779,7 +779,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <Link 
                   href="/teacher/phan-cong-giang-day" 
                   onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
                     pathname.includes('/teacher/phan-cong-giang-day')
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -801,7 +801,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <Link 
                   href="/teacher/ho-tro-hoc-tap" 
                   onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium ${
                     pathname.includes('/teacher/ho-tro-hoc-tap') 
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -823,7 +823,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <Link 
                   href="/teacher/thoi-khoa-bieu" 
                   onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mt-1.5 ${
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mt-1.5 ${
                     pathname.includes('/teacher/thoi-khoa-bieu') 
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
@@ -848,7 +848,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <Link 
                 href="/parent" 
                 onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
                   pathname === '/parent' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
@@ -860,7 +860,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <Link 
                 href="/parent/surveys" 
                 onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
                   pathname.startsWith('/parent/surveys') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
@@ -871,7 +871,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                             <Link 
                 href="/parent/grades" 
                 onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
                   pathname.startsWith('/parent/grades') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
@@ -882,7 +882,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <Link 
                 href="/parent/children/profile" 
                 onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
                   pathname.startsWith('/parent/children/profile') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
@@ -893,7 +893,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <Link 
                 href="/parent/children/advisory" 
                 onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-medium ${
                   pathname.startsWith('/parent/children/advisory') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
@@ -907,7 +907,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         <div className="mt-auto pt-4 flex flex-col gap-2">
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`hidden md:flex items-center ${isCollapsed ? 'justify-center' : 'px-4'} py-3 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 text-sm font-semibold group w-full`}
+            className={`hidden md:flex items-center ${isCollapsed ? 'justify-center' : 'px-4'} py-3 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200 text-sm font-medium group w-full`}
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" /> : (
               <>
@@ -927,7 +927,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 window.location.href = "/login"
               }
             }}
-            className={`flex items-center w-full ${isCollapsed ? 'justify-center' : 'px-4'} py-3 text-white/70 hover:text-white hover:bg-red-500/10 rounded-xl transition-all duration-200 text-sm font-semibold group`}
+            className={`flex items-center w-full ${isCollapsed ? 'justify-center' : 'px-4'} py-3 text-white/70 hover:text-white hover:bg-red-500/10 rounded-xl transition-all duration-200 text-sm font-medium group`}
           >
             <LogOut className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} text-white/50 group-hover:text-red-400 transition-colors`} />
             {!isCollapsed && <span>Đăng xuất</span>}

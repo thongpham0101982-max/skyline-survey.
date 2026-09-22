@@ -32,7 +32,7 @@ export function SurveyTabs({ activeTab, role = 'ADMIN' }: SurveyTabsProps) {
             <Link
               key={tab.id}
               href={tab.href}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black transition-all duration-200 border ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium transition-all duration-200 border ${
                 isActive
                   ? 'bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs'
                   : 'text-slate-600 border-transparent hover:bg-[#48BFE3]/5 hover:text-[#48BFE3]'

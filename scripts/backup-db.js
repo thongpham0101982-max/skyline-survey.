@@ -128,7 +128,7 @@ async function sendNotificationEmail(backupResult) {
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
         <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 24px; color: #ffffff; text-align: center;">
-          <h2 style="margin: 0 0 8px 0; font-size: 22px;">HỆ THỐNG SKYLINE SURVEY MANAGEMENT</h2>
+          <h2 style="margin: 0 0 8px 0; font-size: 22px;">HỆ THỐNG SQMS</h2>
           <p style="margin: 0; font-size: 14px; opacity: 0.9;">Báo cáo Sao lưu Cơ sở Dữ liệu Định kỳ (23h00 Thứ 6)</p>
         </div>
         <div style="padding: 24px; color: #334155; line-height: 1.6;">
@@ -196,7 +196,7 @@ async function sendNotificationEmail(backupResult) {
         tls: { ciphers: 'SSLv3', rejectUnauthorized: false }
       });
       await transporter.sendMail({
-        from: `"Skyline Survey System" <${smtpUser}>`,
+        from: `"SQMS" <${smtpUser}>`,
         to: recipients,
         subject,
         html: htmlContent
@@ -229,7 +229,7 @@ async function runBackup(options = {}) {
   const startTime = Date.now();
 
   console.log(`\n================================================================`);
-  console.log(`  SKYLINE SURVEY MANAGEMENT - BẮT ĐẦU SAO LƯU DỮ LIỆU`);
+  console.log(`  SQMS - BẮT ĐẦU SAO LƯU DỮ LIỆU`);
   console.log(`  Thời gian: ${new Date().toLocaleString('vi-VN')} | Chế độ: ${triggerType}`);
   console.log(`================================================================\n`);
 

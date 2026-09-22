@@ -1,9 +1,9 @@
 @echo off
-title Skyline Survey Development Server
+title SQMS Development Server
 cd /d "%~dp0"
 
 echo ====================================================
-echo   SKYLINE SURVEY SYSTEM - DEV SERVER (PORT 3000)
+echo   SQMS - DEV SERVER (PORT 3000)
 echo   Dang chay tai dia chi: http://192.168.10.239:3000
 echo ====================================================
 

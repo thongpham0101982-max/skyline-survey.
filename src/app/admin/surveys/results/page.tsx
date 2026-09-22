@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db"
 import { ResultsPageClient } from "./client"
 
-export const metadata = { title: "Kết quả Khảo sát | Skyline Academy" }
+export const metadata = { title: "Kết quả Khảo sát | SQMS" }
 export const dynamic = "force-dynamic";
 
 export default async function SurveyResultsListPage() {

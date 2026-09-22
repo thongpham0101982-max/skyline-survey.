@@ -1,8 +1,8 @@
 @echo off
-title Tat Skyline Survey Server
+title Tat SQMS Server
 cd /d "%~dp0"
 echo ====================================================
-echo   Dang dung Skyline Survey Server tren port 3000...
+echo   Dang dung SQMS Server tren port 3000...
 echo ====================================================
 
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (

@@ -22,7 +22,7 @@ export function AdminMobileBottomNav() {
       <Link
         href="/admin"
         className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-          isDashboard ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+          isDashboard ? "text-[#0284C7] font-medium" : "text-slate-500 hover:text-[#0284C7] font-medium"
         }`}
       >
         <div className={`p-1 rounded-lg ${isDashboard ? "bg-[#0284C7]/10" : ""}`}>
@@ -34,7 +34,7 @@ export function AdminMobileBottomNav() {
       <Link
         href="/admin/cau-hinh-khao-sat"
         className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-          isSurveys ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+          isSurveys ? "text-[#0284C7] font-medium" : "text-slate-500 hover:text-[#0284C7] font-medium"
         }`}
       >
         <div className={`p-1 rounded-lg ${isSurveys ? "bg-[#0284C7]/10" : ""}`}>
@@ -46,7 +46,7 @@ export function AdminMobileBottomNav() {
       <Link
         href="/admin/xet-duyet-ket-qua"
         className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-          isApprovals ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+          isApprovals ? "text-[#0284C7] font-medium" : "text-slate-500 hover:text-[#0284C7] font-medium"
         }`}
       >
         <div className={`p-1 rounded-lg ${isApprovals ? "bg-[#0284C7]/10" : ""}`}>
@@ -58,7 +58,7 @@ export function AdminMobileBottomNav() {
       <Link
         href="/admin/ho-so-hoc-sinh"
         className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-          isStudents ? "text-[#0284C7] font-bold" : "text-slate-500 hover:text-[#0284C7] font-medium"
+          isStudents ? "text-[#0284C7] font-medium" : "text-slate-500 hover:text-[#0284C7] font-medium"
         }`}
       >
         <div className={`p-1 rounded-lg ${isStudents ? "bg-[#0284C7]/10" : ""}`}>

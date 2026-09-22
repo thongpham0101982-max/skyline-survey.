@@ -8,7 +8,7 @@ export default function RootLoading() {
         </div>
         <div>
           <h4 className="text-sm font-bold text-slate-800 tracking-tight">Đang tải dữ liệu...</h4>
-          <p className="text-[11px] text-slate-400 mt-0.5">Skyline Survey System</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">SQMS</p>
         </div>
       </div>
     </div>

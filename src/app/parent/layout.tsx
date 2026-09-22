@@ -29,7 +29,7 @@ export default async function ParentLayout({ children }: { children: React.React
               />
               <div className="flex flex-col">
                 <span className="text-xs md:text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5">
-                  <span className="text-[#0284C7] font-extrabold uppercase tracking-wide">SKYLINE</span>
+                  <span className="text-[#0284C7] font-semibold uppercase tracking-wide">SQMS</span>
                   <span className="hidden md:inline text-xs font-bold text-slate-400">• Phụ huynh</span>
                 </span>
                 <span className="md:hidden text-[9px] text-[#48BFE3] font-bold leading-none">Cổng thông tin</span>

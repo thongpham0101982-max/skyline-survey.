@@ -22,7 +22,7 @@ export function ParentMobileBottomNav() {
         <Link
           href="/parent"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isHome ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
+            isHome ? "text-[#003B3A] font-medium" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${isHome ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
@@ -34,7 +34,7 @@ export function ParentMobileBottomNav() {
         <Link
           href="/parent/surveys"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isSurveys ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
+            isSurveys ? "text-[#003B3A] font-medium" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${isSurveys ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
@@ -46,7 +46,7 @@ export function ParentMobileBottomNav() {
         <Link
           href="/parent/children/advisory"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isAdvisory ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
+            isAdvisory ? "text-[#003B3A] font-medium" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${isAdvisory ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
@@ -59,7 +59,7 @@ export function ParentMobileBottomNav() {
         <Link
           href="/parent/grades"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isGrades ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
+            isGrades ? "text-[#003B3A] font-medium" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${isGrades ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>
@@ -70,7 +70,7 @@ export function ParentMobileBottomNav() {
         <Link
           href="/parent/children/profile"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            isProfile ? "text-[#003B3A] font-extrabold" : "text-slate-500 hover:text-[#003B3A] font-medium"
+            isProfile ? "text-[#003B3A] font-medium" : "text-slate-500 hover:text-[#003B3A] font-medium"
           }`}
         >
           <div className={`p-1.5 rounded-xl transition-all ${isProfile ? "bg-teal-50 text-[#003B3A] shadow-xs" : ""}`}>

@@ -308,7 +308,7 @@ export default async function HsDanhSachPage() {
       
       {/* Footer Support */}
       <div className="text-center pt-10">
-         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Skyline Academy Survey System</p>
+         <p className="text-xs font-medium text-slate-400 uppercase tracking-widest">SQMS</p>
       </div>
     </div>
   )

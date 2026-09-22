@@ -94,10 +94,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               />
               <div className="flex flex-col">
                 <span className="text-xs md:text-sm font-black text-slate-800 tracking-tight flex items-center gap-1.5">
-                  <span className="text-[#0284C7] font-extrabold uppercase tracking-wide">SKYLINE</span>
+                  <span className="text-[#0284C7] font-semibold uppercase tracking-wide">SQMS</span>
                   <span className="hidden md:inline text-xs font-bold text-slate-400">• Quản trị</span>
                 </span>
-                <span className="md:hidden text-[9px] text-[#48BFE3] font-bold leading-none">Skyline Survey System</span>
+                <span className="md:hidden text-[9px] text-[#48BFE3] font-medium leading-none">SQMS</span>
               </div>
             </div>
             {isTeacherUser && (

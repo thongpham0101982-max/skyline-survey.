@@ -38,7 +38,7 @@ export function ExamTabs({ activeTab }: ExamTabsProps) {
             <Link
               key={tab.id}
               href={tab.href}
-              className={`flex items-center gap-2 px-6 py-3 border-b-2 font-black text-xs transition-all duration-200 uppercase tracking-wider ${
+              className={`flex items-center gap-2 px-6 py-3 border-b-2 font-medium text-xs transition-all duration-200 uppercase tracking-wider ${
                 tab.isActive
                   ? 'border-[#48BFE3] text-[#48BFE3]'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
@@ -61,7 +61,7 @@ export function ExamTabs({ activeTab }: ExamTabsProps) {
               <Link
                 key={tab.id}
                 href={tab.href}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all duration-200 border ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all duration-200 border ${
                   isActive
                     ? 'bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs'
                     : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-800'

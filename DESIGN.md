@@ -1,6 +1,6 @@
 ---
 version: alpha
-name: Skyline Survey System
+name: SQMS
 description: Hệ thống Quản trị Chất lượng Trường học và Khảo sát Đánh giá Năng lực Sky-Line Education System
 colors:
   brand-violet-dark: "#7400B8"
@@ -28,10 +28,10 @@ rounded:
   "3xl": "32px"
 ---
 
-# Design Language: Skyline Survey (SQMS)
+# Design Language: SQMS
 
 ## Overview
-Skyline Survey (SQMS - School Quality Management System) là hệ thống quản trị chất lượng giáo dục, khảo sát ý kiến, quản lý sổ điểm và đánh giá năng lực học sinh thuộc Hệ thống Giáo dục Sky-Line. Giao diện được thiết kế hiện đại, tinh gọn, thân thiện với người dùng theo phong cách giáo dục cao cấp, sử dụng bảng màu nhận diện thương hiệu 10 bước độc quyền.
+SQMS (School Quality Management System) là hệ thống quản trị chất lượng giáo dục, khảo sát ý kiến, quản lý sổ điểm và đánh giá năng lực học sinh thuộc Hệ thống Giáo dục Sky-Line. Giao diện được thiết kế hiện đại, tinh gọn, thân thiện với người dùng theo phong cách giáo dục cao cấp, sử dụng bảng màu nhận diện thương hiệu 10 bước độc quyền.
 
 ## Colors
 Hệ thống sử dụng bảng màu thương hiệu chính thức 2024 của Sky-Line (10-Step Palette):

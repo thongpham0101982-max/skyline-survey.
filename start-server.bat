@@ -3,7 +3,7 @@ title Skyline Portal 24/7
 cd /d "%~dp0"
 
 echo ====================================================
-echo   SKYLINE SURVEY SYSTEM - 24/7 (PORT 3000)
+echo   SQMS - 24/7 (PORT 3000)
 echo   Dia chi truy cap: http://192.168.10.239:3000
 echo ====================================================
 

@@ -12,8 +12,11 @@ const beVietnamPro = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Skyline Survey System",
-  description: "School Survey Management System",
+  title: {
+    default: "SQMS",
+    template: "%s | SQMS",
+  },
+  description: "Hệ thống Quản trị Chất lượng Trường học (SQMS)",
 };
 
 export default function RootLayout({

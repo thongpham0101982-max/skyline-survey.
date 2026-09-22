@@ -4,7 +4,7 @@ import { createSurveyPeriodAction, updateSurveyPeriodAction, deleteSurveyPeriodA
 import { CalendarDays, Sparkles, AlertCircle } from "lucide-react"
 import { SurveyTabs } from "@/components/SurveyTabs"
 
-export const metadata = { title: "Hệ thống Khảo sát | Skyline Academy" }
+export const metadata = { title: "Hệ thống Khảo sát | SQMS" }
 
 export default async function AdminSurveysPage() {
   let surveys: any[] = []

@@ -37,7 +37,7 @@ export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
               <Link
                 key={tab.id}
                 href={tab.href}
-                className={"flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 border " + (
+                className={"flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 border " + (
                   isActive
                     ? 'bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] text-white border-transparent shadow-md shadow-[#00A99D]/20'
                     : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-900'
