@@ -9,6 +9,7 @@ import {
 } from "@/lib/assistant/tools";
 import { processNativeAssistantQuery } from "@/lib/assistant/nativeEngine";
 import { SCHOOL_KNOWLEDGE_BASE } from "@/lib/assistant/knowledgeBase";
+import { getAdminSession, getScopedDepartmentIds } from "@/lib/session";
 
 // Simple in-memory rate limiting map
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
@@ -57,7 +58,6 @@ export async function POST(req: Request) {
     } catch (e) {
       console.warn("Student session check warning:", e);
     }
-
     const nextAuthUser = session?.user;
     let resolvedRole: AssistantRole = "TEACHER";
     const securityContext: AssistantSecurityContext = {
@@ -73,23 +73,59 @@ export async function POST(req: Request) {
       securityContext.userName = studentSession.studentName;
     } else if (nextAuthUser) {
       const userRole = (nextAuthUser.role || "").toUpperCase();
-      if (["ADMIN", "ADMINISTRATOR", "KT_DBCL", "SUPER_ADMIN"].includes(userRole)) {
-        resolvedRole = "ADMIN";
-        securityContext.role = "ADMIN";
-      } else if (userRole === "PARENT") {
+      if (userRole === "PARENT") {
         resolvedRole = "PARENT";
         securityContext.role = "PARENT";
       } else {
-        resolvedRole = "TEACHER";
-        securityContext.role = "TEACHER";
+        // Cán bộ GV / TTCM / TBP / Ban ĐHCM / Admin
+        let adminSession: any = null;
+        let scopedDeptIds: string[] | null = null;
+        try {
+          adminSession = await getAdminSession();
+          scopedDeptIds = await getScopedDepartmentIds(adminSession);
+        } catch (e) {
+          console.warn("getAdminSession error in assistant route:", e);
+        }
+
+        if (
+          adminSession?.isSuperAdmin ||
+          adminSession?.isHeadOfAcademic ||
+          ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "SUPER_ADMIN", "BAN_DHCM"].includes(userRole)
+        ) {
+          resolvedRole = "ADMIN"; // Ban ĐHCM, Admin (Toàn bộ dữ liệu)
+          securityContext.role = "ADMIN";
+          securityContext.isHeadOfAcademic = true;
+          securityContext.scopedDepartmentIds = null;
+        } else if (adminSession?.isTBP) {
+          resolvedRole = "TBP"; // Trưởng Bộ Phận (Nhiều TCM trong Bộ phận)
+          securityContext.role = "TBP";
+          securityContext.isTBP = true;
+          securityContext.managedDivisions = adminSession.managedDivisions;
+          securityContext.scopedDepartmentIds = scopedDeptIds;
+        } else if (adminSession?.isTTCM) {
+          resolvedRole = "TTCM"; // Tổ Trưởng Chuyên Môn (TCM của mình)
+          securityContext.role = "TTCM";
+          securityContext.isTTCM = true;
+          securityContext.managedDepartmentIds = adminSession.managedDepartmentIds;
+          securityContext.scopedDepartmentIds = scopedDeptIds;
+        } else {
+          resolvedRole = "TEACHER";
+          securityContext.role = "TEACHER";
+        }
+
+        securityContext.teacherId = adminSession?.teacherId;
       }
-    } else if (requestedRole === "STUDENT") {
-      resolvedRole = "STUDENT";
-      securityContext.role = "STUDENT";
+    } else if (requestedRole && ["STUDENT", "TEACHER", "PARENT", "ADMIN", "TTCM", "TBP"].includes(requestedRole)) {
+      resolvedRole = requestedRole as AssistantRole;
+      securityContext.role = resolvedRole;
+      if (resolvedRole === "ADMIN") {
+        securityContext.isHeadOfAcademic = true;
+        securityContext.scopedDepartmentIds = null;
+      }
     }
 
     if (requestedRole && requestedRole !== resolvedRole) {
-      if (securityContext.role === "ADMIN") {
+      if (securityContext.role === "ADMIN" || securityContext.isHeadOfAcademic) {
         resolvedRole = requestedRole;
       }
     }

@@ -98,27 +98,47 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
       ]
     }
 
-    // 3. Phụ huynh
-    if (role === "PARENT") {
-      if (pathname.includes("/grades")) {
-        return [
-          { text: "Tóm tắt kết quả học tập tháng này của con tôi", label: "Báo cáo điểm của con" },
-          { text: "Con có môn nào cần gia đình đồng hành kèm cặp thêm không?", label: "Môn cần đồng hành" }
-        ]
-      }
+    // 3. Tổ Trưởng Chuyên Môn (TTCM)
+    if (role === "TTCM") {
       return [
-        { text: "Tình hình học tập và rèn luyện của con tôi hiện tại ra sao?", label: "Tổng quan về con" },
-        { text: "Con tôi đang đặt ra những mục tiêu gì trong học kỳ này?", label: "Mục tiêu của con" },
-        { text: "Thầy cô có lời khuyên gì để ba mẹ hỗ trợ con học tốt hơn?", label: "Khuyên phụ huynh" }
+        { text: "Danh sách giáo viên thuộc Tổ Chuyên Môn của tôi", label: "Giáo viên trong Tổ" },
+        { text: "Báo cáo chất lượng và tiến độ các bộ môn thuộc Tổ", label: "Chất lượng bộ môn" },
+        { text: "Tình hình dự giờ của giáo viên trong Tổ chuyên môn tháng này", label: "Dự giờ trong Tổ" },
+        { text: "Xem lớp chủ nhiệm có học sinh nào ở diện cảnh báo Vàng hoặc Đỏ", label: "Cảnh báo lớp CN" }
       ]
     }
 
-    // 4. BGH & Admin
+    // 4. Trưởng Bộ Phận (TBP)
+    if (role === "TBP") {
+      return [
+        { text: "Danh sách giáo viên các Tổ Chuyên Môn trong Bộ Phận", label: "Giáo viên trong Bộ Phận" },
+        { text: "Báo cáo chất lượng các môn học thuộc các Tổ trong Bộ Phận", label: "Chất lượng môn các Tổ" },
+        { text: "Giám sát tình hình dự giờ của giáo viên các Tổ trong Bộ Phận", label: "Dự giờ nhiều Tổ" },
+        { text: "Tiến độ sổ điểm các môn thuộc Bộ Phận quản lý", label: "Tiến độ sổ điểm Bộ Phận" }
+      ]
+    }
+
+    // 5. Phụ huynh (PHS - Bảo mật con em mình)
+    if (role === "PARENT") {
+      if (pathname.includes("/grades")) {
+        return [
+          { text: "Bảng điểm chi tiết các môn học kỳ này của con", label: "Bảng điểm của con" },
+          { text: "Điểm trung bình và nhận xét của thầy cô về con", label: "ĐTB & Lời nhận xét" }
+        ]
+      }
+      return [
+        { text: "Kết quả kiểm tra & học tập của con tôi", label: "Kết quả học tập của con" },
+        { text: "Sổ mục tiêu SMART và kế hoạch 7 ngày của con", label: "Mục tiêu của con" },
+        { text: "Xem nhật ký cố vấn học tập và lời dặn của GVCN cho con", label: "Lời dặn của Thầy/Cô" }
+      ]
+    }
+
+    // 6. Ban ĐHCM & Ban Giám Hiệu (Toàn quyền hệ thống)
     return [
-      { text: "Thống kê tiến độ hoàn thành sổ điểm toàn trường", label: "Tiến độ sổ điểm toàn trường" },
-      { text: "Thống kê hoạt động dạy và dự giờ của các Tổ chuyên môn", label: "Hoạt động Tổ chuyên môn" },
-      { text: "Tổng hợp số lượng học sinh cảnh báo Xanh/Vàng/Đỏ toàn trường", label: "Cảnh báo rủi ro toàn trường" },
-      { text: "Báo cáo chỉ số hài lòng Phụ huynh (NPS) mới nhất", label: "Chỉ số NPS khảo sát" }
+      { text: "Báo cáo tiến độ sổ điểm toàn trường — Ban ĐHCM & BGH", label: "Tiến độ sổ điểm toàn trường" },
+      { text: "Hoạt động dạy và dự giờ tất cả các Tổ chuyên môn toàn trường", label: "Dự giờ toàn trường" },
+      { text: "Tổng hợp số lượng học sinh cảnh báo nguy cơ toàn hệ thống", label: "Cảnh báo rủi ro toàn trường" },
+      { text: "Báo cáo chỉ số hài lòng Phụ huynh (NPS) mới nhất", label: "Chỉ số NPS toàn trường" }
     ]
   }, [role, pathname])
 

@@ -210,6 +210,43 @@ const ADMIN_FUNCTION_DECLARATIONS = [
   }
 ];
 
+import {
+  getTCMTeachers,
+  getTCMSubjectQuality,
+  getTCMObservationMonitoring
+} from "./tcmTools";
+
+const TCM_FUNCTION_DECLARATIONS = [
+  {
+    name: "getTCMTeachers",
+    description: "Lấy danh sách giáo viên thuộc Tổ Chuyên Môn (TTCM) hoặc các TCM trong Bộ Phận (TBP).",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        keyword: { type: "STRING", description: "Từ khóa tìm kiếm theo tên hoặc mã giáo viên" }
+      }
+    }
+  },
+  {
+    name: "getTCMSubjectQuality",
+    description: "Thống kê tiến độ vào điểm, điểm trung bình và học sinh dưới chuẩn benchmark của các bộ môn thuộc Tổ Chuyên Môn quản lý.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        subjectQuery: { type: "STRING", description: "Tên hoặc mã môn học cần lọc" }
+      }
+    }
+  },
+  {
+    name: "getTCMObservationMonitoring",
+    description: "Giám sát tiến độ dạy và dự giờ của toàn bộ giáo viên trong Tổ Chuyên Môn (định mức 2 tiết/tháng, danh sách chưa hoàn thành).",
+    parameters: {
+      type: "OBJECT",
+      properties: {}
+    }
+  }
+];
+
 // ============================================================================
 // 2. TRẢ VỀ CÁC TOOL PHÙ HỢP VỚI ROLE
 // ============================================================================
@@ -220,10 +257,18 @@ export function getFunctionDeclarationsForRole(role: AssistantRole) {
       return STUDENT_FUNCTION_DECLARATIONS;
     case "TEACHER":
       return TEACHER_FUNCTION_DECLARATIONS;
+    case "TTCM":
+      return [...TEACHER_FUNCTION_DECLARATIONS, ...TCM_FUNCTION_DECLARATIONS];
+    case "TBP":
+      return [...TCM_FUNCTION_DECLARATIONS, ...ADMIN_FUNCTION_DECLARATIONS];
     case "PARENT":
       return PARENT_FUNCTION_DECLARATIONS;
     case "ADMIN":
-      return ADMIN_FUNCTION_DECLARATIONS;
+      return [
+        ...ADMIN_FUNCTION_DECLARATIONS,
+        ...TCM_FUNCTION_DECLARATIONS,
+        ...TEACHER_FUNCTION_DECLARATIONS
+      ];
     default:
       return [];
   }
@@ -238,6 +283,16 @@ export interface AssistantSecurityContext {
   userId?: string;
   studentId?: string;
   userName?: string;
+  isSuperAdmin?: boolean;
+  isHeadOfAcademic?: boolean; // Ban ĐHCM
+  isTBP?: boolean;            // Trưởng Bộ Phận
+  isTTCM?: boolean;           // Tổ Trưởng Chuyên Môn
+  managedDivisions?: string[];// Bộ phận của TBP
+  managedDepartmentIds?: string[]; // TCM của TTCM
+  scopedDepartmentIds?: string[] | null; // null = Unrestricted (Ban ĐHCM/Admin)
+  departmentName?: string;
+  divisionNames?: string[];
+  teacherId?: string;
 }
 
 export async function executeAssistantTool(
@@ -245,77 +300,138 @@ export async function executeAssistantTool(
   args: any,
   context: AssistantSecurityContext
 ): Promise<any> {
-  // 1. Nhóm Học sinh
-  if (toolName === "getStudentGrades") {
-    if (!context.studentId) return { error: "Không xác định được danh tính học sinh. Vui lòng đăng nhập lại cổng học sinh." };
-    return await getStudentGrades(context.studentId, args?.subjectNameFilter, args?.evaluationPeriod);
-  }
-  if (toolName === "getStudentCompetencies") {
-    if (!context.studentId) return { error: "Không xác định được danh tính học sinh." };
-    return await getStudentCompetencies(context.studentId, args?.subjectFilter);
-  }
-  if (toolName === "getStudentGoalsAndPlans") {
-    if (!context.studentId) return { error: "Không xác định được danh tính học sinh." };
-    return await getStudentGoalsAndPlans(context.studentId, args?.statusFilter);
-  }
-  if (toolName === "getStudentTimetable") {
-    if (!context.studentId) return { error: "Không xác định được danh tính học sinh." };
-    return await getStudentTimetable(context.studentId, args?.dayOfWeek);
-  }
-  if (toolName === "getStudentAdvisoryNotes") {
-    if (!context.studentId) return { error: "Không xác định được danh tính học sinh." };
-    return await getStudentAdvisoryNotes(context.studentId);
+  const role = context.role;
+  const isGlobalAdmin = context.isSuperAdmin || context.isHeadOfAcademic || role === "ADMIN";
+
+  // 1. Nhóm Học sinh (Chỉ cho phép STUDENT)
+  if (
+    [
+      "getStudentGrades",
+      "getStudentCompetencies",
+      "getStudentGoalsAndPlans",
+      "getStudentTimetable",
+      "getStudentAdvisoryNotes"
+    ].includes(toolName)
+  ) {
+    if (role !== "STUDENT" && !isGlobalAdmin) {
+      return { error: "Bạn không có quyền truy cập công cụ học sinh cá nhân này." };
+    }
+    if (!context.studentId && !args?.studentId) {
+      return { error: "Không xác định được danh tính học sinh." };
+    }
+    const targetStudentId = context.studentId || args?.studentId;
+
+    if (toolName === "getStudentGrades") {
+      return await getStudentGrades(targetStudentId, args?.subjectNameFilter, args?.evaluationPeriod);
+    }
+    if (toolName === "getStudentCompetencies") {
+      return await getStudentCompetencies(targetStudentId, args?.subjectFilter);
+    }
+    if (toolName === "getStudentGoalsAndPlans") {
+      return await getStudentGoalsAndPlans(targetStudentId, args?.statusFilter);
+    }
+    if (toolName === "getStudentTimetable") {
+      return await getStudentTimetable(targetStudentId, args?.dayOfWeek);
+    }
+    if (toolName === "getStudentAdvisoryNotes") {
+      return await getStudentAdvisoryNotes(targetStudentId);
+    }
   }
 
-  // 2. Nhóm Giáo viên
-  if (toolName === "getClassGradebookStatus") {
-    if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản giáo viên." };
-    return await getClassGradebookStatus(context.userId, args?.classCode, args?.subjectCode);
-  }
-  if (toolName === "getBenchmarkAlerts") {
-    if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản giáo viên." };
-    return await getBenchmarkAlerts(context.userId, args?.classCode, args?.subjectCode);
-  }
-  if (toolName === "getHomeroomAtRiskStudents") {
-    if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản giáo viên." };
-    return await getHomeroomAtRiskStudents(context.userId);
-  }
-  if (toolName === "draftStudentEvaluationComment") {
-    if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản giáo viên." };
-    return await draftStudentEvaluationComment(args?.studentIdentifier);
-  }
-  if (toolName === "getTeacherObservationStatus") {
-    if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản giáo viên." };
-    return await getTeacherObservationStatus(context.userId);
-  }
-
-  // 3. Nhóm Phụ huynh
-  if (toolName === "getParentChildren") {
+  // 2. Nhóm Phụ huynh (BẢO MẬT: Chỉ truy cập con em mình)
+  if (["getParentChildren", "getChildAcademicProgress", "getChildGoalsAndTeacherNotes"].includes(toolName)) {
+    if (role !== "PARENT" && !isGlobalAdmin) {
+      return { error: "Công cụ này chỉ dành cho tài khoản Phụ huynh học sinh." };
+    }
     if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản phụ huynh." };
-    return await getParentChildren(context.userId);
-  }
-  if (toolName === "getChildAcademicProgress") {
-    if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản phụ huynh." };
-    return await getChildAcademicProgress(context.userId, args?.studentNameOrCode);
-  }
-  if (toolName === "getChildGoalsAndTeacherNotes") {
-    if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản phụ huynh." };
-    return await getChildGoalsAndTeacherNotes(context.userId, args?.studentNameOrCode);
+
+    if (toolName === "getParentChildren") {
+      return await getParentChildren(context.userId);
+    }
+    if (toolName === "getChildAcademicProgress") {
+      return await getChildAcademicProgress(context.userId, args?.studentNameOrCode);
+    }
+    if (toolName === "getChildGoalsAndTeacherNotes") {
+      return await getChildGoalsAndTeacherNotes(context.userId, args?.studentNameOrCode);
+    }
   }
 
-  // 4. Nhóm BGH & Admin
-  if (toolName === "getSchoolwideGradebookProgress") {
-    return await getSchoolwideGradebookProgress(args?.campusCode, args?.grade);
-  }
-  if (toolName === "getDepartmentObservationStats") {
-    return await getDepartmentObservationStats(args?.deptName);
-  }
-  if (toolName === "getSystemAtRiskOverview") {
-    return await getSystemAtRiskOverview(args?.campusCode);
-  }
-  if (toolName === "getSchoolwideSurveyNPS") {
-    return await getSchoolwideSurveyNPS();
+  // 3. Nhóm Nghiệp vụ TCM (Dành cho TTCM, TBP, và Ban ĐHCM / Admin)
+  if (["getTCMTeachers", "getTCMSubjectQuality", "getTCMObservationMonitoring"].includes(toolName)) {
+    if (!["TTCM", "TBP", "ADMIN"].includes(role) && !isGlobalAdmin) {
+      return { error: "Chức năng này chỉ dành cho Tổ Trưởng Chuyên Môn, Trưởng Bộ Phận hoặc Ban ĐHCM." };
+    }
+    const scopedDepts = isGlobalAdmin ? null : (context.scopedDepartmentIds ?? []);
+
+    if (toolName === "getTCMTeachers") {
+      return await getTCMTeachers(scopedDepts, args?.keyword);
+    }
+    if (toolName === "getTCMSubjectQuality") {
+      return await getTCMSubjectQuality(scopedDepts, args?.subjectQuery);
+    }
+    if (toolName === "getTCMObservationMonitoring") {
+      return await getTCMObservationMonitoring(scopedDepts);
+    }
   }
 
-  return { error: `Không tìm thấy công cụ "${toolName}".` };
+  // 4. Nhóm Giáo viên (TEACHER, TTCM, TBP, ADMIN)
+  if (
+    [
+      "getClassGradebookStatus",
+      "getBenchmarkAlerts",
+      "getHomeroomAtRiskStudents",
+      "draftStudentEvaluationComment",
+      "getTeacherObservationStatus"
+    ].includes(toolName)
+  ) {
+    if (role === "STUDENT" || role === "PARENT") {
+      return { error: "Tài khoản của bạn không có quyền truy cập dữ liệu sư phạm của giáo viên." };
+    }
+    if (!context.userId) return { error: "Vui lòng đăng nhập tài khoản giáo viên." };
+
+    if (toolName === "getClassGradebookStatus") {
+      return await getClassGradebookStatus(context.userId, args?.classCode, args?.subjectCode);
+    }
+    if (toolName === "getBenchmarkAlerts") {
+      return await getBenchmarkAlerts(context.userId, args?.classCode, args?.subjectCode);
+    }
+    if (toolName === "getHomeroomAtRiskStudents") {
+      return await getHomeroomAtRiskStudents(context.userId);
+    }
+    if (toolName === "draftStudentEvaluationComment") {
+      return await draftStudentEvaluationComment(args?.studentIdentifier);
+    }
+    if (toolName === "getTeacherObservationStatus") {
+      return await getTeacherObservationStatus(context.userId);
+    }
+  }
+
+  // 5. Nhóm Ban ĐHCM & BGH (Toàn quyền hệ thống)
+  if (
+    [
+      "getSchoolwideGradebookProgress",
+      "getDepartmentObservationStats",
+      "getSystemAtRiskOverview",
+      "getSchoolwideSurveyNPS"
+    ].includes(toolName)
+  ) {
+    if (!isGlobalAdmin && role !== "TBP") {
+      return { error: "Chức năng báo cáo toàn trường chỉ dành cho Ban Điều Hành Chuyên Môn (Ban ĐHCM) và Ban Giám Hiệu." };
+    }
+
+    if (toolName === "getSchoolwideGradebookProgress") {
+      return await getSchoolwideGradebookProgress(args?.campusCode, args?.grade);
+    }
+    if (toolName === "getDepartmentObservationStats") {
+      return await getDepartmentObservationStats(args?.deptName);
+    }
+    if (toolName === "getSystemAtRiskOverview") {
+      return await getSystemAtRiskOverview(args?.campusCode);
+    }
+    if (toolName === "getSchoolwideSurveyNPS") {
+      return await getSchoolwideSurveyNPS();
+    }
+  }
+
+  return { error: `Không tìm thấy công cụ "${toolName}" hoặc bạn chưa được cấp quyền.` };
 }

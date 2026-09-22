@@ -25,6 +25,11 @@ import {
   getSystemAtRiskOverview,
   getSchoolwideSurveyNPS
 } from "./tools/adminTools";
+import {
+  getTCMTeachers,
+  getTCMSubjectQuality,
+  getTCMObservationMonitoring
+} from "./tools/tcmTools";
 import { AssistantSecurityContext } from "./tools";
 import { searchKnowledgeBase } from "./knowledgeBase";
 
@@ -310,20 +315,131 @@ export async function processNativeAssistantQuery(
   }
 
   // ==========================================================================
-  // 4. NGHIỆP VỤ PHỤ HUYNH (PARENT)
+  // 4. NGHIỆP VỤ TỔ TRƯỞNG CHUYÊN MÔN (TTCM)
+  // ==========================================================================
+  if (role === "TTCM") {
+    // A. Giáo viên thuộc Tổ Chuyên Môn
+    if (q.includes("giáo viên") || q.includes("thành viên") || q.includes("gv trong tổ") || q.includes("danh sách gv")) {
+      const res = await getTCMTeachers(context.scopedDepartmentIds);
+      if (res.error) return `⚠️ ${res.error}`;
+      if (res.teachers.length === 0) return res.message || "Tổ chuyên môn hiện chưa có giáo viên nào được phân bổ.";
+
+      let text = `### 👨‍🏫 Danh Sách Giáo Viên Thuộc Tổ Chuyên Môn (Tổng cộng: ${res.totalTeachers} Thầy/Cô)\n\n`;
+      text += `| Họ và tên | Mã GV | Môn chính | Lớp CN | Cơ sở |\n`;
+      text += `| :--- | :---: | :--- | :---: | :--- |\n`;
+      res.teachers.forEach(t => {
+        text += `| **${t.teacherName}** | ${t.teacherCode} | ${t.mainSubject} | ${t.homeroomClass} | ${t.campusName} |\n`;
+      });
+      return text;
+    }
+
+    // B. Chất lượng và tiến độ các bộ môn thuộc TCM
+    if (q.includes("chất lượng") || q.includes("bộ môn") || q.includes("môn học") || q.includes("tiến độ") || q.includes("benchmark") || q.includes("dưới chuẩn")) {
+      const res = await getTCMSubjectQuality(context.scopedDepartmentIds);
+      if (res.error) return `⚠️ ${res.error}`;
+      if (res.subjects.length === 0) return res.message || "Chưa có dữ liệu điểm số các môn thuộc Tổ chuyên môn.";
+
+      let text = `### 📊 Báo Cáo Chất Lượng Các Bộ Môn Thuộc Tổ Chuyên Môn\n\n`;
+      text += `| Môn học | Mã môn | Chuẩn BM | Số đầu điểm | ĐTB môn | Đạt chuẩn | Dưới chuẩn |\n`;
+      text += `| :--- | :---: | :---: | :---: | :---: | :---: | :---: |\n`;
+      res.subjects.forEach(s => {
+        text += `| **${s.subjectName}** | ${s.subjectCode} | ${s.benchmarkStandard} | ${s.totalEntries} | **${s.averageScore}** | **${s.passRate}** | ${s.underBenchmarkCount} HS |\n`;
+      });
+      return text;
+    }
+
+    // C. Theo dõi hoạt động dự giờ trong TCM
+    if (q.includes("dự giờ") || q.includes("chỉ tiêu") || q.includes("tiết dạy")) {
+      const res = await getTCMObservationMonitoring(context.scopedDepartmentIds);
+      if (res.error) return `⚠️ ${res.error}`;
+
+      let text = `### 🏫 Tình Hình Dự Giờ Giáo Viên Trong Tổ Chuyên Môn (Tháng ${res.month}/${res.year})\n\n`;
+      res.departments.forEach(d => {
+        text += `#### 📌 ${d.departmentName}:\n`;
+        text += `- **Sĩ số giáo viên**: ${d.totalTeachers} Thầy/Cô\n`;
+        text += `- **Số tiết dạy đã tổ chức**: **${d.taughtSlotsCount}** tiết\n`;
+        text += `- **Số lượt đi dự giờ**: **${d.observedCount}** / ${d.targetRequired} lượt (Tỷ lệ hoàn thành: **${d.completionRate}**)\n`;
+        if (d.pendingTeachersCount > 0) {
+          text += `- ⏳ **Các Thầy/Cô chưa hoàn thành chỉ tiêu tháng (${d.pendingTeachersCount})**:\n`;
+          d.pendingTeachers.forEach(p => text += `  * ${p}\n`);
+        } else {
+          text += `- ✅ *100% giáo viên trong tổ đã đạt chỉ tiêu 2 tiết dự giờ/tháng!*\n`;
+        }
+      });
+      return text;
+    }
+  }
+
+  // ==========================================================================
+  // 5. NGHIỆP VỤ TRƯỞNG BỘ PHẬN (TBP)
+  // ==========================================================================
+  if (role === "TBP") {
+    // A. Giáo viên các Tổ chuyên môn trong Bộ Phận
+    if (q.includes("giáo viên") || q.includes("danh sách gv") || q.includes("nhân sự")) {
+      const res = await getTCMTeachers(context.scopedDepartmentIds);
+      if (res.error) return `⚠️ ${res.error}`;
+
+      let text = `### 👥 Danh Sách Giáo Viên Các Tổ Chuyên Môn Thuộc Bộ Phận (Tổng cộng: ${res.totalTeachers} GV)\n\n`;
+      text += `| Họ và tên | Mã GV | Tổ Chuyên Môn | Môn chính | Lớp CN |\n`;
+      text += `| :--- | :---: | :--- | :--- | :---: |\n`;
+      res.teachers.forEach(t => {
+        text += `| **${t.teacherName}** | ${t.teacherCode} | **${t.departmentName}** | ${t.mainSubject} | ${t.homeroomClass} |\n`;
+      });
+      return text;
+    }
+
+    // B. Chất lượng các môn học liên TCM trong Bộ Phận
+    if (q.includes("chất lượng") || q.includes("tiến độ") || q.includes("môn học") || q.includes("benchmark") || q.includes("phổ điểm")) {
+      const res = await getTCMSubjectQuality(context.scopedDepartmentIds);
+      if (res.error) return `⚠️ ${res.error}`;
+
+      let text = `### 📈 Báo Cáo Chất Lượng & Tiến Độ Môn Học Các Tổ Trong Bộ Phận\n\n`;
+      text += `| Môn học | Mã môn | Chuẩn BM | Số điểm | ĐTB môn | Tỷ lệ đạt chuẩn | Dưới chuẩn |\n`;
+      text += `| :--- | :---: | :---: | :---: | :---: | :---: | :---: |\n`;
+      res.subjects.forEach(s => {
+        text += `| **${s.subjectName}** | ${s.subjectCode} | ${s.benchmarkStandard} | ${s.totalEntries} | **${s.averageScore}** | **${s.passRate}** | **${s.underBenchmarkCount}** HS |\n`;
+      });
+      return text;
+    }
+
+    // C. Giám sát Dự giờ nhiều TCM trong Bộ Phận
+    if (q.includes("dự giờ") || q.includes("chỉ tiêu") || q.includes("tiết dạy")) {
+      const res = await getTCMObservationMonitoring(context.scopedDepartmentIds);
+      if (res.error) return `⚠️ ${res.error}`;
+
+      let text = `### 🏫 Giám Sát Hoạt Động Dự Giờ Các Tổ Chuyên Môn Trong Bộ Phận (Tháng ${res.month}/${res.year})\n\n`;
+      text += `| Tổ Chuyên Môn | Sĩ số GV | Tiết dạy | Lượt dự | Chỉ tiêu | Tỷ lệ hoàn thành | Chưa đạt |\n`;
+      text += `| :--- | :---: | :---: | :---: | :---: | :---: | :---: |\n`;
+      res.departments.forEach(d => {
+        text += `| **${d.departmentName}** | ${d.totalTeachers} | ${d.taughtSlotsCount} | ${d.observedCount} | ${d.targetRequired} | **${d.completionRate}** | ${d.pendingTeachersCount} GV |\n`;
+      });
+      return text;
+    }
+  }
+
+  // ==========================================================================
+  // 6. NGHIỆP VỤ PHỤ HUYNH (PARENT) — BẢO MẬT CHẶT CHẼ
   // ==========================================================================
   if (role === "PARENT") {
-    // A. Báo cáo kết quả học tập của con
-    if (q.includes("điểm") || q.includes("học tập") || q.includes("kết quả") || q.includes("tình hình") || q.includes("con")) {
+    // Ngăn chặn truy cập dữ liệu ngoài phạm vi con em
+    if (q.includes("toàn trường") || q.includes("lớp khác") || q.includes("dự giờ") || q.includes("lương") || q.includes("giáo viên trường")) {
+      return `Kính thưa Quý Phụ huynh, để bảo đảm quyền riêng tư sư phạm và an toàn thông tin học sinh, tài khoản Phụ huynh chỉ được quyền tra cứu kết quả kiểm tra và hồ sơ cố vấn của chính con em mình. Quý Phụ huynh có thể tra cứu:
+1. **Kết quả kiểm tra & bảng điểm của con**
+2. **Sổ mục tiêu SMART & nhận xét của Thầy/Cô cố vấn**
+3. **Kế hoạch 7 ngày gỡ khó của con**`;
+    }
+
+    // A. Báo cáo kết quả kiểm tra của con
+    if (q.includes("điểm") || q.includes("học tập") || q.includes("kết quả") || q.includes("kiểm tra") || q.includes("bảng điểm") || q.includes("con")) {
       const res = await getChildAcademicProgress(context.userId);
       if (res.error) return `⚠️ ${res.error}`;
 
-      let text = `### 🎓 Kết Quả Học Tập Của Con: ${res.studentName} (${res.className})\n\n`;
+      let text = `### 🎓 Kết Quả Kiểm Tra & Học Tập Của Con: ${res.studentName} (${res.className})\n\n`;
       text += `- **Điểm trung bình hiện tại**: **${res.averageScore}**\n`;
-      text += `- **Số môn đã có điểm**: ${res.totalSubjectsEvaluated} môn\n\n`;
+      text += `- **Số môn đã hoàn thành đánh giá**: ${res.totalSubjectsEvaluated} môn\n\n`;
 
       if (res.subjectDetails && res.subjectDetails.length > 0) {
-        text += `| Môn học | Kỳ | Điểm tổng kết | Lời nhắn của Thầy/Cô |\n`;
+        text += `| Môn học | Kỳ đánh giá | Điểm tổng kết | Lời nhắn & Nhận xét của Thầy/Cô |\n`;
         text += `| :--- | :---: | :---: | :--- |\n`;
         res.subjectDetails.forEach(s => {
           text += `| **${s.subject}** | ${s.period || "Chung"} | **${s.compositeScore ?? "Chưa có"}** | ${s.teacherRemark} |\n`;
@@ -332,19 +448,31 @@ export async function processNativeAssistantQuery(
       return text;
     }
 
-    // B. Mục tiêu của con & Ghi nhận của Thầy cô
-    if (q.includes("mục tiêu") || q.includes("rèn luyện") || q.includes("thầy cô") || q.includes("khuyên")) {
+    // B. Cố vấn học tập theo Học sinh & Sổ mục tiêu của con
+    if (q.includes("cố vấn") || q.includes("mục tiêu") || q.includes("rèn luyện") || q.includes("lời dặn") || q.includes("thầy cô") || q.includes("7 ngày")) {
       const res = await getChildGoalsAndTeacherNotes(context.userId);
       if (res.error) return `⚠️ ${res.error}`;
 
-      let text = `### 🌟 Sổ Mục Tiêu Của Con: ${res.studentName}\n\n`;
+      let text = `### 🌟 Sổ Mục Tiêu & Cố Vấn Học Tập Của Con: ${res.studentName}\n\n`;
       if (!res.goals || res.goals.length === 0) {
         text += `Hiện tại con chưa đăng ký mục tiêu nào trong học kỳ này.\n`;
       } else {
         res.goals.forEach((g, idx) => {
           text += `**${idx + 1}. ${g.targetText}** (Trạng thái: ${g.status})\n`;
-          if (g.teacherComment) text += `  - 👩‍🏫 *Nhận xét của GVCN*: ${g.teacherComment}\n`;
+          if (g.teacherComment) text += `  - 👩‍🏫 *Nhận xét từ GVCN*: ${g.teacherComment}\n`;
           if (g.parentSupportRequest) text += `  - 💬 *Mong muốn con gửi gắm ba mẹ*: ${g.parentSupportRequest}\n`;
+          if (g.sevenDayPlan && g.sevenDayPlan.length > 0) {
+            g.sevenDayPlan.forEach(p => {
+              text += `  - 🚀 *Kế hoạch 7 ngày*: ${p.action} (${p.status})\n`;
+            });
+          }
+        });
+      }
+
+      if (res.recentAdvisoryMeetings && res.recentAdvisoryMeetings.length > 0) {
+        text += `\n#### 📝 Nhật ký gặp gỡ Cố vấn học tập gần nhất:\n`;
+        res.recentAdvisoryMeetings.forEach(m => {
+          text += `- **Ngày ${m.date}** (Cùng Thầy/Cô ${m.teacherName}):\n  * Nội dung: ${m.content}\n  * Giải pháp tiếp theo: ${m.nextActions || "Tiếp tục rèn luyện"}\n`;
         });
       }
       return text;
@@ -352,7 +480,7 @@ export async function processNativeAssistantQuery(
   }
 
   // ==========================================================================
-  // 5. NGHIỆP VỤ BGH & QUẢN TRỊ (ADMIN)
+  // 7. NGHIỆP VỤ BAN ĐHCM & ADMIN (TOÀN QUYỀN TRUY XUẤT TOÀN BỘ HỆ THỐNG)
   // ==========================================================================
   if (role === "ADMIN") {
     // A. Tiến độ sổ điểm toàn trường
@@ -360,7 +488,7 @@ export async function processNativeAssistantQuery(
       const res = await getSchoolwideGradebookProgress();
       if (res.error) return `⚠️ ${res.error}`;
 
-      let text = `### 📊 Báo Cáo Tiến Độ Sổ Điểm Toàn Trường\n\n`;
+      let text = `### 📊 Báo Cáo Tiến Độ Sổ Điểm Toàn Trường — Ban ĐHCM & BGH\n\n`;
       text += `- **Tổng số lớp học**: ${res.totalClasses} lớp\n`;
       text += `- **Tổng số học sinh**: ${res.totalStudents} học sinh\n`;
       text += `- **Tổng số đầu điểm đã vào**: **${res.totalGradeEntries}** điểm\n\n`;
@@ -372,12 +500,12 @@ export async function processNativeAssistantQuery(
       return text;
     }
 
-    // B. Hoạt động dự giờ tổ chuyên môn
-    if (q.includes("tổ chuyên môn") || q.includes("dự giờ") || q.includes("chỉ tiêu tổ")) {
+    // B. Hoạt động dự giờ tất cả các tổ chuyên môn
+    if (q.includes("tổ chuyên môn") || q.includes("dự giờ") || q.includes("chỉ tiêu tổ") || q.includes("tất cả tổ")) {
       const res = await getDepartmentObservationStats();
       if (res.error) return `⚠️ ${res.error}`;
 
-      let text = `### 🏫 Hoạt Động Dạy & Dự Giờ Các Tổ Chuyên Môn (Tháng ${res.currentMonth}/${res.currentYear})\n\n`;
+      let text = `### 🏫 Hoạt Động Dạy & Dự Giờ Tất Cả Tổ Chuyên Môn Toàn Trường (Tháng ${res.currentMonth}/${res.currentYear})\n\n`;
       text += `| Tổ chuyên môn | Số GV | Tiết dạy | Đã dự | Chỉ tiêu | Tỷ lệ hoàn thành |\n`;
       text += `| :--- | :---: | :---: | :---: | :---: | :---: |\n`;
       res.departments.forEach(d => {
@@ -418,6 +546,23 @@ export async function processNativeAssistantQuery(
       text += `- **Điểm hài lòng trung bình**: **${res.averageSatisfactionScore}** / 5.0\n`;
       text += `- **Chỉ số NPS**: **+${res.npsValue}**\n`;
       text += `- **Phân bố**: ${res.promoters} Promoters (Ủng hộ) | ${res.passives} Passives (Trung lập) | ${res.detractors} Detractors (Chưa hài lòng)\n`;
+      return text;
+    }
+
+    // E. Danh sách giáo viên toàn trường
+    if (q.includes("giáo viên") || q.includes("danh sách gv")) {
+      const res = await getTCMTeachers(null);
+      if (res.error) return `⚠️ ${res.error}`;
+
+      let text = `### 👥 Danh Sách Đội Ngũ Giáo Viên Toàn Trường (Tổng cộng: ${res.totalTeachers} Thầy/Cô)\n\n`;
+      text += `| Họ và tên | Mã GV | Tổ Chuyên Môn | Môn chính | Lớp CN |\n`;
+      text += `| :--- | :---: | :--- | :--- | :---: |\n`;
+      res.teachers.slice(0, 20).forEach(t => {
+        text += `| **${t.teacherName}** | ${t.teacherCode} | ${t.departmentName} | ${t.mainSubject} | ${t.homeroomClass} |\n`;
+      });
+      if (res.totalTeachers > 20) {
+        text += `\n*(Hiển thị 20/${res.totalTeachers} Thầy/Cô tiêu biểu. Thầy/Cô có thể tìm kiếm theo tên hoặc mã GV)*`;
+      }
       return text;
     }
   }
