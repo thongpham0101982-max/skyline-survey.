@@ -167,8 +167,19 @@ export async function processNativeAssistantQuery(
   // 3. NGHIỆP VỤ GIÁO VIÊN (TEACHER)
   // ==========================================================================
   if (role === "TEACHER") {
-    // A. Cảnh báo học sinh nguy cơ Vàng / Đỏ lớp chủ nhiệm
-    if (q.includes("vàng") || q.includes("đỏ") || q.includes("cảnh báo") || q.includes("nguy cơ") || q.includes("chủ nhiệm")) {
+    // A. Cảnh báo học sinh nguy cơ Vàng / Đỏ lớp chủ nhiệm & Cố vấn học tập
+    if (
+      q.includes("vàng") ||
+      q.includes("đỏ") ||
+      q.includes("cảnh báo") ||
+      q.includes("nguy cơ") ||
+      q.includes("chủ nhiệm") ||
+      q.includes("hỗ trợ") ||
+      q.includes("cố vấn") ||
+      q.includes("lưu ý") ||
+      q.includes("yêu cầu trợ giúp") ||
+      currentPath?.includes("co-van-hoc-tap")
+    ) {
       const res = await getHomeroomAtRiskStudents(context.userId, currentPath);
       if (res.error) return `⚠️ ${res.error}`;
 
