@@ -45,7 +45,7 @@ export async function GET(req: Request) {
       whereCondition.studentId = { in: classStudents.map(s => s.id) }
     }
 
-    let logs = await prisma.academicConsultationLog.findMany({
+    let rawLogs = await prisma.academicConsultationLog.findMany({
       where: {
         ...whereCondition,
         ...(academicYearId ? { academicYearId } : {})
@@ -58,8 +58,8 @@ export async function GET(req: Request) {
     }).catch(() => [])
 
     // Fallback without academicYearId filter if empty
-    if (logs.length === 0 && targetStudentIds.length > 0) {
-      logs = await prisma.academicConsultationLog.findMany({
+    if (rawLogs.length === 0 && targetStudentIds.length > 0) {
+      rawLogs = await prisma.academicConsultationLog.findMany({
         where: { studentId: { in: targetStudentIds } },
         include: {
           student: { select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } } },
@@ -68,6 +68,16 @@ export async function GET(req: Request) {
         orderBy: { meetingDate: "desc" }
       }).catch(() => [])
     }
+
+    // Lọc loại trừ triệt để các log trao đổi nhận xét điểm số kỳ khảo sát (GradePeriod)
+    const logs = rawLogs.filter((log: any) => {
+      const notes = (log.notes || "").toLowerCase()
+      const content = (log.content || "").toLowerCase()
+      const isGradeExchange = notes.includes("[gradeperiod:") || 
+                             notes.includes("trao đổi giữa gvcn và phhs về kết quả khảo sát") ||
+                             (content.startsWith("ý kiến gvcn:") && notes.includes("khảo sát"))
+      return !isGradeExchange
+    })
 
     const formattedLogs = logs.map(l => ({
       ...l,

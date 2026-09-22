@@ -136,7 +136,7 @@ export async function GET(req: Request) {
     const studentIds = students.map(s => s.id)
 
     // 2. Fetch Real Advisory Data safely
-    const [goals, trackingLogs, consultations, termEvals] = await Promise.all([
+    const [goals, trackingLogs, rawConsultations, termEvals] = await Promise.all([
       ((prisma as any).studentGoal?.findMany ? (prisma as any).studentGoal.findMany({
         where: { studentId: { in: studentIds } },
         include: { actions: true },
@@ -158,6 +158,16 @@ export async function GET(req: Request) {
         orderBy: { createdAt: "desc" }
       }) : Promise.resolve([])).catch(() => [])
     ])
+
+    // Lọc loại trừ triệt để các log trao đổi nhận xét điểm số kỳ khảo sát
+    const consultations = (rawConsultations || []).filter((c: any) => {
+      const notes = (c.notes || "").toLowerCase()
+      const content = (c.content || "").toLowerCase()
+      const isGradeExchange = notes.includes("[gradeperiod:") || 
+                             notes.includes("trao đổi giữa gvcn và phhs về kết quả khảo sát") ||
+                             (content.startsWith("ý kiến gvcn:") && notes.includes("khảo sát"))
+      return !isGradeExchange
+    })
 
     // Map student name lookup
     const studentMap = new Map<string, string>()

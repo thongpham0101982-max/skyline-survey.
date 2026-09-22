@@ -127,6 +127,7 @@ function AdminAdvisoryDashboardContent() {
   const [classConsultationStudentSearch, setClassConsultationStudentSearch] = useState<string>("")
   const [classStudentFilterStatus, setClassStudentFilterStatus] = useState<"ALL" | "CONSULTED" | "NOT_CONSULTED">("ALL")
   const [expandedStudentIdInModal, setExpandedStudentIdInModal] = useState<string | null>(null)
+  const [consultationModalTab, setConsultationModalTab] = useState<"STUDENTS" | "LOGS">("STUDENTS")
 
   // --- TAB 3: ADJUSTMENT REQUESTS STATE ---
   const [adjustmentRequests, setAdjustmentRequests] = useState<any[]>([])
@@ -486,6 +487,40 @@ function AdminAdvisoryDashboardContent() {
     } catch (e: any) {
       alert("Lỗi xuất Excel: " + e.message)
     }
+  }
+
+  function exportClassSpecificConsultationsExcel(cls: any) {
+    if (!cls) return
+    const allClassLogs: any[] = []
+    ;(cls.students || []).forEach((st: any) => {
+      ;(st.logs || []).forEach((log: any) => {
+        allClassLogs.push({
+          "Mã học sinh": st.studentCode,
+          "Họ và tên": st.studentName,
+          "Giới tính": st.gender || "—",
+          "Lớp": cls.className,
+          "Cơ sở": cls.campusName,
+          "Ngày gặp": log.meetingDate ? new Date(log.meetingDate).toLocaleDateString("vi-VN") : "—",
+          "Người tư vấn": log.teacherName || cls.homeroomTeacherName || "Giáo viên Cố vấn",
+          "Nội dung trao đổi": log.content || "—",
+          "Khó khăn ghi nhận": log.difficulties || "—",
+          "Kế hoạch / Hành động tiếp theo": log.nextActions || "—",
+          "Hạn hoàn thành": log.deadline ? new Date(log.deadline).toLocaleDateString("vi-VN") : "—",
+          "Ghi chú": log.notes || "—",
+          "Học sinh tự đánh giá": log.studentReflection || "—"
+        })
+      })
+    })
+
+    if (allClassLogs.length === 0) {
+      alert(`Lớp ${cls.className} hiện chưa có buổi nhật ký tư vấn nào được ghi nhận.`)
+      return
+    }
+
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(allClassLogs)
+    XLSX.utils.book_append_sheet(wb, ws, `So_Nhat_Ky_${cls.className}`)
+    XLSX.writeFile(wb, `So_Nhat_Ky_Tu_Van_${cls.className}_${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
   function handleOpenCreateModal(categoryKey = "HOC_TAP") {
@@ -1537,187 +1572,317 @@ function AdminAdvisoryDashboardContent() {
 
             {/* Quick Search & Filter inside Modal */}
             <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <div className="relative min-w-64 flex-1">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm học sinh trong lớp theo tên hoặc mã HS..."
-                  value={classConsultationStudentSearch}
-                  onChange={e => setClassConsultationStudentSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-white text-slate-800 text-xs font-bold border border-slate-300 outline-none"
-                />
+              <div className="flex items-center gap-2">
+                <div className="bg-slate-200/80 p-1 rounded-2xl flex items-center gap-1 border border-slate-300/60">
+                  <button
+                    onClick={() => setConsultationModalTab("STUDENTS")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                      consultationModalTab === "STUDENTS"
+                        ? "bg-white text-[#003B3A] shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Theo dõi học sinh ({selectedConsultationClass.totalStudents})</span>
+                  </button>
+                  <button
+                    onClick={() => setConsultationModalTab("LOGS")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                      consultationModalTab === "LOGS"
+                        ? "bg-white text-[#003B3A] shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Sổ nhật ký tham vấn ({selectedConsultationClass.totalSessions} buổi)</span>
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => exportClassSpecificConsultationsExcel(selectedConsultationClass)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-xs"
+                  title="Xuất Sổ Nhật Ký Tham Vấn của lớp ra file Excel"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Xuất Excel Sổ Lớp</span>
+                </button>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setClassStudentFilterStatus("ALL")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    classStudentFilterStatus === "ALL"
-                      ? "bg-[#003B3A] text-white shadow-xs"
-                      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
-                  }`}
-                >
-                  Tất cả ({selectedConsultationClass.totalStudents})
-                </button>
-                <button
-                  onClick={() => setClassStudentFilterStatus("CONSULTED")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    classStudentFilterStatus === "CONSULTED"
-                      ? "bg-emerald-600 text-white shadow-xs"
-                      : "bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
-                  }`}
-                >
-                  Đã tư vấn ({selectedConsultationClass.consultedCount})
-                </button>
-                <button
-                  onClick={() => setClassStudentFilterStatus("NOT_CONSULTED")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    classStudentFilterStatus === "NOT_CONSULTED"
-                      ? "bg-rose-600 text-white shadow-xs"
-                      : "bg-white text-rose-700 border border-rose-200 hover:bg-rose-50"
-                  }`}
-                >
-                  Chưa tư vấn ({selectedConsultationClass.unconsultedCount})
-                </button>
-              </div>
+              {consultationModalTab === "STUDENTS" && (
+                <div className="flex flex-wrap items-center gap-2 flex-1 justify-end">
+                  <div className="relative min-w-56 max-w-xs flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Tìm theo tên hoặc mã HS..."
+                      value={classConsultationStudentSearch}
+                      onChange={e => setClassConsultationStudentSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-white text-slate-800 text-xs font-bold border border-slate-300 outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setClassStudentFilterStatus("ALL")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        classStudentFilterStatus === "ALL"
+                          ? "bg-[#003B3A] text-white shadow-xs"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      Tất cả ({selectedConsultationClass.totalStudents})
+                    </button>
+                    <button
+                      onClick={() => setClassStudentFilterStatus("CONSULTED")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        classStudentFilterStatus === "CONSULTED"
+                          ? "bg-emerald-600 text-white shadow-xs"
+                          : "bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
+                      }`}
+                    >
+                      Đã tư vấn ({selectedConsultationClass.consultedCount})
+                    </button>
+                    <button
+                      onClick={() => setClassStudentFilterStatus("NOT_CONSULTED")}
+                      className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        classStudentFilterStatus === "NOT_CONSULTED"
+                          ? "bg-rose-600 text-white shadow-xs"
+                          : "bg-white text-rose-700 border border-rose-200 hover:bg-rose-50"
+                      }`}
+                    >
+                      Chưa tư vấn ({selectedConsultationClass.unconsultedCount})
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Student list inside modal */}
+            {/* Modal Body Content */}
             <div className="p-5 overflow-y-auto flex-1 space-y-3">
-              {(() => {
-                const searchLow = classConsultationStudentSearch.trim().toLowerCase()
-                let list = (selectedConsultationClass.students || []).filter((st: any) =>
-                  !searchLow ||
-                  st.studentName.toLowerCase().includes(searchLow) ||
-                  st.studentCode.toLowerCase().includes(searchLow)
-                )
-
-                if (classStudentFilterStatus === "CONSULTED") {
-                  list = list.filter((s: any) => s.isConsulted)
-                } else if (classStudentFilterStatus === "NOT_CONSULTED") {
-                  list = list.filter((s: any) => !s.isConsulted)
-                }
-
-                if (list.length === 0) {
-                  return (
-                    <div className="p-8 text-center text-slate-400 text-xs font-medium border-2 border-dashed border-slate-200 rounded-2xl">
-                      Không tìm thấy học sinh nào phù hợp trong lớp {selectedConsultationClass.className}.
-                    </div>
+              {consultationModalTab === "STUDENTS" ? (
+                (() => {
+                  const searchLow = classConsultationStudentSearch.trim().toLowerCase()
+                  let list = (selectedConsultationClass.students || []).filter((st: any) =>
+                    !searchLow ||
+                    st.studentName.toLowerCase().includes(searchLow) ||
+                    st.studentCode.toLowerCase().includes(searchLow)
                   )
-                }
 
-                return list.map((st: any, idx: number) => {
-                  const isExpanded = expandedStudentIdInModal === st.id
-                  return (
-                    <div
-                      key={st.id || idx}
-                      className="border border-slate-200 rounded-2xl bg-white p-4 shadow-2xs hover:shadow-xs transition-all space-y-3"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 text-xs font-black flex items-center justify-center shrink-0">
-                            {idx + 1}
-                          </span>
-                          <div>
-                            <p className="font-extrabold text-sm text-slate-900">{st.studentName}</p>
-                            <p className="text-[11px] text-slate-400 font-mono">
-                              Mã HS: {st.studentCode} • Giới tính: {st.gender || "—"}
-                            </p>
-                          </div>
-                        </div>
+                  if (classStudentFilterStatus === "CONSULTED") {
+                    list = list.filter((s: any) => s.isConsulted)
+                  } else if (classStudentFilterStatus === "NOT_CONSULTED") {
+                    list = list.filter((s: any) => !s.isConsulted)
+                  }
 
-                        <div className="flex items-center gap-3">
-                          {st.isConsulted ? (
-                            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black inline-flex items-center gap-1.5">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Đã tư vấn ({st.sessionCount} buổi)</span>
-                            </span>
-                          ) : (
-                            <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-xs font-black inline-flex items-center gap-1.5">
-                              <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                              <span>Chưa có buổi tư vấn nào</span>
-                            </span>
-                          )}
-
-                          {st.isConsulted && (
-                            <button
-                              onClick={() => setExpandedStudentIdInModal(isExpanded ? null : st.id)}
-                              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all flex items-center gap-1"
-                            >
-                              <span>{isExpanded ? "Thu gọn" : "Xem nhật ký"}</span>
-                              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                            </button>
-                          )}
-                        </div>
+                  if (list.length === 0) {
+                    return (
+                      <div className="p-8 text-center text-slate-400 text-xs font-medium border-2 border-dashed border-slate-200 rounded-2xl">
+                        Không tìm thấy học sinh nào phù hợp trong lớp {selectedConsultationClass.className}.
                       </div>
+                    )
+                  }
 
-                      {/* Expanded Consultation Sessions Timeline */}
-                      {isExpanded && st.logs && st.logs.length > 0 && (
-                        <div className="pt-3 border-t border-slate-100 space-y-3 pl-10">
-                          <p className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-teal-600" />
-                            <span>LỊCH SỬ CÁC BUỔI GẶP THAM VẤN CỦA HỌC SINH ({st.logs.length} BUỔI):</span>
-                          </p>
+                  return list.map((st: any, idx: number) => {
+                    const isExpanded = expandedStudentIdInModal === st.id
+                    return (
+                      <div
+                        key={st.id || idx}
+                        className="border border-slate-200 rounded-2xl bg-white p-4 shadow-2xs hover:shadow-xs transition-all space-y-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 text-xs font-black flex items-center justify-center shrink-0">
+                              {idx + 1}
+                            </span>
+                            <div>
+                              <p className="font-extrabold text-sm text-slate-900">{st.studentName}</p>
+                              <p className="text-[11px] text-slate-400 font-mono">
+                                Mã HS: {st.studentCode} • Giới tính: {st.gender || "—"}
+                              </p>
+                            </div>
+                          </div>
 
-                          <div className="space-y-2.5">
-                            {st.logs.map((log: any, logIdx: number) => (
-                              <div
-                                key={log.id || logIdx}
-                                className="p-3.5 rounded-xl border border-teal-100 bg-teal-50/40 text-xs space-y-2 font-medium"
+                          <div className="flex items-center gap-3">
+                            {st.isConsulted ? (
+                              <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black inline-flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Đã tư vấn ({st.sessionCount} buổi)</span>
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-xs font-black inline-flex items-center gap-1.5">
+                                <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                                <span>Chưa có buổi tư vấn nào</span>
+                              </span>
+                            )}
+
+                            {st.isConsulted && (
+                              <button
+                                onClick={() => setExpandedStudentIdInModal(isExpanded ? null : st.id)}
+                                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-all flex items-center gap-1"
                               >
-                                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-slate-700 border-b border-teal-100/60 pb-1.5">
-                                  <span className="text-teal-900 font-extrabold flex items-center gap-1.5">
-                                    <Calendar className="w-3.5 h-3.5 text-teal-700" />
-                                    <span>Ngày gặp: {log.meetingDate ? new Date(log.meetingDate).toLocaleDateString("vi-VN") : "—"}</span>
-                                  </span>
-                                  <span className="text-slate-600">
-                                    Người tư vấn: <strong className="text-slate-900">{log.teacherName}</strong>
-                                  </span>
-                                  {log.deadline && (
-                                    <span className="text-amber-800 font-bold">
-                                      Hạn hoàn thành: {new Date(log.deadline).toLocaleDateString("vi-VN")}
-                                    </span>
-                                  )}
-                                </div>
-
-                                <div className="space-y-1">
-                                  <p className="text-slate-900">
-                                    <strong>Nội dung trao đổi:</strong> {log.content}
-                                  </p>
-                                  {log.difficulties && (
-                                    <p className="text-amber-900">
-                                      <strong>Khó khăn ghi nhận:</strong> {log.difficulties}
-                                    </p>
-                                  )}
-                                  {log.nextActions && (
-                                    <p className="text-emerald-900 font-semibold">
-                                      <strong>Kế hoạch / Hành động tiếp theo:</strong> {log.nextActions}
-                                    </p>
-                                  )}
-                                  {log.notes && (
-                                    <p className="text-slate-600 italic">
-                                      <strong>Ghi chú:</strong> {log.notes}
-                                    </p>
-                                  )}
-                                  {log.studentReflection && (
-                                    <div className="p-2 rounded-lg bg-white border border-teal-200 text-teal-950 font-bold text-[11px] mt-1.5 shadow-2xs">
-                                      💬 <strong>Học sinh tự đánh giá:</strong> "{log.studentReflection}"
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                                <span>{isExpanded ? "Thu gọn" : "Xem nhật ký"}</span>
+                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              </button>
+                            )}
                           </div>
                         </div>
-                      )}
+
+                        {/* Expanded Consultation Sessions Timeline */}
+                        {isExpanded && (
+                          <div className="pt-3 border-t border-slate-100 space-y-3 pl-10">
+                            <p className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-teal-600" />
+                              <span>LỊCH SỬ CÁC BUỔI GẶP THAM VẤN CỦA HỌC SINH ({st.logs?.length || 0} BUỔI):</span>
+                            </p>
+
+                            {st.logs && st.logs.length > 0 ? (
+                              <div className="space-y-2.5">
+                                {st.logs.map((log: any, logIdx: number) => (
+                                  <div
+                                    key={log.id || logIdx}
+                                    className="p-3.5 rounded-xl border border-teal-100 bg-teal-50/40 text-xs space-y-2 font-medium"
+                                  >
+                                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-slate-700 border-b border-teal-100/60 pb-1.5">
+                                      <span className="text-teal-900 font-extrabold flex items-center gap-1.5">
+                                        <Calendar className="w-3.5 h-3.5 text-teal-700" />
+                                        <span>Ngày gặp: {log.meetingDate ? new Date(log.meetingDate).toLocaleDateString("vi-VN") : "—"}</span>
+                                      </span>
+                                      <span className="text-slate-600">
+                                        Người tư vấn: <strong className="text-slate-900">{log.teacherName}</strong>
+                                      </span>
+                                      {log.deadline && (
+                                        <span className="text-amber-800 font-bold">
+                                          Hạn hoàn thành: {new Date(log.deadline).toLocaleDateString("vi-VN")}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                      <p className="text-slate-900">
+                                        <strong>Nội dung trao đổi:</strong> {log.content}
+                                      </p>
+                                      {log.difficulties && (
+                                        <p className="text-amber-900">
+                                          <strong>Khó khăn ghi nhận:</strong> {log.difficulties}
+                                        </p>
+                                      )}
+                                      {log.nextActions && (
+                                        <p className="text-emerald-900 font-semibold">
+                                          <strong>Kế hoạch / Hành động tiếp theo:</strong> {log.nextActions}
+                                        </p>
+                                      )}
+                                      {log.notes && (
+                                        <p className="text-slate-600 italic">
+                                          <strong>Ghi chú:</strong> {log.notes}
+                                        </p>
+                                      )}
+                                      {log.studentReflection && (
+                                        <div className="p-2 rounded-lg bg-white border border-teal-200 text-teal-950 font-bold text-[11px] mt-1.5 shadow-2xs">
+                                          💬 <strong>Học sinh tự đánh giá:</strong> "{log.studentReflection}"
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="p-3 text-xs text-slate-400 italic bg-slate-50 rounded-xl">
+                                Chưa có chi tiết buổi tư vấn cụ thể nào.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })
+                })()
+              ) : (
+                /* TAB SỔ NHẬT KÝ THAM VẤN TOÀN LỚP */
+                (() => {
+                  const allClassLogs: any[] = []
+                  ;(selectedConsultationClass.students || []).forEach((st: any) => {
+                    ;(st.logs || []).forEach((log: any) => {
+                      allClassLogs.push({ ...log, studentName: st.studentName, studentCode: st.studentCode })
+                    })
+                  })
+
+                  // Sắp xếp ngày gặp giảm dần
+                  allClassLogs.sort((a, b) => new Date(b.meetingDate || 0).getTime() - new Date(a.meetingDate || 0).getTime())
+
+                  if (allClassLogs.length === 0) {
+                    return (
+                      <div className="p-12 text-center text-slate-400 text-xs font-medium border-2 border-dashed border-slate-200 rounded-2xl">
+                        Lớp {selectedConsultationClass.className} hiện chưa có buổi nhật ký tư vấn nào được ghi nhận.
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-2xs">
+                      <table className="w-full text-xs text-left border-collapse bg-white">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
+                            <th className="p-3 border-r border-slate-200 w-12 text-center">STT</th>
+                            <th className="p-3 border-r border-slate-200 w-28 whitespace-nowrap">Ngày gặp</th>
+                            <th className="p-3 border-r border-slate-200 w-44">Học sinh</th>
+                            <th className="p-3 border-r border-slate-200 w-36">Người tư vấn</th>
+                            <th className="p-3 border-r border-slate-200">Nội dung trao đổi</th>
+                            <th className="p-3 border-r border-slate-200">Khó khăn ghi nhận</th>
+                            <th className="p-3 border-r border-slate-200">Kế hoạch tiếp theo</th>
+                            <th className="p-3 border-r border-slate-200 w-28 whitespace-nowrap">Thời hạn</th>
+                            <th className="p-3">Đánh giá của HS</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {allClassLogs.map((log: any, idx: number) => (
+                            <tr key={log.id || idx} className="hover:bg-slate-50/70 transition-colors">
+                              <td className="p-3 border-r border-slate-200 text-center font-bold text-slate-500">{idx + 1}</td>
+                              <td className="p-3 border-r border-slate-200 font-bold text-slate-800 whitespace-nowrap">
+                                {log.meetingDate ? new Date(log.meetingDate).toLocaleDateString("vi-VN") : "—"}
+                              </td>
+                              <td className="p-3 border-r border-slate-200">
+                                <p className="font-extrabold text-slate-900">{log.studentName}</p>
+                                <p className="text-[10px] text-slate-400 font-mono">{log.studentCode}</p>
+                              </td>
+                              <td className="p-3 border-r border-slate-200 font-bold text-slate-700">
+                                {log.teacherName || selectedConsultationClass.homeroomTeacherName || "GV Cố vấn"}
+                              </td>
+                              <td className="p-3 border-r border-slate-200 text-slate-800 font-medium leading-relaxed max-w-xs">
+                                {log.content || "—"}
+                              </td>
+                              <td className="p-3 border-r border-slate-200 text-amber-900 font-medium max-w-xs">
+                                {log.difficulties || "—"}
+                              </td>
+                              <td className="p-3 border-r border-slate-200 text-teal-900 font-semibold max-w-xs">
+                                {log.nextActions || "—"}
+                              </td>
+                              <td className="p-3 border-r border-slate-200 font-bold text-slate-600 whitespace-nowrap">
+                                {log.deadline ? new Date(log.deadline).toLocaleDateString("vi-VN") : "—"}
+                              </td>
+                              <td className="p-3">
+                                {log.studentReflection ? (
+                                  <span className="p-1.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-[11px] font-bold block">
+                                    💬 {log.studentReflection}
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] text-slate-400 italic">Chưa phản hồi</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )
-                })
-              })()}
+                })()
+              )}
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-end shrink-0">
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
+              <div className="text-xs text-slate-500 font-medium">
+                Dữ liệu hiển thị các buổi gặp tham vấn cá nhân Cố vấn học tập chuẩn hóa.
+              </div>
               <button
                 onClick={() => setSelectedConsultationClass(null)}
                 className="px-5 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-black transition-all"

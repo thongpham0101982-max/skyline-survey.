@@ -52,13 +52,14 @@ export async function POST(req: Request) {
       console.warn("NextAuth session check warning:", e);
     }
 
-    let studentSession: any = null;
-    try {
-      studentSession = await getStudentSession();
-    } catch (e) {
-      console.warn("Student session check warning:", e);
-    }
     const nextAuthUser = session?.user;
+    const userRole = (nextAuthUser?.role || "").toUpperCase().trim();
+
+    const isStudentRoute = typeof currentPath === "string" && currentPath.startsWith("/hocsinh");
+    const isAdminRoute = typeof currentPath === "string" && currentPath.startsWith("/admin");
+    const isTeacherRoute = typeof currentPath === "string" && currentPath.startsWith("/teacher");
+    const isParentRoute = typeof currentPath === "string" && currentPath.startsWith("/parent");
+
     let resolvedRole: AssistantRole = "TEACHER";
     const securityContext: AssistantSecurityContext = {
       role: "TEACHER",
@@ -66,13 +67,21 @@ export async function POST(req: Request) {
       userName: nextAuthUser?.name
     };
 
-    if (studentSession && studentSession.studentId) {
-      resolvedRole = "STUDENT";
-      securityContext.role = "STUDENT";
-      securityContext.studentId = studentSession.studentId;
-      securityContext.userName = studentSession.studentName;
-    } else if (nextAuthUser) {
-      const userRole = (nextAuthUser.role || "").toUpperCase();
+    // Session học sinh (hs_token cookie) CHỈ ĐƯỢC PHÉP kích hoạt nếu:
+    // - Đang ở cổng học sinh (/hocsinh)
+    // - Hoặc requestedRole là "STUDENT"
+    // - Hoặc không có NextAuth session và không ở các tuyến đường quản trị/giáo viên
+    let studentSession: any = null;
+    if (!isAdminRoute && !isTeacherRoute && !isParentRoute && (isStudentRoute || requestedRole === "STUDENT" || !nextAuthUser)) {
+      try {
+        studentSession = await getStudentSession();
+      } catch (e) {
+        console.warn("Student session check warning:", e);
+      }
+    }
+
+    // 1. Trường hợp có NextAuth session (Admin / Ban ĐHCM / TBP / TTCM / GV / Phụ huynh)
+    if (nextAuthUser) {
       if (userRole === "PARENT") {
         resolvedRole = "PARENT";
         securityContext.role = "PARENT";
@@ -90,23 +99,25 @@ export async function POST(req: Request) {
         if (
           adminSession?.isSuperAdmin ||
           adminSession?.isHeadOfAcademic ||
+          isAdminRoute ||
+          requestedRole === "ADMIN" ||
           ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "SUPER_ADMIN", "BAN_DHCM"].includes(userRole)
         ) {
           resolvedRole = "ADMIN"; // Ban ĐHCM, Admin (Toàn bộ dữ liệu)
           securityContext.role = "ADMIN";
           securityContext.isHeadOfAcademic = true;
           securityContext.scopedDepartmentIds = null;
-        } else if (adminSession?.isTBP) {
+        } else if (adminSession?.isTBP || requestedRole === "TBP") {
           resolvedRole = "TBP"; // Trưởng Bộ Phận (Nhiều TCM trong Bộ phận)
           securityContext.role = "TBP";
           securityContext.isTBP = true;
-          securityContext.managedDivisions = adminSession.managedDivisions;
+          securityContext.managedDivisions = adminSession?.managedDivisions;
           securityContext.scopedDepartmentIds = scopedDeptIds;
-        } else if (adminSession?.isTTCM) {
+        } else if (adminSession?.isTTCM || requestedRole === "TTCM") {
           resolvedRole = "TTCM"; // Tổ Trưởng Chuyên Môn (TCM của mình)
           securityContext.role = "TTCM";
           securityContext.isTTCM = true;
-          securityContext.managedDepartmentIds = adminSession.managedDepartmentIds;
+          securityContext.managedDepartmentIds = adminSession?.managedDepartmentIds;
           securityContext.scopedDepartmentIds = scopedDeptIds;
         } else {
           resolvedRole = "TEACHER";
@@ -115,7 +126,16 @@ export async function POST(req: Request) {
 
         securityContext.teacherId = adminSession?.teacherId;
       }
-    } else if (requestedRole && ["STUDENT", "TEACHER", "PARENT", "ADMIN", "TTCM", "TBP"].includes(requestedRole)) {
+    } 
+    // 2. Trường hợp là học sinh thực thụ truy cập cổng học sinh
+    else if (studentSession && studentSession.studentId) {
+      resolvedRole = "STUDENT";
+      securityContext.role = "STUDENT";
+      securityContext.studentId = studentSession.studentId;
+      securityContext.userName = studentSession.studentName;
+    } 
+    // 3. Fallback theo requestedRole hợp lệ (chỉ khi không có xung đột bảo mật)
+    else if (requestedRole && ["STUDENT", "TEACHER", "PARENT", "ADMIN", "TTCM", "TBP"].includes(requestedRole)) {
       resolvedRole = requestedRole as AssistantRole;
       securityContext.role = resolvedRole;
       if (resolvedRole === "ADMIN") {
@@ -124,8 +144,9 @@ export async function POST(req: Request) {
       }
     }
 
+    // Nếu người dùng có quyền Admin muốn xem trước persona khác (khi không ở trang Admin)
     if (requestedRole && requestedRole !== resolvedRole) {
-      if (securityContext.role === "ADMIN" || securityContext.isHeadOfAcademic) {
+      if ((securityContext.role === "ADMIN" || securityContext.isHeadOfAcademic) && !isAdminRoute) {
         resolvedRole = requestedRole;
       }
     }

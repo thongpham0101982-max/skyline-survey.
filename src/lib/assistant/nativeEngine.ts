@@ -310,7 +310,7 @@ export async function processNativeAssistantQuery(
         text += `> *"Em ${res.studentName} có thái độ học tập nghiêm túc, hoàn thành tốt các bài kiểm tra với điểm trung bình đạt ${res.averageScore}. Em chủ động đặt ra và nỗ lực bám sát các mục tiêu rèn luyện cá nhân. Đề nghị em tiếp tục duy trì tính tự giác, tích cực tương tác và phát huy năng lực trong các hoạt động nhóm."*\n`;
         return text;
       }
-      return `Thầy/Cô vui lòng nhập kèm tên hoặc mã số của học sinh cần soạn nhận xét (Ví dụ: *"Soạn nhận xét cho học sinh Dương Thùy Lâm"*).`;
+      return `Thầy/Cô vui lòng nhập kèm tên hoặc mã số của học sinh cần soạn nhận xét (Ví dụ: *"Soạn nhận xét cho học sinh Nguyễn Văn A"*).`;
     }
   }
 

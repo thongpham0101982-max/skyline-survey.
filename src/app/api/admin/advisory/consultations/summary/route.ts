@@ -169,7 +169,7 @@ export async function GET(req: Request) {
     let consultationLogs: any[] = []
     if (allStudentIds.length > 0) {
       try {
-        consultationLogs = await prisma.academicConsultationLog.findMany({
+        const rawConsultationLogs = await prisma.academicConsultationLog.findMany({
           where: {
             studentId: { in: allStudentIds },
             ...(academicYearId ? { academicYearId } : {})
@@ -192,6 +192,17 @@ export async function GET(req: Request) {
             }
           },
           orderBy: { meetingDate: "desc" }
+        })
+
+        // Lọc loại trừ triệt để các log trao đổi nhận xét điểm số kỳ khảo sát (GradePeriod)
+        // để hoàn trả lại dữ liệu Nhật ký tư vấn Cố vấn học tập chuẩn xác 100%
+        consultationLogs = rawConsultationLogs.filter(log => {
+          const notes = (log.notes || "").toLowerCase()
+          const content = (log.content || "").toLowerCase()
+          const isGradeExchange = notes.includes("[gradeperiod:") || 
+                                 notes.includes("trao đổi giữa gvcn và phhs về kết quả khảo sát") ||
+                                 (content.startsWith("ý kiến gvcn:") && notes.includes("khảo sát"))
+          return !isGradeExchange
         })
       } catch (err) {
         console.error("Lỗi lấy AcademicConsultationLog:", err)
