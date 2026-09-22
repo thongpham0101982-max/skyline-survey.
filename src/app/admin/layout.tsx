@@ -1,6 +1,6 @@
 import { AdminMobileBottomNav } from "@/components/AdminMobileBottomNav"
 export const dynamic = "force-dynamic"
-import { ChatBotWidget } from "@/components/ChatBotWidget"
+import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { GraduationCap } from "lucide-react"
@@ -121,7 +121,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
         
         <AdminMobileBottomNav />
-        <ChatBotWidget role="ADMIN" />
+        <SSMAssistantWidget role="ADMIN" />
       </main>
     </div>
   )

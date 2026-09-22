@@ -7,6 +7,7 @@ import {
   ClipboardCheck, Compass, Heart, Sparkles, LogOut,
   User, Home, BookOpen, Menu, X, ChevronRight, Activity, Shield
 } from "lucide-react"
+import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
 
 export default function HocSinhLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || ""
@@ -253,6 +254,8 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
           <span>Hỗ trợ</span>
         </Link>
       </div>
+
+      <SSMAssistantWidget role="STUDENT" />
     </div>
   )
 }

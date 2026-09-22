@@ -1,6 +1,6 @@
 import { TeacherMobileBottomNav } from "@/components/TeacherMobileBottomNav"
 export const dynamic = "force-dynamic"
-import { ChatBotWidget } from "@/components/ChatBotWidget"
+import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
 import { Sidebar } from "@/components/Sidebar"
 import { auth } from "@/lib/auth"
@@ -125,7 +125,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         </div>
         
         <TeacherMobileBottomNav />
-        <ChatBotWidget role="TEACHER" />
+        <SSMAssistantWidget role="TEACHER" />
       </main>
     </div>
   )

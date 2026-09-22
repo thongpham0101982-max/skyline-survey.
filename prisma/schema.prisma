@@ -1198,17 +1198,6 @@ model ObservationEvaluation {
   @@index([evaluatorId])
 }
 
-model ChatbotConfig {
-  id                String   @id @default(cuid())
-  name              String
-  code              String   @unique
-  systemInstruction String
-  allowedRoles      String   @default("TEACHER,ADMIN")
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-
 model TeacherAcademicYearTarget {
   id               String    @id @default(cuid())
   teacherId        String
