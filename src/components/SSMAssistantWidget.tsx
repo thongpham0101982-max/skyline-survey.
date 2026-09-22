@@ -4,7 +4,8 @@ import { useState, useRef, useEffect, useMemo } from "react"
 import { usePathname } from "next/navigation"
 import {
   MessageSquare, Send, X, Bot, Sparkles, Trash2,
-  ChevronDown, AlertCircle, BookOpen, Compass, Heart,
+  ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minimize2,
+  PanelRightClose, PanelRightOpen, AlertCircle, BookOpen, Compass, Heart,
   ShieldCheck, Award, GraduationCap, BarChart3, RefreshCw
 } from "lucide-react"
 import { AssistantRole, PERSONAS } from "@/lib/assistant/personas"
@@ -21,6 +22,7 @@ interface SSMAssistantWidgetProps {
 export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps) {
   const pathname = usePathname() || ""
   const [isOpen, setIsOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -283,165 +285,213 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
   }[role] || Bot
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end print:hidden">
-      {/* Cửa sổ Trò chuyện */}
+    <>
+      {/* 1. Backdrop nền mờ khi mở trên thiết bị di động hoặc máy tính bảng */}
       {isOpen && (
-        <div className="w-[360px] sm:w-[420px] md:w-[450px] h-[580px] max-h-[85vh] bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 shadow-2xl flex flex-col overflow-hidden mb-3 transition-all duration-300 animate-in slide-in-from-bottom-5">
-          {/* Header */}
-          <div className={`${headerTheme} text-white p-4 flex items-center justify-between shadow-md shrink-0`}>
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-white/15 backdrop-blur-sm rounded-2xl shadow-inner flex items-center justify-center">
-                <RoleIcon className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-black tracking-wide text-white">{persona.name}</h4>
-                  <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-white/20 text-white rounded-full">
-                    {persona.badge}
-                  </span>
-                </div>
-                <p className="text-[10px] text-teal-100 flex items-center gap-1 font-medium mt-0.5 line-clamp-1">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-300 fill-amber-300 shrink-0" />
-                  {persona.tagline}
-                </p>
-              </div>
-            </div>
+        <div
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-40 transition-opacity duration-300 print:hidden"
+          title="Bấm để ẩn Trợ lý"
+        />
+      )}
 
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleClearChat}
-                title="Làm mới cuộc trò chuyện"
-                className="p-2 hover:bg-white/20 rounded-xl transition text-white/80 hover:text-white"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setIsOpen(false)}
-                title="Đóng trợ lý"
-                className="p-2 hover:bg-white/20 rounded-xl transition text-white/80 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      {/* 2. Bảng Trợ Lý Ảo Toàn Diện Bên Phải Màn Hình (Right Side Slide-Over Drawer) */}
+      <aside
+        className={`fixed top-0 right-0 h-screen z-50 flex flex-col bg-white shadow-[-12px_0_40px_rgba(0,0,0,0.18)] border-l border-slate-200/90 transition-transform duration-300 ease-in-out print:hidden ${
+          isOpen ? "translate-x-0" : "translate-x-full pointer-events-none"
+        } ${
+          isExpanded ? "w-full sm:w-[680px] lg:w-[740px]" : "w-full sm:w-[460px] md:w-[480px]"
+        }`}
+        aria-label="Trợ lý ảo SSM"
+      >
+        {/* Header điều khiển */}
+        <div className={`${headerTheme} text-white px-4 py-3.5 flex items-center justify-between shadow-md shrink-0`}>
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 bg-white/15 backdrop-blur-sm rounded-2xl shadow-inner flex items-center justify-center shrink-0">
+              <RoleIcon className="w-5 h-5 text-white" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="text-sm font-black tracking-wide text-white truncate">{persona.name}</h4>
+                <span className="px-2 py-0.5 text-[9px] font-black uppercase tracking-wider bg-white/20 text-white rounded-full shrink-0">
+                  {persona.badge}
+                </span>
+              </div>
+              <p className="text-[10px] text-teal-100 flex items-center gap-1 font-medium mt-0.5 line-clamp-1">
+                <Sparkles className="w-2.5 h-2.5 text-amber-300 fill-amber-300 shrink-0" />
+                <span className="truncate">{persona.tagline}</span>
+              </p>
             </div>
           </div>
 
-          {/* Vùng Tin nhắn */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar text-xs">
-            {messages.map((msg, index) => {
-              const isBot = msg.role === "model"
-              return (
-                <div
-                  key={index}
-                  className={`flex gap-2.5 max-w-[88%] ${isBot ? "self-start" : "ml-auto flex-row-reverse"}`}
-                >
-                  {isBot && (
-                    <div className="w-7 h-7 bg-[#003B3A] text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm mt-0.5">
-                      <RoleIcon className="w-4 h-4 text-[#48BFE3]" />
-                    </div>
-                  )}
-                  <div
-                    className={`p-3.5 rounded-2xl shadow-xs leading-relaxed ${
-                      isBot
-                        ? "bg-slate-50/90 text-slate-800 rounded-tl-none border border-slate-200/80"
-                        : "bg-[#007A72] text-white rounded-tr-none font-medium"
-                    }`}
-                  >
-                    {renderMessageContent(msg.parts[0].text)}
+          <div className="flex items-center gap-1 shrink-0 ml-2">
+            {/* Nút Phóng to / Thu hẹp bề ngang (480px <-> 740px) */}
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              title={isExpanded ? "Thu hẹp bề ngang (480px)" : "Mở rộng bề ngang (740px)"}
+              className="p-2 hover:bg-white/20 rounded-xl transition text-white/80 hover:text-white hidden sm:flex items-center justify-center"
+            >
+              {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+
+            {/* Nút Làm mới cuộc trò chuyện */}
+            <button
+              onClick={handleClearChat}
+              title="Làm mới cuộc trò chuyện"
+              className="p-2 hover:bg-white/20 rounded-xl transition text-white/80 hover:text-white flex items-center justify-center"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
+
+            {/* Nút Ẩn sang bên phải */}
+            <button
+              onClick={() => setIsOpen(false)}
+              title="Ẩn trợ lý sang bên phải"
+              className="p-2 hover:bg-white/25 bg-white/10 rounded-xl transition text-white flex items-center gap-1 text-xs font-bold"
+            >
+              <PanelRightClose className="w-4 h-4" />
+              <span className="hidden sm:inline text-[11px]">Ẩn</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Vùng Lịch Sử Tin Nhắn */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar text-xs bg-slate-50/40">
+          {messages.map((msg, index) => {
+            const isBot = msg.role === "model"
+            return (
+              <div
+                key={index}
+                className={`flex gap-2.5 max-w-[92%] ${isBot ? "self-start" : "ml-auto flex-row-reverse"}`}
+              >
+                {isBot && (
+                  <div className="w-7 h-7 bg-[#003B3A] text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                    <RoleIcon className="w-4 h-4 text-[#48BFE3]" />
                   </div>
-                </div>
-              )
-            })}
-
-            {/* Trạng thái AI đang suy nghĩ / xử lý dữ liệu */}
-            {isLoading && (
-              <div className="flex gap-2.5 max-w-[80%] self-start items-center">
-                <div className="w-7 h-7 bg-[#003B3A] text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                  <RoleIcon className="w-4 h-4 text-[#48BFE3] animate-spin" />
-                </div>
-                <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5">
-                  <span className="text-[11px] font-semibold text-slate-500 mr-1">Đang tổng hợp dữ liệu...</span>
-                  <span className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                  <span className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                  <span className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                )}
+                <div
+                  className={`p-3.5 rounded-2xl shadow-xs leading-relaxed ${
+                    isBot
+                      ? "bg-white text-slate-800 rounded-tl-none border border-slate-200/90 shadow-2xs"
+                      : "bg-[#007A72] text-white rounded-tr-none font-medium shadow-sm"
+                  }`}
+                >
+                  {renderMessageContent(msg.parts[0].text)}
                 </div>
               </div>
-            )}
+            )
+          })}
 
-            {/* Thông báo lỗi */}
-            {error && (
-              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 flex items-center gap-2 text-xs font-semibold">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
+          {/* Trạng thái Đang suy nghĩ / Xử lý */}
+          {isLoading && (
+            <div className="flex gap-2.5 max-w-[85%] self-start items-center">
+              <div className="w-7 h-7 bg-[#003B3A] text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
+                <RoleIcon className="w-4 h-4 text-[#48BFE3] animate-spin" />
               </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Gợi ý câu hỏi thông minh theo ngữ cảnh (Contextual Prompts) */}
-          {contextualPrompts.length > 0 && !isLoading && (
-            <div className="px-3 py-2 bg-slate-50/80 border-t border-slate-100 flex flex-col gap-1 shrink-0">
-              <div className="flex items-center justify-between">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-500" /> Gợi ý nhanh:
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {contextualPrompts.map((p, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSend(p.text)}
-                    className="px-2.5 py-1 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-[11px] font-semibold text-slate-700 hover:text-teal-700 rounded-lg transition duration-150 text-left shadow-2xs active:scale-95"
-                  >
-                    {p.label}
-                  </button>
-                ))}
+              <div className="bg-white border border-slate-200/90 p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 shadow-2xs">
+                <span className="text-[11px] font-semibold text-slate-500 mr-1">Đang tổng hợp dữ liệu...</span>
+                <span className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                <span className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                <span className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
               </div>
             </div>
           )}
 
-          {/* Khung nhập tin nhắn */}
-          <form
-            onSubmit={e => {
-              e.preventDefault()
-              handleSend()
-            }}
-            className="p-3 border-t border-slate-200 bg-white flex gap-2 items-center shrink-0"
-          >
-            <input
-              type="text"
-              placeholder="Nhập câu hỏi hoặc nội dung cần tra cứu..."
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              className="flex-1 text-xs md:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition px-3 py-2 border border-slate-200 rounded-xl font-medium"
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="p-2.5 bg-[#007A72] hover:bg-[#005F5B] text-white rounded-xl shadow-md disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition shrink-0 active:scale-95 flex items-center justify-center"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+          {/* Thông báo lỗi nếu có */}
+          {error && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-600 flex items-center gap-2 text-xs font-semibold">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
         </div>
+
+        {/* Gợi ý câu hỏi thông minh theo ngữ cảnh (Contextual Prompts) */}
+        {contextualPrompts.length > 0 && !isLoading && (
+          <div className="px-3.5 py-2.5 bg-slate-50 border-t border-slate-200/80 flex flex-col gap-1.5 shrink-0">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-2.5 h-2.5 text-amber-500" /> Gợi ý nhanh:
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+              {contextualPrompts.map((p, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSend(p.text)}
+                  className="px-2.5 py-1 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 text-[11px] font-semibold text-slate-700 hover:text-teal-700 rounded-lg transition duration-150 text-left shadow-2xs active:scale-95"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Khung nhập tin nhắn */}
+        <form
+          onSubmit={e => {
+            e.preventDefault()
+            handleSend()
+          }}
+          className="p-3 border-t border-slate-200 bg-white flex gap-2 items-center shrink-0"
+        >
+          <input
+            type="text"
+            placeholder="Nhập câu hỏi hoặc nội dung cần tra cứu..."
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            className="flex-1 text-xs md:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition px-3 py-2.5 border border-slate-200 rounded-xl font-medium"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || isLoading}
+            className="p-2.5 bg-[#007A72] hover:bg-[#005F5B] text-white rounded-xl shadow-md disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition shrink-0 active:scale-95 flex items-center justify-center"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        </form>
+      </aside>
+
+      {/* 3. Nút Tab Cạnh Phải Màn Hình (Right Dock Tab để Bấm Hiện Nhanh) */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          title={`Hiện ${persona.name} ở bên phải`}
+          className="fixed top-1/2 -translate-y-1/2 right-0 z-40 bg-[#003B3A] hover:bg-[#005F5B] text-white py-3.5 px-2 rounded-l-2xl shadow-2xl flex flex-col items-center gap-2 cursor-pointer transition-all duration-300 hover:pl-3 group border-y border-l border-teal-400/40 print:hidden"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#48BFE3] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#48BFE3]"></span>
+          </span>
+          <RoleIcon className="w-4 h-4 text-[#48BFE3] group-hover:scale-110 transition-transform" />
+          <span className="text-[9px] font-black tracking-widest uppercase [writing-mode:vertical-rl] rotate-180 text-teal-100 group-hover:text-white py-1">
+            Trợ Lý Ảo
+          </span>
+          <ChevronLeft className="w-3.5 h-3.5 text-teal-300 group-hover:-translate-x-0.5 transition-transform" />
+        </button>
       )}
 
-      {/* Nút Bong bóng mở Trợ lý */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="h-14 px-4 bg-[#003B3A] text-white rounded-full flex items-center gap-2.5 shadow-2xl border border-teal-600/40 hover:bg-[#005F5B] transition-all duration-300 hover:scale-105 active:scale-95 relative group"
-      >
-        <span className="absolute -inset-1 rounded-full bg-[#48BFE3]/25 animate-ping opacity-75 group-hover:animate-none"></span>
-        <RoleIcon className="w-5 h-5 text-[#48BFE3]" />
-        <span className="text-xs font-black tracking-wide hidden sm:inline">
-          {isOpen ? "Thu nhỏ" : persona.name}
-        </span>
-        {isOpen ? (
-          <ChevronDown className="w-4 h-4 text-slate-300" />
-        ) : (
-          <MessageSquare className="w-4 h-4 text-[#48BFE3]" />
-        )}
-      </button>
-    </div>
+      {/* 4. Nút Nổi Góc Dưới Phải (Bottom-Right Floating Toggle Button) */}
+      <div className="fixed bottom-5 right-5 z-40 print:hidden">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="h-12 px-4 bg-[#003B3A] hover:bg-[#005F5B] text-white rounded-full flex items-center gap-2.5 shadow-2xl border border-teal-500/40 transition-all duration-300 hover:scale-105 active:scale-95 group"
+          title={isOpen ? "Ẩn trợ lý sang bên phải" : "Hiện trợ lý ảo bên phải màn hình"}
+        >
+          <RoleIcon className="w-4 h-4 text-[#48BFE3]" />
+          <span className="text-xs font-black tracking-wide">
+            {isOpen ? "Ẩn Trợ Lý" : "Trợ Lý Ảo"}
+          </span>
+          {isOpen ? (
+            <PanelRightClose className="w-4 h-4 text-slate-300" />
+          ) : (
+            <PanelRightOpen className="w-4 h-4 text-[#48BFE3]" />
+          )}
+        </button>
+      </div>
+    </>
   )
 }
