@@ -7,11 +7,12 @@ import {
   executeAssistantTool,
   AssistantSecurityContext
 } from "@/lib/assistant/tools";
+import { processNativeAssistantQuery } from "@/lib/assistant/nativeEngine";
 
 // Simple in-memory rate limiting map
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_MINUTE = 15;
+const MAX_REQUESTS_PER_MINUTE = 30;
 
 export async function POST(req: Request) {
   try {
@@ -39,14 +40,6 @@ export async function POST(req: Request) {
 
     if (!message || typeof message !== "string") {
       return Response.json({ error: "Tin nhắn không hợp lệ." }, { status: 400 });
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return Response.json(
-        { error: "Hệ thống chưa được cấu hình GEMINI_API_KEY trong biến môi trường." },
-        { status: 500 }
-      );
     }
 
     // 2. Xác thực danh tính & Vai trò người dùng (Authentication & RBAC)
@@ -90,12 +83,10 @@ export async function POST(req: Request) {
         securityContext.role = "TEACHER";
       }
     } else if (requestedRole === "STUDENT") {
-      // Cho phép nếu có student session fallback
       resolvedRole = "STUDENT";
       securityContext.role = "STUDENT";
     }
 
-    // Nếu người dùng yêu cầu vai trò thấp hơn quyền hiện có (ví dụ Admin muốn dùng thử chế độ Teacher)
     if (requestedRole && requestedRole !== resolvedRole) {
       if (securityContext.role === "ADMIN") {
         resolvedRole = requestedRole;
@@ -103,9 +94,25 @@ export async function POST(req: Request) {
     }
 
     const persona = PERSONAS[resolvedRole] || PERSONAS.TEACHER;
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
 
-    // 3. Xây dựng System Instruction kèm Ngữ cảnh thời gian thực
-    let fullSystemInstruction = `${persona.systemInstruction}\n\n[NGỮ CẢNH HỆ THỐNG HIỆN THỜI]
+    // 3. CHẾ ĐỘ NATIVE ENGINE (KHÔNG CẦN GEMINI_API_KEY)
+    // Nếu không có API Key, chạy trực tiếp bộ máy thông minh nội bộ trên CSDL thật
+    if (!apiKey) {
+      const nativeResponseText = await processNativeAssistantQuery(message, securityContext, currentPath);
+      return Response.json({
+        success: true,
+        text: nativeResponseText,
+        role: resolvedRole,
+        personaName: persona.name,
+        badge: persona.badge,
+        primaryColor: persona.primaryColor
+      });
+    }
+
+    // 4. NẾU CÓ GEMINI_API_KEY: Sử dụng Gemini 2.5 Flash kết hợp Function Calling
+    try {
+      let fullSystemInstruction = `${persona.systemInstruction}\n\n[NGỮ CẢNH HỆ THỐNG HIỆN THỜI]
 - Thời điểm hiện tại: ${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}
 - Vai trò người dùng đang tương tác: ${resolvedRole}
 - Họ tên người dùng: ${securityContext.userName || "Chưa định danh"}
@@ -113,62 +120,69 @@ export async function POST(req: Request) {
 - QUY TẮC BẢO ĐẢM TÍNH TOÀN VẸN DỮ LIỆU: BẮT BUỘC chỉ sử dụng dữ liệu thực tế được trả về từ các công cụ (Function Tools). TUYỆT ĐỐI KHÔNG BỊA ĐẶT hay phát sinh bất kỳ số liệu, điểm số, môn học hay học sinh nào không có trong database thực tế của web app SSM. Nếu chưa có dữ liệu hoặc danh sách rỗng, hãy trả lời chính xác và trung thực rằng hệ thống chưa ghi nhận dữ liệu.
 - Quy tắc định dạng: Định dạng câu trả lời đẹp mắt bằng Markdown, bảng biểu rõ ràng khi có số liệu, dùng biểu tượng cảm xúc (emoji) tích cực và phù hợp với môi trường giáo dục.`;
 
-    // 4. Khởi tạo Gemini Model với Function Declarations
-    const functionDeclarations = getFunctionDeclarationsForRole(resolvedRole);
+      const functionDeclarations = getFunctionDeclarationsForRole(resolvedRole);
+      const ai = new GoogleGenerativeAI(apiKey);
+      const model = ai.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        tools: functionDeclarations.length > 0 ? [{ functionDeclarations: functionDeclarations as any }] : [],
+        systemInstruction: fullSystemInstruction
+      });
 
-    const ai = new GoogleGenerativeAI(apiKey);
-    const model = ai.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      tools: functionDeclarations.length > 0 ? [{ functionDeclarations: functionDeclarations as any }] : [],
-      systemInstruction: fullSystemInstruction
-    });
-
-    // Chuẩn hóa lịch sử tin nhắn
-    const cleanHistory = Array.isArray(history) ? [...history] : [];
-    while (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
-      cleanHistory.shift();
-    }
-
-    const chat = model.startChat({ history: cleanHistory });
-    let result = await chat.sendMessage(message);
-
-    // 5. Kiểm tra và thực thi Function Calls (nếu AI yêu cầu dữ liệu)
-    const calls = typeof result.response.functionCalls === "function"
-      ? result.response.functionCalls()
-      : (result.response.functionCalls || []);
-
-    if (calls && calls.length > 0) {
-      const call = calls[0];
-      let toolData: any = null;
-
-      try {
-        toolData = await executeAssistantTool(call.name, call.args, securityContext);
-      } catch (err: any) {
-        console.error(`Tool execution error for ${call.name}:`, err);
-        toolData = { error: `Lỗi khi thực thi công cụ: ${err.message}` };
+      const cleanHistory = Array.isArray(history) ? [...history] : [];
+      while (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
+        cleanHistory.shift();
       }
 
-      // Trả kết quả dữ liệu lại cho Gemini để tổng hợp câu trả lời sư phạm
-      result = await chat.sendMessage([
-        {
-          functionResponse: {
-            name: call.name,
-            response: toolData || { message: "Không có dữ liệu trả về." }
-          }
+      const chat = model.startChat({ history: cleanHistory });
+      let result = await chat.sendMessage(message);
+
+      const calls = typeof result.response.functionCalls === "function"
+        ? result.response.functionCalls()
+        : (result.response.functionCalls || []);
+
+      if (calls && calls.length > 0) {
+        const call = calls[0];
+        let toolData: any = null;
+
+        try {
+          toolData = await executeAssistantTool(call.name, call.args, securityContext);
+        } catch (err: any) {
+          console.error(`Tool execution error for ${call.name}:`, err);
+          toolData = { error: `Lỗi khi thực thi công cụ: ${err.message}` };
         }
-      ]);
+
+        result = await chat.sendMessage([
+          {
+            functionResponse: {
+              name: call.name,
+              response: toolData || { message: "Không có dữ liệu trả về." }
+            }
+          }
+        ]);
+      }
+
+      const responseText = result.response.text();
+      return Response.json({
+        success: true,
+        text: responseText,
+        role: resolvedRole,
+        personaName: persona.name,
+        badge: persona.badge,
+        primaryColor: persona.primaryColor
+      });
+    } catch (geminiError: any) {
+      console.warn("Gemini API call failed, falling back to Native Engine:", geminiError);
+      // Tự động chuyển tiếp sang Native Engine nếu Gemini API bị lỗi/hết quota
+      const fallbackText = await processNativeAssistantQuery(message, securityContext, currentPath);
+      return Response.json({
+        success: true,
+        text: fallbackText,
+        role: resolvedRole,
+        personaName: persona.name,
+        badge: persona.badge,
+        primaryColor: persona.primaryColor
+      });
     }
-
-    const responseText = result.response.text();
-
-    return Response.json({
-      success: true,
-      text: responseText,
-      role: resolvedRole,
-      personaName: persona.name,
-      badge: persona.badge,
-      primaryColor: persona.primaryColor
-    });
   } catch (error: any) {
     console.error("Assistant API Error:", error);
     return Response.json(

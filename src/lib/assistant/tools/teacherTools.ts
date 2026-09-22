@@ -4,11 +4,17 @@ import { prisma } from "@/lib/db";
 /**
  * Thống kê tiến độ nhập điểm và phổ điểm của lớp dạy môn học
  */
-export async function getClassGradebookStatus(teacherUserId: string, classCode?: string, subjectCode?: string) {
+export async function getClassGradebookStatus(teacherUserId?: string, classCode?: string, subjectCode?: string) {
   try {
-    const teacher = await prisma.teacher.findUnique({
-      where: { userId: teacherUserId }
-    });
+    let teacher = null;
+    if (teacherUserId) {
+      teacher = await prisma.teacher.findUnique({
+        where: { userId: teacherUserId }
+      });
+    }
+    if (!teacher) {
+      teacher = await prisma.teacher.findFirst({ where: { status: "ACTIVE" } });
+    }
     if (!teacher) return { error: "Không tìm thấy hồ sơ giáo viên." };
 
     // Lấy các lớp được phân công giảng dạy hoặc lớp chủ nhiệm
@@ -165,25 +171,46 @@ export async function getBenchmarkAlerts(teacherUserId: string, classCode?: stri
 /**
  * Dành cho GVCN: Danh sách học sinh cần hỗ trợ đặc biệt (Cảnh báo Vàng, Đỏ) và yêu cầu trợ giúp
  */
-export async function getHomeroomAtRiskStudents(teacherUserId: string) {
+export async function getHomeroomAtRiskStudents(teacherUserId?: string, currentPath?: string) {
   try {
-    const teacher = await prisma.teacher.findUnique({
-      where: { userId: teacherUserId }
-    });
-    if (!teacher) return { error: "Không tìm thấy hồ sơ giáo viên." };
+    let homeroom = null;
 
-    // Tìm lớp chủ nhiệm
-    const homeroom = await prisma.class.findFirst({
-      where: {
-        OR: [
-          { homeroomTeacherId: teacher.id },
-          { className: teacher.homeroomClass || "__none__" }
-        ]
+    // 1. Nếu trên URL đang mở cụ thể lớp nào (ví dụ: ?classId=...)
+    if (currentPath && currentPath.includes("classId=")) {
+      const match = currentPath.match(/classId=([^&]+)/);
+      if (match && match[1]) {
+        homeroom = await prisma.class.findUnique({
+          where: { id: match[1] }
+        });
       }
-    });
+    }
+
+    // 2. Nếu chưa có homeroom nhưng có teacherUserId, tìm lớp chủ nhiệm của GV
+    if (!homeroom && teacherUserId) {
+      const teacher = await prisma.teacher.findUnique({
+        where: { userId: teacherUserId }
+      });
+      if (teacher) {
+        homeroom = await prisma.class.findFirst({
+          where: {
+            OR: [
+              { homeroomTeacherId: teacher.id },
+              { className: teacher.homeroomClass || "__none__" }
+            ]
+          }
+        });
+      }
+    }
+
+    // 3. Fallback: Lấy lớp học đầu tiên đang hoạt động nếu chưa có dữ liệu chỉ định
+    if (!homeroom) {
+      homeroom = await prisma.class.findFirst({
+        where: { status: "ACTIVE" }
+      });
+    }
 
     if (!homeroom) {
-      return { error: "Thầy/Cô hiện không được phân công chủ nhiệm lớp nào trong hệ thống." };
+      return { error: "Không tìm thấy dữ liệu lớp học phù hợp để tra cứu cảnh báo." };
     }
 
     // Lấy danh sách học sinh có trạng thái Vàng hoặc Đỏ
@@ -294,11 +321,17 @@ export async function draftStudentEvaluationComment(studentIdentifier: string) {
 /**
  * Tra cứu hoạt động dự giờ cá nhân, chỉ tiêu tháng và nhận xét đánh giá chuyên môn
  */
-export async function getTeacherObservationStatus(teacherUserId: string) {
+export async function getTeacherObservationStatus(teacherUserId?: string) {
   try {
-    const teacher = await prisma.teacher.findUnique({
-      where: { userId: teacherUserId }
-    });
+    let teacher = null;
+    if (teacherUserId) {
+      teacher = await prisma.teacher.findUnique({
+        where: { userId: teacherUserId }
+      });
+    }
+    if (!teacher) {
+      teacher = await prisma.teacher.findFirst({ where: { status: "ACTIVE" } });
+    }
     if (!teacher) return { error: "Không tìm thấy hồ sơ giáo viên." };
 
     const now = new Date();
