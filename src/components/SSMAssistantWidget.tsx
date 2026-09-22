@@ -453,6 +453,15 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
             <Send className="w-4 h-4" />
           </button>
         </form>
+
+        {/* Nút Tab mép ngoài của Bảng trượt để bấm Thu gọn / Ẩn nhanh */}
+        <button
+          onClick={() => setIsOpen(false)}
+          title="Ẩn Trợ lý Ảo sang bên phải"
+          className="absolute top-1/2 -translate-y-1/2 -left-9 bg-[#003B3A] hover:bg-[#005F5B] text-white py-3.5 px-1.5 rounded-l-xl shadow-xl flex items-center justify-center border-y border-l border-teal-400/40 transition hover:-translate-x-0.5 group"
+        >
+          <ChevronRight className="w-5 h-5 text-teal-300 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
+        </button>
       </aside>
 
       {/* 3. Nút Tab Cạnh Phải Màn Hình (Right Dock Tab để Bấm Hiện Nhanh) */}
@@ -460,38 +469,19 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
         <button
           onClick={() => setIsOpen(true)}
           title={`Hiện ${persona.name} ở bên phải`}
-          className="fixed top-1/2 -translate-y-1/2 right-0 z-40 bg-[#003B3A] hover:bg-[#005F5B] text-white py-3.5 px-2 rounded-l-2xl shadow-2xl flex flex-col items-center gap-2 cursor-pointer transition-all duration-300 hover:pl-3 group border-y border-l border-teal-400/40 print:hidden"
+          className="fixed top-1/2 -translate-y-1/2 right-0 z-40 bg-[#003B3A] hover:bg-[#005F5B] text-white py-4 px-2.5 rounded-l-2xl shadow-2xl flex flex-col items-center gap-2.5 cursor-pointer transition-all duration-300 hover:pl-3.5 group border-y border-l border-teal-400/40 print:hidden"
         >
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#48BFE3] opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#48BFE3]"></span>
           </span>
-          <RoleIcon className="w-4 h-4 text-[#48BFE3] group-hover:scale-110 transition-transform" />
-          <span className="text-[9px] font-black tracking-widest uppercase [writing-mode:vertical-rl] rotate-180 text-teal-100 group-hover:text-white py-1">
+          <RoleIcon className="w-5 h-5 text-[#48BFE3] group-hover:scale-110 transition-transform" />
+          <span className="text-[10px] font-black tracking-widest uppercase [writing-mode:vertical-rl] rotate-180 text-teal-100 group-hover:text-white py-1.5">
             Trợ Lý Ảo
           </span>
-          <ChevronLeft className="w-3.5 h-3.5 text-teal-300 group-hover:-translate-x-0.5 transition-transform" />
+          <ChevronLeft className="w-4 h-4 text-teal-300 group-hover:-translate-x-0.5 transition-transform" />
         </button>
       )}
-
-      {/* 4. Nút Nổi Góc Dưới Phải (Bottom-Right Floating Toggle Button) */}
-      <div className="fixed bottom-5 right-5 z-40 print:hidden">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className="h-12 px-4 bg-[#003B3A] hover:bg-[#005F5B] text-white rounded-full flex items-center gap-2.5 shadow-2xl border border-teal-500/40 transition-all duration-300 hover:scale-105 active:scale-95 group"
-          title={isOpen ? "Ẩn trợ lý sang bên phải" : "Hiện trợ lý ảo bên phải màn hình"}
-        >
-          <RoleIcon className="w-4 h-4 text-[#48BFE3]" />
-          <span className="text-xs font-black tracking-wide">
-            {isOpen ? "Ẩn Trợ Lý" : "Trợ Lý Ảo"}
-          </span>
-          {isOpen ? (
-            <PanelRightClose className="w-4 h-4 text-slate-300" />
-          ) : (
-            <PanelRightOpen className="w-4 h-4 text-[#48BFE3]" />
-          )}
-        </button>
-      </div>
     </>
   )
 }
