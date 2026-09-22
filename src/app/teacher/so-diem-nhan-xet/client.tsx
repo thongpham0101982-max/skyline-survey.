@@ -1,3 +1,4 @@
+import Link from "next/link"
 "use client"
 
 const COLUMN_TYPES = [
@@ -31,6 +32,7 @@ import {
   Unlock,
   Send,
   X,
+  BarChart3,
   FileSpreadsheet, 
   Save, 
   Download, 
@@ -762,6 +764,13 @@ export function DiemNhanXetTeacherClient({
                 className="hidden"
               />
 
+              <Link
+                href={`/teacher/phan-tich-chat-luong?subjectId=${selectedSubjectId}&evaluationPeriod=${selectedPeriod}`}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all shadow-2xs"
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-sky-600" />
+                <span>Đối sánh chất lượng</span>
+              </Link>
               <button
                 type="button"
                 onClick={handleExportExcel}

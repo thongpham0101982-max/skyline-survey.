@@ -1,6 +1,8 @@
+import Link from "next/link"
 "use client"
 import { useState, useMemo, useEffect } from "react"
 import { 
+  BarChart3,
   BookOpen, 
   Users, 
   CalendarDays, 
@@ -514,6 +516,13 @@ export function TeachingAssignmentClient({
                     <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold flex items-center gap-1">
                       <UserCheck className="w-3 h-3" /> Đang phụ trách
                     </span>
+                    <Link
+                      href={`/teacher/phan-tich-chat-luong?subjectId=${group.subjectId}`}
+                      className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[10px] font-extrabold flex items-center gap-1 transition-colors shadow-2xs"
+                      title="Xem phân tích chất lượng & đối sánh môn học"
+                    >
+                      <BarChart3 className="w-3 h-3 text-sky-600" /> Phân tích chất lượng
+                    </Link>
                   </div>
                 </div>
 

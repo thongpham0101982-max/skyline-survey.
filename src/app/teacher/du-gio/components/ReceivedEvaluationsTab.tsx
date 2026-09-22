@@ -1298,7 +1298,7 @@ export function ReceivedEvaluationsTab({
                               ? "bg-rose-50 text-rose-700 border border-rose-200"
                               : "bg-slate-100 text-slate-700 border border-slate-200"
                           }`}>
-                            {isSurprise ? "⚡ Đột xuất" : "📋 Kế hoạch"}
+                            {isSurprise ? "Đột xuất" : "Kế hoạch"}
                           </span>
                         </div>
                       </td>
@@ -1306,9 +1306,7 @@ export function ReceivedEvaluationsTab({
                       {/* Giáo viên dạy */}
                       <td className="p-3.5">
                         <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${getAvatarGradient(teacherName)} text-white flex items-center justify-center font-black text-[10px] shrink-0 shadow-2xs`}>
-                            {teacherName.charAt(0)}
-                          </div>
+                          
                           <div>
                             <span className="font-extrabold text-slate-900 text-xs block">
                               {teacherName}
@@ -1324,9 +1322,7 @@ export function ReceivedEvaluationsTab({
                       {/* Giáo viên dự */}
                       <td className="p-3.5">
                         <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 rounded-full bg-gradient-to-br ${getAvatarGradient(evaluatorName)} text-white flex items-center justify-center font-black text-[10px] shrink-0 shadow-2xs`}>
-                            {evaluatorName.charAt(0)}
-                          </div>
+                          
                           <div>
                             <span className="font-extrabold text-slate-900 text-xs block">
                               {evaluatorName}
@@ -1380,18 +1376,15 @@ export function ReceivedEvaluationsTab({
                         {isHost ? (
                           isAcknowledged ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                               Đã tiếp thu
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
-                              <Clock className="w-3 h-3 text-amber-600" />
                               Chờ phản hồi
                             </span>
                           )
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-lg bg-teal-50 text-teal-800 border border-teal-300 shadow-2xs">
-                            <CheckCircle2 className="w-3 h-3 text-teal-600" />
                             Đã nộp phiếu
                           </span>
                         )}
@@ -1409,13 +1402,13 @@ export function ReceivedEvaluationsTab({
                           </button>
                           {setPrintModalSlot && (
                             <button
-                              type="button"
-                              onClick={() => setPrintModalSlot({ slot: evalItem.slot, registration: { ...(evalItem.registration || {}), evaluation: evalItem.evaluation } })}
-                              className="p-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all cursor-pointer shadow-2xs"
-                              title="In phiếu đánh giá"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                            </button>
+                                type="button"
+                                onClick={() => setPrintModalSlot({ slot: evalItem.slot, registration: { ...(evalItem.registration || {}), evaluation: evalItem.evaluation } })}
+                                className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                                title="In phiếu đánh giá"
+                              >
+                                In phiếu
+                              </button>
                           )}
                         </div>
                       </td>

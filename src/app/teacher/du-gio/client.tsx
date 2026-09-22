@@ -3249,9 +3249,7 @@ export function ObservationClient(props: ObservationClientProps) {
             {/* Teacher Chip & Year selector */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/15">
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getAvatarGradient(currentTeacher?.teacherName || "G")} text-white flex items-center justify-center font-black text-sm shadow-xs border border-white/30`}>
-                  {currentTeacher?.teacherName?.charAt(0) || "G"}
-                </div>
+                
                 <div className="text-left">
                   <span className="block text-xs font-black text-white leading-tight">{currentTeacher?.teacherName}</span>
                   <span className="block text-[10px] text-emerald-200/80 font-medium">
@@ -3297,7 +3295,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   }`}
                   title="Chuyển sang Chế độ Quản trị & Điều hành"
                 >
-                  <Building2 className="w-3.5 h-3.5 text-teal-700" />
                   <span>Chế độ Quản lý</span>
                 </button>
 
@@ -3316,7 +3313,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   }`}
                   title="Chuyển sang Chế độ Cá nhân (Giáo viên)"
                 >
-                  <User className="w-3.5 h-3.5 text-amber-600" />
                   <span>Chế độ Cá nhân</span>
                 </button>
               </div>
@@ -3330,7 +3326,6 @@ export function ObservationClient(props: ObservationClientProps) {
               }}
               className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-xs transition-all shadow-md shadow-emerald-950/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
             >
-              <Plus className="w-4 h-4" />
               <span>Đăng ký tiết dạy</span>
             </button>
 
@@ -3343,7 +3338,6 @@ export function ObservationClient(props: ObservationClientProps) {
                 }}
                 className="px-3.5 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white font-black text-xs transition-all border border-white/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
               >
-                <Sparkles className="w-4 h-4 text-amber-300" />
                 <span>Xin dự giờ</span>
               </button>
             )}
@@ -3357,8 +3351,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 }}
                 className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-black text-xs transition-all shadow-md shadow-rose-950/20 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
               >
-                <Zap className="w-4 h-4 text-amber-300 animate-pulse" />
-                <span>Đột xuất ⚡</span>
+                <span>Đột xuất</span>
               </button>
             )}
 
@@ -3369,7 +3362,6 @@ export function ObservationClient(props: ObservationClientProps) {
                 className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition-all shadow-md border border-emerald-400/40 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
                 title="Xuất file Excel danh sách tiết dạy và kết quả"
               >
-                <Download className="w-4 h-4" />
                 <span>Xuất Excel</span>
               </button>
             )}
@@ -3382,10 +3374,10 @@ export function ObservationClient(props: ObservationClientProps) {
                   showToast("Đã làm mới dữ liệu mới nhất!", "info");
                 });
               }}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer border border-white/15"
+              className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors cursor-pointer border border-white/15"
               title="Làm mới dữ liệu"
             >
-              <RotateCcw className="w-4 h-4" />
+              Làm mới
             </button>
           </div>
         </div>
@@ -3406,7 +3398,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   : "text-indigo-950 bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200/80"
               }`}
             >
-              <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
               <span className="truncate">1. Báo cáo & Thống kê TCM</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "ttcm_summary" 
@@ -3427,7 +3418,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   : "text-teal-950 bg-teal-50/60 hover:bg-teal-100/80 border border-teal-200/70"
               }`}
             >
-              <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
               <span className="truncate">2. Quản lý Tiết dạy toàn trường</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "overview_slots" 
@@ -3448,7 +3438,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   : "text-violet-950 bg-violet-50/60 hover:bg-violet-100/80 border border-violet-200/70"
               }`}
             >
-              <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
               <span className="truncate">3. Kết quả đánh giá</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "evaluations" 
@@ -3469,7 +3458,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   : "text-rose-950 bg-rose-50/70 hover:bg-rose-100/90 border border-rose-200/80"
               }`}
             >
-              <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
               <span className="truncate">4. Duyệt chấm lại</span>
               {pendingReEvalCount > 0 && (
                 <span className="px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 bg-red-500 text-white border border-white animate-pulse">
@@ -3492,7 +3480,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   : "text-amber-950 bg-amber-50/60 hover:bg-amber-100/80 border border-amber-200/70"
               }`}
             >
-              <Calendar className={`w-4 h-4 shrink-0 ${activeMainTab === "my_schedule" ? "text-amber-200" : "text-amber-600"}`} />
               <span className="truncate">1. Lịch & Việc của tôi</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "my_schedule" 
@@ -3513,7 +3500,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   : "text-teal-950 bg-teal-50/60 hover:bg-teal-100/80 border border-teal-200/70"
               }`}
             >
-              <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
               <span className="truncate">2. Danh sách tiết dạy</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "overview_slots" 
@@ -3534,7 +3520,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   : "text-violet-950 bg-violet-50/60 hover:bg-violet-100/80 border border-violet-200/70"
               }`}
             >
-              <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
               <span className="truncate">3. Kết quả đánh giá</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "evaluations" 
@@ -3555,7 +3540,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   : "text-emerald-950 bg-emerald-50/60 hover:bg-emerald-100/80 border border-emerald-200/70"
               }`}
             >
-              <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "teacher_report" ? "text-emerald-200" : "text-emerald-600"}`} />
               <span className="truncate">4. Báo cáo thống kê</span>
               <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "teacher_report" 
@@ -3577,7 +3561,6 @@ export function ObservationClient(props: ObservationClientProps) {
                     : "text-indigo-950 bg-indigo-50/70 hover:bg-indigo-100/90 border border-indigo-200/80"
                 }`}
               >
-                <LayoutDashboard className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
                 <span className="truncate">{isTBP ? "5. Báo cáo TBP & Tổ CM" : "5. Báo cáo TTCM"}</span>
                 <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                   activeMainTab === "ttcm_summary" 
@@ -3600,7 +3583,6 @@ export function ObservationClient(props: ObservationClientProps) {
                     : "text-rose-950 bg-rose-50/70 hover:bg-rose-100/90 border border-rose-200/80"
                 }`}
               >
-                <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
                 <span className="truncate">6. Duyệt chấm lại</span>
                 {pendingReEvalCount > 0 && (
                   <span className="px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 bg-red-500 text-white border border-white animate-pulse">
@@ -4119,7 +4101,6 @@ export function ObservationClient(props: ObservationClientProps) {
                 className="ml-auto px-3.5 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-md shadow-amber-900/20 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 hover:scale-[1.02]"
                 title="Rà soát và tự động cập nhật lại toàn bộ các tiết Chờ duyệt sang Đã duyệt hoặc Hết hạn"
               >
-                <RotateCcw className={`w-3.5 h-3.5 ${isSyncingStatuses ? "animate-spin" : ""}`} />
                 <span>{isSyncingStatuses ? "Đang đồng bộ..." : "Rà soát trạng thái"}</span>
               </button>
             )}
@@ -4339,20 +4320,10 @@ export function ObservationClient(props: ObservationClientProps) {
                         )}
                         <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
                         <td className="p-4 font-bold text-slate-800">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(observerName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
-                              {observerName.charAt(0)}
-                            </div>
-                            <span className="font-black text-indigo-950">{observerName}</span>
-                          </div>
+                          <span className="font-semibold text-indigo-950">{observerName}</span>
                         </td>
                         <td className="p-4 font-bold text-slate-800">
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher?.teacherName || "G")} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
-                              {(slot.teacher?.teacherName || "G").charAt(0)}
-                            </div>
-                            <span className="font-black text-slate-800">{slot.teacher?.teacherName}</span>
-                          </div>
+                          <span className="font-semibold text-slate-800">{slot.teacher?.teacherName}</span>
                         </td>
                         {/* Thời gian đăng ký */}
                         <td className="p-4 whitespace-nowrap">
@@ -4445,10 +4416,10 @@ export function ObservationClient(props: ObservationClientProps) {
                               <button
                                 type="button"
                                 onClick={() => handleDeleteSlot(slot.id)}
-                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer shadow-2xs hover:scale-105"
+                                className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer shadow-2xs hover:scale-105 text-xs font-semibold"
                                 title="Xóa tiết yêu cầu dự giờ này"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                Xóa
                               </button>
                             )}
                             {!isHost && slot.status !== "PENDING_TEACHER_APPROVAL" && !canDeleteAnySlot && (
@@ -4486,14 +4457,9 @@ export function ObservationClient(props: ObservationClientProps) {
                       
                       {/* Cột GIÁO VIÊN */}
                       <td className="p-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher.teacherName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
-                            {slot.teacher.teacherName.charAt(0)}
-                          </div>
-                          <span className="font-extrabold text-slate-900 text-xs tracking-tight">
-                            {slot.teacher.teacherName}
-                          </span>
-                        </div>
+                        <span className="font-semibold text-slate-900 text-xs tracking-tight">
+                          {slot.teacher.teacherName}
+                        </span>
                       </td>
 
                       {/* Cột THỜI GIAN ĐĂNG KÝ */}
@@ -4604,10 +4570,7 @@ export function ObservationClient(props: ObservationClientProps) {
                               const regTeacherName = reg.teacher?.teacherName || reg.teacherName || "GV";
                               return (
                                 <div key={reg.id} className="flex items-center gap-1.5 text-[11px] truncate">
-                                  <div className={`w-4 h-4 rounded-full bg-gradient-to-br ${getAvatarGradient(regTeacherName)} text-white flex items-center justify-center font-black text-[9px] shrink-0`}>
-                                    {regTeacherName.charAt(0)}
-                                  </div>
-                                  <span className="font-bold text-slate-700 truncate">{regTeacherName}</span>
+                                  <span className="font-semibold text-slate-700 truncate">{regTeacherName}</span>
                                   {reg.isApproved ? (
                                     <span className="px-2 py-0.5 text-[9px] font-medium rounded bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">Đã duyệt</span>
                                   ) : (
@@ -4647,10 +4610,10 @@ export function ObservationClient(props: ObservationClientProps) {
                             <button
                               type="button"
                               onClick={() => setDrawerSlot(slot)}
-                              className="p-1.5 rounded-lg bg-[#003B3A]/10 hover:bg-[#003B3A]/20 text-[#003B3A] border border-[#003B3A]/20 transition-all cursor-pointer shadow-2xs"
+                              className="px-2.5 py-1 rounded-lg bg-[#003B3A]/10 hover:bg-[#003B3A]/20 text-[#003B3A] border border-[#003B3A]/20 transition-all cursor-pointer shadow-2xs text-xs font-semibold"
                               title="Xem chi tiết tiết dạy (Detail Drawer)"
                             >
-                              <Eye className="w-3.5 h-3.5" />
+                              Chi tiết
                             </button>
                             {/* Chi tiết / In phiếu */}
                             <button
@@ -4659,20 +4622,20 @@ export function ObservationClient(props: ObservationClientProps) {
                                 const reg = slot.registrations?.[0] || null;
                                 setPrintModalSlot({ slot, registration: reg });
                               }}
-                              className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#008B82] border border-teal-200/80 transition-all cursor-pointer shadow-2xs"
+                              className="px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-[#008B82] border border-teal-200/80 transition-all cursor-pointer shadow-2xs text-xs font-semibold"
                               title="Xem chi tiết & In phiếu đánh giá"
                             >
-                              <Printer className="w-3.5 h-3.5" />
+                              In phiếu
                             </button>
 
                             {/* Sửa tiết dạy */}
                             <button
                               type="button"
                               onClick={() => openEditModal(slot)}
-                              className="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 transition-all cursor-pointer shadow-2xs"
+                              className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 transition-all cursor-pointer shadow-2xs text-xs font-semibold"
                               title="Chỉnh sửa thông tin tiết dạy"
                             >
-                              <Edit className="w-3.5 h-3.5" />
+                              Sửa
                             </button>
 
                             {/* Gửi email nhắc nhở */}
@@ -4689,10 +4652,10 @@ export function ObservationClient(props: ObservationClientProps) {
                                     }
                                   });
                                 }}
-                                className="p-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 transition-all cursor-pointer shadow-2xs"
+                                className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 transition-all cursor-pointer shadow-2xs text-xs font-semibold"
                                 title="Gửi email nhắc nhở nộp phiếu đánh giá"
                               >
-                                <Mail className="w-3.5 h-3.5" />
+                                Nhắc mail
                               </button>
                             )}
 
@@ -4700,10 +4663,10 @@ export function ObservationClient(props: ObservationClientProps) {
                             <button
                               type="button"
                               onClick={() => handleDeleteSlot(slot.id)}
-                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 transition-all cursor-pointer shadow-2xs hover:scale-105"
+                              className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 transition-all cursor-pointer shadow-2xs hover:scale-105 text-xs font-semibold"
                               title={slot.registrations && slot.registrations.length > 0 ? `Xóa tiết dạy (${slot.registrations.length} GV đã đăng ký)` : "Xóa tiết dạy này"}
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              Xóa
                             </button>
                           </div>
                         ) : (
@@ -4712,10 +4675,10 @@ export function ObservationClient(props: ObservationClientProps) {
                             <button
                               type="button"
                               onClick={() => setDrawerSlot(slot)}
-                              className="p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all cursor-pointer shadow-2xs"
+                              className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all cursor-pointer shadow-2xs text-xs font-semibold"
                               title="Xem chi tiết tiết dạy (Detail Drawer)"
                             >
-                              <Eye className="w-3.5 h-3.5 text-[#003B3A]" />
+                              Chi tiết
                             </button>
                             {isHost ? (
                               <div className="flex items-center gap-1.5">
@@ -4725,10 +4688,10 @@ export function ObservationClient(props: ObservationClientProps) {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteSlot(slot.id)}
-                                  className="p-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer shadow-2xs"
+                                  className="px-2.5 py-1 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer shadow-2xs text-xs font-semibold"
                                   title="Xóa tiết dạy của tôi"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  Xóa
                                 </button>
                               </div>
                             ) : isExpired ? (
@@ -4809,7 +4772,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   </>
                 ) : (
                   <>
-                    <Trash2 className="w-4 h-4" />
                     <span>Xóa {selectedSlotIds.length} tiết đã chọn</span>
                   </>
                 )}
@@ -5155,10 +5117,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                     return (
                                       <div key={reg.id} className="flex items-center justify-between gap-2 p-1.5 bg-slate-50 rounded-xl border border-slate-200/80 shadow-2xs">
                                         <div className="flex items-center gap-2 min-w-0 flex-1">
-                                          <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${getAvatarGradient(regName)} text-white flex items-center justify-center font-black text-[10px] shrink-0`}>
-                                            {regName.charAt(0)}
-                                          </div>
-                                          <span className="font-bold text-slate-800 text-xs truncate" title={regName}>
+                                          <span className="font-semibold text-slate-800 text-xs truncate" title={regName}>
                                             {regName}
                                           </span>
                                         </div>
@@ -5203,7 +5162,6 @@ export function ObservationClient(props: ObservationClientProps) {
                                                     }}
                                                     className="px-2 py-0.5 text-[10px] font-black rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
                                                   >
-                                                    <Mail className="w-2.5 h-2.5 text-amber-600" />
                                                     Nhắc mail
                                                   </button>
                                                 </>
@@ -5478,14 +5436,10 @@ export function ObservationClient(props: ObservationClientProps) {
 
                           {/* Giáo viên dạy */}
                           <td className="p-3.5">
-                            <div className="flex items-center gap-2.5">
-                              <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher.teacherName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
-                                {slot.teacher.teacherName.charAt(0)}
-                              </div>
-                              <div>
-                                <span className="font-extrabold text-slate-900 text-xs tracking-tight block">
-                                  {slot.teacher.teacherName}
-                                </span>
+                            <div>
+                              <span className="font-semibold text-slate-900 text-xs tracking-tight block">
+                                {slot.teacher.teacherName}
+                              </span>
                                 <span className="text-[11px] text-slate-400 font-medium">
                                   {slot.teacher?.departmentRel?.name || (departments.find((d: any) => d.id === slot.teacher?.departmentId)?.name) || "TCM"}
                                 </span>
@@ -5575,8 +5529,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                     className="px-2.5 py-1 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer flex items-center gap-1"
                                     title="In phiếu đánh giá chuẩn A4"
                                   >
-                                    <Printer className="w-3.5 h-3.5 text-slate-600" />
-                                    <span className="hidden sm:inline">In phiếu</span>
+                                    <span>In phiếu</span>
                                   </button>
                                   {myReg.evaluation.reEvaluationStatus === "REQUESTED" && (
                                     <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
@@ -5589,7 +5542,6 @@ export function ObservationClient(props: ObservationClientProps) {
                                       onClick={() => openEvalModal(myReg, slot)}
                                       className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs animate-pulse flex items-center gap-1 cursor-pointer"
                                     >
-                                      <RotateCcw className="w-3 h-3" />
                                       <span>Đánh giá lại</span>
                                     </button>
                                   )}
@@ -5644,7 +5596,6 @@ export function ObservationClient(props: ObservationClientProps) {
                                     onClick={() => openEvalModal(myReg, slot)}
                                     className="px-4 py-2 bg-gradient-to-r from-[#008B82] to-teal-700 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5"
                                   >
-                                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                                     <span>Nhập đánh giá</span>
                                   </button>
                                 );
@@ -5847,8 +5798,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     onClick={() => setPrintModalSlot({ slot: evalModal.slot, registration: evalModal.registration })}
                     className="px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white font-bold rounded-xl text-xs transition-all flex items-center gap-1.5 border border-white/20 cursor-pointer shadow-xs"
                   >
-                    <Printer className="w-3.5 h-3.5 text-[#48BFE3]" />
-                    <span className="hidden sm:inline">In phiếu A4</span>
+                    <span>In phiếu A4</span>
                   </button>
                   <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer">
                     <X className="w-5 h-5 text-white/80" />
@@ -5939,7 +5889,6 @@ export function ObservationClient(props: ObservationClientProps) {
                         onClick={handleRestoreDraft}
                         className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                       >
-                        <Sparkles className="w-3.5 h-3.5" />
                         <span>Khôi phục bản nháp</span>
                       </button>
                       <button
@@ -5988,7 +5937,6 @@ export function ObservationClient(props: ObservationClientProps) {
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95"
                               title="Chấm điểm tối đa 20/20 cho toàn bộ 11 tiêu chí"
                             >
-                              <Sparkles className="w-3.5 h-3.5" />
                               <span>Chấm nhanh Max (20/20)</span>
                             </button>
                             <button
@@ -6001,7 +5949,6 @@ export function ObservationClient(props: ObservationClientProps) {
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                               title="Đặt lại toàn bộ về 0 điểm"
                             >
-                              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
                               <span>Đặt lại 0đ</span>
                             </button>
                           </div>
@@ -6216,7 +6163,6 @@ export function ObservationClient(props: ObservationClientProps) {
                             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-600 text-white hover:bg-amber-700 text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95"
                             title="Chấm điểm tối đa 10/10 cho toàn bộ các tiêu chí Mầm non"
                           >
-                            <Sparkles className="w-3.5 h-3.5" />
                             <span>Chấm nhanh Max (10/10)</span>
                           </button>
                           <button
@@ -6229,7 +6175,6 @@ export function ObservationClient(props: ObservationClientProps) {
                             className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200 text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95"
                             title="Đặt lại toàn bộ về 0 điểm"
                           >
-                            <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
                             <span>Đặt lại 0đ</span>
                           </button>
                         </div>
@@ -6633,8 +6578,7 @@ export function ObservationClient(props: ObservationClientProps) {
                               onClick={handleAcknowledgeAndFeedback}
                               className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-900/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60 hover:scale-105 active:scale-95"
                             >
-                              <CheckCheck className="w-4 h-4 text-emerald-200" />
-                              {teacherFeedbackSubmitting ? "Đang xử lý..." : evalModal.registration.evaluation.teacherAcknowledgedAt ? "Cập nhật phản hồi" : "✅ Xác nhận Đã Tiếp Thu Góp Ý & Gửi Phản Hồi"}
+                              {teacherFeedbackSubmitting ? "Đang xử lý..." : evalModal.registration.evaluation.teacherAcknowledgedAt ? "Cập nhật phản hồi" : "Xác nhận Đã Tiếp Thu Góp Ý & Gửi Phản Hồi"}
                             </button>
                           </div>
                         </div>
@@ -6691,7 +6635,6 @@ export function ObservationClient(props: ObservationClientProps) {
                           }}
                           className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black rounded-xl text-xs shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
                           <span>Yêu cầu đánh giá lại</span>
                         </button>
                       )}
@@ -6714,8 +6657,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       disabled={evalSubmitting}
                       className="px-6 py-2.5 bg-gradient-to-r from-[#008B82] to-[#006059] hover:from-[#007068] hover:to-[#004f4a] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer flex items-center gap-2"
                     >
-                      <CheckCircle2 className="w-4 h-4 text-teal-200" />
-                      {evalSubmitting ? "Đang lưu..." : isApprovedForReEval ? "💾 Lưu & Cập nhật biên bản" : isDraft ? "💾 Hoàn thành & nộp biên bản" : "💾 Lưu và hoàn thành biên bản"}
+                      {evalSubmitting ? "Đang lưu..." : isApprovedForReEval ? "Lưu & Cập nhật biên bản" : isDraft ? "Hoàn thành & nộp biên bản" : "Lưu và hoàn thành biên bản"}
                     </button>
                   )}
                 </div>
@@ -6956,7 +6898,6 @@ export function ObservationClient(props: ObservationClientProps) {
                                     }}
                                     className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition-all flex items-center gap-1 cursor-pointer"
                                   >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
                                     <span>Đồng ý</span>
                                   </button>
                                   <button
@@ -6967,7 +6908,6 @@ export function ObservationClient(props: ObservationClientProps) {
                                     }}
                                     className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-black transition-all flex items-center gap-1 cursor-pointer"
                                   >
-                                    <XCircle className="w-3.5 h-3.5" />
                                     <span>Từ chối</span>
                                   </button>
                                 </>

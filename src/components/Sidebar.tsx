@@ -775,7 +775,29 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   {!isCollapsed && <span>5. Sổ điểm/nhận xét</span>}
                 </Link>
 
-                {/* 6. Phân công giảng dạy */}
+                {/* 6. Phân tích chất lượng môn học */}
+                <Link 
+                  href="/teacher/phan-tich-chat-luong" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
+                    pathname.includes('/teacher/phan-tich-chat-luong')
+                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.includes('/teacher/phan-tich-chat-luong')
+                      ? "bg-sky-500/20 border border-sky-500/40 shadow-[0_0_8px_rgba(14,165,233,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-sky-500/30"
+                  }`}>
+                    <BarChart3 className={`w-4 h-4 transition-all ${
+                      pathname.includes('/teacher/phan-tich-chat-luong') ? "text-sky-400" : "text-slate-400 group-hover:text-sky-400 group-hover:scale-110"
+                    }`} />
+                  </div>
+                  {!isCollapsed && <span>6. Phân tích chất lượng môn học</span>}
+                </Link>
+
+                {/* 7. Phân công giảng dạy */}
                 <Link 
                   href="/teacher/phan-cong-giang-day" 
                   onClick={() => setIsOpen(false)} 
@@ -794,7 +816,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/phan-cong-giang-day') ? "text-violet-400" : "text-slate-400 group-hover:text-violet-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>5. Phân công giảng dạy</span>}
+                  {!isCollapsed && <span>7. Phân công giảng dạy</span>}
                 </Link>
 
                 {/* 7. Phụ đạo, bồi dưỡng Học sinh */}
@@ -816,7 +838,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/ho-tro-hoc-tap') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>6. Phụ đạo, bồi dưỡng Học sinh</span>}
+                  {!isCollapsed && <span>8. Phụ đạo, bồi dưỡng Học sinh</span>}
                 </Link>
 
                 {/* 7. Thời khóa biểu */}
@@ -838,7 +860,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/thoi-khoa-bieu') ? "text-amber-400" : "text-slate-400 group-hover:text-amber-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>7. Thời khóa biểu</span>}
+                  {!isCollapsed && <span>9. Thời khóa biểu</span>}
                 </Link>
               </div>
             </>
