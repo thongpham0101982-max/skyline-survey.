@@ -3408,7 +3408,7 @@ export function ObservationClient(props: ObservationClientProps) {
             >
               <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
               <span className="truncate">1. Báo cáo & Thống kê TCM</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "ttcm_summary" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-indigo-200/80 text-indigo-950 border border-indigo-300/80"
@@ -3429,7 +3429,7 @@ export function ObservationClient(props: ObservationClientProps) {
             >
               <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
               <span className="truncate">2. Quản lý Tiết dạy toàn trường</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "overview_slots" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-teal-200/80 text-teal-950 border border-teal-300/80"
@@ -3450,7 +3450,7 @@ export function ObservationClient(props: ObservationClientProps) {
             >
               <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
               <span className="truncate">3. Kết quả đánh giá</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "evaluations" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-violet-200/80 text-violet-950 border border-violet-300/80"
@@ -3472,7 +3472,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
               <span className="truncate">4. Duyệt chấm lại</span>
               {pendingReEvalCount > 0 && (
-                <span className="px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 bg-red-500 text-white border border-white animate-pulse">
+                <span className="px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 bg-red-500 text-white border border-white animate-pulse">
                   {pendingReEvalCount}
                 </span>
               )}
@@ -3494,7 +3494,7 @@ export function ObservationClient(props: ObservationClientProps) {
             >
               <Calendar className={`w-4 h-4 shrink-0 ${activeMainTab === "my_schedule" ? "text-amber-200" : "text-amber-600"}`} />
               <span className="truncate">1. Lịch & Việc của tôi</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "my_schedule" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-amber-200/80 text-amber-950 border border-amber-300/80"
@@ -3515,7 +3515,7 @@ export function ObservationClient(props: ObservationClientProps) {
             >
               <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
               <span className="truncate">2. Danh sách tiết dạy</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "overview_slots" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-teal-200/80 text-teal-950 border border-teal-300/80"
@@ -3536,7 +3536,7 @@ export function ObservationClient(props: ObservationClientProps) {
             >
               <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
               <span className="truncate">3. Kết quả đánh giá</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "evaluations" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-violet-200/80 text-violet-950 border border-violet-300/80"
@@ -3557,7 +3557,7 @@ export function ObservationClient(props: ObservationClientProps) {
             >
               <BarChart3 className={`w-4 h-4 shrink-0 ${activeMainTab === "teacher_report" ? "text-emerald-200" : "text-emerald-600"}`} />
               <span className="truncate">4. Báo cáo thống kê</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                 activeMainTab === "teacher_report" 
                   ? "bg-white/25 text-white border border-white/30" 
                   : "bg-emerald-200/80 text-emerald-950 border border-emerald-300/80"
@@ -3579,7 +3579,7 @@ export function ObservationClient(props: ObservationClientProps) {
               >
                 <LayoutDashboard className={`w-4 h-4 shrink-0 ${activeMainTab === "ttcm_summary" ? "text-indigo-200" : "text-indigo-600"}`} />
                 <span className="truncate">{isTBP ? "5. Báo cáo TBP & Tổ CM" : "5. Báo cáo TTCM"}</span>
-                <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+                <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 ${
                   activeMainTab === "ttcm_summary" 
                     ? "bg-white/25 text-white border border-white/30" 
                     : "bg-indigo-200/80 text-indigo-950 border border-indigo-300/80"
@@ -3603,7 +3603,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 <RotateCcw className={`w-4 h-4 shrink-0 ${activeMainTab === "re_evaluations" ? "text-rose-200" : "text-rose-600"}`} />
                 <span className="truncate">6. Duyệt chấm lại</span>
                 {pendingReEvalCount > 0 && (
-                  <span className="px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 bg-red-500 text-white border border-white animate-pulse">
+                  <span className="px-2 py-0.5 text-[10px] rounded-full font-semibold shrink-0 bg-red-500 text-white border border-white animate-pulse">
                     {pendingReEvalCount}
                   </span>
                 )}
@@ -3940,9 +3940,9 @@ export function ObservationClient(props: ObservationClientProps) {
                                       {slot.topic}
                                     </span>
                                     {isSurpriseSlot(slot) && (
-                                      <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
-                                        ⚡ Đột xuất
-                                      </span>
+                                      <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
+                                    Đột xuất
+                                  </span>
                                     )}
                                   </div>
                                 </div>
@@ -4006,14 +4006,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setActiveFilterTab("all")}
-              className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 activeFilterTab === "all"
                   ? "bg-gradient-to-r from-[#003B3A] to-slate-900 text-white shadow-md shadow-slate-900/30 border border-slate-500/40 scale-[1.02]"
                   : "text-slate-700 bg-white/80 hover:bg-white hover:text-slate-900 border border-slate-200/80"
               }`}
             >
-              <span>⭐ Tất cả</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>Tất cả</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 activeFilterTab === "all" ? "bg-white/25 text-white border border-white/30" : "bg-slate-200 text-slate-800 border border-slate-300"
               }`}>
                 {tabCounts.all}
@@ -4024,14 +4024,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setActiveFilterTab("self_open")}
-              className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 activeFilterTab === "self_open"
                   ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30 border border-emerald-400/40 scale-[1.02]"
                   : "text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200/80"
               }`}
             >
-              <span>✨ Tiết GV Dạy tự mở</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>Tiết GV Dạy tự mở</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 activeFilterTab === "self_open" ? "bg-white/25 text-white border border-white/30" : "bg-emerald-200/80 text-emerald-950 border border-emerald-300"
               }`}>
                 {tabCounts.self_open}
@@ -4042,14 +4042,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setActiveFilterTab("expired")}
-              className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 activeFilterTab === "expired"
                   ? "bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md shadow-rose-600/30 border border-rose-400/40 scale-[1.02]"
                   : "text-rose-900 bg-rose-50/70 hover:bg-rose-100 border border-rose-200/80"
               }`}
             >
-              <span>⏳ Hết hạn</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>Hết hạn</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 activeFilterTab === "expired" ? "bg-white/25 text-white border border-white/30" : "bg-rose-200/80 text-rose-950 border border-rose-300"
               }`}>
                 {tabCounts.expired}
@@ -4060,14 +4060,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setActiveFilterTab("gbm_request")}
-              className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 activeFilterTab === "gbm_request"
                   ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-400/40 scale-[1.02]"
                   : "text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100 border border-indigo-200/80"
               }`}
             >
-              <span>📩 Xin dự giờ</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>Xin dự giờ</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 activeFilterTab === "gbm_request" ? "bg-white/25 text-white border border-white/30" : "bg-indigo-200/80 text-indigo-950 border border-indigo-300"
               }`}>
                 {tabCounts.gbm_request}
@@ -4078,14 +4078,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setActiveFilterTab("my_dept")}
-              className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 activeFilterTab === "my_dept"
                   ? "bg-gradient-to-r from-teal-700 to-emerald-800 text-white shadow-md shadow-teal-900/30 border border-teal-400/40 scale-[1.02]"
                   : "text-teal-950 bg-teal-50/70 hover:bg-teal-100 border border-teal-200/80"
               }`}
             >
-              <span>🏫 Thuộc TCM</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>Thuộc TCM</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 activeFilterTab === "my_dept" ? "bg-white/25 text-white border border-white/30" : "bg-teal-200/80 text-teal-950 border border-teal-300"
               }`}>
                 {tabCounts.my_dept}
@@ -4096,14 +4096,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setActiveFilterTab("other_dept")}
-              className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+              className={`px-3.5 py-2 text-xs font-semibold rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                 activeFilterTab === "other_dept"
                   ? "bg-gradient-to-r from-sky-700 to-blue-800 text-white shadow-md shadow-sky-900/30 border border-sky-400/40 scale-[1.02]"
                   : "text-sky-950 bg-sky-50/70 hover:bg-sky-100 border border-sky-200/80"
               }`}
             >
-              <span>🌐 TCM khác</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>TCM khác</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 activeFilterTab === "other_dept" ? "bg-white/25 text-white border border-white/30" : "bg-sky-200/80 text-sky-950 border border-sky-300"
               }`}>
                 {tabCounts.other_dept}
@@ -4120,7 +4120,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 title="Rà soát và tự động cập nhật lại toàn bộ các tiết Chờ duyệt sang Đã duyệt hoặc Hết hạn"
               >
                 <RotateCcw className={`w-3.5 h-3.5 ${isSyncingStatuses ? "animate-spin" : ""}`} />
-                <span>{isSyncingStatuses ? "Đang đồng bộ..." : "🔄 Rà soát trạng thái"}</span>
+                <span>{isSyncingStatuses ? "Đang đồng bộ..." : "Rà soát trạng thái"}</span>
               </button>
             )}
           </div>
@@ -4158,7 +4158,7 @@ export function ObservationClient(props: ObservationClientProps) {
           {/* 3. Bộ phận (Ban ĐHCM) */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-indigo-500 uppercase flex items-center gap-1">
-              <span>🏢 Bộ phận</span>
+              <span>Bộ phận</span>
             </span>
             <select 
               value={filterDivisionCode} 
@@ -4222,8 +4222,8 @@ export function ObservationClient(props: ObservationClientProps) {
         {activeFilterCount > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             {activeFilterTags.map(tag => (
-              <span key={tag.key} className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl bg-teal-50 text-[#008B82] border border-teal-200">
-                <span>{tag.label}:</span> <span className="font-black">{tag.value}</span>
+              <span key={tag.key} className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-xl bg-teal-50 text-[#008B82] border border-teal-200">
+                <span>{tag.label}:</span> <span className="font-bold">{tag.value}</span>
                 <button onClick={tag.onRemove} className="p-0.5 hover:bg-teal-200/50 rounded-full transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -4393,31 +4393,27 @@ export function ObservationClient(props: ObservationClientProps) {
                             const hasApprovedReg = (slot.registrations || []).some((r: any) => r.isApproved || !!r.evaluation);
                             if (hasApprovedReg || slot.status === "ACTIVE" || slot.status === "COMPLETED") {
                               return (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  <Check className="w-3 h-3 text-emerald-500" />
+                                <span className="inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-semibold uppercase rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
                                   Đã duyệt
                                 </span>
                               );
                             }
                             if (slot.status === "REJECTED") {
                               return (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
-                                  <X className="w-3 h-3 text-rose-500" />
+                                <span className="inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-semibold uppercase rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
                                   Từ chối
                                 </span>
                               );
                             }
                             if (slot.status === "EXPIRED" || isExpired) {
                               return (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase rounded-lg bg-slate-100 text-slate-500 border border-slate-200">
-                                  <Clock className="w-3 h-3 text-slate-400" />
+                                <span className="inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-semibold uppercase rounded-lg bg-slate-100 text-slate-600 border border-slate-200">
                                   Hết hạn
                                 </span>
                               );
                             }
                             return (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
-                                <Clock className="w-3 h-3 text-amber-500" />
+                              <span className="inline-flex items-center justify-center px-2.5 py-1 text-[11px] font-semibold uppercase rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
                                 Chờ duyệt
                               </span>
                             );
@@ -4613,9 +4609,9 @@ export function ObservationClient(props: ObservationClientProps) {
                                   </div>
                                   <span className="font-bold text-slate-700 truncate">{regTeacherName}</span>
                                   {reg.isApproved ? (
-                                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-100 text-emerald-800 shrink-0">Đã duyệt</span>
+                                    <span className="px-2 py-0.5 text-[9px] font-medium rounded bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">Đã duyệt</span>
                                   ) : (
-                                    <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800 shrink-0">Chờ duyệt</span>
+                                    <span className="px-2 py-0.5 text-[9px] font-medium rounded bg-amber-50 text-amber-700 border border-amber-200 shrink-0">Chờ duyệt</span>
                                   )}
                                 </div>
                               );
@@ -4629,16 +4625,15 @@ export function ObservationClient(props: ObservationClientProps) {
                       {/* Cột TRẠNG THÁI */}
                       <td className="p-4 whitespace-nowrap">
                         {isExpired ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-slate-100 text-slate-500 border border-slate-200">
+                          <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold uppercase rounded-xl bg-slate-100 text-slate-600 border border-slate-200">
                             Hết hạn
                           </span>
                         ) : observerCount >= (slot.maxSeats || 4) ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold uppercase rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
                             Xin dự
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold uppercase rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
                             Mở ĐK
                           </span>
                         )}
@@ -4858,14 +4853,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setMyScheduleSubTab("all")}
-              className={`px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                 myScheduleSubTab === "all"
                   ? "bg-[#003B3A] text-white shadow-xs"
                   : "text-slate-600 hover:text-slate-900 bg-white/60"
               }`}
             >
-              <span>🌟 Tất cả</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>Tất cả</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 myScheduleSubTab === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
               }`}>
                 {myTaughtSlots.length + myObservedSlots.length}
@@ -4875,14 +4870,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setMyScheduleSubTab("taught")}
-              className={`px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                 myScheduleSubTab === "taught"
                   ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-xs"
                   : "text-slate-600 hover:text-amber-800 bg-white/60"
               }`}
             >
-              <span>🧑‍🏫 Tiết tôi dạy</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>Tiết tôi dạy</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 myScheduleSubTab === "taught" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"
               }`}>
                 {myTaughtSlots.length}
@@ -4892,14 +4887,14 @@ export function ObservationClient(props: ObservationClientProps) {
             <button
               type="button"
               onClick={() => setMyScheduleSubTab("observed")}
-              className={`px-4 py-2 text-xs font-black rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+              className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                 myScheduleSubTab === "observed"
                   ? "bg-gradient-to-r from-[#008B82] to-teal-700 text-white shadow-xs"
                   : "text-slate-600 hover:text-teal-800 bg-white/60"
               }`}
             >
-              <span>👁️ Tiết tôi đi dự</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+              <span>Tiết tôi đi dự</span>
+              <span className={`px-2 py-0.5 text-[10px] rounded-full font-semibold ${
                 myScheduleSubTab === "observed" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-900"
               }`}>
                 {myObservedSlots.length}
@@ -4929,9 +4924,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       {myTaughtSlots.length} tiết
                     </span>
                     {myTaughtSlots.filter(s => isSurpriseSlot(s)).length > 0 && (
-                      <span className="px-2.5 py-0.5 text-xs font-black bg-rose-50 text-rose-700 rounded-full border border-rose-200 flex items-center gap-1 shadow-2xs">
-                        <span>⚡</span>
-                        <span>{myTaughtSlots.filter(s => isSurpriseSlot(s)).length} đột xuất</span>
+                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-rose-50 text-rose-700 rounded-full border border-rose-200 inline-block shadow-2xs">
+                        {myTaughtSlots.filter(s => isSurpriseSlot(s)).length} đột xuất
                       </span>
                     )}
                   </div>
@@ -4965,7 +4959,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-slate-500 hover:text-teal-800"
                       }`}
                     >
-                      <span>📋 Kế hoạch</span>
+                      <span>Kế hoạch</span>
                       <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => !isSurpriseSlot(s)).length})</span>
                     </button>
                     <button
@@ -4977,7 +4971,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-slate-500 hover:text-rose-700"
                       }`}
                     >
-                      <span>⚡ Đột xuất</span>
+                      <span>Đột xuất</span>
                       <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => isSurpriseSlot(s)).length})</span>
                     </button>
                   </div>
@@ -5004,7 +4998,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-amber-800/80 hover:text-amber-950"
                       }`}
                     >
-                      <span>🍼 ĐG Mầm non</span>
+                      <span>ĐG Mầm non</span>
                       <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).key === "MAM_NON").length})</span>
                     </button>
                     <button
@@ -5016,7 +5010,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-emerald-800/80 hover:text-emerald-950"
                       }`}
                     >
-                      <span>🏫 GV Phổ thông</span>
+                      <span>GV Phổ thông</span>
                       <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => getSlotCategoryInfo(s).key !== "MAM_NON").length})</span>
                     </button>
                   </div>
@@ -5096,7 +5090,6 @@ export function ObservationClient(props: ObservationClientProps) {
                                   className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap min-w-[110px] ${cat.badgeClass}`}
                                   title={cat.label}
                                 >
-                                  <span>{icon}</span>
                                   <span>{cat.shortCode}</span>
                                 </span>
                               );
@@ -5111,8 +5104,8 @@ export function ObservationClient(props: ObservationClientProps) {
                                   {slot.topic}
                                 </p>
                                 {isSurpriseSlot(slot) && (
-                                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
-                                    ⚡ Đột xuất
+                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
+                                    Đột xuất
                                   </span>
                                 )}
                                 {slot.isDoublePeriod && (
@@ -5175,12 +5168,13 @@ export function ObservationClient(props: ObservationClientProps) {
                                               {reg.evaluation ? (
                                                 <div className="flex items-center gap-1.5 flex-wrap">
                                                   {reg.evaluation.reEvaluationStatus === "DRAFT" ? (
-                                                    <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-sky-100 text-sky-950 border border-sky-300 shadow-2xs">
-                                                      📝 Bản nháp
+                                                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs">
+                                                      Bản nháp
                                                     </span>
                                                   ) : (
-                                                    <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-emerald-100 text-emerald-950 border border-emerald-300 shadow-2xs">
-                                                      ⭐ {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                                                      {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                                    
                                                     </span>
                                                   )}
                                                   <button
@@ -5193,8 +5187,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                                 </div>
                                               ) : (
                                                 <>
-                                                  <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                                                    <Check className="w-2.5 h-2.5 text-emerald-600" />
+                                                  <span className="px-2 py-0.5 text-[10px] font-semibold uppercase rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block">
                                                     Đã duyệt
                                                   </span>
                                                   <button
@@ -5297,9 +5290,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       {myObservedSlots.length} tiết
                     </span>
                     {myObservedSlots.filter(s => isSurpriseSlot(s)).length > 0 && (
-                      <span className="px-2.5 py-0.5 text-xs font-black bg-rose-50 text-rose-700 rounded-full border border-rose-200 flex items-center gap-1 shadow-2xs">
-                        <span>⚡</span>
-                        <span>{myObservedSlots.filter(s => isSurpriseSlot(s)).length} đột xuất</span>
+                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-rose-50 text-rose-700 rounded-full border border-rose-200 inline-block shadow-2xs">
+                        {myObservedSlots.filter(s => isSurpriseSlot(s)).length} đột xuất
                       </span>
                     )}
                   </div>
@@ -5333,7 +5325,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-slate-500 hover:text-teal-800"
                       }`}
                     >
-                      <span>📋 Kế hoạch</span>
+                      <span>Kế hoạch</span>
                       <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => !isSurpriseSlot(s)).length})</span>
                     </button>
                     <button
@@ -5345,7 +5337,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-slate-500 hover:text-rose-700"
                       }`}
                     >
-                      <span>⚡ Đột xuất</span>
+                      <span>Đột xuất</span>
                       <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => isSurpriseSlot(s)).length})</span>
                     </button>
                   </div>
@@ -5372,7 +5364,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-sky-800/80 hover:text-sky-950"
                       }`}
                     >
-                      <span>🌐 Giáo viên nước ngoài</span>
+                      <span>GV Nước ngoài</span>
                       <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).key === "GVNN_ESL").length})</span>
                     </button>
                     <button
@@ -5384,7 +5376,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-amber-800/80 hover:text-amber-950"
                       }`}
                     >
-                      <span>🍼 ĐG Mầm non</span>
+                      <span>ĐG Mầm non</span>
                       <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).key === "MAM_NON").length})</span>
                     </button>
                     <button
@@ -5396,7 +5388,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-emerald-800/80 hover:text-emerald-950"
                       }`}
                     >
-                      <span>🏫 GV Phổ thông</span>
+                      <span>GV Phổ thông</span>
                       <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => getSlotCategoryInfo(s).key === "K12").length})</span>
                     </button>
                   </div>
@@ -5478,7 +5470,6 @@ export function ObservationClient(props: ObservationClientProps) {
                                   className={`px-2.5 py-1 rounded-xl text-xs font-black border inline-flex items-center justify-center gap-1 shadow-2xs whitespace-nowrap min-w-[110px] ${cat.badgeClass}`}
                                   title={cat.label}
                                 >
-                                  <span>{icon}</span>
                                   <span>{cat.shortCode}</span>
                                 </span>
                               );
@@ -5510,8 +5501,8 @@ export function ObservationClient(props: ObservationClientProps) {
                                   {slot.topic}
                                 </p>
                                 {isSurpriseSlot(slot) && (
-                                  <span className="px-1.5 py-0.5 text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
-                                    ⚡ Đột xuất
+                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
+                                    Đột xuất
                                   </span>
                                 )}
                                 {slot.isDoublePeriod && (
@@ -5546,13 +5537,11 @@ export function ObservationClient(props: ObservationClientProps) {
                           {/* Trạng thái duyệt */}
                           <td className="p-3.5 text-center">
                             {myReg?.isApproved ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-black uppercase rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-semibold uppercase rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
                                 Đã duyệt
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-black uppercase rounded-xl bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
-                                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                              <span className="inline-flex items-center justify-center px-3 py-1 text-xs font-semibold uppercase rounded-xl bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
                                 Chờ duyệt
                               </span>
                             )}
@@ -5564,12 +5553,13 @@ export function ObservationClient(props: ObservationClientProps) {
                               <div className="flex flex-col gap-1.5 py-0.5">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   {myReg.evaluation.reEvaluationStatus === "DRAFT" ? (
-                                    <span className="px-2.5 py-1 rounded-xl bg-sky-100 text-sky-950 font-black text-xs border border-sky-300 shadow-2xs">
-                                      📝 Bản nháp
+                                    <span className="px-2.5 py-1 rounded-xl bg-sky-50 text-sky-700 font-semibold text-xs border border-sky-200 shadow-2xs">
+                                      Bản nháp
                                     </span>
                                   ) : (
-                                    <span className="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-950 font-black text-xs border border-emerald-300 shadow-2xs">
-                                      ⭐ {myReg.evaluation.overallRating || myReg.evaluation.rating || "Đã đánh giá"} {myReg.evaluation.totalScore != null && Number(myReg.evaluation.totalScore) > 0 ? `(${Number(myReg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                    <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-xs border border-emerald-200 shadow-2xs">
+                                      {myReg.evaluation.overallRating || myReg.evaluation.rating || "Đã đánh giá"} {myReg.evaluation.totalScore != null && Number(myReg.evaluation.totalScore) > 0 ? `(${Number(myReg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                    
                                     </span>
                                   )}
                                   <button
@@ -5638,10 +5628,9 @@ export function ObservationClient(props: ObservationClientProps) {
                                 if (monthStatus === "FUTURE") {
                                   return (
                                     <div className="flex flex-col gap-1 items-start">
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold shadow-2xs" title="Chưa đến tháng diễn ra tiết dạy">
-                                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                        <span>Chưa đến hạn</span>
-                                      </span>
+                                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 border border-slate-200 text-xs font-semibold shadow-2xs" title="Chưa đến tháng diễn ra tiết dạy">
+                                         <span>Chưa đến hạn</span>
+                                       </span>
                                       <span className="text-[10px] text-slate-400 italic">
                                         Đánh giá vào tháng {!isNaN(slotD.getTime()) ? `${slotD.getMonth() + 1}/${slotD.getFullYear()}` : "tới"}
                                       </span>
@@ -5656,7 +5645,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                     className="px-4 py-2 bg-gradient-to-r from-[#008B82] to-teal-700 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5"
                                   >
                                     <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                                    <span>✍️ Nhập đánh giá</span>
+                                    <span>Nhập đánh giá</span>
                                   </button>
                                 );
                               })()
@@ -5668,12 +5657,11 @@ export function ObservationClient(props: ObservationClientProps) {
                           {/* Thao tác */}
                           <td className="p-3.5 text-right">
                             {myReg?.evaluation ? (
-                              <span className="text-xs text-emerald-700 font-extrabold flex items-center justify-end gap-1">
-                                <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                                Hoàn thành
-                              </span>
+                              <span className="px-2.5 py-1 text-xs text-emerald-700 font-semibold rounded-lg bg-emerald-50 border border-emerald-200 inline-block">
+                                 Hoàn thành
+                               </span>
                             ) : myReg?.isApproved ? (
-                              <span className="px-2.5 py-1 text-[11px] font-bold rounded-xl bg-slate-100 text-slate-500 border border-slate-200 inline-block shadow-2xs" title="Tiết dạy đã được duyệt, không thể tự ý hủy">
+                              <span className="px-2.5 py-1 text-[11px] font-semibold rounded-xl bg-slate-100 text-slate-500 border border-slate-200 inline-block shadow-2xs" title="Tiết dạy đã được duyệt, không thể tự ý hủy">
                                 Đã duyệt (Không thể hủy)
                               </span>
                             ) : (
@@ -6656,7 +6644,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           {evalModal.registration.evaluation.teacherAcknowledgedAt ? (
                             <div className="p-3.5 bg-emerald-50/50 rounded-xl border border-emerald-200 text-slate-800 space-y-1.5">
                               <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900">
-                                <span>👨‍🏫 Phản hồi từ Giáo viên dạy ({evalModal.slot.teacher?.teacherName}):</span>
+                                <span>Phản hồi từ Giáo viên dạy ({evalModal.slot.teacher?.teacherName}):</span>
                                 <span className="text-slate-500 font-medium">
                                   {new Date(evalModal.registration.evaluation.teacherAcknowledgedAt).toLocaleString("vi-VN")}
                                 </span>
