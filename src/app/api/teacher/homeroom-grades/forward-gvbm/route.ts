@@ -49,8 +49,7 @@ export async function POST(request: Request) {
       include: {
         class: {
           include: {
-            campus: true,
-            homeroomTeacher: true
+            campus: true
           }
         }
       }
@@ -190,7 +189,7 @@ export async function POST(request: Request) {
         })
 
         if (gvbm?.userId) {
-          const homeroomName = student.class?.homeroomTeacher?.teacherName || session?.user?.name || "GVCN"
+          const homeroomName = session?.user?.name || "GVCN"
           const className = student.class?.className || "Lớp"
           const cleanSnippet = parentFeedbackText ? `"${parentFeedbackText.slice(0, 100)}..."` : "Ý kiến cần phối hợp"
 
@@ -234,7 +233,7 @@ export async function POST(request: Request) {
         })
 
         if (gvbm?.userId) {
-          const homeroomName = student.class?.homeroomTeacher?.teacherName || session?.user?.name || "GVCN"
+          const homeroomName = session?.user?.name || "GVCN"
           const className = student.class?.className || "Lớp"
 
           await prisma.notification.create({
