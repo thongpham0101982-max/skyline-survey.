@@ -6,7 +6,11 @@ import { retrieveKnowledge } from "../rag/retriever";
 import { getStudentExamAnalysis, getClassExamAnalysis } from "../tools/examAnalysisTool";
 import { getTeacherObservationAnalysis } from "../tools/observationAnalysisTool";
 import { getStudentAdvisoryAnalysis } from "../tools/advisoryAnalysisTool";
+import { generateSmartStudentComment, CommentStyle } from "../tools/smartCommentTool";
+import { generateExecutiveReport, ReportType } from "../tools/executiveReportTool";
+import { calculateStudentHealthIndex, calculateClassHealthMatrix } from "../analytics/healthIndexEngine";
 import { PERSONAS } from "@/lib/assistant/personas";
+
 
 export async function processAIOptimizedQuery(
   rawQuery: string,
@@ -152,6 +156,108 @@ export async function processAIOptimizedQuery(
     }
 
     // ========================================================================
+    // WAVE 3: AI SMART COMMENT GENERATOR (Nhận xét học bạ 360°)
+    // ========================================================================
+    else if (intent === "SMART_COMMENT") {
+      toolsUsed.push("generateSmartStudentComment");
+
+      let style: CommentStyle = "ENCOURAGING";
+      if (query.includes("khen thưởng") || query.includes("bứt phá") || query.includes("xuất sắc")) {
+        style = "COMMENDATORY";
+      } else if (query.includes("nghiêm túc") || query.includes("rèn luyện") || query.includes("kỷ luật")) {
+        style = "CONSTRUCTIVE";
+      }
+
+      // Tách tên học sinh từ truy vấn nếu có
+      let studentIdentifier = userContext.studentId || "";
+      const cleanName = query.replace(/(soạn|gợi ý|thảo|viết|nhận xét|học bạ|học kỳ|cho|học sinh|em|bạn|phong cách|khích lệ|khen thưởng|bứt phá|nghiêm túc|rèn luyện|đồng hành)/gi, "").trim();
+
+      if (cleanName.length >= 2) {
+        studentIdentifier = cleanName;
+      }
+
+      if (!studentIdentifier) {
+        responseText = `### ✍️ Trợ Lý Soạn Thảo Nhận Xét Học Bạ 360°\n\nThầy/Cô vui lòng nhập kèm **Tên** hoặc **Mã số** của học sinh cần soạn nhận xét.\n\n*Ví dụ: "Soạn nhận xét cho học sinh Nguyễn Văn A phong cách khích lệ" hoặc "Gợi ý nhận xét cho mã HS 24001".*`;
+      } else {
+        const commentRes = await generateSmartStudentComment(studentIdentifier, userContext, style);
+        responseText = commentRes.markdown;
+        analyticsContext = { module: "SMART_COMMENT", style: commentRes.styleUsed, metrics: commentRes.metricsSummary };
+      }
+    }
+
+    // ========================================================================
+    // WAVE 3: ONE-CLICK EXECUTIVE PDF / REPORT EXPORT
+    // ========================================================================
+    else if (intent === "EXECUTIVE_REPORT") {
+      toolsUsed.push("generateExecutiveReport");
+
+      let reportType: ReportType = "CLASS_ACADEMIC_REPORT";
+      if (query.includes("dự giờ") || query.includes("tiêu chí") || query.includes("tiết dạy")) {
+        reportType = "OBSERVATION_MATRIX_REPORT";
+      } else if (query.includes("rủi ro") || query.includes("sức khỏe") || query.includes("audit") || query.includes("ews")) {
+        reportType = "HOLISTIC_HEALTH_AUDIT_REPORT";
+      }
+
+      const targetId = userContext.classId || userContext.teacherId || "";
+      if (!targetId && reportType !== "OBSERVATION_MATRIX_REPORT") {
+        responseText = `### 📑 Trợ Lý Xuất Báo Cáo Điều Hành\n\nVui lòng chọn một lớp học cụ thể hoặc chỉ định mã lớp để xuất báo cáo phân tích chuẩn Sky-Line.\n\n*Ví dụ: Thầy/Cô có thể vào trang Lớp chủ nhiệm hoặc Sổ điểm rồi nhấn yêu cầu.*`;
+      } else {
+        const reportRes = await generateExecutiveReport(reportType, targetId, userContext);
+        responseText = reportRes.markdown;
+        analyticsContext = { module: "EXECUTIVE_REPORT", type: reportRes.reportType, printUrl: reportRes.printUrl };
+      }
+    }
+
+    // ========================================================================
+    // WAVE 3: AI EARLY WARNING SYSTEM (EWS) & STUDENT HEALTH INDEX
+    // ========================================================================
+    else if (intent === "HEALTH_INDEX") {
+      toolsUsed.push(userContext.studentId ? "calculateStudentHealthIndex" : "calculateClassHealthMatrix");
+
+      if (userContext.studentId) {
+        const health = await calculateStudentHealthIndex(userContext.studentId);
+        if (!health) {
+          responseText = "⚠️ Không tìm thấy dữ liệu sức khỏe học tập của học sinh.";
+        } else {
+          responseText =
+            `### 🛡️ Chỉ Số Sức Khỏe Học Tập Toàn Diện (HHI) — ${health.studentName} (${health.className})\n\n` +
+            `- **Điểm Tổng Hợp HHI**: **${health.hhiScore} / 100** — ${health.tierLabel}\n\n` +
+            `#### 📊 Phân Rã 4 Trọng Số Cốt Lõi:\n` +
+            `| Trọng số | Trụ cột đánh giá | Điểm số | Trạng thái |\n` +
+            `| :--- | :--- | :--- | :--- |\n` +
+            `| 40% | 📚 Điểm Học Lực & Benchmark | **${health.components.academicScore}/100** | ĐTB: ${health.rawMetrics.avgScore || "N/A"} (${health.rawMetrics.belowBenchmarkCount} môn dưới chuẩn) |\n` +
+            `| 25% | 🎯 Khoảng Cách Mục Tiêu GAP | **${health.components.gapScore}/100** | Tỷ lệ đạt: ${Math.round(health.rawMetrics.completedGoalsRatio * 100)}% |\n` +
+            `| 20% | ⏳ Tiến Độ Gỡ Rào Cản 7 Ngày | **${health.components.barrierScore}/100** | Hoàn thành: ${Math.round(health.rawMetrics.resolvedBarriersRatio * 100)}% |\n` +
+            `| 15% | 🤝 Tương Tác & Cảm Xúc Hỗ Trợ | **${health.components.wellbeingScore}/100** | SOS chưa xử lý: ${health.rawMetrics.pendingUrgentHelpCount} |\n\n` +
+            `---\n\n` +
+            `#### 💡 Đề Xuất Phác Đồ Can Thiệp:\n` +
+            `${health.insights.recommendedIntervention}\n`;
+        }
+      } else if (userContext.classId) {
+        const matrix = await calculateClassHealthMatrix(userContext.classId);
+        if (!matrix) {
+          responseText = "⚠️ Không thể phân tích ma trận sức khỏe học sinh của lớp.";
+        } else {
+          const redList = matrix.students.filter(s => s.tier === "RED").map(s => `- 🔴 **${s.studentName}** (\`${s.studentCode}\`): HHI **${s.hhiScore}/100**`).join("\n");
+          const yellowList = matrix.students.filter(s => s.tier === "YELLOW").slice(0, 5).map(s => `- 🟡 **${s.studentName}** (\`${s.studentCode}\`): HHI **${s.hhiScore}/100**`).join("\n");
+
+          responseText =
+            `### 🛡️ Ma Trận Sức Khỏe Học Tập (HHI) — ${matrix.className}\n\n` +
+            `> 📊 **Điểm Sức Khỏe Trung Bình Của Lớp**: **${matrix.averageHHI} / 100** | **Tổng sĩ số**: ${matrix.totalStudents} HS\n\n` +
+            `#### 🚦 Phân Bố Theo Mức Độ Rủi Ro:\n` +
+            `- 🟢 **Xanh (Tự chủ tốt)**: **${matrix.distribution.greenCount} HS** (${matrix.distribution.greenPercent}%)\n` +
+            `- 🟡 **Vàng (Cần lưu tâm)**: **${matrix.distribution.yellowCount} HS** (${matrix.distribution.yellowPercent}%)\n` +
+            `- 🔴 **Đỏ (Nguy cơ tụt dốc)**: **${matrix.distribution.redCount} HS** (${matrix.distribution.redPercent}%)\n\n` +
+            (redList ? `#### 🚨 Học Sinh Nhóm Đỏ (Cần hành động khẩn cấp):\n${redList}\n\n` : "") +
+            (yellowList ? `#### ⚠️ Học Sinh Nhóm Vàng (Đang theo dõi):\n${yellowList}\n\n` : "") +
+            `Thầy/Cô có thể gõ *"Xuất báo cáo kiểm toán rủi ro"* để lấy bản in PDF chi tiết cho Ban Giám Hiệu.`;
+        }
+      } else {
+        responseText = `### 🛡️ Trợ Lý Hệ Thống Cảnh Báo Sớm (EWS)\n\nThầy/Cô vui lòng chỉ định lớp học để phân tích Ma trận Sức khỏe Học tập Toàn diện (HHI) dựa trên 4 trọng số thực tế.`;
+      }
+    }
+
+    // ========================================================================
     // GENERAL INQUIRY (Chào hỏi, Nghiệp vụ chung & Native Fallback)
     // ========================================================================
     else {
@@ -182,22 +288,25 @@ export async function processAIOptimizedQuery(
           responseText = nativeResponse;
           toolsUsed.push("nativeEngineFallback");
         } else {
-          responseText = `Xin chào! Tôi là **${persona.name}** (${persona.badge}) của Hệ thống Giáo dục Sky-Line.\n\nTrong Wave 1, tôi sẵn sàng hỗ trợ Thầy/Cô và Em 4 năng lực cốt lõi:\n` +
-            `1. 📖 **Tra cứu Quy chế & Quy trình SSM**: Điểm chuẩn benchmark, định mức dự giờ 11 tiêu chí, quy trình mở khóa sổ điểm.\n` +
-            `2. 📈 **Phân tích Kết quả Kiểm tra**: Phổ điểm, tỷ lệ đạt chuẩn, so sánh các kỳ kiểm tra định kỳ.\n` +
-            `3. 📋 **Phân tích Hoạt động Dự giờ**: Điểm trung bình 11 tiêu chí, nhận xét ưu điểm và tiêu chí cần bồi dưỡng.\n` +
-            `4. 🎯 **Hồ sơ Cố vấn & Mục tiêu SMART**: Đánh giá khoảng chênh GAP, kế hoạch 7 ngày gỡ khó, cảnh báo học sinh Xanh/Vàng/Đỏ.\n\n` +
+          responseText = `Xin chào! Tôi là **${persona.name}** (${persona.badge}) của Hệ thống Giáo dục Sky-Line.\n\nTôi sẵn sàng đồng hành cùng Thầy/Cô và Em với các nhóm năng lực nâng cao:\n` +
+            `1. 📖 **Tra cứu Quy chế & Quy trình SSM**: Benchmark chất lượng, 11 tiêu chí dự giờ, quy trình mở khóa sổ điểm.\n` +
+            `2. 📈 **Phân tích Kiểm tra & Sổ điểm**: Phổ điểm, tỷ lệ đạt chuẩn, cảnh báo nộp trễ hạn.\n` +
+            `3. 🎯 **Cố vấn & Sức khỏe Học tập (HHI)**: Chỉ số 0-100, kế hoạch 7 ngày, phát hiện sớm nguy cơ Xanh/Vàng/Đỏ.\n` +
+            `4. ✍️ **Sinh Nhận Xét Học Bạ 360°**: Cá nhân hóa theo 3 phong cách (Khích lệ, Khen thưởng, Rèn luyện).\n` +
+            `5. 📑 **Xuất Báo Cáo Điều Hành PDF**: Báo cáo phổ điểm, ma trận dự giờ và rà soát rủi ro toàn diện.\n\n` +
             `Thầy/Cô và Em có thể chọn nhanh một câu hỏi gợi ý bên dưới hoặc nhập câu hỏi trực tiếp!`;
         }
       } catch {
-        responseText = `Xin chào! Tôi là **${persona.name}** (${persona.badge}) của Hệ thống Giáo dục Sky-Line.\n\nTrong Wave 1, tôi sẵn sàng hỗ trợ Thầy/Cô và Em 4 năng lực cốt lõi:\n` +
-          `1. 📖 **Tra cứu Quy chế & Quy trình SSM**: Điểm chuẩn benchmark, định mức dự giờ 11 tiêu chí, quy trình mở khóa sổ điểm.\n` +
-          `2. 📈 **Phân tích Kết quả Kiểm tra**: Phổ điểm, tỷ lệ đạt chuẩn, so sánh các kỳ kiểm tra định kỳ.\n` +
-          `3. 📋 **Phân tích Hoạt động Dự giờ**: Điểm trung bình 11 tiêu chí, nhận xét ưu điểm và tiêu chí cần bồi dưỡng.\n` +
-          `4. 🎯 **Hồ sơ Cố vấn & Mục tiêu SMART**: Đánh giá khoảng chênh GAP, kế hoạch 7 ngày gỡ khó, cảnh báo học sinh Xanh/Vàng/Đỏ.\n\n` +
+        responseText = `Xin chào! Tôi là **${persona.name}** (${persona.badge}) của Hệ thống Giáo dục Sky-Line.\n\nTôi sẵn sàng đồng hành cùng Thầy/Cô và Em với các nhóm năng lực nâng cao:\n` +
+          `1. 📖 **Tra cứu Quy chế & Quy trình SSM**: Benchmark chất lượng, 11 tiêu chí dự giờ, quy trình mở khóa sổ điểm.\n` +
+          `2. 📈 **Phân tích Kiểm tra & Sổ điểm**: Phổ điểm, tỷ lệ đạt chuẩn, cảnh báo nộp trễ hạn.\n` +
+          `3. 🎯 **Cố vấn & Sức khỏe Học tập (HHI)**: Chỉ số 0-100, kế hoạch 7 ngày, phát hiện sớm nguy cơ Xanh/Vàng/Đỏ.\n` +
+          `4. ✍️ **Sinh Nhận Xét Học Bạ 360°**: Cá nhân hóa theo 3 phong cách (Khích lệ, Khen thưởng, Rèn luyện).\n` +
+          `5. 📑 **Xuất Báo Cáo Điều Hành PDF**: Báo cáo phổ điểm, ma trận dự giờ và rà soát rủi ro toàn diện.\n\n` +
           `Thầy/Cô và Em có thể chọn nhanh một câu hỏi gợi ý bên dưới hoặc nhập câu hỏi trực tiếp!`;
       }
     }
+
   } catch (err: any) {
     console.error("AI Orchestrator Error:", err);
     responseText = `⚠️ Đã xảy ra lỗi trong quá trình xử lý: ${err.message || "Vui lòng thử lại sau ít phút."}`;

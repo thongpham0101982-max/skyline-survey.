@@ -7,12 +7,16 @@ export type AIIntent =
   | "EXAM_ANALYSIS"
   | "OBSERVATION_ANALYSIS"
   | "ADVISORY_ANALYSIS"
+  | "SMART_COMMENT"
+  | "EXECUTIVE_REPORT"
+  | "HEALTH_INDEX"
   | "ACTION_REQUEST"
   | "STUDENT_QUERY"
   | "TEACHER_QUERY"
   | "REPORT"
   | "SSM_GUIDE"
   | "GENERAL_INQUIRY";
+
 
 export interface AIUserContext {
   userId?: string;

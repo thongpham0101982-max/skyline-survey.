@@ -17,6 +17,49 @@ export function classifyIntent(query: string, currentPath: string = ""): AIInten
     return "ACTION_REQUEST";
   }
 
+  // Wave 3.1: AI Smart Comment & Narrative Insights Generator
+  if (
+    q.includes("soạn nhận xét") ||
+    q.includes("gợi ý nhận xét") ||
+    q.includes("nhận xét học kỳ") ||
+    q.includes("nhận xét học bạ") ||
+    q.includes("nhận xét cho học sinh") ||
+    q.includes("lời phê") ||
+    q.includes("viết nhận xét") ||
+    q.includes("phong cách khích lệ") ||
+    q.includes("phong cách khen thưởng") ||
+    q.includes("phong cách rèn luyện")
+  ) {
+    return "SMART_COMMENT";
+  }
+
+  // Wave 3.2: One-Click Executive PDF / Report Export
+  if (
+    q.includes("xuất báo cáo") ||
+    q.includes("tải báo cáo") ||
+    q.includes("in báo cáo") ||
+    q.includes("báo cáo điều hành") ||
+    q.includes("báo cáo tổng hợp") ||
+    (q.includes("báo cáo") && (q.includes("pdf") || q.includes("phổ điểm") || q.includes("in ấn") || q.includes("toàn diện")))
+  ) {
+    return "EXECUTIVE_REPORT";
+  }
+
+  // Wave 3.3: AI Early Warning System (EWS) & Student Holistic Health Index
+  if (
+    q.includes("chỉ số sức khỏe") ||
+    q.includes("sức khỏe học tập") ||
+    q.includes("hhi") ||
+    q.includes("early warning") ||
+    q.includes("cảnh báo sớm") ||
+    q.includes("ma trận rủi ro") ||
+    q.includes("kiểm toán rủi ro") ||
+    q.includes("phân loại rủi ro")
+  ) {
+    return "HEALTH_INDEX";
+  }
+
+
   // 1. Phân biệt rõ: Câu hỏi về quy định, quy chế, văn bản, hướng dẫn, định mức chung -> KNOWLEDGE_SEARCH (RAG)
   // Trừ khi câu hỏi đang hỏi số liệu thực tế: "học sinh nào", "con có môn nào", "của em", "lớp của tôi", "danh sách"
   const isAskingRegulation = (

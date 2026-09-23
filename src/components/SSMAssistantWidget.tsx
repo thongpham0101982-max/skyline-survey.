@@ -106,42 +106,46 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
     if (role === "TEACHER") {
       if (pathname.includes("/diem-lop-chu-nhiem") || pathname.includes("/classes")) {
         return [
+          { text: "Tính chỉ số sức khỏe học tập HHI của lớp chủ nhiệm", label: "🛡️ Sức khỏe học tập (HHI)" },
+          { text: "Xuất báo cáo phân tích chất lượng học tập của lớp", label: "📑 Xuất báo cáo PDF" },
+          { text: "Soạn nhận xét học kỳ cho học sinh phong cách khích lệ", label: "✍️ Soạn nhận xét 360°" },
           { text: "Lớp có những học sinh nào dưới điểm chuẩn benchmark?", label: "Học sinh dưới chuẩn" },
-          { text: "Thống kê tiến độ nhập điểm và phổ điểm của lớp", label: "Tiến độ vào điểm" },
-          { text: "So sánh điểm giữa kỳ và cuối kỳ của học sinh trong lớp", label: "So sánh GK - CK" },
           { text: "Quy chế điểm chuẩn benchmark học tập Sky-Line", label: "Quy chế Benchmark" }
         ]
       }
       if (pathname.includes("/co-van-hoc-tap") || pathname.includes("/ho-so-hoc-sinh")) {
         return [
+          { text: "Soạn nhận xét học kỳ cho học sinh phong cách khích lệ", label: "✍️ Soạn nhận xét 360°" },
+          { text: "Tính chỉ số sức khỏe học tập HHI của lớp chủ nhiệm", label: "🛡️ Chỉ số sức khỏe HHI" },
+          { text: "Xuất báo cáo kiểm toán rủi ro học tập của lớp", label: "🚨 Báo cáo rủi ro PDF" },
           { text: "Lớp chủ nhiệm có học sinh nào ở trạng thái Vàng hoặc Đỏ?", label: "Cảnh báo Vàng/Đỏ" },
-          { text: "Có học sinh nào gửi yêu cầu trợ giúp cần xử lý không?", label: "Yêu cầu trợ giúp mới" },
-          { text: "Học sinh nào đã mở khóa sổ mục tiêu trên 3 lần?", label: "Mở khóa > 3 lần" },
-          { text: "Gợi ý hành động trong kế hoạch 7 ngày gỡ khó cho học sinh", label: "Kế hoạch 7 ngày" },
-          { text: "Soạn thảo gợi ý nhận xét học kỳ cho học sinh", label: "Dự thảo nhận xét HS" }
+          { text: "Có học sinh nào gửi yêu cầu trợ giúp cần xử lý không?", label: "Yêu cầu trợ giúp mới" }
         ]
       }
       if (pathname.includes("/so-diem-nhan-xet") || pathname.includes("/phan-tich-chat-luong")) {
         return [
+          { text: "Soạn nhận xét học kỳ cho học sinh phong cách khích lệ", label: "✍️ Soạn nhận xét 360°" },
           { text: "Phổ điểm và tỷ lệ đạt Benchmark môn tôi phụ trách", label: "Phổ điểm môn dạy" },
-          { text: "Quy trình xin mở khóa sổ điểm trên hệ thống SSM", label: "Quy trình mở khóa điểm" },
-          { text: "Soạn thảo gợi ý nhận xét học kỳ cho học sinh", label: "Gợi ý nhận xét HS" }
+          { text: "Quy trình xin mở khóa sổ điểm trên hệ thống SSM", label: "Quy trình mở khóa điểm" }
         ]
       }
       if (pathname.includes("/du-gio")) {
         return [
+          { text: "Xuất báo cáo tổng kết hoạt động dự giờ", label: "📑 Báo cáo dự giờ PDF" },
           { text: "Tôi đã đi dự giờ đủ chỉ tiêu tháng này chưa?", label: "Chỉ tiêu dự giờ tháng" },
           { text: "Xem nhận xét ưu điểm và góp ý các tiết dạy của tôi", label: "Nhận xét tiết dạy của tôi" },
           { text: "Quy định đánh giá dự giờ 11 tiêu chí sư phạm và định mức tháng", label: "Quy định Dự giờ 11 TC" }
         ]
       }
       return [
+        { text: "Tính chỉ số sức khỏe học tập HHI của lớp chủ nhiệm", label: "🛡️ Chỉ số sức khỏe HHI" },
+        { text: "Soạn nhận xét học kỳ cho học sinh phong cách khích lệ", label: "✍️ Soạn nhận xét 360°" },
         { text: "Danh sách học sinh lớp chủ nhiệm cần lưu ý đặc biệt", label: "Học sinh diện lưu ý" },
         { text: "Kiểm tra tiến độ nhập điểm các lớp tôi phụ trách", label: "Tiến độ sổ điểm" },
-        { text: "Kiểm tra chỉ tiêu dự giờ cá nhân trong tháng", label: "Chỉ tiêu dự giờ" },
         { text: "Quy chế điểm chuẩn benchmark học tập Sky-Line", label: "Quy chế Benchmark" }
       ]
     }
+
 
     // 3. Tổ Trưởng Chuyên Môn (TTCM)
     if (role === "TTCM") {
@@ -368,10 +372,32 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
       return tableHtml
     })
 
+    // Code blocks ```text ... ```
+    html = html.replace(/```(?:text|markdown)?\s*([\s\S]*?)```/g, (_m, code) => {
+      const cleanCode = code.trim()
+      return `<div class="my-2 p-3 bg-slate-900 text-teal-300 font-mono rounded-xl border border-slate-800 text-[11px] leading-relaxed relative overflow-x-auto whitespace-pre-wrap select-all cursor-pointer shadow-xs" title="Nhấp để bôi đen/sao chép">${cleanCode}</div>`
+    })
+
+    // Inline code `code`
+    html = html.replace(/`([^`]+)`/g, "<code class='px-1.5 py-0.5 bg-slate-100 text-teal-800 rounded text-[11px] font-mono font-bold border border-slate-200'>$1</code>")
+
+    // Markdown Links [text](url)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "<a href='$2' target='_blank' rel='noopener noreferrer' class='inline-flex items-center gap-1 text-teal-700 hover:text-teal-900 font-bold underline decoration-teal-500 underline-offset-2 hover:bg-teal-50 px-1 py-0.5 rounded transition-colors'>$1 ↗</a>")
+
+    // Blockquotes &gt; text
+    html = html.replace(/^&gt;\s+(.*)$/gm, "<blockquote class='border-l-4 border-teal-600 bg-teal-50/50 pl-3 py-1 my-1.5 text-slate-700 italic rounded-r text-xs'>$1</blockquote>")
+
+    // Collapsible &lt;details&gt; & &lt;summary&gt;
+    html = html.replace(/&lt;details&gt;/g, "<details class='my-1.5 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs'>")
+      .replace(/&lt;\/details&gt;/g, "</details>")
+      .replace(/&lt;summary&gt;/g, "<summary class='cursor-pointer font-bold text-slate-700 hover:text-teal-700 select-none'>")
+      .replace(/&lt;\/summary&gt;/g, "</summary>")
+
     // Newlines
     html = html.replace(/\n/g, "<br />")
 
     return (
+
       <div
         dangerouslySetInnerHTML={{ __html: html }}
         className="prose prose-sm max-w-none text-xs md:text-sm leading-relaxed"
