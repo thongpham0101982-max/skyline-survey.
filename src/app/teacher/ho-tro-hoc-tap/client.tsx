@@ -1406,7 +1406,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
       // Normalize keeping Tiếng Việt and Ngữ Văn distinct, passing student's className
       const normalizedSubs = Array.from(new Set(rawSubs.map((sub: string) => normalizeSubjectNameClient(sub, s.className))));
 
-      normalizedSubs.forEach((sub: string) => {
+      normalizedSubs.forEach((sub: any) => {
         const rowId = `${s.id}___${sub}`;
         const isMatchedTeacher = (s.matchedSubjects || []).some((ms: string) => normalizeSubjectNameClient(ms, s.className) === sub);
         const score = getScoreForSubject(s, sub);
@@ -1781,6 +1781,49 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     });
   }, [filteredTargets, summaryCategoryFilter, summaryMonthFilter, summaryLevelFilter]);
 
+  // Danh sách học sinh hỗ trợ tâm lý chuẩn lấy từ danh mục Hỗ trợ học tập từ Admin (LearningSupportTarget có supportType === "PSYCHOLOGICAL")
+  const psychologicalTargetsList = useMemo(() => {
+    const rawPsychTargets = (targets || []).filter((t: any) => t.supportType === "PSYCHOLOGICAL");
+
+    return rawPsychTargets.map((t: any) => {
+      const matchAssessment = (psychologicalStudents || []).find((ps: any) =>
+        ps.studentId === t.studentId ||
+        (ps.studentCode && ps.studentCode === t.student?.studentCode)
+      );
+
+      const counselorNames = (t.assignments || []).map((a: any) => a.teacher?.teacherName).filter(Boolean);
+      const counselorDisplay = counselorNames.length > 0
+        ? counselorNames.join(", ")
+        : (t.createdBy?.teacherName || matchAssessment?.counselorName || "Chưa phân công");
+
+      return {
+        id: t.id,
+        targetId: t.id,
+        studentId: t.studentId,
+        studentCode: t.student?.studentCode || matchAssessment?.studentCode || "",
+        studentName: t.student?.studentName || matchAssessment?.studentName || "",
+        gender: t.student?.gender || matchAssessment?.gender || "",
+        dateOfBirth: t.student?.dateOfBirth,
+        classId: t.student?.classId || t.student?.class?.id || matchAssessment?.classId || "",
+        className: (t.student?.class?.className || matchAssessment?.className || "").split(/[_-]/)[0],
+        fullClassName: t.student?.class?.className || matchAssessment?.className || "",
+        campusId: t.student?.class?.campusId || matchAssessment?.campusId || "",
+        campusName: t.student?.class?.campus?.campusName || matchAssessment?.campusName || "Sky-Line",
+        counselorName: counselorDisplay,
+        counselorRole: counselorNames.length > 0 ? "GV / Chuyên viên tham vấn" : (matchAssessment?.counselorRole || "Chuyên viên tham vấn"),
+        startDate: t.startDate || t.createdAt,
+        reason: t.reason || t.notes || matchAssessment?.reason || "Tâm lý",
+        notes: t.notes || "",
+        status: t.status || "TIẾP TỤC THEO TUẦN",
+        terminationStatus: t.terminationStatus || "ACTIVE",
+        evaluations: t.evaluations || [],
+        target: t,
+        psychologyAssessment: matchAssessment?.psychologyAssessment || null,
+        totalScore: matchAssessment?.totalScore ?? null
+      };
+    });
+  }, [targets, psychologicalStudents]);
+
   // Count approved proposals submitted by this teacher
   const approvedHistoryCount = useMemo(() => {
     return targets.filter((t: any) => 
@@ -2105,7 +2148,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               ? "bg-white text-purple-950 shadow-sm"
               : "bg-purple-100 text-purple-900 border border-purple-200"
           }`}>
-            {psychologicalStudents.length}
+            {psychologicalTargetsList.length}
           </span>
         </button>
 
@@ -2350,14 +2393,17 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         </div>
       ) : activeSubTab === "psychology" ? (
         <PsychologicalEvaluationLogTab
-          students={psychologicalStudents}
+          students={psychologicalTargetsList}
           homeroomClasses={homeroomClasses}
           assignedClasses={assignedClasses}
           academicYearName={academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"}
           academicYearId={selectedYearId}
           teacher={teacher}
           roleFilter={roleFilter}
-          onRefresh={fetchPsychologicalStudents}
+          onRefresh={() => {
+            fetchTeacherData()
+            fetchPsychologicalStudents()
+          }}
         />
       ) : activeSubTab === "assigned" ? (
         <div className="space-y-4">

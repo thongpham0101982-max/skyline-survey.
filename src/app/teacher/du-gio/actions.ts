@@ -1328,6 +1328,91 @@ export async function cancelObservation(targetId: string) {
   }
 }
 
+// Helper phân quyền quản trị tiết dạy (Áp dụng cho Ban ĐHCM, GĐCS, TBP, TTCM)
+async function canUserManageSlot(userId: string, userRole: string, slot: any): Promise<boolean> {
+  const cleanRole = (userRole || "").toUpperCase().trim();
+  const isSuperOrBanDHCM = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "SUPERADMIN", "KT_DBCL", "BAN_DHCM"].includes(cleanRole);
+  if (isSuperOrBanDHCM) return true;
+
+  const currentTeacher = await prisma.teacher.findUnique({
+    where: { userId },
+    include: {
+      departmentAssignments: true,
+      divisionAssignments: true,
+      departmentRel: true
+    }
+  });
+  if (!currentTeacher) return false;
+
+  // Nếu là chính GV tạo slot:
+  if (slot.teacherId === currentTeacher.id) return true;
+
+  const pos = (currentTeacher.position || "").toUpperCase();
+  const allPositions: string[] = [pos];
+  if (currentTeacher.positions) {
+    try {
+      const parsed = typeof currentTeacher.positions === "string" ? JSON.parse(currentTeacher.positions) : currentTeacher.positions;
+      if (Array.isArray(parsed)) parsed.forEach(p => allPositions.push(String(p).toUpperCase()));
+    } catch {}
+  }
+  currentTeacher.departmentAssignments?.forEach((da: any) => { if (da.position) allPositions.push(String(da.position).toUpperCase()); });
+  currentTeacher.divisionAssignments?.forEach((da: any) => { if (da.position) allPositions.push(String(da.position).toUpperCase()); });
+
+  // 1. Ban ĐHCM / BGH
+  const isBanDHCM = ["BAN_DHCM", "TB_DHCM", "TRUONG_BAN_DHCM", "PHO_BAN_DHCM", "QLCM", "BGH", "BAN GIAM HIEU"].some(k => 
+    allPositions.some(p => p.includes(k)) || cleanRole.includes(k)
+  );
+  if (isBanDHCM) return true;
+
+  // 2. GĐCS: Quản lý các tiết thuộc Cơ sở đó
+  const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "PGDCS", "PGĐCS", "GIÁM ĐỐC CƠ SỞ"].some(k => 
+    allPositions.some(p => p.includes(k)) || cleanRole.includes(k)
+  );
+  if (isGDCS) {
+    const slotTeacher = slot.teacher || await prisma.teacher.findUnique({ where: { id: slot.teacherId }, select: { campusId: true } });
+    if (slot.campusId === currentTeacher.campusId || slotTeacher?.campusId === currentTeacher.campusId) {
+      return true;
+    }
+  }
+
+  // 3. TBP: Quản lý các TCM trực thuộc Bộ phận
+  const isTBP = ["TBP", "TRUONG_BO_PHAN", "TRUONG_BOPHAN", "PHO_BO_PHAN", "TRƯỞNG BỘ PHẬN"].some(k => 
+    allPositions.some(p => p.includes(k)) || cleanRole.includes(k)
+  );
+  if (isTBP) {
+    const myDivCodes = new Set<string>();
+    currentTeacher.divisionAssignments?.forEach((da: any) => { if (da.divisionCode) myDivCodes.add(normalizeDivisionCode(da.divisionCode)); });
+    const slotTeacher = slot.teacher || await prisma.teacher.findUnique({ 
+      where: { id: slot.teacherId }, 
+      include: { departmentRel: true } 
+    });
+    const slotDivCode = normalizeDivisionCode(slotTeacher?.departmentRel?.divisionCode || "");
+    if (slotDivCode && myDivCodes.has(slotDivCode)) {
+      return true;
+    }
+  }
+
+  // 4. TTCM: Tổ nào thì quản lý được Tổ đó
+  const isTTCM = ["TTCM", "TỔ TRƯỞNG", "TO_TRUONG", "TỔ PHÓ", "TO_PHO", "TPCM"].some(k => 
+    allPositions.some(p => p.includes(k)) || cleanRole.includes(k)
+  );
+  if (isTTCM) {
+    const myDeptIds = new Set<string>();
+    if (currentTeacher.departmentId) myDeptIds.add(currentTeacher.departmentId);
+    currentTeacher.departmentAssignments?.forEach((da: any) => {
+      if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM", "TPTCM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
+        myDeptIds.add(da.departmentId);
+      }
+    });
+    const slotTeacher = slot.teacher || await prisma.teacher.findUnique({ where: { id: slot.teacherId }, select: { departmentId: true } });
+    if ((slotTeacher?.departmentId && myDeptIds.has(slotTeacher.departmentId)) || (slot.targetDeptId && myDeptIds.has(slot.targetDeptId))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export async function deleteObservationSlot(slotId: string) {
   try {
     invalidateObservationSlotsCache();
@@ -1337,26 +1422,23 @@ export async function deleteObservationSlot(slotId: string) {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isObsAdmin = await checkIsObservationAdmin(roleCode, session.user.id);
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "SUPER_ADMIN", "BAN_DHCM"].includes(roleCode) || isObsAdmin;
-
-    let currentTeacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id }
-    })
-
     const slot = await prisma.observationSlot.findUnique({
-      where: { id: slotId }
+      where: { id: slotId },
+      include: { teacher: { include: { departmentRel: true } } }
     })
 
     if (!slot) {
       return { success: false, error: "Không tìm thấy thông tin tiết dạy" }
     }
 
-    if (currentTeacher && slot.teacherId !== currentTeacher.id && !isAdmin) {
-      return { success: false, error: "Thầy/Cô chỉ có thể hủy tiết dạy do chính mình khởi tạo" }
+    const hasManagePerm = await canUserManageSlot(session.user.id, roleCode, slot);
+    if (!hasManagePerm) {
+      return { success: false, error: "Thầy/Cô không có thẩm quyền xóa hoặc quản lý tiết dạy này" };
     }
 
-    if (!isAdmin) {
+    const cleanRole = (roleCode || "").toUpperCase().trim();
+    const isSuperOrBanDHCM = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "SUPERADMIN", "KT_DBCL", "BAN_DHCM"].includes(cleanRole);
+    if (!isSuperOrBanDHCM) {
       const hasEvaluations = await prisma.observationEvaluation.count({
         where: { registration: { slotId } }
       });
@@ -1402,28 +1484,21 @@ export async function deleteMultipleObservationSlots(slotIds: string[]) {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isObsAdmin = await checkIsObservationAdmin(roleCode, session.user.id);
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "SUPER_ADMIN", "BAN_DHCM"].includes(roleCode) || isObsAdmin;
+    const slots = await prisma.observationSlot.findMany({
+      where: { id: { in: slotIds } },
+      include: { teacher: { include: { departmentRel: true } } }
+    });
 
-    let currentTeacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id }
-    })
-
-    // If not admin, verify all slots belong to current teacher
-    if (!isAdmin) {
-      if (!currentTeacher) {
-        return { success: false, error: "Không tìm thấy thông tin giáo viên" }
+    for (const slot of slots) {
+      const hasPerm = await canUserManageSlot(session.user.id, roleCode, slot);
+      if (!hasPerm) {
+        return { success: false, error: `Thầy/Cô không có thẩm quyền xóa tiết dạy "${slot.topic}" do không thuộc phạm vi quản lý của Thầy/Cô` };
       }
-      const foreignSlotsCount = await prisma.observationSlot.count({
-        where: {
-          id: { in: slotIds },
-          teacherId: { not: currentTeacher.id }
-        }
-      });
-      if (foreignSlotsCount > 0) {
-        return { success: false, error: "Thầy/Cô chỉ có thể xóa các tiết dạy do chính mình khởi tạo" }
-      }
+    }
 
+    const cleanRole = (roleCode || "").toUpperCase().trim();
+    const isSuperOrBanDHCM = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "SUPERADMIN", "KT_DBCL", "BAN_DHCM"].includes(cleanRole);
+    if (!isSuperOrBanDHCM) {
       const hasEvaluations = await prisma.observationEvaluation.count({
         where: { registration: { slotId: { in: slotIds } } }
       });

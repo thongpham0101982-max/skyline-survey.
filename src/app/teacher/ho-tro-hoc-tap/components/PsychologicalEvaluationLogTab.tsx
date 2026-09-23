@@ -5,7 +5,7 @@ import { useState, useMemo } from "react"
 import {
   Brain, Heart, Search, Filter, Download, Printer, Eye, Sparkles, 
   User, Clock, CheckCircle2, AlertCircle, TrendingUp, AlertTriangle,
-  ChevronRight, ArrowUpDown, Calendar, HelpCircle, FileText
+  ChevronRight, ArrowUpDown, Calendar, HelpCircle, FileText, Compass
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { formatDateSafe } from "../client"
@@ -41,15 +41,15 @@ export function PsychologicalEvaluationLogTab({
   // Role-filtered students: in HOMEROOM mode, strictly only keep students of homeroomClasses
   const roleFilteredStudents = useMemo(() => {
     if (roleFilter === "HOMEROOM") {
-      const hrIds = new Set(homeroomClasses.map((c: any) => c.id));
-      return students.filter(s => hrIds.has(s.classId));
+      const hrIds = new Set(homeroomClasses.map((c: any) => c.id))
+      return students.filter(s => hrIds.has(s.classId))
     }
     if (roleFilter === "ASSIGNED") {
-      const hrIds = new Set(homeroomClasses.map((c: any) => c.id));
-      return students.filter(s => !hrIds.has(s.classId));
+      const hrIds = new Set(homeroomClasses.map((c: any) => c.id))
+      return students.filter(s => !hrIds.has(s.classId))
     }
-    return students;
-  }, [students, roleFilter, homeroomClasses]);
+    return students
+  }, [students, roleFilter, homeroomClasses])
 
   // Derive classes available for filtering strictly under current role
   const availableClasses = useMemo(() => {
@@ -75,15 +75,28 @@ export function PsychologicalEvaluationLogTab({
   // 1. Statistics Summary Cards (strictly on roleFilteredStudents)
   const stats = useMemo(() => {
     const total = roleFilteredStudents.length
-    const needAttention = roleFilteredStudents.filter(s => 
-      s.status === "CẦN THEO DÕI" || s.status === "CẦN CAN THIỆP" || (s.totalScore !== null && s.totalScore < 0)
-    ).length
-    const stable = roleFilteredStudents.filter(s => 
-      s.status === "ĐÃ ỔN ĐỊNH" || s.status === "BÌNH THƯỜNG" || s.status === "HOÀN THÀNH" || (s.totalScore === 0)
-    ).length
-    const supporting = roleFilteredStudents.filter(s => s.status === "ĐANG HỖ TRỢ" || s.status === "ĐANG THEO DÕI").length
+    
+    // Cần theo dõi & Can thiệp: trạng thái can thiệp / chuyên sâu / cần theo dõi / điểm âm
+    const needAttention = roleFilteredStudents.filter(s => {
+      const st = (s.status || "").toUpperCase()
+      return st.includes("CAN THIỆP") || st.includes("CHUYÊN SÂU") || st.includes("CẦN THEO DÕI") || (s.totalScore !== null && s.totalScore < 0)
+    }).length
 
-    return { total, needAttention, stable, supporting }
+    // Đã ổn định / Bình thường: trạng thái ổn định / bình thường / kết thúc
+    const stable = roleFilteredStudents.filter(s => {
+      const st = (s.status || "").toUpperCase()
+      return st.includes("ỔN ĐỊNH") || st.includes("BÌNH THƯỜNG") || st.includes("KẾT THÚC") || st.includes("TERMINATED")
+    }).length
+
+    // Đang theo dõi / Hỗ trợ: các trạng thái đang hoạt động còn lại
+    const supporting = total - needAttention - stable
+
+    return { 
+      total, 
+      needAttention, 
+      stable, 
+      supporting: supporting >= 0 ? supporting : 0 
+    }
   }, [roleFilteredStudents])
 
   // 2. Filter students
@@ -96,12 +109,17 @@ export function PsychologicalEvaluationLogTab({
 
       // Status filter
       if (selectedStatusFilter !== "ALL") {
+        const st = (item.status || "").toUpperCase()
         if (selectedStatusFilter === "NEED_ATTENTION") {
-          if (item.status !== "CẦN THEO DÕI" && item.status !== "CẦN CAN THIỆP" && (item.totalScore === null || item.totalScore >= 0)) return false
+          if (!st.includes("CAN THIỆP") && !st.includes("CHUYÊN SÂU") && !st.includes("CẦN THEO DÕI") && (item.totalScore === null || item.totalScore >= 0)) return false
         } else if (selectedStatusFilter === "STABLE") {
-          if (item.status !== "ĐÃ ỔN ĐỊNH" && item.status !== "BÌNH THƯỜNG" && item.status !== "HOÀN THÀNH") return false
+          if (!st.includes("ỔN ĐỊNH") && !st.includes("BÌNH THƯỜNG") && !st.includes("KẾT THÚC") && !st.includes("TERMINATED")) return false
         } else if (selectedStatusFilter === "SUPPORTING") {
-          if (item.status !== "ĐANG HỖ TRỢ" && item.status !== "ĐANG THEO DÕI") return false
+          if (st.includes("CAN THIỆP") || st.includes("CHUYÊN SÂU") || st.includes("CẦN THEO DÕI") || st.includes("ỔN ĐỊNH") || st.includes("BÌNH THƯỜNG") || st.includes("KẾT THÚC")) return false
+        } else if (selectedStatusFilter === "WEEKLY") {
+          if (!st.includes("THEO TUẦN")) return false
+        } else if (selectedStatusFilter === "ONGOING") {
+          if (!st.includes("THEO DÕI")) return false
         }
       }
 
@@ -118,7 +136,7 @@ export function PsychologicalEvaluationLogTab({
 
       return true
     })
-  }, [students, selectedClassFilter, selectedStatusFilter, searchTerm])
+  }, [roleFilteredStudents, selectedClassFilter, selectedStatusFilter, searchTerm])
 
   // Export Excel
   const handleExportExcel = () => {
@@ -131,18 +149,16 @@ export function PsychologicalEvaluationLogTab({
       "Giới tính": s.gender === "FEMALE" ? "Nữ" : "Nam",
       "Lớp": s.className,
       "Cơ sở": s.campusName,
-      "GV Phụ trách Tâm lý": s.counselorName,
-      "Vai trò": s.counselorRole,
-      "Ngày đánh giá": formatDateSafe(s.startDate),
-      "Đánh giá của GV Tâm lý": s.reason,
-      "Tổng điểm khảo sát": s.totalScore != null ? `${s.totalScore} đ` : "Chưa có",
-      "Trạng thái": s.status
+      "GV / Chuyên viên tham vấn": s.counselorName,
+      "Bắt đầu theo dõi": formatDateSafe(s.startDate),
+      "Vấn đề / Lý do hỗ trợ": s.reason || s.notes || "Tâm lý",
+      "Trạng thái": s.status || "Tiếp tục theo dõi"
     }))
 
     const ws = XLSX.utils.json_to_sheet(exportData)
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, "Nhat_ky_danh_gia_tam_ly")
-    XLSX.writeFile(wb, `Nhat_ky_danh_gia_tam_ly_${academicYearName.replace(/\s+/g, "_")}.xlsx`)
+    XLSX.writeFile(wb, `Danh_sach_tam_ly_${academicYearName.replace(/\s+/g, "_")}.xlsx`)
   }
 
   const handleOpenDetail = (student: any) => {
@@ -152,7 +168,7 @@ export function PsychologicalEvaluationLogTab({
 
   return (
     <div className="space-y-5">
-      {/* 4 KPI Metric Cards */}
+      {/* 4 KPI Metric Cards: Synchronized with Screenshot 2 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="bg-gradient-to-br from-purple-900 to-indigo-900 text-white p-5 rounded-3xl shadow-sm space-y-2">
           <div className="flex justify-between items-start">
@@ -221,7 +237,7 @@ export function PsychologicalEvaluationLogTab({
               >
                 <option value="ALL">Tất cả lớp ({availableClasses.length} lớp)</option>
                 {availableClasses.map(c => {
-                  const studentCount = students.filter(s => s.classId === c.id).length
+                  const studentCount = roleFilteredStudents.filter(s => s.classId === c.id).length
                   return (
                     <option key={c.id} value={c.id}>
                       {c.className} {studentCount > 0 ? `(${studentCount} HS)` : ""}
@@ -240,9 +256,11 @@ export function PsychologicalEvaluationLogTab({
                 className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20"
               >
                 <option value="ALL">Tất cả trạng thái</option>
-                <option value="NEED_ATTENTION">🔴 Cần theo dõi & can thiệp</option>
-                <option value="STABLE">🟢 Đã ổn định / Bình thường</option>
-                <option value="SUPPORTING">🔵 Đang hỗ trợ / Đang theo dõi</option>
+                <option value="WEEKLY">🟣 Tiếp tục theo tuần</option>
+                <option value="ONGOING">🟣 Tiếp tục theo dõi</option>
+                <option value="NEED_ATTENTION">🔴 Cần theo dõi & can thiệp / chuyên sâu</option>
+                <option value="STABLE">🟢 Đã ổn định / Kết thúc bồi dưỡng</option>
+                <option value="SUPPORTING">🔵 Đang hỗ trợ</option>
               </select>
             </div>
           </div>
@@ -255,7 +273,7 @@ export function PsychologicalEvaluationLogTab({
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                placeholder="Tìm tên, mã HS, GV, nhận xét..."
+                placeholder="Tìm tên, mã HS, GV tham vấn, lý do..."
                 className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 outline-none focus:ring-2 focus:ring-purple-500/20"
               />
             </div>
@@ -281,7 +299,7 @@ export function PsychologicalEvaluationLogTab({
         </div>
       </div>
 
-      {/* Main 8-Column Data Table */}
+      {/* Main 8-Column Data Table: Synchronized with Admin Screenshot 1 */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[1000px]">
@@ -290,10 +308,10 @@ export function PsychologicalEvaluationLogTab({
                 <th className="py-3.5 px-4 text-center w-12">STT</th>
                 <th className="py-3.5 px-4 min-w-[200px]">Học sinh</th>
                 <th className="py-3.5 px-4 min-w-[140px]">Lớp & Cơ sở</th>
-                <th className="py-3.5 px-4 min-w-[180px]">GV Phụ trách Môn Tâm lý</th>
-                <th className="py-3.5 px-4 min-w-[120px]">Ngày đánh giá</th>
-                <th className="py-3.5 px-4 min-w-[250px]">Kết quả đánh giá của GV Tâm lý</th>
-                <th className="py-3.5 px-4 text-center min-w-[130px]">Trạng thái</th>
+                <th className="py-3.5 px-4 min-w-[190px]">GV / Chuyên viên tham vấn</th>
+                <th className="py-3.5 px-4 text-center min-w-[130px]">Bắt đầu theo dõi</th>
+                <th className="py-3.5 px-4 min-w-[220px]">Vấn đề / Lý do hỗ trợ</th>
+                <th className="py-3.5 px-4 text-center min-w-[170px]">Trạng thái</th>
                 <th className="py-3.5 px-4 text-center min-w-[160px]">Xem chi tiết kết quả</th>
               </tr>
             </thead>
@@ -303,13 +321,18 @@ export function PsychologicalEvaluationLogTab({
                   <td colSpan={8} className="py-14 text-center text-slate-400 space-y-2">
                     <Brain className="h-10 w-10 text-purple-300 mx-auto opacity-70" />
                     <p className="font-bold text-slate-600 text-sm">Không có học sinh đánh giá tâm lý nào phù hợp bộ lọc</p>
-                    <p className="text-xs text-slate-400">Dữ liệu được lọc tự động theo các lớp Thầy/Cô được phân công chủ nhiệm.</p>
+                    <p className="text-xs text-slate-400">Dữ liệu được lấy trực tiếp từ Danh sách Hỗ trợ Tâm lý từ Admin theo các lớp Thầy/Cô phụ trách.</p>
                   </td>
                 </tr>
               ) : (
                 filteredStudents.map((item, idx) => {
-                  const isNegative = item.totalScore !== null && item.totalScore < 0
-                  const isAttention = item.status === "CẦN THEO DÕI" || item.status === "CẦN CAN THIỆP" || isNegative
+                  const st = (item.status || "").toUpperCase()
+                  const isWeekly = st.includes("THEO TUẦN")
+                  const isOngoing = st.includes("THEO DÕI")
+                  const isIntensive = st.includes("CHUYÊN SÂU")
+                  const isTerminated = st.includes("KẾT THÚC") || st.includes("TERMINATED")
+                  const isIntervention = st.includes("CAN THIỆP") || (item.totalScore !== null && item.totalScore < 0)
+                  const isStable = st.includes("ỔN ĐỊNH") || st.includes("BÌNH THƯỜNG")
 
                   return (
                     <tr 
@@ -333,8 +356,12 @@ export function PsychologicalEvaluationLogTab({
                             </div>
                             <div className="font-mono text-[10px] text-purple-600 font-semibold flex items-center gap-1.5 mt-0.5">
                               <span>{item.studentCode}</span>
-                              <span>•</span>
-                              <span>{item.gender === "FEMALE" ? "Nữ" : (item.gender === "MALE" ? "Nam" : "")}</span>
+                              {item.gender && (
+                                <>
+                                  <span>•</span>
+                                  <span>{item.gender === "FEMALE" ? "Nữ" : "Nam"}</span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -344,90 +371,90 @@ export function PsychologicalEvaluationLogTab({
                       <td className="py-3.5 px-4">
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-black text-slate-900">{item.className}</span>
+                            <span className="font-black text-slate-900">Lớp {item.className}</span>
                             <span className="bg-teal-100 text-teal-800 text-[9px] font-black px-1.5 py-0.2 rounded border border-teal-200">
                               Lớp chủ nhiệm
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-500 font-medium">
-                            {item.campusName || "Sky-Line"}
+                          <p className="text-[11px] text-teal-700 font-semibold">
+                            {item.campusName || "CSS"}
                           </p>
                         </div>
                       </td>
 
-                      {/* 4. GV Phụ trách Môn Tâm lý */}
+                      {/* 4. GV / Chuyên viên tham vấn: Đồng bộ Screenshot 1 */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 bg-purple-100 text-purple-700 rounded-lg shrink-0">
-                            <User className="h-3.5 w-3.5" />
-                          </div>
-                          <div>
-                            <span className="font-bold text-slate-900 block text-xs">
-                              {item.counselorName}
-                            </span>
-                            <span className="text-[10px] text-purple-600 font-semibold">
-                              {item.counselorRole || "GV Môn Tâm lý"}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* 5. Bắt đầu theo dõi / Ngày đánh giá */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5 text-slate-600">
-                          <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                          <span className="font-medium text-xs">
-                            {formatDateSafe(item.startDate)}
+                        <div className="space-y-0.5">
+                          <span className="font-bold text-indigo-900 bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-100/80 inline-block text-[11px]">
+                            {item.counselorName}
                           </span>
-                        </div>
-                      </td>
-
-                      {/* 6. Kết quả đánh giá của GV Tâm lý */}
-                      <td className="py-3.5 px-4">
-                        <div className="max-w-[280px]">
-                          <p className="font-semibold text-slate-800 line-clamp-2 leading-snug" title={item.reason}>
-                            {item.reason}
-                          </p>
-                          {item.totalScore != null && (
-                            <span className={`inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold border ${
-                              isNegative
-                                ? "bg-rose-50 text-rose-700 border-rose-200"
-                                : "bg-purple-50 text-purple-700 border-purple-200"
-                            }`}>
-                              Tổng điểm khảo sát: {item.totalScore} đ
-                            </span>
+                          {item.counselorRole && (
+                            <p className="text-[10px] text-slate-400 font-medium pl-0.5">
+                              {item.counselorRole}
+                            </p>
                           )}
                         </div>
                       </td>
 
-                      {/* 7. Trạng thái */}
+                      {/* 5. Bắt đầu theo dõi: Đồng bộ Screenshot 1 */}
                       <td className="py-3.5 px-4 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black border shadow-2xs ${
-                          isAttention
-                            ? "bg-rose-50 text-rose-800 border-rose-200"
-                            : item.status === "ĐÃ ỔN ĐỊNH" || item.status === "BÌNH THƯỜNG" || item.status === "HOÀN THÀNH"
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                            : "bg-sky-50 text-sky-800 border-sky-200"
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            isAttention
-                              ? "bg-rose-500 animate-pulse"
-                              : item.status === "ĐÃ ỔN ĐỊNH" || item.status === "BÌNH THƯỜNG" || item.status === "HOÀN THÀNH"
-                              ? "bg-emerald-500"
-                              : "bg-sky-500 animate-pulse"
-                          }`} />
-                          {item.status}
-                        </span>
+                        <div className="flex items-center justify-center gap-1.5 text-slate-600 font-semibold text-xs">
+                          <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                          <span>{formatDateSafe(item.startDate)}</span>
+                        </div>
                       </td>
 
-                      {/* 8. Xem chi tiết kết quả đánh giá */}
+                      {/* 6. Vấn đề / Lý do hỗ trợ: Đồng bộ Screenshot 1 */}
+                      <td className="py-3.5 px-4 max-w-[240px]">
+                        <p className="text-slate-700 font-medium truncate text-xs" title={item.reason || item.notes || "Tâm lý"}>
+                          {item.reason || item.notes || "Tâm lý"}
+                        </p>
+                      </td>
+
+                      {/* 7. Trạng thái: Đồng bộ chính xác Screenshot 1 */}
+                      <td className="py-3.5 px-4 text-center">
+                        {isIntensive ? (
+                          <span className="px-2.5 py-1 rounded-full bg-fuchsia-100 text-fuchsia-800 font-black text-[10px] border border-fuchsia-200 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-500 animate-pulse" />
+                            XÂY DỰNG KẾ HOẠCH HỖ TRỢ CHUYÊN SÂU
+                          </span>
+                        ) : isTerminated ? (
+                          <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-black text-[10px] border border-slate-200 inline-flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3 h-3 text-slate-500" />
+                            KẾT THÚC BỒI DƯỠNG
+                          </span>
+                        ) : isIntervention ? (
+                          <span className="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 font-black text-[10px] border border-rose-200 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                            CẦN THEO DÕI
+                          </span>
+                        ) : isWeekly ? (
+                          <span className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-800 font-black text-[10px] border border-violet-200/70 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                            TIẾP TỤC THEO TUẦN
+                          </span>
+                        ) : isStable ? (
+                          <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px] border border-emerald-200 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            ĐÃ ỔN ĐỊNH
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 font-black text-[10px] border border-purple-200 inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" />
+                            {item.status || "TIẾP TỤC THEO DÕI"}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* 8. Xem chi tiết kết quả: Mở Modal Tiến trình 10 tháng */}
                       <td className="py-3.5 px-4 text-center">
                         <button
                           type="button"
                           onClick={() => handleOpenDetail(item)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer group-hover:scale-105"
+                          title="Xem tiến trình đánh giá 10 tháng"
                         >
-                          <Eye className="h-3.5 w-3.5" />
+                          <Compass className="h-3.5 w-3.5 text-purple-200" />
                           <span>Xem chi tiết</span>
                         </button>
                       </td>
@@ -440,7 +467,7 @@ export function PsychologicalEvaluationLogTab({
         </div>
       </div>
 
-      {/* Detail Modal Component */}
+      {/* Detail Modal Component: 10-Month Progress Modal */}
       <PsychologicalDetailModal
         isOpen={isDetailModalOpen}
         onClose={() => {
