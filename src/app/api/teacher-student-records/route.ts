@@ -905,8 +905,8 @@ export async function GET(req: Request) {
           sc.subject?.name?.toLowerCase().includes("tâm lý")
         )
 
-        // Only include students who have a psychological score OR a psychological support target
-        if (!psychScoreRecord && !primaryTarget) {
+        // Only include students who have an official psychological support target from "Danh sách Học sinh Đang được Hỗ trợ Tâm lý"
+        if (!primaryTarget) {
           continue
         }
 

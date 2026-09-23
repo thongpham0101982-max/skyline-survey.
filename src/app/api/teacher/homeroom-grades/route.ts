@@ -433,7 +433,7 @@ export async function GET(request: Request) {
     const studentIds = students.map(s => s.id)
     const periodTags = targetPeriodFilter.map(p => `[GradePeriod: ${p}]`)
 
-    const [inputAssessments, learningCommitments, consultationLogs] = await Promise.all([
+    const [inputAssessments, learningCommitments, consultationLogs, psychologicalTargets] = await Promise.all([
       prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes }
@@ -466,8 +466,44 @@ export async function GET(request: Request) {
           OR: periodTags.map(tag => ({ notes: { contains: tag } }))
         },
         orderBy: { updatedAt: "desc" }
+      }).catch(() => []),
+      prisma.learningSupportTarget.findMany({
+        where: {
+          studentId: { in: studentIds },
+          academicYearId: targetYearId,
+          supportType: "PSYCHOLOGICAL"
+        },
+        include: {
+          assignments: {
+            include: {
+              teacher: { select: { id: true, teacherName: true } }
+            }
+          },
+          evaluations: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          },
+          createdBy: { select: { id: true, teacherName: true } }
+        }
       }).catch(() => [])
     ])
+
+    const psychologyMap = new Map<string, any>()
+    psychologicalTargets.forEach((pt: any) => {
+      const counselorNames = (pt.assignments || []).map((a: any) => a.teacher?.teacherName).filter(Boolean)
+      const counselorDisplay = counselorNames.length > 0
+        ? counselorNames.join(", ")
+        : (pt.createdBy?.teacherName || "Chuyên viên tham vấn")
+
+      psychologyMap.set(pt.studentId, {
+        id: pt.id,
+        reason: pt.reason || pt.notes || "Hỗ trợ Tâm lý học đường",
+        counselorName: counselorDisplay,
+        status: pt.status || "Đang theo dõi",
+        terminationStatus: pt.terminationStatus || "ACTIVE",
+        latestEvaluation: pt.evaluations?.[0] || null
+      })
+    })
 
     const inputMap = new Map<string, any>()
     inputAssessments.forEach(ia => {
@@ -610,6 +646,8 @@ export async function GET(request: Request) {
         isEntranceCommitted,
         inputAssessment: inputInfo || null,
         learningCommitments: commitments,
+        isPsychologySupport: psychologyMap.has(st.id),
+        psychologySupport: psychologyMap.get(st.id) || null,
         teacherRemark: exchangeMap.get(st.id)?.teacherRemark || "",
         teacherRemarkDate: exchangeMap.get(st.id)?.teacherRemarkDate || null,
         parentFeedback: exchangeMap.get(st.id)?.parentFeedback || "",
@@ -626,7 +664,8 @@ export async function GET(request: Request) {
       st.belowAverageCount > 0 || 
       st.belowBenchmarkCount > 0 || 
       st.isEntranceCommitted || 
-      st.learningCommitments.length > 0
+      st.learningCommitments.length > 0 ||
+      st.isPsychologySupport
     )
 
     return NextResponse.json({
@@ -662,6 +701,7 @@ export async function GET(request: Request) {
         trackingStudentsCount: trackingStudents.length,
         entranceCommittedCount: studentMatrix.filter(s => s.isEntranceCommitted).length,
         learningCommittedCount: studentMatrix.filter(s => s.learningCommitments.length > 0).length,
+        psychologySupportCount: studentMatrix.filter(s => s.isPsychologySupport).length,
         parentFeedbackSummary: {
           totalFeedbackCount: studentMatrix.filter(s => Boolean(s.parentFeedback)).length,
           acknowledgedCount: studentMatrix.filter(s => Boolean(s.parentFeedback) && s.isAcknowledged).length,

@@ -1781,11 +1781,14 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
     });
   }, [filteredTargets, summaryCategoryFilter, summaryMonthFilter, summaryLevelFilter]);
 
-  // Danh sách học sinh hỗ trợ tâm lý chuẩn lấy từ danh mục Hỗ trợ học tập từ Admin (LearningSupportTarget có supportType === "PSYCHOLOGICAL")
+  // Danh sách học sinh hỗ trợ tâm lý chuẩn: kết hợp LearningSupportTarget (Admin) và Hồ sơ Đánh giá Tâm lý
   const psychologicalTargetsList = useMemo(() => {
-    const rawPsychTargets = (targets || []).filter((t: any) => t.supportType === "PSYCHOLOGICAL");
+    const list: any[] = [];
+    const seenStudentIds = new Set<string>();
 
-    return rawPsychTargets.map((t: any) => {
+    // 1. Ưu tiên các học sinh đã có trong LearningSupportTarget (supportType === "PSYCHOLOGICAL")
+    const rawPsychTargets = (targets || []).filter((t: any) => t.supportType === "PSYCHOLOGICAL");
+    rawPsychTargets.forEach((t: any) => {
       const matchAssessment = (psychologicalStudents || []).find((ps: any) =>
         ps.studentId === t.studentId ||
         (ps.studentCode && ps.studentCode === t.student?.studentCode)
@@ -1796,7 +1799,8 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         ? counselorNames.join(", ")
         : (t.createdBy?.teacherName || matchAssessment?.counselorName || "Chưa phân công");
 
-      return {
+      seenStudentIds.add(t.studentId);
+      list.push({
         id: t.id,
         targetId: t.id,
         studentId: t.studentId,
@@ -1820,9 +1824,62 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
         target: t,
         psychologyAssessment: matchAssessment?.psychologyAssessment || null,
         totalScore: matchAssessment?.totalScore ?? null
-      };
+      });
     });
+
+    // 2. Chỉ bổ sung nếu học sinh đã có hồ sơ hỗ trợ tâm lý (targetId)
+    (psychologicalStudents || []).forEach((ps: any) => {
+      if (!ps.targetId || seenStudentIds.has(ps.studentId)) return;
+      seenStudentIds.add(ps.studentId);
+
+      list.push({
+        id: ps.id || `ps_${ps.studentId}`,
+        targetId: ps.targetId,
+        studentId: ps.studentId,
+        studentCode: ps.studentCode || "",
+        studentName: ps.studentName || "",
+        gender: ps.gender || "",
+        dateOfBirth: ps.dateOfBirth,
+        classId: ps.classId || "",
+        className: (ps.className || "").split(/[_-]/)[0],
+        fullClassName: ps.className || "",
+        campusId: ps.campusId || "",
+        campusName: ps.campusName || "Sky-Line",
+        counselorName: ps.counselorName || "Chưa phân công",
+        counselorRole: ps.counselorRole || "GV / Chuyên viên tham vấn",
+        startDate: ps.startDate || new Date(),
+        reason: ps.reason || "Tâm lý",
+        notes: ps.notes || "",
+        status: ps.status || "CẦN THEO DÕI",
+        terminationStatus: ps.terminationStatus || "ACTIVE",
+        evaluations: ps.evaluations || [],
+        target: ps.target || null,
+        psychologyAssessment: ps.psychologyAssessment || null,
+        totalScore: ps.totalScore ?? null
+      });
+    });
+
+    return list;
   }, [targets, psychologicalStudents]);
+
+  // Lọc theo vai trò GVCN / GVBM để hiển thị badge số lượng chính xác
+  const rolePsychologicalStudents = useMemo(() => {
+    if (roleFilter === "HOMEROOM") {
+      const hrIds = new Set(homeroomClasses.map((c: any) => c.id));
+      return psychologicalTargetsList.filter(s => 
+        hrIds.has(s.classId) || 
+        homeroomClasses.some((c: any) => c.className === s.fullClassName || c.className === s.className)
+      );
+    }
+    if (roleFilter === "ASSIGNED") {
+      const hrIds = new Set(homeroomClasses.map((c: any) => c.id));
+      return psychologicalTargetsList.filter(s => 
+        !hrIds.has(s.classId) &&
+        !homeroomClasses.some((c: any) => c.className === s.fullClassName || c.className === s.className)
+      );
+    }
+    return psychologicalTargetsList;
+  }, [psychologicalTargetsList, roleFilter, homeroomClasses]);
 
   // Count approved proposals submitted by this teacher
   const approvedHistoryCount = useMemo(() => {
@@ -2148,7 +2205,7 @@ const [evalSelectedMonth, setEvalSelectedMonth] = useState<string>("Tháng 9")
               ? "bg-white text-purple-950 shadow-sm"
               : "bg-purple-100 text-purple-900 border border-purple-200"
           }`}>
-            {psychologicalTargetsList.length}
+            {rolePsychologicalStudents.length}
           </span>
         </button>
 

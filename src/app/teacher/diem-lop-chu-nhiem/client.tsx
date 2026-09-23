@@ -29,7 +29,9 @@ import {
   Layers,
   ChevronRight,
   Printer,
-  Clock
+  Clock,
+  UserCheck,
+  Heart
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -304,6 +306,8 @@ export function HomeroomGradesClient({
       list = list.filter((s: any) => s.isEntranceCommitted)
     } else if (trackingFilter === "LEARNING_COMMITMENT") {
       list = list.filter((s: any) => s.learningCommitments.length > 0)
+    } else if (trackingFilter === "PSYCHOLOGY_SUPPORT") {
+      list = list.filter((s: any) => s.isPsychologySupport)
     }
 
     if (searchTerm.trim()) {
@@ -408,6 +412,7 @@ export function HomeroomGradesClient({
       row["Môn < Chuẩn"] = st.belowBenchmarkCount
       row["Cam kết đầu vào"] = st.isEntranceCommitted ? "Có" : "Không"
       row["Cam kết học tập"] = st.learningCommitments.length > 0 ? `${st.learningCommitments.length} môn` : "Không"
+      row["Hỗ trợ Tâm lý"] = st.isPsychologySupport ? `Có (${st.psychologySupport?.reason || "Hỗ trợ TL"})` : "Không"
       row["Ý kiến & Nhận xét GVCN"] = st.teacherRemark || ""
       row["Ý kiến phản hồi PHHS"] = st.parentFeedback || ""
 
@@ -651,14 +656,14 @@ export function HomeroomGradesClient({
         </div>
 
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">HS Diện Cam kết</div>
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">HS Cam kết & Hỗ trợ</div>
           <div className="text-2xl font-black text-amber-600 mt-1 flex items-baseline gap-1.5">
-            <span>{(data?.summary?.entranceCommittedCount || 0) + (data?.summary?.learningCommittedCount || 0)}</span>
+            <span>{(data?.summary?.entranceCommittedCount || 0) + (data?.summary?.learningCommittedCount || 0) + (data?.summary?.psychologySupportCount || 0)}</span>
             <span className="text-xs font-semibold text-slate-500">HS</span>
           </div>
-          <div className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1">
-            <Target className="w-3 h-3 text-amber-500" />
-            <span>Đầu vào ({data?.summary?.entranceCommittedCount || 0}) / Học tập ({data?.summary?.learningCommittedCount || 0})</span>
+          <div className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1 flex-wrap">
+            <Target className="w-3 h-3 text-amber-500 shrink-0" />
+            <span>Đầu vào ({data?.summary?.entranceCommittedCount || 0}) • SLC ({data?.summary?.learningCommittedCount || 0}) • Tâm lý ({data?.summary?.psychologySupportCount || 0})</span>
           </div>
         </div>
       </div>
@@ -1335,13 +1340,24 @@ export function HomeroomGradesClient({
 
                   <button
                     onClick={() => setTrackingFilter("LEARNING_COMMITMENT")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                       trackingFilter === "LEARNING_COMMITMENT"
                         ? "bg-teal-600 text-white shadow-xs"
                         : "bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100"
                     }`}
                   >
                     Cam kết học tập ({data?.summary?.learningCommittedCount || 0})
+                  </button>
+
+                  <button
+                    onClick={() => setTrackingFilter("PSYCHOLOGY_SUPPORT")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      trackingFilter === "PSYCHOLOGY_SUPPORT"
+                        ? "bg-pink-600 text-white shadow-xs"
+                        : "bg-pink-50 text-pink-800 border border-pink-200 hover:bg-pink-100"
+                    }`}
+                  >
+                    Hỗ trợ Tâm lý ({data?.summary?.psychologySupportCount || 0})
                   </button>
                 </div>
 
@@ -1362,13 +1378,14 @@ export function HomeroomGradesClient({
                         <th className="py-3 px-3 text-center border-r border-slate-700 w-24">ĐTB Chung</th>
                         <th className="py-3 px-3 min-w-[220px] border-r border-slate-700">Môn Dưới Chuẩn / Cần Chú Ý</th>
                         <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-purple-950">Hồ sơ Cam kết Đầu vào</th>
-                        <th className="py-3 px-3 min-w-[200px] bg-teal-950">Cam kết Học tập (SLC)</th>
+                        <th className="py-3 px-3 min-w-[200px] border-r border-slate-700 bg-teal-950">Cam kết Học tập (SLC)</th>
+                        <th className="py-3 px-3 min-w-[200px] bg-pink-950 text-white">Hỗ trợ Tâm lý (Admin)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {filteredTracking.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="py-12 text-center text-slate-400 font-semibold">
+                          <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
                             Tuyệt vời! Không có học sinh nào thuộc nhóm cần theo dõi này.
                           </td>
                         </tr>
@@ -1469,7 +1486,7 @@ export function HomeroomGradesClient({
                               </td>
 
                               {/* Learning commitments */}
-                              <td className="py-3 px-3">
+                              <td className="py-3 px-3 border-r border-slate-200">
                                 {st.learningCommitments.length > 0 ? (
                                   <div className="space-y-1">
                                     {st.learningCommitments.map((lc: any) => (
@@ -1486,6 +1503,32 @@ export function HomeroomGradesClient({
                                         )}
                                       </div>
                                     ))}
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-300 font-medium">-</span>
+                                )}
+                              </td>
+
+                              {/* Psychological Support */}
+                              <td className="py-3 px-3">
+                                {st.isPsychologySupport && st.psychologySupport ? (
+                                  <div className="space-y-1 bg-pink-50/70 p-2.5 rounded-xl border border-pink-200 text-[11px]">
+                                    <div className="font-extrabold text-pink-900 flex items-center justify-between gap-1">
+                                      <span className="flex items-center gap-1">
+                                        <Heart className="w-3.5 h-3.5 text-pink-600 fill-pink-500" />
+                                        <span>Đang hỗ trợ tâm lý</span>
+                                      </span>
+                                      <span className="px-1.5 py-0.5 rounded bg-pink-100 text-pink-800 text-[10px] font-bold">
+                                        {st.psychologySupport.status || "Đang theo dõi"}
+                                      </span>
+                                    </div>
+                                    <div className="text-slate-700 mt-1">
+                                      <strong>Nội dung:</strong> {st.psychologySupport.reason}
+                                    </div>
+                                    <div className="text-pink-800 text-[10px] font-semibold flex items-center gap-1">
+                                      <UserCheck className="w-3 h-3 text-pink-600" />
+                                      <span>CB/GV Phụ trách: {st.psychologySupport.counselorName}</span>
+                                    </div>
                                   </div>
                                 ) : (
                                   <span className="text-slate-300 font-medium">-</span>

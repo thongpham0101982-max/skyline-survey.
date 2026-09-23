@@ -42,11 +42,17 @@ export function PsychologicalEvaluationLogTab({
   const roleFilteredStudents = useMemo(() => {
     if (roleFilter === "HOMEROOM") {
       const hrIds = new Set(homeroomClasses.map((c: any) => c.id))
-      return students.filter(s => hrIds.has(s.classId))
+      return students.filter(s => 
+        hrIds.has(s.classId) ||
+        homeroomClasses.some((c: any) => c.className === s.fullClassName || c.className === s.className)
+      )
     }
     if (roleFilter === "ASSIGNED") {
       const hrIds = new Set(homeroomClasses.map((c: any) => c.id))
-      return students.filter(s => !hrIds.has(s.classId))
+      return students.filter(s => 
+        !hrIds.has(s.classId) &&
+        !homeroomClasses.some((c: any) => c.className === s.fullClassName || c.className === s.className)
+      )
     }
     return students
   }, [students, roleFilter, homeroomClasses])
@@ -58,6 +64,11 @@ export function PsychologicalEvaluationLogTab({
       homeroomClasses.forEach((c: any) => {
         if (c?.id) map.set(c.id, { id: c.id, className: c.className || "Lớp" })
       })
+      roleFilteredStudents.forEach((s: any) => {
+        if (s?.classId && !map.has(s.classId)) {
+          map.set(s.classId, { id: s.classId, className: s.fullClassName || s.className || "Lớp" })
+        }
+      })
       return Array.from(map.values()).sort((a, b) => a.className.localeCompare(b.className))
     }
     const rawList = (assignedClasses && assignedClasses.length > 0) ? assignedClasses : homeroomClasses
@@ -66,7 +77,7 @@ export function PsychologicalEvaluationLogTab({
     })
     roleFilteredStudents.forEach((s: any) => {
       if (s?.classId && !map.has(s.classId)) {
-        map.set(s.classId, { id: s.classId, className: s.className || "Lớp" })
+        map.set(s.classId, { id: s.classId, className: s.fullClassName || s.className || "Lớp" })
       }
     })
     return Array.from(map.values()).sort((a, b) => a.className.localeCompare(b.className))
@@ -103,8 +114,12 @@ export function PsychologicalEvaluationLogTab({
   const filteredStudents = useMemo(() => {
     return roleFilteredStudents.filter(item => {
       // Class filter
-      if (selectedClassFilter !== "ALL" && item.classId !== selectedClassFilter) {
-        return false
+      if (selectedClassFilter !== "ALL") {
+        const matchClass = 
+          item.classId === selectedClassFilter ||
+          item.fullClassName === selectedClassFilter ||
+          item.className === selectedClassFilter
+        if (!matchClass) return false
       }
 
       // Status filter
