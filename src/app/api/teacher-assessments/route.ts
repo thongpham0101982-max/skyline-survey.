@@ -489,8 +489,8 @@ export async function GET(req: any) {
                     mainSubjectRel: {
                         select: {
                             id: true,
-                            name: true,
-                            code: true
+                            subjectName: true,
+                            subjectCode: true
                         }
                     }
                 }
@@ -655,7 +655,7 @@ export async function GET(req: any) {
                 homeroomClass: teacher.homeroomClass,
                 position: teacher.position,
                 positions: teacher.positions,
-                mainSubject: teacher.mainSubjectRel?.name || null
+                mainSubject: teacher.mainSubjectRel?.subjectName || null
             }
         });
     }
