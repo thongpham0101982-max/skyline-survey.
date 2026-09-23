@@ -341,9 +341,9 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       } else if (subjectId && isGVBMRecipient) {
         roleSpecificMessage = `Thầy/Cô vừa nhận được phân công phụ trách <strong>Hoạt động trải nghiệm môn ${subjectName || "Bộ môn"}</strong> từ <strong>${displaySenderName}</strong> với vai trò: <strong style='color: #b45309;'>${roleDescription}</strong> (Chấm điểm đánh giá chuyên môn môn học).`;
       } else if (subjectId && isGVCNRecipient) {
-        roleSpecificMessage = `Lớp chủ nhiệm của Thầy/Cô vừa được phân công tham gia <strong>Hoạt động trải nghiệm tích hợp môn ${subjectName || "Bộ môn"}</strong> từ <strong>${displaySenderName}</strong> với vai trò: <strong style='color: #00A99D;'>${roleDescription}</strong> (Phối hợp theo dõi tiến độ và đánh giá vai trò của học sinh lớp).`;
+        roleSpecificMessage = `Lớp chủ nhiệm của Thầy/Cô vừa được phân công tham gia <strong>Hoạt động trải nghiệm tích hợp môn ${subjectName || "Bộ môn"}</strong> từ <strong>${displaySenderName}</strong> với vai trò: <strong style='color: #00A19A;'>${roleDescription}</strong> (Phối hợp theo dõi tiến độ và đánh giá vai trò của học sinh lớp).`;
       } else {
-        roleSpecificMessage = `Thầy/Cô vừa nhận được kế hoạch <strong>Hoạt động trải nghiệm</strong> từ <strong>${displaySenderName}</strong> với vai trò: <strong style='color: #00A99D;'>${roleDescription}</strong>.`;
+        roleSpecificMessage = `Thầy/Cô vừa nhận được kế hoạch <strong>Hoạt động trải nghiệm</strong> từ <strong>${displaySenderName}</strong> với vai trò: <strong style='color: #00A19A;'>${roleDescription}</strong>.`;
       }
 
       // Collect CC emails (Campus Directors of recipient's campuses + manual extra emails)
@@ -372,7 +372,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; color: #1e293b; margin: 0; padding: 0; -webkit-text-size-adjust: none; }
     .container { max-width: 680px; margin: 24px auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
-    .header { background: linear-gradient(135deg, #003B3A 0%, #007A70 50%, #00A99D 100%); padding: 32px 28px; text-align: center; color: #ffffff; }
+    .header { background: linear-gradient(135deg, #003B3A 0%, #00736E 50%, #00A19A 100%); padding: 32px 28px; text-align: center; color: #ffffff; }
     .header h1 { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.3; }
     .header p { margin: 8px 0 0 0; font-size: 13.5px; opacity: 0.95; font-weight: 700; color: #e0f2fe; }
     .badge { display: inline-block; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.35); padding: 5px 14px; border-radius: 20px; font-size: 11.5px; font-weight: 800; margin-top: 12px; color: #ffffff; }
@@ -380,7 +380,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
     .greeting { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 14px; }
     
     /* MANDATORY NOTICE CALLOUT */
-    .mandatory-notice { background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%); border-left: 5px solid #00A99D; border-radius: 12px; padding: 18px 20px; margin: 20px 0 24px 0; box-shadow: 0 2px 8px rgba(0,169,157,0.1); }
+    .mandatory-notice { background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%); border-left: 5px solid #00A19A; border-radius: 12px; padding: 18px 20px; margin: 20px 0 24px 0; box-shadow: 0 2px 8px rgba(0,161,154,0.1); }
     .mandatory-notice .notice-title { font-size: 14px; font-weight: 900; color: #003B3A; display: flex; items-center: center; margin-bottom: 6px; }
     .mandatory-notice .notice-content { font-size: 13.5px; line-height: 1.6; color: #134e4a; font-weight: 600; margin: 0; }
     
@@ -393,7 +393,7 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
     .table-info td.value { font-weight: 600; color: #0f172a; }
     
     .cta-container { text-align: center; margin: 32px 0 20px 0; }
-    .btn { display: inline-block; background: linear-gradient(135deg, #003B3A 0%, #00A99D 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; padding: 15px 36px; border-radius: 14px; box-shadow: 0 6px 18px rgba(0, 169, 157, 0.35); text-transform: uppercase; letter-spacing: 0.3px; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; padding: 15px 36px; border-radius: 14px; box-shadow: 0 6px 18px rgba(0, 161, 154, 0.35); text-transform: uppercase; letter-spacing: 0.3px; }
     
     .instruction-box { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 14px 18px; margin: 20px 0; font-size: 12.5px; color: #92400e; line-height: 1.55; }
     .instruction-box strong { color: #78350f; }

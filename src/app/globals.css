@@ -8,75 +8,51 @@
 @theme inline {
   --color-border: #e2e8f0;
   --color-input: #e2e8f0;
-  --color-ring: #00A99D;
+  --color-ring: #00A19A;
   --color-background: #ffffff;
   --color-foreground: #0f172a;
   --color-muted: #f1f5f9;
   --color-muted-foreground: #64748b;
-  /* SKY-LINE 2024 OFFICIAL 10-STEP COLOR PALETTE */
-  /* 1. Deep Violet (116, 0, 184) */
-  --color-brand-violet-dark: #7400B8;
-  /* 2. Royal Purple (105, 48, 195) */
-  --color-brand-violet: #6930C3;
-  /* 3. Violet Blue (94, 96, 206) */
-  --color-brand-indigo: #5E60CE;
-  /* 4. Slate Blue (83, 144, 217) */
-  --color-brand-blue-dark: #5390D9;
-  /* 5. Sky Blue (78, 168, 222) */
-  --color-brand-blue: #4EA8DE;
-  /* 6. Primary Cyan (72, 191, 227) */
-  --color-brand-cyan: #48BFE3;
-  /* 7. Cyan Aqua (86, 207, 225) */
-  --color-brand-aqua: #56CFE1;
-  /* 8. Turquoise (100, 223, 223) */
-  --color-brand-turquoise: #64DFDF;
-  /* 9. Mint Cyan (114, 239, 221) */
-  --color-brand-mint: #72EFDD;
-  /* 10. Bright Mint (128, 255, 219) */
-  --color-brand-mint-bright: #80FFDB;
 
-  /* Tailwind Color Mappings for seamless theme integration */
-  --color-indigo-50: #F0FDFD;
-  --color-indigo-100: #80FFDB;
-  --color-indigo-200: #72EFDD;
-  --color-indigo-300: #64DFDF;
-  --color-indigo-400: #56CFE1;
-  --color-indigo-500: #48BFE3;
-  --color-indigo-600: #4EA8DE;
-  --color-indigo-700: #5390D9;
-  --color-indigo-800: #5E60CE;
-  --color-indigo-900: #6930C3;
-  --color-indigo-950: #7400B8;
+  /* SKY-LINE OFFICIAL BRAND PALETTE (LOGO SPECIFICATION: #00A19A | RGB: 0, 161, 154 | CMYK: 84, 13, 46, 0) */
+  --color-brand-primary: #00A19A;
+  --color-brand-teal: #00A19A;
+  --color-brand-hover: #008B85;
+  --color-brand-active: #00736E;
+  --color-brand-dark: #005854;
+  --color-brand-deep: #003B3A;
 
-  --color-purple-50: #F0FDFD;
-  --color-purple-100: #80FFDB;
-  --color-purple-200: #72EFDD;
-  --color-purple-300: #64DFDF;
-  --color-purple-400: #56CFE1;
-  --color-purple-500: #48BFE3;
-  --color-purple-600: #4EA8DE;
-  --color-purple-700: #5390D9;
-  --color-purple-800: #5E60CE;
-  --color-purple-900: #6930C3;
-  --color-purple-950: #7400B8;
+  /* Sky-Line 10-Step Tonal Palette (Optimized for Web, Mobile, and High-Gamut Displays) */
+  --color-skyline-50: #F0FDFA;
+  --color-skyline-100: #CCFBF1;
+  --color-skyline-200: #99F6E4;
+  --color-skyline-300: #5EEAD4;
+  --color-skyline-400: #2DD4BF;
+  --color-skyline-500: #00A19A; /* Official Brand Core */
+  --color-skyline-600: #008B85; /* Web/Touch Hover */
+  --color-skyline-700: #00736E; /* WCAG AA Accessible Text (4.6:1) */
+  --color-skyline-800: #005854; /* WCAG AAA High-Contrast Text (7.2:1) */
+  --color-skyline-900: #003B3A; /* Sky-Line Deep Pine (Sidebar & Core Identity) */
+  --color-skyline-950: #002220; /* Ultra-deep contrast */
 
-  --color-emerald-50: #F0FDFD;
-  --color-emerald-100: #80FFDB;
-  --color-emerald-200: #72EFDD;
-  --color-emerald-300: #64DFDF;
-  --color-emerald-400: #56CFE1;
-  --color-emerald-500: #48BFE3;
-  --color-emerald-600: #4EA8DE;
-  --color-emerald-700: #5390D9;
-  --color-emerald-800: #5E60CE;
-  --color-emerald-900: #6930C3;
-  --color-emerald-950: #7400B8;
+  /* Harmonized Tailwind Palette Mappings */
+  --color-teal-50: #F0FDFA;
+  --color-teal-100: #CCFBF1;
+  --color-teal-200: #99F6E4;
+  --color-teal-300: #5EEAD4;
+  --color-teal-400: #2DD4BF;
+  --color-teal-500: #00A19A;
+  --color-teal-600: #008B85;
+  --color-teal-700: #00736E;
+  --color-teal-800: #005854;
+  --color-teal-900: #003B3A;
+  --color-teal-950: #002220;
 
-  --color-chart-1: #48BFE3;
-  --color-chart-2: #6930C3;
-  --color-chart-3: #5E60CE;
-  --color-chart-4: #56CFE1;
-  --color-chart-5: #80FFDB;
+  --color-chart-1: #00A19A;
+  --color-chart-2: #003B3A;
+  --color-chart-3: #2DD4BF;
+  --color-chart-4: #0284C7;
+  --color-chart-5: #D97706;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 14px;
@@ -87,16 +63,21 @@
 
 :root {
   --background: #F5F7FA; /* Premium Background */
-  --foreground: #0F172A; /* Navy text */
+  --foreground: #0F172A; /* Slate-900 text */
   --card: #FFFFFF;       /* Surface */
   --card-foreground: #0F172A;
   --popover: #FFFFFF;
   --popover-foreground: #0F172A;
-  /* SSM BRAND & SEMANTIC DESIGN TOKENS (Sky-Line Deep Pine #003B3A) */
-  --primary: #003B3A;             /* Sky-Line Deep Pine Core */
-  --primary-hover: #004D4B;       /* Deep Pine Hover */
-  --primary-active: #002827;      /* Deep Pine Active */
-  --primary-foreground: #FFFFFF;
+
+  /* SSM BRAND & SEMANTIC DESIGN TOKENS (Sky-Line Official #00A19A & Deep Pine #003B3A) */
+  --primary: #00A19A;             /* Sky-Line Official Brand Teal Core */
+  --primary-hover: #008B85;       /* Web & Device Interactive Hover */
+  --primary-active: #00736E;      /* Touch & Press Active State */
+  --primary-foreground: #FFFFFF;  /* High Contrast White */
+  --brand-pine: #003B3A;          /* Sky-Line Deep Pine */
+  --brand-teal: #00A19A;          /* Sky-Line Official Teal (RGB: 0, 161, 154) */
+  --brand-teal-accessible: #00736E; /* WCAG 2.1 AA text on white */
+  --brand-teal-light: #F0FDFA;
   --surface: #FFFFFF;             /* Card / Surface */
   --surface-secondary: #F1F5F9;   /* Muted surface */
   --border-strong: #CBD5E1;
@@ -109,8 +90,8 @@
   --warning-background: #FFFBEB;
   --error: #DC2626;
   --error-background: #FEF2F2;
-  --info: #0284C7;
-  --info-background: #F0F9FF;
+  --info: #00A19A;
+  --info-background: #F0FDFA;
   --accent-yellow: #D97706; /* Earthy yellow accent */
   --accent-yellow-light: rgba(217, 119, 6, 0.1);
   --accent-yellow-foreground: #FFFFFF;
@@ -118,21 +99,28 @@
   --secondary-foreground: #0F172A;
   --muted: #F1F5F9;
   --muted-foreground: #64748B;
-  --accent: #F0FDFD;
-  --accent-foreground: #6930C3;
+  --accent: #F0FDFA;
+  --accent-foreground: #00736E;
   --destructive: #EF4444;
   --border: #E2E8F0;
   --input: #E2E8F0;
-  --ring: rgba(0, 59, 58, 0.25);
+  --ring: rgba(0, 161, 154, 0.25);
   --radius: 14px;
-  --sidebar: #6930C3; /* Premium Dark Teal Sidebar */
+  --sidebar: #003B3A; /* Sky-Line Deep Pine Sidebar */
   --sidebar-foreground: #E6F6F5;
-  --sidebar-primary: #003B3A;
+  --sidebar-primary: #00A19A;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: rgba(255, 255, 255, 0.1);
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: rgba(0, 59, 58, 0.2);
+  --sidebar-ring: rgba(0, 161, 154, 0.3);
+}
+
+/* Wide Gamut P3 Display enhancement for Apple & OLED devices */
+@supports (color: color(display-p3 1 1 1)) {
+  :root {
+    --brand-teal-p3: color(display-p3 0 0.631 0.604);
+  }
 }
 
 @layer base {
@@ -157,16 +145,16 @@
   }
   
   .premium-gradient-primary {
-    background-image: linear-gradient(135deg, #7400B8 0%, #6930C3 25%, #5E60CE 50%, #48BFE3 75%, #80FFDB 100%) !important;
+    background-image: linear-gradient(135deg, #003B3A 0%, #00736E 40%, #00A19A 75%, #5EEAD4 100%) !important;
   }
   .skyline-gradient-brand {
-    background-image: linear-gradient(135deg, #7400B8 0%, #6930C3 30%, #48BFE3 70%, #80FFDB 100%) !important;
+    background-image: linear-gradient(135deg, #003B3A 0%, #00736E 40%, #00A19A 100%) !important;
   }
   .skyline-gradient-button {
-    background-image: linear-gradient(to right, #6930C3, #48BFE3) !important;
+    background-image: linear-gradient(to right, #00A19A, #008B85) !important;
   }
   .skyline-gradient-header {
-    background-image: linear-gradient(to right, #7400B8, #5E60CE, #48BFE3) !important;
+    background-image: linear-gradient(to right, #003B3A, #00736E, #00A19A) !important;
   }
   
   .hover-lift {
@@ -179,23 +167,26 @@
    ========================================== */
 @layer components {
   /* Nút bấm thương hiệu Sky-Line */
+  /* Nút bấm thương hiệu Sky-Line */
   .btn-skyline-primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 500;
+    font-weight: 600;
     color: #ffffff;
-    background-color: #0284C7;
+    background-color: #00A19A;
     transition: all 0.2s ease;
     border-radius: 12px;
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 6px rgba(0, 161, 154, 0.2);
   }
   .btn-skyline-primary:hover {
-    background-color: #0369A1;
+    background-color: #008B85;
+    box-shadow: 0 4px 14px rgba(0, 161, 154, 0.3);
   }
   .btn-skyline-primary:active {
+    background-color: #00736E;
     transform: scale(0.98);
   }
 
@@ -203,17 +194,17 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 500;
+    font-weight: 600;
     color: #ffffff;
-    background-color: #0F2942;
+    background-color: #003B3A;
     transition: all 0.2s ease;
     border-radius: 12px;
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 2px 6px rgba(0, 59, 58, 0.2);
   }
   .btn-skyline-dark:hover {
-    background-color: #0A1D30;
+    background-color: #002827;
   }
   .btn-skyline-dark:active {
     transform: scale(0.98);
@@ -223,7 +214,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 500;
+    font-weight: 600;
     color: #ffffff;
     background-color: #D97706;
     transition: all 0.2s ease;
@@ -243,18 +234,19 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-weight: 500;
-    color: #334155;
+    font-weight: 600;
+    color: #00736E;
     background-color: #ffffff;
-    border: 1px solid #E2E8F0;
+    border: 1px solid #CCFBF1;
     transition: all 0.2s ease;
     border-radius: 12px;
     padding: 0.5rem 1rem;
     font-size: 0.75rem;
   }
   .btn-skyline-outline:hover {
-    background-color: #F8FAFC;
-    color: #0F172A;
+    background-color: #F0FDFA;
+    border-color: #00A19A;
+    color: #005854;
   }
 
   /* Card chuẩn Quản trị & Bảng */
@@ -293,8 +285,8 @@
     outline: none;
   }
   .admin-input:focus {
-    border-color: #48BFE3;
-    box-shadow: 0 0 0 3px rgba(72, 191, 227, 0.15);
+    border-color: #00A19A;
+    box-shadow: 0 0 0 3px rgba(0, 161, 154, 0.18);
   }
 
   /* Header trang chuẩn Quản trị */
@@ -365,7 +357,7 @@
   transition: all 0.3s ease;
 }
 .empty-state:hover {
-  border-color: #48BFE3;
+  border-color: #00A19A;
   background-color: #F0FDFA;
 }
 
@@ -395,8 +387,8 @@
 
 /* 7. Loading state spinner */
 .loading-spinner {
-  border: 3px solid rgba(72, 191, 227, 0.1);
-  border-top: 3px solid #48BFE3;
+  border: 3px solid rgba(0, 161, 154, 0.15);
+  border-top: 3px solid #00A19A;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -418,8 +410,8 @@
 }
 
 .badge-primary {
-  background-color: #E6F6F5 !important;
-  color: #48BFE3 !important;
+  background-color: #CCFBF1 !important;
+  color: #00736E !important;
 }
 
 .badge-accent {
@@ -563,7 +555,7 @@
 
 /* 14. Focus styling overrides (Standardized accessible outline) */
 *:focus-visible {
-  outline: 2px solid #08AAA4 !important;
+  outline: 2px solid #00A19A !important;
   outline-offset: 2px;
 }
 
@@ -598,8 +590,8 @@
   select:not(.raw-select):focus,
   textarea:not(.raw-textarea):focus
 ) {
-  border-color: #48BFE3 !important;
-  box-shadow: 0 0 0 4px rgba(72, 191, 227, 0.15) !important;
+  border-color: #00A19A !important;
+  box-shadow: 0 0 0 4px rgba(0, 161, 154, 0.15) !important;
 }
 
 /* 16. Premium Search Bar Focus Transitions */
@@ -609,24 +601,24 @@
 }
 
 .relative:focus-within > svg.absolute {
-  color: #48BFE3 !important;
+  color: #00A19A !important;
   transform: translateY(-50%) scale(1.05) !important;
 }
 
 /* ==========================================
-   TEACHER UI DESIGN SYSTEM - SKY-LINE BLUE
+   TEACHER UI DESIGN SYSTEM - SKY-LINE TEAL
    ========================================== */
 
 /* Teacher CSS Custom Properties */
 :root {
-  --teacher-primary: #48BFE3;
-  --teacher-primary-dark: #008b82;
-  --teacher-dark: #6930C3;
+  --teacher-primary: #00A19A;
+  --teacher-primary-dark: #00736E;
+  --teacher-dark: #003B3A;
   --teacher-sky: #0EA5E9;
   --teacher-sky-light: #E0F2FE;
-  --teacher-sky-50: #F0F9FF;
+  --teacher-sky-50: #F0FDFA;
   --teacher-surface: #FFFFFF;
-  --teacher-bg: #F0F7FF;
+  --teacher-bg: #F8FAFC;
   --teacher-muted: #64748B;
   --teacher-border: #E2E8F0;
   --teacher-amber: #D97706;
@@ -637,14 +629,14 @@
    TEACHER PAGE HEADER
    ========================================== */
 .teacher-page-header {
-  background: linear-gradient(135deg, #6930C3 0%, #48BFE3 50%, #0EA5E9 100%);
+  background: linear-gradient(135deg, #003B3A 0%, #00736E 50%, #00A19A 100%);
   border-radius: 20px;
   padding: 1.5rem 1.75rem;
   color: white;
   margin-bottom: 1.5rem;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(72, 191, 227, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 161, 154, 0.25);
 }
 
 .teacher-page-header::before {
@@ -727,9 +719,9 @@
 }
 
 /* Card accent top borders */
-.teacher-card-teal    { border-top: 3px solid #48BFE3 !important; }
+.teacher-card-teal    { border-top: 3px solid #00A19A !important; }
 .teacher-card-sky     { border-top: 3px solid #0EA5E9 !important; }
-.teacher-card-dark    { border-top: 3px solid #6930C3 !important; }
+.teacher-card-dark    { border-top: 3px solid #003B3A !important; }
 .teacher-card-amber   { border-top: 3px solid #D97706 !important; }
 .teacher-card-emerald { border-top: 3px solid #059669 !important; }
 
@@ -737,7 +729,7 @@
    TEACHER BUTTON SYSTEM (fully synchronized)
    ========================================== */
 
-/* Primary button: gradient teal to sky */
+/* Primary button: gradient teal to deep brand */
 .teacher-btn {
   display: inline-flex;
   align-items: center;
@@ -764,13 +756,13 @@
 }
 
 .teacher-btn-primary {
-  background: linear-gradient(135deg, #48BFE3, #0EA5E9);
+  background: linear-gradient(135deg, #00A19A, #008B85);
   color: white;
-  box-shadow: 0 2px 8px rgba(72, 191, 227, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 161, 154, 0.3);
 }
 .teacher-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #008b82, #0284C7);
-  box-shadow: 0 4px 16px rgba(72, 191, 227, 0.4);
+  background: linear-gradient(135deg, #008B85, #00736E);
+  box-shadow: 0 4px 16px rgba(0, 161, 154, 0.4);
   transform: translateY(-1px);
 }
 .teacher-btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.98); }
@@ -781,8 +773,8 @@
   border: 1px solid #E2E8F0;
 }
 .teacher-btn-secondary:hover:not(:disabled) {
-  border-color: #48BFE3;
-  color: #48BFE3;
+  border-color: #00A19A;
+  color: #00736E;
   background: #F0FDFA;
 }
 
@@ -841,13 +833,13 @@
   white-space: nowrap;
 }
 
-.teacher-badge-teal    { background: #E6F7F6; color: #48BFE3; border-color: #CCEFED; }
+.teacher-badge-teal    { background: #CCFBF1; color: #00736E; border-color: #99F6E4; }
 .teacher-badge-sky     { background: #E0F2FE; color: #0284C7; border-color: #BAE6FD; }
 .teacher-badge-emerald { background: #ECFDF5; color: #059669; border-color: #A7F3D0; }
 .teacher-badge-amber   { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
 .teacher-badge-rose    { background: #FFF1F2; color: #E11D48; border-color: #FECDD3; }
 .teacher-badge-slate   { background: #F1F5F9; color: #475569; border-color: #E2E8F0; }
-.teacher-badge-dark    { background: #E6F7F6; color: #6930C3; border-color: #CCEFED; }
+.teacher-badge-dark    { background: #F0FDFA; color: #003B3A; border-color: #99F6E4; }
 
 /* ==========================================
    TEACHER STAT CARD
@@ -979,9 +971,9 @@
 }
 
 .teacher-form-input:focus {
-  border-color: #48BFE3 !important;
+  border-color: #00A19A !important;
   background: white;
-  box-shadow: 0 0 0 3px rgba(72, 191, 227, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(0, 161, 154, 0.15) !important;
 }
 
 .teacher-form-input::placeholder {
@@ -1019,7 +1011,7 @@
 
 .teacher-tab-active {
   background: white;
-  color: #48BFE3;
+  color: #00736E;
   box-shadow: 0 1px 3px rgba(15,23,42,0.1);
 }
 
@@ -1074,7 +1066,7 @@
 }
 
 .teacher-slot-card-observed {
-  border-left: 3px solid #48BFE3;
+  border-left: 3px solid #00A19A;
   background: linear-gradient(to right, #F0FDFA, white);
 }
 
@@ -1154,7 +1146,7 @@
 .teacher-progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #48BFE3, #0EA5E9);
+  background: linear-gradient(90deg, #00A19A, #2DD4BF);
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1181,7 +1173,7 @@
 }
 
 .teacher-modal-header {
-  background: linear-gradient(135deg, #6930C3, #48BFE3);
+  background: linear-gradient(135deg, #003B3A, #00A19A);
   padding: 1.25rem 1.5rem;
   display: flex;
   align-items: center;
@@ -1251,7 +1243,7 @@
 
 .teacher-quick-reg-card:hover {
   background: #F0FDFA;
-  border-color: #CCEFED;
+  border-color: #99F6E4;
 }
 
 /* ==========================================
@@ -1276,7 +1268,7 @@
   font-size: 1.5rem !important;
   font-weight: 900 !important;
   letter-spacing: -0.03em;
-  color: #48BFE3;
+  color: #00A19A;
   line-height: 1;
 }
 
@@ -1355,7 +1347,7 @@ input:-webkit-autofill:active {
 /* Ensure focus-visible behaves nicely for accessibility */
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid #08AAA4 !important;
+  outline: 2px solid #00A19A !important;
   outline-offset: 2px;
 }
 

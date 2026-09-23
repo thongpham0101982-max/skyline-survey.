@@ -3,6 +3,20 @@ import { AIIntent } from "../types";
 export function classifyIntent(query: string, currentPath: string = ""): AIIntent {
   const q = query.toLowerCase().trim();
 
+  // 0. Wave 2: AI Action Triggers (Soạn thảo & Gửi email có Human Confirmation)
+  if (
+    q.includes("gửi email") ||
+    q.includes("gửi mail") ||
+    q.includes("soạn email") ||
+    q.includes("nhắc nhở nộp") ||
+    q.includes("nhắc nhở sổ điểm") ||
+    q.includes("nhắc nhở dự giờ") ||
+    q.includes("gửi thông báo cho phụ huynh") ||
+    q.includes("gửi thư cho phụ huynh")
+  ) {
+    return "ACTION_REQUEST";
+  }
+
   // 1. Phân biệt rõ: Câu hỏi về quy định, quy chế, văn bản, hướng dẫn, định mức chung -> KNOWLEDGE_SEARCH (RAG)
   // Trừ khi câu hỏi đang hỏi số liệu thực tế: "học sinh nào", "con có môn nào", "của em", "lớp của tôi", "danh sách"
   const isAskingRegulation = (

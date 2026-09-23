@@ -6,7 +6,7 @@ import {
   MessageSquare, Send, X, Bot, Sparkles, Trash2,
   ChevronDown, ChevronLeft, ChevronRight, Maximize2, Minimize2,
   PanelRightClose, PanelRightOpen, AlertCircle, BookOpen, Compass, Heart,
-  ShieldCheck, Award, GraduationCap, BarChart3, RefreshCw
+  ShieldCheck, Award, GraduationCap, BarChart3, RefreshCw, CheckCircle2, Loader2
 } from "lucide-react"
 import { AssistantRole, PERSONAS } from "@/lib/assistant/personas"
 
@@ -21,6 +21,20 @@ interface ChatMessage {
     source: string
     effectiveDate: string
   }>
+  pendingAction?: {
+    actionId: string
+    actionType: string
+    title: string
+    description: string
+    preview: {
+      recipient?: string
+      subject?: string
+      summary: string
+      details: Record<string, any>
+    }
+  }
+  actionStatus?: "EXECUTING" | "EXECUTED" | "CANCELLED"
+  actionResult?: string
 }
 
 interface SSMAssistantWidgetProps {
@@ -259,7 +273,8 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
         {
           role: "model",
           parts: [{ text: data.text }],
-          sources: data.sources
+          sources: data.sources,
+          pendingAction: data.pendingAction
         }
       ])
     } catch (err: any) {
@@ -268,6 +283,31 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleConfirmAction = async (msgIndex: number, actionId: string) => {
+    setMessages(prev => prev.map((m, idx) => idx === msgIndex ? { ...m, actionStatus: "EXECUTING" } : m))
+    try {
+      const res = await fetch("/api/assistant/actions/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ actionId, requestedRole: role })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setMessages(prev => prev.map((m, idx) => idx === msgIndex ? { ...m, actionStatus: "EXECUTED", actionResult: data.message } : m))
+      } else {
+        alert(data.message || "Không thể thực thi hành động.")
+        setMessages(prev => prev.map((m, idx) => idx === msgIndex ? { ...m, actionStatus: undefined } : m))
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối khi gửi yêu cầu.")
+      setMessages(prev => prev.map((m, idx) => idx === msgIndex ? { ...m, actionStatus: undefined } : m))
+    }
+  }
+
+  const handleCancelAction = (msgIndex: number) => {
+    setMessages(prev => prev.map((m, idx) => idx === msgIndex ? { ...m, actionStatus: "CANCELLED" } : m))
   }
 
   const handleClearChat = () => {
@@ -457,6 +497,68 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
                           <strong>{s.title}</strong> ({s.source} • v{s.version})
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {msg.pendingAction && (
+                    <div className="mt-3 pt-3 border-t border-slate-200">
+                      <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-3 text-xs">
+                        <div className="flex items-center gap-1.5 font-bold text-amber-900 mb-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                          {msg.pendingAction.title}
+                        </div>
+                        {msg.pendingAction.preview.recipient && (
+                          <p className="text-slate-600 mb-1">
+                            <strong className="text-slate-800">Người nhận:</strong> {msg.pendingAction.preview.recipient}
+                          </p>
+                        )}
+                        {msg.pendingAction.preview.subject && (
+                          <p className="text-slate-600 mb-1">
+                            <strong className="text-slate-800">Tiêu đề:</strong> {msg.pendingAction.preview.subject}
+                          </p>
+                        )}
+                        <p className="text-slate-600 mb-2">
+                          <strong className="text-slate-800">Tóm tắt:</strong> {msg.pendingAction.preview.summary}
+                        </p>
+
+                        {/* Action Buttons */}
+                        {msg.actionStatus === "EXECUTED" ? (
+                          <div className="bg-emerald-100/90 border border-emerald-300 text-emerald-800 font-bold p-2 rounded-lg flex items-center gap-1.5 text-xs">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                            {msg.actionResult || "Đã thực thi hành động thành công!"}
+                          </div>
+                        ) : msg.actionStatus === "CANCELLED" ? (
+                          <div className="bg-slate-100 text-slate-500 font-medium p-2 rounded-lg text-xs">
+                            Đã hủy bỏ hành động.
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              onClick={() => handleConfirmAction(index, msg.pendingAction!.actionId)}
+                              disabled={msg.actionStatus === "EXECUTING"}
+                              className="px-3 py-1.5 bg-[#002828] hover:bg-[#003838] text-white font-bold rounded-lg text-xs flex items-center gap-1.5 shadow transition-all active:scale-95 disabled:opacity-50"
+                            >
+                              {msg.actionStatus === "EXECUTING" ? (
+                                <>
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  Đang gửi...
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-400" />
+                                  Xác Nhận Thực Hiện
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleCancelAction(index)}
+                              disabled={msg.actionStatus === "EXECUTING"}
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-lg text-xs transition-colors"
+                            >
+                              Hủy Bỏ
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

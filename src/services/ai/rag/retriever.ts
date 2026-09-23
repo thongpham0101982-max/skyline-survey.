@@ -1,5 +1,6 @@
-import { AIUserContext, RAGCitation } from "../types";
+import { AIUserContext, RAGCitation, KnowledgeDocumentMetadata } from "../types";
 import { OFFICIAL_KNOWLEDGE_DOCUMENTS } from "./knowledgeStore";
+import { prisma } from "@/lib/db";
 
 export interface RetrievalResult {
   hasMatch: boolean;
@@ -7,7 +8,7 @@ export interface RetrievalResult {
   citations: RAGCitation[];
 }
 
-export function retrieveKnowledge(query: string, userContext: AIUserContext): RetrievalResult {
+export async function retrieveKnowledge(query: string, userContext: AIUserContext): Promise<RetrievalResult> {
   if (!query || !query.trim()) {
     return { hasMatch: false, content: "", citations: [] };
   }
@@ -21,8 +22,33 @@ export function retrieveKnowledge(query: string, userContext: AIUserContext): Re
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
 
+  // Fetch dynamic documents from Database
+  let dynamicDocs: KnowledgeDocumentMetadata[] = [];
+  try {
+    const dbDocs = await prisma.knowledgeDocument.findMany({
+      where: { status: "ACTIVE" }
+    });
+    dynamicDocs = dbDocs.map(d => ({
+      id: d.id,
+      title: d.title,
+      category: d.category as any,
+      version: d.version,
+      schoolYear: d.schoolYear,
+      effectiveDate: d.effectiveDate,
+      status: d.status as any,
+      roleScope: (d.roleScope ? JSON.parse(d.roleScope) : ["ADMIN", "TEACHER"]) as any,
+      campusScope: (d.campusScope ? JSON.parse(d.campusScope) : ["ALL"]) as any,
+      source: d.source,
+      content: d.content
+    }));
+  } catch (e) {
+    // If DB has no documents or fails, fall back to official static store
+  }
+
+  const allDocuments = [...OFFICIAL_KNOWLEDGE_DOCUMENTS, ...dynamicDocs];
+
   // 1. Pre-filtering by Metadata: Status, Effective Date, Role Scope, Campus Scope
-  const eligibleDocs = OFFICIAL_KNOWLEDGE_DOCUMENTS.filter(doc => {
+  const eligibleDocs = allDocuments.filter(doc => {
     // A. Status Check
     if (doc.status !== "ACTIVE") return false;
 

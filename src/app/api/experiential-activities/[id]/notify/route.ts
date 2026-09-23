@@ -82,14 +82,14 @@ export async function POST(
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; color: #1e293b; margin: 0; padding: 0; }
     .container { max-width: 680px; margin: 24px auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
-    .header { background: linear-gradient(135deg, #003B3A 0%, #007A70 50%, #00A99D 100%); padding: 30px 24px; text-align: center; color: #ffffff; }
+    .header { background: linear-gradient(135deg, #003B3A 0%, #00736E 50%, #00A19A 100%); padding: 30px 24px; text-align: center; color: #ffffff; }
     .badge { display: inline-block; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.35); padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; margin-top: 10px; color: #ffffff; }
     .body { padding: 30px 24px; }
-    .mandatory-notice { background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%); border-left: 5px solid #00A99D; border-radius: 12px; padding: 16px 20px; margin: 18px 0; font-size: 13.5px; line-height: 1.6; color: #134e4a; font-weight: 600; }
+    .mandatory-notice { background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%); border-left: 5px solid #00A19A; border-radius: 12px; padding: 16px 20px; margin: 18px 0; font-size: 13.5px; line-height: 1.6; color: #134e4a; font-weight: 600; }
     .table-info { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
     .table-info td { padding: 10px 12px; border-bottom: 1px solid #f1f5f9; }
     .table-info td.label { font-weight: 700; color: #475569; width: 35%; }
-    .btn { display: inline-block; background: linear-gradient(135deg, #003B3A 0%, #00A99D 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 13.5px; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 169, 157, 0.35); text-transform: uppercase; }
+    .btn { display: inline-block; background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 13.5px; padding: 14px 32px; border-radius: 12px; box-shadow: 0 4px 14px rgba(0, 161, 154, 0.35); text-transform: uppercase; }
   </style>
 </head>
 <body>

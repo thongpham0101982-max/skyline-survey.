@@ -53,15 +53,47 @@ export async function processAIOptimizedQuery(
   let sources: any[] = [];
   let toolsUsed: string[] = [];
   let analyticsContext: any = undefined;
+  let pendingAction: any = undefined;
   let decision: "APPROVED" | "DENIED" | "SCOPE_RESTRICTED" = "APPROVED";
 
   try {
     // ========================================================================
+    // WAVE 2: ACTION REQUEST (Soạn thảo Email / Báo cáo có Human Confirmation)
+    // ========================================================================
+    if (intent === "ACTION_REQUEST") {
+      toolsUsed.push("draftActionProposal");
+      const { draftAction } = await import("../actions/actionDrafter");
+
+      let actionType: any = "ACTION_SEND_ADVISORY_EMAIL";
+      if (query.includes("sổ điểm") || query.includes("vào điểm") || query.includes("hạn nộp")) {
+        actionType = "ACTION_SEND_GRADEBOOK_REMINDER";
+      } else if (query.includes("dự giờ") || query.includes("chỉ tiêu")) {
+        actionType = "ACTION_SEND_OBSERVATION_REMINDER";
+      }
+
+      const draftResult = await draftAction(userContext, actionType, {
+        studentId: userContext.studentId,
+        classId: userContext.classId
+      });
+
+      if (draftResult.success && draftResult.proposal) {
+        pendingAction = draftResult.proposal;
+        responseText = `⚡ **Yêu Cầu Xác Nhận Hành Động (Human Confirmation Required)**\n\n` +
+          `Tôi đã chuẩn bị xong bản thảo: **${draftResult.proposal.title}**.\n\n` +
+          `Theo chính sách an toàn của Sky-Line, hệ thống **không bao giờ tự động gửi email mà chưa có sự đồng ý của Thầy/Cô**.\n` +
+          `Kính mời Thầy/Cô xem thông tin dự thảo bên dưới và bấm nút **[Xác Nhận Thực Hiện]** để hệ thống gửi đi.`;
+      } else {
+        responseText = `⚠️ **Không thể khởi tạo hành động**: ${draftResult.error || "Dữ liệu không đủ điều kiện."}`;
+        decision = "DENIED";
+      }
+    }
+
+    // ========================================================================
     // PRIORITY 1: KNOWLEDGE RAG QUERIES (Quy chế, quy trình, hướng dẫn)
     // ========================================================================
-    if (intent === "KNOWLEDGE_SEARCH") {
+    else if (intent === "KNOWLEDGE_SEARCH") {
       toolsUsed.push("searchKnowledge");
-      const ragResult = retrieveKnowledge(query, userContext);
+      const ragResult = await retrieveKnowledge(query, userContext);
       responseText = ragResult.content;
       sources = ragResult.citations;
     }
@@ -198,6 +230,7 @@ export async function processAIOptimizedQuery(
     sources,
     toolsUsed,
     analyticsContext,
+    pendingAction,
     traceId,
     latencyMs
   };

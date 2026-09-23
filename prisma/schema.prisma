@@ -2362,3 +2362,47 @@ model StudentGoalUnlock {
   @@index([academicYearId])
   @@index([status])
 }
+
+// ============================================================================
+// WAVE 2: ENTERPRISE AI MODELS (Additive - Zero Breaking Changes)
+// ============================================================================
+
+model KnowledgeDocument {
+  id            String   @id @default(cuid())
+  title         String
+  category      String   // BENCHMARK, OBSERVATION, ADVISORY, PROCESS, GENERAL
+  version       String   @default("1.0")
+  schoolYear    String   @default("2026-2027")
+  effectiveDate String
+  status        String   @default("ACTIVE") // ACTIVE, DRAFT, ARCHIVED
+  roleScope     String   // JSON string of allowed roles: ["ADMIN", "TEACHER", ...]
+  campusScope   String   // JSON string of allowed campusIds or ["ALL"]
+  source        String   // So hieu van ban / quyet dinh ban hanh
+  content       String   // Full text content
+  createdBy     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([status])
+}
+
+model AIPendingAction {
+  id               String    @id @default(cuid())
+  actionType       String    // ACTION_SEND_ADVISORY_EMAIL, ACTION_SEND_GRADEBOOK_REMINDER, etc.
+  targetEntityId   String?   // studentId, classId, teacherId, etc.
+  payloadJson      String    // JSON string containing email details (to, subject, body, metadata)
+  proposedByUserId String
+  proposedByRole   String
+  status           String    @default("PENDING") // PENDING, EXECUTED, CANCELLED, EXPIRED
+  expiresAt        DateTime
+  executedAt       DateTime?
+  resultSummary    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([proposedByUserId])
+  @@index([status])
+  @@index([expiresAt])
+}
+

@@ -1,6 +1,4 @@
-/**
- * Core Type Definitions for Enterprise SSM AI Assistant (Wave 1)
- */
+import { ActionProposal } from "../actions/actionTypes";
 
 export type AssistantRole = "STUDENT" | "TEACHER" | "TTCM" | "TBP" | "PARENT" | "ADMIN";
 
@@ -9,6 +7,7 @@ export type AIIntent =
   | "EXAM_ANALYSIS"
   | "OBSERVATION_ANALYSIS"
   | "ADVISORY_ANALYSIS"
+  | "ACTION_REQUEST"
   | "STUDENT_QUERY"
   | "TEACHER_QUERY"
   | "REPORT"
@@ -45,7 +44,7 @@ export interface AIPageContext {
 export interface KnowledgeDocumentMetadata {
   id: string;
   title: string;
-  category: "REGULATION" | "BENCHMARK" | "OBSERVATION" | "ADVISORY" | "PROCESS" | "SSM_GUIDE";
+  category: "REGULATION" | "BENCHMARK" | "OBSERVATION" | "ADVISORY" | "PROCESS" | "SSM_GUIDE" | "GENERAL";
   version: string;
   schoolYear: string;
   effectiveDate: string; // YYYY-MM-DD
@@ -83,6 +82,7 @@ export interface AIAssistantResponse {
     metrics?: Record<string, any>;
     sampleSize?: number;
   };
+  pendingAction?: ActionProposal;
   suggestedPrompts?: Array<{
     label: string;
     text: string;
@@ -91,3 +91,4 @@ export interface AIAssistantResponse {
   traceId: string;
   latencyMs: number;
 }
+

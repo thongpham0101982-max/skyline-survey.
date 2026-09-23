@@ -63,8 +63,7 @@ export async function getTeacherObservationAnalysis(
           include: {
             slot: {
               include: {
-                teacher: { select: { teacherName: true, teacherCode: true } },
-                department: { select: { name: true } }
+                teacher: { select: { teacherName: true, teacherCode: true, departmentId: true } }
               }
             }
           }
