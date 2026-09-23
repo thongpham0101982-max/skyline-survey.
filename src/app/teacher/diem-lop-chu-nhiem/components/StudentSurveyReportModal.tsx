@@ -14,7 +14,8 @@ import {
   User,
   Users,
   BookOpen,
-  ExternalLink
+  ExternalLink,
+  Send
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
@@ -221,6 +222,16 @@ export function StudentSurveyReportModal({
           <div class="remarks-header" style="color: #0369a1;">Ý kiến & Phản hồi của Phụ huynh học sinh (PHHS):</div>
           <div class="remarks-content" style="font-style: italic; color: #1e293b;">
             "${student.parentFeedback}"
+          </div>
+        </div>
+        ` : ''}
+
+        ${student.forwardedGvbm ? `
+        <!-- Forward to GVBM Status -->
+        <div class="remarks-box" style="margin-top: 8px; border-color: #93c5fd; background-color: #eff6ff;">
+          <div class="remarks-header" style="color: #1d4ed8;">Phối hợp Giáo viên Bộ môn (GVBM):</div>
+          <div class="remarks-content" style="color: #1e293b;">
+            Đã chuyển thông tin phối hợp tới GVBM <b>${student.forwardedGvbm.teacherName}</b> (Môn <b>${student.forwardedGvbm.subjectName}</b>)${student.forwardedGvbm.message ? `: <i>"${student.forwardedGvbm.message}"</i>` : ''}
           </div>
         </div>
         ` : ''}
@@ -927,6 +938,22 @@ export function StudentSurveyReportModal({
             </div>
             <div className="text-[10.5px] text-slate-700 leading-snug font-medium pt-0.5 italic">
               &ldquo;{student.parentFeedback}&rdquo;
+            </div>
+          </div>
+        )}
+
+        {/* Forward to GVBM Status (if available) */}
+        {student.forwardedGvbm && (
+          <div className="border border-blue-200 rounded-xl p-3 bg-blue-50/40 mb-3 space-y-1">
+            <div className="text-[11px] font-black text-blue-900 uppercase flex items-center gap-1.5">
+              <Send className="w-3.5 h-3.5 text-blue-600" />
+              <span>Phối hợp Giáo viên Bộ môn (GVBM):</span>
+            </div>
+            <div className="text-[10.5px] text-slate-800 leading-snug font-medium pt-0.5">
+              Đã chuyển tiếp thông tin tới GVBM <strong className="text-blue-950 font-bold">{student.forwardedGvbm.teacherName}</strong> (Môn <strong className="text-blue-700 font-extrabold">{student.forwardedGvbm.subjectName}</strong>)
+              {student.forwardedGvbm.message && (
+                <span className="italic text-slate-600"> &mdash; &ldquo;{student.forwardedGvbm.message}&rdquo;</span>
+              )}
             </div>
           </div>
         )}

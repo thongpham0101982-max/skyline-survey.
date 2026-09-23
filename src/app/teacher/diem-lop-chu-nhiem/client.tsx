@@ -28,7 +28,8 @@ import {
   Info,
   Layers,
   ChevronRight,
-  Printer
+  Printer,
+  Clock
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -277,6 +278,19 @@ export function HomeroomGradesClient({
 
     return list
   }, [data?.studentMatrix, feedbackStatusFilter, searchTerm])
+
+  // Count feedback statuses for Tab 4 badges
+  const feedbackCounts = useMemo(() => {
+    if (!data?.studentMatrix) return { all: 0, hasFeedback: 0, pending: 0, acknowledged: 0, forwarded: 0 }
+    const matrix = data.studentMatrix
+    return {
+      all: matrix.length,
+      hasFeedback: matrix.filter((s: any) => Boolean(s.parentFeedback)).length,
+      pending: matrix.filter((s: any) => Boolean(s.parentFeedback) && !s.isAcknowledged && !s.forwardedGvbm).length,
+      acknowledged: matrix.filter((s: any) => Boolean(s.parentFeedback) && s.isAcknowledged && !s.forwardedGvbm).length,
+      forwarded: matrix.filter((s: any) => Boolean(s.forwardedGvbm)).length
+    }
+  }, [data?.studentMatrix])
 
   // Filtered tracking students
   const filteredTracking = useMemo(() => {
@@ -951,6 +965,7 @@ export function HomeroomGradesClient({
                               {/* Teacher Remark & Parent Feedback Column */}
                               <td className="py-2.5 px-3 border-r border-slate-200">
                                 <div className="space-y-1.5">
+                                  {/* 1. Trao đổi / Nhận xét GVCN */}
                                   {st.teacherRemark ? (
                                     <div
                                       onClick={() => handleOpenFeedbackModal(st)}
@@ -962,7 +977,7 @@ export function HomeroomGradesClient({
                                       </div>
                                       <div className="flex items-center gap-1 mt-1 text-[10px] text-teal-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Edit3 className="w-2.5 h-2.5" />
-                                        <span>Chỉnh sửa nhận xét</span>
+                                        <span>Chỉnh sửa nhận xét GVCN</span>
                                       </div>
                                     </div>
                                   ) : (
@@ -977,9 +992,9 @@ export function HomeroomGradesClient({
                                     </button>
                                   )}
 
-                                  {/* Parent Feedback Badge */}
+                                  {/* 2. Ý kiến phản hồi từ PHHS */}
                                   {st.parentFeedback && (
-                                    <div>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                       <button
                                         type="button"
                                         onClick={() => handleOpenFeedbackModal(st)}
@@ -989,6 +1004,43 @@ export function HomeroomGradesClient({
                                         <MessageSquare className="w-2.5 h-2.5 text-sky-600" />
                                         <span>PHHS đã phản hồi</span>
                                       </button>
+
+                                      {!st.forwardedGvbm && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenForwardModal(st)}
+                                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[10px] font-bold cursor-pointer transition-colors shadow-2xs"
+                                          title="Chuyển tiếp ý kiến của PHHS đến Giáo viên Bộ môn liên quan"
+                                        >
+                                          <Send className="w-2.5 h-2.5 text-blue-600" />
+                                          <span>Chuyển GVBM</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* 3. Trạng thái chuyển đến GVBM liên quan */}
+                                  {st.forwardedGvbm && (
+                                    <div className="bg-blue-50/90 border border-blue-200 rounded-lg p-1.5 text-[10px] space-y-0.5">
+                                      <div className="flex items-center justify-between gap-1">
+                                        <span className="font-extrabold text-blue-900 flex items-center gap-1">
+                                          <Send className="w-2.5 h-2.5 text-blue-600 shrink-0" />
+                                          <span>Đã chuyển GVBM: <strong>{st.forwardedGvbm.teacherName}</strong> ({st.forwardedGvbm.subjectName})</span>
+                                        </span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenForwardModal(st)}
+                                          className="text-[9px] text-blue-700 hover:text-blue-900 font-bold underline cursor-pointer shrink-0"
+                                          title="Chuyển lại hoặc đổi GVBM khác"
+                                        >
+                                          Đổi
+                                        </button>
+                                      </div>
+                                      {st.forwardedGvbm.message && (
+                                        <div className="text-slate-600 italic line-clamp-1">
+                                          &ldquo;{st.forwardedGvbm.message}&rdquo;
+                                        </div>
+                                      )}
                                     </div>
                                   )}
                                 </div>
@@ -1449,6 +1501,294 @@ export function HomeroomGradesClient({
               </div>
             </div>
           )}
+
+          {/* TAB 4: TỔNG HỢP Ý KIẾN PHHS & PHỐI HỢP GVBM */}
+          {activeTab === "feedback" && (
+            <div className="space-y-4">
+              {/* Filter sub-buttons */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs font-bold text-slate-600 mr-1">Bộ lọc phản hồi:</span>
+                  <button
+                    onClick={() => setFeedbackStatusFilter("HAS_FEEDBACK")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      feedbackStatusFilter === "HAS_FEEDBACK"
+                        ? "bg-sky-600 text-white shadow-xs"
+                        : "bg-sky-50 text-sky-800 border border-sky-200 hover:bg-sky-100"
+                    }`}
+                  >
+                    Có ý kiến PHHS ({feedbackCounts.hasFeedback})
+                  </button>
+
+                  <button
+                    onClick={() => setFeedbackStatusFilter("PENDING")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      feedbackStatusFilter === "PENDING"
+                        ? "bg-amber-600 text-white shadow-xs"
+                        : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+                    }`}
+                  >
+                    Chờ tiếp nhận ({feedbackCounts.pending})
+                  </button>
+
+                  <button
+                    onClick={() => setFeedbackStatusFilter("ACKNOWLEDGED")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      feedbackStatusFilter === "ACKNOWLEDGED"
+                        ? "bg-teal-600 text-white shadow-xs"
+                        : "bg-teal-50 text-teal-800 border border-teal-200 hover:bg-teal-100"
+                    }`}
+                  >
+                    Đã tiếp nhận ({feedbackCounts.acknowledged})
+                  </button>
+
+                  <button
+                    onClick={() => setFeedbackStatusFilter("FORWARDED")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      feedbackStatusFilter === "FORWARDED"
+                        ? "bg-blue-600 text-white shadow-xs"
+                        : "bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100"
+                    }`}
+                  >
+                    Đã chuyển GVBM ({feedbackCounts.forwarded})
+                  </button>
+
+                  <button
+                    onClick={() => setFeedbackStatusFilter("ALL")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      feedbackStatusFilter === "ALL"
+                        ? "bg-slate-900 text-white shadow-xs"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                    }`}
+                  >
+                    Toàn bộ lớp ({feedbackCounts.all})
+                  </button>
+                </div>
+
+                <div className="text-xs text-slate-500 font-semibold">
+                  Hiển thị <strong className="text-slate-900">{filteredFeedbackStudents.length}</strong> học sinh
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+                <div className="overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-800 text-white font-bold">
+                        <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
+                        <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
+                        <th className="py-3 px-3 min-w-[160px] border-r border-slate-700">Họ và tên</th>
+                        <th className="py-3 px-3 text-center border-r border-slate-700 w-24">ĐTB Lớp</th>
+                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-sky-950">
+                          <div className="flex items-center gap-1.5">
+                            <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
+                            <span>1. Ý kiến phản hồi của PHHS</span>
+                          </div>
+                        </th>
+                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-teal-950">
+                          <div className="flex items-center gap-1.5">
+                            <UserCheck className="w-3.5 h-3.5 text-teal-400" />
+                            <span>2. Trao đổi & Nhận xét của GVCN</span>
+                          </div>
+                        </th>
+                        <th className="py-3 px-3 min-w-[260px] border-r border-slate-700 bg-blue-950">
+                          <div className="flex items-center gap-1.5">
+                            <Send className="w-3.5 h-3.5 text-blue-400" />
+                            <span>3. Trạng thái chuyển đến GVBM liên quan</span>
+                          </div>
+                        </th>
+                        <th className="py-3 px-3 text-center bg-slate-900 min-w-[120px]">
+                          Thao tác
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {filteredFeedbackStudents.length === 0 ? (
+                        <tr>
+                          <td colSpan={8} className="py-12 text-center text-slate-400 font-semibold">
+                            Không có học sinh nào phù hợp với bộ lọc này.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredFeedbackStudents.map((st: any, idx: number) => {
+                          return (
+                            <tr key={st.studentId} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="py-3 px-3 text-center font-bold text-slate-500 border-r border-slate-200">
+                                {idx + 1}
+                              </td>
+                              <td className="py-3 px-3 font-semibold text-slate-700 border-r border-slate-200">
+                                {st.studentCode}
+                              </td>
+                              <td className="py-3 px-3 font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                                <div>{st.studentName}</div>
+                                <div className="text-[11px] font-normal text-slate-500">
+                                  {st.gender === "female" ? "Nữ" : "Nam"} • {st.dateOfBirth ? new Date(st.dateOfBirth).toLocaleDateString("vi-VN") : ""}
+                                </div>
+                              </td>
+                              <td className="py-3 px-3 text-center font-black text-sm text-[#0284C7] bg-teal-50/20 border-r border-slate-200">
+                                {st.gpa !== null ? st.gpa.toFixed(1) : "-"}
+                              </td>
+
+                              {/* Ý kiến phản hồi của PHHS */}
+                              <td className="py-3 px-3 border-r border-slate-200">
+                                {st.parentFeedback ? (
+                                  <div className="space-y-1.5 bg-sky-50/60 p-2.5 rounded-xl border border-sky-200">
+                                    <div className="flex items-center justify-between text-[10.5px]">
+                                      <span className="font-extrabold text-sky-800 flex items-center gap-1">
+                                        <CheckCircle2 className="w-3 h-3 text-sky-600" />
+                                        Phản hồi từ Cổng PHHS
+                                      </span>
+                                      {st.parentFeedbackDate && (
+                                        <span className="text-slate-500 font-medium">
+                                          {new Date(st.parentFeedbackDate).toLocaleDateString("vi-VN")}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-xs text-slate-800 font-medium italic leading-relaxed bg-white/80 p-2 rounded-lg border border-sky-100">
+                                      &ldquo;{st.parentFeedback}&rdquo;
+                                    </div>
+                                    <div className="flex items-center justify-between pt-0.5">
+                                      {st.isAcknowledged ? (
+                                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-teal-700 bg-teal-100/70 px-2 py-0.5 rounded-md">
+                                          <CheckCircle2 className="w-3 h-3 text-teal-600" />
+                                          Đã tiếp nhận
+                                        </span>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleAcknowledgeFeedback(st)}
+                                          className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2 py-0.5 rounded-md border border-amber-300 transition-colors cursor-pointer"
+                                        >
+                                          <span>Chưa tiếp nhận • Bấm xác nhận</span>
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 italic text-[11px]">Chưa có phản hồi từ PHHS</span>
+                                )}
+                              </td>
+
+                              {/* Trao đổi & Nhận xét GVCN */}
+                              <td className="py-3 px-3 border-r border-slate-200">
+                                {st.teacherRemark ? (
+                                  <div className="space-y-1.5 bg-teal-50/60 p-2.5 rounded-xl border border-teal-200">
+                                    <div className="flex items-center justify-between text-[10.5px]">
+                                      <span className="font-extrabold text-teal-900 flex items-center gap-1">
+                                        <UserCheck className="w-3 h-3 text-teal-600" />
+                                        Nhận xét của GVCN
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenFeedbackModal(st)}
+                                        className="text-[10px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5 cursor-pointer underline"
+                                      >
+                                        <Edit3 className="w-2.5 h-2.5" />
+                                        <span>Sửa</span>
+                                      </button>
+                                    </div>
+                                    <div className="text-xs text-slate-800 font-semibold leading-relaxed bg-white/80 p-2 rounded-lg border border-teal-100">
+                                      {st.teacherRemark}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenFeedbackModal(st)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-dashed border-teal-300 transition-all cursor-pointer shadow-2xs"
+                                    >
+                                      <Edit3 className="w-3 h-3 text-teal-600" />
+                                      <span>+ Thêm nhận xét GVCN</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* Trạng thái chuyển đến GVBM liên quan */}
+                              <td className="py-3 px-3 border-r border-slate-200">
+                                {st.forwardedGvbm ? (
+                                  <div className="space-y-1.5 bg-blue-50/80 p-2.5 rounded-xl border border-blue-200">
+                                    <div className="flex items-center justify-between text-[10.5px]">
+                                      <span className="font-extrabold text-blue-900 flex items-center gap-1">
+                                        <Send className="w-3 h-3 text-blue-600" />
+                                        Đã chuyển đến GVBM
+                                      </span>
+                                      {st.forwardedGvbm.forwardedAt && (
+                                        <span className="text-slate-500 font-medium">
+                                          {new Date(st.forwardedGvbm.forwardedAt).toLocaleDateString("vi-VN")}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="bg-white/90 p-2 rounded-lg border border-blue-100 space-y-1">
+                                      <div className="text-xs font-bold text-slate-900">
+                                        Thầy/Cô: <strong className="text-blue-950 font-black">{st.forwardedGvbm.teacherName}</strong>
+                                        <span className="mx-1 text-slate-300">•</span>
+                                        Môn: <strong className="text-blue-700 font-extrabold">{st.forwardedGvbm.subjectName}</strong>
+                                      </div>
+                                      {st.forwardedGvbm.message && (
+                                        <div className="text-[11px] text-slate-700 italic leading-snug">
+                                          &ldquo;{st.forwardedGvbm.message}&rdquo;
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex justify-end pt-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenForwardModal(st)}
+                                        className="text-[10px] font-bold text-blue-700 hover:text-blue-900 bg-white hover:bg-blue-100 px-2 py-0.5 rounded-md border border-blue-300 transition-colors flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <Send className="w-2.5 h-2.5" />
+                                        <span>Chuyển lại / Đổi môn</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1.5">
+                                    <div className="text-[11px] text-slate-500">Chưa chuyển GVBM</div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenForwardModal(st)}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all cursor-pointer shadow-xs"
+                                    >
+                                      <Send className="w-3 h-3" />
+                                      <span>Chuyển đến GVBM</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+
+                              {/* Thao tác */}
+                              <td className="py-3 px-2 text-center space-y-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenReport(st.studentId)}
+                                  className="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 transition-all shadow-2xs cursor-pointer"
+                                  title={`Xem và in phiếu điểm của học sinh ${st.studentName}`}
+                                >
+                                  <Printer className="w-3.5 h-3.5 text-teal-600" />
+                                  <span>Phiếu điểm</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenFeedbackModal(st)}
+                                  className="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition-all shadow-2xs cursor-pointer"
+                                >
+                                  <Edit3 className="w-3 h-3 text-slate-600" />
+                                  <span>Trao đổi</span>
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -1571,6 +1911,20 @@ export function HomeroomGradesClient({
         teacherName={data?.classInfo?.homeroomTeacherName || teacherName}
         onSaved={handleFeedbackSaved}
         onOpenReport={handleOpenReport}
+        onOpenForward={(st: any) => handleOpenForwardModal(st)}
+      />
+
+      {/* MODAL: CHUYỂN Ý KIẾN ĐẾN GIÁO VIÊN BỘ MÔN (GVBM) */}
+      <ForwardToGvbmModal
+        isOpen={forwardModalOpen}
+        onClose={() => setForwardModalOpen(false)}
+        student={selectedForwardStudent}
+        academicYearId={selectedYearId}
+        selectedPeriod={selectedPeriod}
+        periodLabel={EVAL_PERIODS.find(p => p.code === selectedPeriod)?.label || selectedPeriod}
+        currentClass={currentClass}
+        teachingAssignments={data?.teachingAssignments || []}
+        onForwarded={handleForwarded}
       />
     </div>
   )

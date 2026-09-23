@@ -12,7 +12,8 @@ import {
   Users,
   Printer,
   Edit3,
-  AlertCircle
+  AlertCircle,
+  Send
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -32,6 +33,7 @@ interface Props {
     parentFeedbackDate: any
   }) => void
   onOpenReport?: (studentId: string) => void
+  onOpenForward?: (student: any) => void
 }
 
 export function HomeroomFeedbackModal({
@@ -43,7 +45,8 @@ export function HomeroomFeedbackModal({
   periodLabel,
   teacherName,
   onSaved,
-  onOpenReport
+  onOpenReport,
+  onOpenForward
 }: Props) {
   const [teacherRemark, setTeacherRemark] = useState("")
   const [parentFeedback, setParentFeedback] = useState("")
@@ -320,6 +323,82 @@ export function HomeroomFeedbackModal({
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center gap-2.5 text-slate-500 text-xs">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>Chưa có phản hồi trực tuyến từ PHHS qua Cổng phụ huynh cho kỳ khảo sát này.</span>
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Forward to GVBM Status */}
+          <div className="space-y-2 pt-2 border-t border-slate-200">
+            <label className="text-xs font-black text-blue-900 uppercase tracking-wide flex items-center gap-1.5">
+              <Send className="h-4 w-4 text-blue-600" />
+              <span>3. Phối hợp & Trạng thái chuyển đến Giáo viên Bộ môn (GVBM):</span>
+            </label>
+
+            {student.forwardedGvbm ? (
+              <div className="bg-blue-50/80 border border-blue-200 rounded-2xl p-3.5 space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-extrabold text-blue-900 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                    Đã chuyển tiếp thông tin tới GVBM {student.forwardedGvbm.teacherName}
+                  </span>
+                  {student.forwardedGvbm.forwardedAt && (
+                    <span className="text-slate-500 font-medium">
+                      {new Date(student.forwardedGvbm.forwardedAt).toLocaleDateString("vi-VN")}
+                    </span>
+                  )}
+                </div>
+
+                <div className="bg-white/90 p-3 rounded-xl border border-blue-100 space-y-1">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="font-bold text-slate-600">Bộ môn:</span>
+                    <span className="font-extrabold text-blue-900">{student.forwardedGvbm.subjectName}</span>
+                    <span className="text-slate-400">•</span>
+                    <span className="font-bold text-slate-600">Giáo viên:</span>
+                    <span className="font-extrabold text-slate-900">{student.forwardedGvbm.teacherName}</span>
+                  </div>
+                  {student.forwardedGvbm.message && (
+                    <div className="text-xs text-slate-700 italic pt-0.5">
+                      <span className="font-semibold text-slate-500 not-italic">Lời nhắn: </span>
+                      &ldquo;{student.forwardedGvbm.message}&rdquo;
+                    </div>
+                  )}
+                </div>
+
+                {onOpenForward && (
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose()
+                        onOpenForward(student)
+                      }}
+                      className="text-[11px] font-bold text-blue-700 hover:text-blue-900 bg-white hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-300 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Chuyển lại / Đổi môn khác</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between gap-3 text-slate-600 text-xs">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Chưa chuyển thông tin này cho Giáo viên Bộ môn.</span>
+                </div>
+                {onOpenForward && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose()
+                      onOpenForward(student)
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Chuyển đến GVBM</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
