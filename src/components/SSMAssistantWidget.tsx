@@ -58,11 +58,12 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
 
   // Tạo các câu hỏi gợi ý thông minh dựa trên Vai trò và Trang hiện tại (Context-Aware)
   const contextualPrompts = useMemo(() => {
-    // 1. Học sinh
+    // 1. Học sinh (STUDENT)
     if (role === "STUDENT") {
       if (pathname.includes("/muc-tieu")) {
         return [
           { text: "Em còn mục tiêu nào chưa hoàn thành?", label: "Mục tiêu chưa đạt" },
+          { text: "Khoảng cách GAP giữa kết quả thực tế và mục tiêu của em", label: "Chênh lệch GAP" },
           { text: "Gợi ý cho em 3 hành động trong kế hoạch 7 ngày gỡ khó", label: "7 ngày gỡ khó" },
           { text: "Xem lời nhắn của ba mẹ và thầy cô về mục tiêu của em", label: "Lời nhắn ba mẹ & GV" }
         ]
@@ -73,38 +74,58 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
           { text: "Năng lực nào em cần rèn luyện thêm?", label: "Năng lực cần cải thiện" }
         ]
       }
+      if (pathname.includes("/ho-tro")) {
+        return [
+          { text: "Hướng dẫn em cách gửi yêu cầu trợ giúp học tập đến GVCN", label: "Cách xin trợ giúp" },
+          { text: "Xem nhận xét của Thầy/Cô cố vấn học tập", label: "Lời dặn của Cố vấn" }
+        ]
+      }
       return [
         { text: "Tra cứu điểm số các môn học kỳ này của em", label: "Điểm các môn" },
+        { text: "Điểm của em có môn nào dưới chuẩn Benchmark không?", label: "Chuẩn Benchmark" },
         { text: "Hôm nay em có những tiết học nào?", label: "Thời khóa biểu hôm nay" },
         { text: "Em muốn xem nhận xét của Thầy/Cô cố vấn học tập", label: "Lời dặn của Cố vấn" }
       ]
     }
 
-    // 2. Giáo viên
+    // 2. Giáo viên (TEACHER - gồm GVCN và GVBM)
     if (role === "TEACHER") {
       if (pathname.includes("/diem-lop-chu-nhiem") || pathname.includes("/classes")) {
         return [
           { text: "Lớp có những học sinh nào dưới điểm chuẩn benchmark?", label: "Học sinh dưới chuẩn" },
-          { text: "Thống kê tiến độ nhập điểm và phổ điểm của lớp", label: "Tiến độ vào điểm" }
+          { text: "Thống kê tiến độ nhập điểm và phổ điểm của lớp", label: "Tiến độ vào điểm" },
+          { text: "So sánh điểm giữa kỳ và cuối kỳ của học sinh trong lớp", label: "So sánh GK - CK" },
+          { text: "Quy chế điểm chuẩn benchmark học tập Sky-Line", label: "Quy chế Benchmark" }
         ]
       }
       if (pathname.includes("/co-van-hoc-tap") || pathname.includes("/ho-so-hoc-sinh")) {
         return [
           { text: "Lớp chủ nhiệm có học sinh nào ở trạng thái Vàng hoặc Đỏ?", label: "Cảnh báo Vàng/Đỏ" },
           { text: "Có học sinh nào gửi yêu cầu trợ giúp cần xử lý không?", label: "Yêu cầu trợ giúp mới" },
+          { text: "Học sinh nào đã mở khóa sổ mục tiêu trên 3 lần?", label: "Mở khóa > 3 lần" },
+          { text: "Gợi ý hành động trong kế hoạch 7 ngày gỡ khó cho học sinh", label: "Kế hoạch 7 ngày" },
           { text: "Soạn thảo gợi ý nhận xét học kỳ cho học sinh", label: "Dự thảo nhận xét HS" }
+        ]
+      }
+      if (pathname.includes("/so-diem-nhan-xet") || pathname.includes("/phan-tich-chat-luong")) {
+        return [
+          { text: "Phổ điểm và tỷ lệ đạt Benchmark môn tôi phụ trách", label: "Phổ điểm môn dạy" },
+          { text: "Quy trình xin mở khóa sổ điểm trên hệ thống SSM", label: "Quy trình mở khóa điểm" },
+          { text: "Soạn thảo gợi ý nhận xét học kỳ cho học sinh", label: "Gợi ý nhận xét HS" }
         ]
       }
       if (pathname.includes("/du-gio")) {
         return [
           { text: "Tôi đã đi dự giờ đủ chỉ tiêu tháng này chưa?", label: "Chỉ tiêu dự giờ tháng" },
-          { text: "Xem nhận xét ưu điểm và góp ý các tiết dạy của tôi", label: "Nhận xét tiết dạy của tôi" }
+          { text: "Xem nhận xét ưu điểm và góp ý các tiết dạy của tôi", label: "Nhận xét tiết dạy của tôi" },
+          { text: "Quy định đánh giá dự giờ 11 tiêu chí sư phạm và định mức tháng", label: "Quy định Dự giờ 11 TC" }
         ]
       }
       return [
         { text: "Danh sách học sinh lớp chủ nhiệm cần lưu ý đặc biệt", label: "Học sinh diện lưu ý" },
         { text: "Kiểm tra tiến độ nhập điểm các lớp tôi phụ trách", label: "Tiến độ sổ điểm" },
-        { text: "Kiểm tra chỉ tiêu dự giờ cá nhân trong tháng", label: "Chỉ tiêu dự giờ" }
+        { text: "Kiểm tra chỉ tiêu dự giờ cá nhân trong tháng", label: "Chỉ tiêu dự giờ" },
+        { text: "Quy chế điểm chuẩn benchmark học tập Sky-Line", label: "Quy chế Benchmark" }
       ]
     }
 
@@ -114,6 +135,8 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
         { text: "Danh sách giáo viên thuộc Tổ Chuyên Môn của tôi", label: "Giáo viên trong Tổ" },
         { text: "Báo cáo chất lượng và tiến độ các bộ môn thuộc Tổ", label: "Chất lượng bộ môn" },
         { text: "Tình hình dự giờ của giáo viên trong Tổ chuyên môn tháng này", label: "Dự giờ trong Tổ" },
+        { text: "Ma trận đánh giá 11 tiêu chí sư phạm của các giáo viên trong Tổ", label: "11 tiêu chí Tổ CM" },
+        { text: "Quy trình xác nhận yêu cầu xin mở khóa sổ điểm của giáo viên", label: "Xác nhận mở khóa điểm" },
         { text: "Xem lớp chủ nhiệm có học sinh nào ở diện cảnh báo Vàng hoặc Đỏ", label: "Cảnh báo lớp CN" }
       ]
     }
@@ -124,26 +147,61 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
         { text: "Danh sách giáo viên các Tổ Chuyên Môn trong Bộ Phận", label: "Giáo viên trong Bộ Phận" },
         { text: "Báo cáo chất lượng các môn học thuộc các Tổ trong Bộ Phận", label: "Chất lượng môn các Tổ" },
         { text: "Giám sát tình hình dự giờ của giáo viên các Tổ trong Bộ Phận", label: "Dự giờ nhiều Tổ" },
-        { text: "Tiến độ sổ điểm các môn thuộc Bộ Phận quản lý", label: "Tiến độ sổ điểm Bộ Phận" }
+        { text: "Tiến độ sổ điểm các môn thuộc Bộ Phận quản lý", label: "Tiến độ sổ điểm Bộ Phận" },
+        { text: "Tỷ lệ học sinh đạt chuẩn Benchmark các môn trong Bộ Phận", label: "Tỷ lệ Benchmark Khối" },
+        { text: "Quy định đánh giá dự giờ 11 tiêu chí sư phạm và định mức tháng", label: "Quy định Dự giờ 11 TC" }
       ]
     }
 
-    // 5. Phụ huynh (PHS - Bảo mật con em mình)
+    // 5. Phụ huynh (PARENT - Bảo mật con em mình)
     if (role === "PARENT") {
       if (pathname.includes("/grades")) {
         return [
           { text: "Bảng điểm chi tiết các môn học kỳ này của con", label: "Bảng điểm của con" },
-          { text: "Điểm trung bình và nhận xét của thầy cô về con", label: "ĐTB & Lời nhận xét" }
+          { text: "Điểm trung bình và nhận xét của thầy cô về con", label: "ĐTB & Lời nhận xét" },
+          { text: "Con có môn nào đang ở mức dưới chuẩn Benchmark không?", label: "Môn dưới Benchmark" }
+        ]
+      }
+      if (pathname.includes("/children/advisory") || pathname.includes("/advisory")) {
+        return [
+          { text: "Sổ mục tiêu SMART và tiến độ hoàn thành của con", label: "Mục tiêu SMART của con" },
+          { text: "Kế hoạch 7 ngày gỡ rào cản học tập của con đang thế nào?", label: "Kế hoạch 7 ngày của con" },
+          { text: "Xem nhật ký cố vấn học tập và lời dặn của GVCN cho con", label: "Lời dặn của Thầy/Cô" }
         ]
       }
       return [
         { text: "Kết quả kiểm tra & học tập của con tôi", label: "Kết quả học tập của con" },
+        { text: "Con tôi có đang nằm trong diện cảnh báo học tập không?", label: "Cảnh báo học tập của con" },
         { text: "Sổ mục tiêu SMART và kế hoạch 7 ngày của con", label: "Mục tiêu của con" },
-        { text: "Xem nhật ký cố vấn học tập và lời dặn của GVCN cho con", label: "Lời dặn của Thầy/Cô" }
+        { text: "Xem nhật ký cố vấn học tập và lời dặn của GVCN cho con", label: "Lời dặn của Thầy/Cô" },
+        { text: "Báo cáo chỉ số hài lòng Phụ huynh (NPS) mới nhất", label: "Khảo sát ý kiến NPS" }
       ]
     }
 
-    // 6. Ban ĐHCM & Ban Giám Hiệu (Toàn quyền hệ thống)
+    // 6. Ban ĐHCM & Ban Giám Hiệu / Admin (Toàn quyền hệ thống)
+    if (pathname.includes("/ktdbcl")) {
+      return [
+        { text: "Báo cáo tiến độ sổ điểm toàn trường — Ban ĐHCM & BGH", label: "Tiến độ sổ điểm toàn trường" },
+        { text: "Phổ điểm và tỷ lệ đạt chuẩn Benchmark học tập toàn trường", label: "Phổ điểm toàn trường" },
+        { text: "Danh sách yêu cầu xin mở khóa sổ điểm chờ duyệt", label: "Yêu cầu mở khóa điểm" },
+        { text: "Quy chế điểm chuẩn benchmark học tập và quy định khảo thí", label: "Quy chế Benchmark" },
+        { text: "Quy trình xin mở khóa sổ điểm trên hệ thống SSM", label: "Quy trình Mở khóa điểm" }
+      ]
+    }
+    if (pathname.includes("/du-gio") || pathname.includes("/ma-tran")) {
+      return [
+        { text: "Hoạt động dạy và dự giờ tất cả các Tổ chuyên môn toàn trường", label: "Dự giờ toàn trường" },
+        { text: "Báo cáo ma trận dự giờ và điểm trung bình 11 tiêu chí sư phạm", label: "11 Tiêu chí toàn trường" },
+        { text: "Quy định đánh giá dự giờ 11 tiêu chí sư phạm và định mức tháng", label: "Quy định Dự giờ 11 TC" }
+      ]
+    }
+    if (pathname.includes("/co-van-hoc-tap") || pathname.includes("/ho-so")) {
+      return [
+        { text: "Tổng hợp số lượng học sinh cảnh báo nguy cơ toàn hệ thống", label: "Cảnh báo rủi ro toàn trường" },
+        { text: "Thống kê học sinh mở khóa mục tiêu SMART quá 3 lần", label: "Mở khóa mục tiêu > 3 lần" },
+        { text: "Quy định sổ mục tiêu SMART và kế hoạch 7 ngày gỡ khó", label: "Quy chế Mục tiêu SMART" }
+      ]
+    }
     return [
       { text: "Báo cáo tiến độ sổ điểm toàn trường — Ban ĐHCM & BGH", label: "Tiến độ sổ điểm toàn trường" },
       { text: "Hoạt động dạy và dự giờ tất cả các Tổ chuyên môn toàn trường", label: "Dự giờ toàn trường" },

@@ -63,14 +63,14 @@ export async function getTeacherObservationAnalysis(
           include: {
             slot: {
               include: {
-                teacher: { select: { fullName: true, teacherCode: true } },
+                teacher: { select: { teacherName: true, teacherCode: true } },
                 department: { select: { name: true } }
               }
             }
           }
         }
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { submittedAt: "desc" }
     });
 
     if (evaluations.length === 0) {

@@ -120,15 +120,51 @@ export async function processAIOptimizedQuery(
     }
 
     // ========================================================================
-    // GENERAL INQUIRY (Chào hỏi & Hướng dẫn nghiệp vụ)
+    // GENERAL INQUIRY (Chào hỏi, Nghiệp vụ chung & Native Fallback)
     // ========================================================================
     else {
-      responseText = `Xin chào! Tôi là **${persona.name}** (${persona.badge}) của Hệ thống Giáo dục Sky-Line.\n\nTrong Wave 1, tôi sẵn sàng hỗ trợ Thầy/Cô và Em 4 năng lực cốt lõi:\n` +
-        `1. 📖 **Tra cứu Quy chế & Quy trình SSM**: Điểm chuẩn benchmark, định mức dự giờ 11 tiêu chí, quy trình mở khóa sổ điểm.\n` +
-        `2. 📈 **Phân tích Kết quả Kiểm tra**: Phổ điểm, tỷ lệ đạt chuẩn, so sánh các kỳ kiểm tra định kỳ.\n` +
-        `3. 📋 **Phân tích Hoạt động Dự giờ**: Điểm trung bình 11 tiêu chí, nhận xét ưu điểm và tiêu chí cần bồi dưỡng.\n` +
-        `4. 🎯 **Hồ sơ Cố vấn & Mục tiêu SMART**: Đánh giá khoảng chênh GAP, kế hoạch 7 ngày gỡ khó, cảnh báo học sinh Xanh/Vàng/Đỏ.\n\n` +
-        `Thầy/Cô và Em có thể chọn nhanh một câu hỏi gợi ý bên dưới hoặc nhập câu hỏi trực tiếp!`;
+      try {
+        const { processNativeAssistantQuery } = await import("@/lib/assistant/nativeEngine");
+        const nativeResponse = await processNativeAssistantQuery(
+          query,
+          {
+            userId: userContext.userId,
+            userName: userContext.userName,
+            role: userContext.role,
+            campusId: userContext.campusId,
+            scopedDepartmentIds: userContext.allowedCampusIds,
+            departmentId: userContext.departmentId,
+            managedDepartmentIds: userContext.managedDepartmentIds,
+            managedDivisions: userContext.managedDivisions,
+            isHeadOfAcademic: userContext.isHeadOfAcademic,
+            isTBP: userContext.isTBP,
+            isTTCM: userContext.isTTCM,
+            teacherId: userContext.teacherId,
+            studentId: userContext.studentId,
+            classId: userContext.classId
+          },
+          currentPath
+        );
+
+        if (nativeResponse && !nativeResponse.includes("Thầy/Cô và các bạn có thể bấm vào các gợi ý nhanh phía dưới")) {
+          responseText = nativeResponse;
+          toolsUsed.push("nativeEngineFallback");
+        } else {
+          responseText = `Xin chào! Tôi là **${persona.name}** (${persona.badge}) của Hệ thống Giáo dục Sky-Line.\n\nTrong Wave 1, tôi sẵn sàng hỗ trợ Thầy/Cô và Em 4 năng lực cốt lõi:\n` +
+            `1. 📖 **Tra cứu Quy chế & Quy trình SSM**: Điểm chuẩn benchmark, định mức dự giờ 11 tiêu chí, quy trình mở khóa sổ điểm.\n` +
+            `2. 📈 **Phân tích Kết quả Kiểm tra**: Phổ điểm, tỷ lệ đạt chuẩn, so sánh các kỳ kiểm tra định kỳ.\n` +
+            `3. 📋 **Phân tích Hoạt động Dự giờ**: Điểm trung bình 11 tiêu chí, nhận xét ưu điểm và tiêu chí cần bồi dưỡng.\n` +
+            `4. 🎯 **Hồ sơ Cố vấn & Mục tiêu SMART**: Đánh giá khoảng chênh GAP, kế hoạch 7 ngày gỡ khó, cảnh báo học sinh Xanh/Vàng/Đỏ.\n\n` +
+            `Thầy/Cô và Em có thể chọn nhanh một câu hỏi gợi ý bên dưới hoặc nhập câu hỏi trực tiếp!`;
+        }
+      } catch {
+        responseText = `Xin chào! Tôi là **${persona.name}** (${persona.badge}) của Hệ thống Giáo dục Sky-Line.\n\nTrong Wave 1, tôi sẵn sàng hỗ trợ Thầy/Cô và Em 4 năng lực cốt lõi:\n` +
+          `1. 📖 **Tra cứu Quy chế & Quy trình SSM**: Điểm chuẩn benchmark, định mức dự giờ 11 tiêu chí, quy trình mở khóa sổ điểm.\n` +
+          `2. 📈 **Phân tích Kết quả Kiểm tra**: Phổ điểm, tỷ lệ đạt chuẩn, so sánh các kỳ kiểm tra định kỳ.\n` +
+          `3. 📋 **Phân tích Hoạt động Dự giờ**: Điểm trung bình 11 tiêu chí, nhận xét ưu điểm và tiêu chí cần bồi dưỡng.\n` +
+          `4. 🎯 **Hồ sơ Cố vấn & Mục tiêu SMART**: Đánh giá khoảng chênh GAP, kế hoạch 7 ngày gỡ khó, cảnh báo học sinh Xanh/Vàng/Đỏ.\n\n` +
+          `Thầy/Cô và Em có thể chọn nhanh một câu hỏi gợi ý bên dưới hoặc nhập câu hỏi trực tiếp!`;
+      }
     }
   } catch (err: any) {
     console.error("AI Orchestrator Error:", err);
