@@ -13,6 +13,14 @@ import { AssistantRole, PERSONAS } from "@/lib/assistant/personas"
 interface ChatMessage {
   role: "user" | "model"
   parts: [{ text: string }]
+  sources?: Array<{
+    documentId: string
+    title: string
+    category: string
+    version: string
+    source: string
+    effectiveDate: string
+  }>
 }
 
 interface SSMAssistantWidgetProps {
@@ -140,6 +148,9 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
       { text: "Báo cáo tiến độ sổ điểm toàn trường — Ban ĐHCM & BGH", label: "Tiến độ sổ điểm toàn trường" },
       { text: "Hoạt động dạy và dự giờ tất cả các Tổ chuyên môn toàn trường", label: "Dự giờ toàn trường" },
       { text: "Tổng hợp số lượng học sinh cảnh báo nguy cơ toàn hệ thống", label: "Cảnh báo rủi ro toàn trường" },
+      { text: "Quy chế điểm chuẩn benchmark học tập và quy định khảo thí", label: "Quy chế Benchmark" },
+      { text: "Quy định đánh giá dự giờ 11 tiêu chí sư phạm và định mức tháng", label: "Quy định Dự giờ 11 TC" },
+      { text: "Quy trình xin mở khóa sổ điểm trên hệ thống SSM", label: "Quy trình Mở khóa điểm" },
       { text: "Báo cáo chỉ số hài lòng Phụ huynh (NPS) mới nhất", label: "Chỉ số NPS toàn trường" }
     ]
   }, [role, pathname])
@@ -189,7 +200,8 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
         ...prev,
         {
           role: "model",
-          parts: [{ text: data.text }]
+          parts: [{ text: data.text }],
+          sources: data.sources
         }
       ])
     } catch (err: any) {
@@ -377,6 +389,18 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
                   }`}
                 >
                   {renderMessageContent(msg.parts[0].text)}
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-col gap-1.5">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                        <BookOpen className="w-3 h-3 text-teal-600" /> Nguồn trích dẫn quy định:
+                      </span>
+                      {msg.sources.map((s, idx) => (
+                        <div key={idx} className="text-[10px] bg-teal-50/80 border border-teal-200/80 rounded-lg px-2.5 py-1 text-teal-900 font-medium">
+                          <strong>{s.title}</strong> ({s.source} • v{s.version})
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )

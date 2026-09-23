@@ -8,6 +8,7 @@ import {
   AssistantSecurityContext
 } from "@/lib/assistant/tools";
 import { processNativeAssistantQuery } from "@/lib/assistant/nativeEngine";
+import { processAIOptimizedQuery, AIUserContext } from "@/services/ai";
 import { SCHOOL_KNOWLEDGE_BASE } from "@/lib/assistant/knowledgeBase";
 import { getAdminSession, getScopedDepartmentIds } from "@/lib/session";
 
@@ -154,18 +155,28 @@ export async function POST(req: Request) {
     const persona = PERSONAS[resolvedRole] || PERSONAS.TEACHER;
     const apiKey = process.env.GEMINI_API_KEY?.trim();
 
-    // 3. CHẾ ĐỘ NATIVE ENGINE (KHÔNG CẦN GEMINI_API_KEY)
-    // Nếu không có API Key, chạy trực tiếp bộ máy thông minh nội bộ trên CSDL thật
+    const aiUserContext: AIUserContext = {
+      userId: securityContext.userId,
+      userName: securityContext.userName,
+      role: resolvedRole,
+      campusId: securityContext.campusId,
+      allowedCampusIds: securityContext.scopedDepartmentIds || undefined,
+      departmentId: securityContext.departmentId,
+      managedDepartmentIds: securityContext.managedDepartmentIds,
+      managedDivisions: securityContext.managedDivisions,
+      isHeadOfAcademic: securityContext.isHeadOfAcademic,
+      isTBP: securityContext.isTBP,
+      isTTCM: securityContext.isTTCM,
+      teacherId: securityContext.teacherId,
+      studentId: securityContext.studentId,
+      classId: securityContext.classId
+    };
+
+    // 3. CHẾ ĐỘ ENTERPRISE AI ORCHESTRATOR & DETERMINISTIC ANALYTICS (WAVE 1)
+    // Nếu không có API Key, chạy trực tiếp Enterprise Orchestrator với RAG, Analytics và Guardrails
     if (!apiKey) {
-      const nativeResponseText = await processNativeAssistantQuery(message, securityContext, currentPath);
-      return Response.json({
-        success: true,
-        text: nativeResponseText,
-        role: resolvedRole,
-        personaName: persona.name,
-        badge: persona.badge,
-        primaryColor: persona.primaryColor
-      });
+      const aiResponse = await processAIOptimizedQuery(message, aiUserContext, currentPath);
+      return Response.json(aiResponse);
     }
 
     // 4. NẾU CÓ GEMINI_API_KEY: Sử dụng Gemini 2.5 Flash kết hợp Function Calling
@@ -231,17 +242,9 @@ ${SCHOOL_KNOWLEDGE_BASE.filter(k => k.applicableRoles.includes(resolvedRole) || 
         primaryColor: persona.primaryColor
       });
     } catch (geminiError: any) {
-      console.warn("Gemini API call failed, falling back to Native Engine:", geminiError);
-      // Tự động chuyển tiếp sang Native Engine nếu Gemini API bị lỗi/hết quota
-      const fallbackText = await processNativeAssistantQuery(message, securityContext, currentPath);
-      return Response.json({
-        success: true,
-        text: fallbackText,
-        role: resolvedRole,
-        personaName: persona.name,
-        badge: persona.badge,
-        primaryColor: persona.primaryColor
-      });
+      console.warn("Gemini API call failed, falling back to Enterprise AI Orchestrator:", geminiError);
+      const fallbackAiResponse = await processAIOptimizedQuery(message, aiUserContext, currentPath);
+      return Response.json(fallbackAiResponse);
     }
   } catch (error: any) {
     console.error("Assistant API Error:", error);
