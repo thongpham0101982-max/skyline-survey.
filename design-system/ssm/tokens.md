@@ -4,17 +4,23 @@
 
 ---
 
-## 1. MÀU SẮC THƯƠNG HIỆU (BRAND IDENTITY: DEEP PINE)
+## 1. MÀU SẮC THƯƠNG HIỆU (OFFICIAL SKY-LINE BRAND IDENTITY)
 
-Màu nhận diện chủ đạo của Sky-Line SSM là **Deep Pine (`#003B3A`)** — gam màu xanh thông trầm tĩnh, tạo cảm giác tin cậy, sư phạm chuẩn mực và học thuật vững bền.
+Màu nhận diện thương hiệu chính thức của Sky-Line theo bộ nhận diện chuẩn (`FILE LOGO SKL.pdf`):
+- **Official Brand Teal (`#00A19A`)**: CMYK: `84, 13, 46, 0` | RGB: `0, 161, 154` — Sắc ngọc bích tươi sáng của biểu tượng cánh chim Sky-Line, ứng dụng cho nút bấm chính, logo, điểm nhấn thương hiệu.
+- **Deep Pine (`#003B3A`)**: Gam xanh thông trầm tĩnh cho Sidebar, Header trang trọng và thanh điều hướng.
 
 ```css
 :root {
   /* Brand Core */
-  --primary: #003B3A;             /* Sky-Line Deep Pine */
-  --primary-hover: #004D4B;       /* Deep Pine Hover */
-  --primary-active: #002827;      /* Deep Pine Active */
-  --primary-foreground: #FFFFFF;  /* Chữ trắng tương phản 11.2:1 */
+  --primary: #00A19A;             /* Sky-Line Official Brand Teal (RGB: 0, 161, 154) */
+  --primary-hover: #008B85;       /* Tương tác hover trên Web & Touch */
+  --primary-active: #00736E;      /* Tương tác active/nhấn */
+  --primary-foreground: #FFFFFF;  /* Chữ trắng tương phản cao */
+  --brand-pine: #003B3A;          /* Sky-Line Deep Pine */
+  --brand-teal: #00A19A;          /* Mã chuẩn thương hiệu gốc */
+  --brand-teal-accessible: #00736E; /* WCAG 2.1 AA text (4.6:1 trên nền trắng) */
+  --brand-teal-light: #F0FDFA;    /* Nền thẻ dịu mắt */
 
   /* Surfaces & Backgrounds */
   --background: #F8FAFC;          /* Nền trang Slate-50 dịu mắt */
@@ -60,7 +66,7 @@ Màu nhận diện chủ đạo của Sky-Line SSM là **Deep Pine (`#003B3A`)**
 
 ## 3. THANG KÍCH THƯỚC CHỮ (TYPOGRAPHY SCALE)
 
-Phông chữ hệ thống: `Inter`, `Be Vietnam Pro`, `Segoe UI`, `system-ui`.
+Phông chữ nhận diện thương hiệu Sky-Line: **`Open Sans`** (Google Fonts hỗ trợ tiếng Việt đầy đủ), kết hợp fallback `Be Vietnam Pro`, `Segoe UI`, `system-ui`. Trọng số chuẩn hóa: Light (300), Regular (400), Medium (500), SemiBold (600), Bold (700), ExtraBold (800).
 
 | Cấp bậc (Level) | Tailwind Class | Kích thước / Line-height | Trọng lượng (Weight) | Ứng dụng |
 |---|---|---|---|---|

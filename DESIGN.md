@@ -1,23 +1,30 @@
 ---
-version: alpha
-name: SQMS
-description: Hệ thống Quản trị Chất lượng Trường học và Khảo sát Đánh giá Năng lực Sky-Line Education System
+version: 2.0
+name: SQMS / SSM Sky-Line
+description: Hệ thống Quản trị Chất lượng Trường học và Đánh giá Năng lực - Hệ thống Giáo dục Sky-Line
 colors:
-  brand-violet-dark: "#7400B8"
-  brand-violet: "#6930C3"
-  brand-indigo: "#5E60CE"
-  brand-blue-dark: "#5390D9"
-  brand-blue: "#4EA8DE"
-  brand-cyan: "#48BFE3"
-  brand-aqua: "#56CFE1"
-  brand-turquoise: "#64DFDF"
-  brand-mint: "#72EFDD"
-  brand-mint-bright: "#80FFDB"
-  skyline-dark: "#003B3A"
-  accent-yellow: "#D97706"
+  brand-primary: "#00A19A"       # Sky-Line Teal chính thức (Logo, CMYK: C84 M13 Y46 K0 | RGB: 0 161 154)
+  brand-hover: "#008B85"         # Trạng thái tương tác Hover trên Web/Mobile
+  brand-active: "#00736E"        # Trạng thái Active / Touch
+  brand-accessible-text: "#00736E" # WCAG AA (4.6:1 trên nền trắng)
+  brand-accessible-heading: "#005854" # WCAG AAA (7.2:1 trên nền trắng)
+  brand-deep-pine: "#003B3A"     # Nền Sidebar, Header trang trọng
+  accent-yellow: "#D97706"       # Màu cảnh báo / Thao tác bổ trợ
+  skyline-scale:
+    50: "#F0FDFA"
+    100: "#CCFBF1"
+    200: "#99F6E4"
+    300: "#5EEAD4"
+    400: "#2DD4BF"
+    500: "#00A19A"
+    600: "#008B85"
+    700: "#00736E"
+    800: "#005854"
+    900: "#003B3A"
+    950: "#002220"
 typography:
   sans:
-    fontFamily: "Be Vietnam Pro, sans-serif"
+    fontFamily: "Open Sans, Be Vietnam Pro, sans-serif"
 rounded:
   base: "12px"
   sm: "8px"
@@ -28,40 +35,68 @@ rounded:
   "3xl": "32px"
 ---
 
-# Design Language: SQMS
+# Design Language: SSM Sky-Line (Brand Standard 2026)
 
-## Overview
-SQMS (School Quality Management System) là hệ thống quản trị chất lượng giáo dục, khảo sát ý kiến, quản lý sổ điểm và đánh giá năng lực học sinh thuộc Hệ thống Giáo dục Sky-Line. Giao diện được thiết kế hiện đại, tinh gọn, thân thiện với người dùng theo phong cách giáo dục cao cấp, sử dụng bảng màu nhận diện thương hiệu 10 bước độc quyền.
+## 1. Overview
+Hệ thống Quản lý Chất lượng Giáo dục Sky-Line (SSM / SQMS) tuân thủ bộ quy chuẩn nhận diện thương hiệu chính thức từ tài liệu **FILE LOGO SKL (LOGO + MÃ MÀU).pdf**, được số hóa chuyên biệt cho môi trường Web đa thiết bị (Desktop, Laptop, Tablet, Mobile, màn hình Retina Display P3 và OLED).
 
-## Colors
-Hệ thống sử dụng bảng màu thương hiệu chính thức 2024 của Sky-Line (10-Step Palette):
-- **Primary Cyan (`#48BFE3`)**: Màu chủ đạo cho các nút bấm chính, liên kết, trạng thái kích hoạt và điểm nhấn giao diện.
-- **Deep Navy / Teal (`#003B3A`)**: Màu nền chính cho thanh bên (Sidebar), panel thương hiệu và các tiêu đề trang trọng.
-- **Royal Purple & Indigo (`#6930C3`, `#5E60CE`)**: Sử dụng cho biểu đồ dữ liệu, phân loại chuyên môn và thẻ năng lực.
-- **Accent Yellow (`#D97706`)**: Màu cảnh báo nhẹ, thẻ cần chú ý hoặc nhấn mạnh hành động quan trọng.
-- **Backgrounds**: Nền trang sử dụng sắc độ trung tính `#F5F7FA` (Neutral Slate/Zinc) để tôn vinh nội dung và bảng dữ liệu.
+---
 
-## Typography
-- **Phông chữ chủ đạo**: `Be Vietnam Pro` (Google Fonts) hỗ trợ tiếng Việt hoàn chỉnh với đầy đủ các trọng số:
-  - Heading: Font Black (900) hoặc Bold (700) kết hợp `text-balance` chống ngắt dòng đơn lẻ.
-  - Body: Regular (400) hoặc Medium (500) kết hợp `text-pretty`.
-  - Data / Numbers: Luôn sử dụng `tabular-nums` để số liệu, điểm số, ngày tháng hiển thị thẳng hàng.
+## 2. Màu Sắc Thương Hiệu Gốc (Official Brand Specifications)
+Biểu tượng thương hiệu Sky-Line (Cánh chim / vệt sóng vươn lên) sử dụng gam màu ngọc bích đặc trưng:
 
-## Layout & Viewport
-- Luôn sử dụng đơn vị Dynamic Viewport (`min-h-dvh`, `h-dvh`) cho các khung nhìn toàn màn hình, khắc phục lỗi nhảy giao diện do thanh địa chỉ trình duyệt trên điện thoại (iOS Safari / Android Chrome).
-- Khoảng cách lề và padding tuân theo hệ thống tỷ lệ chuẩn Tailwind (4px, 8px, 12px, 16px, 24px, 32px).
+| Hệ màu | Thông số kỹ thuật | Ứng dụng chính |
+|---|---|---|
+| **CMYK** | `C84 - M13 - Y46 - K0` | In ấn ấn phẩm, đồng phục, pano biểu bảng thực tế |
+| **RGB** | `R0 - G161 - B154` | Không gian màu số hiển thị điện tử |
+| **HEX** | **`#00A19A`** | Mã màu cốt lõi trên Web và ứng dụng di động |
 
-## Elevation & Depth
-- **Thẻ Card**: Nền trắng `#FFFFFF`, viền mỏng `border-slate-200/90`, đổ bóng nhẹ `shadow-2xs` hoặc `shadow-xs`.
-- **Modals / Dialogs**: Đổ bóng `shadow-2xl` với nền overlay mờ `bg-[#001D1C]/80` kết hợp `backdrop-blur-md`.
+---
 
-## Components & Interaction
-- **Button**: Bo góc `rounded-xl`, hiệu ứng phản hồi nhấn `active:scale-[0.98]`, độ trễ hiệu ứng tối đa 200ms.
-- **DataTable**: Thiết kế phân trang rõ ràng, cột số tự động căn lề chuẩn với `tabular-nums`, trạng thái trống (`emptyMessage`) có chỉ dẫn cụ thể.
-- **Icons**: Chuẩn hóa kích thước hình học bằng `size-*` (`size-4`, `size-5`, `size-6`). Nút chỉ có icon phải luôn có `aria-label`.
+## 3. Hệ Thống Sắc Độ Tương Thích Web & Đa Thiết Bị (Tonal Scale 50 - 950)
+Để đảm bảo khả năng đọc tốt dưới ánh sáng ngoài trời trên điện thoại, đồng thời dịu mắt khi giáo viên làm việc lâu trên máy tính:
 
-## Do's and Don'ts
-- **DO**: Luôn thêm `aria-label` cho các nút chỉ chứa biểu tượng (icon buttons).
-- **DO**: Dùng `tabular-nums` khi hiển thị bảng điểm, mã học sinh, thời gian và chỉ số KPI.
-- **DON'T**: Không sử dụng `h-screen`, thay bằng `h-dvh`.
-- **DON'T**: Không sử dụng dải màu gradient sặc sỡ hoặc hiệu ứng phát sáng chói mắt làm mất tính chuyên nghiệp trong môi trường sư phạm.
+| Bước màu | Mã HEX | Ứng dụng UI trên Web & Mobile | Tiêu chuẩn WCAG |
+|---|---|---|---|
+| **50** | `#F0FDFA` | Nền thẻ nhẹ, nền dòng được chọn (table row highlight), tab active | Nền dịu mắt |
+| **100** | `#CCFBF1` | Nền badge trạng thái, chip thông tin, pill tag | Nền tag phụ |
+| **200** | `#99F6E4` | Đường viền card, đường kẻ phân cách nhẹ | Border mềm |
+| **300** | `#5EEAD4` | Viền focus, hiệu ứng hover viền | Interactive |
+| **400** | `#2DD4BF` | Icon phụ, chỉ số phụ trên biểu đồ dữ liệu | Accent sáng |
+| **500** | **`#00A19A`** | **MÀU THƯƠNG HIỆU CHÍNH THỨC**: Nút bấm chính, Icon thương hiệu, Brand Logo, Điểm nhấn thanh điều hướng | **Core Brand** |
+| **600** | `#008B85` | Trạng thái Hover của Button/Link trên chuột máy tính & phản hồi chạm trên điện thoại | Hover/Touch |
+| **700** | `#00736E` | Chữ / Text Link thương hiệu trên nền trắng (`#FFFFFF`) | **WCAG AA (4.6:1)** |
+| **800** | `#005854` | Tiêu đề trang, văn bản quan trọng cần độ tương phản cao | **WCAG AAA (7.2:1)** |
+| **900** | `#003B3A` | **Deep Pine**: Nền Sidebar, Topbar, Card Header trang trọng | Tương phản tuyệt đối (11.5:1) |
+| **950** | `#002220` | Nền chế độ tối (Dark Mode surface), bóng đổ chuyên sâu | Dark depth |
+
+---
+
+## 4. Tương Thích Màn Hình Mới (Wide Color Gamut & OLED Displays)
+- **Display P3**: Hệ thống tích hợp CSS Modern Color 4 `@supports (color: color(display-p3 ...))` giúp màu `#00A19A` trên màn hình Apple (MacBook, iPad, iPhone) và màn hình OLED Android giữ được độ rực rỡ và chiều sâu chính xác như tài liệu in ấn gốc.
+- **Fallback an toàn**: Tự động chuyển đổi êm ái sang không gian sRGB chuẩn trên tất cả các màn hình LCD văn phòng thông thường.
+
+---
+
+## 5. Quy Chuẩn Nút Bấm & Thành Phần Tương Tác
+- **Button Sky-Line Primary**:
+  - Nền: `#00A19A`
+  - Chữ: Trắng `#FFFFFF` (Font weight: 600 - 700)
+  - Hover: `#008B85` với bóng đổ nhẹ `shadow-[0_4px_14px_rgba(0,161,154,0.3)]`
+  - Active/Press: `#00736E`, scale `0.98`
+- **Focus Rings**: `outline: 2px solid #00A19A` kèm `box-shadow: 0 0 0 4px rgba(0, 161, 154, 0.18)` chống mất nét trên các loại màn hình khác nhau.
+- **Header Thanh Điều Hướng (Navbar / Sidebar)**: Phối hợp chuyển tiếp sang trọng giữa `#003B3A` (Deep Pine) và `#00A19A` (Teal).
+
+---
+
+## 6. Phông Chữ Thương Hiệu (Brand Typography: Open Sans)
+Hệ thống sử dụng phông chữ thương hiệu chính thức từ thư mục `We're Sky-Liners > BRAND GUIDELINES > Font thương hiệu`:
+- **Primary Font**: **`Open Sans`** — Phông chữ chuẩn nhận diện Sky-Line, hỗ trợ tiếng Việt đầy đủ với các biến thể:
+  - **Light (300)**: Caption, chú thích siêu nhỏ.
+  - **Regular (400)**: Văn bản nội dung (body text), nhận xét học tập, nhãn phụ.
+  - **Medium (500)**: Dữ liệu bảng (table cells), menu items.
+  - **SemiBold (600)**: Nhãn form, tiêu đề phụ, trạng thái badge.
+  - **Bold (700)**: Nút bấm (buttons), tiêu đề card, điểm số nổi bật.
+  - **ExtraBold (800)**: Tiêu đề trang (page titles), số liệu thống kê lớn.
+- **Dữ liệu số (Data / Numbers)**: Kết hợp `tabular-nums font-mono` để căn thẳng cột điểm số, mã học sinh, thời gian trên mọi thiết bị.
+- **Fallback chuẩn**: `Be Vietnam Pro`, `Segoe UI`, `system-ui`.

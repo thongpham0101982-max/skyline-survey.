@@ -12,7 +12,7 @@ export interface KPICardProps {
   badgeVariant?: "default" | "skyline" | "accent" | "success" | "destructive" | "secondary"
   href?: string
   hrefLabel?: string
-  colorTheme?: "sky" | "emerald" | "amber" | "purple" | "rose" | "slate"
+  colorTheme?: "sky" | "emerald" | "amber" | "purple" | "rose" | "slate" | "teal" | "gold" | "violet" | "pine"
   progress?: number
   className?: string
 }
@@ -26,16 +26,40 @@ export function KPICard({
   badge,
   href,
   hrefLabel,
-  colorTheme = "sky",
+  colorTheme = "teal",
   progress,
   className = ""
 }: KPICardProps) {
   const themeColors = {
+    teal: {
+      bg: "bg-[#00A19A]/10 text-[#00A19A] border-[#00A19A]/20",
+      badge: "bg-[#00A19A]/10 text-[#00736E] border-[#00A19A]/30",
+      link: "text-[#00736E] hover:text-[#00A19A]",
+      progress: "bg-[#00A19A]"
+    },
+    gold: {
+      bg: "bg-[#AE882E]/10 text-[#AE882E] border-[#AE882E]/20",
+      badge: "bg-[#AE882E]/10 text-[#937326] border-[#AE882E]/30",
+      link: "text-[#937326] hover:text-[#AE882E]",
+      progress: "bg-[#AE882E]"
+    },
+    violet: {
+      bg: "bg-[#6E3D89]/10 text-[#6E3D89] border-[#6E3D89]/20",
+      badge: "bg-[#6E3D89]/10 text-[#593170] border-[#6E3D89]/30",
+      link: "text-[#593170] hover:text-[#6E3D89]",
+      progress: "bg-[#6E3D89]"
+    },
+    pine: {
+      bg: "bg-[#003B3A]/10 text-[#003B3A] border-[#003B3A]/20",
+      badge: "bg-[#003B3A]/10 text-[#003B3A] border-[#003B3A]/30",
+      link: "text-[#003B3A] hover:text-[#00A19A]",
+      progress: "bg-[#003B3A]"
+    },
     sky: {
-      bg: "bg-sky-50 text-[#0284C7] border-sky-100",
-      badge: "bg-sky-50 text-sky-700 border-sky-200/70",
-      link: "text-sky-600 hover:text-sky-700",
-      progress: "bg-sky-500"
+      bg: "bg-[#00A19A]/10 text-[#00736E] border-[#00A19A]/20",
+      badge: "bg-[#CCFBF1] text-[#00736E] border-[#99F6E4]",
+      link: "text-[#00736E] hover:text-[#00A19A]",
+      progress: "bg-[#00A19A]"
     },
     emerald: {
       bg: "bg-emerald-50 text-emerald-600 border-emerald-100",
@@ -50,10 +74,10 @@ export function KPICard({
       progress: "bg-amber-500"
     },
     purple: {
-      bg: "bg-purple-50 text-purple-600 border-purple-100",
-      badge: "bg-purple-50 text-purple-700 border-purple-200/70",
-      link: "text-purple-600 hover:text-purple-700",
-      progress: "bg-purple-500"
+      bg: "bg-[#6E3D89]/10 text-[#6E3D89] border-[#6E3D89]/20",
+      badge: "bg-[#6E3D89]/10 text-[#593170] border-[#6E3D89]/30",
+      link: "text-[#593170] hover:text-[#6E3D89]",
+      progress: "bg-[#6E3D89]"
     },
     rose: {
       bg: "bg-rose-50 text-rose-600 border-rose-100",

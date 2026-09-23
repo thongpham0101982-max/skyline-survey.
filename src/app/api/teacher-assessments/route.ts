@@ -471,7 +471,29 @@ export async function GET(req: any) {
         const [teacher, targetYear, totalAssignments] = await Promise.all([
             prisma.teacher.findUnique({
                 where: { userId: session.user.id },
-                select: { id: true }
+                select: {
+                    id: true,
+                    teacherCode: true,
+                    teacherName: true,
+                    homeroomClass: true,
+                    position: true,
+                    positions: true,
+                    campusId: true,
+                    campus: {
+                        select: {
+                            id: true,
+                            campusCode: true,
+                            campusName: true
+                        }
+                    },
+                    mainSubjectRel: {
+                        select: {
+                            id: true,
+                            name: true,
+                            code: true
+                        }
+                    }
+                }
             }),
             academicYearId
                 ? prisma.academicYear.findUnique({ where: { id: academicYearId } })
@@ -620,7 +642,21 @@ export async function GET(req: any) {
             scoredStudents: 0,
             academicYearName,
             totalObservedLessons,
-            remedialStudentsCount
+            remedialStudentsCount,
+            campus: teacher.campus ? {
+                id: teacher.campus.id,
+                campusCode: teacher.campus.campusCode,
+                campusName: teacher.campus.campusName
+            } : null,
+            teacherInfo: {
+                id: teacher.id,
+                teacherCode: teacher.teacherCode,
+                teacherName: teacher.teacherName,
+                homeroomClass: teacher.homeroomClass,
+                position: teacher.position,
+                positions: teacher.positions,
+                mainSubject: teacher.mainSubjectRel?.name || null
+            }
         });
     }
     

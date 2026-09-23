@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useMemo } from "react";
 import {
@@ -591,7 +591,7 @@ export function ReceivedEvaluationsTab({
               <select
                 value={selectedEvalRole}
                 onChange={e => setSelectedEvalRole(e.target.value as any)}
-                className="py-2 px-3.5 bg-teal-50/80 border border-teal-200 rounded-xl text-xs font-black text-teal-900 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
+                className="py-2 px-3.5 bg-teal-50/80 border border-teal-200 rounded-xl text-xs font-black text-teal-900 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none transition-all shadow-2xs cursor-pointer"
               >
                 <option value="ALL">🌟 Tất cả vai trò ({receivedEvaluations.length} phiếu)</option>
                 <option value="TEACHER">🧑‍🏫 Tiết tôi dạy (GV dạy) ({taughtCount} phiếu)</option>
@@ -605,7 +605,7 @@ export function ReceivedEvaluationsTab({
               <select
                 value={selectedEvalMonth}
                 onChange={e => handleEvalMonthChange(e.target.value)}
-                className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
+                className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none transition-all shadow-2xs cursor-pointer"
               >
                 <option value="ALL">Toàn bộ năm học ({receivedEvaluations.length} phiếu)</option>
                 {availableMonths.map(m => (
@@ -620,7 +620,7 @@ export function ReceivedEvaluationsTab({
               <select
                 value={selectedOriginType}
                 onChange={e => setSelectedOriginType(e.target.value as any)}
-                className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none transition-all shadow-2xs cursor-pointer"
+                className="py-2 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-[#003B3A] focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none transition-all shadow-2xs cursor-pointer"
               >
                 <option value="ALL">Mọi hình thức (Tất cả)</option>
                 <option value="PLAN">📋 Tiết theo kế hoạch</option>
@@ -703,11 +703,11 @@ export function ReceivedEvaluationsTab({
               <span>Năng lực hiện tại</span>
               <Info className="w-3 h-3 text-slate-300" />
             </div>
-            <p className="text-3xl font-black text-[#00A99D] tracking-tight">
+            <p className="text-3xl font-black text-[#00A19A] tracking-tight">
               {currentOverallPct !== null ? `${currentOverallPct}%` : "--"}
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#00A99D] flex items-center justify-center border border-sky-100 shadow-2xs">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#00A19A] flex items-center justify-center border border-sky-100 shadow-2xs">
             <Target className="w-6 h-6" />
           </div>
         </div>
@@ -887,7 +887,7 @@ export function ReceivedEvaluationsTab({
                   <polygon
                     points={currentPath}
                     fill="rgba(0, 169, 157, 0.22)"
-                    stroke="#00A99D"
+                    stroke="#00A19A"
                     strokeWidth="2.5"
                   />
                 )}
@@ -917,7 +917,7 @@ export function ReceivedEvaluationsTab({
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 font-medium">
             <span>Đánh giá đa chiều {isPreschoolEvaluations ? "5 tiêu chí Mầm non" : "11 yêu cầu Chuẩn nghề nghiệp"}</span>
-            <span className="text-[#00A99D] font-bold">
+            <span className="text-[#00A19A] font-bold">
               {currentOverallPct !== null ? `Mức đạt: ${currentOverallPct}%` : "Chưa có dữ liệu"}
             </span>
           </div>
@@ -941,7 +941,7 @@ export function ReceivedEvaluationsTab({
               {competencyData.map(item => (
                 <div key={item.id} className="p-2.5 rounded-2xl bg-slate-50/70 hover:bg-slate-50 border border-slate-100 transition-all flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <span className="w-7 h-7 rounded-xl bg-teal-50 text-[#00A99D] border border-teal-200/60 font-black text-[11px] flex items-center justify-center shrink-0">
+                    <span className="w-7 h-7 rounded-xl bg-teal-50 text-[#00A19A] border border-teal-200/60 font-black text-[11px] flex items-center justify-center shrink-0">
                       {item.id}
                     </span>
                     <span className="text-xs font-bold text-slate-800 truncate" title={item.label}>
@@ -1069,7 +1069,7 @@ export function ReceivedEvaluationsTab({
                         y1={trendPoints[0].y}
                         x2={trendW - padR}
                         y2={trendPoints[0].y}
-                        stroke="#00A99D"
+                        stroke="#00A19A"
                         strokeWidth="1.5"
                         strokeDasharray="4 4"
                         opacity="0.5"
@@ -1097,7 +1097,7 @@ export function ReceivedEvaluationsTab({
                   {areaPathStr && <path d={areaPathStr} fill="url(#monthAreaGrad)" />}
 
                   {/* Stroke Line */}
-                  {linePathStr && <path d={linePathStr} fill="none" stroke="#00A99D" strokeWidth="2.5" strokeLinecap="round" />}
+                  {linePathStr && <path d={linePathStr} fill="none" stroke="#00A19A" strokeWidth="2.5" strokeLinecap="round" />}
 
                   {/* Data points and labels */}
                   {trendPoints.map((p, idx) => (
@@ -1201,7 +1201,7 @@ export function ReceivedEvaluationsTab({
           {/* Goal Banner */}
           <div className="p-3.5 rounded-2xl bg-gradient-to-r from-teal-50 to-sky-50 border border-teal-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-[#00A99D]" />
+              <Target className="w-4 h-4 text-[#00A19A]" />
               <span className="text-xs font-bold text-slate-700">Mục tiêu lượt dự tiếp theo:</span>
             </div>
             <span className="text-sm font-black text-[#003B3A] bg-white px-3 py-1 rounded-xl shadow-2xs border border-teal-200">
@@ -1235,7 +1235,7 @@ export function ReceivedEvaluationsTab({
           {selectedEvalMonth !== "ALL" && (
             <button
               onClick={() => handleEvalMonthChange("ALL")}
-              className="px-3 py-1 rounded-xl text-xs font-bold text-[#00A99D] bg-teal-50 hover:bg-teal-100 transition-colors border border-teal-200 cursor-pointer"
+              className="px-3 py-1 rounded-xl text-xs font-bold text-[#00A19A] bg-teal-50 hover:bg-teal-100 transition-colors border border-teal-200 cursor-pointer"
             >
               Xem tất cả các tháng
             </button>

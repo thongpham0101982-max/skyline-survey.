@@ -93,11 +93,12 @@ export async function getBackupListAction() {
 }
 
 export async function triggerBackupAction() {
-  const path = require("path");
-  const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
   try {
-    const backupModule = eval("require")(scriptPath);
-    const result = await backupModule.runBackup({ triggerType: "MANUAL_WEB_ADMIN", force: true });
+    const path = require("path");
+    const scriptPath = path.join(process.cwd(), "scripts", "backup-db.js");
+    const dynamicRequire = eval("require");
+    const { runBackup } = dynamicRequire(scriptPath);
+    const result = await runBackup({ triggerType: "MANUAL_WEB_ADMIN", force: true });
     revalidatePath("/admin/maintenance");
     return { success: true, result };
   } catch (err: any) {

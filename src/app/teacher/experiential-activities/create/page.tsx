@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -661,7 +661,7 @@ export default function CreateActivityWizard() {
             className="px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-black text-slate-700 hover:text-[#003B3A] transition-all flex items-center gap-2 shadow-2xs"
             title="Quay về trang Quản lý Hoạt động trải nghiệm"
           >
-            <ArrowLeft className="w-4 h-4 text-[#00A99D]" />
+            <ArrowLeft className="w-4 h-4 text-[#00A19A]" />
             <span>← Quay về Quản lý Hoạt động</span>
           </button>
           <div className="text-xs font-black text-slate-500 bg-white/80 px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs">
@@ -686,7 +686,7 @@ export default function CreateActivityWizard() {
                   onClick={() => setCurrentStep(step.num)}
                   className={`cursor-pointer p-3 rounded-2xl border transition-all ${
                     isActive
-                      ? 'bg-[#00A99D]/10 border-[#00A99D] shadow-xs'
+                      ? 'bg-[#00A19A]/10 border-[#00A19A] shadow-xs'
                       : isPast
                       ? 'bg-emerald-50/60 border-emerald-200 hover:bg-emerald-50'
                       : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100/80'
@@ -696,7 +696,7 @@ export default function CreateActivityWizard() {
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${
                         isActive
-                          ? 'bg-[#00A99D] text-white'
+                          ? 'bg-[#00A19A] text-white'
                           : isPast
                           ? 'bg-emerald-600 text-white'
                           : 'bg-slate-200 text-slate-600'
@@ -729,7 +729,7 @@ export default function CreateActivityWizard() {
             <div className="bg-gradient-to-br from-teal-50/70 via-emerald-50/40 to-sky-50/50 rounded-2xl p-4 sm:p-5 border border-teal-200/80 shadow-xs">
               <div className="flex items-center justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#00A99D] text-white flex items-center justify-center shadow-xs shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-[#00A19A] text-white flex items-center justify-center shadow-xs shrink-0">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
@@ -762,9 +762,9 @@ export default function CreateActivityWizard() {
                       <div
                         key={preset.id}
                         onClick={() => handleApplyPreset(preset)}
-                        className={`group relative p-3.5 rounded-2xl border transition-all cursor-pointer bg-white hover:shadow-md hover:border-[#00A99D] flex flex-col justify-between ${
+                        className={`group relative p-3.5 rounded-2xl border transition-all cursor-pointer bg-white hover:shadow-md hover:border-[#00A19A] flex flex-col justify-between ${
                           isSelected
-                            ? 'border-[#00A99D] ring-2 ring-[#00A99D]/20 bg-teal-50/20'
+                            ? 'border-[#00A19A] ring-2 ring-[#00A19A]/20 bg-teal-50/20'
                             : 'border-slate-200 hover:border-teal-300'
                         }`}
                       >
@@ -783,7 +783,7 @@ export default function CreateActivityWizard() {
                             </span>
                           </div>
                           <div>
-                            <h4 className="text-xs font-black text-slate-900 group-hover:text-[#00A99D] transition-colors leading-snug line-clamp-2">
+                            <h4 className="text-xs font-black text-slate-900 group-hover:text-[#00A19A] transition-colors leading-snug line-clamp-2">
                               {preset.name}
                             </h4>
                             <p className="text-[11px] text-slate-500 font-medium line-clamp-2 mt-1">
@@ -796,7 +796,7 @@ export default function CreateActivityWizard() {
                           <span className="text-slate-500 font-bold">
                             {preset.criteria.length} tiêu chí đánh giá
                           </span>
-                          <span className="inline-flex items-center gap-1 font-black text-[#00A99D] group-hover:translate-x-0.5 transition-transform">
+                          <span className="inline-flex items-center gap-1 font-black text-[#00A19A] group-hover:translate-x-0.5 transition-transform">
                             {isSelected ? 'Đang chọn' : 'Áp dụng mẫu'}
                             <ChevronRight className="w-3.5 h-3.5" />
                           </span>
@@ -820,7 +820,7 @@ export default function CreateActivityWizard() {
                   placeholder="Ví dụ: Hội chợ Xuân Kết nối Yêu thương 2026, STEM Khám phá Hệ Sinh thái..."
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                  className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                 />
               </div>
 
@@ -829,7 +829,7 @@ export default function CreateActivityWizard() {
                 <select
                   value={formData.scale}
                   onChange={e => setFormData({ ...formData, scale: e.target.value })}
-                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                 >
                   {ACTIVITY_SCALES.map(sc => (
                     <option key={sc.id} value={sc.id}>{sc.name}</option>
@@ -855,7 +855,7 @@ export default function CreateActivityWizard() {
                       subjectName: sub ? sub.subjectName : (dept ? dept.name : '')
                     });
                   }}
-                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                 >
                   <option value="">Hoạt động chung / Liên tổ (Không gắn riêng TCM)</option>
                   {departments && departments.length > 0 && (
@@ -887,7 +887,7 @@ export default function CreateActivityWizard() {
                   required
                   value={formData.date}
                   onChange={e => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                 />
               </div>
 
@@ -898,7 +898,7 @@ export default function CreateActivityWizard() {
                   placeholder="Ví dụ: 08:00 - 11:30 hoặc Cả ngày"
                   value={formData.timeRange}
                   onChange={e => setFormData({ ...formData, timeRange: e.target.value })}
-                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                  className="w-full py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                 />
               </div>
 
@@ -909,7 +909,7 @@ export default function CreateActivityWizard() {
                   placeholder="Ví dụ: Sân trường Sky-Line Beach-D, Trung tâm Văn hóa TP Đà Nẵng..."
                   value={formData.location}
                   onChange={e => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                  className="w-full py-2.5 px-4 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                 />
               </div>
             </div>
@@ -928,14 +928,14 @@ export default function CreateActivityWizard() {
                       onClick={() => setFormData({ ...formData, strand: strand.id })}
                       className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col justify-between ${
                         isSelected
-                          ? 'bg-[#00A99D]/10 border-[#00A99D] shadow-sm'
+                          ? 'bg-[#00A19A]/10 border-[#00A19A] shadow-sm'
                           : 'bg-slate-50/70 border-slate-200/70 hover:bg-slate-100'
                       }`}
                     >
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-black text-slate-800">{strand.name}</span>
-                          {isSelected && <CheckCircle2 className="w-4 h-4 text-[#00A99D]" />}
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-[#00A19A]" />}
                         </div>
                         <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{strand.desc}</p>
                       </div>
@@ -985,7 +985,7 @@ export default function CreateActivityWizard() {
                   placeholder="Nêu khái quát nội dung chính của hoạt động..."
                   value={formData.description}
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                 />
               </div>
               <div>
@@ -995,7 +995,7 @@ export default function CreateActivityWizard() {
                   placeholder="Học sinh phát triển kỹ năng làm việc nhóm, giao tiếp, sáng tạo..."
                   value={formData.objectives}
                   onChange={e => setFormData({ ...formData, objectives: e.target.value })}
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                 />
               </div>
             </div>
@@ -1009,7 +1009,7 @@ export default function CreateActivityWizard() {
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, evidenceUrls: [...(formData.evidenceUrls || []), ''] })}
-                  className="text-[11px] font-black text-[#00A99D] hover:underline flex items-center gap-1"
+                  className="text-[11px] font-black text-[#00A19A] hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Thêm đường dẫn ảnh
                 </button>
@@ -1026,7 +1026,7 @@ export default function CreateActivityWizard() {
                         next[idx] = e.target.value;
                         setFormData({ ...formData, evidenceUrls: next });
                       }}
-                      className="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                      className="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
                     />
                     {idx > 0 && (
                       <button
@@ -1064,7 +1064,7 @@ export default function CreateActivityWizard() {
                   if (!formData.name.trim()) { toast.error('Vui lòng nhập Tên hoạt động'); return; }
                   setCurrentStep(2);
                 }}
-                className="px-6 py-3 bg-[#00A99D] hover:bg-[#008F85] text-white text-xs font-black rounded-2xl shadow-md shadow-[#00A99D]/20 flex items-center gap-2"
+                className="px-6 py-3 bg-[#00A19A] hover:bg-[#008F85] text-white text-xs font-black rounded-2xl shadow-md shadow-[#00A19A]/20 flex items-center gap-2"
               >
                 <span>Sang Bước 2: Thiết lập đánh giá</span>
                 <ChevronRight className="w-4 h-4" />
@@ -1091,13 +1091,13 @@ export default function CreateActivityWizard() {
                   onClick={() => setEvalMode('PARTICIPATION_ONLY')}
                   className={`cursor-pointer p-4 rounded-2xl border-2 transition-all ${
                     evalMode === 'PARTICIPATION_ONLY'
-                      ? 'bg-[#00A99D]/10 border-[#00A99D] shadow-xs'
+                      ? 'bg-[#00A19A]/10 border-[#00A19A] shadow-xs'
                       : 'bg-slate-50/70 border-slate-200/70 hover:bg-slate-100'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-slate-800">Hình thức 1: Chỉ ghi nhận tham gia</span>
-                    {evalMode === 'PARTICIPATION_ONLY' && <CheckCircle2 className="w-4 h-4 text-[#00A99D]" />}
+                    {evalMode === 'PARTICIPATION_ONLY' && <CheckCircle2 className="w-4 h-4 text-[#00A19A]" />}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
                     Không chấm điểm theo tiêu chí. Kết quả phân loại thành: Tham gia / Không tham gia / Miễn.
@@ -1108,13 +1108,13 @@ export default function CreateActivityWizard() {
                   onClick={() => setEvalMode('CRITERIA')}
                   className={`cursor-pointer p-4 rounded-2xl border-2 transition-all ${
                     evalMode === 'CRITERIA'
-                      ? 'bg-[#00A99D]/10 border-[#00A99D] shadow-xs'
+                      ? 'bg-[#00A19A]/10 border-[#00A19A] shadow-xs'
                       : 'bg-slate-50/70 border-slate-200/70 hover:bg-slate-100'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-slate-800">Hình thức 2: Đánh giá theo tiêu chí năng lực</span>
-                    {evalMode === 'CRITERIA' && <CheckCircle2 className="w-4 h-4 text-[#00A99D]" />}
+                    {evalMode === 'CRITERIA' && <CheckCircle2 className="w-4 h-4 text-[#00A19A]" />}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
                     Chấm điểm theo 1, 3, 5 tiêu chí hoặc tùy chỉnh. Kết quả xếp loại: Nổi bật, Tốt, Đạt, Cần hỗ trợ.
@@ -1180,14 +1180,14 @@ export default function CreateActivityWizard() {
                               type="text"
                               value={crit.name}
                               onChange={e => handleUpdateCriterion(crit.id, 'name', e.target.value)}
-                              className="w-full font-black text-xs text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#00A99D] outline-none"
+                              className="w-full font-black text-xs text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#00A19A] outline-none"
                               placeholder="Tên tiêu chí"
                             />
                             <input
                               type="text"
                               value={crit.description || ''}
                               onChange={e => handleUpdateCriterion(crit.id, 'description', e.target.value)}
-                              className="w-full text-[11px] text-slate-500 font-medium bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#00A99D] outline-none"
+                              className="w-full text-[11px] text-slate-500 font-medium bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#00A19A] outline-none"
                               placeholder="Mô tả hướng dẫn chấm (hiển thị tooltip)"
                             />
                           </div>
@@ -1214,7 +1214,7 @@ export default function CreateActivityWizard() {
                               type="checkbox"
                               checked={crit.isRequired}
                               onChange={e => handleUpdateCriterion(crit.id, 'isRequired', e.target.checked)}
-                              className="rounded text-[#00A99D] focus:ring-0"
+                              className="rounded text-[#00A19A] focus:ring-0"
                             />
                             <span className="text-[11px] font-bold text-slate-600">Bắt buộc</span>
                           </label>
@@ -1243,9 +1243,9 @@ export default function CreateActivityWizard() {
                           key={libItem.id}
                           type="button"
                           onClick={() => handleAddCriterionFromLib(libItem)}
-                          className="px-2.5 py-1 bg-white hover:bg-[#00A99D]/10 hover:text-[#003B3A] text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 hover:border-[#00A99D]/40 transition-all flex items-center gap-1"
+                          className="px-2.5 py-1 bg-white hover:bg-[#00A19A]/10 hover:text-[#003B3A] text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 hover:border-[#00A19A]/40 transition-all flex items-center gap-1"
                         >
-                          <Plus className="w-3 h-3 text-[#00A99D]" />
+                          <Plus className="w-3 h-3 text-[#00A19A]" />
                           <span>{libItem.name}</span>
                         </button>
                       ))}
@@ -1286,7 +1286,7 @@ export default function CreateActivityWizard() {
                           value="EQUAL_WEIGHT"
                           checked={formulaType === 'EQUAL_WEIGHT'}
                           onChange={() => setFormulaType('EQUAL_WEIGHT')}
-                          className="text-[#00A99D]"
+                          className="text-[#00A19A]"
                         />
                         <span className="text-xs font-bold text-slate-700">Công thức A: Đồng trọng số (Tổng điểm / Điểm tối đa * 100%)</span>
                       </label>
@@ -1297,7 +1297,7 @@ export default function CreateActivityWizard() {
                           value="WEIGHTED"
                           checked={formulaType === 'WEIGHTED'}
                           onChange={() => setFormulaType('WEIGHTED')}
-                          className="text-[#00A99D]"
+                          className="text-[#00A19A]"
                         />
                         <span className="text-xs font-bold text-slate-700">Công thức B: Theo trọng số riêng từng tiêu chí</span>
                       </label>
@@ -1352,7 +1352,7 @@ export default function CreateActivityWizard() {
               <button
                 type="button"
                 onClick={() => setCurrentStep(3)}
-                className="px-6 py-3 bg-[#00A99D] hover:bg-[#008F85] text-white text-xs font-black rounded-2xl shadow-md shadow-[#00A99D]/20 flex items-center gap-2"
+                className="px-6 py-3 bg-[#00A19A] hover:bg-[#008F85] text-white text-xs font-black rounded-2xl shadow-md shadow-[#00A19A]/20 flex items-center gap-2"
               >
                 <span>Sang Bước 3: Gán lớp</span>
                 <ChevronRight className="w-4 h-4" />
@@ -1371,9 +1371,9 @@ export default function CreateActivityWizard() {
                   Chọn Bậc học, Cơ sở, Khối và Lớp tham gia. Hệ thống tự động liên kết GVCN và GVBM tương ứng.
                 </p>
               </div>
-              <div className="bg-[#003B3A]/5 px-3 py-1.5 rounded-xl border border-[#00A99D]/20 self-start sm:self-auto">
+              <div className="bg-[#003B3A]/5 px-3 py-1.5 rounded-xl border border-[#00A19A]/20 self-start sm:self-auto">
                 <span className="text-xs font-black text-[#003B3A]">
-                  Đã chọn: <strong className="text-[#00A99D]">{assignedClasses.length}</strong> lớp
+                  Đã chọn: <strong className="text-[#00A19A]">{assignedClasses.length}</strong> lớp
                 </span>
               </div>
             </div>
@@ -1388,7 +1388,7 @@ export default function CreateActivityWizard() {
                   <select
                     value={formData.educationLevel}
                     onChange={e => setFormData({ ...formData, educationLevel: e.target.value })}
-                    className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
+                    className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A19A]/30 outline-none"
                   >
                     <option value="PHO_THONG">Phổ thông (Tiểu học, THCS, THPT)</option>
                     <option value="Tieu hoc">Tiểu học (Khối 1 - 5)</option>
@@ -1411,7 +1411,7 @@ export default function CreateActivityWizard() {
                           const allIds = campuses.map(c => c.id);
                           setFormData({ ...formData, selectedCampusIds: allIds });
                         }}
-                        className="text-[11px] font-black text-[#00A99D] hover:underline"
+                        className="text-[11px] font-black text-[#00A19A] hover:underline"
                       >
                         ⚡ Chọn tất cả cơ sở
                       </button>
@@ -1456,7 +1456,7 @@ export default function CreateActivityWizard() {
                           }`}
                         >
                           <div className="flex items-center gap-1.5 truncate">
-                            <Building2 className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#00A99D]' : 'text-slate-400'}`} />
+                            <Building2 className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#00A19A]' : 'text-slate-400'}`} />
                             <span className="truncate">{cp.campusName || cp.campusCode}</span>
                           </div>
                           {isSelected && <Check className="w-3.5 h-3.5 text-white shrink-0 ml-1" />}
@@ -1486,7 +1486,7 @@ export default function CreateActivityWizard() {
                       ));
                       setSelectedFilterGrades(allAvailableGrades);
                     }}
-                    className="text-[11px] font-black text-[#00A99D] hover:underline"
+                    className="text-[11px] font-black text-[#00A19A] hover:underline"
                   >
                     ⚡ Chọn tất cả khối
                   </button>
@@ -1561,7 +1561,7 @@ export default function CreateActivityWizard() {
             <div className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-slate-100">
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-[#00A99D]" />
+                  <GraduationCap className="w-4 h-4 text-[#00A19A]" />
                   <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
                     4. Danh sách Lớp (Chọn 1 hoặc nhiều lớp)
                   </span>
@@ -1608,7 +1608,7 @@ export default function CreateActivityWizard() {
                       setAssignedClasses(newItems);
                       toast.success(`Đã gán toàn bộ ${newItems.length} lớp theo Cơ sở & Khối đã chọn!`);
                     }}
-                    className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5"
                   >
                     <CheckCheck className="w-3.5 h-3.5" />
                     <span>⚡ Gán TOÀN BỘ lớp theo Cơ sở & Khối</span>
@@ -1654,7 +1654,7 @@ export default function CreateActivityWizard() {
                         <div key={campus.id} className="border border-slate-200 rounded-2xl p-4 bg-slate-50/40 space-y-3">
                           <div className="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
                             <div className="flex items-center gap-2">
-                              <Building2 className="w-4 h-4 text-[#00A99D]" />
+                              <Building2 className="w-4 h-4 text-[#00A19A]" />
                               <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
                                 {campus.campusName || campus.campusCode}
                               </span>
@@ -1698,10 +1698,10 @@ export default function CreateActivityWizard() {
                                 className={`px-3 py-1.5 rounded-xl text-[11px] font-black transition-all flex items-center gap-1 ${
                                   isCampusAllSelected
                                     ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                                    : 'bg-teal-50 text-[#003B3A] border border-[#00A99D]/30 hover:bg-teal-100'
+                                    : 'bg-teal-50 text-[#003B3A] border border-[#00A19A]/30 hover:bg-teal-100'
                                 }`}
                               >
-                                <Sparkles className="w-3 h-3 text-[#00A99D]" />
+                                <Sparkles className="w-3 h-3 text-[#00A19A]" />
                                 <span>{isCampusAllSelected ? 'Bỏ chọn toàn bộ cơ sở này' : '⚡ Gán TOÀN BỘ lớp cơ sở này'}</span>
                               </button>
                             </div>
@@ -1719,7 +1719,7 @@ export default function CreateActivityWizard() {
                                     <button
                                       type="button"
                                       onClick={() => handleSelectAllClassesInGrade(gradeClasses)}
-                                      className="text-[11px] font-black text-[#00A99D] hover:underline"
+                                      className="text-[11px] font-black text-[#00A19A] hover:underline"
                                     >
                                       {isGradeAllSelected ? 'Bỏ chọn toàn khối' : 'Chọn toàn khối'}
                                     </button>
@@ -1793,7 +1793,7 @@ export default function CreateActivityWizard() {
                       <div className="border border-slate-200 rounded-2xl p-4 bg-slate-50/40 space-y-3">
                         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
                           <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4 text-[#00A99D]" />
+                            <Building2 className="w-4 h-4 text-[#00A19A]" />
                             <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
                               Danh sách Lớp theo Khối
                             </span>
@@ -1813,7 +1813,7 @@ export default function CreateActivityWizard() {
                                   <button
                                     type="button"
                                     onClick={() => handleSelectAllClassesInGrade(gradeClasses)}
-                                    className="text-[11px] font-black text-[#00A99D] hover:underline"
+                                    className="text-[11px] font-black text-[#00A19A] hover:underline"
                                   >
                                     {isGradeAllSelected ? 'Bỏ chọn toàn khối' : 'Chọn toàn khối'}
                                   </button>
@@ -1893,7 +1893,7 @@ export default function CreateActivityWizard() {
                 type="date"
                 value={formData.deadline}
                 onChange={e => setFormData({ ...formData, deadline: e.target.value })}
-                className="py-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
+                className="py-2 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A19A]/30 outline-none"
               />
             </div>
 
@@ -1915,7 +1915,7 @@ export default function CreateActivityWizard() {
                   }
                   setCurrentStep(4);
                 }}
-                className="px-6 py-3 bg-[#00A99D] hover:bg-[#008F85] text-white text-xs font-black rounded-2xl shadow-md shadow-[#00A99D]/20 flex items-center gap-2"
+                className="px-6 py-3 bg-[#00A19A] hover:bg-[#008F85] text-white text-xs font-black rounded-2xl shadow-md shadow-[#00A19A]/20 flex items-center gap-2"
               >
                 <span>Sang Bước 4: Kiểm tra & Phát hành</span>
                 <ChevronRight className="w-4 h-4" />
@@ -2004,13 +2004,13 @@ export default function CreateActivityWizard() {
             <div className="bg-gradient-to-br from-teal-50/40 via-white to-sky-50/40 p-5 sm:p-6 rounded-3xl border border-teal-200/80 shadow-xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-teal-100/80 pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#00A99D] text-white flex items-center justify-center shadow-md shadow-[#00A99D]/20">
+                  <div className="w-10 h-10 rounded-2xl bg-[#00A19A] text-white flex items-center justify-center shadow-md shadow-[#00A19A]/20">
                     <Mail className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
                       <span>Cấu hình Đẩy Mail Tự Động cho GVCN & GĐCS</span>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00A99D]/10 text-[#003B3A]">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#00A19A]/10 text-[#003B3A]">
                         Tự động hóa
                       </span>
                     </h3>
@@ -2027,7 +2027,7 @@ export default function CreateActivityWizard() {
                     onChange={e => setEmailSettings({ ...emailSettings, sendEmail: e.target.checked })}
                     className="sr-only peer"
                   />
-                  <div className="relative w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#00A99D]"></div>
+                  <div className="relative w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#00A19A]"></div>
                   <span className="text-xs font-black text-slate-700">
                     {emailSettings.sendEmail ? 'Bật gửi email' : 'Tắt gửi email'}
                   </span>
@@ -2039,7 +2039,7 @@ export default function CreateActivityWizard() {
                   {/* SENDER SELECTION */}
                   <div className="space-y-2">
                     <label className="text-xs font-black text-slate-700 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-[#00A99D]" />
+                      <User className="w-3.5 h-3.5 text-[#00A19A]" />
                       <span>1. Tùy chọn Người gửi / Đơn vị thông báo (Sender):</span>
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -2056,7 +2056,7 @@ export default function CreateActivityWizard() {
                           onClick={() => setEmailSettings({ ...emailSettings, senderOption: opt.id })}
                           className={`p-2.5 rounded-2xl border text-left transition-all ${
                             emailSettings.senderOption === opt.id
-                              ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-xs'
+                              ? 'bg-[#00A19A] text-white border-[#00A19A] shadow-xs'
                               : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
                           }`}
                         >
@@ -2075,7 +2075,7 @@ export default function CreateActivityWizard() {
                           value={emailSettings.senderName}
                           onChange={e => setEmailSettings({ ...emailSettings, senderName: e.target.value })}
                           placeholder="Nhập tên người gửi / đơn vị (ví dụ: Ban Tổ chức Hội thao, Tổ Ngoại ngữ,...)"
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
+                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A19A]/30 outline-none"
                         />
                       </div>
                     )}
@@ -2090,7 +2090,7 @@ export default function CreateActivityWizard() {
                             value={emailSettings.replyTo}
                             onChange={e => setEmailSettings({ ...emailSettings, replyTo: e.target.value })}
                             placeholder="vd: thongpn@skylineschool.edu.vn"
-                            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none"
+                            className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A19A]/30 outline-none"
                           />
                         </div>
                       </div>
@@ -2107,7 +2107,7 @@ export default function CreateActivityWizard() {
                   <div className="space-y-2 pt-3 border-t border-teal-100/60">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-black text-slate-700 flex items-center gap-1.5">
-                        <Building2 className="w-3.5 h-3.5 text-[#00A99D]" />
+                        <Building2 className="w-3.5 h-3.5 text-[#00A19A]" />
                         <span>2. Email Giám đốc Cơ sở (GĐCS) & CC đồng gửi:</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-[#003B3A]">
@@ -2115,7 +2115,7 @@ export default function CreateActivityWizard() {
                           type="checkbox"
                           checked={emailSettings.includeGdcs}
                           onChange={e => setEmailSettings({ ...emailSettings, includeGdcs: e.target.checked })}
-                          className="rounded text-[#00A99D] focus:ring-[#00A99D]"
+                          className="rounded text-[#00A19A] focus:ring-[#00A19A]"
                         />
                         <span>Tự động CC GĐCS theo từng cơ sở</span>
                       </label>
@@ -2133,7 +2133,7 @@ export default function CreateActivityWizard() {
                           const managerName = matchedCampus?.manager?.fullName;
                           return (
                             <div key={code} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                              <Building2 className="w-3.5 h-3.5 text-[#00A99D]" />
+                              <Building2 className="w-3.5 h-3.5 text-[#00A19A]" />
                               <span className="font-extrabold text-slate-800">Sky-Line {code}</span>
                               <span className="text-slate-400">|</span>
                               <span className="text-slate-600 font-semibold text-[11px]">
@@ -2167,7 +2167,7 @@ export default function CreateActivityWizard() {
                               }
                             }}
                             placeholder="Nhập email cần CC thêm và nhấn Thêm..."
-                            className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D]/30"
+                            className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#00A19A]/30"
                           />
                           <button
                             type="button"
@@ -2217,7 +2217,7 @@ export default function CreateActivityWizard() {
                   <div className="space-y-2 pt-3 border-t border-teal-100/60">
                     <label className="text-xs font-black text-slate-700 flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
-                        <MessageSquare className="w-3.5 h-3.5 text-[#00A99D]" />
+                        <MessageSquare className="w-3.5 h-3.5 text-[#00A19A]" />
                         <span>3. Lời nhắn & Yêu cầu trọng tâm gửi đến GVCN:</span>
                       </span>
                       <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
@@ -2231,7 +2231,7 @@ export default function CreateActivityWizard() {
                         value={emailSettings.customMessage}
                         onChange={e => setEmailSettings({ ...emailSettings, customMessage: e.target.value })}
                         placeholder="Thầy cô vui lòng thực hiện đánh giá vai trò của Học sinh lớp..."
-                        className="w-full p-3 bg-white border border-teal-300/80 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D]/30 outline-none shadow-2xs"
+                        className="w-full p-3 bg-white border border-teal-300/80 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A19A]/30 outline-none shadow-2xs"
                       />
                     </div>
                     <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl flex items-start gap-2.5 text-[11.5px] text-amber-900 leading-relaxed font-semibold">
@@ -2247,7 +2247,7 @@ export default function CreateActivityWizard() {
                     <button
                       type="button"
                       onClick={() => setShowEmailPreview(!showEmailPreview)}
-                      className="inline-flex items-center gap-2 text-xs font-black text-[#003B3A] hover:text-[#00A99D] transition-colors"
+                      className="inline-flex items-center gap-2 text-xs font-black text-[#003B3A] hover:text-[#00A19A] transition-colors"
                     >
                       {showEmailPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       <span>{showEmailPreview ? 'Ẩn xem trước mẫu Email' : '👁️ Xem trước nội dung Email sẽ gửi đến GVCN & GĐCS'}</span>
@@ -2255,7 +2255,7 @@ export default function CreateActivityWizard() {
 
                     {showEmailPreview && (
                       <div className="mt-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-inner space-y-3 font-sans">
-                        <div className="p-4 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white rounded-xl text-center">
+                        <div className="p-4 bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white rounded-xl text-center">
                           <div className="text-xs font-black uppercase tracking-wider">QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</div>
                           <div className="text-[11px] font-bold text-teal-100 mt-0.5">{getResolvedSenderName().toUpperCase()}</div>
                           <div className="inline-block bg-white/20 px-2 py-0.5 rounded-full text-[10px] font-black mt-2">
@@ -2269,7 +2269,7 @@ export default function CreateActivityWizard() {
                             Lớp chủ nhiệm của Thầy/Cô vừa nhận được kế hoạch <strong>Hoạt động trải nghiệm</strong> từ <strong>{getResolvedSenderName()}</strong>.
                           </div>
 
-                          <div className="bg-teal-50 border-l-4 border-[#00A99D] p-2.5 rounded-r-xl text-[#003B3A] font-bold text-[11.5px] leading-relaxed">
+                          <div className="bg-teal-50 border-l-4 border-[#00A19A] p-2.5 rounded-r-xl text-[#003B3A] font-bold text-[11.5px] leading-relaxed">
                             📌 <strong>Yêu cầu từ Ban Tổ Chức:</strong><br/>
                             "{emailSettings.customMessage}"
                           </div>
@@ -2285,7 +2285,7 @@ export default function CreateActivityWizard() {
                           </div>
 
                           <div className="text-center py-2">
-                            <span className="inline-block bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white px-5 py-2.5 rounded-xl font-black text-xs shadow-md">
+                            <span className="inline-block bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white px-5 py-2.5 rounded-xl font-black text-xs shadow-md">
                               TRUY CẬP VÀ ĐÁNH GIÁ VAI TRÒ HỌC SINH &rarr;
                             </span>
                           </div>
@@ -2293,7 +2293,7 @@ export default function CreateActivityWizard() {
                           {/* TEST EMAIL TOOLBAR */}
                           <div className="pt-3 border-t border-slate-200 mt-3 flex flex-col sm:flex-row items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-xl">
                             <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
-                              <Mail className="w-3.5 h-3.5 text-[#00A99D]" />
+                              <Mail className="w-3.5 h-3.5 text-[#00A19A]" />
                               <span>Gửi thử nghiệm đến Email của bạn:</span>
                             </div>
                             <div className="flex items-center gap-1.5 w-full sm:w-auto">
@@ -2302,7 +2302,7 @@ export default function CreateActivityWizard() {
                                 value={testEmail}
                                 onChange={e => setTestEmail(e.target.value)}
                                 placeholder="Nhập email của bạn..."
-                                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D]/30 w-full sm:w-56"
+                                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-[#00A19A]/30 w-full sm:w-56"
                               />
                               <button
                                 type="button"
@@ -2347,7 +2347,7 @@ export default function CreateActivityWizard() {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => handleSubmit(false)}
-                  className="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 transition-all flex items-center justify-center gap-2.5 transform active:scale-95"
+                  className="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A19A]/25 transition-all flex items-center justify-center gap-2.5 transform active:scale-95"
                 >
                   <Send className="w-4 h-4 text-white" />
                   <span>{isEditMode ? 'Cập nhật kế hoạch ngay' : 'Giao hoạt động ngay'}</span>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
@@ -123,24 +123,24 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
         {/* HERO BANNER */}
         <div className="relative backdrop-blur-xl bg-white/90 rounded-3xl p-6 sm:p-8 border border-white shadow-xl shadow-slate-200/50 overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A99D] via-[#48BFE3] to-[#6366F1]" />
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A19A] via-[#48BFE3] to-[#6366F1]" />
 
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             <div className="flex items-start sm:items-center gap-4 sm:gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#003B3A] via-[#00A99D] to-[#48BFE3] p-0.5 shadow-lg shadow-[#00A99D]/20 shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#003B3A] via-[#00A19A] to-[#48BFE3] p-0.5 shadow-lg shadow-[#00A19A]/20 shrink-0">
                 <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-                  <BarChart3 className="w-8 h-8 text-[#00A99D]" />
+                  <BarChart3 className="w-8 h-8 text-[#00A19A]" />
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A99D]/10 text-[#003B3A] border border-[#00A99D]/20">
+                  <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20">
                     Báo Cáo & Thống Kê
                   </span>
                   <span className="text-slate-300 text-xs"></span>
                   <span className="text-xs font-bold text-slate-500">Quản trị Chất lượng Sky-Line</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A99D] bg-clip-text text-transparent tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A19A] bg-clip-text text-transparent tracking-tight">
                   Dashboard Đánh Giá Hoạt động Trải Nghiệm
                 </h1>
                 <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1">
@@ -182,10 +182,10 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">Lượt HS đánh giá</p>
+                <p className="text-[11px] font-bold text-[#00A19A] uppercase tracking-wider">Lượt HS đánh giá</p>
                 <p className="text-2xl font-black text-[#003B3A] mt-1">{kpis.totalStudentsEvaluated}</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center border border-[#00A99D]/30">
+              <div className="w-11 h-11 rounded-xl bg-[#00A19A]/10 text-[#00A19A] flex items-center justify-center border border-[#00A19A]/30">
                 <Users className="w-5 h-5" />
               </div>
             </div>
@@ -311,7 +311,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           {/* CHART 2: 4-STRAND DISTRIBUTION */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md shadow-slate-200/40 space-y-4">
             <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#00A99D]" />
+              <span className="w-2 h-2 rounded-full bg-[#00A19A]" />
               Số lượng Hoạt động theo 4 Mạch Trải nghiệm
             </h3>
             <div className="h-64">
@@ -320,7 +320,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                   <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 'bold' }} />
                   <YAxis tick={{ fontSize: 11 }} />
                   <Tooltip />
-                  <Bar dataKey="count" name="S? hoạt động" fill="#00A99D" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="count" name="S? hoạt động" fill="#00A19A" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -413,7 +413,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                               <div
-                                className={`h-full rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-[#00A99D]'}`}
+                                className={`h-full rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-[#00A19A]'}`}
                                 style={{ width: `${cp.progressPercent}%` }}
                               />
                             </div>

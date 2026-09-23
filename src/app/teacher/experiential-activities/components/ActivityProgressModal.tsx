@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 // @ts-nocheck
 import React, { useState } from 'react';
 import { X, Users, CheckCircle2, Clock, BarChart3, AlertCircle, ArrowRight, ExternalLink, Calendar, Mail, Send, RefreshCw, Loader2 } from 'lucide-react';
@@ -83,7 +83,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="text-[11px] font-black text-[#003B3A] bg-[#00A99D]/10 px-2.5 py-0.5 rounded-lg border border-[#00A99D]/20">
+              <span className="text-[11px] font-black text-[#003B3A] bg-[#00A19A]/10 px-2.5 py-0.5 rounded-lg border border-[#00A19A]/20">
                 {activity.code || 'HDTN'}
               </span>
               <span className="text-xs font-bold text-slate-500">{activity.activityTypeName || 'Hoạt động trải nghiệm'}</span>
@@ -104,13 +104,13 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
         <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 space-y-2">
           <div className="flex items-center justify-between text-xs font-black">
             <span className="text-slate-700">Tiến độ hoàn thành toàn bộ:</span>
-            <span className={progressPercent === 100 ? 'text-emerald-600' : 'text-[#00A99D]'}>
+            <span className={progressPercent === 100 ? 'text-emerald-600' : 'text-[#00A19A]'}>
               {completedClasses}/{totalClasses} lớp ({progressPercent}%)
             </span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
             <div 
-              className={`h-full rounded-full transition-all ${progressPercent === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#003B3A] to-[#00A99D]' }`}
+              className={`h-full rounded-full transition-all ${progressPercent === 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-[#003B3A] to-[#00A19A]' }`}
               style={{ width: progressPercent + '%' }}
             />
           </div>
@@ -131,7 +131,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
               const pct = totalSt > 0 ? Math.round((evalSt / totalSt) * 100) : 0;
 
               return (
-                <div key={idx} className="p-3.5 rounded-2xl bg-white border border-slate-200/80 hover:border-[#00A99D]/40 transition-all flex items-center justify-between gap-3 shadow-2xs">
+                <div key={idx} className="p-3.5 rounded-2xl bg-white border border-slate-200/80 hover:border-[#00A19A]/40 transition-all flex items-center justify-between gap-3 shadow-2xs">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs ${
                       isCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -166,7 +166,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
                         onClose();
                         router.push(`${basePath}/${activity.id}?classId=${cls.classId}`);
                       }}
-                      className="p-2.5 rounded-xl bg-slate-100 hover:bg-gradient-to-r hover:from-[#003B3A] hover:to-[#00A99D] hover:text-white text-slate-600 transition-all"
+                      className="p-2.5 rounded-xl bg-slate-100 hover:bg-gradient-to-r hover:from-[#003B3A] hover:to-[#00A19A] hover:text-white text-slate-600 transition-all"
                       title="Mở sổ đánh giá của lớp này"
                     >
                       <ExternalLink className="w-4 h-4" />
@@ -201,7 +201,7 @@ export function ActivityProgressModal({ activity, isOpen, onClose }: { activity:
               className="px-3.5 py-2 bg-teal-50 hover:bg-teal-100 border border-teal-300 text-[#003B3A] text-xs font-black rounded-xl transition-all flex items-center gap-1.5 shadow-2xs"
               title="Gửi lại email thông báo kế hoạch cho tất cả GVCN và CC GĐCS"
             >
-              {sendingResend ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00A99D]" /> : <RefreshCw className="w-3.5 h-3.5 text-[#00A99D]" />}
+              {sendingResend ? <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00A19A]" /> : <RefreshCw className="w-3.5 h-3.5 text-[#00A19A]" />}
               <span>Gửi lại kế hoạch cho tất cả lớp</span>
             </button>
           </div>

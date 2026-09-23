@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -234,24 +234,24 @@ export default function ExperientialActivitiesList() {
 
         {/* HERO BANNER - SKYLINE TEAL BRANDING */}
         <div className="relative backdrop-blur-xl bg-white/90 rounded-3xl p-6 sm:p-8 border border-white shadow-xl shadow-slate-200/50 overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A99D] via-[#48BFE3] to-[#6366F1]" />
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A19A] via-[#48BFE3] to-[#6366F1]" />
           
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             <div className="flex items-start sm:items-center gap-4 sm:gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#003B3A] via-[#00A99D] to-[#48BFE3] p-0.5 shadow-lg shadow-[#00A99D]/20 shrink-0 transform hover:scale-105 transition-transform duration-300">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#003B3A] via-[#00A19A] to-[#48BFE3] p-0.5 shadow-lg shadow-[#00A19A]/20 shrink-0 transform hover:scale-105 transition-transform duration-300">
                 <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-                  <Activity className="w-8 h-8 text-[#00A99D]" />
+                  <Activity className="w-8 h-8 text-[#00A19A]" />
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A99D]/10 text-[#003B3A] border border-[#00A99D]/20">
+                  <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20">
                     Sky-Line Education System
                   </span>
                   <span className="text-slate-300 text-xs"></span>
                   <span className="text-xs font-bold text-slate-500">Quản trị chất lượng giáo dục</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A99D] bg-clip-text text-transparent tracking-tight">
+                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A19A] bg-clip-text text-transparent tracking-tight">
                   Quản lý Hoạt động Trải nghiệm Học sinh
                 </h1>
                 <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1">
@@ -271,7 +271,7 @@ export default function ExperientialActivitiesList() {
 
               <button
                 onClick={() => router.push(`${basePath}/create`)}
-                className="px-6 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 transition-all flex items-center gap-2.5 group transform active:scale-95"
+                className="px-6 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A19A]/25 transition-all flex items-center gap-2.5 group transform active:scale-95"
                 title="Khởi tạo hoạt động trải nghiệm mới cho lớp chủ nhiệm hoặc bộ môn"
               >
                 <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
@@ -316,10 +316,10 @@ export default function ExperientialActivitiesList() {
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">Lượt học sinh tham gia</p>
+                <p className="text-[11px] font-bold text-[#00A19A] uppercase tracking-wider">Lượt học sinh tham gia</p>
                 <p className="text-2xl font-black text-[#003B3A] mt-1">{totalStudents}</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center border border-[#00A99D]/30">
+              <div className="w-11 h-11 rounded-xl bg-[#00A19A]/10 text-[#00A19A] flex items-center justify-center border border-[#00A19A]/30">
                 <Users className="w-5 h-5" />
               </div>
             </div>
@@ -382,11 +382,11 @@ export default function ExperientialActivitiesList() {
                     onClick={() => setRoleScope(tab.id)}
                     className={`group px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 border cursor-pointer ${
                       isActive
-                        ? 'bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-md shadow-[#00A99D]/20 scale-[1.02]'
+                        ? 'bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white border-transparent shadow-md shadow-[#00A19A]/20 scale-[1.02]'
                         : 'bg-white/90 text-slate-700 border-slate-200/80 hover:bg-white hover:text-slate-900 hover:border-slate-300 shadow-2xs'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-[#00A99D]'}`} />
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-[#00A19A]'}`} />
                     <span>{tab.label}</span>
                     <span className={`ml-1 px-2.5 py-0.5 rounded-full text-[11px] font-black transition-all ${
                       isActive ? tab.pillActive : tab.pillInactive
@@ -408,7 +408,7 @@ export default function ExperientialActivitiesList() {
               <select
                 value={selectedYearId}
                 onChange={e => setSelectedYearId(e.target.value)}
-                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
               >
                 {academicYears.map(y => (
                   <option key={y.id} value={y.id}>{y.name}</option>
@@ -421,7 +421,7 @@ export default function ExperientialActivitiesList() {
               <select
                 value={selectedCampusId}
                 onChange={e => setSelectedCampusId(e.target.value)}
-                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
               >
                 <option value="ALL">Tất cả cơ sở</option>
                 {campuses.map(c => (
@@ -435,7 +435,7 @@ export default function ExperientialActivitiesList() {
               <select
                 value={selectedLevel}
                 onChange={e => setSelectedLevel(e.target.value)}
-                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
               >
                 <option value="ALL">Tất cả cấp học</option>
                 <option value="Tieu hoc">Tiểu học</option>
@@ -450,7 +450,7 @@ export default function ExperientialActivitiesList() {
               <select
                 value={selectedGrade}
                 onChange={e => setSelectedGrade(e.target.value)}
-                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
               >
                 <option value="ALL">Tất cả khối</option>
                 {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => (
@@ -464,7 +464,7 @@ export default function ExperientialActivitiesList() {
               <select
                 value={selectedStrand}
                 onChange={e => setSelectedStrand(e.target.value)}
-                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
               >
                 <option value="ALL">Tất cả 4 mạch</option>
                 {ACTIVITY_STRANDS.map(s => (
@@ -478,7 +478,7 @@ export default function ExperientialActivitiesList() {
               <select
                 value={statusFilter}
                 onChange={e => setStatusFilter(e.target.value)}
-                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none"
+                className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none"
               >
                 <option value="ALL">Tất cả trạng thái</option>
                 <option value="DRAFT">Bản nháp</option>
@@ -498,7 +498,7 @@ export default function ExperientialActivitiesList() {
                 placeholder="Tìm theo tên hoạt động, mã, địa điểm..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all"
+                className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none transition-all"
               />
               {search && (
                 <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -535,14 +535,14 @@ export default function ExperientialActivitiesList() {
         {/* MAIN ACTIVITIES CONTENT */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white/80 rounded-3xl border border-white shadow-xl shadow-slate-200/40 space-y-4">
-            <div className="w-10 h-10 border-4 border-[#00A99D]/20 border-t-[#00A99D] rounded-full animate-spin" />
+            <div className="w-10 h-10 border-4 border-[#00A19A]/20 border-t-[#00A19A] rounded-full animate-spin" />
             <p className="text-xs font-bold text-slate-500">Đang tải danh sách hoạt động trải nghiệm Sky-Line...</p>
           </div>
         ) : activities.length === 0 ? (
           <div className="bg-white/85 rounded-3xl py-16 px-6 text-center border border-white shadow-xl shadow-slate-200/40">
             <div className="max-w-md mx-auto space-y-4">
-              <div className="w-20 h-20 rounded-3xl bg-[#00A99D]/10 mx-auto flex items-center justify-center border border-[#00A99D]/20">
-                <Sparkles className="w-10 h-10 text-[#00A99D]" />
+              <div className="w-20 h-20 rounded-3xl bg-[#00A19A]/10 mx-auto flex items-center justify-center border border-[#00A19A]/20">
+                <Sparkles className="w-10 h-10 text-[#00A19A]" />
               </div>
               <h3 className="text-xl font-black text-slate-800">
                 {search ? 'Không tìm thấy hoạt động phù hợp' : 'Chưa có hoạt động trải nghiệm nào'}
@@ -555,7 +555,7 @@ export default function ExperientialActivitiesList() {
               </p>
               <button
                 onClick={() => router.push(`${basePath}/create`)}
-                className="px-6 py-3 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 inline-flex items-center gap-2 mt-2"
+                className="px-6 py-3 bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white text-xs font-black rounded-2xl shadow-lg shadow-[#00A19A]/25 inline-flex items-center gap-2 mt-2"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tạo hoạt động mới ngay</span>
@@ -566,7 +566,7 @@ export default function ExperientialActivitiesList() {
           <div className="bg-white/90 rounded-3xl border border-white shadow-xl shadow-slate-200/40 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileSpreadsheet className="w-4 h-4 text-[#00A99D]" />
+                <FileSpreadsheet className="w-4 h-4 text-[#00A19A]" />
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
                   Danh sách Hoạt động ({activities.length} hoạt động)
                 </span>
@@ -611,13 +611,13 @@ export default function ExperientialActivitiesList() {
                       >
                         <td className="py-4 px-4 text-center text-slate-400 font-bold">{index + 1}</td>
                         <td className="py-4 px-5 whitespace-nowrap">
-                          <span className="inline-block text-[11px] font-black text-[#003B3A] bg-[#00A99D]/10 border border-[#00A99D]/20 px-2.5 py-1 rounded-xl">
+                          <span className="inline-block text-[11px] font-black text-[#003B3A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-xl">
                             {act.code || 'HDTN'}
                           </span>
                         </td>
                         <td className="py-4 px-5">
                           <div className="space-y-1.5">
-                            <h4 className="text-sm font-black text-slate-800 group-hover:text-[#00A99D] transition-colors line-clamp-1">
+                            <h4 className="text-sm font-black text-slate-800 group-hover:text-[#00A19A] transition-colors line-clamp-1">
                               {act.name}
                             </h4>
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -657,7 +657,7 @@ export default function ExperientialActivitiesList() {
                         {/* CỘT NGƯỜI TẠO */}
                         <td className="py-4 px-4 whitespace-nowrap text-center">
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black bg-slate-50 text-[#003B3A] border border-slate-200 shadow-2xs">
-                            <User className="w-3.5 h-3.5 text-[#00A99D]" />
+                            <User className="w-3.5 h-3.5 text-[#00A19A]" />
                             <span>{act.creatorName || act.teacherName || 'Giáo viên'}</span>
                           </span>
                         </td>
@@ -676,7 +676,7 @@ export default function ExperientialActivitiesList() {
                         </td>
 
                         <td className="py-4 px-4 whitespace-nowrap text-center">
-                          <span className="inline-block px-2.5 py-1 rounded-xl text-xs font-black bg-teal-50 text-[#003B3A] border border-[#00A99D]/30 shadow-2xs">
+                          <span className="inline-block px-2.5 py-1 rounded-xl text-xs font-black bg-teal-50 text-[#003B3A] border border-[#00A19A]/30 shadow-2xs">
                             {getCleanCampusCode(act)}
                           </span>
                         </td>
@@ -701,13 +701,13 @@ export default function ExperientialActivitiesList() {
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-[11px] font-black">
                               <span className="text-slate-700">{completedClasses}/{totalClasses} lớp</span>
-                              <span className={progressPercent === 100 ? 'text-emerald-600' : 'text-[#00A99D]'}>
+                              <span className={progressPercent === 100 ? 'text-emerald-600' : 'text-[#00A19A]'}>
                                 {progressPercent}%
                               </span>
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all ${progressPercent === 100 ? 'bg-emerald-500' : 'bg-[#00A99D]'}`}
+                                className={`h-full rounded-full transition-all ${progressPercent === 100 ? 'bg-emerald-500' : 'bg-[#00A19A]'}`}
                                 style={{ width: `${progressPercent}%` }}
                               />
                             </div>
@@ -723,20 +723,20 @@ export default function ExperientialActivitiesList() {
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 onClick={() => setProgressModalActivity(act)}
-                                className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D]/10 text-slate-600 hover:text-[#003B3A] transition-colors"
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A19A]/10 text-slate-600 hover:text-[#003B3A] transition-colors"
                                 title="Theo dõi tiến độ nộp của các lớp"
                               >
-                                <BarChart3 className="w-4 h-4 text-[#00A99D]" />
+                                <BarChart3 className="w-4 h-4 text-[#00A19A]" />
                               </button>
                               <button
                                 onClick={e => {
                                   e.stopPropagation();
                                   router.push(`${basePath}/create?editId=${act.id}`);
                                 }}
-                                className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#00A99D] transition-colors"
+                                className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#00A19A] transition-colors"
                                 title="Hiệu chỉnh kế hoạch hoạt động"
                               >
-                                <Edit3 className="w-4 h-4 text-[#00A99D]" />
+                                <Edit3 className="w-4 h-4 text-[#00A19A]" />
                               </button>
                               <button
                                 onClick={e => handleDuplicate(e, act)}
@@ -768,7 +768,7 @@ export default function ExperientialActivitiesList() {
                             <div className="flex items-center justify-end">
                               <button
                                 onClick={() => router.push(act.myAssignedClass?.classId ? `${basePath}/${act.id}?classId=${act.myAssignedClass.classId}` : `${basePath}/${act.id}`)}
-                                className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A99D] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs font-black rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
+                                className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs font-black rounded-xl shadow-xs flex items-center gap-1.5 transition-all"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                                 <span>Tiến hành nhập</span>
@@ -796,20 +796,20 @@ export default function ExperientialActivitiesList() {
                 <div
                   key={act.id}
                   onClick={() => router.push(`${basePath}/${act.id}`)}
-                  className="group bg-white/90 rounded-3xl border border-white shadow-md shadow-slate-200/40 hover:shadow-xl hover:border-[#00A99D]/40 transition-all duration-200 cursor-pointer flex flex-col overflow-hidden"
+                  className="group bg-white/90 rounded-3xl border border-white shadow-md shadow-slate-200/40 hover:shadow-xl hover:border-[#00A19A]/40 transition-all duration-200 cursor-pointer flex flex-col overflow-hidden"
                 >
-                  <div className="h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3]" />
+                  <div className="h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3]" />
                   <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="text-[11px] font-black text-[#003B3A] bg-[#00A99D]/10 border border-[#00A99D]/20 px-2.5 py-1 rounded-xl">
+                        <span className="text-[11px] font-black text-[#003B3A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-xl">
                           {act.code || 'HDTN'}
                         </span>
                         {act.canManage ? (
                         <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                           <button
                             onClick={() => setProgressModalActivity(act)}
-                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#00A99D]/10 flex items-center justify-center text-[#00A99D]"
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-[#00A19A]/10 flex items-center justify-center text-[#00A19A]"
                             title="Theo dõi tiến độ"
                           >
                             <BarChart3 className="w-3.5 h-3.5" />
@@ -819,7 +819,7 @@ export default function ExperientialActivitiesList() {
                               e.stopPropagation();
                               router.push(`${basePath}/create?editId=${act.id}`);
                             }}
-                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-teal-50 flex items-center justify-center text-[#00A99D]"
+                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-teal-50 flex items-center justify-center text-[#00A19A]"
                             title="Hiệu chỉnh kế hoạch"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -841,14 +841,14 @@ export default function ExperientialActivitiesList() {
                         </div>
                       ) : (
                         act.myAssignedClass && (
-                          <span className="text-[11px] font-black text-[#003B3A] bg-teal-50 border border-[#00A99D]/30 px-2.5 py-0.5 rounded-lg">
+                          <span className="text-[11px] font-black text-[#003B3A] bg-teal-50 border border-[#00A19A]/30 px-2.5 py-0.5 rounded-lg">
                             Lớp {act.myAssignedClass.className}
                           </span>
                         )
                       )}
                       </div>
 
-                      <h3 className="text-base font-black text-slate-800 group-hover:text-[#00A99D] transition-colors line-clamp-2 leading-snug">
+                      <h3 className="text-base font-black text-slate-800 group-hover:text-[#00A19A] transition-colors line-clamp-2 leading-snug">
                         {act.name}
                       </h3>
 
@@ -891,7 +891,7 @@ export default function ExperientialActivitiesList() {
                     <div className="pt-4 border-t border-slate-100 space-y-3">
                       <div className="flex items-center justify-between text-xs font-bold text-slate-500">
                         <div className="flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-[#00A99D]" />
+                          <User className="w-3.5 h-3.5 text-[#00A19A]" />
                           <span className="text-[11px] font-bold text-slate-600">Tạo bởi: <strong className="text-[#003B3A]">{act.creatorName || act.teacherName || 'Giáo viên'}</strong></span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -903,11 +903,11 @@ export default function ExperientialActivitiesList() {
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-[11px] font-bold text-slate-600">
                           <span>Tiến độ: {completedClasses}/{totalClasses} lớp</span>
-                          <span className="font-black text-[#00A99D]">{progressPercent}%</span>
+                          <span className="font-black text-[#00A19A]">{progressPercent}%</span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                           <div
-                            className={"h-full rounded-full " + (progressPercent === 100 ? "bg-emerald-500" : "bg-[#00A99D]")} style={{ width: progressPercent + "%" }}
+                            className={"h-full rounded-full " + (progressPercent === 100 ? "bg-emerald-500" : "bg-[#00A19A]")} style={{ width: progressPercent + "%" }}
                           />
                         </div>
                       </div>
@@ -916,7 +916,7 @@ export default function ExperientialActivitiesList() {
                         <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${badge.containerCls}`}>
                           {badge.label}
                         </span>
-                        <span className="text-xs font-black text-[#00A99D] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
+                        <span className="text-xs font-black text-[#00A19A] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
                           Xem & Chấm điểm <ArrowUpRight className="w-3.5 h-3.5" />
                         </span>
                       </div>

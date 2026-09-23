@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 // src/app/admin/experiential-activities/components/AdminExperientialList.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -200,21 +200,21 @@ export default function AdminExperientialList() {
         <ExperientialTabs activeTab="activities" />
         {/* Header */}
         <div className="relative backdrop-blur-xl bg-white/90 rounded-3xl p-6 sm:p-8 border border-white shadow-xl overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A99D] via-[#48BFE3] to-[#6366F1]" />
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#003B3A] via-[#00A19A] via-[#48BFE3] to-[#6366F1]" />
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
             <div className="flex items-start sm:items-center gap-4 sm:gap-5">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#003B3A] via-[#00A99D] to-[#48BFE3] p-0.5 shadow-lg shadow-[#00A99D]/20 shrink-0 transform hover:scale-105 transition-transform duration-300">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#003B3A] via-[#00A19A] to-[#48BFE3] p-0.5 shadow-lg shadow-[#00A19A]/20 shrink-0 transform hover:scale-105 transition-transform duration-300">
                 <div className="w-full h-full bg-white rounded-[14px] flex items-center justify-center">
-                  <span className="text-[#00A99D] font-bold">EXP</span>
+                  <span className="text-[#00A19A] font-bold">EXP</span>
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A99D]/10 text-[#003B3A] border border-[#00A99D]/20">Sky-Line Education System</span>
+                  <span className="px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20">Sky-Line Education System</span>
                   <span className="text-slate-300 text-xs" />
                   <span className="text-xs font-bold text-slate-500">Quản trị chất lượng giáo dục</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A99D] bg-clip-text text-transparent tracking-tight">Quản lý Hoạt động Trải nghiệm Học sinh</h1>
+                <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-[#003B3A] via-[#005F5E] to-[#00A19A] bg-clip-text text-transparent tracking-tight">Quản lý Hoạt động Trải nghiệm Học sinh</h1>
                 <p className="text-slate-500 font-medium text-xs sm:text-sm mt-1">
                   Khởi tạo, cấu hình tiêu chí, phân công GVCN và theo dõi đánh giá năng lực học sinh toàn diện
                 </p>
@@ -222,7 +222,7 @@ export default function AdminExperientialList() {
             </div>
             <div className="flex items-center gap-3 shrink-0 flex-wrap">
               <button onClick={handleExportExcel} className="px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 text-xs font-black rounded-2xl border border-slate-200/80 shadow-2xs transition-all">Xuất Excel</button>
-              <button onClick={() => router.push(`${basePath}/create`)} className="px-6 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A99D] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A99D]/25 transition-all flex items-center gap-2.5 group transform active:scale-95" title="Tạo hoạt động mới">
+              <button onClick={() => router.push(`${basePath}/create`)} className="px-6 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A19A]/25 transition-all flex items-center gap-2.5 group transform active:scale-95" title="Tạo hoạt động mới">
                 + Tạo hoạt động
               </button>
             </div>
@@ -252,10 +252,10 @@ export default function AdminExperientialList() {
             </div>
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">Lượt học sinh tham gia</p>
+                <p className="text-[11px] font-bold text-[#00A19A] uppercase tracking-wider">Lượt học sinh tham gia</p>
                 <p className="text-2xl font-black text-[#003B3A] mt-1">{totalStudents}</p>
               </div>
-              <div className="w-11 h-11 rounded-xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center border border-[#00A99D]/30">👥</div>
+              <div className="w-11 h-11 rounded-xl bg-[#00A19A]/10 text-[#00A19A] flex items-center justify-center border border-[#00A19A]/30">👥</div>
             </div>
           </div>
         </div>
@@ -265,20 +265,20 @@ export default function AdminExperientialList() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Năm học</label>
-              <select value={selectedYearId} onChange={e => setSelectedYearId(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none">
+              <select value={selectedYearId} onChange={e => setSelectedYearId(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none">
                 {academicYears.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cơ sở</label>
-              <select value={selectedCampusId} onChange={e => setSelectedCampusId(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none">
+              <select value={selectedCampusId} onChange={e => setSelectedCampusId(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none">
                 <option value="ALL">Tất cả cơ sở</option>
                 {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName || c.campusCode}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Cấp học</label>
-              <select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none">
+              <select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none">
                 <option value="ALL">Tất cả cấp học</option>
                 <option value="Tieu hoc">Tiểu học</option>
                 <option value="THCS">THCS</option>
@@ -288,14 +288,14 @@ export default function AdminExperientialList() {
             </div>
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Khối</label>
-              <select value={selectedGrade} onChange={e => setSelectedGrade(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none">
+              <select value={selectedGrade} onChange={e => setSelectedGrade(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none">
                 <option value="ALL">Tất cả khối</option>
                 {[1,2,3,4,5,6,7,8,9,10,11,12].map(g => <option key={g} value={String(g)}>Khối {g}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">Mạch hoạt động</label>
-              <select value={selectedStrand} onChange={e => setSelectedStrand(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] outline-none">
+              <select value={selectedStrand} onChange={e => setSelectedStrand(e.target.value)} className="w-full py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#00A19A]/30 focus:border-[#00A19A] outline-none">
                 <option value="ALL">Tất cả 4 mạch</option>
                 {ACTIVITY_STRANDS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
@@ -303,7 +303,7 @@ export default function AdminExperientialList() {
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-100">
             <div className="relative w-full sm:max-w-md">
-              <input type="text" placeholder="Tìm tên, mã, địa điểm..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none" />
+              <input type="text" placeholder="Tìm tên, mã, địa điểm..." value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-10 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none" />
               {search && <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">✕</button>}
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -318,13 +318,13 @@ export default function AdminExperientialList() {
         {/* Main list */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white/80 rounded-3xl border border-white shadow-xl space-y-4">
-            <div className="w-10 h-10 border-4 border-[#00A99D]/20 border-t-[#00A99D] rounded-full animate-spin" />
+            <div className="w-10 h-10 border-4 border-[#00A19A]/20 border-t-[#00A19A] rounded-full animate-spin" />
             <p className="text-xs font-bold text-slate-500">Đang tải...</p>
           </div>
         ) : activities.length === 0 ? (
           <div className="bg-white/85 rounded-3xl py-16 px-6 text-center border border-white shadow-xl">
             <h3 className="text-xl font-black text-slate-800">{search ? 'Không tìm thấy' : 'Chưa có hoạt động'}</h3>
-            <button onClick={() => router.push(`${basePath}/create`)} className="px-6 py-3 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-black rounded-2xl shadow-lg mt-4">+ Tạo hoạt động</button>
+            <button onClick={() => router.push(`${basePath}/create`)} className="px-6 py-3 bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white text-xs font-black rounded-2xl shadow-lg mt-4">+ Tạo hoạt động</button>
           </div>
         ) : viewMode === 'list' ? (
           <div className="bg-white/90 rounded-3xl border border-white shadow-xl overflow-hidden">
@@ -359,9 +359,9 @@ export default function AdminExperientialList() {
                     return (
                       <tr key={act.id} onClick={() => router.push(act.myAssignedClass?.classId ? `${basePath}/${act.id}?classId=${act.myAssignedClass.classId}` : `${basePath}/${act.id}`)} className="hover:bg-teal-50/30 cursor-pointer transition-colors">
                         <td className="py-4 px-4 text-center text-slate-400 font-bold">{i+1}</td>
-                        <td className="py-4 px-5"><span className="inline-block text-[11px] font-black text-[#003B3A] bg-[#00A99D]/10 border border-[#00A99D]/20 px-2.5 py-1 rounded-xl">{act.code || 'HDTN'}</span></td>
+                        <td className="py-4 px-5"><span className="inline-block text-[11px] font-black text-[#003B3A] bg-[#00A19A]/10 border border-[#00A19A]/20 px-2.5 py-1 rounded-xl">{act.code || 'HDTN'}</span></td>
                         <td className="py-4 px-5">
-                          <h4 className="text-sm font-black text-slate-800 group-hover:text-[#00A99D] transition-colors line-clamp-1">{act.name}</h4>
+                          <h4 className="text-sm font-black text-slate-800 group-hover:text-[#00A19A] transition-colors line-clamp-1">{act.name}</h4>
                           <div className="flex flex-wrap gap-1.5 mt-1">
                             {act.strand && <span className="text-[10px] font-black bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{act.strand}</span>}
                             <span className="text-[10px] font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{act.activityTypeName || 'Sự kiện'}</span>
@@ -375,29 +375,29 @@ export default function AdminExperientialList() {
                             <span className="inline-block text-[11px] font-semibold bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-200">Chung</span>
                           )}
                         </td>
-                        <td className="py-4 px-4 text-center"><span className="inline-block px-2.5 py-1 rounded-xl bg-teal-50 text-[#003B3A] border border-[#00A99D]/30">{getCleanCampusCode(act)}</span></td>
+                        <td className="py-4 px-4 text-center"><span className="inline-block px-2.5 py-1 rounded-xl bg-teal-50 text-[#003B3A] border border-[#00A19A]/30">{getCleanCampusCode(act)}</span></td>
                         <td className="py-4 px-4 text-center"><span className="inline-block px-2.5 py-1 rounded-xl bg-slate-100 text-slate-800 border border-slate-200">{getCleanGrades(act)}</span></td>
                         <td className="py-4 px-5"><span className="font-bold text-slate-700">{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : '-'}</span></td>
                         <td className="py-4 px-5 text-center"><div className="font-black text-slate-800">{totalClasses} lớp</div><div className="text-[11px] text-slate-400">{act.participantsCount || 0} HS</div></td>
                         <td className="py-4 px-5"><span className="px-2.5 py-1 bg-slate-100 rounded-lg text-slate-700 font-bold text-xs border border-slate-200">{act.evalMode === 'PARTICIPATION_ONLY' ? 'Chỉ tham gia' : `${(act.criteria||[]).length} tiêu chí`}</span></td>
                         <td className="py-4 px-5">
                           <div className="space-y-1">
-                            <div className="flex items-center justify-between text-[11px] font-black"><span>{completedClasses}/{totalClasses} lớp</span><span className={prog===100?'text-emerald-600':'text-[#00A99D]'}>{prog}%</span></div>
-                            <div className="w-full bg-slate-100 rounded-full h-1.5"><div className={`h-full rounded-full ${prog===100?'bg-emerald-500':'bg-[#00A99D]'}`} style={{width:`${prog}%`}}></div></div>
+                            <div className="flex items-center justify-between text-[11px] font-black"><span>{completedClasses}/{totalClasses} lớp</span><span className={prog===100?'text-emerald-600':'text-[#00A19A]'}>{prog}%</span></div>
+                            <div className="w-full bg-slate-100 rounded-full h-1.5"><div className={`h-full rounded-full ${prog===100?'bg-emerald-500':'bg-[#00A19A]'}`} style={{width:`${prog}%`}}></div></div>
                           </div>
                         </td>
                         <td className="py-4 px-5"><span className={`inline-block text-[11px] font-black px-2.5 py-1 rounded-full border ${badge.containerCls}`}>{badge.label}</span></td>
                         <td className="py-4 px-5 text-right" onClick={e=>e.stopPropagation()}>
                           {act.canManage ? (
                             <div className="flex items-center gap-1">
-                              <button onClick={() => setProgressModalActivity(act)} className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A99D]/10 text-slate-600 hover:text-[#003B3A]" title="Tiến độ">Tiến độ</button>
-                              <button onClick={e=>{e.stopPropagation(); router.push(`${basePath}/create?editId=${act.id}`);}} className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#00A99D]" title="Sửa">Sửa</button>
+                              <button onClick={() => setProgressModalActivity(act)} className="p-2 rounded-xl bg-slate-100 hover:bg-[#00A19A]/10 text-slate-600 hover:text-[#003B3A]" title="Tiến độ">Tiến độ</button>
+                              <button onClick={e=>{e.stopPropagation(); router.push(`${basePath}/create?editId=${act.id}`);}} className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#00A19A]" title="Sửa">Sửa</button>
                               <button onClick={e=>handleDuplicate(e, act)} className="p-2 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600" title="Nhân bản">Nhân bản</button>
                               <button onClick={e=>handleToggleLock(e, act)} className={`p-2 rounded-xl ${locked?'bg-amber-50 text-amber-700 hover:bg-amber-100':'bg-slate-100 text-slate-600 hover:bg-slate-200'}`} title={locked?'Mở khóa':'Khóa'}>{locked?'Mở khóa':'Khóa'}</button>
                               <button onClick={e=>handleDelete(e, act.id)} className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600" title="Xóa">Xóa</button>
                             </div>
                           ) : (
-                            <button onClick={() => router.push(act.myAssignedClass?.classId ? `${basePath}/${act.id}?classId=${act.myAssignedClass.classId}` : `${basePath}/${act.id}`)} className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white text-xs font-black rounded-xl shadow-xs">Xem</button>
+                            <button onClick={() => router.push(act.myAssignedClass?.classId ? `${basePath}/${act.id}?classId=${act.myAssignedClass.classId}` : `${basePath}/${act.id}`)} className="px-3.5 py-1.5 bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white text-xs font-black rounded-xl shadow-xs">Xem</button>
                           )}
                         </td>
                       </tr>
