@@ -2029,6 +2029,15 @@ export function TTCMDepartmentSummaryTab({
                             >
                               {rating}
                             </span>
+                            {item.evaluation.teacherAcknowledgedAt ? (
+                              <span className="block text-[9px] font-bold text-emerald-700 mt-1">
+                                ✓ Đã tiếp thu
+                              </span>
+                            ) : (
+                              <span className="block text-[9px] font-medium text-amber-600 mt-1">
+                                ⏳ Chờ tiếp thu
+                              </span>
+                            )}
                           </td>
 
                           <td className="py-3.5 px-4 text-right">

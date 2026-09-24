@@ -558,7 +558,7 @@ export async function getObservationSlots(filters: {
       : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
 
     const where: any = {
-      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] }
+      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED", "COMPLETED"] }
     }
 
     const andConditions: any[] = []
@@ -1769,6 +1769,16 @@ export async function submitEvaluation(data: {
       };
     }
 
+    const isPastDate = !isNaN(slotDate.getTime()) && 
+      new Date(slotDate.getFullYear(), slotDate.getMonth(), slotDate.getDate()) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (!registration.evaluation && !isAdmin && isPastDate) {
+      return {
+        success: false,
+        error: "Tiết dạy đã qua ngày diễn ra. Thầy/Cô vui lòng sử dụng chức năng 'Phiếu dự giờ bổ sung' kèm lý do để Giáo viên giảng dạy phê duyệt!"
+      };
+    }
+
     if (registration.teacherId !== currentTeacher.id) return { success: false, error: "Không có quyền nộp phiếu này" }
     if (!registration.isApproved) return { success: false, error: "Cần được xác nhận dự giờ trước khi nộp phiếu đánh giá" }
     // Bắt buộc nhập "Nội dung cần cải thiện / Góp ý phát triển"
@@ -2289,10 +2299,16 @@ async function ensureDbColumns() {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "reEvaluationNote" TEXT;`);
   } catch (e) {}
   try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "teacherAcknowledgedAt" TIMESTAMP;`);
+  } catch (e) {}
+  try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "teacherAcknowledgedAt" DATETIME;`);
   } catch (e) {}
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "teacherFeedback" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "teacherFeedbackAt" TIMESTAMP;`);
   } catch (e) {}
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "teacherFeedbackAt" DATETIME;`);
@@ -3550,7 +3566,12 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
 
     // Kiểm tra quyền: Chỉ GV dạy của tiết hoặc Admin mới có quyền xác nhận tiếp thu & phản hồi
     const isHost = 
-      (currentTeacher && (hostTeacher?.id === currentTeacher.id || slot?.teacherId === currentTeacher.id)) ||
+      (currentTeacher && (
+        hostTeacher?.id === currentTeacher.id || 
+        slot?.teacherId === currentTeacher.id ||
+        (hostTeacher?.teacherCode && currentTeacher?.teacherCode && hostTeacher.teacherCode === currentTeacher.teacherCode) ||
+        (hostTeacher?.email && currentTeacher?.email && hostTeacher.email.toLowerCase() === currentTeacher.email.toLowerCase())
+      )) ||
       (hostTeacher?.userId === session.user.id) ||
       (hostTeacher?.email && session.user?.email && hostTeacher.email.toLowerCase() === session.user.email.toLowerCase());
 
@@ -3570,7 +3591,18 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
       }
     });
 
-    // 1. Gửi Email thông báo trực tiếp đến Người dự giờ (Evaluator)
+    // Cập nhật trạng thái slot sang COMPLETED khi giáo viên dạy đã tiếp thu ý kiến
+    if (slot?.id) {
+      await prisma.observationSlot.update({
+        where: { id: slot.id },
+        data: { status: "COMPLETED" }
+      }).catch(e => console.warn("Could not update slot status to COMPLETED:", e));
+    }
+
+    // Invalidate cache ngay sau khi cập nhật dữ liệu để người dùng thấy trạng thái mới ngay lập tức
+    invalidateObservationSlotsCache();
+
+    // 1. Gửi Email thông báo trực tiếp đến Người dự giờ (Evaluator) - chạy không đồng bộ để không chặn giao diện
     try {
       const evaluatorEmail = getTeacherResolvedEmail(evaluator);
       if (evaluatorEmail && evaluatorEmail.includes("@")) {
@@ -3583,7 +3615,7 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
           acknowledgedAtStr: `${nowTime.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} • ${nowTime.toLocaleDateString("vi-VN")}`,
           directLink: SKYLINE_SSM_LOGIN_URL
         });
-        await sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: evaluatorEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Acknowledge email error:", e));
+        sendEmail({ from: "HỆ THỐNG DỰ GIỜ SKY-LINE", to: evaluatorEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Acknowledge email error:", e));
       }
 
       // 2. Tạo thông báo chuông in-app cho Người dự giờ
@@ -3593,7 +3625,7 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
           data: {
             userId: evaluatorUserId,
             title: "Giáo viên đã tiếp thu góp ý dự giờ 💬",
-            message: `GV ${hostTeacher?.teacherName || "dạy"} đã xác nhận tiếp thu góp ý và gửi phản hồi cho tiết "${slot?.topic || "Tiết dạy"}".`,
+            message: `GV ${hostTeacher?.teacherName || "dạy"} đã xác nhận tiếp thu góp ý và gửi phản hồi cho tiết "${slot?.topic || "Tiết dạy"}". Trạng thái tiết đã hoàn tất.`,
             link: `/teacher/du-gio?tab=evaluations`,
             isRead: false
           }
@@ -3611,7 +3643,8 @@ export async function acknowledgeAndFeedbackEvaluation(data: {
     return { 
       success: true, 
       evaluation: updated,
-      message: "Đã xác nhận tiếp thu góp ý và gửi phản hồi thành công!" 
+      slotStatus: "COMPLETED",
+      message: "Đã xác nhận tiếp thu góp ý và cập nhật trạng thái hoàn tất thành công!" 
     };
   } catch (e: any) {
     console.error("[acknowledgeAndFeedbackEvaluation Error]:", e);
@@ -4200,7 +4233,7 @@ export async function getTTCMDepartmentOverview(params?: {
 
     // Query slots where teacher is in this department OR an observer is in this department
     const slotWhere: any = {
-      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] }
+      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED", "COMPLETED"] }
     };
 
     const andConditions: any[] = [];

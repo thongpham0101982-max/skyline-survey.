@@ -20,7 +20,7 @@ import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
   Eye, TrendingUp, TrendingDown, Target, Star, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
   CheckCircle2, XCircle, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck,
-  BarChart3, PieChart, Printer, Download, FileSpreadsheet, Edit, LayoutDashboard
+  BarChart3, PieChart, Printer, Download, FileSpreadsheet, Edit, LayoutDashboard, Loader2
 } from "lucide-react"
 import { ACADEMIC_DIVISIONS, normalizeDivisionCode } from "@/config/divisions";
 
@@ -2167,6 +2167,16 @@ export function ObservationClient(props: ObservationClientProps) {
         setIsSupplementalEval(true);
         setSupplementalReasonText(registration.evaluation?.supplementalReason || "");
       } else {
+        const slotD = new Date(slot?.date);
+        const now = new Date();
+        const isPastDate = !isNaN(slotD.getTime()) && new Date(slotD.getFullYear(), slotD.getMonth(), slotD.getDate()) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        // Nếu tiết đã qua ngày và chưa có phiếu, giáo viên phải nộp theo quy trình phiếu dự giờ bổ sung
+        if (!registration?.evaluation && !isAdminUser && isPastDate) {
+          openEvalModal(registration, slot, true);
+          return;
+        }
+
         setIsSupplementalEval(false);
         setSupplementalReasonText("");
 
@@ -2545,38 +2555,78 @@ export function ObservationClient(props: ObservationClientProps) {
   const handleAcknowledgeAndFeedback = async () => {
     if (!evalModal?.registration?.evaluation?.id && !evalModal?.registration?.id && !evalModal?.slot?.id) return;
     setTeacherFeedbackSubmitting(true);
-    const res = await acknowledgeAndFeedbackEvaluation({
-      evaluationId: evalModal.registration?.evaluation?.id,
-      registrationId: evalModal.registration?.id,
-      feedback: teacherFeedbackText
-    });
-    setTeacherFeedbackSubmitting(false);
-    if (res.success) {
-      showToast(res.message || "Đã xác nhận tiếp thu góp ý thành công!", "success");
-      const updatedAckAt = res.evaluation?.teacherAcknowledgedAt ? new Date(res.evaluation.teacherAcknowledgedAt) : new Date();
-      const updatedFeedback = teacherFeedbackText.trim() || "Đã tiếp thu toàn bộ góp ý chuyên môn.";
-
-      // CRITICAL: Cập nhật state với tham chiếu object mới để React render lại ngay lập tức
-      setEvalModal((prev: any) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          registration: {
-            ...prev.registration,
-            evaluation: {
-              ...(prev.registration?.evaluation || {}),
-              teacherAcknowledgedAt: updatedAckAt,
-              teacherFeedback: updatedFeedback,
-              teacherFeedbackAt: updatedAckAt
-            }
-          }
-        };
+    try {
+      const res = await acknowledgeAndFeedbackEvaluation({
+        evaluationId: evalModal.registration?.evaluation?.id,
+        registrationId: evalModal.registration?.id,
+        feedback: teacherFeedbackText
       });
+      if (res.success) {
+        showToast(res.message || "Đã xác nhận tiếp thu góp ý thành công!", "success");
+        const updatedAckAt = res.evaluation?.teacherAcknowledgedAt ? new Date(res.evaluation.teacherAcknowledgedAt) : new Date();
+        const updatedFeedback = teacherFeedbackText.trim() || "Đã tiếp thu toàn bộ góp ý chuyên môn.";
 
-      router.refresh();
-      refreshSlots();
-    } else {
-      showToast(res.error || "Không thể gửi phản hồi", "error");
+        // 1. Cập nhật evalModal ngay lập tức
+        setEvalModal((prev: any) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            slot: {
+              ...(prev.slot || {}),
+              status: "COMPLETED"
+            },
+            registration: {
+              ...prev.registration,
+              evaluation: {
+                ...(prev.registration?.evaluation || {}),
+                teacherAcknowledgedAt: updatedAckAt,
+                teacherFeedback: updatedFeedback,
+                teacherFeedbackAt: updatedAckAt
+              }
+            }
+          };
+        });
+
+        // 2. Cập nhật tức thì vào slots và personalSlots trong state để bảng bên ngoài đổi trạng thái ngay
+        const targetSlotId = evalModal.slot?.id;
+        const targetRegId = evalModal.registration?.id;
+        const targetEvalId = evalModal.registration?.evaluation?.id;
+
+        const updateSlotItem = (s: any) => {
+          if (s.id !== targetSlotId) return s;
+          return {
+            ...s,
+            status: "COMPLETED",
+            registrations: (s.registrations || []).map((r: any) => {
+              if (r.id === targetRegId || (targetEvalId && r.evaluation?.id === targetEvalId)) {
+                return {
+                  ...r,
+                  evaluation: {
+                    ...(r.evaluation || {}),
+                    teacherAcknowledgedAt: updatedAckAt,
+                    teacherFeedback: updatedFeedback,
+                    teacherFeedbackAt: updatedAckAt
+                  }
+                };
+              }
+              return r;
+            })
+          };
+        };
+
+        setSlots((prev: any[]) => prev.map(updateSlotItem));
+        setPersonalSlots((prev: any[]) => prev.map(updateSlotItem));
+
+        router.refresh();
+        refreshSlots();
+      } else {
+        showToast(res.error || "Không thể gửi phản hồi", "error");
+      }
+    } catch (err: any) {
+      console.error("Lỗi khi xác nhận tiếp thu góp ý:", err);
+      showToast(err?.message || "Đã xảy ra lỗi khi gửi phản hồi!", "error");
+    } finally {
+      setTeacherFeedbackSubmitting(false);
     }
   };
 
@@ -5766,9 +5816,20 @@ export function ObservationClient(props: ObservationClientProps) {
                                                         Bản nháp
                                                       </span>
                                                     ) : (
-                                                      <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                                                        {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
-                                                      </span>
+                                                      <>
+                                                        <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                                                          {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                                        </span>
+                                                        {reg.evaluation.teacherAcknowledgedAt ? (
+                                                          <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs flex items-center gap-1" title={`Đã tiếp thu ngày ${new Date(reg.evaluation.teacherAcknowledgedAt).toLocaleDateString("vi-VN")}`}>
+                                                            <span>✓ Đã tiếp thu</span>
+                                                          </span>
+                                                        ) : (
+                                                          <span className="px-2 py-0.5 text-[9px] font-bold rounded-md bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs flex items-center gap-1" title="Chờ Giáo viên dạy tiếp thu góp ý">
+                                                            <span>⏳ Chờ tiếp thu</span>
+                                                          </span>
+                                                        )}
+                                                      </>
                                                     )}
                                                     <button
                                                       type="button"
@@ -6302,6 +6363,27 @@ export function ObservationClient(props: ObservationClientProps) {
                                   );
                                 }
 
+                                const isPastDate = !isNaN(slotD.getTime()) && new Date(slotD.getFullYear(), slotD.getMonth(), slotD.getDate()) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+                                if (isPastDate && !isAdminUser) {
+                                  return (
+                                    <div className="flex flex-col gap-1 items-start">
+                                      <button
+                                        type="button"
+                                        onClick={() => openEvalModal(myReg, slot, true)}
+                                        className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5"
+                                        title="Tiết dạy đã qua ngày. Nhấn để nộp Phiếu dự giờ bổ sung (yêu cầu GV dạy phê duyệt)"
+                                      >
+                                        <FileText className="w-3.5 h-3.5" />
+                                        <span>Nộp bổ sung</span>
+                                      </button>
+                                      <span className="text-[10px] text-amber-800/80 font-medium">
+                                        (Đã qua ngày • Cần GV dạy duyệt)
+                                      </span>
+                                    </div>
+                                  );
+                                }
+
                                 return (
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <button
@@ -6311,14 +6393,16 @@ export function ObservationClient(props: ObservationClientProps) {
                                     >
                                       <span>Nhập đánh giá</span>
                                     </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => openEvalModal(myReg, slot, true)}
-                                      className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1"
-                                      title="Nộp phiếu dự giờ bổ sung (Cần GV dạy duyệt)"
-                                    >
-                                      <span>Nộp bổ sung</span>
-                                    </button>
+                                    {isAdminUser && (
+                                      <button
+                                        type="button"
+                                        onClick={() => openEvalModal(myReg, slot, true)}
+                                        className="px-3 py-1 bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer"
+                                        title="Nộp phiếu dự giờ bổ sung (Cần GV dạy duyệt)"
+                                      >
+                                        <span>Nộp bổ sung</span>
+                                      </button>
+                                    )}
                                   </div>
                                 );
                               })()
@@ -7358,7 +7442,22 @@ export function ObservationClient(props: ObservationClientProps) {
                               onClick={handleAcknowledgeAndFeedback}
                               className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black rounded-xl text-xs shadow-md shadow-emerald-900/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-60 hover:scale-105 active:scale-95"
                             >
-                              {teacherFeedbackSubmitting ? "Đang xử lý..." : evalModal.registration.evaluation.teacherAcknowledgedAt ? "Cập nhật phản hồi" : "Xác nhận Đã Tiếp Thu Góp Ý & Gửi Phản Hồi"}
+                              {teacherFeedbackSubmitting ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>Đang cập nhật trạng thái...</span>
+                                </>
+                              ) : evalModal.registration.evaluation.teacherAcknowledgedAt ? (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                                  <span>Cập nhật phản hồi</span>
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                                  <span>Xác nhận Đã Tiếp Thu Góp Ý & Gửi Phản Hồi</span>
+                                </>
+                              )}
                             </button>
                           </div>
                         </div>

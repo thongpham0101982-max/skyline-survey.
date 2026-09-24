@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useMemo } from "react";
 import {
@@ -1373,19 +1373,17 @@ export function ReceivedEvaluationsTab({
 
                       {/* Trạng thái */}
                       <td className="p-3.5 text-center">
-                        {isHost ? (
-                          isAcknowledged ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs">
-                              Đã tiếp thu
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
-                              Chờ phản hồi
-                            </span>
-                          )
+                        {isAcknowledged ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-black rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs" title="Giáo viên dạy đã xác nhận tiếp thu ý kiến chuyên môn">
+                            ✓ Đã tiếp thu
+                          </span>
+                        ) : isHost ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs" title="Vui lòng xem phiếu và bấm xác nhận tiếp thu góp ý">
+                            ⏳ Chờ phản hồi
+                          </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-black rounded-lg bg-teal-50 text-teal-800 border border-teal-300 shadow-2xs">
-                            Đã nộp phiếu
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs" title="Đã nộp phiếu, đang chờ Giáo viên dạy tiếp thu góp ý">
+                            ⏳ Chờ GV tiếp thu
                           </span>
                         )}
                       </td>
