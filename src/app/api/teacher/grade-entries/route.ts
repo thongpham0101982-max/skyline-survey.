@@ -226,6 +226,87 @@ export async function GET(request: Request) {
       }
     })
 
+    // Load Homeroom Coordination logs (Transferred from GVCN to GVBM)
+    let periodVariants = [evaluationPeriod]
+    if (evaluationPeriod === "KSĐN" || evaluationPeriod === "KSDN") {
+      periodVariants = ["KSĐN", "KSDN"]
+    } else if (evaluationPeriod === "GK1" || evaluationPeriod === "GIUA_KY_1") {
+      periodVariants = ["GK1", "GIUA_KY_1"]
+    } else if (evaluationPeriod === "CK1" || evaluationPeriod === "CUOI_KY_1") {
+      periodVariants = ["CK1", "CUOI_KY_1"]
+    } else if (evaluationPeriod === "GK2" || evaluationPeriod === "GIUA_KY_2") {
+      periodVariants = ["GK2", "GIUA_KY_2"]
+    } else if (evaluationPeriod === "CK2" || evaluationPeriod === "CUOI_KY_2") {
+      periodVariants = ["CK2", "CUOI_KY_2"]
+    }
+
+    const currentSubject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+      select: { id: true, subjectName: true, subjectCode: true }
+    }).catch(() => null)
+
+    const consultationLogs = await prisma.academicConsultationLog.findMany({
+      where: {
+        studentId: { in: studentIds },
+        academicYearId: targetAcademicYearId,
+        OR: periodVariants.map(p => ({ notes: { contains: `[GradePeriod: ${p}]` } }))
+      },
+      include: {
+        teacher: { select: { id: true, teacherName: true } }
+      },
+      orderBy: { updatedAt: "desc" }
+    }).catch(() => [])
+
+    const homeroomCoordination: Record<string, any> = {}
+    consultationLogs.forEach((log: any) => {
+      if (!log.nextActions || !log.nextActions.includes("[GVBM_FORWARD:")) return
+
+      const forwardMatch = log.nextActions.match(/\[GVBM_FORWARD:(.*?)\]/)
+      if (!forwardMatch) return
+
+      try {
+        const forwardedGvbm = JSON.parse(forwardMatch[1])
+        // Match by subjectId or subjectName or teacherId
+        const isSubjectMatch = (forwardedGvbm.subjectId && forwardedGvbm.subjectId === subjectId) ||
+          (currentSubject?.subjectName && forwardedGvbm.subjectName && 
+           forwardedGvbm.subjectName.trim().toLowerCase() === currentSubject.subjectName.trim().toLowerCase()) ||
+          (teacher?.id && forwardedGvbm.teacherId === teacher.id)
+
+        if (!isSubjectMatch) return
+
+        let gvbmResponse: any = null
+        const respMatch = log.nextActions.match(/\[GVBM_RESPONSE:(.*?)\]/)
+        if (respMatch) {
+          try {
+            gvbmResponse = JSON.parse(respMatch[1])
+          } catch (_) {}
+        }
+
+        let parentFeedback = ""
+        if (log.difficulties) {
+          parentFeedback = log.difficulties.replace(/^Ý KIẾN PHHS:\s*/i, "").trim()
+        }
+
+        let teacherRemark = ""
+        if (log.content) {
+          teacherRemark = log.content.replace(/^Ý KIẾN GVCN:\s*/i, "").trim()
+        }
+
+        if (!homeroomCoordination[log.studentId]) {
+          homeroomCoordination[log.studentId] = {
+            logId: log.id,
+            studentId: log.studentId,
+            forwardedGvbm,
+            gvbmResponse,
+            parentFeedback,
+            teacherRemark,
+            homeroomTeacherName: log.teacher?.teacherName || "GVCN",
+            updatedAt: log.updatedAt
+          }
+        }
+      } catch (_) {}
+    })
+
     return NextResponse.json({
       success: true,
       config,
@@ -234,7 +315,8 @@ export async function GET(request: Request) {
       assignedTeacher,
       isLocked,
       lockInfo,
-      unlockRequest: unlockRequest || null
+      unlockRequest: unlockRequest || null,
+      homeroomCoordination
     })
 
   } catch (error: any) {

@@ -250,29 +250,29 @@ export async function GET(request: Request) {
       const defaultScore = levelCode === "TIEU_HOC" ? 7.0 : 6.0
       if (!benchmarkConfigs || benchmarkConfigs.length === 0) return defaultScore
 
-      const matchPeriodSubGrade = benchmarkConfigs.find(b => 
-        b.subjectId === subId && 
-        isGradeMatching(b.grade, targetClass.grade) && 
+      const matchPeriodSubGrade = benchmarkConfigs.find(b =>
+        b.subjectId === subId &&
+        isGradeMatching(b.grade, targetClass.grade) &&
         periodVariants.includes(b.evaluationPeriod)
       )
       if (matchPeriodSubGrade) return matchPeriodSubGrade.benchmarkScore
 
-      const matchSubGrade = benchmarkConfigs.find(b => 
-        b.subjectId === subId && 
-        isGradeMatching(b.grade, targetClass.grade) && 
+      const matchSubGrade = benchmarkConfigs.find(b =>
+        b.subjectId === subId &&
+        isGradeMatching(b.grade, targetClass.grade) &&
         b.evaluationPeriod === "ALL"
       )
       if (matchSubGrade) return matchSubGrade.benchmarkScore
 
-      const matchSubLevel = benchmarkConfigs.find(b => 
-        b.subjectId === subId && 
+      const matchSubLevel = benchmarkConfigs.find(b =>
+        b.subjectId === subId &&
         b.level === levelCode
       )
       if (matchSubLevel) return matchSubLevel.benchmarkScore
 
-      const matchLevel = benchmarkConfigs.find(b => 
-        b.level === levelCode && 
-        (!b.subjectId || b.subjectId === "ALL") && 
+      const matchLevel = benchmarkConfigs.find(b =>
+        b.level === levelCode &&
+        (!b.subjectId || b.subjectId === "ALL") &&
         (!b.grade || b.grade === "ALL")
       )
       if (matchLevel) return matchLevel.benchmarkScore
@@ -542,7 +542,7 @@ export async function GET(request: Request) {
             try {
               forwardedGvbm = JSON.parse(forwardMatch[1])
               isAcknowledged = true
-            } catch (_) {}
+            } catch (_) { }
           }
         }
 
@@ -589,7 +589,7 @@ export async function GET(request: Request) {
           if (entry.componentScores) {
             try {
               compScores = typeof entry.componentScores === "string" ? JSON.parse(entry.componentScores) : entry.componentScores
-            } catch (_) {}
+            } catch (_) { }
           }
           if (entry.compositeScore !== null && entry.compositeScore !== undefined) {
             const num = Number(entry.compositeScore)
@@ -655,15 +655,16 @@ export async function GET(request: Request) {
         isAcknowledged: Boolean(exchangeMap.get(st.id)?.isAcknowledged),
         acknowledgedAt: exchangeMap.get(st.id)?.acknowledgedAt || null,
         forwardedGvbm: exchangeMap.get(st.id)?.forwardedGvbm || null,
+        gvbmResponse: exchangeMap.get(st.id)?.gvbmResponse || null,
         exchangeLogId: exchangeMap.get(st.id)?.logId || null,
         defaultTeacherRemark: `Giáo viên chủ nhiệm ghi nhận tinh thần và kết quả tham gia kỳ khảo sát của học sinh ${st.studentName}. Đề nghị học sinh tiếp tục nỗ lực phát huy điểm mạnh và duy trì tinh thần học tập tích cực.`
       }
     })
 
-    const trackingStudents = studentMatrix.filter(st => 
-      st.belowAverageCount > 0 || 
-      st.belowBenchmarkCount > 0 || 
-      st.isEntranceCommitted || 
+    const trackingStudents = studentMatrix.filter(st =>
+      st.belowAverageCount > 0 ||
+      st.belowBenchmarkCount > 0 ||
+      st.isEntranceCommitted ||
       st.learningCommitments.length > 0 ||
       st.isPsychologySupport
     )
@@ -705,7 +706,8 @@ export async function GET(request: Request) {
         parentFeedbackSummary: {
           totalFeedbackCount: studentMatrix.filter(s => Boolean(s.parentFeedback)).length,
           acknowledgedCount: studentMatrix.filter(s => Boolean(s.parentFeedback) && s.isAcknowledged).length,
-          forwardedCount: studentMatrix.filter(s => Boolean(s.parentFeedback) && Boolean(s.forwardedGvbm)).length
+          forwardedCount: studentMatrix.filter(s => Boolean(s.parentFeedback) && Boolean(s.forwardedGvbm)).length,
+          respondedCount: studentMatrix.filter(s => Boolean(s.gvbmResponse)).length
         }
       }
     })

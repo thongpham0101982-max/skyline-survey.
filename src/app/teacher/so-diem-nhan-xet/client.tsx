@@ -46,10 +46,12 @@ import {
   Calendar,
   Sparkles,
   AlertCircle,
-  Clock
+  Clock,
+  MessageSquare
 } from "lucide-react"
 import { calculateCompositeScore, getColumnMaxScore } from "@/lib/grading/formula-calculator"
 import { Button } from "@/components/ui/button"
+import { GvbmResponseModal } from "./components/GvbmResponseModal"
 
 interface Props {
   academicYears: any[]
@@ -239,6 +241,35 @@ export function DiemNhanXetTeacherClient({
   const [cancellingUnlock, setCancellingUnlock] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Homeroom Coordination state
+  const [homeroomCoordination, setHomeroomCoordination] = useState<Record<string, any>>({})
+  const [selectedCoordStudent, setSelectedCoordStudent] = useState<any>(null)
+  const [coordModalOpen, setCoordModalOpen] = useState(false)
+
+  const handleOpenCoordModal = (student: any) => {
+    setSelectedCoordStudent(student)
+    setCoordModalOpen(true)
+  }
+
+  const handleCoordinationSaved = (studentId: string, responseData: any) => {
+    setHomeroomCoordination(prev => ({
+      ...prev,
+      [studentId]: {
+        ...(prev[studentId] || {}),
+        gvbmResponse: responseData
+      }
+    }))
+  }
+
+  const coordStudents = useMemo(() => {
+    const list = gradeSheetData.students.filter(st => Boolean(homeroomCoordination[st.id]))
+    return {
+      all: list,
+      pending: list.filter(st => !homeroomCoordination[st.id]?.gvbmResponse),
+      responded: list.filter(st => Boolean(homeroomCoordination[st.id]?.gvbmResponse))
+    }
+  }, [gradeSheetData.students, homeroomCoordination])
+
   // Fetch teaching assignments if academic year changes
   useEffect(() => {
     fetch(`/api/teacher/grade-entries?action=getAssignments&academicYearId=${selectedYearId}`)
@@ -260,6 +291,7 @@ export function DiemNhanXetTeacherClient({
       setGradeSheetData({ config: null, students: [], entries: {} })
       setIsSheetLocked(false)
       setSheetLockInfo(null)
+      setHomeroomCoordination({})
       return
     }
     try {
@@ -287,6 +319,7 @@ export function DiemNhanXetTeacherClient({
         }
         setIsSheetLocked(Boolean(data.isLocked))
         setSheetLockInfo(data.lockInfo || null)
+        setHomeroomCoordination(data.homeroomCoordination || {})
         setGradeSheetData({
           config: data.config,
           students: data.students || [],
@@ -870,6 +903,41 @@ export function DiemNhanXetTeacherClient({
           </div>
         )}
 
+        {/* Coordination Banner with Homeroom Teacher */}
+        {!hasNoAssignments && coordStudents.all.length > 0 && (
+          <div className="bg-gradient-to-r from-sky-50 via-teal-50 to-indigo-50 border border-teal-200/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <MessageSquare className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-black text-slate-900 flex items-center gap-2">
+                  <span>Phối Hợp Ý Kiến PHHS & Đề Xuất Từ GVCN</span>
+                  <span className="px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold">
+                    {coordStudents.all.length} học sinh
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 mt-0.5 font-medium">
+                  Giáo viên Chủ nhiệm đã chuyển tiếp ý kiến PHHS và đề xuất GVBM hỗ trợ học sinh môn {currentSubject?.subjectName || "bộ môn"}.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              {coordStudents.pending.length > 0 && (
+                <span className="px-2.5 py-1 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 text-[11px] font-bold">
+                  Chờ phản hồi: {coordStudents.pending.length}
+                </span>
+              )}
+              {coordStudents.responded.length > 0 && (
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-100 border border-emerald-300 text-emerald-900 text-[11px] font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Đã phản hồi: {coordStudents.responded.length}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Empty State when teacher has no assignments for this semester/year */}
         {hasNoAssignments ? (
           <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-10 text-center space-y-3.5 my-4">
@@ -904,7 +972,7 @@ export function DiemNhanXetTeacherClient({
                   <tr className="bg-slate-800 text-white font-bold">
                     <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
                     <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
-                    <th className="py-3 px-3 w-48 border-r border-slate-700">Họ và tên</th>
+                    <th className="py-3 px-3 w-52 border-r border-slate-700">Họ và tên</th>
                     <th className="py-3 px-3 w-32 border-r border-slate-700">Môn học</th>
                     
                     {activeColNames.map((colName: string, idx: number) => {
@@ -948,7 +1016,34 @@ export function DiemNhanXetTeacherClient({
                           {st.studentCode}
                         </td>
                         <td className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200">
-                          {st.studentName}
+                          <div>
+                            <div>{st.studentName}</div>
+                            {homeroomCoordination[st.id] && (
+                              <div className="mt-1">
+                                {homeroomCoordination[st.id].gvbmResponse ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenCoordModal(st)}
+                                    className="px-2 py-0.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-black text-[10px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+                                    title="Xem và cập nhật kết quả phản hồi gửi đến GVCN"
+                                  >
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    <span>Đã phản hồi GVCN</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenCoordModal(st)}
+                                    className="px-2 py-0.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-black text-[10px] inline-flex items-center gap-1 shadow-2xs animate-pulse transition-all cursor-pointer"
+                                    title="GVCN đề xuất phối hợp hỗ trợ môn học theo ý kiến PHHS - Bấm để tiếp nhận & phản hồi"
+                                  >
+                                    <MessageSquare className="w-3 h-3 text-amber-600" />
+                                    <span>Ý kiến PHHS (Cần phản hồi GVCN)</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2.5 px-3 text-slate-600 font-medium border-r border-slate-200">
                           {currentSubject?.subjectName || "Môn"}
@@ -1160,6 +1255,19 @@ export function DiemNhanXetTeacherClient({
           </div>
         </div>
       )}
+
+      {/* MODAL TIẾP NHẬN & PHẢN HỒI KẾT QUẢ ĐẾN GVCN */}
+      <GvbmResponseModal
+        isOpen={coordModalOpen}
+        onClose={() => setCoordModalOpen(false)}
+        student={selectedCoordStudent}
+        coordinationInfo={selectedCoordStudent ? homeroomCoordination[selectedCoordStudent.id] : null}
+        currentClass={currentClass}
+        currentSubject={currentSubject}
+        selectedPeriod={selectedPeriod}
+        academicYearId={selectedYearId}
+        onSaved={handleCoordinationSaved}
+      />
       </div>
     </div>
   )

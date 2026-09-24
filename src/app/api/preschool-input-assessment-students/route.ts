@@ -1797,6 +1797,50 @@ export async function PUT(req) {
          oldSchoolType: data.oldSchoolType || null,
       }
     });
+
+    // Auto-sync Student.studentType if admissionResult is updated
+    if (data.admissionResult !== undefined) {
+      try {
+        const candidateCodes = [result.enrollmentCode, result.studentCode].map((c: any) => (c || "").trim().toUpperCase()).filter(Boolean);
+        const matchingStudents = await prisma.student.findMany({
+          where: {
+            OR: [
+              { studentCode: { in: candidateCodes } },
+              result.enrollmentClassId && result.fullName ? {
+                classId: result.enrollmentClassId,
+                studentName: result.fullName.trim()
+              } : undefined
+            ].filter(Boolean) as any
+          }
+        });
+
+        const resLower = String(data.admissionResult || "").toLowerCase();
+        const isGiaoLuu = resLower.includes("giao lưu") || resLower.includes("giao luu");
+
+        for (const ms of matchingStudents) {
+          if (isGiaoLuu && ms.studentType !== "GIAO_LUU") {
+            await prisma.student.update({
+              where: { id: ms.id },
+              data: {
+                studentType: "GIAO_LUU",
+                studentTypeNote: "Học giao lưu theo kết quả khảo sát đầu vào"
+              }
+            });
+          } else if (!isGiaoLuu && ms.studentType === "GIAO_LUU" && (ms.studentTypeNote || "").includes("khảo sát")) {
+            await prisma.student.update({
+              where: { id: ms.id },
+              data: {
+                studentType: "CHINH_KHOA",
+                studentTypeNote: null
+              }
+            });
+          }
+        }
+      } catch (syncErr) {
+        console.error("Auto sync Student.studentType error:", syncErr);
+      }
+    }
+
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });

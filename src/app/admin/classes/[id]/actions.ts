@@ -23,6 +23,33 @@ export async function importStudentsAction(classId: string, data: any[]) {
   })
   const existingStudentsMap = new Map(existingStudents.map(s => [s.studentCode, s]))
 
+  // Pre-fetch candidate survey results for studentCodes
+  const [k12Candidates, preCandidates] = await Promise.all([
+    prisma.inputAssessmentStudent.findMany({
+      where: {
+        OR: [
+          { studentCode: { in: studentCodes } },
+          { enrollmentCode: { in: studentCodes } }
+        ]
+      },
+      select: { studentCode: true, enrollmentCode: true, admissionResult: true }
+    }),
+    prisma.preschoolInputAssessmentStudent.findMany({
+      where: {
+        OR: [
+          { studentCode: { in: studentCodes } },
+          { enrollmentCode: { in: studentCodes } }
+        ]
+      },
+      select: { studentCode: true, enrollmentCode: true, admissionResult: true }
+    })
+  ]);
+  const candidateResultMap = new Map<string, string>();
+  for (const c of [...k12Candidates, ...preCandidates]) {
+    if (c.studentCode) candidateResultMap.set(c.studentCode.trim().toUpperCase(), c.admissionResult || "");
+    if (c.enrollmentCode) candidateResultMap.set(c.enrollmentCode.trim().toUpperCase(), c.admissionResult || "");
+  }
+
   // 2. Use a transaction block to batch inserts/updates together
   await prisma.$transaction(async (tx) => {
     for (const item of data) {
@@ -47,6 +74,13 @@ export async function importStudentsAction(classId: string, data: any[]) {
           warnings.push(`Mã HS đã tồn tại trong hệ thống: ${sCode}`)
           continue
         } else {
+          const candResult = (candidateResultMap.get(sCode) || "").toLowerCase();
+          const isSurveyGiaoLuu = candResult.includes("giao lưu") || candResult.includes("giao luu");
+          const resolvedType = item.studentType === "GIAO_LUU" || isSurveyGiaoLuu ? "GIAO_LUU" : "CHINH_KHOA";
+          const resolvedNote = resolvedType === "GIAO_LUU" 
+            ? (isSurveyGiaoLuu ? "Học giao lưu theo kết quả khảo sát đầu vào" : "Import diện giao lưu") 
+            : null;
+
           await tx.student.create({
             data: {
               studentCode: sCode,
@@ -57,8 +91,8 @@ export async function importStudentsAction(classId: string, data: any[]) {
               campusId: cls.campusId,
               academicYearId: cls.academicYearId,
               status: "ACTIVE",
-              studentType: item.studentType || "CHINH_KHOA",
-              studentTypeNote: item.studentType === "GIAO_LUU" ? "Import diện giao lưu" : null
+              studentType: resolvedType,
+              studentTypeNote: resolvedNote
             }
           });
           if (item.vnEduCode) {
@@ -313,6 +347,25 @@ export async function addStudentAction(classId: string, data: any) {
       }
     }
 
+    // Tự động kiểm tra kết quả khảo sát đầu vào nếu là diện Đạt - Giao lưu
+    const candK12 = await prisma.inputAssessmentStudent.findFirst({
+      where: {
+        OR: [{ studentCode }, { enrollmentCode: studentCode }]
+      },
+      select: { admissionResult: true }
+    });
+    const candPre = !candK12 ? await prisma.preschoolInputAssessmentStudent.findFirst({
+      where: {
+        OR: [{ studentCode }, { enrollmentCode: studentCode }]
+      },
+      select: { admissionResult: true }
+    }) : null;
+    const candRes = (candK12?.admissionResult || candPre?.admissionResult || "").toLowerCase();
+    const isSurveyGiaoLuu = candRes.includes("giao lưu") || candRes.includes("giao luu");
+
+    const resolvedStudentType = data.studentType === "GIAO_LUU" || isSurveyGiaoLuu ? "GIAO_LUU" : "CHINH_KHOA";
+    const resolvedStudentTypeNote = data.studentTypeNote || (resolvedStudentType === "GIAO_LUU" ? (isSurveyGiaoLuu ? "Học giao lưu theo kết quả khảo sát đầu vào" : "Học giao lưu") : null);
+
     const student = await prisma.student.create({
       data: {
         studentCode: studentCode,
@@ -323,8 +376,8 @@ export async function addStudentAction(classId: string, data: any) {
         campusId: cls.campusId,
         academicYearId: cls.academicYearId,
         status: "ACTIVE",
-        studentType: data.studentType === "GIAO_LUU" ? "GIAO_LUU" : "CHINH_KHOA",
-        studentTypeNote: data.studentTypeNote || (data.studentType === "GIAO_LUU" ? "Học giao lưu" : null)
+        studentType: resolvedStudentType,
+        studentTypeNote: resolvedStudentTypeNote
       }
     })
     const session = await auth()
@@ -509,6 +562,54 @@ export async function syncClassStudentsWithSurveysAction(classId: string) {
 
     let createdCount = 0
     let updatedCount = 0
+    let syncedStudentTypesCount = 0
+
+    // Kiểm tra và đồng bộ diện học sinh từ khảo sát đầu vào nếu có kết quả Đạt - Giao lưu
+    const studentCodes = cls.students.map(s => s.studentCode).filter(Boolean);
+    const [candK12List, candPreList] = await Promise.all([
+      prisma.inputAssessmentStudent.findMany({
+        where: {
+          OR: [
+            { studentCode: { in: studentCodes } },
+            { enrollmentCode: { in: studentCodes } },
+            { enrollmentClassId: classId }
+          ]
+        },
+        select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true, admissionResult: true }
+      }),
+      prisma.preschoolInputAssessmentStudent.findMany({
+        where: {
+          OR: [
+            { studentCode: { in: studentCodes } },
+            { enrollmentCode: { in: studentCodes } },
+            { enrollmentClassId: classId }
+          ]
+        },
+        select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true, admissionResult: true }
+      })
+    ]);
+    const candidates = [...candK12List, ...candPreList];
+
+    for (const student of cls.students) {
+      const matched = candidates.find(c =>
+        (c.studentCode && (c.studentCode === student.studentCode || c.enrollmentCode === student.studentCode)) ||
+        (c.enrollmentClassId === classId && c.fullName && c.fullName.trim().toLowerCase() === student.studentName.trim().toLowerCase())
+      );
+      if (matched && matched.admissionResult) {
+        const resLower = matched.admissionResult.toLowerCase();
+        const isGiaoLuu = resLower.includes("giao lưu") || resLower.includes("giao luu");
+        if (isGiaoLuu && student.studentType !== "GIAO_LUU") {
+          await prisma.student.update({
+            where: { id: student.id },
+            data: {
+              studentType: "GIAO_LUU",
+              studentTypeNote: "Học giao lưu theo kết quả khảo sát đầu vào"
+            }
+          });
+          syncedStudentTypesCount++;
+        }
+      }
+    }
 
     for (const student of cls.students) {
       for (const period of activePeriods) {
@@ -553,15 +654,17 @@ export async function syncClassStudentsWithSurveysAction(classId: string) {
       "SurveyForm",
       classId,
       null,
-      { createdCount, updatedCount, studentCount: cls.students.length }
+      { createdCount, updatedCount, studentCount: cls.students.length, syncedStudentTypesCount }
     )
 
     revalidatePath(`/admin/classes/${classId}`)
+    const extraMsg = syncedStudentTypesCount > 0 ? ` Đồng thời cập nhật ${syncedStudentTypesCount} học sinh sang diện Giao lưu theo kết quả khảo sát.` : "";
     return {
       success: true,
-      message: `Đã đồng bộ thành công ${cls.students.length} học sinh với ${activePeriods.length} đợt khảo sát (${createdCount} tạo mới, ${updatedCount} cập nhật).`,
+      message: `Đã đồng bộ thành công ${cls.students.length} học sinh với ${activePeriods.length} đợt khảo sát (${createdCount} tạo mới, ${updatedCount} cập nhật).${extraMsg}`,
       createdCount,
-      updatedCount
+      updatedCount,
+      syncedStudentTypesCount
     }
   } catch (e: any) {
     return { success: false, error: e.message }

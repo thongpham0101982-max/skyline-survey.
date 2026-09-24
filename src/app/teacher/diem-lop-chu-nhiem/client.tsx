@@ -266,6 +266,8 @@ export function HomeroomGradesClient({
       list = list.filter((s: any) => Boolean(s.parentFeedback) && s.isAcknowledged && !s.forwardedGvbm)
     } else if (feedbackStatusFilter === "FORWARDED") {
       list = list.filter((s: any) => Boolean(s.forwardedGvbm))
+    } else if (feedbackStatusFilter === "RESPONDED") {
+      list = list.filter((s: any) => Boolean(s.gvbmResponse))
     }
 
     if (searchTerm.trim()) {
@@ -274,7 +276,8 @@ export function HomeroomGradesClient({
         (s.studentName || "").toLowerCase().includes(lower) ||
         (s.studentCode || "").toLowerCase().includes(lower) ||
         (s.parentFeedback || "").toLowerCase().includes(lower) ||
-        (s.teacherRemark || "").toLowerCase().includes(lower)
+        (s.teacherRemark || "").toLowerCase().includes(lower) ||
+        (s.gvbmResponse?.responseContent || "").toLowerCase().includes(lower)
       )
     }
 
@@ -283,14 +286,15 @@ export function HomeroomGradesClient({
 
   // Count feedback statuses for Tab 4 badges
   const feedbackCounts = useMemo(() => {
-    if (!data?.studentMatrix) return { all: 0, hasFeedback: 0, pending: 0, acknowledged: 0, forwarded: 0 }
+    if (!data?.studentMatrix) return { all: 0, hasFeedback: 0, pending: 0, acknowledged: 0, forwarded: 0, responded: 0 }
     const matrix = data.studentMatrix
     return {
       all: matrix.length,
       hasFeedback: matrix.filter((s: any) => Boolean(s.parentFeedback)).length,
       pending: matrix.filter((s: any) => Boolean(s.parentFeedback) && !s.isAcknowledged && !s.forwardedGvbm).length,
       acknowledged: matrix.filter((s: any) => Boolean(s.parentFeedback) && s.isAcknowledged && !s.forwardedGvbm).length,
-      forwarded: matrix.filter((s: any) => Boolean(s.forwardedGvbm)).length
+      forwarded: matrix.filter((s: any) => Boolean(s.forwardedGvbm)).length,
+      responded: matrix.filter((s: any) => Boolean(s.gvbmResponse)).length
     }
   }, [data?.studentMatrix])
 
@@ -431,7 +435,9 @@ export function HomeroomGradesClient({
     const feedbackList = data.studentMatrix.filter((s: any) => Boolean(s.parentFeedback))
     const rows = feedbackList.map((st: any, idx: number) => {
       let statusText = "Chờ tiếp nhận"
-      if (st.forwardedGvbm) {
+      if (st.gvbmResponse) {
+        statusText = `GVBM đã phản hồi (${st.gvbmResponse.statusText || "Đã xử lý"})`
+      } else if (st.forwardedGvbm) {
         statusText = `Đã chuyển GVBM (${st.forwardedGvbm.subjectName} - ${st.forwardedGvbm.teacherName})`
       } else if (st.isAcknowledged) {
         statusText = "Đã tiếp nhận"
@@ -451,7 +457,9 @@ export function HomeroomGradesClient({
         "Trạng thái xử lý": statusText,
         "GVBM tiếp nhận": st.forwardedGvbm?.teacherName || "",
         "Môn chuyển giao": st.forwardedGvbm?.subjectName || "",
-        "Lời nhắn GVCN gửi GVBM": st.forwardedGvbm?.message || ""
+        "Lời nhắn GVCN gửi GVBM": st.forwardedGvbm?.message || "",
+        "Kết quả phản hồi của GVBM": st.gvbmResponse?.responseContent || "",
+        "Ngày GVBM phản hồi": st.gvbmResponse?.respondedAt ? new Date(st.gvbmResponse.respondedAt).toLocaleDateString("vi-VN") : ""
       }
     })
 
@@ -1048,6 +1056,29 @@ export function HomeroomGradesClient({
                                       )}
                                     </div>
                                   )}
+
+                                  {/* 4. Kết quả phản hồi từ GVBM */}
+                                  {st.gvbmResponse && (
+                                    <div className="bg-emerald-50/95 border border-emerald-300 rounded-xl p-2 text-[10px] space-y-1 shadow-2xs">
+                                      <div className="flex items-center justify-between gap-1">
+                                        <span className="font-black text-emerald-900 flex items-center gap-1">
+                                          <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                                          <span>GVBM đã phản hồi ({st.gvbmResponse.teacherName})</span>
+                                        </span>
+                                        {st.gvbmResponse.respondedAt && (
+                                          <span className="text-[9px] text-emerald-700 font-bold">
+                                            {new Date(st.gvbmResponse.respondedAt).toLocaleDateString("vi-VN")}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="text-[10px] font-extrabold text-teal-800">
+                                        • {st.gvbmResponse.statusText || "Đã xử lý hỗ trợ"}
+                                      </div>
+                                      <div className="text-slate-700 italic bg-white/80 p-1.5 rounded-lg border border-emerald-200 leading-relaxed font-medium">
+                                        &ldquo;{st.gvbmResponse.responseContent}&rdquo;
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
 
@@ -1597,6 +1628,17 @@ export function HomeroomGradesClient({
                   </button>
 
                   <button
+                    onClick={() => setFeedbackStatusFilter("RESPONDED")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      feedbackStatusFilter === "RESPONDED"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                    }`}
+                  >
+                    GVBM đã phản hồi ({feedbackCounts.responded})
+                  </button>
+
+                  <button
                     onClick={() => setFeedbackStatusFilter("ALL")}
                     className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                       feedbackStatusFilter === "ALL"
@@ -1751,7 +1793,42 @@ export function HomeroomGradesClient({
 
                               {/* Trạng thái chuyển đến GVBM liên quan */}
                               <td className="py-3 px-3 border-r border-slate-200">
-                                {st.forwardedGvbm ? (
+                                {st.gvbmResponse ? (
+                                  <div className="space-y-1.5 bg-emerald-50/95 p-2.5 rounded-xl border border-emerald-300 shadow-2xs">
+                                    <div className="flex items-center justify-between text-[10.5px]">
+                                      <span className="font-black text-emerald-900 flex items-center gap-1">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                        <span>GVBM ĐÃ PHẢN HỒI KẾT QUẢ</span>
+                                      </span>
+                                      {st.gvbmResponse.respondedAt && (
+                                        <span className="text-[10px] text-emerald-700 font-bold">
+                                          {new Date(st.gvbmResponse.respondedAt).toLocaleDateString("vi-VN")}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="bg-white/95 p-2 rounded-lg border border-emerald-200 space-y-1 text-xs">
+                                      <div className="font-bold text-slate-900 flex items-center justify-between flex-wrap gap-1">
+                                        <span>GV: <strong className="text-emerald-950 font-black">{st.gvbmResponse.teacherName}</strong> ({st.gvbmResponse.subjectName})</span>
+                                        <span className="text-[9.5px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-extrabold border border-emerald-300">
+                                          {st.gvbmResponse.statusText || "Đã xử lý hỗ trợ"}
+                                        </span>
+                                      </div>
+                                      <div className="text-[11px] text-slate-700 italic bg-emerald-50/40 p-2 rounded-md border border-emerald-100 leading-relaxed font-medium">
+                                        &ldquo;{st.gvbmResponse.responseContent}&rdquo;
+                                      </div>
+                                    </div>
+                                    <div className="flex justify-end pt-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenForwardModal(st)}
+                                        className="text-[10px] font-bold text-teal-700 hover:text-teal-900 bg-white hover:bg-teal-50 px-2 py-0.5 rounded-md border border-teal-300 transition-colors flex items-center gap-1 cursor-pointer"
+                                      >
+                                        <Send className="w-2.5 h-2.5" />
+                                        <span>Chuyển lại / Đổi môn khác</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : st.forwardedGvbm ? (
                                   <div className="space-y-1.5 bg-blue-50/80 p-2.5 rounded-xl border border-blue-200">
                                     <div className="flex items-center justify-between text-[10.5px]">
                                       <span className="font-extrabold text-blue-900 flex items-center gap-1">

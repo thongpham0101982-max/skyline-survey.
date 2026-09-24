@@ -106,3 +106,91 @@ export async function triggerBackupAction() {
     return { success: false, error: err.message || "Lỗi tiến trình sao lưu" };
   }
 }
+
+export async function syncSurveyStudentTypesAction() {
+  try {
+    const [k12GiaoLuu, preGiaoLuu] = await Promise.all([
+      prisma.inputAssessmentStudent.findMany({
+        where: {
+          OR: [
+            { admissionResult: { contains: "Giao lưu" } },
+            { admissionResult: { contains: "giao lưu" } },
+            { admissionResult: { contains: "Giao Luu" } },
+            { admissionResult: { contains: "giao luu" } }
+          ]
+        },
+        select: {
+          id: true,
+          studentCode: true,
+          enrollmentCode: true,
+          fullName: true,
+          admissionResult: true,
+          enrollmentClassId: true
+        }
+      }),
+      prisma.preschoolInputAssessmentStudent.findMany({
+        where: {
+          OR: [
+            { admissionResult: { contains: "Giao lưu" } },
+            { admissionResult: { contains: "giao lưu" } },
+            { admissionResult: { contains: "Giao Luu" } },
+            { admissionResult: { contains: "giao luu" } }
+          ]
+        },
+        select: {
+          id: true,
+          studentCode: true,
+          enrollmentCode: true,
+          fullName: true,
+          admissionResult: true,
+          enrollmentClassId: true
+        }
+      })
+    ]);
+
+    const allGiaoLuuCandidates = [...k12GiaoLuu, ...preGiaoLuu];
+    let updatedCount = 0;
+
+    for (const cand of allGiaoLuuCandidates) {
+      const codes = [cand.enrollmentCode, cand.studentCode].map(c => (c || "").trim().toUpperCase()).filter(Boolean);
+      const matchingStudents = await prisma.student.findMany({
+        where: {
+          OR: [
+            { studentCode: { in: codes } },
+            cand.enrollmentClassId && cand.fullName ? {
+              classId: cand.enrollmentClassId,
+              studentName: cand.fullName.trim()
+            } : undefined
+          ].filter(Boolean) as any
+        }
+      });
+
+      for (const student of matchingStudents) {
+        if (student.studentType !== "GIAO_LUU") {
+          await prisma.student.update({
+            where: { id: student.id },
+            data: {
+              studentType: "GIAO_LUU",
+              studentTypeNote: student.studentTypeNote || "Học giao lưu theo kết quả khảo sát đầu vào"
+            }
+          });
+          updatedCount++;
+        }
+      }
+    }
+
+    try {
+      revalidatePath("/admin/maintenance");
+      revalidatePath("/admin/classes");
+    } catch {}
+    return {
+      success: true,
+      message: `Đã rà soát ${allGiaoLuuCandidates.length} hồ sơ khảo sát Đạt - Giao lưu. Cập nhật thành công ${updatedCount} học sinh sang diện Giao lưu.`,
+      updatedCount
+    };
+  } catch (err: any) {
+    console.error("[syncSurveyStudentTypesAction Error]:", err);
+    return { success: false, error: err.message || "Lỗi khi đồng bộ diện học sinh" };
+  }
+}
+

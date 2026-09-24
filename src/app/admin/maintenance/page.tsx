@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import { ShieldAlert, RefreshCcw, CheckCircle2, ServerCog } from "lucide-react"
-import { syncPortalAccountsAction, getBackupListAction } from "./actions"
+import { syncPortalAccountsAction, getBackupListAction, syncSurveyStudentTypesAction } from "./actions"
 import { SyncButton } from "./SyncButton"
 import { BackupSection } from "./BackupSection"
 
@@ -56,6 +56,26 @@ export default async function MaintenancePage() {
                </ul>
             </div>
             <SyncButton syncAction={syncPortalAccountsAction} />
+         </div>
+      </div>
+
+      {/* Phần đồng bộ Diện học sinh từ kết quả khảo sát */}
+      <div className="bg-white rounded-[2rem] p-8 border-2 border-teal-100 shadow-sm space-y-6">
+         <div className="flex justify-between items-start">
+            <div className="space-y-1">
+               <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-teal-50 text-teal-600 rounded-lg">
+                     <RefreshCcw className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-xl font-black text-slate-800">Đồng bộ Diện học sinh từ Khảo sát</h3>
+               </div>
+               <p className="text-slate-500 text-sm font-medium">Tự động rà soát kết quả khảo sát đầu vào và cập nhật Diện học sinh:</p>
+               <ul className="text-xs text-slate-500 mt-4 space-y-2 list-disc ml-5">
+                  <li><strong>Kết quả &quot;Đạt - Giao lưu&quot;:</strong> Tự động gán diện <strong>Giao lưu</strong> (GIAO_LUU)</li>
+                  <li><strong>Kết quả còn lại:</strong> Giữ nguyên diện <strong>Chính khóa</strong> (CHINH_KHOA)</li>
+               </ul>
+            </div>
+            <SyncButton syncAction={syncSurveyStudentTypesAction} />
          </div>
       </div>
     </div>
