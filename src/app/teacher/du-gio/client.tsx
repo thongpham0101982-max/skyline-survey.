@@ -2005,22 +2005,22 @@ export function ObservationClient(props: ObservationClientProps) {
       });
     }
 
-    // Lọc theo campus nếu đã chọn campus
-    if (surpriseCampusId) {
-      list = list.filter((t: any) => !t.campusId || t.campusId === surpriseCampusId);
-    }
-
+    // Không lọc theo cơ sở (surpriseCampusId) - GV dạy được dự theo Tổ chuyên môn, cơ sở dùng để chọn lớp
     return list;
-  }, [teachers, surpriseDeptId, surpriseCampusId, isAdminUser, isBanDHCM, isQLCM, ttcmAllowedDepartments]);
+  }, [teachers, surpriseDeptId, isAdminUser, isBanDHCM, isQLCM, ttcmAllowedDepartments]);
 
   const filteredClassesForSurprise = useMemo(() => {
     if (!classes || classes.length === 0) return [];
+    const cleanDbLevel = surpriseLevel && surpriseLevel !== "all" ? normalizeLevel(surpriseLevel) : "";
     return classes.filter((c: any) => {
       const cLvl = normalizeLevel(c.level || "");
       if (isMamNonTeacher && cLvl !== "mam non") return false;
       if (!isMamNonTeacher && surpriseLevel !== "Mầm non" && cLvl === "mam non") return false;
       if (surpriseCampusId && surpriseCampusId !== "all") {
         if (!isClassInCampus(c, surpriseCampusId)) return false;
+      }
+      if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
+        if (cLvl !== cleanDbLevel) return false;
       }
       return true;
     });

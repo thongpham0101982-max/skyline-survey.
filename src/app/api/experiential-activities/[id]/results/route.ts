@@ -58,16 +58,29 @@ export async function PUT(
 
     const updatedAssignedClasses = assignedClasses.map((cls: any) => {
       if (!classId || cls.classId === classId) {
+        const totalSt = cls.totalStudents || students.length || 1;
         const evaluatedCount = students.filter((s: any) => s.isCompleted || (s.finalResult && s.finalResult !== "CHUA_DANH_GIA")).length;
-        const newStatus = isCompleted ? "COMPLETED" : (evaluatedCount > 0 ? "IN_PROGRESS" : "DRAFT");
+        const pct = totalSt > 0 ? Math.round((evaluatedCount / totalSt) * 100) : 0;
+
+        let evalStatus = "DA_TIEP_NHAN";
+        if (isCompleted || (evaluatedCount >= totalSt && totalSt > 0)) {
+          evalStatus = "DA_DANH_GIA";
+        } else if (evaluatedCount > 0) {
+          evalStatus = "DANG_DANH_GIA";
+        }
+
+        const newStatus = evalStatus === "DA_DANH_GIA" ? "COMPLETED" : (evalStatus === "DANG_DANH_GIA" ? "IN_PROGRESS" : "DRAFT");
         if (newStatus !== "COMPLETED") allClassCompleted = false;
+
         return {
           ...cls,
           evaluatedStudents: evaluatedCount,
-          status: newStatus
+          status: newStatus,
+          evalStatus, // "DA_TIEP_NHAN" | "DANG_DANH_GIA" | "DA_DANH_GIA"
+          progressPercent: pct
         };
       }
-      if (cls.status !== "COMPLETED") allClassCompleted = false;
+      if (cls.status !== "COMPLETED" && cls.evalStatus !== "DA_DANH_GIA") allClassCompleted = false;
       return cls;
     });
 

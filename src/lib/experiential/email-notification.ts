@@ -214,12 +214,27 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       });
     }
 
-    // 4. Find all GVBM for the assigned classes if subjectId is provided
+    // 4. Find all GVBM for the assigned classes if subjectId or subjectName is provided
     let teachingAssignments: any[] = [];
-    if (subjectId) {
+    let resolvedSubjectId = subjectId;
+    if (!resolvedSubjectId && subjectName) {
+      try {
+        const matchedSubject = await prisma.subject.findFirst({
+          where: {
+            OR: [
+              { subjectName: { contains: subjectName.trim() } },
+              { subjectCode: { contains: subjectName.trim() } }
+            ]
+          }
+        });
+        if (matchedSubject) resolvedSubjectId = matchedSubject.id;
+      } catch {}
+    }
+
+    if (resolvedSubjectId) {
       teachingAssignments = await prisma.teachingAssignment.findMany({
         where: {
-          subjectId: subjectId,
+          subjectId: resolvedSubjectId,
           classId: { in: classIds }
         },
         include: {
@@ -230,6 +245,27 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
           subject: true
         }
       });
+    } else if (subjectName) {
+      try {
+        teachingAssignments = await prisma.teachingAssignment.findMany({
+          where: {
+            classId: { in: classIds },
+            subject: {
+              OR: [
+                { subjectName: { contains: subjectName.trim() } },
+                { subjectCode: { contains: subjectName.trim() } }
+              ]
+            }
+          },
+          include: {
+            teacher: {
+              include: { user: true }
+            },
+            class: true,
+            subject: true
+          }
+        });
+      } catch {}
     }
 
     // 5. Aggregate unique teachers and their roles & campuses
@@ -312,6 +348,37 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
       if (clsName && !existing.classes.includes(clsName)) existing.classes.push(clsName);
 
       recipientMap.set(key, existing);
+    }
+
+    // Process explicit GVBM from assignedClasses items if any
+    for (const clsItem of assignedClasses) {
+      let explicitGvbm: any = null;
+      if (clsItem.subjectTeacherId && teacherMapById.has(clsItem.subjectTeacherId)) {
+        explicitGvbm = teacherMapById.get(clsItem.subjectTeacherId);
+      } else if (clsItem.subjectTeacherName) {
+        explicitGvbm = teacherMapByName.get(normKey(clsItem.subjectTeacherName));
+      }
+
+      if (explicitGvbm) {
+        const email = resolveTeacherEmail(explicitGvbm, explicitGvbm.user, explicitGvbm.teacherName);
+        if (email) {
+          const key = explicitGvbm.id || email;
+          const existing = recipientMap.get(key) || {
+            teacherId: explicitGvbm.id,
+            teacherName: explicitGvbm.teacherName || "Thầy/Cô",
+            email,
+            roles: [],
+            classes: [],
+            campusIds: [],
+            campusCodes: []
+          };
+          const subjTitle = clsItem.subjectName || subjectName || "Bộ môn";
+          const roleText = `GVBM ${subjTitle} (Lớp ${clsItem.className})`;
+          if (!existing.roles.includes(roleText)) existing.roles.push(roleText);
+          if (!existing.classes.includes(clsItem.className)) existing.classes.push(clsItem.className);
+          recipientMap.set(key, existing);
+        }
+      }
     }
 
     const recipients = Array.from(recipientMap.values());

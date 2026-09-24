@@ -1287,11 +1287,27 @@ export async function GET(req: Request) {
 
             const resolvedName = p?.record?.name || recMeta.activityName || p?.record?.catalog?.name || "Hoạt động trải nghiệm";
 
+            let catalogMeta: any = {};
+            try {
+              if (p?.record?.catalog?.description && p.record.catalog.description.startsWith("{")) {
+                catalogMeta = JSON.parse(p.record.catalog.description);
+              }
+            } catch {}
+
+            const themeName = recMeta.themeName || catalogMeta.themeName || "";
+            const integratedSubjects = recMeta.integratedSubjects || catalogMeta.integratedSubjects || recMeta.subjectName || "";
+            const educationalContent = recMeta.educationalContent || catalogMeta.educationalContent || recMeta.description || "";
+            const deliverables = recMeta.deliverables || catalogMeta.deliverables || "";
+
             return {
               id: p?.id || String(idx),
               stt: idx + 1,
               activityId: p?.recordId || p?.record?.id,
               activityName: (resolvedName || "").trim(),
+              themeName: (themeName || "").trim(),
+              integratedSubjects: (integratedSubjects || "").trim(),
+              educationalContent: (educationalContent || "").trim(),
+              deliverables: (deliverables || "").trim(),
               groupName: (resolvedGroup || "").trim(),
               strand: recMeta.strand || undefined,
               role: (resolvedRole || "").trim(),

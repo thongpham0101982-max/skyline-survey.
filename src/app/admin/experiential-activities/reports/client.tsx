@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
@@ -192,7 +192,7 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
 
             <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">T? l? Hoàn thành</p>
+                <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Tỷ lệ Hoàn thành</p>
                 <p className="text-2xl font-black text-emerald-700 mt-1">{kpis.overallCompletionRate}%</p>
               </div>
               <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200">
@@ -347,15 +347,116 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
           </div>
         </div>
 
-        {/* HOMEROOM CLASS PROGRESS MONITORING TABLE */}
+        {/* 1. CAMPUS TLHN DISPATCH & DEPLOYMENT PROGRESS */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-md shadow-slate-200/40 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
+          <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-black text-slate-800">Giám Sát Tiến độ nh Gi C?a Giáo Viên Ch? Nhđiểm</h3>
-              <p className="text-xs text-slate-500 font-medium">Theo dõi thời gian thực tiến độ nộp sổổ đánh giá của tổng lớp</p>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#00A19A]" />
+                <h3 className="text-sm font-black text-slate-800">
+                  1. Giám Sát Tiến Độ Tiếp Nhận & Triển Khai Của GV Tổ TLHN Theo Cơ Sở
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                Theo dõi tình trạng tiếp nhận hoạt động được phân bổ và tiến độ gán lớp tại từng cơ sở
+              </p>
             </div>
-            <span className="text-xs font-bold text-slate-400">
-              Tổng c?ng: {(stats?.classProgress || []).length} lượt phân công
+            <span className="text-xs font-bold text-[#003B3A] bg-[#00A19A]/10 px-3 py-1 rounded-full border border-[#00A19A]/20">
+              Tổng: {(stats?.campusTLHNProgress || []).length} cơ sở
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                  <th className="py-3.5 px-4 text-center w-12">#</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Cơ sở</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Cán bộ Tổ TLHN</th>
+                  <th className="py-3.5 px-4 text-center min-w-[120px]">Tổng HĐ phân bổ</th>
+                  <th className="py-3.5 px-4 text-center min-w-[120px]">Chưa tiếp nhận</th>
+                  <th className="py-3.5 px-4 text-center min-w-[120px]">Đã tiếp nhận</th>
+                  <th className="py-3.5 px-4 text-center min-w-[120px]">Đã triển khai</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Tỷ lệ triển khai lớp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                {(stats?.campusTLHNProgress || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-slate-400 font-bold">
+                      Chưa có dữ liệu phân bổ hoạt động về cơ sở nào trong năm học được chọn
+                    </td>
+                  </tr>
+                ) : (
+                  (stats?.campusTLHNProgress || []).map((cp: any, idx: number) => {
+                    const isFullyDeployed = cp.deployRate === 100 && cp.totalDispatched > 0;
+                    return (
+                      <tr key={idx} className="hover:bg-teal-50/20 transition-colors">
+                        <td className="py-3.5 px-4 text-center text-slate-400 font-bold">{idx + 1}</td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="font-extrabold text-slate-800 text-[13px]">{cp.campusName || cp.campusCode}</span>
+                          <span className="text-[11px] text-slate-400 font-mono block">Mã: {cp.campusCode}</span>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <span className="font-bold text-[#003B3A]">{cp.tlhnTeacherName || 'GV Tổ TLHN'}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="font-black text-slate-800 text-[13px]">{cp.totalDispatched}</span> hoạt động
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            {cp.pendingCount}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            {cp.receivedCount}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            {cp.deployedCount} ({cp.totalClassesDeployed} lớp)
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-[11px] font-black">
+                              <span className={isFullyDeployed ? 'text-emerald-700' : 'text-[#00A19A]'}>{cp.deployRate}%</span>
+                              <span className="text-[10px] text-slate-400">{cp.deployedCount}/{cp.totalDispatched} HĐ</span>
+                            </div>
+                            <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${isFullyDeployed ? 'bg-emerald-500' : 'bg-[#00A19A]'}`}
+                                style={{ width: `${cp.deployRate}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 2. CLASS EVALUATION PROGRESS MONITORING (GVCN & GVBM) */}
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-md shadow-slate-200/40 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+                <h3 className="text-sm font-black text-slate-800">
+                  2. Giám Sát Tiến Độ Đánh Giá Của GVCN & GVBM Theo Từng Lớp
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                Theo dõi tiến độ chấm điểm thời gian thực của giáo viên bộ môn và chủ nhiệm được phân công
+              </p>
+            </div>
+            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+              Tổng cộng: {(stats?.classProgress || []).length} lượt phân công
             </span>
           </div>
 
@@ -366,23 +467,26 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                   <th className="py-3.5 px-4 text-center w-12">#</th>
                   <th className="py-3.5 px-4 min-w-[120px]">Cơ sở / Khối</th>
                   <th className="py-3.5 px-4 min-w-[100px]">Lớp</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">GVCN Ph? trch</th>
-                  <th className="py-3.5 px-4 min-w-[240px]">Tên Hoạt động & Mạch</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">GVBM & Môn chủ trì</th>
+                  <th className="py-3.5 px-4 min-w-[140px]">GVCN</th>
+                  <th className="py-3.5 px-4 min-w-[220px]">Tên Hoạt động</th>
                   <th className="py-3.5 px-4 text-center min-w-[120px]">Đã đánh giá</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Tiến độ %</th>
-                  <th className="py-3.5 px-4 min-w-[120px]">Trạng thái</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Tiến độ % HS</th>
+                  <th className="py-3.5 px-4 min-w-[130px]">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {(stats?.classProgress || []).length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-400 font-bold">
-                      Chưa cóó lớp nào được phân công hoạt động
+                    <td colSpan={9} className="py-12 text-center text-slate-400 font-bold">
+                      Chưa có lớp nào được triển khai hoạt động
                     </td>
                   </tr>
                 ) : (
-                  (stats?.classProgress || []).map((cp, idx) => {
-                    const isCompleted = cp.status === 'COMPLETED' || cp.progressPercent === 100;
+                  (stats?.classProgress || []).map((cp: any, idx: number) => {
+                    const evalStatus = cp.evalStatus || (cp.status === 'COMPLETED' ? 'DA_DANH_GIA' : (cp.evaluatedStudents > 0 ? 'DANG_DANH_GIA' : 'DA_TIEP_NHAN'));
+                    const isCompleted = evalStatus === 'DA_DANH_GIA';
+                    const isInProgress = evalStatus === 'DANG_DANH_GIA';
 
                     return (
                       <tr key={idx} className="hover:bg-teal-50/20 transition-colors">
@@ -396,8 +500,16 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                             {cp.className}
                           </span>
                         </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-indigo-900">{cp.subjectTeacherName || 'Chưa gán GVBM'}</div>
+                          {cp.subjectName && (
+                            <span className="text-[10px] text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded font-semibold border border-indigo-100">
+                              {cp.subjectName}
+                            </span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="font-bold text-slate-800">{cp.homeroomTeacherName || 'Chưa gán'}</span>
+                          <span className="font-semibold text-slate-700">{cp.homeroomTeacherName || '—'}</span>
                         </td>
                         <td className="py-3.5 px-4">
                           <div className="font-black text-slate-800 line-clamp-1">{cp.activityName}</div>
@@ -409,25 +521,33 @@ export function ExperientialReportsClient(props?: { academicYears?: any[]; activ
                         <td className="py-3.5 px-4">
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-[11px] font-black">
-                              <span>{cp.progressPercent}%</span>
+                              <span className={isCompleted ? 'text-emerald-700' : 'text-[#00A19A]'}>{cp.progressPercent}%</span>
                             </div>
                             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                               <div
-                                className={`h-full rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-[#00A19A]'}`}
+                                className={`h-full rounded-full transition-all duration-300 ${isCompleted ? 'bg-emerald-500' : 'bg-[#00A19A]'}`}
                                 style={{ width: `${cp.progressPercent}%` }}
                               />
                             </div>
                           </div>
                         </td>
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${
-                            isCompleted
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-sky-50 text-sky-700 border-sky-200'
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-sky-500'}`} />
-                            <span>{isCompleted ? 'Hoàn thành' : 'Đang thực hiện'}</span>
-                          </span>
+                          {isCompleted ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                              Đã đánh giá
+                            </span>
+                          ) : isInProgress ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 border border-sky-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                              Đang đánh giá
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                              Đã tiếp nhận
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );

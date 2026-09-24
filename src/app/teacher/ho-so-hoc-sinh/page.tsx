@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 "use client"
 
 // Build portfolio version: 30.0-1788358433056
@@ -897,36 +897,66 @@ export default function TeacherStudentProfilePage() {
                                     Học sinh chưa tham gia dự án trải nghiệm ngoại khóa nào.
                                   </div>
                                 ) : (
-                                  <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                                  <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-2xs">
                                     <table className="w-full text-xs text-left border-collapse">
                                       <thead>
-                                        <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                                          <th className="py-2.5 px-3 text-center w-12">STT</th>
-                                          <th className="py-2.5 px-3">Tên hoạt động</th>
-                                          <th className="py-2.5 px-3">Nhóm hoạt động</th>
-                                          <th className="py-2.5 px-3 text-center">Vai trò tham gia</th>
-                                          <th className="py-2.5 px-3 text-center">Mức đánh giá</th>
+                                        <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 text-[11px] uppercase tracking-wider">
+                                          <th className="py-2.5 px-3 text-center w-10">STT</th>
+                                          <th className="py-2.5 px-3 min-w-[180px]">Tên hoạt động ngoại khóa</th>
+                                          <th className="py-2.5 px-3 min-w-[160px]">Chủ đề giáo dục</th>
+                                          <th className="py-2.5 px-3 min-w-[170px]">Môn tích hợp & Vai trò</th>
+                                          <th className="py-2.5 px-3 min-w-[200px]">Nội dung giáo dục</th>
+                                          <th className="py-2.5 px-3 text-center min-w-[130px]">Kết quả đánh giá</th>
                                         </tr>
                                       </thead>
-                                      <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                                         {selectedStudent.experientialActivities.map((act: any, idx: number) => (
-                                          <tr key={act.id || idx}>
-                                            <td className="py-2.5 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                                            <td className="py-2.5 px-3 font-extrabold text-slate-800">{act.activityName}</td>
-                                            <td className="py-2.5 px-3">
-                                              <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-bold border border-slate-200">
-                                                {act.groupName}
+                                          <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                                            <td className="py-3 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                                            <td className="py-3 px-3">
+                                              <div className="font-extrabold text-[#003B3A] text-xs">{act.activityName}</div>
+                                              {act.deliverables && (
+                                                <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                                                  Dự án/SP: {act.deliverables}
+                                                </div>
+                                              )}
+                                            </td>
+                                            <td className="py-3 px-3 text-slate-600 font-medium">
+                                              {act.themeName || act.groupName || '—'}
+                                            </td>
+                                            <td className="py-3 px-3">
+                                              <div className="text-[11px] font-semibold text-slate-700">
+                                                {act.integratedSubjects || 'Liên môn'}
+                                              </div>
+                                              <span className="inline-block mt-1 bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20 px-2 py-0.5 rounded text-[10px] font-black uppercase">
+                                                {act.role || 'Thành viên'}
                                               </span>
                                             </td>
-                                            <td className="py-2.5 px-3 text-center">
-                                              <span className="bg-[#00A19A]/10 text-[#00A19A] border border-[#00A19A]/20 px-2 py-0.5 rounded text-[10px] font-black uppercase">
-                                                {act.role}
-                                              </span>
+                                            <td className="py-3 px-3 text-slate-600 text-[11px] leading-relaxed">
+                                              {act.educationalContent ? (
+                                                <div className="line-clamp-2" title={act.educationalContent}>
+                                                  {act.educationalContent}
+                                                </div>
+                                              ) : (
+                                                '—'
+                                              )}
                                             </td>
-                                            <td className="py-2.5 px-3 text-center">
-                                              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-black uppercase">
-                                                {act.evalLevel}
-                                              </span>
+                                            <td className="py-3 px-3 text-center">
+                                              <div className="inline-flex flex-col items-center gap-1">
+                                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase">
+                                                  {act.evalLevel || 'Đạt'}
+                                                </span>
+                                                {act.score !== undefined && act.score !== null && (
+                                                  <span className="text-[10px] font-bold text-slate-400">
+                                                    {act.score}% điểm
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {act.remarks && (
+                                                <div className="text-[10px] text-slate-500 italic mt-1 max-w-[130px] mx-auto line-clamp-1" title={act.remarks}>
+                                                  {act.remarks}
+                                                </div>
+                                              )}
                                             </td>
                                           </tr>
                                         ))}

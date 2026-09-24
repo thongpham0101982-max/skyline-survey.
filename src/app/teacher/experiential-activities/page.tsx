@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { ACTIVITY_STRANDS, SKYLINE_ACTIVITY_TYPES } from "@/lib/experiential/constants";
 import { ActivityProgressModal } from "./components/ActivityProgressModal";
+import { TLHNDispatchView } from "./components/TLHNDispatchView";
 import { ExperientialTabs } from "@/components/ExperientialTabs";
 
 export default function ExperientialActivitiesList() {
@@ -332,6 +333,7 @@ export default function ExperientialActivitiesList() {
             ALL: rawActivities.length,
             GVBM: rawActivities.filter(a => a.isGVBM || (a.hasTcmOrSubject && (a.isGVCN || a.isMyCreated || a.canManage || a.isAssignedToMe))).length,
             GVCN: rawActivities.filter(a => a.isGVCN || a.isMyCreated || a.canManage).length,
+            TLHN: rawActivities.filter(a => a.campusCode || a.campusId).length,
             MY_CREATED: rawActivities.filter(a => a.isMyCreated).length
           };
 
@@ -343,6 +345,14 @@ export default function ExperientialActivitiesList() {
               count: tabCounts.ALL,
               pillActive: 'bg-white/30 text-white border border-white/40 shadow-xs',
               pillInactive: 'bg-slate-100 text-slate-700 border border-slate-200 group-hover:bg-slate-200'
+            },
+            { 
+              id: 'TLHN', 
+              label: '🧭 Dành cho GV Tổ TLHN (Tiếp nhận cơ sở)', 
+              icon: Compass, 
+              count: tabCounts.TLHN,
+              pillActive: 'bg-sky-300 text-sky-950 border border-sky-200 shadow-xs font-black',
+              pillInactive: 'bg-sky-100/90 text-sky-900 border border-sky-300 group-hover:bg-sky-200'
             },
             { 
               id: 'GVBM', 
@@ -532,8 +542,10 @@ export default function ExperientialActivitiesList() {
           </div>
         </div>
 
-        {/* MAIN ACTIVITIES CONTENT */}
-        {loading ? (
+        {/* MAIN ACTIVITIES CONTENT OR TLHN VIEW */}
+        {roleScope === 'TLHN' ? (
+          <TLHNDispatchView selectedYearId={selectedYearId} onRefreshParent={loadActivities} />
+        ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white/80 rounded-3xl border border-white shadow-xl shadow-slate-200/40 space-y-4">
             <div className="w-10 h-10 border-4 border-[#00A19A]/20 border-t-[#00A19A] rounded-full animate-spin" />
             <p className="text-xs font-bold text-slate-500">Đang tải danh sách hoạt động trải nghiệm Sky-Line...</p>

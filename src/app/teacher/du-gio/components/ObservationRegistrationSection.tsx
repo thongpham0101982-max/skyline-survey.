@@ -728,8 +728,8 @@ export function ObservationRegistrationSection(props: any) {
                   Thông tin Giáo viên & Tiết học
                 </h5>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Tổ chuyên môn */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* 1. Tổ chuyên môn */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span>Tổ chuyên môn *</span>
@@ -767,12 +767,58 @@ export function ObservationRegistrationSection(props: any) {
                     </select>
                   </div>
 
-                  {/* Giáo viên dạy */}
+                  {/* 2. Môn học */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                      <span>Môn học *</span>
+                      {isMamNonTeacher && (
+                        <span className="text-[10px] text-emerald-600 font-bold">✨ Chủ đề/Chuyên đề</span>
+                      )}
+                    </label>
+                    <select
+                      value={surpriseSubjectId}
+                      onChange={e => {
+                        const sId = e.target.value;
+                        setSurpriseSubjectId(sId);
+                        const sObj = subjects.find((s: any) => s.id === sId);
+                        if (sObj) {
+                          setSurpriseSubjectName(sObj.subjectName);
+                        } else if (sId) {
+                          setSurpriseSubjectName(sId);
+                        }
+                      }}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      <option value="">-- Chọn môn học --</option>
+                      {/* Đưa môn Chủ đề/Chuyên đề lên đầu danh sách */}
+                      {(() => {
+                        const chuDeSub = subjects.find((s: any) => {
+                          const n = (s.subjectName || "").toLowerCase();
+                          return n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề";
+                        });
+                        const chuDeId = chuDeSub ? chuDeSub.id : "Chủ đề/Chuyên đề";
+                        return (
+                          <option key="opt_chude" value={chuDeId}>
+                            🌟 Chủ đề/Chuyên đề {isMamNonTeacher ? "(Mầm non)" : ""}
+                          </option>
+                        );
+                      })()}
+                      {subjects.map((s: any) => {
+                        const n = (s.subjectName || "").toLowerCase();
+                        if (n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề") return null;
+                        return (
+                          <option key={s.id} value={s.id}>{s.subjectName}</option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {/* 3. Giáo viên dạy được dự */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span>Giáo viên dạy được dự *</span>
                       {filteredTeachersForSurprise.length > 0 && (
-                        <span className="text-[10px] text-slate-500 font-normal">({filteredTeachersForSurprise.length} giáo viên)</span>
+                        <span className="text-[10px] text-slate-500 font-normal">({filteredTeachersForSurprise.length} GV)</span>
                       )}
                     </label>
                     <select
@@ -783,8 +829,8 @@ export function ObservationRegistrationSection(props: any) {
                         if (tId) {
                           const tObj = teachers.find((t: any) => t.id === tId);
                           if (tObj) {
-                            if (tObj.campusId) setSurpriseCampusId(tObj.campusId);
-                            if (tObj.mainSubjectRel?.subjectName) {
+                            if (tObj.campusId && !surpriseCampusId) setSurpriseCampusId(tObj.campusId);
+                            if (tObj.mainSubjectRel?.subjectName && !surpriseSubjectId) {
                               setSurpriseSubjectName(tObj.mainSubjectRel.subjectName);
                               if (tObj.mainSubjectId) setSurpriseSubjectId(tObj.mainSubjectId);
                             }
@@ -819,22 +865,7 @@ export function ObservationRegistrationSection(props: any) {
                     </select>
                   </div>
 
-                  {/* Cơ sở */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cơ sở trường</label>
-                    <select
-                      value={surpriseCampusId}
-                      onChange={e => setSurpriseCampusId(e.target.value)}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
-                    >
-                      <option value="">-- Chọn cơ sở --</option>
-                      {campuses.map((c: any) => (
-                        <option key={c.id} value={c.id}>{c.campusName}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Ngày dự giờ */}
+                  {/* 4. Ngày dự giờ */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Ngày dự giờ *</label>
                     <input
@@ -847,7 +878,7 @@ export function ObservationRegistrationSection(props: any) {
                     />
                   </div>
 
-                  {/* Tiết dự */}
+                  {/* 5. Tiết dự */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
                       {surpriseLevel === "Mầm non" ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}
@@ -876,7 +907,50 @@ export function ObservationRegistrationSection(props: any) {
                     </select>
                   </div>
 
-                  {/* Lớp học */}
+                  {/* 6. Cơ sở trường */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cơ sở trường</label>
+                    <select
+                      value={surpriseCampusId}
+                      onChange={e => {
+                        setSurpriseCampusId(e.target.value);
+                        setSurpriseClassId("");
+                      }}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      <option value="">-- Chọn cơ sở để chọn lớp --</option>
+                      {campuses.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.campusName}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 7. Cấp học */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cấp học</label>
+                    <select
+                      value={surpriseLevel}
+                      onChange={e => {
+                        const newLvl = e.target.value;
+                        setSurpriseLevel(newLvl);
+                        setSurpriseClassId("");
+                        if (newLvl === "Mầm non") {
+                          const khacChuyenDeId = getKhacChuyenDeSubjectId(subjects);
+                          setSurpriseSubjectId(khacChuyenDeId);
+                          setSurpriseSubjectName("Chủ đề/Chuyên đề");
+                        }
+                      }}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                    >
+                      <option value="Phổ thông K-12">Phổ thông K-12</option>
+                      <option value="Tiểu học">Tiểu học</option>
+                      <option value="THCS">THCS</option>
+                      <option value="THPT">THPT</option>
+                      <option value="Mầm non">Mầm non</option>
+                    </select>
+                  </div>
+
+                  {/* 8. Lớp học */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
                       <span>Lớp học *</span>
@@ -931,54 +1005,8 @@ export function ObservationRegistrationSection(props: any) {
                     </div>
                   </div>
 
-                  {/* Môn học */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
-                      <span>Môn học *</span>
-                      {isMamNonTeacher && (
-                        <span className="text-[10px] text-emerald-600 font-bold">✨ Chủ đề/Chuyên đề</span>
-                      )}
-                    </label>
-                    <select
-                      value={surpriseSubjectId}
-                      onChange={e => {
-                        const sId = e.target.value;
-                        setSurpriseSubjectId(sId);
-                        const sObj = subjects.find((s: any) => s.id === sId);
-                        if (sObj) {
-                          setSurpriseSubjectName(sObj.subjectName);
-                        } else if (sId) {
-                          setSurpriseSubjectName(sId);
-                        }
-                      }}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
-                    >
-                      <option value="">-- Chọn môn học --</option>
-                      {/* Đưa môn Chủ đề/Chuyên đề lên đầu danh sách */}
-                      {(() => {
-                        const chuDeSub = subjects.find((s: any) => {
-                          const n = (s.subjectName || "").toLowerCase();
-                          return n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề";
-                        });
-                        const chuDeId = chuDeSub ? chuDeSub.id : "Chủ đề/Chuyên đề";
-                        return (
-                          <option key="opt_chude" value={chuDeId}>
-                            🌟 Chủ đề/Chuyên đề {isMamNonTeacher ? "(Mầm non)" : ""}
-                          </option>
-                        );
-                      })()}
-                      {subjects.map((s: any) => {
-                        const n = (s.subjectName || "").toLowerCase();
-                        if (n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề") return null;
-                        return (
-                          <option key={s.id} value={s.id}>{s.subjectName}</option>
-                        );
-                      })}
-                    </select>
-                  </div>
-
-                  {/* Phòng học */}
-                  <div className="flex flex-col gap-1.5">
+                  {/* 9. Phòng học */}
+                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Phòng học</label>
                     <input
                       type="text"
@@ -987,22 +1015,6 @@ export function ObservationRegistrationSection(props: any) {
                       onChange={e => setSurpriseRoom(e.target.value)}
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
                     />
-                  </div>
-
-                  {/* Cấp học */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cấp học</label>
-                    <select
-                      value={surpriseLevel}
-                      onChange={e => setSurpriseLevel(e.target.value)}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
-                    >
-                      <option value="Phổ thông K-12">Phổ thông K-12</option>
-                      <option value="Tiểu học">Tiểu học</option>
-                      <option value="THCS">THCS</option>
-                      <option value="THPT">THPT</option>
-                      <option value="Mầm non">Mầm non</option>
-                    </select>
                   </div>
                 </div>
 
