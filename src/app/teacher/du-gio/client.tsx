@@ -222,8 +222,16 @@ import {
   deleteObservationSlot, deleteMultipleObservationSlots, getCreatedCountInMonth, getObservationSlots, triggerSlotReminder,
   approveRegistration, submitEvaluation, updateTeacherObservationTargets, sendPendingEvaluationReminder,
   requestReEvaluation, approveReEvaluation, rejectReEvaluation, getReEvaluationRequests,
-  createSurpriseObservation
+  createSurpriseObservation, submitSupplementalEvaluation
 } from "./actions"
+import { ReviewSupplementalModal } from "./components/ReviewSupplementalModal"
+
+export function isEvaluationOfficiallyApproved(evaluation: any): boolean {
+  if (!evaluation) return false;
+  if (evaluation.reEvaluationStatus === "DRAFT") return false;
+  if (evaluation.isSupplemental && evaluation.supplementalStatus !== "APPROVED") return false;
+  return true;
+}
 
 interface TeacherInfo {
   id: string;
@@ -654,6 +662,12 @@ export function ObservationClient(props: ObservationClientProps) {
   const [adminReEvalSubmitting, setAdminReEvalSubmitting] = useState(false)
   const [reEvalFilterStatus, setReEvalFilterStatus] = useState<"ALL" | "REQUESTED" | "APPROVED" | "REJECTED" | "COMPLETED">("ALL")
   const [reEvalSearchQuery, setReEvalSearchQuery] = useState("")
+
+  // Supplemental Evaluation States
+  const [isSupplementalEval, setIsSupplementalEval] = useState(false)
+  const [supplementalReasonText, setSupplementalReasonText] = useState("")
+  const [reviewSupplementalModal, setReviewSupplementalModal] = useState<{ slot: any; registration: any } | null>(null)
+
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -2128,20 +2142,49 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   };
 
-  const openEvalModal = (registration: any, slot: any) => {
-    // Nếu là đánh giá mới (chưa có phiếu) và không phải Admin, chỉ cho phép đánh giá trong tháng hiện tại
-    if (!registration?.evaluation && !isAdminUser && slot?.date) {
-      const monthStatus = getSlotMonthStatus(slot.date);
-      if (monthStatus !== "CURRENT") {
-        const slotD = new Date(slot.date);
-        const now = new Date();
-        const slotMonthStr = !isNaN(slotD.getTime()) ? `${slotD.getMonth() + 1}/${slotD.getFullYear()}` : "";
-        const curMonthStr = `${now.getMonth() + 1}/${now.getFullYear()}`;
-        showToast(
-          `Chỉ được phép đánh giá các tiết dạy diễn ra trong tháng hiện tại (Tháng ${curMonthStr}). Tiết dạy này thuộc thời gian tháng ${slotMonthStr} nên không thể đánh giá!`,
-          "error"
-        );
+  const openEvalModal = (registration: any, slot: any, isSupplemental = false) => {
+    // Nếu là nộp phiếu bổ sung
+    if (isSupplemental) {
+      if (!registration?.isApproved) {
+        showToast("Tiết dạy này chưa được Giáo viên giảng dạy xác nhận dự giờ. Không thể nộp phiếu bổ sung!", "error");
         return;
+      }
+      const slotD = new Date(slot.date);
+      const now = new Date();
+      if (slotD > now) {
+        showToast("Tiết học chưa diễn ra, không thể nộp phiếu bổ sung trước thời gian dạy!", "error");
+        return;
+      }
+      const endOfSlotMonth = new Date(slotD.getFullYear(), slotD.getMonth() + 1, 0, 23, 59, 59, 999);
+      if (now > endOfSlotMonth) {
+        showToast(`Đã hết hạn bổ sung phiếu cho tiết học này! Thời hạn bổ sung chỉ áp dụng đến hết tháng phát sinh tiết dự (${slotD.getMonth() + 1}/${slotD.getFullYear()}).`, "error");
+        return;
+      }
+      setIsSupplementalEval(true);
+      setSupplementalReasonText(registration.evaluation?.supplementalReason || "");
+    } else {
+      if (registration?.evaluation?.isSupplemental) {
+        setIsSupplementalEval(true);
+        setSupplementalReasonText(registration.evaluation?.supplementalReason || "");
+      } else {
+        setIsSupplementalEval(false);
+        setSupplementalReasonText("");
+
+        // Nếu là đánh giá mới (chưa có phiếu) và không phải Admin, chỉ cho phép đánh giá trong tháng hiện tại
+        if (!registration?.evaluation && !isAdminUser && slot?.date) {
+          const monthStatus = getSlotMonthStatus(slot.date);
+          if (monthStatus !== "CURRENT") {
+            const slotD = new Date(slot.date);
+            const now = new Date();
+            const slotMonthStr = !isNaN(slotD.getTime()) ? `${slotD.getMonth() + 1}/${slotD.getFullYear()}` : "";
+            const curMonthStr = `${now.getMonth() + 1}/${now.getFullYear()}`;
+            showToast(
+              `Chỉ được phép đánh giá các tiết dạy diễn ra trong tháng hiện tại (Tháng ${curMonthStr}). Tiết dạy này thuộc thời gian tháng ${slotMonthStr} nên không thể đánh giá!`,
+              "error"
+            );
+            return;
+          }
+        }
       }
     }
 
@@ -2451,6 +2494,37 @@ export function ObservationClient(props: ObservationClientProps) {
     }
 
     if (!evalOverall) { showToast("Vui lòng chọn xếp loại tổng thể!", "error"); return }
+
+    if (isSupplementalEval) {
+      if (!supplementalReasonText || !supplementalReasonText.trim()) {
+        showToast("Lý do nộp bổ sung phiếu là bắt buộc. Vui lòng ghi rõ lý do chưa nộp kịp thời!", "error");
+        return;
+      }
+      if (!evalImprovements || !evalImprovements.trim()) {
+        showToast("Nội dung cần cải thiện / Góp ý phát triển là bắt buộc. Vui lòng nhập nhận xét!", "error");
+        return;
+      }
+
+      setEvalSubmitting(true);
+      const res = await submitSupplementalEvaluation({
+        ...payload,
+        supplementalReason: supplementalReasonText.trim()
+      });
+      setEvalSubmitting(false);
+
+      if (res.success) {
+        if (typeof window !== "undefined" && evalModal) {
+          const draftKey = `skyline_eval_draft_${evalModal.slot.id}_${evalModal.registration.id}`;
+          localStorage.removeItem(draftKey);
+        }
+        showToast(res.message || "Đã nộp phiếu dự giờ bổ sung thành công! Đang chờ Giáo viên giảng dạy xét duyệt.", "success");
+        setEvalModal(null);
+        refreshSlots();
+      } else {
+        showToast(res.error || "Lỗi nộp phiếu bổ sung!", "error");
+      }
+      return;
+    }
 
     setEvalSubmitting(true)
     const res = await submitEvaluation(payload)
@@ -2807,7 +2881,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (isHost) {
         stats[key].totalTaughtSlots += 1;
         const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved || isSurprise);
-        const hasEval = approvedRegs.some((r: any) => !!r.evaluation);
+        const hasEval = approvedRegs.some((r: any) => isEvaluationOfficiallyApproved(r.evaluation));
         if (hasEval) {
           stats[key].taughtCount += countWeight;
           if (isSurprise) {
@@ -2832,13 +2906,13 @@ export function ObservationClient(props: ObservationClientProps) {
           isSurprise,
           isDoublePeriod: !!slot.isDoublePeriod,
           hasEvaluation: hasEval,
-          evaluations: approvedRegs.filter((r: any) => !!r.evaluation).map((r: any) => r.evaluation)
+          evaluations: approvedRegs.filter((r: any) => isEvaluationOfficiallyApproved(r.evaluation)).map((r: any) => r.evaluation)
         });
       }
 
       if (myReg && (myReg.isApproved || isSurprise || !!myReg.evaluation)) {
         stats[key].totalObservedSlots += 1;
-        if (myReg.evaluation) {
+        if (myReg.evaluation && isEvaluationOfficiallyApproved(myReg.evaluation)) {
           stats[key].observedCount += countWeight;
           if (isSurprise) {
             stats[key].surpriseObservedCount += countWeight;
@@ -3331,11 +3405,11 @@ export function ObservationClient(props: ObservationClientProps) {
     });
   }, [myObservedSlots, observedOriginFilter, observedCategoryFilter]);
 
-  // Các tiết dự hợp lệ (bản thân GV đã có phiếu đánh giá / nhận xét)
+  // Các tiết dự hợp lệ (bản thân GV đã có phiếu đánh giá / nhận xét được duyệt chính thức)
   const myValidObservedSlots = useMemo(() => {
     return myObservedSlots.filter(slot => {
       const reg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
-      return reg && (reg.isApproved || isSurpriseSlot(slot) || !!reg.evaluation) && !!reg.evaluation;
+      return reg && (reg.isApproved || isSurpriseSlot(slot) || !!reg.evaluation) && isEvaluationOfficiallyApproved(reg.evaluation);
     });
   }, [myObservedSlots, currentTeacher?.id]);
 
@@ -3370,11 +3444,11 @@ export function ObservationClient(props: ObservationClientProps) {
     return count;
   }, [myValidObservedSlots]);
 
-  // Tiết dạy hợp lệ: Tiết dạy ít nhất có 1 phiếu đánh giá từ người dự (1-4 phiếu)
+  // Tiết dạy hợp lệ: Tiết dạy ít nhất có 1 phiếu đánh giá từ người dự được duyệt chính thức
   const myValidTaughtSlots = useMemo(() => {
     return myTaughtSlots.filter(slot => {
       const approvedRegs = slot.registrations?.filter((r: any) => r.isApproved || isSurpriseSlot(slot)) || [];
-      return approvedRegs.some((r: any) => !!r.evaluation);
+      return approvedRegs.some((r: any) => isEvaluationOfficiallyApproved(r.evaluation));
     });
   }, [myTaughtSlots]);
 
@@ -3404,12 +3478,12 @@ export function ObservationClient(props: ObservationClientProps) {
     return myObservedSlots.filter(s => isSurpriseSlot(s)).length;
   }, [myObservedSlots]);
 
-  // Tổng số phiếu đánh giá nhận được từ tất cả các tiết dạy
+  // Tổng số phiếu đánh giá nhận được từ tất cả các tiết dạy (đã duyệt chính thức)
   const totalReceivedEvalCount = useMemo(() => {
     let count = 0;
     myTaughtSlots.forEach(slot => {
       slot.registrations?.forEach((r: any) => {
-        if (r.evaluation) count++;
+        if (isEvaluationOfficiallyApproved(r.evaluation)) count++;
       });
     });
     return count;
@@ -3426,8 +3500,31 @@ export function ObservationClient(props: ObservationClientProps) {
   const myPendingEvaluationsCount = useMemo(() => {
     return myObservedSlots.filter(s => {
       const reg = s.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
-      return reg && (reg.isApproved || isSurpriseSlot(s)) && !reg.evaluation;
+      return reg && (reg.isApproved || isSurpriseSlot(s)) && !isEvaluationOfficiallyApproved(reg.evaluation);
     }).length;
+  }, [myObservedSlots, currentTeacher?.id]);
+
+  // Danh sách các tiết dự giờ trong tháng hiện hành đủ điều kiện nộp bổ sung
+  const eligibleSupplementalSlots = useMemo(() => {
+    const now = new Date();
+    return (myObservedSlots || []).filter(slot => {
+      const reg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
+      if (!reg || !reg.isApproved) return false;
+
+      const slotD = new Date(slot.date);
+      if (isNaN(slotD.getTime())) return false;
+      if (slotD > now) return false; // Chưa diễn ra
+
+      // Vẫn còn trong tháng phát sinh tiết dự
+      const endOfSlotMonth = new Date(slotD.getFullYear(), slotD.getMonth() + 1, 0, 23, 59, 59, 999);
+      if (now > endOfSlotMonth) return false;
+
+      // Chưa có evaluation HOẶC evaluation là phiếu bổ sung đang chờ sửa (NEEDS_REVISION)
+      if (!reg.evaluation) return true;
+      if (reg.evaluation.isSupplemental && reg.evaluation.supplementalStatus === "NEEDS_REVISION") return true;
+
+      return false;
+    });
   }, [myObservedSlots, currentTeacher?.id]);
 
   const myReceivedEvaluationsStats = useMemo(() => {
@@ -3435,7 +3532,7 @@ export function ObservationClient(props: ObservationClientProps) {
     let count = 0;
     myTaughtSlots.forEach(slot => {
       slot.registrations?.forEach((r: any) => {
-        if (r.evaluation && Number(r.evaluation.totalScore) > 0) {
+        if (isEvaluationOfficiallyApproved(r.evaluation) && Number(r.evaluation.totalScore) > 0) {
           sum += Number(r.evaluation.totalScore);
           count++;
         }
@@ -5550,6 +5647,11 @@ export function ObservationClient(props: ObservationClientProps) {
                                 <p className="font-black text-[#003B3A] text-xs leading-snug" title={slot.topic}>
                                   {slot.topic}
                                 </p>
+                                {(slot.registrations || []).some((r: any) => r.evaluation?.isSupplemental && r.evaluation?.supplementalStatus === "PENDING") && (
+                                  <span className="px-2 py-0.5 text-[9px] font-black bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-md shadow-xs animate-pulse flex items-center gap-1" title="Có giáo viên nộp phiếu dự giờ bổ sung cần Thầy/Cô xét duyệt">
+                                    <span>🔔 Có phiếu bổ sung chờ duyệt</span>
+                                  </span>
+                                )}
                                 {isSurpriseSlot(slot) && (
                                   <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
                                     Đột xuất
@@ -5610,25 +5712,73 @@ export function ObservationClient(props: ObservationClientProps) {
                                           {reg.isApproved ? (
                                             <>
                                               {reg.evaluation ? (
-                                                <div className="flex items-center gap-1.5 flex-wrap">
-                                                  {reg.evaluation.reEvaluationStatus === "DRAFT" ? (
-                                                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs">
-                                                      Bản nháp
-                                                    </span>
-                                                  ) : (
-                                                    <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
-                                                      {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
-                                                    
-                                                    </span>
-                                                  )}
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => openEvalModal(reg, slot)}
-                                                    className="px-2 py-0.5 text-[10px] font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-md transition-all shadow-2xs cursor-pointer"
-                                                  >
-                                                    {reg.evaluation.reEvaluationStatus === "DRAFT" && reg.teacherId === currentTeacher?.id ? "Tiếp tục đánh giá" : "Xem phiếu"}
-                                                  </button>
-                                                </div>
+                                                reg.evaluation.isSupplemental ? (
+                                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {reg.evaluation.supplementalStatus === "PENDING" ? (
+                                                      <>
+                                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-300">
+                                                          Chờ Thầy/Cô duyệt
+                                                        </span>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => setReviewSupplementalModal({ slot, registration: reg })}
+                                                          className="px-2.5 py-0.5 text-[10px] font-black rounded-md bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white shadow-2xs flex items-center gap-1 cursor-pointer animate-pulse"
+                                                        >
+                                                          <span>🔔 Duyệt phiếu</span>
+                                                        </button>
+                                                      </>
+                                                    ) : reg.evaluation.supplementalStatus === "APPROVED" ? (
+                                                      <>
+                                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-800 border border-emerald-300">
+                                                          Đã duyệt bổ sung {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                                        </span>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => openEvalModal(reg, slot)}
+                                                          className="px-2 py-0.5 text-[10px] font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-md transition-all shadow-2xs cursor-pointer"
+                                                        >
+                                                          Xem phiếu
+                                                        </button>
+                                                      </>
+                                                    ) : reg.evaluation.supplementalStatus === "NEEDS_REVISION" ? (
+                                                      <>
+                                                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-orange-50 text-orange-800 border border-orange-300" title={reg.evaluation.supplementalReviewNote || "Đã yêu cầu sửa"}>
+                                                          Đã yêu cầu sửa
+                                                        </span>
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => setReviewSupplementalModal({ slot, registration: reg })}
+                                                          className="px-2 py-0.5 text-[10px] font-bold text-amber-800 bg-white hover:bg-amber-50 border border-amber-200 rounded-md transition-all shadow-2xs cursor-pointer"
+                                                        >
+                                                          Xem lại
+                                                        </button>
+                                                      </>
+                                                    ) : (
+                                                      <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-50 text-rose-800 border border-rose-300" title={reg.evaluation.supplementalReviewNote || "Đã từ chối"}>
+                                                        Đã từ chối
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                ) : (
+                                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                                    {reg.evaluation.reEvaluationStatus === "DRAFT" ? (
+                                                      <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-sky-50 text-sky-700 border border-sky-200 shadow-2xs">
+                                                        Bản nháp
+                                                      </span>
+                                                    ) : (
+                                                      <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                                                        {reg.evaluation.overallRating || "Đã đánh giá"} {reg.evaluation.totalScore != null && Number(reg.evaluation.totalScore) > 0 ? `(${Number(reg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                                      </span>
+                                                    )}
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => openEvalModal(reg, slot)}
+                                                      className="px-2 py-0.5 text-[10px] font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-md transition-all shadow-2xs cursor-pointer"
+                                                    >
+                                                      {reg.evaluation.reEvaluationStatus === "DRAFT" && reg.teacherId === currentTeacher?.id ? "Tiếp tục đánh giá" : "Xem phiếu"}
+                                                    </button>
+                                                  </div>
+                                                )
                                               ) : (
                                                 <>
                                                   <span className="px-2 py-0.5 text-[10px] font-semibold uppercase rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 inline-block">
@@ -5839,6 +5989,52 @@ export function ObservationClient(props: ObservationClientProps) {
               )}
             </div>
 
+            {/* Banner Rà soát các tiết dự giờ trong tháng hiện hành đủ điều kiện nộp bổ sung */}
+            {eligibleSupplementalSlots.length > 0 && (
+              <div className="mb-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50/80 to-amber-50/60 border border-amber-200/90 shadow-2xs">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                      <Clock className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-black text-amber-950">
+                          Rà soát tiết dự giờ tháng {new Date().getMonth() + 1}/{new Date().getFullYear()}: Có {eligibleSupplementalSlots.length} tiết chưa có phiếu đánh giá
+                        </h4>
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-amber-200/80 text-amber-900 border border-amber-300">
+                          Đủ điều kiện nộp bổ sung
+                        </span>
+                      </div>
+                      <p className="text-xs text-amber-900/85 mt-1 leading-relaxed">
+                        Các tiết dự này đã được Giáo viên dạy phê duyệt nhưng chưa có phiếu đánh giá chính thức. Thầy/Cô được phép nộp <strong>Phiếu dự giờ bổ sung</strong> kèm lý do đến hết tháng phát sinh tiết dự. Phiếu sẽ được tính vào thống kê KPI sau khi GV dạy phê duyệt.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 flex items-center gap-2">
+                    {eligibleSupplementalSlots.length === 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const singleSlot = eligibleSupplementalSlots[0];
+                          const reg = (singleSlot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
+                          if (reg) openEvalModal(reg, singleSlot, true);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-black text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Nộp phiếu bổ sung ngay</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs font-bold text-amber-800 bg-white/90 px-3 py-1.5 rounded-xl border border-amber-200 shadow-2xs">
+                        Bấm nút &quot;Nộp bổ sung&quot; tại từng tiết bên dưới
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {myObservedSlots.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                 <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
@@ -5990,23 +6186,52 @@ export function ObservationClient(props: ObservationClientProps) {
                             {myReg?.evaluation ? (
                               <div className="flex flex-col gap-1.5 py-0.5">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  {myReg.evaluation.reEvaluationStatus === "DRAFT" ? (
+                                  {myReg.evaluation.isSupplemental ? (
+                                    myReg.evaluation.supplementalStatus === "PENDING" ? (
+                                      <span className="px-2.5 py-1 rounded-xl bg-amber-50 text-amber-900 border border-amber-300 font-bold text-xs shadow-2xs flex items-center gap-1">
+                                        <span>⏳ Chờ GV dạy duyệt</span>
+                                      </span>
+                                    ) : myReg.evaluation.supplementalStatus === "NEEDS_REVISION" ? (
+                                      <span className="px-2.5 py-1 rounded-xl bg-orange-50 text-orange-900 border border-orange-300 font-bold text-xs shadow-2xs flex items-center gap-1" title={myReg.evaluation.supplementalReviewNote || "Yêu cầu chỉnh sửa"}>
+                                        <span>⚠️ Yêu cầu sửa</span>
+                                      </span>
+                                    ) : myReg.evaluation.supplementalStatus === "REJECTED" ? (
+                                      <span className="px-2.5 py-1 rounded-xl bg-rose-50 text-rose-800 border border-rose-300 font-bold text-xs shadow-2xs flex items-center gap-1" title={myReg.evaluation.supplementalReviewNote || "Bị từ chối"}>
+                                        <span>❌ Bị từ chối</span>
+                                      </span>
+                                    ) : (
+                                      <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-xs shadow-2xs">
+                                        ✅ Đã duyệt bổ sung {myReg.evaluation.totalScore != null && Number(myReg.evaluation.totalScore) > 0 ? `(${Number(myReg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
+                                      </span>
+                                    )
+                                  ) : myReg.evaluation.reEvaluationStatus === "DRAFT" ? (
                                     <span className="px-2.5 py-1 rounded-xl bg-sky-50 text-sky-700 font-semibold text-xs border border-sky-200 shadow-2xs">
                                       Bản nháp
                                     </span>
                                   ) : (
                                     <span className="px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 font-semibold text-xs border border-emerald-200 shadow-2xs">
                                       {myReg.evaluation.overallRating || myReg.evaluation.rating || "Đã đánh giá"} {myReg.evaluation.totalScore != null && Number(myReg.evaluation.totalScore) > 0 ? `(${Number(myReg.evaluation.totalScore).toFixed(2).replace(/\.00$/, "")}đ)` : ""}
-                                    
                                     </span>
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={() => openEvalModal(myReg, slot)}
-                                    className="px-3 py-1 text-xs font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-xl transition-all shadow-2xs cursor-pointer"
-                                  >
-                                    {myReg.evaluation.reEvaluationStatus === "DRAFT" ? "Tiếp tục đánh giá" : "Xem phiếu"}
-                                  </button>
+
+                                  {myReg.evaluation.isSupplemental && myReg.evaluation.supplementalStatus === "NEEDS_REVISION" ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => openEvalModal(myReg, slot, true)}
+                                      className="px-3 py-1 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl text-xs font-black shadow-xs animate-pulse flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <span>Sửa phiếu bổ sung</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => openEvalModal(myReg, slot, !!myReg.evaluation.isSupplemental)}
+                                      className="px-3 py-1 text-xs font-bold text-teal-800 bg-white hover:bg-teal-50 border border-teal-200 rounded-xl transition-all shadow-2xs cursor-pointer"
+                                    >
+                                      {myReg.evaluation.reEvaluationStatus === "DRAFT" ? "Tiếp tục đánh giá" : "Xem phiếu"}
+                                    </button>
+                                  )}
+
                                   <button
                                     type="button"
                                     onClick={() => setPrintModalSlot({ slot, registration: myReg })}
@@ -6015,6 +6240,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   >
                                     <span>In phiếu</span>
                                   </button>
+
                                   {myReg.evaluation.reEvaluationStatus === "REQUESTED" && (
                                     <span className="px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-black">
                                       ⏳ Chờ duyệt mở lại
@@ -6036,18 +6262,20 @@ export function ObservationClient(props: ObservationClientProps) {
                                   <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                                     <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                     <span>
-                                      Thời gian đánh giá: <strong className="text-slate-800 font-bold">{formatEvalDateTimeVi(myReg.evaluation.submittedAt || myReg.evaluation.updatedAt || myReg.evaluation.createdAt)}</strong>
+                                      Thời gian {myReg.evaluation.isSupplemental ? "nộp bổ sung" : "đánh giá"}: <strong className="text-slate-800 font-bold">{formatEvalDateTimeVi(myReg.evaluation.supplementalSubmittedAt || myReg.evaluation.submittedAt || myReg.evaluation.updatedAt || myReg.evaluation.createdAt)}</strong>
                                     </span>
                                   </div>
                                 )}
                               </div>
                             ) : myReg?.isApproved ? (
                               (() => {
-                                const monthStatus = getSlotMonthStatus(slot.date);
                                 const now = new Date();
                                 const slotD = new Date(slot.date);
+                                const endOfSlotMonth = new Date(slotD.getFullYear(), slotD.getMonth() + 1, 0, 23, 59, 59, 999);
+                                const isWithinMonth = now <= endOfSlotMonth;
+                                const hasHappened = slotD <= now;
 
-                                if (monthStatus === "PAST") {
+                                if (!isWithinMonth) {
                                   return (
                                     <div className="flex flex-col gap-1 items-start">
                                       <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold shadow-2xs" title="Tiết dạy đã qua tháng, đã hết hạn đánh giá">
@@ -6055,33 +6283,43 @@ export function ObservationClient(props: ObservationClientProps) {
                                         <span>Hết hạn đánh giá</span>
                                       </span>
                                       <span className="text-[10px] text-slate-400 italic">
-                                        Chỉ đánh giá trong tháng {now.getMonth() + 1}/{now.getFullYear()}
+                                        Hết hạn nộp vào cuối tháng {!isNaN(slotD.getTime()) ? `${slotD.getMonth() + 1}/${slotD.getFullYear()}` : ""}
                                       </span>
                                     </div>
                                   );
                                 }
 
-                                if (monthStatus === "FUTURE") {
+                                if (!hasHappened) {
                                   return (
                                     <div className="flex flex-col gap-1 items-start">
-                                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 border border-slate-200 text-xs font-semibold shadow-2xs" title="Chưa đến tháng diễn ra tiết dạy">
-                                         <span>Chưa đến hạn</span>
-                                       </span>
+                                      <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-100 text-slate-600 border border-slate-200 text-xs font-semibold shadow-2xs" title="Chưa đến thời gian diễn ra tiết dạy">
+                                        <span>Chưa diễn ra</span>
+                                      </span>
                                       <span className="text-[10px] text-slate-400 italic">
-                                        Đánh giá vào tháng {!isNaN(slotD.getTime()) ? `${slotD.getMonth() + 1}/${slotD.getFullYear()}` : "tới"}
+                                        Đánh giá sau khi tiết học bắt đầu
                                       </span>
                                     </div>
                                   );
                                 }
 
                                 return (
-                                  <button
-                                    type="button"
-                                    onClick={() => openEvalModal(myReg, slot)}
-                                    className="px-4 py-2 bg-gradient-to-r from-[#008B82] to-teal-700 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1.5"
-                                  >
-                                    <span>Nhập đánh giá</span>
-                                  </button>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => openEvalModal(myReg, slot, false)}
+                                      className="px-3.5 py-1.5 bg-gradient-to-r from-[#008B82] to-teal-700 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95"
+                                    >
+                                      <span>Nhập đánh giá</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => openEvalModal(myReg, slot, true)}
+                                      className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer hover:scale-105 active:scale-95 flex items-center gap-1"
+                                      title="Nộp phiếu dự giờ bổ sung (Cần GV dạy duyệt)"
+                                    >
+                                      <span>Nộp bổ sung</span>
+                                    </button>
+                                  </div>
                                 );
                               })()
                             ) : (
@@ -6300,6 +6538,32 @@ export function ObservationClient(props: ObservationClientProps) {
                       <p className="text-xs text-sky-800 font-medium mt-0.5">
                         Phiếu đánh giá này hiện đang được lưu dưới dạng <strong>Bản nháp</strong>. Thầy/Cô có thể tiếp tục chấm điểm các tiêu chí, hoàn thiện nhận xét và bấm nút <strong>"Hoàn thành & nộp biên bản"</strong> bên dưới để hoàn tất.
                       </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Supplemental Evaluation Alert Banner */}
+                {isSupplementalEval && (
+                  <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border-2 border-amber-300 flex items-start gap-3 shadow-xs">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-amber-400 text-amber-950 text-[10px] font-black uppercase">
+                          Cơ chế bổ sung
+                        </span>
+                        <h5 className="text-xs font-black text-amber-950 uppercase tracking-wide">
+                          PHIẾU DỰ GIỜ BỔ SUNG TRONG THÁNG
+                        </h5>
+                      </div>
+                      <p className="text-xs text-amber-900 font-medium leading-relaxed">
+                        Phiếu này được nộp bổ sung cho tiết dự giờ trong tháng. Sau khi Thầy/Cô gửi, phiếu sẽ được chuyển tới <strong>Giáo viên giảng dạy ({evalModal.slot.teacher?.teacherName})</strong> để xét duyệt. Chỉ sau khi được duyệt, phiếu mới được ghi nhận chính thức và tính vào thống kê chỉ tiêu.
+                      </p>
+                      {evalModal.registration.evaluation?.supplementalStatus === "NEEDS_REVISION" && evalModal.registration.evaluation?.supplementalReviewNote && (
+                        <div className="mt-2 p-3 bg-white/90 rounded-xl border border-amber-300 text-slate-800 text-xs font-semibold">
+                          <span className="text-amber-800 font-black">💬 Ý kiến yêu cầu chỉnh sửa từ GV giảng dạy:</span>
+                          <p className="mt-0.5 italic">{evalModal.registration.evaluation.supplementalReviewNote}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -6974,7 +7238,39 @@ export function ObservationClient(props: ObservationClientProps) {
                     </div>
                   );
                 })()}
-                {!isReadOnly && (
+                {!isReadOnly && isSupplementalEval && (
+                  <div className="space-y-4 mt-4">
+                    <div className="p-4 bg-amber-50/70 border border-amber-300 rounded-2xl space-y-1.5 shadow-2xs">
+                      <label className="block text-xs font-black text-amber-950 uppercase tracking-wide">
+                        * Lý do nộp phiếu dự giờ bổ sung (Bắt buộc)
+                      </label>
+                      <p className="text-[11px] text-amber-800 font-medium">
+                        Vui lòng nêu rõ lý do chưa nộp kịp thời trong buổi dự giờ:
+                      </p>
+                      <textarea
+                        rows={3}
+                        value={supplementalReasonText}
+                        onChange={(e) => setSupplementalReasonText(e.target.value)}
+                        placeholder="Ví dụ: Trùng lịch họp hội đồng / tham gia bồi dưỡng chuyên môn đột xuất nên bổ sung phiếu trước khi kết thúc tháng..."
+                        className="w-full p-3 bg-white rounded-xl border border-amber-300 text-xs font-medium focus:ring-2 focus:ring-amber-500 outline-none resize-none"
+                      />
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-amber-950">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                      <div className="text-xs">
+                        <p className="font-bold text-amber-900">⏳ Quy trình xét duyệt phiếu bổ sung</p>
+                        <p className="text-[11px] text-amber-800 font-medium">
+                          Sau khi nộp, phiếu sẽ được chuyển tới <strong>Giáo viên giảng dạy</strong> để xét duyệt. Chỉ sau khi được duyệt, phiếu mới được ghi nhận chính thức và hệ thống sẽ <strong>tự động gửi email kết quả cho GV dạy</strong>.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {!isReadOnly && !isSupplementalEval && (
                   <div className="bg-teal-50 border border-teal-200/80 rounded-2xl p-3.5 flex items-center gap-3 text-teal-950 mt-4">
                     <div className="w-8 h-8 rounded-xl bg-teal-100 flex items-center justify-center shrink-0 text-teal-700">
                       <Mail className="w-4 h-4" />
@@ -7139,9 +7435,23 @@ export function ObservationClient(props: ObservationClientProps) {
                       type="button"
                       onClick={handleSubmitEval}
                       disabled={evalSubmitting}
-                      className="px-6 py-2.5 bg-gradient-to-r from-[#008B82] to-[#006059] hover:from-[#007068] hover:to-[#004f4a] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer flex items-center gap-2"
+                      className={`px-6 py-2.5 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer flex items-center gap-2 ${
+                        isSupplementalEval
+                          ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 shadow-amber-600/30"
+                          : "bg-gradient-to-r from-[#008B82] to-[#006059] hover:from-[#007068] hover:to-[#004f4a]"
+                      }`}
                     >
-                      {evalSubmitting ? "Đang lưu..." : isApprovedForReEval ? "Lưu & Cập nhật biên bản" : isDraft ? "Hoàn thành & nộp biên bản" : "Lưu và hoàn thành biên bản"}
+                      {evalSubmitting
+                        ? "Đang lưu..."
+                        : isSupplementalEval
+                        ? (evalModal.registration.evaluation?.supplementalStatus === "NEEDS_REVISION"
+                            ? "Cập nhật & Gửi lại phiếu bổ sung"
+                            : "Gửi phiếu dự giờ bổ sung (Chờ GV dạy duyệt)")
+                        : isApprovedForReEval
+                        ? "Lưu & Cập nhật biên bản"
+                        : isDraft
+                        ? "Hoàn thành & nộp biên bản"
+                        : "Lưu và hoàn thành biên bản"}
                     </button>
                   )}
                 </div>
@@ -7608,6 +7918,23 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: GIÁO VIÊN GIẢNG DẠY XÉT DUYỆT PHIẾU DỰ GIỜ BỔ SUNG */}
+      {/* ======================================================== */}
+      {reviewSupplementalModal && (
+        <ReviewSupplementalModal
+          isOpen={!!reviewSupplementalModal}
+          onClose={() => setReviewSupplementalModal(null)}
+          slot={reviewSupplementalModal.slot}
+          registration={reviewSupplementalModal.registration}
+          currentTeacher={currentTeacher}
+          onSuccess={() => {
+            showToast("Đã xử lý xét duyệt phiếu dự giờ bổ sung!", "success");
+            refreshSlots();
+          }}
+        />
       )}
 
       {/* ======================================================== */}

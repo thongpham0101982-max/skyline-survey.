@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { DiemNhanXetTeacherClient } from "./client"
+import { Suspense } from "react"
 
 export const metadata = {
   title: "Sổ điểm / Nhận xét - Giáo viên Bộ môn",
@@ -40,13 +41,15 @@ export default async function TeacherDiemNhanXetPage() {
   // Strictly enforce Teaching Assignments: No fallback to all school classes/subjects
 
   return (
-    <DiemNhanXetTeacherClient
-      academicYears={JSON.parse(JSON.stringify(academicYears))}
-      activeYearId={activeYear?.id || ""}
-      initialAssignments={JSON.parse(JSON.stringify(assignments))}
-      initialClasses={JSON.parse(JSON.stringify(classes))}
-      initialSubjects={JSON.parse(JSON.stringify(subjects))}
-      teacherName={teacher?.teacherName || session?.user?.name || "Giáo viên"}
-    />
+    <Suspense fallback={<div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu Sổ điểm & Nhận xét...</div>}>
+      <DiemNhanXetTeacherClient
+        academicYears={JSON.parse(JSON.stringify(academicYears))}
+        activeYearId={activeYear?.id || ""}
+        initialAssignments={JSON.parse(JSON.stringify(assignments))}
+        initialClasses={JSON.parse(JSON.stringify(classes))}
+        initialSubjects={JSON.parse(JSON.stringify(subjects))}
+        teacherName={teacher?.teacherName || session?.user?.name || "Giáo viên"}
+      />
+    </Suspense>
   )
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useState, useEffect, useMemo } from "react"
 import {
   FileSpreadsheet,
@@ -78,6 +79,16 @@ export function HomeroomGradesClient({
   const [activeTab, setActiveTab] = useState<"matrix" | "comparative" | "tracking" | "feedback">("matrix")
   const [searchTerm, setSearchTerm] = useState("")
   const [trackingFilter, setTrackingFilter] = useState<string>("ALL") // "ALL" | "BELOW_AVG" | "BELOW_BENCHMARK" | "ENTRANCE_COMMITMENT" | "LEARNING_COMMITMENT"
+
+  // If teacher has no homeroom classes but has GVBM search parameters, auto-redirect to so-diem-nhan-xet
+  useEffect(() => {
+    if (homeroomClasses.length === 0 && typeof window !== "undefined") {
+      const search = window.location.search
+      if (search && (search.includes("classId") || search.includes("subjectId") || search.includes("studentId"))) {
+        window.location.href = `/teacher/so-diem-nhan-xet${search}`
+      }
+    }
+  }, [homeroomClasses.length])
 
   // Data states
   const [loading, setLoading] = useState(false)
@@ -498,14 +509,38 @@ export function HomeroomGradesClient({
 
   if (homeroomClasses.length === 0) {
     return (
-      <div className="bg-amber-50 border border-amber-200 p-8 rounded-2xl text-center space-y-3 my-6">
-        <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
-          <AlertCircle className="w-6 h-6" />
+      <div className="max-w-2xl mx-auto space-y-4 my-8 animate-fadeIn">
+        <div className="bg-amber-50 border border-amber-200 p-8 rounded-2xl text-center space-y-3 shadow-xs">
+          <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-extrabold text-amber-900 uppercase">Chưa ghi nhận phân công Giáo viên Chủ nhiệm</h3>
+          <p className="text-xs text-amber-800 max-w-md mx-auto leading-relaxed">
+            Tài khoản hiện tại chưa được gán làm Giáo viên Chủ nhiệm cho lớp học nào trong năm học này.
+          </p>
         </div>
-        <h3 className="text-base font-extrabold text-amber-900 uppercase">Chưa ghi nhận phân công Giáo viên Chủ nhiệm</h3>
-        <p className="text-xs text-amber-800 max-w-md mx-auto">
-          Tài khoản hiện tại chưa được gán làm Giáo viên Chủ nhiệm cho lớp học nào trong năm học này. Vui lòng liên hệ BGH hoặc Ban Đào tạo để cập nhật.
-        </p>
+
+        <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200 p-6 rounded-2xl text-center space-y-3 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center mx-auto shadow-xs">
+            <BookOpen className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-black text-teal-950 uppercase">Thầy/Cô là Giáo viên Bộ môn (GVBM)?</h4>
+            <p className="text-xs text-teal-800 max-w-md mx-auto mt-1 leading-relaxed">
+              Nếu Thầy/Cô cần nhập điểm bộ môn, quản lý sổ điểm lớp giảng dạy hoặc tiếp nhận &amp; phản hồi ý kiến PHHS do GVCN chuyển tiếp, vui lòng truy cập <strong>Sổ điểm &amp; Nhận xét GVBM</strong>.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              href="/teacher/so-diem-nhan-xet"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>Chuyển sang Sổ Điểm &amp; Nhận Xét GVBM</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }

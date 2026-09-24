@@ -1,5 +1,6 @@
 "use client"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 const COLUMN_TYPES = [
   { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
@@ -47,7 +48,12 @@ import {
   Sparkles,
   AlertCircle,
   Clock,
-  MessageSquare
+  MessageSquare,
+  Search,
+  Filter,
+  ArrowRight,
+  UserCheck,
+  Check
 } from "lucide-react"
 import { calculateCompositeScore, getColumnMaxScore } from "@/lib/grading/formula-calculator"
 import { Button } from "@/components/ui/button"
@@ -78,6 +84,12 @@ export function DiemNhanXetTeacherClient({
   initialSubjects,
   teacherName
 }: Props) {
+  const searchParams = useSearchParams()
+  const paramClassId = searchParams?.get("classId") || ""
+  const paramSubjectId = searchParams?.get("subjectId") || ""
+  const paramStudentId = searchParams?.get("studentId") || ""
+  const paramPeriod = searchParams?.get("period") || ""
+
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
   const [assignments, setAssignments] = useState<any[]>(initialAssignments)
   const [classes, setClasses] = useState<any[]>(initialClasses)
@@ -88,7 +100,9 @@ export function DiemNhanXetTeacherClient({
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
   const [selectedSystemFilter, setSelectedSystemFilter] = useState("ALL")
 
-  const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
+  const [selectedPeriod, setSelectedPeriod] = useState(
+    paramPeriod && PERIODS.some(p => p.code === paramPeriod) ? paramPeriod : "KSĐN"
+  )
 
   // Target semester based on selected period
   const targetSemester = useMemo(() => {
@@ -118,8 +132,8 @@ export function DiemNhanXetTeacherClient({
   }, [filteredAssignments, assignments.length, classes])
 
   // Computed assigned subjects for current year, semester, and selected class
-  const [selectedClassId, setSelectedClassId] = useState<string>("")
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("")
+  const [selectedClassId, setSelectedClassId] = useState<string>(paramClassId || "")
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>(paramSubjectId || "")
 
   const assignedSubjects = useMemo(() => {
     const map = new Map()
@@ -202,23 +216,31 @@ export function DiemNhanXetTeacherClient({
   // Sync selectedClassId and selectedSubjectId when filters change
   useEffect(() => {
     if (filteredClasses.length > 0) {
-      if (!filteredClasses.some(c => c.id === selectedClassId)) {
+      if (paramClassId && filteredClasses.some(c => c.id === paramClassId)) {
+        if (selectedClassId !== paramClassId) {
+          setSelectedClassId(paramClassId)
+        }
+      } else if (!filteredClasses.some(c => c.id === selectedClassId)) {
         setSelectedClassId(filteredClasses[0].id)
       }
     } else {
       setSelectedClassId("")
     }
-  }, [filteredClasses])
+  }, [filteredClasses, paramClassId])
 
   useEffect(() => {
     if (assignedSubjects.length > 0) {
-      if (!assignedSubjects.some(s => s.id === selectedSubjectId)) {
+      if (paramSubjectId && assignedSubjects.some(s => s.id === paramSubjectId)) {
+        if (selectedSubjectId !== paramSubjectId) {
+          setSelectedSubjectId(paramSubjectId)
+        }
+      } else if (!assignedSubjects.some(s => s.id === selectedSubjectId)) {
         setSelectedSubjectId(assignedSubjects[0].id)
       }
     } else {
       setSelectedSubjectId("")
     }
-  }, [assignedSubjects])
+  }, [assignedSubjects, paramSubjectId])
 
   const [gradeSheetData, setGradeSheetData] = useState<{
     config: any
@@ -240,6 +262,17 @@ export function DiemNhanXetTeacherClient({
   const [submittingUnlock, setSubmittingUnlock] = useState(false)
   const [cancellingUnlock, setCancellingUnlock] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Active Tab state: "grades" (Sổ điểm & Nhận xét) | "coordination" (Ý kiến phản hồi PHHS & Phối hợp GVCN)
+  const [activeTab, setActiveTab] = useState<"grades" | "coordination">("grades")
+  const [coordFilter, setCoordFilter] = useState<"ALL" | "PENDING" | "RESPONDED">("ALL")
+  const [coordSearchTerm, setCoordSearchTerm] = useState("")
+
+  useEffect(() => {
+    if (paramStudentId) {
+      setActiveTab("coordination")
+    }
+  }, [paramStudentId])
 
   // Homeroom Coordination state
   const [homeroomCoordination, setHomeroomCoordination] = useState<Record<string, any>>({})
@@ -269,6 +302,75 @@ export function DiemNhanXetTeacherClient({
       responded: list.filter(st => Boolean(homeroomCoordination[st.id]?.gvbmResponse))
     }
   }, [gradeSheetData.students, homeroomCoordination])
+
+  const displayedCoordStudents = useMemo(() => {
+    let list = coordStudents.all
+    if (coordFilter === "PENDING") {
+      list = coordStudents.pending
+    } else if (coordFilter === "RESPONDED") {
+      list = coordStudents.responded
+    }
+
+    if (coordSearchTerm.trim()) {
+      const q = coordSearchTerm.trim().toLowerCase()
+      list = list.filter(st => 
+        (st.studentName && st.studentName.toLowerCase().includes(q)) ||
+        (st.studentCode && st.studentCode.toLowerCase().includes(q))
+      )
+    }
+
+    return list
+  }, [coordStudents, coordFilter, coordSearchTerm])
+
+  const handleExportCoordinationExcel = () => {
+    if (coordStudents.all.length === 0) {
+      alert("Chưa có dữ liệu ý kiến PHHS để xuất Excel.")
+      return
+    }
+
+    const currentClass = assignedClasses.find(c => c.id === selectedClassId)
+    const currentSubject = assignedSubjects.find(s => s.id === selectedSubjectId)
+    const periodName = EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod
+
+    const rows = coordStudents.all.map((st, idx) => {
+      const coord = homeroomCoordination[st.id] || {}
+      return {
+        "STT": idx + 1,
+        "Mã học sinh": st.studentCode,
+        "Họ và tên học sinh": st.studentName,
+        "Lớp": currentClass?.className || "",
+        "Môn học": currentSubject?.subjectName || "",
+        "Kỳ khảo sát": periodName,
+        "Ý kiến phản hồi của PHHS": coord.parentFeedback || "",
+        "Giáo viên Chủ nhiệm": coord.homeroomTeacherName || "",
+        "Lời nhắn / Đề xuất từ GVCN": coord.forwardedGvbm?.message || "",
+        "Ngày GVCN chuyển tiếp": coord.forwardedGvbm?.forwardedAt ? new Date(coord.forwardedGvbm.forwardedAt).toLocaleString("vi-VN") : "",
+        "Trạng thái GVBM": coord.gvbmResponse ? "Đã phản hồi" : "Chờ phản hồi",
+        "Biện pháp hỗ trợ": coord.gvbmResponse?.statusText || "",
+        "Nội dung phản hồi của GVBM": coord.gvbmResponse?.responseContent || "",
+        "Thời gian GVBM phản hồi": coord.gvbmResponse?.respondedAt ? new Date(coord.gvbmResponse.respondedAt).toLocaleString("vi-VN") : ""
+      }
+    })
+
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "YKienPHHS_PhoiHopGVBM")
+    XLSX.writeFile(wb, `TongHop_YKienPHHS_Mon_${currentSubject?.subjectName || "Mon"}_Lop_${currentClass?.className || "Lop"}_Ky_${selectedPeriod}.xlsx`)
+  }
+
+  // Auto-open coordination modal if studentId is passed in URL query param
+  const hasAutoOpenedModal = useRef(false)
+  useEffect(() => {
+    if (paramStudentId && !hasAutoOpenedModal.current && gradeSheetData.students.length > 0) {
+      const target = gradeSheetData.students.find(
+        st => st.id === paramStudentId || st.studentCode === paramStudentId
+      )
+      if (target) {
+        hasAutoOpenedModal.current = true
+        handleOpenCoordModal(target)
+      }
+    }
+  }, [paramStudentId, gradeSheetData.students])
 
   // Fetch teaching assignments if academic year changes
   useEffect(() => {
@@ -835,6 +937,50 @@ export function DiemNhanXetTeacherClient({
           )}
         </div>
 
+        {/* Navigation Tabs (Tag chọn chế độ) */}
+        {!hasNoAssignments && (
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab("grades")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === "grades"
+                  ? "bg-teal-700 text-white shadow-md shadow-teal-700/20"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Sổ Điểm & Đánh Giá Môn Học</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("coordination")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap ${
+                activeTab === "coordination"
+                  ? "bg-teal-700 text-white shadow-md shadow-teal-700/20"
+                  : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Ý Kiến Phản Hồi PHHS & Trao Đổi GVCN</span>
+              {coordStudents.all.length > 0 && (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                  coordStudents.pending.length > 0
+                    ? "bg-amber-400 text-amber-950 animate-pulse"
+                    : "bg-teal-100 text-teal-800"
+                }`}>
+                  {coordStudents.all.length} {coordStudents.pending.length > 0 ? `(${coordStudents.pending.length} chờ)` : ""}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* TAB 1: SỔ ĐIỂM & ĐÁNH GIÁ MÔN HỌC */}
+        {activeTab === "grades" && (
+          <div className="space-y-6">
+
         {/* CẢNH BÁO SỔ ĐIỂM ĐÃ BỊ KHÓA & NÚT YÊU CẦU MỞ SỔ */}
         {isSheetLocked && !hasNoAssignments && (
           <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm animate-fadeIn">
@@ -934,6 +1080,14 @@ export function DiemNhanXetTeacherClient({
                   Đã phản hồi: {coordStudents.responded.length}
                 </span>
               )}
+              <button
+                type="button"
+                onClick={() => setActiveTab("coordination")}
+                className="px-3 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+              >
+                <span>Xem danh sách & Phản hồi</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         )}
@@ -1155,6 +1309,287 @@ export function DiemNhanXetTeacherClient({
             )}
           </div>
         )}
+      </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* TAB 2: Ý KIẾN PHẢN HỒI PHHS & TRAO ĐỔI GVCN */}
+      {/* ======================================================== */}
+      {activeTab === "coordination" && (
+        <div className="space-y-5 animate-fadeIn">
+          {/* Header Card: Chọn kỳ khảo sát / Học kỳ & Thao tác */}
+          <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              {/* Chọn Kỳ khảo sát / Học kỳ */}
+              <div className="space-y-1.5">
+                <div className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-teal-600" />
+                  <span>Chọn Kỳ khảo sát / Học kỳ</span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {EVAL_PERIODS.map(period => {
+                    const isSelected = selectedPeriod === period.code
+                    return (
+                      <button
+                        key={period.code}
+                        type="button"
+                        onClick={() => setSelectedPeriod(period.code)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-teal-700 text-white shadow-sm shadow-teal-700/30 scale-102"
+                            : "bg-white border border-slate-200 hover:bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {period.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Thông tin lớp, môn & Nút Xuất Excel */}
+              <div className="flex items-center gap-2 self-start lg:self-center flex-wrap">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold">
+                  <span>{currentClass?.className || "Lớp"}</span>
+                  <span>•</span>
+                  <span>{currentSubject?.subjectName || "Môn"}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleExportCoordinationExcel}
+                  disabled={coordStudents.all.length === 0}
+                  className="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Xuất Excel Báo Cáo</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 3 Thẻ thống kê nhanh */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-sky-50/80 border border-sky-200 rounded-xl p-3.5 flex items-center justify-between shadow-2xs">
+                <div>
+                  <div className="text-[11px] font-bold text-sky-800 uppercase tracking-wide">Tổng Ý Kiến PHHS</div>
+                  <div className="text-2xl font-black text-sky-950 mt-0.5">{coordStudents.all.length}</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-sky-200/90 text-sky-800 flex items-center justify-center font-bold">
+                  <Users className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 flex items-center justify-between shadow-2xs">
+                <div>
+                  <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wide">Chờ GVBM Phản Hồi</div>
+                  <div className="text-2xl font-black text-amber-950 mt-0.5">{coordStudents.pending.length}</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-amber-200/90 text-amber-800 flex items-center justify-center font-bold">
+                  <Clock className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 flex items-center justify-between shadow-2xs">
+                <div>
+                  <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide">Đã Phản Hồi GVCN</div>
+                  <div className="text-2xl font-black text-emerald-950 mt-0.5">{coordStudents.responded.length}</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-200/90 text-emerald-800 flex items-center justify-center font-bold">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            {/* Thanh lọc trạng thái & Tìm kiếm */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setCoordFilter("ALL")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    coordFilter === "ALL"
+                      ? "bg-slate-800 text-white shadow-xs"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  Tất cả ({coordStudents.all.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCoordFilter("PENDING")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    coordFilter === "PENDING"
+                      ? "bg-amber-600 text-white shadow-xs"
+                      : "bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100"
+                  }`}
+                >
+                  Chờ phản hồi ({coordStudents.pending.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCoordFilter("RESPONDED")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                    coordFilter === "RESPONDED"
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
+                  }`}
+                >
+                  Đã phản hồi ({coordStudents.responded.length})
+                </button>
+              </div>
+
+              <div className="relative min-w-[240px]">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={coordSearchTerm}
+                  onChange={(e) => setCoordSearchTerm(e.target.value)}
+                  placeholder="Tìm tên hoặc mã HS..."
+                  className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 text-xs bg-white focus:ring-2 focus:ring-teal-500 outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Bảng danh sách chi tiết */}
+          {displayedCoordStudents.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200 shadow-xs space-y-2">
+              <MessageSquare className="w-10 h-10 text-slate-300 mx-auto" />
+              <div className="text-sm font-extrabold text-slate-700">
+                {coordStudents.all.length === 0
+                  ? `Chưa ghi nhận ý kiến phản hồi PHHS nào cần phối hợp môn ${currentSubject?.subjectName || "bộ môn"} trong kỳ ${EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name || selectedPeriod}.`
+                  : "Không tìm thấy học sinh nào phù hợp với bộ lọc."}
+              </div>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                Khi Giáo viên Chủ nhiệm chuyển tiếp ý kiến của Phụ huynh học sinh cần hỗ trợ môn học, thông tin sẽ được cập nhật trực tiếp tại đây.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto bg-white border border-slate-200 rounded-2xl shadow-xs">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-800 text-white font-bold">
+                    <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
+                    <th className="py-3 px-3 w-48 border-r border-slate-700">Học sinh</th>
+                    <th className="py-3 px-3 min-w-[280px] border-r border-slate-700">Ý kiến phản hồi của PHHS</th>
+                    <th className="py-3 px-3 min-w-[260px] border-r border-slate-700">Trao đổi từ GVCN</th>
+                    <th className="py-3 px-3 min-w-[280px]">Kết quả & Biện pháp của GVBM</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {displayedCoordStudents.map((st, idx) => {
+                    const coord = homeroomCoordination[st.id] || {}
+                    const hasResponse = Boolean(coord.gvbmResponse)
+
+                    return (
+                      <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 px-3 text-center font-bold text-slate-500 border-r border-slate-200 align-top">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3 px-3 border-r border-slate-200 align-top space-y-1">
+                          <div className="font-extrabold text-slate-900 text-sm">{st.studentName}</div>
+                          <div className="text-[11px] font-semibold text-slate-500">Mã: {st.studentCode}</div>
+                          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-bold">
+                            <span>{currentClass?.className || "Lớp"}</span>
+                            <span>•</span>
+                            <span>{currentSubject?.subjectName || "Môn"}</span>
+                          </div>
+                        </td>
+
+                        {/* Ý kiến phản hồi của PHHS */}
+                        <td className="py-3 px-3 border-r border-slate-200 align-top">
+                          <div className="bg-sky-50/80 border border-sky-200 rounded-xl p-3.5 space-y-2">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-extrabold text-sky-900 flex items-center gap-1.5">
+                                <Users className="w-3.5 h-3.5 text-sky-600" />
+                                <span>Ý kiến Phụ huynh</span>
+                              </span>
+                            </div>
+                            <p className="text-slate-800 text-xs italic leading-relaxed">
+                              "{coord.parentFeedback || "Không có nội dung chi tiết."}"
+                            </p>
+                          </div>
+                        </td>
+
+                        {/* Trao đổi / Đề xuất từ GVCN */}
+                        <td className="py-3 px-3 border-r border-slate-200 align-top">
+                          <div className="bg-indigo-50/80 border border-indigo-200 rounded-xl p-3.5 space-y-2">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-extrabold text-indigo-900 flex items-center gap-1.5">
+                                <UserCheck className="w-3.5 h-3.5 text-indigo-600" />
+                                <span>GVCN: {coord.homeroomTeacherName || "Giáo viên Chủ nhiệm"}</span>
+                              </span>
+                              {coord.forwardedGvbm?.forwardedAt && (
+                                <span className="text-[10px] text-indigo-600 font-medium">
+                                  {new Date(coord.forwardedGvbm.forwardedAt).toLocaleDateString("vi-VN")}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-slate-700 text-xs leading-relaxed">
+                              <strong>Lời nhắn:</strong> "{coord.forwardedGvbm?.message || coord.teacherRemark || "Nhờ Thầy/Cô hỗ trợ và quan sát học sinh trong tiết học."}"
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Kết quả phản hồi của GVBM */}
+                        <td className="py-3 px-3 align-top space-y-2">
+                          {hasResponse ? (
+                            <div className="space-y-2">
+                              <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3.5 space-y-2">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-black text-[10px]">
+                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                    {coord.gvbmResponse.statusText || "Đã có biện pháp"}
+                                  </span>
+                                  {coord.gvbmResponse.respondedAt && (
+                                    <span className="text-[10px] text-emerald-700 font-semibold">
+                                      {new Date(coord.gvbmResponse.respondedAt).toLocaleDateString("vi-VN")}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-slate-800 text-xs leading-relaxed">
+                                  {coord.gvbmResponse.responseContent}
+                                </p>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCoordModal(st)}
+                                className="w-full py-1.5 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-bold text-xs inline-flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                              >
+                                <MessageSquare className="w-3.5 h-3.5 text-teal-600" />
+                                <span>Cập nhật phản hồi cho GVCN</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="space-y-2.5">
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-100 border border-amber-300 text-amber-900 font-extrabold text-[11px] animate-pulse">
+                                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Chờ GVBM phản hồi kết quả</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-normal">
+                                Vui lòng tiếp nhận đề xuất từ GVCN và phản hồi biện pháp hỗ trợ chuyên môn cho học sinh.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCoordModal(st)}
+                                className="w-full py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-extrabold text-xs inline-flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Tiếp nhận & Phản hồi cho GVCN</span>
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
       {/* MODAL YÊU CẦU MỞ SỔ ĐIỂM */}
       {isUnlockModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-fadeIn">

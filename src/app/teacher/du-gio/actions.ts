@@ -2297,6 +2297,30 @@ async function ensureDbColumns() {
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "teacherFeedbackAt" DATETIME;`);
   } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "isSupplemental" BOOLEAN DEFAULT 0;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "supplementalStatus" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "supplementalReason" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "supplementalSubmittedAt" DATETIME;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "supplementalReviewedAt" DATETIME;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "supplementalReviewedBy" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "supplementalReviewNote" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationEvaluation" ADD COLUMN "supplementalHistory" TEXT;`);
+  } catch (e) {}
 }
 
 export async function requestObservationSlot(data: {
@@ -4352,3 +4376,518 @@ export async function syncAndReconcileObservationStatuses() {
     return { success: false, error: error.message || "Lỗi đồng bộ trạng thái tiết dự giờ" };
   }
 }
+
+/**
+ * Nộp phiếu dự giờ bổ sung:
+ * - Điều kiện: Tiết đã duyệt, GV dạy đã xác nhận dự giờ, chưa có phiếu (hoặc đang yêu cầu sửa)
+ * - Thời hạn: Đến hết tháng phát sinh tiết dự giờ
+ * - Bắt buộc nhập lý do bổ sung và nhận xét cải thiện
+ * - Trạng thái ban đầu: isSupplemental = true, supplementalStatus = 'PENDING'
+ */
+export async function submitSupplementalEvaluation(data: {
+  registrationId: string
+  slotId: string
+  criterion1?: number
+  criterion2?: number
+  criterion3?: number
+  criterion4?: number
+  criterion5?: number
+  score1?: number
+  score2?: number
+  score3?: number
+  score4?: number
+  score5?: number
+  score6?: number
+  score7?: number
+  score8?: number
+  score9?: number
+  score10?: number
+  score11?: number
+  totalScore?: number
+  strengths?: string
+  improvements: string
+  generalComment?: string
+  overallRating: string
+  supplementalReason: string
+}) {
+  try {
+    invalidateObservationSlotsCache();
+    await ensureDbColumns();
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        user: true,
+        campus: true,
+        departmentRel: true
+      }
+    });
+    if (!currentTeacher) return { success: false, error: "Teacher profile not found" };
+
+    const registration = await prisma.observationRegistration.findUnique({
+      where: { id: data.registrationId },
+      include: {
+        evaluation: true,
+        slot: {
+          include: {
+            teacher: { include: { user: true, campus: true } }
+          }
+        }
+      }
+    });
+    if (!registration) return { success: false, error: "Không tìm thấy đăng ký dự giờ" };
+
+    if (registration.teacherId !== currentTeacher.id) {
+      return { success: false, error: "Bạn không có quyền nộp phiếu cho đăng ký dự giờ này" };
+    }
+
+    if (!registration.isApproved) {
+      return { success: false, error: "Tiết dự giờ này chưa được Giáo viên giảng dạy xác nhận dự giờ. Không thể nộp phiếu bổ sung!" };
+    }
+
+    const slotDate = new Date(registration.slot.date);
+    const now = new Date();
+
+    if (slotDate > now) {
+      return { success: false, error: "Tiết học chưa diễn ra. Không thể nộp phiếu đánh giá trước thời gian học." };
+    }
+
+    // Thời hạn bổ sung: Đến hết ngày cuối cùng của tháng phát sinh tiết dự
+    const endOfSlotMonth = new Date(slotDate.getFullYear(), slotDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    if (now > endOfSlotMonth) {
+      const monthStr = `${String(slotDate.getMonth() + 1).padStart(2, "0")}/${slotDate.getFullYear()}`;
+      return {
+        success: false,
+        error: `Đã hết hạn bổ sung phiếu cho tiết học này! Thời hạn bổ sung chỉ áp dụng đến hết tháng phát sinh tiết dự (${monthStr}).`
+      };
+    }
+
+    // Bắt buộc nhập lý do bổ sung
+    if (!data.supplementalReason || !data.supplementalReason.trim()) {
+      return { success: false, error: "Lý do bổ sung phiếu là bắt buộc. Vui lòng nêu rõ lý do chưa nộp kịp thời!" };
+    }
+
+    // Bắt buộc nhập nhận xét cải thiện
+    if (!data.improvements || !data.improvements.trim()) {
+      return { success: false, error: "Nội dung cần cải thiện / Góp ý phát triển là bắt buộc. Vui lòng nhập nhận xét trước khi gửi phiếu!" };
+    }
+
+    // Đọc lịch sử hiện tại nếu có
+    let historyList: any[] = [];
+    if (registration.evaluation?.supplementalHistory) {
+      try {
+        historyList = JSON.parse(registration.evaluation.supplementalHistory);
+        if (!Array.isArray(historyList)) historyList = [];
+      } catch (e) {
+        historyList = [];
+      }
+    }
+
+    const newHistoryEntry = {
+      action: registration.evaluation?.supplementalStatus === "NEEDS_REVISION" ? "RESUBMIT" : "SUBMIT",
+      timestamp: now.toISOString(),
+      reason: data.supplementalReason.trim(),
+      submittedBy: currentTeacher.teacherName,
+      teacherCode: currentTeacher.teacherCode
+    };
+    historyList.push(newHistoryEntry);
+
+    const evalData = {
+      criterion1: data.criterion1 ?? null,
+      criterion2: data.criterion2 ?? null,
+      criterion3: data.criterion3 ?? null,
+      criterion4: data.criterion4 ?? null,
+      criterion5: data.criterion5 ?? null,
+      score1: data.score1 ?? null,
+      score2: data.score2 ?? null,
+      score3: data.score3 ?? null,
+      score4: data.score4 ?? null,
+      score5: data.score5 ?? null,
+      score6: data.score6 ?? null,
+      score7: data.score7 ?? null,
+      score8: data.score8 ?? null,
+      score9: data.score9 ?? null,
+      score10: data.score10 ?? null,
+      score11: data.score11 ?? null,
+      totalScore: data.totalScore ?? null,
+      strengths: data.strengths || "",
+      improvements: data.improvements.trim(),
+      generalComment: data.generalComment || "",
+      overallRating: data.overallRating,
+      submittedAt: now,
+      // Cờ bổ sung
+      isSupplemental: true,
+      supplementalStatus: "PENDING",
+      supplementalReason: data.supplementalReason.trim(),
+      supplementalSubmittedAt: now,
+      supplementalReviewedAt: null,
+      supplementalReviewedBy: null,
+      supplementalReviewNote: null,
+      supplementalHistory: JSON.stringify(historyList)
+    };
+
+    if (registration.evaluation) {
+      await prisma.observationEvaluation.update({
+        where: { registrationId: data.registrationId },
+        data: evalData
+      });
+    } else {
+      await prisma.observationEvaluation.create({
+        data: {
+          registrationId: data.registrationId,
+          slotId: data.slotId,
+          evaluatorId: currentTeacher.id,
+          ...evalData
+        }
+      });
+    }
+
+    // Gửi thông báo In-app cho GV giảng dạy (Host Teacher) biết có phiếu bổ sung chờ duyệt
+    const hostTeacher = registration.slot?.teacher;
+    if (hostTeacher?.user?.id) {
+      await prisma.notification.create({
+        data: {
+          userId: hostTeacher.user.id,
+          title: "Phiếu dự giờ bổ sung chờ duyệt 📋",
+          message: `Thầy/Cô ${currentTeacher.teacherName} vừa nộp phiếu dự giờ bổ sung cho tiết "${registration.slot.topic}". Vui lòng xem xét và duyệt phiếu.`,
+          link: `/teacher/du-gio?tab=my_schedule`,
+          isRead: false
+        }
+      }).catch(e => console.error("[submitSupplementalEvaluation] Notif error:", e));
+    }
+
+    revalidatePath("/teacher/du-gio");
+    revalidatePath("/teacher/du-gio-mam-non");
+    revalidatePath("/admin/du-gio");
+
+    return {
+      success: true,
+      message: "Đã nộp phiếu dự giờ bổ sung thành công! Phiếu đang chờ Giáo viên giảng dạy xét duyệt."
+    };
+  } catch (e: any) {
+    console.error("[submitSupplementalEvaluation Error]:", e);
+    return { success: false, error: e.message || "Lỗi khi nộp phiếu dự giờ bổ sung" };
+  }
+}
+
+/**
+ * GV Giảng dạy xét duyệt phiếu dự giờ bổ sung:
+ * - action: 'APPROVE' | 'REJECT' | 'REQUEST_REVISION'
+ * - Chỉ sau khi GVGD duyệt (APPROVE):
+ *   + Phiếu được ghi nhận chính thức
+ *   + Được tính vào thống kê
+ *   + Tự động gửi email kết quả cho GV dạy
+ */
+export async function reviewSupplementalEvaluation(data: {
+  evaluationId?: string
+  registrationId?: string
+  action: "APPROVE" | "REJECT" | "REQUEST_REVISION"
+  reviewNote?: string
+}) {
+  try {
+    invalidateObservationSlotsCache();
+    await ensureDbColumns();
+    const session = await auth()
+    if (!session || !session.user) return { success: false, error: "Unauthorized" }
+
+    const roleCode = (session.user as any)?.role || "TEACHER";
+    const isObsAdmin = await checkIsObservationAdmin(roleCode, session.user.id);
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      include: { user: true, campus: true }
+    });
+    if (!currentTeacher && !isObsAdmin) return { success: false, error: "Teacher profile not found" };
+
+    let evaluation = null;
+    if (data.evaluationId) {
+      evaluation = await prisma.observationEvaluation.findUnique({
+        where: { id: data.evaluationId },
+        include: {
+          registration: {
+            include: {
+              teacher: { include: { user: true, campus: true, departmentRel: true, departmentAssignments: { include: { department: true } } } },
+              slot: { include: { teacher: { include: { user: true, campus: true } } } }
+            }
+          }
+        }
+      });
+    } else if (data.registrationId) {
+      evaluation = await prisma.observationEvaluation.findUnique({
+        where: { registrationId: data.registrationId },
+        include: {
+          registration: {
+            include: {
+              teacher: { include: { user: true, campus: true, departmentRel: true, departmentAssignments: { include: { department: true } } } },
+              slot: { include: { teacher: { include: { user: true, campus: true } } } }
+            }
+          }
+        }
+      });
+    }
+
+    if (!evaluation) return { success: false, error: "Không tìm thấy phiếu đánh giá cần xét duyệt" };
+
+    const hostTeacher = evaluation.registration?.slot?.teacher;
+    const observerTeacher = evaluation.registration?.teacher;
+    const slot = evaluation.registration?.slot;
+
+    // Kiểm tra quyền: Người thực hiện phải là GVGD của tiết đó hoặc Quản trị viên
+    const isHost = currentTeacher && hostTeacher && hostTeacher.id === currentTeacher.id;
+    if (!isHost && !isObsAdmin) {
+      return { success: false, error: "Chỉ Giáo viên trực tiếp giảng dạy tiết học này (hoặc Ban Quản trị) mới có quyền xét duyệt phiếu bổ sung!" };
+    }
+
+    // Bắt buộc nhập lý do/ghi chú khi Từ chối hoặc Yêu cầu sửa
+    if (data.action !== "APPROVE" && (!data.reviewNote || !data.reviewNote.trim())) {
+      return {
+        success: false,
+        error: data.action === "REJECT" ? "Vui lòng nhập lý do từ chối phiếu bổ sung!" : "Vui lòng nhập nội dung yêu cầu chỉnh sửa!"
+      };
+    }
+
+    const now = new Date();
+    const reviewerName = currentTeacher?.teacherName || session.user.name || "Giáo viên giảng dạy";
+
+    // Đọc lịch sử và append
+    let historyList: any[] = [];
+    if (evaluation.supplementalHistory) {
+      try {
+        historyList = JSON.parse(evaluation.supplementalHistory);
+        if (!Array.isArray(historyList)) historyList = [];
+      } catch (e) {
+        historyList = [];
+      }
+    }
+
+    historyList.push({
+      action: data.action,
+      reviewedBy: reviewerName,
+      timestamp: now.toISOString(),
+      note: data.reviewNote?.trim() || null
+    });
+
+    if (data.action === "APPROVE") {
+      await prisma.observationEvaluation.update({
+        where: { id: evaluation.id },
+        data: {
+          supplementalStatus: "APPROVED",
+          supplementalReviewedAt: now,
+          supplementalReviewedBy: reviewerName,
+          supplementalReviewNote: data.reviewNote?.trim() || null,
+          supplementalHistory: JSON.stringify(historyList)
+        }
+      });
+
+      // TỰ ĐỘNG GỬI EMAIL KẾT QUẢ CHO GIÁO VIÊN GIẢNG DẠY (Host Teacher)
+      try {
+        const hostEmail = getTeacherResolvedEmail(hostTeacher);
+        const observerEmail = getTeacherResolvedEmail(observerTeacher);
+        const isMN = slot?.level === "Mầm non";
+        const isSurprise = slot?.requestOrigin === "SURPRISE" ||
+          (typeof slot?.description === "string" && (slot.description.includes("[SURPRISE]") || slot.description.toLowerCase().includes("dự giờ đột xuất")));
+        const formattedDateVi = slot?.date
+          ? new Date(slot.date).toLocaleDateString("vi-VN", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" })
+          : "";
+        const totalDisplay = evaluation.totalScore != null
+          ? (isMN ? `${Number(evaluation.totalScore).toFixed(2)} / 10.00đ` : `${Number(evaluation.totalScore).toFixed(2)} / 20.00đ`)
+          : "Đã hoàn thành";
+        const ratingDisplay = evaluation.overallRating || "Đạt";
+
+        if (hostTeacher && hostEmail && hostEmail.includes("@")) {
+          const emailSubject = `[Sky-line SSM - Phiếu Bổ Sung Đã Duyệt] Kết quả đánh giá tiết dạy: "${slot?.topic}" - Người dự: ${observerTeacher?.teacherName}`;
+
+          const observerDeptName = observerTeacher?.departmentRel?.name ||
+            observerTeacher?.departmentAssignments?.map((da: any) => da.department?.name).filter(Boolean).join(", ") ||
+            undefined;
+
+          let parsedCriteriaScores: number[] = [];
+          if (isMN) {
+            try {
+              const parsed = typeof evaluation.generalComment === "string" ? JSON.parse(evaluation.generalComment) : null;
+              if (parsed && Array.isArray(parsed.scores)) {
+                parsedCriteriaScores = parsed.scores;
+              }
+            } catch (e) {}
+            if (parsedCriteriaScores.length === 0) {
+              parsedCriteriaScores = [
+                evaluation.criterion1 || 0,
+                evaluation.criterion2 || 0,
+                evaluation.criterion3 || 0,
+                evaluation.criterion4 || 0,
+                evaluation.criterion5 || 0
+              ];
+            }
+          } else {
+            parsedCriteriaScores = [
+              evaluation.score1 || 0,
+              evaluation.score2 || 0,
+              evaluation.score3 || 0,
+              evaluation.score4 || 0,
+              evaluation.score5 || 0,
+              evaluation.score6 || 0,
+              evaluation.score7 || 0,
+              evaluation.score8 || 0,
+              evaluation.score9 || 0,
+              evaluation.score10 || 0,
+              evaluation.score11 || 0
+            ];
+          }
+
+          const emailHtml = isSurprise
+            ? renderObservationSurpriseCompletedForHost({
+                hostName: hostTeacher.teacherName,
+                observerName: observerTeacher?.teacherName || "Giáo viên dự giờ",
+                observerCode: observerTeacher?.teacherCode,
+                observerPosition: observerTeacher?.position || undefined,
+                observerEmail: observerEmail || undefined,
+                observerDepartment: observerDeptName,
+                topic: slot?.topic || "Tiết dạy",
+                subjectName: slot?.subjectName || "Môn học",
+                grade: slot?.grade || "",
+                className: slot?.className || "",
+                dateStr: formattedDateVi,
+                period: slot?.startTime || "Tiết dạy",
+                campusName: slot?.campusName || hostTeacher.campus?.campusName || "Sky-Line",
+                room: slot?.room || "học",
+                totalScore: totalDisplay,
+                rating: ratingDisplay,
+                strengths: evaluation.strengths || undefined,
+                improvements: evaluation.improvements || undefined,
+                generalComment: evaluation.generalComment || undefined,
+                directLink: SKYLINE_SSM_LOGIN_URL,
+                criteriaScores: {
+                  type: isMN ? "MAMNON" : "K12",
+                  scores: parsedCriteriaScores
+                }
+              })
+            : renderObservationEvaluationCompletedForHost({
+                hostName: hostTeacher.teacherName,
+                observerName: observerTeacher?.teacherName || "Giáo viên dự giờ",
+                observerCode: observerTeacher?.teacherCode,
+                observerPosition: observerTeacher?.position || undefined,
+                topic: slot?.topic || "Tiết dạy",
+                subjectName: slot?.subjectName || "Môn học",
+                grade: slot?.grade || undefined,
+                className: slot?.className || undefined,
+                dateStr: formattedDateVi,
+                period: `${slot?.startTime || ""}${slot?.endTime ? " - " + slot.endTime : ""}`.trim() || "Tiết dự giờ",
+                campusName: slot?.campusName || hostTeacher.campus?.campusName || "Sky-Line",
+                room: slot?.room || undefined,
+                totalScore: totalDisplay,
+                rating: ratingDisplay,
+                strengths: evaluation.strengths || undefined,
+                improvements: evaluation.improvements || undefined,
+                generalComment: evaluation.generalComment || undefined,
+                directLink: SKYLINE_SSM_LOGIN_URL,
+                criteriaScores: {
+                  type: isMN ? "MAMNON" : "K12",
+                  scores: parsedCriteriaScores
+                }
+              });
+
+          await sendEmail({
+            from: "HỆ THỐNG DỰ GIỜ SKY-LINE",
+            to: hostEmail,
+            subject: emailSubject,
+            html: emailHtml
+          }).catch(e => console.error("[reviewSupplementalEvaluation] Email sending error to host:", e));
+        }
+
+        // Thông báo in-app cho GV dự giờ
+        if (observerTeacher?.user?.id) {
+          await prisma.notification.create({
+            data: {
+              userId: observerTeacher.user.id,
+              title: "Phiếu dự giờ bổ sung đã được duyệt ✅",
+              message: `Giáo viên giảng dạy ${reviewerName} đã phê duyệt phiếu dự giờ bổ sung của Thầy/Cô cho tiết "${slot?.topic}". Phiếu đã được ghi nhận chính thức vào hệ thống thống kê.`,
+              link: `/teacher/du-gio?tab=evaluations`,
+              isRead: false
+            }
+          }).catch(e => console.error("[reviewSupplementalEvaluation] In-app notif error to observer:", e));
+        }
+      } catch (mailErr) {
+        console.error("[reviewSupplementalEvaluation] Post-approval dispatch error:", mailErr);
+      }
+
+      revalidatePath("/teacher/du-gio");
+      revalidatePath("/teacher/du-gio-mam-non");
+      revalidatePath("/admin/du-gio");
+      revalidatePath("/admin/tong-hop-du-gio");
+
+      return {
+        success: true,
+        message: "Đã phê duyệt phiếu dự giờ bổ sung thành công! Phiếu đã được ghi nhận chính thức và hệ thống đã gửi email kết quả cho Giáo viên giảng dạy."
+      };
+    } else if (data.action === "REJECT") {
+      await prisma.observationEvaluation.update({
+        where: { id: evaluation.id },
+        data: {
+          supplementalStatus: "REJECTED",
+          supplementalReviewedAt: now,
+          supplementalReviewedBy: reviewerName,
+          supplementalReviewNote: data.reviewNote.trim(),
+          supplementalHistory: JSON.stringify(historyList)
+        }
+      });
+
+      if (observerTeacher?.user?.id) {
+        await prisma.notification.create({
+          data: {
+            userId: observerTeacher.user.id,
+            title: "Phiếu dự giờ bổ sung bị từ chối ❌",
+            message: `Phiếu dự giờ bổ sung cho tiết "${slot?.topic}" đã bị từ chối bởi ${reviewerName}. Lý do: ${data.reviewNote.trim()}`,
+            link: `/teacher/du-gio?tab=my_schedule`,
+            isRead: false
+          }
+        }).catch(e => console.error("[reviewSupplementalEvaluation] In-app notif error to observer:", e));
+      }
+
+      revalidatePath("/teacher/du-gio");
+      revalidatePath("/admin/du-gio");
+
+      return {
+        success: true,
+        message: "Đã từ chối phiếu dự giờ bổ sung."
+      };
+    } else if (data.action === "REQUEST_REVISION") {
+      await prisma.observationEvaluation.update({
+        where: { id: evaluation.id },
+        data: {
+          supplementalStatus: "NEEDS_REVISION",
+          supplementalReviewedAt: now,
+          supplementalReviewedBy: reviewerName,
+          supplementalReviewNote: data.reviewNote.trim(),
+          supplementalHistory: JSON.stringify(historyList)
+        }
+      });
+
+      if (observerTeacher?.user?.id) {
+        await prisma.notification.create({
+          data: {
+            userId: observerTeacher.user.id,
+            title: "Yêu cầu chỉnh sửa phiếu dự giờ bổ sung ✍️",
+            message: `Giáo viên giảng dạy ${reviewerName} yêu cầu Thầy/Cô chỉnh sửa lại phiếu dự giờ bổ sung cho tiết "${slot?.topic}". Nội dung: ${data.reviewNote.trim()}`,
+            link: `/teacher/du-gio?tab=my_schedule`,
+            isRead: false
+          }
+        }).catch(e => console.error("[reviewSupplementalEvaluation] In-app notif error to observer:", e));
+      }
+
+      revalidatePath("/teacher/du-gio");
+      revalidatePath("/admin/du-gio");
+
+      return {
+        success: true,
+        message: "Đã gửi yêu cầu chỉnh sửa đến Giáo viên dự giờ."
+      };
+    }
+
+    return { success: false, error: "Hành động không hợp lệ" };
+  } catch (e: any) {
+    console.error("[reviewSupplementalEvaluation Error]:", e);
+    return { success: false, error: e.message || "Lỗi khi xét duyệt phiếu bổ sung" };
+  }
+}
+

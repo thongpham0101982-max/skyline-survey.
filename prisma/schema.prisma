@@ -1192,6 +1192,15 @@ model ObservationEvaluation {
   teacherFeedback       String?
   teacherFeedbackAt     DateTime?
 
+  isSupplemental          Boolean   @default(false)
+  supplementalStatus      String?
+  supplementalReason      String?
+  supplementalSubmittedAt DateTime?
+  supplementalReviewedAt  DateTime?
+  supplementalReviewedBy  String?
+  supplementalReviewNote  String?
+  supplementalHistory     String?
+
   registration ObservationRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
 
   @@index([slotId])

@@ -198,7 +198,7 @@ export async function POST(request: Request) {
               userId: gvbm.userId,
               title: `[Ý kiến PHHS] Phối hợp hỗ trợ HS ${student.studentName} - Lớp ${className} (${subjectName})`,
               message: `GVCN ${homeroomName} đã chuyển tiếp ý kiến PHHS: ${cleanSnippet}. Lời nhắn: "${message || 'Nhờ Thầy/Cô hỗ trợ và quan sát học sinh trong tiết học'}"`,
-              link: `/teacher/diem-lop-chu-nhiem`
+              link: `/teacher/so-diem-nhan-xet?classId=${student.classId}&subjectId=${subjectId}&studentId=${studentId}&period=${encodeURIComponent(targetPeriodTag)}`
             }
           }).catch((err) => console.error("Lỗi gửi Notification cho GVBM:", err))
         }
@@ -241,7 +241,7 @@ export async function POST(request: Request) {
               userId: gvbm.userId,
               title: `[Ý kiến PHHS] Phối hợp hỗ trợ HS ${student.studentName} - Lớp ${className} (${subjectName})`,
               message: `GVCN ${homeroomName} đã chuyển tiếp thông tin hỗ trợ bộ môn ${subjectName}. Lời nhắn: "${message || 'Nhờ Thầy/Cô hỗ trợ và quan sát học sinh trong tiết học'}"`,
-              link: `/teacher/diem-lop-chu-nhiem`
+              link: `/teacher/so-diem-nhan-xet?classId=${student.classId}&subjectId=${subjectId}&studentId=${studentId}&period=${encodeURIComponent(targetPeriodTag)}`
             }
           }).catch((err) => console.error("Lỗi gửi Notification cho GVBM:", err))
         }

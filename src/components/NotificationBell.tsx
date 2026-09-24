@@ -68,6 +68,14 @@ export function resolveNotificationLink(n: { title?: string; message?: string; l
       }
     }
 
+    // Re-route coordination notifications sent from GVCN to GVBM to so-diem-nhan-xet
+    if (
+      link.startsWith("/teacher/diem-lop-chu-nhiem") &&
+      (text.includes("phối hợp") || text.includes("chuyển tiếp ý kiến phhs") || (n.title && n.title.includes("[Ý kiến PHHS]")))
+    ) {
+      return link.replace("/teacher/diem-lop-chu-nhiem", "/teacher/so-diem-nhan-xet")
+    }
+
     // Return custom link as-is if no special normalization matched
     return link
   }

@@ -249,7 +249,11 @@ export async function GET(request: Request) {
       where: {
         studentId: { in: studentIds },
         academicYearId: targetAcademicYearId,
-        OR: periodVariants.map(p => ({ notes: { contains: `[GradePeriod: ${p}]` } }))
+        OR: periodVariants.flatMap(p => [
+          { notes: { contains: `[GradePeriod: ${p}]` } },
+          { notes: { contains: `[GradePeriod:${p}]` } },
+          { notes: { contains: p } }
+        ])
       },
       include: {
         teacher: { select: { id: true, teacherName: true } }
