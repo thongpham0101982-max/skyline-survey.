@@ -229,8 +229,12 @@ export async function POST(req: NextRequest) {
         level: cls.level || meta.educationLevel,
         homeroomTeacherId: cls.homeroomTeacherId || '',
         homeroomTeacherName: cls.homeroomTeacherName || '',
+        homeroomTeacherEmail: cls.homeroomTeacherEmail || '',
+        departmentId: cls.departmentId || '',
+        departmentName: cls.departmentName || '',
         subjectTeacherId: cls.subjectTeacherId || '',
         subjectTeacherName: cls.subjectTeacherName || '',
+        subjectTeacherEmail: cls.subjectTeacherEmail || '',
         subjectId: cls.subjectId || meta.primarySubjectId || '',
         subjectName: cls.subjectName || meta.primarySubjectName || '',
         totalStudents: cls.totalStudents || 0,
@@ -239,6 +243,27 @@ export async function POST(req: NextRequest) {
         status: 'DRAFT',
         progressPercent: 0
       }));
+
+      // Kế thừa Cấu hình & Tiêu chí đánh giá từ Danh mục Hoạt động
+      const evalCfg = meta.evaluationConfig || {};
+      const evalMode = evalCfg.mode || 'CRITERIA';
+      const criteria = (evalCfg.criteria && evalCfg.criteria.length > 0)
+        ? evalCfg.criteria.map((c: any, idx: number) => ({
+            id: c.id || `crit_${idx + 1}`,
+            name: c.name,
+            description: c.description || '',
+            weight: Number(c.weight) || 0,
+            maxScore: Number(c.maxScore) || 10,
+            isRequired: true,
+            order: idx + 1
+          }))
+        : [
+            { id: 'crit_1', name: 'Thái độ & Ý thức tham gia', description: 'Tự giác, kỷ luật, hợp tác', weight: 40, isRequired: true, order: 1 },
+            { id: 'crit_2', name: 'Kỹ năng & Mức độ đạt chuẩn', description: 'Thực hiện yêu cầu, kỹ năng thực tế', weight: 30, isRequired: true, order: 2 },
+            { id: 'crit_3', name: 'Sản phẩm & Thu hoạch', description: 'Chất lượng sản phẩm / bài viết', weight: 30, isRequired: false, order: 3 }
+          ];
+
+      const formulaType = evalCfg.formulaType === 'AVERAGE' ? 'EQUAL_WEIGHT' : 'WEIGHTED';
 
       const fullRecordMeta = {
         campusId,
@@ -259,13 +284,12 @@ export async function POST(req: NextRequest) {
         activityTypeId: 'SU_KIEN',
         activityTypeName: meta.organizationFormat || 'Hoạt động trải nghiệm',
         scale: 'LOP',
-        evalMode: 'CRITERIA',
-        criteria: [
-          { id: 'crit_1', name: 'Thái độ & Ý thức tham gia', description: 'Tự giác, kỷ luật, hợp tác', weight: 40, isRequired: true, order: 1 },
-          { id: 'crit_2', name: 'Kỹ năng & Mức độ đạt chuẩn', description: 'Thực hiện yêu cầu, kỹ năng thực tế', weight: 30, isRequired: true, order: 2 },
-          { id: 'crit_3', name: 'Sản phẩm & Thu hoạch', description: 'Chất lượng sản phẩm / bài viết', weight: 30, isRequired: false, order: 3 }
-        ],
-        formulaType: 'EQUAL_WEIGHT',
+        evalMode,
+        criteria,
+        formulaType,
+        hasRoleAssessment: evalCfg.hasRoleAssessment !== undefined ? evalCfg.hasRoleAssessment : true,
+        rolesList: evalCfg.rolesList || [],
+        completionBenchmark: evalCfg.completionBenchmark || 'Điểm TB >= 5.0',
         thresholds: { outstanding: 85, good: 70, pass: 50 },
         mandatoryRules: [],
         assignedClasses: formattedAssignedClasses,
@@ -379,13 +403,13 @@ export async function POST(req: NextRequest) {
           subjectId: meta.primarySubjectId || null,
           subjectName: meta.primarySubjectName || null,
           scale: 'LOP',
-          evalMode: 'CRITERIA',
+          evalMode: fullRecordMeta.evalMode || 'CRITERIA',
           criteria: fullRecordMeta.criteria || [],
           date: new Date().toISOString(),
           location: meta.expectedLocation || '',
           senderName: `${teacherName} (Tổ TLHN CS ${currentAlloc.campusCode || ''})`,
           senderEmail: session.user.email || teacher?.email || undefined,
-          customMessage: `GV Tổ TLHN đã tiếp nhận và triển khai hoạt động ngoại khóa "${catalog.name}" xuống lớp của Quý Thầy/Cô. Kính nhờ Thầy/Cô GVCN và GVBM vào hệ thống tiếp nhận lớp và tiến hành đánh giá học sinh theo kế hoạch.`,
+          customMessage: `Các thầy cô vừa nhận được Kế hoạch hoạt động ngoại khóa/trải nghiệm từ BP HĐNGLL - Tổ CTHS. Kính nhờ các thầy cô vui lòng triển khai kế hoạch đến GVCN, GVBM liên quan tại cơ sở và tiến hành đánh giá học sinh theo đúng tiêu chí được giao. Xin cảm ơn.`,
           includeGdcs: true,
           assignedClasses: formattedAssignedClasses
         }).catch(err => console.error('[Campus Dispatch Email Error]:', err));

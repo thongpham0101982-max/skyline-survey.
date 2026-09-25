@@ -160,7 +160,11 @@ export async function GET(req: Request) {
 
       if (teacherRecord) {
         // 1. Check GVCN match: Teacher is homeroom teacher of any assigned class
-        const matchedGvcnClass = assignedClasses.find((c: any) => c.classId && homeroomClassIds.has(c.classId));
+        const matchedGvcnClass = assignedClasses.find((c: any) => 
+          (c.classId && homeroomClassIds.has(c.classId)) ||
+          (c.homeroomTeacherId && c.homeroomTeacherId === teacherRecord.id) ||
+          (c.homeroomTeacherEmail && teacherRecord.email && c.homeroomTeacherEmail.toLowerCase() === teacherRecord.email.toLowerCase())
+        );
         if (matchedGvcnClass) {
           isGVCN = true;
           myAssignedClass = matchedGvcnClass;
@@ -170,7 +174,8 @@ export async function GET(req: Request) {
         // a) Explicitly assigned in assignedClasses list
         const explicitGvbmMatch = assignedClasses.find((c: any) => 
           (c.subjectTeacherId && c.subjectTeacherId === teacherRecord.id) ||
-          (c.subjectTeacherName && teacherRecord.teacherName && c.subjectTeacherName === teacherRecord.teacherName)
+          (c.subjectTeacherName && teacherRecord.teacherName && c.subjectTeacherName === teacherRecord.teacherName) ||
+          (c.subjectTeacherEmail && teacherRecord.email && c.subjectTeacherEmail.toLowerCase() === teacherRecord.email.toLowerCase())
         );
         if (explicitGvbmMatch) {
           isGVBM = true;

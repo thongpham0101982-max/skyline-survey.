@@ -378,6 +378,23 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
           if (!existing.classes.includes(clsItem.className)) existing.classes.push(clsItem.className);
           recipientMap.set(key, existing);
         }
+      } else if (clsItem.subjectTeacherEmail && clsItem.subjectTeacherEmail.includes('@')) {
+        const email = clsItem.subjectTeacherEmail.trim().toLowerCase();
+        const key = clsItem.subjectTeacherId || email;
+        const existing = recipientMap.get(key) || {
+          teacherId: clsItem.subjectTeacherId || '',
+          teacherName: clsItem.subjectTeacherName || "Thầy/Cô GVBM",
+          email,
+          roles: [],
+          classes: [],
+          campusIds: [],
+          campusCodes: []
+        };
+        const subjTitle = clsItem.subjectName || subjectName || "Bộ môn";
+        const roleText = `GVBM ${subjTitle} (Lớp ${clsItem.className})`;
+        if (!existing.roles.includes(roleText)) existing.roles.push(roleText);
+        if (clsItem.className && !existing.classes.includes(clsItem.className)) existing.classes.push(clsItem.className);
+        recipientMap.set(key, existing);
       }
     }
 

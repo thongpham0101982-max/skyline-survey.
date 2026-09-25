@@ -8,12 +8,19 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ExperientialTabs } from '@/components/ExperientialTabs';
-import { SHEET_CONFIGS, SheetCode, ActivityCatalogItem } from '@/lib/experiential/catalog-types';
+import { 
+  SHEET_CONFIGS, 
+  SheetCode, 
+  ActivityCatalogItem,
+  EDUCATION_LEVEL_OPTIONS,
+  PROGRAM_TYPE_OPTIONS
+} from '@/lib/experiential/catalog-types';
 import { CatalogAddEditModal } from './components/CatalogAddEditModal';
 import { CatalogImportModal } from './components/CatalogImportModal';
 import { CatalogAllocateModal } from './components/CatalogAllocateModal';
 import { CatalogAssignCTHSModal } from './components/CatalogAssignCTHSModal';
 import { CatalogBulkDeleteModal } from './components/CatalogBulkDeleteModal';
+import { CatalogEvaluationConfigModal } from './components/CatalogEvaluationConfigModal';
 
 export default function ActivityCatalogsPage() {
   const [academicYears, setAcademicYears] = useState<any[]>([]);
@@ -37,6 +44,8 @@ export default function ActivityCatalogsPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isAllocateOpen, setIsAllocateOpen] = useState(false);
   const [allocatingItem, setAllocatingItem] = useState<any>(null);
+  const [isConfigEvalOpen, setIsConfigEvalOpen] = useState(false);
+  const [evalConfigItem, setEvalConfigItem] = useState<any>(null);
 
   useEffect(() => {
     fetch('/api/academic-years')
@@ -513,27 +522,30 @@ export default function ActivityCatalogsPage() {
                 <th className="py-3 px-2 text-center w-10">STT</th>
                 <th className="py-3 px-3 w-16">Khối</th>
                 <th className="py-3 px-4 min-w-[200px]">Tên hoạt động ngoại khóa</th>
-                <th className="py-3 px-4 min-w-[170px]">Chủ đề giáo dục</th>
-                <th className="py-3 px-3 min-w-[130px]">Môn chủ trì</th>
+                <th className="py-3 px-3 min-w-[120px]">Bậc học</th>
+                <th className="py-3 px-3 min-w-[110px]">Hệ học</th>
+                <th className="py-3 px-4 min-w-[160px]">Chủ đề giáo dục</th>
                 <th className="py-3 px-3 min-w-[140px]">Môn phối hợp / Tích hợp</th>
                 <th className="py-3 px-3 min-w-[120px]">Thời gian & HK</th>
-                <th className="py-3 px-3 min-w-[140px]">Địa điểm dự kiến</th>
-                <th className="py-3 px-3 min-w-[170px]">GV Tổ CTHS phụ trách</th>
-                <th className="py-3 px-3 min-w-[150px]">Cơ sở tiếp nhận (TLHN)</th>
+                <th className="py-3 px-3 min-w-[130px]">Địa điểm dự kiến</th>
+                <th className="py-3 px-3 min-w-[160px]">GV Phụ trách Kế hoạch</th>
+                <th className="py-3 px-3 min-w-[140px]">Sản phẩm / Dự án</th>
+                <th className="py-3 px-3 min-w-[150px]">Cấu hình & Đánh giá</th>
+                <th className="py-3 px-3 min-w-[140px]">Cơ sở tiếp nhận (TLHN)</th>
                 <th className="py-3 px-3 text-center min-w-[130px] sticky right-0 bg-slate-50">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-slate-400">
+                  <td colSpan={15} className="py-12 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
                     Đang tải danh mục hoạt động...
                   </td>
                 </tr>
               ) : catalogs.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-slate-400">
+                  <td colSpan={15} className="py-12 text-center text-slate-400">
                     <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
                       <BookOpen className="w-6 h-6" />
                     </div>
@@ -541,14 +553,14 @@ export default function ActivityCatalogsPage() {
                     <div className="mt-2 flex items-center justify-center gap-2">
                       <button
                         onClick={() => setIsImportOpen(true)}
-                        className="text-xs font-bold text-[#00A19A] hover:underline"
+                        className="text-xs font-bold text-[#00A19A] hover:underline cursor-pointer"
                       >
                         Import từ Excel
                       </button>
                       <span>hoặc</span>
                       <button
                         onClick={() => { setEditingItem(null); setIsAddEditOpen(true); }}
-                        className="text-xs font-bold text-[#00A19A] hover:underline"
+                        className="text-xs font-bold text-[#00A19A] hover:underline cursor-pointer"
                       >
                         Thêm thủ công
                       </button>
@@ -560,6 +572,21 @@ export default function ActivityCatalogsPage() {
                   const meta = act.meta || {};
                   const allocatedCampuses = meta.allocatedCampuses || [];
                   const isSelected = selectedIds.includes(act.id);
+
+                  // Bậc học
+                  const eduLevels = Array.isArray(meta.educationLevels) && meta.educationLevels.length > 0
+                    ? meta.educationLevels
+                    : [meta.educationLevel || currentSheetCfg.level];
+
+                  // Hệ học
+                  const progTypes = Array.isArray(meta.programTypes) && meta.programTypes.length > 0
+                    ? meta.programTypes
+                    : [meta.programType || currentSheetCfg.program];
+
+                  // Cấu hình đánh giá
+                  const evalCfg = meta.evaluationConfig;
+                  const mode = evalCfg?.mode;
+                  const critCount = (mode === 'CRITERIA' && Array.isArray(evalCfg?.criteria)) ? evalCfg.criteria.length : 0;
 
                   return (
                     <tr 
@@ -594,36 +621,82 @@ export default function ActivityCatalogsPage() {
                           )}
                         </div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5">{act.code}</div>
-                        {meta.deliverables && (
-                          <div className="mt-1 flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-flex">
-                            <Award className="w-3 h-3 shrink-0" />
-                            <span>SP: {meta.deliverables}</span>
-                          </div>
-                        )}
                       </td>
+
+                      {/* Bậc học (1 hoặc nhiều bậc) */}
+                      <td className="py-3 px-3">
+                        <div className="flex flex-wrap gap-1">
+                          {eduLevels.map((lvl: string) => {
+                            const opt = EDUCATION_LEVEL_OPTIONS.find(o => o.id === lvl);
+                            return (
+                              <span
+                                key={lvl}
+                                className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200/60 whitespace-nowrap"
+                              >
+                                {opt?.name || lvl}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </td>
+
+                      {/* Hệ học (1 hoặc nhiều hệ) */}
+                      <td className="py-3 px-3">
+                        <div className="flex flex-wrap gap-1">
+                          {progTypes.map((prog: string) => {
+                            const opt = PROGRAM_TYPE_OPTIONS.find(o => o.id === prog);
+                            const isHeS = prog === 'HE_S';
+                            const isSongNgu = prog === 'SONG_NGU';
+                            const colorCls = isHeS
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200/60'
+                              : isSongNgu
+                                ? 'bg-indigo-50 text-indigo-800 border-indigo-200/60'
+                                : 'bg-purple-50 text-purple-800 border-purple-200/60';
+                            return (
+                              <span
+                                key={prog}
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border whitespace-nowrap ${colorCls}`}
+                              >
+                                {opt?.name || prog}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </td>
+
                       <td className="py-3 px-4 text-slate-600 font-medium">
                         {meta.themeName || '—'}
                       </td>
+
+                      {/* Môn phối hợp / Tích hợp (kèm Môn chủ trì) */}
                       <td className="py-3 px-3">
-                        <span className="font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded text-[11px] inline-block">
-                          {meta.primarySubjectName || '—'}
-                        </span>
+                        {meta.primarySubjectName && (
+                          <div className="mb-1">
+                            <span className="font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded text-[10px] inline-block">
+                              Chủ trì: {meta.primarySubjectName}
+                            </span>
+                          </div>
+                        )}
+                        <div className="text-slate-600 text-[11px]">
+                          {meta.coopSubjectNames || meta.integratedSubjects || '—'}
+                        </div>
                       </td>
-                      <td className="py-3 px-3 text-slate-500">
-                        {meta.coopSubjectNames || meta.integratedSubjects || '—'}
-                      </td>
+
                       <td className="py-3 px-3 text-slate-600">
                         <div className="font-semibold">{meta.timeFrame || '—'}</div>
                         <div className="text-[10px] text-slate-400 font-medium">Học kỳ {meta.semester || 1}</div>
                       </td>
+
                       <td className="py-3 px-3 text-slate-600">
                         <div className="flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate max-w-[130px]">{meta.expectedLocation || '—'}</span>
+                          <span className="truncate max-w-[130px]" title={meta.expectedLocation || ''}>
+                            {meta.expectedLocation || '—'}
+                          </span>
                         </div>
                       </td>
 
-                      {/* Cột: GV Tổ CTHS Phụ trách (1 hoặc nhiều người) */}
+                      {/* GV Phụ trách Kế hoạch (Tổ CTHS: 1 hoặc nhiều người) */}
                       <td className="py-3 px-3">
                         {meta.cthsTeacherName || (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0) ? (
                           (() => {
@@ -661,7 +734,7 @@ export default function ActivityCatalogsPage() {
                                   </div>
                                   <div className="text-[9px] font-mono text-teal-700 truncate max-w-[110px]">
                                     {firstTeacher?.teacherCode || 'Tổ CTHS'}
-                                    {extraCount > 0 ? ` (${teacherList.length} GV phụ trách)` : ''}
+                                    {extraCount > 0 ? ` (${teacherList.length} GV)` : ''}
                                   </div>
                                 </div>
                                 <Edit3 className="w-3 h-3 text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-0.5" />
@@ -683,7 +756,53 @@ export default function ActivityCatalogsPage() {
                         )}
                       </td>
 
-                      {/* Cột: Cơ sở tiếp nhận (TLHN) */}
+                      {/* Sản phẩm / học tập dự án */}
+                      <td className="py-3 px-3">
+                        {meta.deliverables ? (
+                          <div 
+                            className="flex items-center gap-1 text-[11px] text-emerald-800 bg-emerald-50/90 px-2 py-0.5 rounded-lg border border-emerald-200/70 inline-flex max-w-[150px] truncate"
+                            title={meta.deliverables}
+                          >
+                            <Award className="w-3 h-3 text-emerald-600 shrink-0" />
+                            <span className="truncate">{meta.deliverables}</span>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 text-[11px] italic">—</span>
+                        )}
+                      </td>
+
+                      {/* Cấu hình & Hình thức đánh giá */}
+                      <td className="py-3 px-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEvalConfigItem(act);
+                            setIsConfigEvalOpen(true);
+                          }}
+                          className={`group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
+                            mode
+                              ? 'bg-teal-50 border-teal-200 text-[#003B3A] hover:bg-teal-100 hover:border-teal-300 shadow-2xs'
+                              : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:text-[#00A19A] hover:border-teal-300 hover:bg-teal-50'
+                          }`}
+                          title="Nhấn để thiết lập Tiêu chí Rubric & Công thức đánh giá"
+                        >
+                          <Award className={`w-3.5 h-3.5 ${mode ? 'text-[#00A19A]' : 'text-slate-400'}`} />
+                          <span className="truncate max-w-[110px]">
+                            {mode === 'CRITERIA'
+                              ? `Rubric (${critCount} TC)`
+                              : mode === 'PASS_FAIL'
+                                ? 'Đạt / C.Đạt'
+                                : mode === 'SCORE_10'
+                                  ? 'Thang 10'
+                                  : mode === 'ROLE_BASED'
+                                    ? 'Theo Vai trò'
+                                    : '+ Cấu hình'}
+                          </span>
+                          <Edit3 className="w-3 h-3 text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                        </button>
+                      </td>
+
+                      {/* Cơ sở tiếp nhận (TLHN) */}
                       <td className="py-3 px-3">
                         {allocatedCampuses.length === 0 ? (
                           <span className="text-[10px] text-slate-400 italic">Chưa đẩy cơ sở</span>
@@ -706,7 +825,7 @@ export default function ActivityCatalogsPage() {
                         )}
                       </td>
 
-                      {/* Cột: Thao tác */}
+                      {/* Thao tác */}
                       <td className="py-3 px-3 text-center sticky right-0 bg-white shadow-l">
                         <div className="flex items-center justify-center gap-1">
                           {/* Nút Đẩy cơ sở */}
@@ -715,7 +834,7 @@ export default function ActivityCatalogsPage() {
                               setAllocatingItem(act);
                               setIsAllocateOpen(true);
                             }}
-                            className="p-1.5 rounded-lg text-[#00A19A] hover:bg-[#00A19A]/10 transition-colors"
+                            className="p-1.5 rounded-lg text-[#00A19A] hover:bg-[#00A19A]/10 transition-colors cursor-pointer"
                             title="Đẩy hoạt động xuống cơ sở (Tổ TLHN)"
                           >
                             <Send className="w-4 h-4" />
@@ -725,7 +844,7 @@ export default function ActivityCatalogsPage() {
                           {act.status === 'CANCELLED' ? (
                             <button
                               onClick={() => handleToggleSingleStatus(act)}
-                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors cursor-pointer"
                               title="Khôi phục / Kích hoạt lại hoạt động này"
                             >
                               <RotateCcw className="w-4 h-4" />
@@ -733,7 +852,7 @@ export default function ActivityCatalogsPage() {
                           ) : (
                             <button
                               onClick={() => handleToggleSingleStatus(act)}
-                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
                               title="Chuyển hoạt động sang trạng thái HỦY (bảo toàn lịch sử đánh giá)"
                             >
                               <Ban className="w-4 h-4" />
@@ -746,7 +865,7 @@ export default function ActivityCatalogsPage() {
                               setEditingItem(act);
                               setIsAddEditOpen(true);
                             }}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
                             title="Chỉnh sửa thông tin"
                           >
                             <Edit3 className="w-4 h-4" />
@@ -755,7 +874,7 @@ export default function ActivityCatalogsPage() {
                           {/* Nút Xóa */}
                           <button
                             onClick={() => handleDelete(act)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                             title="Xóa hoạt động này"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -821,6 +940,17 @@ export default function ActivityCatalogsPage() {
           loadCatalogs();
         }}
         selectedActivities={selectedActivities}
+      />
+
+      {/* Modal thiết lập tiêu chí & công thức đánh giá trực tiếp */}
+      <CatalogEvaluationConfigModal
+        isOpen={isConfigEvalOpen}
+        onClose={() => {
+          setIsConfigEvalOpen(false);
+          setEvalConfigItem(null);
+        }}
+        onSaved={loadCatalogs}
+        catalogItem={evalConfigItem}
       />
     </div>
   );

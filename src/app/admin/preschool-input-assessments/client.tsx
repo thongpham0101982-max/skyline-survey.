@@ -2514,11 +2514,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         fetchStudentSummaries();
         notify("Đã lưu kết quả đánh giá");
       } else {
-        notify("Lỗi khi lưu đánh giá", "err");
+        const errData = await r.json().catch(() => null);
+        notify(errData?.error || "Lỗi khi lưu đánh giá", "err");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      notify("Lỗi", "err");
+      notify(e?.message || "Lỗi kết nối khi lưu đánh giá", "err");
     } finally {
       setSavingEval(false);
     }

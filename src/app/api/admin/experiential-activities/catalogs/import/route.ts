@@ -106,7 +106,9 @@ async function saveRowsToCatalogs(rows: ParsedCatalogRow[], academicYearId?: str
       const meta: ActivityCatalogMeta = {
         academicYearId: academicYearId || '',
         educationLevel: row.educationLevel,
+        educationLevels: row.educationLevels || [row.educationLevel],
         programType: row.programType,
+        programTypes: row.programTypes || [row.programType],
         sheetCode: row.sheetCode,
         grades: row.grades || [row.grade],
         themeName: row.themeName || '',
@@ -121,6 +123,8 @@ async function saveRowsToCatalogs(rows: ParsedCatalogRow[], academicYearId?: str
         primarySubjectName: row.primarySubjectName || '',
         coopSubjectNames: row.coopSubjectNames || '',
         deliverables: row.deliverables || '',
+        cthsTeacherName: row.cthsTeacherName || '',
+        evaluationConfig: row.evaluationConfig,
         notes: row.notes || '',
         allocatedCampuses: []
       };

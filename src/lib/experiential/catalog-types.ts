@@ -40,12 +40,47 @@ export interface CTHSTeacherAssignment {
   position?: string;
 }
 
+export interface CriterionItem {
+  id: string;
+  name: string;
+  weight: number; // Trọng số (%)
+  maxScore: number; // Điểm tối đa (mặc định 10)
+  description?: string;
+}
+
+export type EvaluationMode = 'CRITERIA' | 'PASS_FAIL' | 'SCORE_10' | 'ROLE_BASED';
+
+export interface ActivityEvaluationConfig {
+  mode: EvaluationMode;
+  modeTitle?: string;
+  hasRoleAssessment?: boolean; // Đánh giá vai trò học sinh
+  criteria?: CriterionItem[];
+  formulaType?: 'AVERAGE' | 'WEIGHTED' | 'HIGHEST' | 'PASS_ALL';
+  completionBenchmark?: string; // Ví dụ: "Điểm TB >= 5.0" hoặc "Đạt tất cả tiêu chí"
+  rolesList?: string[];
+}
+
+export const EDUCATION_LEVEL_OPTIONS: { value: CatalogEducationLevel; label: string; shortLabel: string }[] = [
+  { value: 'MN', label: 'Mầm non', shortLabel: 'MN' },
+  { value: 'TIEU_HOC', label: 'Tiểu học', shortLabel: 'TH' },
+  { value: 'THCS', label: 'Trung học cơ sở', shortLabel: 'THCS' },
+  { value: 'THPT', label: 'Trung học phổ thông', shortLabel: 'THPT' },
+];
+
+export const PROGRAM_TYPE_OPTIONS: { value: ProgramType; label: string; shortLabel: string }[] = [
+  { value: 'HE_S', label: 'Hệ Chất lượng cao (Hệ S)', shortLabel: 'Hệ S' },
+  { value: 'SONG_NGU', label: 'Hệ Song ngữ', shortLabel: 'Song ngữ' },
+  { value: 'QUOC_TE', label: 'Hệ Quốc tế', shortLabel: 'Quốc tế' },
+];
+
 export interface ActivityCatalogMeta {
   academicYearId?: string;
-  educationLevel: CatalogEducationLevel;
-  programType: ProgramType;
+  educationLevel: CatalogEducationLevel; // Bậc học chính (tương thích ngược)
+  educationLevels?: CatalogEducationLevel[]; // Chọn 1 hay nhiều bậc học: MN, TIEU_HOC, THCS, THPT
+  programType: ProgramType; // Hệ học chính (tương thích ngược)
+  programTypes?: ProgramType[]; // Chọn 1 hay nhiều hệ học: HE_S, SONG_NGU, QUOC_TE
   sheetCode: SheetCode;
-  grades: string[]; // ["1", "2"] or ["Lớp 1", "Lớp 2"] or ["Mầm non"]
+  grades: string[]; // ["1", "2"] hoặc ["Lớp 1", "Lớp 2"] hoặc ["Mầm non"]
   themeName: string; // Chủ đề giáo dục
   integratedSubjects: string; // Các môn tích hợp
   educationalContent: string; // Nội dung giáo dục
@@ -67,6 +102,7 @@ export interface ActivityCatalogMeta {
   cthsTeacherCode?: string; // Mã GV Tổ CTHS
   cthsTeacherName?: string; // Họ tên các GV Tổ CTHS phụ trách (dạng ghép ngăn cách dấu phẩy)
   cthsTeacherEmail?: string; // Email GV Tổ CTHS
+  evaluationConfig?: ActivityEvaluationConfig; // Thiết lập Cấu hình & Tiêu chí đánh giá
   allocatedCampuses?: CampusAllocationItem[];
 }
 

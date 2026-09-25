@@ -354,20 +354,28 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await auth()
-    const currentUser = session?.user as any
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại." }, { status: 401 })
+    }
+
+    const currentUser = session.user as any
     const userRole = (currentUser?.role || "").toUpperCase()
-    let isBghRole = ["ADMIN", "KT_DBCL", "KTDBCL", "BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole)
-    if (!isBghRole && userRole) {
+    const userId = currentUser?.id || ""
+
+    const isGlobalAdmin = ["ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole)
+    let isBghRole = isGlobalAdmin || ["BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole)
+    const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole)
+
+    if (!isGlobalAdmin && !isBghRole && !isGDCSUser && userRole) {
       try {
         const dbPerms = await prisma.permission.findMany({
-          where: { roleCode: userRole, module: { in: ["XET_DUYET_MAM_NON", "XET_DUYET_KET_QUA"] } }
+          where: { roleCode: userRole, module: { in: ["XET_DUYET_MAM_NON"] } }
         })
         isBghRole = dbPerms.some((p: any) => p.canRead || p.canUpdate || p.canCreate)
       } catch (e) {
         console.error("Error fetching permissions for BGH check in dev scores API:", e)
       }
     }
-    const isGlobalAdmin = isBghRole
 
     const body = await req.json()
     const { studentId, scores, devProfessionalComment, devPsychologyComment, devImportantNote, devAssessmentResult, bghApprovalStatus, bghApprovalComment, gdcsApprovalStatus, gdcsApprovalComment } = body
@@ -385,109 +393,143 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Không tìm thấy học sinh" }, { status: 404 })
     }
 
-    // Kiểm tra khóa kỳ/đợt khảo sát mầm non
-    const isPeriodLocked = student.period?.status !== "ACTIVE";
-    const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
-    if (isPeriodLocked || isBatchLocked) {
-      return NextResponse.json({ error: "Hạng mục khảo sát mầm non (Kỳ/Đợt) đã bị Khóa. Không thể sửa điểm!" }, { status: 403 })
-    }
-
-    // Upsert each score in transaction
-    const results = await prisma.$transaction(
-      scores
-        .filter((s) => s.criteriaId && s.result)
-        .map((s) =>
-          (prisma as any).preschoolDevScore.upsert({
-            where: {
-              studentId_criteriaId: { studentId, criteriaId: s.criteriaId }
-            },
-            create: {
-              studentId,
-              criteriaId: s.criteriaId,
-              result: s.result,
-              note: s.note || null,
-              assessorId: s.assessorId || null
-            },
-            update: {
-              result: s.result,
-              note: s.note || null,
-              assessorId: s.assessorId || null
-            }
-          })
-        )
-    )
-
     // Fetch user campus assignments to check for campus-bound rules
     const userAssignments = await prisma.userCampusAssignment.findMany({
-      where: { userId: currentUser?.id || "" },
+      where: { userId },
       include: { campus: true }
     });
 
-    const hasCampusMatch = userAssignments.length === 0 || userAssignments.some(ca => 
+    const hasCampusMatch = isGlobalAdmin || userAssignments.length === 0 || userAssignments.some(ca => 
       isPreschoolCampusMatch(student.admissionCampus, ca.campus.campusCode, ca.campus.campusName) ||
       student.admissionCampus === ca.campusId
     );
 
-    // BGH check: role must be ADMIN or KT_DBCL, AND must have campus match (if assigned to specific campuses)
-    const canApproveBGH = isGlobalAdmin && hasCampusMatch;
+    // BGH check: Global Admin or BGH MN roles with campus match
+    const canApproveBGH = (isGlobalAdmin || isBghRole) && hasCampusMatch;
 
-    // GDCS check: role must be ADMIN or GDCS roles, AND must have campus match (if assigned to specific campuses)
-    const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
-    const canApproveGDCS = isGlobalAdmin ? hasCampusMatch : (isGDCSUser && hasCampusMatch);
+    // GDCS check: Global Admin or GDCS roles with campus match
+    const canApproveGDCS = (isGlobalAdmin || isGDCSUser) && hasCampusMatch;
 
-    // Determine final values with safety protection (if unauthorized, preserve database values)
-    const updatedBghStatus = bghApprovalStatus !== undefined 
-      ? (canApproveBGH ? bghApprovalStatus : student.bghApprovalStatus) 
-      : undefined;
-    const updatedBghComment = bghApprovalComment !== undefined 
-      ? (canApproveBGH ? bghApprovalComment : student.bghApprovalComment) 
-      : undefined;
+    const isApprover = canApproveBGH || canApproveGDCS || isGlobalAdmin;
 
-    const updatedGdcsStatus = gdcsApprovalStatus !== undefined 
-      ? (canApproveGDCS ? gdcsApprovalStatus : student.gdcsApprovalStatus) 
-      : undefined;
-    const updatedGdcsComment = gdcsApprovalComment !== undefined 
-      ? (canApproveGDCS ? gdcsApprovalComment : student.gdcsApprovalComment) 
-      : undefined;
+    // Fetch existing scores for this student to detect actual changes (avoiding heavy transactions when approving)
+    const existingScores = await (prisma as any).preschoolDevScore.findMany({
+      where: { studentId },
+      select: { id: true, criteriaId: true, result: true, note: true }
+    });
+
+    const existingScoreMap = new Map<string, any>();
+    for (const es of existingScores) {
+      existingScoreMap.set(es.criteriaId, es);
+    }
+
+    const validScores = scores.filter((s: any) => s.criteriaId && s.result);
+    const changedScores: any[] = [];
+
+    for (const s of validScores) {
+      const existing = existingScoreMap.get(s.criteriaId);
+      const newNote = s.note || null;
+      if (!existing) {
+        changedScores.push({ ...s, isNew: true });
+      } else if (existing.result !== s.result || (existing.note || null) !== newNote) {
+        changedScores.push({ ...s, id: existing.id, isNew: false });
+      }
+    }
+
+    // Check lock only if someone is attempting to modify scores and is not an approver (or period/batch locked for evaluation entry)
+    const isPeriodLocked = student.period?.status !== "ACTIVE";
+    const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
+    if (changedScores.length > 0 && !isApprover && (isPeriodLocked || isBatchLocked)) {
+      return NextResponse.json({ error: "Hạng mục khảo sát mầm non (Kỳ/Đợt) đã bị Khóa. Không thể sửa điểm!" }, { status: 403 });
+    }
+
+    // Execute only changed scores in parallel (ultra-fast, avoid transaction timeout)
+    if (changedScores.length > 0) {
+      await Promise.all(
+        changedScores.map((s) => {
+          if (s.isNew) {
+            return (prisma as any).preschoolDevScore.create({
+              data: {
+                studentId,
+                criteriaId: s.criteriaId,
+                result: s.result,
+                note: s.note || null,
+                assessorId: s.assessorId || null
+              }
+            });
+          } else {
+            return (prisma as any).preschoolDevScore.update({
+              where: { id: s.id },
+              data: {
+                result: s.result,
+                note: s.note || null,
+                assessorId: s.assessorId || null
+              }
+            });
+          }
+        })
+      );
+    }
+
+    // Determine user full name for logging approval
+    let approverName = currentUser?.fullName || currentUser?.name;
+    if (!approverName && userId) {
+      try {
+        const u = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { fullName: true }
+        });
+        if (u?.fullName) approverName = u.fullName;
+      } catch {}
+    }
+    approverName = approverName || currentUser?.email || "Người duyệt";
+
+    // Determine updated BGH status and comment safely (never overwrite if not allowed)
+    let updatedBghStatus = student.bghApprovalStatus;
+    let updatedBghComment = student.bghApprovalComment;
+    let finalBghUser = student.bghApprovalUser;
+    let finalBghDate = student.bghApprovalDate;
+
+    if (canApproveBGH && bghApprovalStatus !== undefined) {
+      updatedBghStatus = bghApprovalStatus || null;
+      updatedBghComment = bghApprovalComment !== undefined ? bghApprovalComment : student.bghApprovalComment;
+      finalBghUser = bghApprovalStatus ? approverName : null;
+      finalBghDate = bghApprovalStatus ? new Date() : null;
+    }
+
+    // Determine updated GDCS status and comment safely (never overwrite if not allowed)
+    let updatedGdcsStatus = student.gdcsApprovalStatus;
+    let updatedGdcsComment = student.gdcsApprovalComment;
+    let finalGdcsUser = student.gdcsApprovalUser;
+    let finalGdcsDate = student.gdcsApprovalDate;
+
+    if (canApproveGDCS && gdcsApprovalStatus !== undefined) {
+      updatedGdcsStatus = gdcsApprovalStatus || null;
+      updatedGdcsComment = gdcsApprovalComment !== undefined ? gdcsApprovalComment : student.gdcsApprovalComment;
+      finalGdcsUser = gdcsApprovalStatus ? approverName : null;
+      finalGdcsDate = gdcsApprovalStatus ? new Date() : null;
+    }
 
     // Recalculate final admissionResult
-    const finalBgh = updatedBghStatus !== undefined ? updatedBghStatus : student.bghApprovalStatus;
-    const finalGdcs = updatedGdcsStatus !== undefined ? updatedGdcsStatus : student.gdcsApprovalStatus;
-
-    const finalBghUser = updatedBghStatus !== undefined 
-      ? (canApproveBGH ? (updatedBghStatus ? (currentUser?.name || currentUser?.email || "BGH") : null) : student.bghApprovalUser) 
-      : undefined;
-    const finalBghDate = updatedBghStatus !== undefined 
-      ? (canApproveBGH ? (updatedBghStatus ? new Date() : null) : student.bghApprovalDate) 
-      : undefined;
-
-    const finalGdcsUser = updatedGdcsStatus !== undefined 
-      ? (canApproveGDCS ? (updatedGdcsStatus ? (currentUser?.name || currentUser?.email || "GĐCS") : null) : student.gdcsApprovalUser) 
-      : undefined;
-    const finalGdcsDate = updatedGdcsStatus !== undefined 
-      ? (canApproveGDCS ? (updatedGdcsStatus ? new Date() : null) : student.gdcsApprovalDate) 
-      : undefined;
+    const finalBgh = updatedBghStatus || "";
+    const finalGdcs = updatedGdcsStatus || "";
+    const isApproved = (s: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
 
     let finalAdmissionResult = undefined;
-    const hasBghOrGdcsStatus = (finalBgh !== undefined && finalBgh !== null && finalBgh !== "") || 
-                               (finalGdcs !== undefined && finalGdcs !== null && finalGdcs !== "");
+    const hasBghOrGdcsStatus = Boolean(finalBgh || finalGdcs);
 
     if (hasBghOrGdcsStatus) {
-      const bgh = finalBgh || "";
-      const gdcs = finalGdcs || "";
-      const isApproved = (s: string) => s === "DAT" || s === "DAT_MIEN_HOC_THU" || s === "DAT_HOC_THU";
-
-      if (isApproved(bgh) && isApproved(gdcs)) {
-        if (bgh === "DAT_MIEN_HOC_THU" || gdcs === "DAT_MIEN_HOC_THU" || bgh === "DAT" || gdcs === "DAT") {
+      if (isApproved(finalBgh) && isApproved(finalGdcs)) {
+        if (finalBgh === "DAT_MIEN_HOC_THU" || finalGdcs === "DAT_MIEN_HOC_THU" || finalBgh === "DAT" || finalGdcs === "DAT") {
           finalAdmissionResult = "Đạt - Miễn Học Thử";
-        } else if (bgh === "DAT_HOC_THU" || gdcs === "DAT_HOC_THU") {
+        } else if (finalBgh === "DAT_HOC_THU" || finalGdcs === "DAT_HOC_THU") {
           finalAdmissionResult = "Đạt - Học Thử";
         } else {
           finalAdmissionResult = "Đạt";
         }
-      } else if (bgh === "KHONG_DAT" || gdcs === "KHONG_DAT") {
+      } else if (finalBgh === "KHONG_DAT" || finalGdcs === "KHONG_DAT") {
         finalAdmissionResult = "Không đạt";
-      } else if (bgh === "Y_KIEN_KHAC" || gdcs === "Y_KIEN_KHAC") {
+      } else if (finalBgh === "Y_KIEN_KHAC" || finalGdcs === "Y_KIEN_KHAC") {
         finalAdmissionResult = "Ý kiến khác";
       } else {
         finalAdmissionResult = "Chưa duyệt";
@@ -495,13 +537,13 @@ export async function POST(req: NextRequest) {
     } else {
       const finalDevResult = devAssessmentResult !== undefined ? devAssessmentResult : student.devAssessmentResult;
       if (finalDevResult === "DAT") {
-        finalAdmissionResult = "Đạt"
+        finalAdmissionResult = "Đạt";
       } else if (finalDevResult === "KHONG_DAT") {
-        finalAdmissionResult = "Chưa duyệt"
+        finalAdmissionResult = "Chưa duyệt";
       } else if (finalDevResult === "HOC_THU") {
-        finalAdmissionResult = "Học thử"
+        finalAdmissionResult = "Học thử";
       } else {
-        finalAdmissionResult = ""
+        finalAdmissionResult = "";
       }
     }
 
@@ -524,9 +566,10 @@ export async function POST(req: NextRequest) {
         gdcsApprovalDate: finalGdcsDate,
       }
     })
-    return NextResponse.json({ success: true, count: results.length })
+    return NextResponse.json({ success: true, count: changedScores.length })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    console.error("Preschool Dev Scores POST error:", e);
+    return NextResponse.json({ error: e.message || "Đã xảy ra lỗi khi lưu kết quả đánh giá." }, { status: 500 })
   }
 }
 
