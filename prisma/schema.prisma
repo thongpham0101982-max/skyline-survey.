@@ -660,15 +660,16 @@ model WeeklyReport {
 }
 
 model WeeklyReportItem {
-  id               String       @id @default(cuid())
-  reportId         String
-  mainTask         String
-  workContent      String
-  progress         String       @default("NOT_STARTED")
-  proposedSolution String?
-  managerNote      String?
-  createdAt        DateTime     @default(now())
-  report           WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  id                 String       @id @default(cuid())
+  reportId           String
+  mainTask           String
+  workContent        String
+  expectedCompletion String?
+  progress           String       @default("NOT_STARTED")
+  proposedSolution   String?
+  managerNote        String?
+  createdAt          DateTime     @default(now())
+  report             WeeklyReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
 
   @@index([reportId])
 }

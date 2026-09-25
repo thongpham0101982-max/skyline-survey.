@@ -89,7 +89,7 @@ export async function getAllWeeklyReports(weekNumber: number, month: number, yea
 
 export async function saveWeeklyReport(data: {
   weekNumber: number; month: number; year: number; academicYearId?: string; targetUserId?: string;
-  items: { id?: string; mainTask: string; workContent: string; progress: string; proposedSolution?: string }[]
+  items: { id?: string; mainTask: string; workContent: string; expectedCompletion?: string; progress: string; proposedSolution?: string }[]
 }) {
   try {
     const session = await auth()
@@ -127,6 +127,7 @@ export async function saveWeeklyReport(data: {
               create: data.items.map(item => ({
                 mainTask: item.mainTask,
                 workContent: item.workContent,
+                expectedCompletion: item.expectedCompletion || null,
                 progress: item.progress,
                 proposedSolution: item.proposedSolution || ""
               }))
@@ -148,6 +149,7 @@ export async function saveWeeklyReport(data: {
             create: data.items.map(item => ({
               mainTask: item.mainTask,
               workContent: item.workContent,
+              expectedCompletion: item.expectedCompletion || null,
               progress: item.progress,
               proposedSolution: item.proposedSolution || ""
             }))

@@ -43,7 +43,24 @@ const PROGRESS = [
   { value: "NOT_COMPLETED", label: "Chưa hoàn thành", color: "bg-amber-100 text-amber-700 border-amber-200", barColor: "#f59e0b" },
 ]
 
-interface ReportItem { id?: string; mainTask: string; workContent: string; progress: string; proposedSolution: string; managerNote?: string }
+interface ReportItem { 
+  id?: string; 
+  mainTask: string; 
+  workContent: string; 
+  expectedCompletion?: string; 
+  progress: string; 
+  proposedSolution: string; 
+  managerNote?: string 
+}
+
+function formatExpectedDate(dateStr?: string) {
+  if (!dateStr) return "-"
+  if (dateStr.includes("-")) {
+    const parts = dateStr.split("-")
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`
+  }
+  return dateStr
+}
 
 export function WeeklyReportClient({ 
   currentRole, 
@@ -358,6 +375,7 @@ export function WeeklyReportClient({
         id: i.id, 
         mainTask: i.mainTask, 
         workContent: i.workContent, 
+        expectedCompletion: i.expectedCompletion || "",
         progress: i.progress, 
         proposedSolution: i.proposedSolution || "", 
         managerNote: i.managerNote || "" 
@@ -367,9 +385,9 @@ export function WeeklyReportClient({
       setManagerComment(res.report.managerComment || "")
     } else { 
       setItems([
-        { mainTask: "", workContent: "", progress: "NOT_STARTED", proposedSolution: "" },
-        { mainTask: "", workContent: "", progress: "NOT_STARTED", proposedSolution: "" },
-        { mainTask: "", workContent: "", progress: "NOT_STARTED", proposedSolution: "" }
+        { mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" },
+        { mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" },
+        { mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" }
       ])
       setReportId("")
       setReportStatus("")
@@ -555,7 +573,7 @@ export function WeeklyReportClient({
 
   const addRows = (count: number = 1) => {
     const newRows: ReportItem[] = Array.from({ length: count }, () => ({
-      mainTask: "", workContent: "", progress: "NOT_STARTED", proposedSolution: ""
+      mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: ""
     }))
     setItems(prev => [...prev, ...newRows])
   }
@@ -569,9 +587,20 @@ export function WeeklyReportClient({
   }
 
   const handleSave = async () => {
-    const activeItems = items.filter(i => i.mainTask.trim() || i.workContent.trim())
+    const activeItems = items.filter(i => i.mainTask.trim() || i.workContent.trim() || i.expectedCompletion?.trim())
     if (activeItems.length === 0) return alert("Vui lòng nhập ít nhất 1 công việc!")
     
+    // Kiểm tra tính bắt buộc cho các công việc
+    for (let i = 0; i < activeItems.length; i++) {
+      const it = activeItems[i]
+      if (!it.mainTask.trim()) {
+        return alert(`⚠️ Vui lòng nhập "Task chính" cho công việc ở dòng ${i + 1}!`)
+      }
+      if (!it.expectedCompletion || !it.expectedCompletion.trim()) {
+        return alert(`⚠️ Bắt buộc: Vui lòng chọn "Mốc dự kiến hoàn thành" cho Task chính: "${it.mainTask}"!`)
+      }
+    }
+
     setSaving(true)
     const res = await saveWeeklyReport({ 
       weekNumber: selectedWeek, 
@@ -582,6 +611,7 @@ export function WeeklyReportClient({
       items: activeItems.map(i => ({ 
         mainTask: i.mainTask, 
         workContent: i.workContent, 
+        expectedCompletion: i.expectedCompletion,
         progress: i.progress, 
         proposedSolution: i.proposedSolution 
       })) 
@@ -609,6 +639,7 @@ export function WeeklyReportClient({
           "Chức danh / Tổ": report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role),
           "Task Chính": item.mainTask,
           "Nội Dung Công Việc": item.workContent,
+          "Mốc Dự Kiến Hoàn Thành": formatExpectedDate(item.expectedCompletion),
           "Tiến Độ": PROGRESS.find(p => p.value === item.progress)?.label || item.progress,
           "Đề Xuất Giải Pháp": item.proposedSolution || "",
           "Nhận Xét Của QL": item.managerNote || ""
@@ -894,10 +925,11 @@ export function WeeklyReportClient({
                       <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
                         <th className="p-3 text-center w-10">STT</th>
                         <th className="p-3 min-w-[140px]">Task chính</th>
-                        <th className="p-3 min-w-[240px]">Nội dung công việc</th>
+                        <th className="p-3 min-w-[220px]">Nội dung công việc</th>
+                        <th className="p-3 min-w-[125px]">Dự kiến HT</th>
                         <th className="p-3 w-28">Tiến độ</th>
-                        <th className="p-3 min-w-[180px]">Đề xuất giải pháp</th>
-                        <th className="p-3 min-w-[180px]">Nhận xét QL</th>
+                        <th className="p-3 min-w-[160px]">Đề xuất giải pháp</th>
+                        <th className="p-3 min-w-[160px]">Nhận xét QL</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y font-medium">
@@ -908,6 +940,9 @@ export function WeeklyReportClient({
                             <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
                             <td className="p-3 font-bold text-indigo-900">{item.mainTask}</td>
                             <td className="p-3 text-slate-700 leading-relaxed break-words">{item.workContent}</td>
+                            <td className="p-3 text-slate-700 font-semibold whitespace-nowrap">
+                              {formatExpectedDate(item.expectedCompletion)}
+                            </td>
                             <td className="p-3">
                               <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
                                 {prog.label}
@@ -1737,16 +1772,17 @@ export function WeeklyReportClient({
                         <th className="p-3 text-center w-12">STT</th>
                         <th className="p-3 min-w-[150px]">Nhân sự / Tổ</th>
                         <th className="p-3 min-w-[140px]">Task chính</th>
-                        <th className="p-3 min-w-[240px]">Nội dung công việc</th>
+                        <th className="p-3 min-w-[220px]">Nội dung công việc</th>
+                        <th className="p-3 min-w-[125px]">Dự kiến HT</th>
                         <th className="p-3 w-28">Tiến độ</th>
-                        <th className="p-3 min-w-[180px]">Đề xuất giải pháp</th>
-                        <th className="p-3 min-w-[180px]">Nhận xét QL</th>
+                        <th className="p-3 min-w-[160px]">Đề xuất giải pháp</th>
+                        <th className="p-3 min-w-[160px]">Nhận xét QL</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y font-medium">
                       {consolidatedData.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-8 text-center text-slate-400">
+                          <td colSpan={8} className="p-8 text-center text-slate-400">
                             Chưa có báo cáo nào được nộp cho tuần này theo bộ lọc hiện tại!
                           </td>
                         </tr>
@@ -1765,6 +1801,9 @@ export function WeeklyReportClient({
                                 </td>
                                 <td className="p-3 font-bold text-indigo-900">{item.mainTask}</td>
                                 <td className="p-3 text-slate-700 leading-relaxed">{item.workContent}</td>
+                                <td className="p-3 text-slate-700 font-semibold whitespace-nowrap">
+                                  {formatExpectedDate(item.expectedCompletion)}
+                                </td>
                                 <td className="p-3">
                                   <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
                                     {prog.label}
@@ -1819,8 +1858,13 @@ export function WeeklyReportClient({
                   <thead>
                     <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
                       <th className="p-3 text-center w-10">STT</th>
-                      <th className="p-3 min-w-[160px]">Task chính</th>
-                      <th className="p-3 min-w-[260px]">Nội dung công việc chi tiết</th>
+                      <th className="p-3 min-w-[160px]">Task chính <span className="text-red-500 font-bold">*</span></th>
+                      <th className="p-3 min-w-[240px]">Nội dung công việc chi tiết</th>
+                      <th className="p-3 min-w-[160px]">
+                        <span className="flex items-center gap-1 text-slate-700">
+                          Mốc dự kiến HT <span className="text-red-500 font-bold">*</span>
+                        </span>
+                      </th>
                       <th className="p-3 w-36">Tiến độ</th>
                       <th className="p-3 min-w-[180px]">Đề xuất giải pháp (nếu có)</th>
                       <th className="p-3 text-center w-16">Thao tác</th>
@@ -1846,6 +1890,19 @@ export function WeeklyReportClient({
                             onChange={e => updateItem(idx, "workContent", e.target.value)}
                             placeholder="Mô tả công việc thực hiện trong tuần..."
                             className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-700"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <input
+                            type="date"
+                            value={item.expectedCompletion || ""}
+                            onChange={e => updateItem(idx, "expectedCompletion", e.target.value)}
+                            className={`w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-semibold text-slate-700 transition-all ${
+                              !item.expectedCompletion && (item.mainTask || item.workContent)
+                                ? "border-amber-400 bg-amber-50/50 focus:border-amber-500"
+                                : "border-slate-200 bg-white"
+                            }`}
+                            title="Mốc dự kiến hoàn thành (bắt buộc)"
                           />
                         </td>
                         <td className="p-3">

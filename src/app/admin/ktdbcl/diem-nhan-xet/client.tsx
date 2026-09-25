@@ -35,11 +35,13 @@ import {
   CheckSquare,
   Square,
   Lock,
-  Unlock
+  Unlock,
+  MessageSquare
 } from "lucide-react"
 import { GradeAnalyticsTab } from "./analytics-tab"
 import { GradeProgressTab } from "./progress-tab"
 import { GradeUnlockRequestsTab } from "./requests-tab"
+import { FeedbackTrackingTab } from "./feedback-tracking-tab"
 import { ClipboardCheck } from "lucide-react"
 import { isGradeMatching } from "./grade-utils"
 import {
@@ -104,7 +106,7 @@ const GRADES = [
 export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, subjects, campuses = [] }: Props) {
   // Common filters
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
-  const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics" | "progress" | "requests">("config")
+  const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics" | "progress" | "requests" | "feedback">("config")
   const [pendingUnlockCount, setPendingUnlockCount] = useState(0)
 
   const fetchPendingUnlockCount = async () => {
@@ -1172,6 +1174,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 {pendingUnlockCount}
               </span>
             )}
+          </button>
+          <button
+            onClick={() => setActiveTab("feedback")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
+              activeTab === "feedback"
+                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
+                : "text-white/80 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>6. Theo dõi Phản hồi PHHS & Trao đổi GV</span>
           </button>
         </div>
       </div>
@@ -2689,6 +2702,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
             setActiveTab("grades")
           }}
           onRequestsUpdated={fetchPendingUnlockCount}
+        />
+      )}
+
+      {/* TAB 6: THEO DÕI PHẢN HỒI PHHS & NỘI DUNG TRAO ĐỔI GVCN - GVBM */}
+      {activeTab === "feedback" && (
+        <FeedbackTrackingTab
+          academicYears={academicYears}
+          selectedYearId={selectedYearId}
+          campuses={campuses}
+          classes={classes}
+          subjects={subjects}
         />
       )}
     
