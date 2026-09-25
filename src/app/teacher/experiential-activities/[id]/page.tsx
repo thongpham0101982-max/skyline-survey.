@@ -456,7 +456,15 @@ export default function ActivityResultInput() {
                 <span className="text-[11px] font-black text-[#003B3A] bg-[#00A19A]/10 px-2.5 py-0.5 rounded-lg border border-[#00A19A]/20">
                   {activity?.code || 'HDTN'}
                 </span>
-                <span className="text-xs text-slate-400 font-bold hidden sm:inline"></span>
+                {isEventActivity ? (
+                  <span className="text-[11px] font-black text-purple-800 bg-purple-100 px-2.5 py-0.5 rounded-lg border border-purple-200">
+                    Hoạt động sự kiện (Chỉ tính vai trò HS & Điểm danh)
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-black text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">
+                    Trải nghiệm / Dự án (Đánh giá Rubric)
+                  </span>
+                )}
                 <span className="text-xs font-bold text-slate-500 hidden sm:inline">{activity?.activityTypeName}</span>
               </div>
               <h1 className="text-sm sm:text-base font-black text-slate-900 truncate">
@@ -734,8 +742,12 @@ export default function ActivityResultInput() {
                   ))}
 
                   {/* SUMMARY & REMARK */}
-                  <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">Điểm %</th>
-                  <th className="py-3.5 px-3 min-w-[130px] text-center">Xếp loại</th>
+                  {!isEventActivity && (
+                    <>
+                      <th className="py-3.5 px-3 min-w-[100px] text-center border-l border-slate-200">Điểm %</th>
+                      <th className="py-3.5 px-3 min-w-[130px] text-center">Xếp loại</th>
+                    </>
+                  )}
                   <th className="py-3.5 px-4 min-w-[220px]">Nhận xét & Phiếu cá nhân</th>
                 </tr>
               </thead>
@@ -743,7 +755,7 @@ export default function ActivityResultInput() {
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={7 + (activity?.criteria?.length || 0)} className="py-12 text-center text-slate-400 font-bold">
+                    <td colSpan={(isEventActivity ? 5 : 7) + (activity?.criteria?.length || 0)} className="py-12 text-center text-slate-400 font-bold">
                       Không tìm thấy học sinh nào phù hợp
                     </td>
                   </tr>
@@ -794,14 +806,23 @@ export default function ActivityResultInput() {
                         {/* ROLES */}
                         <td className="py-3 px-3 whitespace-nowrap">
                           <select
-                            value={st.roles?.[0] || 'THANH_VIEN'}
+                            value={st.roles?.[0] || (isEventActivity ? (eventRolesList[4] || eventRolesList[0] || 'Thành viên tham gia') : 'THANH_VIEN')}
                             disabled={isLocked || isAbsent}
                             onChange={e => updateStudent(st.id, { roles: [e.target.value] })}
-                            className="py-1 px-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none"
+                            className={`py-1 px-2 border rounded-lg text-xs font-bold outline-none ${
+                              isEventActivity
+                                ? 'bg-purple-50 border-purple-200 text-purple-900 font-extrabold'
+                                : 'bg-slate-50 border-slate-200 text-slate-700'
+                            }`}
                           >
-                            {STUDENT_ROLES.map(role => (
-                              <option key={role.id} value={role.name}>{role.name}</option>
-                            ))}
+                            {isEventActivity
+                              ? eventRolesList.map((roleName: string) => (
+                                  <option key={roleName} value={roleName}>{roleName}</option>
+                                ))
+                              : STUDENT_ROLES.map(role => (
+                                  <option key={role.id} value={role.name}>{role.name}</option>
+                                ))
+                            }
                           </select>
                         </td>
 
@@ -849,21 +870,23 @@ export default function ActivityResultInput() {
                           );
                         })}
 
-                        {/* CALCULATED PERCENT */}
-                        <td className="py-3 px-3 text-center border-l border-slate-200 whitespace-nowrap">
-                          {st.calculatedPercent !== null ? (
-                            <span className="font-black text-xs text-slate-900">{st.calculatedPercent}%</span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-
-                        {/* FINAL RATING BADGE */}
-                        <td className="py-3 px-3 text-center whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${ratingBadge.containerCls}`}>
-                            <span>{ratingBadge.label}</span>
-                          </span>
-                        </td>
+                        {/* CALCULATED PERCENT & FINAL RATING - Chỉ hiển thị cho Trải nghiệm / Dự án */}
+                        {!isEventActivity && (
+                          <>
+                            <td className="py-3 px-3 text-center border-l border-slate-200 whitespace-nowrap">
+                              {st.calculatedPercent !== null ? (
+                                <span className="font-black text-xs text-slate-900">{st.calculatedPercent}%</span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-3 text-center whitespace-nowrap">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black border ${ratingBadge.containerCls}`}>
+                                <span>{ratingBadge.label}</span>
+                              </span>
+                            </td>
+                          </>
+                        )}
 
                         {/* REMARK INPUT */}
                         <td className="py-3 px-4">
