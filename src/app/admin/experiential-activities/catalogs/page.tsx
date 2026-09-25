@@ -3,7 +3,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Plus, Search, Download, UploadCloud, Layers, Sparkles, 
   Building2, BookOpen, Calendar, Clock, MapPin, Edit3, Trash2, 
-  Send, CheckCircle2, AlertCircle, RefreshCw, Filter, Award, Tag
+  Send, CheckCircle2, AlertCircle, RefreshCw, Filter, Award, Tag,
+  Ban, RotateCcw, CheckSquare, Square, UserCheck, Users
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ExperientialTabs } from '@/components/ExperientialTabs';
@@ -13,7 +14,6 @@ import { CatalogImportModal } from './components/CatalogImportModal';
 import { CatalogAllocateModal } from './components/CatalogAllocateModal';
 import { CatalogAssignCTHSModal } from './components/CatalogAssignCTHSModal';
 import { CatalogBulkDeleteModal } from './components/CatalogBulkDeleteModal';
-import { CheckSquare, Square, UserCheck, Users } from 'lucide-react';
 
 export default function ActivityCatalogsPage() {
   const [academicYears, setAcademicYears] = useState<any[]>([]);
@@ -24,6 +24,7 @@ export default function ActivityCatalogsPage() {
   const [search, setSearch] = useState('');
   const [semesterFilter, setSemesterFilter] = useState<'ALL' | '1' | '2'>('ALL');
   const [gradeFilter, setGradeFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'CANCELLED'>('ALL');
 
   // Bulk actions state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -56,6 +57,7 @@ export default function ActivityCatalogsPage() {
     if (selectedYearId) url += `&academicYearId=${selectedYearId}`;
     if (search.trim()) url += `&q=${encodeURIComponent(search.trim())}`;
     if (gradeFilter !== 'ALL') url += `&grade=${encodeURIComponent(gradeFilter)}`;
+    if (statusFilter !== 'ALL') url += `&status=${statusFilter}`;
 
     fetch(url)
       .then(r => r.json())
@@ -71,7 +73,7 @@ export default function ActivityCatalogsPage() {
         setCatalogs([]);
         setLoading(false);
       });
-  }, [activeSheetCode, selectedYearId, search, semesterFilter, gradeFilter]);
+  }, [activeSheetCode, selectedYearId, search, semesterFilter, gradeFilter, statusFilter]);
 
   useEffect(() => {
     loadCatalogs();
@@ -80,7 +82,7 @@ export default function ActivityCatalogsPage() {
   // Clear selected when sheet or filters change
   useEffect(() => {
     setSelectedIds([]);
-  }, [activeSheetCode, selectedYearId, semesterFilter, gradeFilter]);
+  }, [activeSheetCode, selectedYearId, semesterFilter, gradeFilter, statusFilter]);
 
   const handleToggleSelectAll = () => {
     if (selectedIds.length === catalogs.length && catalogs.length > 0) {
@@ -99,6 +101,55 @@ export default function ActivityCatalogsPage() {
   };
 
   const selectedActivities = catalogs.filter(c => selectedIds.includes(c.id));
+
+  // Chuyển trạng thái hàng loạt (HỦY hoặc KÍCH HOẠT LẠI)
+  const handleBulkUpdateStatus = async (targetStatus: 'ACTIVE' | 'CANCELLED') => {
+    if (selectedIds.length === 0) return;
+    const actionLabel = targetStatus === 'CANCELLED' ? 'HỦY' : 'KÍCH HOẠT LẠI';
+    if (!confirm(`Bạn có chắc chắn muốn chuyển ${selectedIds.length} hoạt động sang trạng thái "${actionLabel}"?`)) return;
+
+    try {
+      const res = await fetch('/api/admin/experiential-activities/catalogs', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'BULK_UPDATE_STATUS',
+          ids: selectedIds,
+          status: targetStatus
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi khi cập nhật trạng thái');
+      toast.success(data.message || `Đã chuyển ${selectedIds.length} hoạt động sang trạng thái ${actionLabel}`);
+      setSelectedIds([]);
+      loadCatalogs();
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi hệ thống');
+    }
+  };
+
+  // Đổi trạng thái 1 hoạt động
+  const handleToggleSingleStatus = async (item: ActivityCatalogItem) => {
+    const nextStatus = item.status === 'CANCELLED' ? 'ACTIVE' : 'CANCELLED';
+    const actionLabel = nextStatus === 'CANCELLED' ? 'HỦY' : 'KÍCH HOẠT LẠI';
+    if (!confirm(`Bạn có chắc chắn muốn chuyển hoạt động "${item.name}" sang trạng thái "${actionLabel}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/admin/experiential-activities/catalogs/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: nextStatus
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi cập nhật');
+      toast.success(`Đã chuyển hoạt động sang trạng thái ${actionLabel}`);
+      loadCatalogs();
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi hệ thống');
+    }
+  };
 
   const handleDelete = async (item: ActivityCatalogItem) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa hoạt động "${item.name}" khỏi danh mục?`)) return;
@@ -243,6 +294,34 @@ export default function ActivityCatalogsPage() {
               Học kỳ 2
             </button>
           </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={() => setStatusFilter('ALL')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                statusFilter === 'ALL' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Tất cả
+            </button>
+            <button
+              onClick={() => setStatusFilter('ACTIVE')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                statusFilter === 'ACTIVE' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Đang áp dụng
+            </button>
+            <button
+              onClick={() => setStatusFilter('CANCELLED')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                statusFilter === 'CANCELLED' ? 'bg-white text-rose-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Đã hủy
+            </button>
+          </div>
         </div>
 
         <button
@@ -322,23 +401,43 @@ export default function ActivityCatalogsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsAssignCTHSOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-teal-950 bg-gradient-to-r from-teal-300 to-emerald-300 hover:brightness-105 shadow-sm shadow-teal-400/20 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-teal-950 bg-gradient-to-r from-teal-300 to-emerald-300 hover:brightness-105 shadow-sm shadow-teal-400/20 transition-all cursor-pointer"
               title="Gán giáo viên/cán bộ Tổ CTHS phụ trách cho các hoạt động đã chọn"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Gán GV Tổ CTHS ({selectedIds.length})</span>
+              <span>Gán GV CTHS ({selectedIds.length})</span>
+            </button>
+
+            {/* Nút HỦY HÀNG LOẠT */}
+            <button
+              onClick={() => handleBulkUpdateStatus('CANCELLED')}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-amber-950 bg-gradient-to-r from-amber-300 to-amber-400 hover:brightness-105 shadow-sm shadow-amber-500/20 transition-all cursor-pointer"
+              title="Chuyển các hoạt động đã chọn sang trạng thái HỦY (bảo toàn lịch sử đánh giá)"
+            >
+              <Ban className="w-4 h-4" />
+              <span>Hủy hoạt động ({selectedIds.length})</span>
+            </button>
+
+            {/* Nút KÍCH HOẠT LẠI HÀNG LOẠT */}
+            <button
+              onClick={() => handleBulkUpdateStatus('ACTIVE')}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-950 bg-emerald-300 hover:bg-emerald-200 shadow-sm transition-all cursor-pointer"
+              title="Kích hoạt lại các hoạt động đã hủy"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Kích hoạt lại ({selectedIds.length})</span>
             </button>
 
             <button
               onClick={() => setIsBulkDeleteOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/20 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/20 transition-all cursor-pointer"
               title="Xóa vĩnh viễn các hoạt động đã chọn khỏi danh mục"
             >
               <Trash2 className="w-4 h-4" />
-              <span>Xóa hoạt động ({selectedIds.length})</span>
+              <span>Xóa ({selectedIds.length})</span>
             </button>
 
             <button
@@ -435,7 +534,20 @@ export default function ActivityCatalogsPage() {
                         {Array.isArray(meta.grades) ? meta.grades.join(', ') : meta.grades || '—'}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-extrabold text-[#003B3A] text-[13px]">{act.name}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`font-extrabold text-[13px] ${act.status === 'CANCELLED' ? 'text-slate-400 line-through' : 'text-[#003B3A]'}`}>
+                            {act.name}
+                          </span>
+                          {act.status === 'CANCELLED' ? (
+                            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-700 border border-rose-200">
+                              Đã hủy
+                            </span>
+                          ) : (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                              Áp dụng
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-slate-400 font-mono mt-0.5">{act.code}</div>
                         {meta.deliverables && (
                           <div className="mt-1 flex items-center gap-1 text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60 inline-flex">
@@ -533,6 +645,7 @@ export default function ActivityCatalogsPage() {
                       {/* Cột: Thao tác */}
                       <td className="py-3 px-3 text-center sticky right-0 bg-white shadow-l">
                         <div className="flex items-center justify-center gap-1">
+                          {/* Nút Đẩy cơ sở */}
                           <button
                             onClick={() => {
                               setAllocatingItem(act);
@@ -543,16 +656,39 @@ export default function ActivityCatalogsPage() {
                           >
                             <Send className="w-4 h-4" />
                           </button>
+
+                          {/* Nút Chuyển HỦY / KHÔI PHỤC */}
+                          {act.status === 'CANCELLED' ? (
+                            <button
+                              onClick={() => handleToggleSingleStatus(act)}
+                              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                              title="Khôi phục / Kích hoạt lại hoạt động này"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleToggleSingleStatus(act)}
+                              className="p-1.5 rounded-lg text-amber-600 hover:bg-amber-50 transition-colors"
+                              title="Chuyển hoạt động sang trạng thái HỦY (bảo toàn lịch sử đánh giá)"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Nút Chỉnh sửa */}
                           <button
                             onClick={() => {
                               setEditingItem(act);
                               setIsAddEditOpen(true);
                             }}
                             className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
-                            title="Chỉnh sửa"
+                            title="Chỉnh sửa thông tin"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
+
+                          {/* Nút Xóa */}
                           <button
                             onClick={() => handleDelete(act)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"

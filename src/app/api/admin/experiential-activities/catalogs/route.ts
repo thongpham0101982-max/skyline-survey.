@@ -127,6 +127,10 @@ export async function GET(req: NextRequest) {
     if (grade && grade !== 'ALL') {
       filtered = filtered.filter(item => item.meta.grades && item.meta.grades.includes(grade));
     }
+    const statusParam = searchParams.get('status');
+    if (statusParam && statusParam !== 'ALL') {
+      filtered = filtered.filter(item => item.status === statusParam);
+    }
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       filtered = filtered.filter(item => 
@@ -135,7 +139,8 @@ export async function GET(req: NextRequest) {
         (item.meta.themeName && item.meta.themeName.toLowerCase().includes(q)) ||
         (item.meta.primarySubjectName && item.meta.primarySubjectName.toLowerCase().includes(q)) ||
         (item.meta.integratedSubjects && item.meta.integratedSubjects.toLowerCase().includes(q)) ||
-        (item.meta.expectedLocation && item.meta.expectedLocation.toLowerCase().includes(q))
+        (item.meta.expectedLocation && item.meta.expectedLocation.toLowerCase().includes(q)) ||
+        (item.meta.cthsTeacherName && item.meta.cthsTeacherName.toLowerCase().includes(q))
       );
     }
 
@@ -199,7 +204,7 @@ export async function POST(req: NextRequest) {
         typeId: fallbackType.id,
         level: meta.educationLevel || 'TIEU_HOC',
         description: JSON.stringify(meta),
-        status: 'ACTIVE'
+        status: body.status || 'ACTIVE'
       }
     });
 
@@ -227,12 +232,31 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, ids = [], cthsTeacherId, cthsTeacherCode, cthsTeacherName, cthsTeacherEmail } = body;
+    const { action, ids = [], cthsTeacherId, cthsTeacherCode, cthsTeacherName, cthsTeacherEmail, status } = body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: 'Vui lòng chọn ít nhất một hoạt động' }, { status: 400 });
     }
 
+    // Action: Chuyển trạng thái hàng loạt (HỦY / KÍCH HOẠT)
+    if (action === 'BULK_UPDATE_STATUS') {
+      const targetStatus = (status === 'CANCELLED' || status === 'HUY') ? 'CANCELLED' : 'ACTIVE';
+      await prisma.activityCatalog.updateMany({
+        where: { id: { in: ids } },
+        data: { status: targetStatus }
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: targetStatus === 'CANCELLED' 
+          ? `Đã chuyển ${ids.length} hoạt động sang trạng thái HỦY` 
+          : `Đã kích hoạt lại ${ids.length} hoạt động thành công`,
+        count: ids.length,
+        status: targetStatus
+      });
+    }
+
+    // Action: Gán GV Tổ CTHS hàng loạt
     if (action === 'BULK_ASSIGN_CTHS') {
       const catalogs = await prisma.activityCatalog.findMany({
         where: { id: { in: ids } }
@@ -287,10 +311,24 @@ export async function DELETE(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { ids = [] } = body;
+    const { ids = [], forceDelete = false, cancelInstead = false } = body;
 
     if (!Array.isArray(ids) || ids.length === 0) {
-      return NextResponse.json({ error: 'Vui lòng chọn ít nhất một hoạt động để xóa' }, { status: 400 });
+      return NextResponse.json({ error: 'Vui lòng chọn ít nhất một hoạt động' }, { status: 400 });
+    }
+
+    // Nếu người dùng chọn phương án "Chuyển sang trạng thái HỦY"
+    if (cancelInstead) {
+      await prisma.activityCatalog.updateMany({
+        where: { id: { in: ids } },
+        data: { status: 'CANCELLED' }
+      });
+      return NextResponse.json({
+        success: true,
+        message: `Đã chuyển ${ids.length} hoạt động sang trạng thái HỦY thành công`,
+        count: ids.length,
+        status: 'CANCELLED'
+      });
     }
 
     const catalogs = await prisma.activityCatalog.findMany({
@@ -311,17 +349,26 @@ export async function DELETE(req: NextRequest) {
 
     // Kiểm tra hoạt động đã có học sinh tham gia đánh giá
     const withParticipants = catalogs.filter(c => c.records.some(r => r.participants.length > 0));
-    if (withParticipants.length > 0) {
+    if (withParticipants.length > 0 && !forceDelete) {
       return NextResponse.json({
-        error: `Không thể xóa vì có ${withParticipants.length} hoạt động (${withParticipants.map(c => `"${c.name}"`).join(', ')}) đã có học sinh tham gia đánh giá.`
+        error: `Không thể xóa vĩnh viễn vì có ${withParticipants.length} hoạt động (${withParticipants.map(c => `"${c.name}"`).join(', ')}) đã có học sinh tham gia đánh giá.`,
+        canCancelInstead: true,
+        withParticipantsCount: withParticipants.length,
+        withParticipantsNames: withParticipants.map(c => c.name)
       }, { status: 400 });
     }
 
-    // Xóa các đợt record rỗng nếu có
-    const recordIdsToDelete = catalogs.flatMap(c => c.records.map(r => r.id));
-    if (recordIdsToDelete.length > 0) {
+    // Xóa triệt để các participants, evidences, records nếu forceDelete = true
+    const recordIds = catalogs.flatMap(c => c.records.map(r => r.id));
+    if (recordIds.length > 0) {
+      await prisma.activityParticipant.deleteMany({
+        where: { recordId: { in: recordIds } }
+      });
+      await prisma.activityEvidence.deleteMany({
+        where: { recordId: { in: recordIds } }
+      });
       await prisma.activityRecord.deleteMany({
-        where: { id: { in: recordIdsToDelete } }
+        where: { id: { in: recordIds } }
       });
     }
 

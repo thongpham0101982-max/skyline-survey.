@@ -65,7 +65,7 @@ export interface ActivityCatalogItem {
   typeId: string;
   themeId?: string | null;
   level?: string | null;
-  status: 'ACTIVE' | 'INACTIVE';
+  status: 'ACTIVE' | 'INACTIVE' | 'CANCELLED';
   createdAt: string;
   updatedAt: string;
   meta: ActivityCatalogMeta;

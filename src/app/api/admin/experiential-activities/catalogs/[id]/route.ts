@@ -112,6 +112,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       data: {
         name: name !== undefined ? name.trim() : existing.name,
         level: updatedMeta.educationLevel || existing.level,
+        status: body.status !== undefined ? body.status : existing.status,
         description: JSON.stringify(updatedMeta)
       }
     });
@@ -122,6 +123,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         id: updated.id,
         code: updated.code,
         name: updated.name,
+        status: updated.status,
         meta: updatedMeta
       }
     });
@@ -140,19 +142,45 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
 
     const { id } = await params;
+    const { searchParams } = new URL(req.url);
+    const cancelInstead = searchParams.get('cancelInstead') === 'true';
+
     const existing = await prisma.activityCatalog.findUnique({
       where: { id },
-      include: { records: { select: { id: true } } }
+      include: {
+        records: {
+          select: {
+            id: true,
+            participants: { select: { id: true } }
+          }
+        }
+      }
     });
 
     if (!existing) {
       return NextResponse.json({ error: 'Không tìm thấy hoạt động' }, { status: 404 });
     }
 
-    if (existing.records && existing.records.length > 0) {
+    if (cancelInstead) {
+      await prisma.activityCatalog.update({
+        where: { id },
+        data: { status: 'CANCELLED' }
+      });
+      return NextResponse.json({ success: true, message: 'Đã chuyển hoạt động sang trạng thái HỦY' });
+    }
+
+    const hasParticipants = existing.records.some(r => r.participants.length > 0);
+    if (hasParticipants) {
       return NextResponse.json({ 
-        error: `Không thể xóa hoạt động này vì đã có ${existing.records.length} đợt triển khai/bản ghi gắn liền. Vui lòng chuyển trạng thái sang ngưng áp dụng.` 
+        error: `Không thể xóa vĩnh viễn vì hoạt động đã có học sinh tham gia đánh giá. Bạn có thể chuyển sang trạng thái "HỦY" để ngưng áp dụng.`,
+        canCancelInstead: true
       }, { status: 400 });
+    }
+
+    // Clean up empty records
+    const recordIds = existing.records.map(r => r.id);
+    if (recordIds.length > 0) {
+      await prisma.activityRecord.deleteMany({ where: { id: { in: recordIds } } });
     }
 
     await prisma.activityCatalog.delete({ where: { id } });
