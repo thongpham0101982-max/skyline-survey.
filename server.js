@@ -12,6 +12,14 @@ const path = require('path');
 const isBuilt = fs.existsSync(path.join(__dirname, '.next', 'BUILD_ID'));
 const isDev = !isBuilt;
 
+process.on('uncaughtException', (err) => {
+  console.error('[Skyline Server] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Skyline Server] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 console.log(`[Skyline Server] Starting in ${isDev ? 'DEVELOPMENT' : 'PRODUCTION'} mode on ${hostname}:${port}...`);
 
 const app = next({ dev: isDev, hostname, port, dir: __dirname });
