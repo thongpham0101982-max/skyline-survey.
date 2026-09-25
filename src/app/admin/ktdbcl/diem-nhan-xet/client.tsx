@@ -42,6 +42,7 @@ import { GradeAnalyticsTab } from "./analytics-tab"
 import { GradeProgressTab } from "./progress-tab"
 import { GradeUnlockRequestsTab } from "./requests-tab"
 import { FeedbackTrackingTab } from "./feedback-tracking-tab"
+import { BulkExportModal } from "./bulk-export-modal"
 import { ClipboardCheck } from "lucide-react"
 import { isGradeMatching } from "./grade-utils"
 import {
@@ -599,6 +600,8 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
   // Modal Nhập nhận xét theo khoảng điểm
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false)
+  // Modal Xuất Excel Đa Sheet theo Kỳ khảo sát
+  const [isBulkExportModalOpen, setIsBulkExportModalOpen] = useState(false)
   const [commentTemplates, setCommentTemplates] = useState({
     good: "Nắm vững kiến thức, phát biểu tích cực, làm bài tốt",
     fair: "Có ý thức học tập, tiếp thu bài tốt, cần rèn luyện thêm bài tập nâng cao",
@@ -2117,11 +2120,22 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
                   <button
                     type="button"
+                    onClick={() => setIsBulkExportModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#005B58] hover:bg-[#004845] text-white rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all"
+                    title="Xuất bảng điểm tất cả các môn theo cơ sở, mỗi môn 1 Sheet"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-300" />
+                    Xuất Excel Kỳ khảo sát (Đa Sheet)
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={handleExportExcel}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all"
+                    title="Xuất bảng điểm cho lớp và môn đang chọn"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    Xuất Excel
+                    Xuất Excel (1 Lớp)
                   </button>
 
                   <button
@@ -2965,7 +2979,20 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           </div>
         </div>
       )}
+      {/* MODAL XUẤT EXCEL KỲ KHẢO SÁT (ĐA SHEET THEO MÔN & CƠ SỞ) */}
+      <BulkExportModal
+        isOpen={isBulkExportModalOpen}
+        onClose={() => setIsBulkExportModalOpen(false)}
+        campuses={campuses}
+        academicYears={academicYears}
+        defaultCampusId={selectedCampusId}
+        defaultPeriod={selectedPeriod}
+        defaultYearId={selectedYearId}
+        subjects={subjects}
+        evalPeriods={EVAL_PERIODS}
+        grades={GRADES}
+      />
 
-</div>
+    </div>
   )
 }
