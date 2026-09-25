@@ -54,7 +54,7 @@ export function BulkExportModal({
   const [selectedGrade, setSelectedGrade] = useState("ALL")
   const [selectedSubjectIds, setSelectedSubjectIds] = useState<string[]>([])
   const [subjectSearch, setSubjectSearch] = useState("")
-  const [onlyPeriodSubjects, setOnlyPeriodSubjects] = useState(false)
+  const [onlyPeriodSubjects, setOnlyPeriodSubjects] = useState(true)
 
   const [includeOverviewSheet, setIncludeOverviewSheet] = useState(true)
   const [includeMasterSummarySheet, setIncludeMasterSummarySheet] = useState(true)
@@ -89,8 +89,15 @@ export function BulkExportModal({
       if (defaultPeriod) setSelectedPeriod(defaultPeriod)
       if (defaultYearId) setSelectedYearId(defaultYearId)
 
-      // Mặc định chọn tất cả các môn của trường
-      setSelectedSubjectIds(subjects.map(s => s.id))
+      // Nếu kỳ này có cấu hình môn riêng (ví dụ 13 môn của KSĐN), mặc định chỉ chọn 13 môn này
+      if (periodSubjectIds.size > 0) {
+        setSelectedSubjectIds(Array.from(periodSubjectIds))
+        setOnlyPeriodSubjects(true)
+      } else {
+        setSelectedSubjectIds(subjects.map(s => s.id))
+        setOnlyPeriodSubjects(false)
+      }
+
       setErrorMessage(null)
       setExportSuccess(false)
       setProgressPercent(0)
@@ -98,6 +105,38 @@ export function BulkExportModal({
       setSubjectSearch("")
     }
   }, [isOpen, defaultCampusId, defaultPeriod, defaultYearId, subjects, campuses])
+
+  // Khi người dùng thay đổi Kỳ hoặc Khối: Cập nhật lại danh sách môn theo kỳ
+  const handlePeriodChange = (newPeriod: string) => {
+    setSelectedPeriod(newPeriod)
+    // Tính toán lại các môn theo kỳ mới
+    const newPeriodIds = new Set<string>()
+    savedConfigs.forEach(c => {
+      const pMatch = c.evaluationPeriod === newPeriod || c.evaluationPeriod === "ALL"
+      const gMatch = selectedGrade === "ALL" || isGradeMatching(c.grade, selectedGrade)
+      if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
+        newPeriodIds.add(c.subjectId)
+      }
+    })
+    if (onlyPeriodSubjects && newPeriodIds.size > 0) {
+      setSelectedSubjectIds(Array.from(newPeriodIds))
+    }
+  }
+
+  const handleGradeChange = (newGrade: string) => {
+    setSelectedGrade(newGrade)
+    const newPeriodIds = new Set<string>()
+    savedConfigs.forEach(c => {
+      const pMatch = c.evaluationPeriod === selectedPeriod || c.evaluationPeriod === "ALL"
+      const gMatch = newGrade === "ALL" || isGradeMatching(c.grade, newGrade)
+      if (pMatch && gMatch && c.subjectId && c.subjectId !== "ALL") {
+        newPeriodIds.add(c.subjectId)
+      }
+    })
+    if (onlyPeriodSubjects && newPeriodIds.size > 0) {
+      setSelectedSubjectIds(Array.from(newPeriodIds))
+    }
+  }
 
   // Filtered subjects based on search & period filter
   const displayedSubjects = useMemo(() => {
@@ -115,6 +154,14 @@ export function BulkExportModal({
     })
   }, [subjects, subjectSearch, onlyPeriodSubjects, periodSubjectIds])
 
+  // Danh sách ID môn THỰC SỰ được chọn để xuất (chỉ tính các môn nằm trong phạm vi đang lọc)
+  const effectiveSelectedIds = useMemo(() => {
+    if (onlyPeriodSubjects && periodSubjectIds.size > 0) {
+      return selectedSubjectIds.filter(id => periodSubjectIds.has(id))
+    }
+    return selectedSubjectIds
+  }, [selectedSubjectIds, onlyPeriodSubjects, periodSubjectIds])
+
   // Select all currently displayed subjects
   const handleSelectAll = () => {
     const idsToAdd = displayedSubjects.map(s => s.id)
@@ -123,19 +170,27 @@ export function BulkExportModal({
 
   // Deselect all currently displayed subjects
   const handleDeselectAll = () => {
-    if (displayedSubjects.length === subjects.length) {
-      setSelectedSubjectIds([])
-    } else {
-      const idsToRemove = new Set(displayedSubjects.map(s => s.id))
-      setSelectedSubjectIds(prev => prev.filter(id => !idsToRemove.has(id)))
-    }
+    const idsToRemove = new Set(displayedSubjects.map(s => s.id))
+    setSelectedSubjectIds(prev => prev.filter(id => !idsToRemove.has(id)))
   }
 
   // Select only subjects configured for this period
   const handleSelectOnlyPeriodSubjects = () => {
     if (periodSubjectIds.size > 0) {
-      setSelectedSubjectIds(Array.from(periodSubjectIds))
       setOnlyPeriodSubjects(true)
+      setSelectedSubjectIds(Array.from(periodSubjectIds))
+    }
+  }
+
+  const handleToggleOnlyPeriod = () => {
+    const nextVal = !onlyPeriodSubjects
+    setOnlyPeriodSubjects(nextVal)
+    if (nextVal && periodSubjectIds.size > 0) {
+      // Khi bật chế độ chỉ môn theo kỳ: tự động loại bỏ các môn ngoài kỳ khỏi lựa chọn
+      setSelectedSubjectIds(prev => {
+        const kept = prev.filter(id => periodSubjectIds.has(id))
+        return kept.length > 0 ? kept : Array.from(periodSubjectIds)
+      })
     }
   }
 
@@ -147,7 +202,7 @@ export function BulkExportModal({
   }
 
   const handleExport = async () => {
-    if (selectedSubjectIds.length === 0) {
+    if (effectiveSelectedIds.length === 0) {
       setErrorMessage("Vui lòng chọn ít nhất 1 môn học để xuất dữ liệu!")
       return
     }
@@ -157,14 +212,15 @@ export function BulkExportModal({
       setErrorMessage(null)
       setExportSuccess(false)
       setProgressPercent(10)
-      setProgressMessage("Đang gửi yêu cầu nạp dữ liệu từ máy chủ...")
+      setProgressMessage(`Đang gửi yêu cầu nạp dữ liệu cho ${effectiveSelectedIds.length} môn đã chọn...`)
 
+      // Chỉ gửi đúng danh sách ID các môn được người dùng lựa chọn
       const queryParams = new URLSearchParams({
         academicYearId: selectedYearId,
         campusId: selectedCampusId,
         evaluationPeriod: selectedPeriod,
         grade: selectedGrade,
-        subjectIds: selectedSubjectIds.join(",")
+        subjectIds: effectiveSelectedIds.join(",")
       })
 
       const res = await fetch(`/api/admin/ktdbcl/export-grades-bulk?${queryParams.toString()}`)
@@ -178,8 +234,15 @@ export function BulkExportModal({
         throw new Error("Không tìm thấy học sinh nào thuộc cơ sở/khối này trong năm học đã chọn!")
       }
 
+      // Đảm bảo chỉ các môn nằm trong effectiveSelectedIds mới được tạo Sheet
+      const finalSubjects = (data.subjects || []).filter(s => effectiveSelectedIds.includes(s.id))
+
+      if (finalSubjects.length === 0) {
+        throw new Error("Không tìm thấy dữ liệu môn học tương ứng với các môn đã chọn!")
+      }
+
       setProgressPercent(30)
-      setProgressMessage("Đã nhận dữ liệu học sinh & điểm. Đang phân tích và xử lý bảng tính...")
+      setProgressMessage(`Đang phân tích bảng tính và tạo Sheet cho ${finalSubjects.length} môn...`)
 
       const campusObj = campuses.find(c => c.id === selectedCampusId)
       const campusName = campusObj?.campusName || (selectedCampusId === "ALL" ? "Toan_Truong" : "CoSo")
@@ -195,7 +258,7 @@ export function BulkExportModal({
         evaluationPeriodName: periodName,
         classes: data.classes || [],
         students: data.students || [],
-        subjects: data.subjects || [],
+        subjects: finalSubjects,
         configs: data.configs || [],
         entries: data.entries || [],
         teachingAssignments: data.teachingAssignments || [],
@@ -209,7 +272,7 @@ export function BulkExportModal({
 
       setExportSuccess(true)
       setProgressPercent(100)
-      setProgressMessage("Xuất file Excel thành công! Tệp tin đã được lưu về máy của bạn.")
+      setProgressMessage(`Xuất file Excel thành công với ${finalSubjects.length} môn đã chọn! Tệp tin đã được lưu về máy của bạn.`)
     } catch (err: any) {
       console.error("Bulk export error:", err)
       setErrorMessage(err.message || "Đã xảy ra sự cố khi xuất file Excel")
@@ -305,7 +368,7 @@ export function BulkExportModal({
                 </label>
                 <select
                   value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  onChange={(e) => handlePeriodChange(e.target.value)}
                   disabled={isExporting}
                   className="w-full border border-teal-300 rounded-xl px-3 py-2 text-xs font-bold text-teal-950 bg-teal-50/60 focus:ring-2 focus:ring-[#005B58] outline-none shadow-sm cursor-pointer"
                 >
@@ -323,7 +386,7 @@ export function BulkExportModal({
                 </label>
                 <select
                   value={selectedGrade}
-                  onChange={(e) => setSelectedGrade(e.target.value)}
+                  onChange={(e) => handleGradeChange(e.target.value)}
                   disabled={isExporting}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#005B58] outline-none shadow-sm cursor-pointer"
                 >
@@ -342,8 +405,8 @@ export function BulkExportModal({
               <div className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <BookOpen className="w-3.5 h-3.5 text-[#005B58]" />
                 2. Chọn Danh Sách Môn Học Cần Xuất
-                <span className="text-teal-800 bg-teal-100/70 border border-teal-200 px-2 py-0.5 rounded-full font-bold text-[11px]">
-                  Đã chọn: {selectedSubjectIds.length}/{subjects.length} môn
+                <span className="text-teal-900 bg-teal-100 border border-teal-300 px-2.5 py-0.5 rounded-full font-black text-[11px] shadow-2xs">
+                  ĐÃ CHỌN: {effectiveSelectedIds.length}/{displayedSubjects.length} MÔN
                 </span>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -352,7 +415,11 @@ export function BulkExportModal({
                     type="button"
                     onClick={handleSelectOnlyPeriodSubjects}
                     disabled={isExporting}
-                    className="text-[11px] font-bold text-emerald-800 hover:text-emerald-950 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300 transition-colors shadow-2xs"
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors shadow-2xs ${
+                      onlyPeriodSubjects
+                        ? "bg-teal-700 text-white border-teal-700"
+                        : "text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-emerald-300"
+                    }`}
                     title="Chỉ chọn các môn đã được cấu hình trong kỳ này"
                   >
                     Môn theo kỳ ({periodSubjectIds.size})
@@ -370,9 +437,9 @@ export function BulkExportModal({
                   type="button"
                   onClick={handleDeselectAll}
                   disabled={isExporting}
-                  className="text-[11px] font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg border border-slate-200 transition-colors shadow-2xs"
+                  className="text-[11px] font-bold text-rose-700 hover:text-rose-900 bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg border border-rose-200 transition-colors shadow-2xs"
                 >
-                  Bỏ chọn
+                  Bỏ chọn tất cả
                 </button>
               </div>
             </div>
@@ -394,19 +461,19 @@ export function BulkExportModal({
               {periodSubjectIds.size > 0 && (
                 <button
                   type="button"
-                  onClick={() => setOnlyPeriodSubjects(!onlyPeriodSubjects)}
-                  className={`text-[11px] px-2.5 py-1.5 rounded-xl border font-bold transition-all shrink-0 ${
+                  onClick={handleToggleOnlyPeriod}
+                  className={`text-[11px] px-3 py-1.5 rounded-xl border font-bold transition-all shrink-0 cursor-pointer shadow-2xs ${
                     onlyPeriodSubjects
-                      ? "bg-teal-700 text-white border-teal-700 shadow-xs"
-                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                      ? "bg-teal-800 text-white border-teal-800"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
-                  {onlyPeriodSubjects ? "Đang lọc: Môn theo kỳ" : "Lọc môn theo kỳ"}
+                  {onlyPeriodSubjects ? `✓ Đang lọc: Môn theo kỳ (${periodSubjectIds.size})` : `Hiện tất cả (${subjects.length} môn)`}
                 </button>
               )}
             </div>
 
-            {/* Danh sách nút chọn môn học - Click mượt mà, không bị xung đột label */}
+            {/* Danh sách nút chọn môn học - Click mượt mà */}
             <div className="max-h-56 overflow-y-auto p-2.5 border border-slate-200 rounded-2xl bg-white grid grid-cols-2 sm:grid-cols-3 gap-2 shadow-inner">
               {displayedSubjects.length === 0 ? (
                 <div className="col-span-full py-6 text-center text-xs text-slate-400 font-medium">
@@ -414,7 +481,7 @@ export function BulkExportModal({
                 </div>
               ) : (
                 displayedSubjects.map(s => {
-                  const isSelected = selectedSubjectIds.includes(s.id)
+                  const isSelected = effectiveSelectedIds.includes(s.id)
                   const isPeriodSubj = periodSubjectIds.has(s.id)
 
                   return (
@@ -573,7 +640,7 @@ export function BulkExportModal({
             <button
               type="button"
               onClick={handleExport}
-              disabled={isExporting || selectedSubjectIds.length === 0}
+              disabled={isExporting || effectiveSelectedIds.length === 0}
               className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#005B58] hover:bg-[#004845] text-white text-xs font-bold shadow-lg shadow-teal-900/10 hover:shadow-xl transition-all disabled:opacity-50 cursor-pointer"
             >
               {isExporting ? (
@@ -584,7 +651,7 @@ export function BulkExportModal({
               ) : (
                 <>
                   <Download className="w-4 h-4" />
-                  Tiến hành Xuất Excel ({selectedSubjectIds.length} môn)
+                  Tiến hành Xuất Excel ({effectiveSelectedIds.length} môn)
                 </>
               )}
             </button>
