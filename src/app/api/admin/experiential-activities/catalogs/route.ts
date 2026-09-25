@@ -217,3 +217,126 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message || 'Internal Server Error' }, { status: 500 });
   }
 }
+
+export async function PUT(req: NextRequest) {
+  try {
+    const session = await auth();
+    const isAllowed = await checkAdminOrCTHSPermission(session);
+    if (!isAllowed) {
+      return NextResponse.json({ error: 'Bạn không có quyền cập nhật Danh mục HĐTN & Ngoại khóa' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { action, ids = [], cthsTeacherId, cthsTeacherCode, cthsTeacherName, cthsTeacherEmail } = body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'Vui lòng chọn ít nhất một hoạt động' }, { status: 400 });
+    }
+
+    if (action === 'BULK_ASSIGN_CTHS') {
+      const catalogs = await prisma.activityCatalog.findMany({
+        where: { id: { in: ids } }
+      });
+
+      let updatedCount = 0;
+      for (const cat of catalogs) {
+        let currentMeta: any = {};
+        if (cat.description && cat.description.startsWith('{')) {
+          try {
+            currentMeta = JSON.parse(cat.description);
+          } catch {}
+        }
+
+        const updatedMeta = {
+          ...currentMeta,
+          cthsTeacherId: cthsTeacherId || '',
+          cthsTeacherCode: cthsTeacherCode || '',
+          cthsTeacherName: cthsTeacherName || '',
+          cthsTeacherEmail: cthsTeacherEmail || ''
+        };
+
+        await prisma.activityCatalog.update({
+          where: { id: cat.id },
+          data: {
+            description: JSON.stringify(updatedMeta)
+          }
+        });
+        updatedCount++;
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã gán GV Tổ CTHS (${cthsTeacherName || 'Chưa gán'}) cho ${updatedCount} hoạt động thành công`,
+        count: updatedCount
+      });
+    }
+
+    return NextResponse.json({ error: 'Action không hợp lệ' }, { status: 400 });
+  } catch (error: any) {
+    console.error('Error in bulk PUT catalogs:', error);
+    return NextResponse.json({ error: error?.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await auth();
+    const isAllowed = await checkAdminOrCTHSPermission(session);
+    if (!isAllowed) {
+      return NextResponse.json({ error: 'Bạn không có quyền xóa Danh mục HĐTN & Ngoại khóa' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { ids = [] } = body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'Vui lòng chọn ít nhất một hoạt động để xóa' }, { status: 400 });
+    }
+
+    const catalogs = await prisma.activityCatalog.findMany({
+      where: { id: { in: ids } },
+      include: {
+        records: {
+          select: {
+            id: true,
+            participants: { select: { id: true } }
+          }
+        }
+      }
+    });
+
+    if (catalogs.length === 0) {
+      return NextResponse.json({ error: 'Không tìm thấy hoạt động cần xóa' }, { status: 404 });
+    }
+
+    // Kiểm tra hoạt động đã có học sinh tham gia đánh giá
+    const withParticipants = catalogs.filter(c => c.records.some(r => r.participants.length > 0));
+    if (withParticipants.length > 0) {
+      return NextResponse.json({
+        error: `Không thể xóa vì có ${withParticipants.length} hoạt động (${withParticipants.map(c => `"${c.name}"`).join(', ')}) đã có học sinh tham gia đánh giá.`
+      }, { status: 400 });
+    }
+
+    // Xóa các đợt record rỗng nếu có
+    const recordIdsToDelete = catalogs.flatMap(c => c.records.map(r => r.id));
+    if (recordIdsToDelete.length > 0) {
+      await prisma.activityRecord.deleteMany({
+        where: { id: { in: recordIdsToDelete } }
+      });
+    }
+
+    const deleteResult = await prisma.activityCatalog.deleteMany({
+      where: { id: { in: ids } }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Đã xóa thành công ${deleteResult.count} hoạt động khỏi danh mục`,
+      count: deleteResult.count
+    });
+  } catch (error: any) {
+    console.error('Error bulk deleting catalogs:', error);
+    return NextResponse.json({ error: error?.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
+

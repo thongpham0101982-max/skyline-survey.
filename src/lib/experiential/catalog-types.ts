@@ -50,6 +50,10 @@ export interface ActivityCatalogMeta {
   deliverables?: string; // Sản phẩm học tập / Dự án
   notes?: string; // Ghi chú
   plainDescription?: string;
+  cthsTeacherId?: string; // GV thuộc Tổ CTHS phụ trách
+  cthsTeacherCode?: string; // Mã GV Tổ CTHS
+  cthsTeacherName?: string; // Họ tên GV Tổ CTHS phụ trách
+  cthsTeacherEmail?: string; // Email GV Tổ CTHS
   allocatedCampuses?: CampusAllocationItem[];
 }
 

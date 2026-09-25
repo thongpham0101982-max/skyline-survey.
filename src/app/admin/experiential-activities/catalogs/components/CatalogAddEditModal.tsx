@@ -42,10 +42,24 @@ export function CatalogAddEditModal({
     primarySubjectName: '',
     coopSubjectNames: '',
     deliverables: '',
-    notes: ''
+    notes: '',
+    cthsTeacherId: '',
+    cthsTeacherCode: '',
+    cthsTeacherName: '',
+    cthsTeacherEmail: ''
   });
 
   const [saving, setSaving] = useState(false);
+  const [teachers, setTeachers] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/admin/experiential-activities/catalogs/cths-teachers')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) setTeachers(data);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (initialData) {
@@ -69,7 +83,11 @@ export function CatalogAddEditModal({
         primarySubjectName: meta.primarySubjectName || '',
         coopSubjectNames: meta.coopSubjectNames || '',
         deliverables: meta.deliverables || '',
-        notes: meta.notes || ''
+        notes: meta.notes || '',
+        cthsTeacherId: meta.cthsTeacherId || '',
+        cthsTeacherCode: meta.cthsTeacherCode || '',
+        cthsTeacherName: meta.cthsTeacherName || '',
+        cthsTeacherEmail: meta.cthsTeacherEmail || ''
       });
     } else {
       setFormData({
@@ -91,7 +109,11 @@ export function CatalogAddEditModal({
         primarySubjectName: '',
         coopSubjectNames: '',
         deliverables: '',
-        notes: ''
+        notes: '',
+        cthsTeacherId: '',
+        cthsTeacherCode: '',
+        cthsTeacherName: '',
+        cthsTeacherEmail: ''
       });
     }
   }, [initialData, activeSheetCode, isOpen]);
@@ -255,6 +277,54 @@ export function CatalogAddEditModal({
                   />
                 </div>
               </div>
+            </div>
+
+            {/* GV Tổ CTHS Phụ trách */}
+            <div className="p-3.5 rounded-2xl bg-teal-50/60 border border-teal-200/80">
+              <label className="block text-xs font-bold text-teal-900 mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-[#00A19A]" />
+                  Giáo viên / Cán bộ Tổ CTHS phụ trách hoạt động
+                </span>
+                {formData.cthsTeacherName && (
+                  <span className="text-[11px] font-semibold text-[#00A19A]">
+                    Đã chọn: {formData.cthsTeacherName} ({formData.cthsTeacherCode})
+                  </span>
+                )}
+              </label>
+              <select
+                value={formData.cthsTeacherId || ''}
+                onChange={e => {
+                  const tId = e.target.value;
+                  const t = teachers.find((x: any) => x.id === tId);
+                  setFormData({
+                    ...formData,
+                    cthsTeacherId: t ? t.id : '',
+                    cthsTeacherCode: t ? t.teacherCode : '',
+                    cthsTeacherName: t ? t.teacherName : '',
+                    cthsTeacherEmail: t ? t.email : ''
+                  });
+                }}
+                className="w-full text-xs font-medium px-3 py-2 rounded-xl border border-teal-200 bg-white focus:outline-hidden focus:border-[#00A19A] focus:ring-2 focus:ring-[#00A19A]/20 transition-all text-slate-800"
+              >
+                <option value="">-- Chưa phân công (Để trống) --</option>
+                {teachers.filter((t: any) => t.isCTHS).length > 0 && (
+                  <optgroup label="⭐ Cán bộ / Giáo viên Tổ CTHS & HĐNG">
+                    {teachers.filter((t: any) => t.isCTHS).map((t: any) => (
+                      <option key={t.id} value={t.id}>
+                        {t.teacherName} ({t.teacherCode}) {t.campusCode ? `- CS ${t.campusCode}` : ''}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label="Tất cả cán bộ & Giáo viên">
+                  {teachers.filter((t: any) => !t.isCTHS).map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.teacherName} ({t.teacherCode}) {t.campusCode ? `- CS ${t.campusCode}` : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
             </div>
           </div>
 

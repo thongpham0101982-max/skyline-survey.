@@ -11,6 +11,9 @@ import { SHEET_CONFIGS, SheetCode, ActivityCatalogItem } from '@/lib/experientia
 import { CatalogAddEditModal } from './components/CatalogAddEditModal';
 import { CatalogImportModal } from './components/CatalogImportModal';
 import { CatalogAllocateModal } from './components/CatalogAllocateModal';
+import { CatalogAssignCTHSModal } from './components/CatalogAssignCTHSModal';
+import { CatalogBulkDeleteModal } from './components/CatalogBulkDeleteModal';
+import { CheckSquare, Square, UserCheck, Users } from 'lucide-react';
 
 export default function ActivityCatalogsPage() {
   const [academicYears, setAcademicYears] = useState<any[]>([]);
@@ -21,6 +24,11 @@ export default function ActivityCatalogsPage() {
   const [search, setSearch] = useState('');
   const [semesterFilter, setSemesterFilter] = useState<'ALL' | '1' | '2'>('ALL');
   const [gradeFilter, setGradeFilter] = useState<string>('ALL');
+
+  // Bulk actions state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isAssignCTHSOpen, setIsAssignCTHSOpen] = useState(false);
+  const [isBulkDeleteOpen, setIsBulkDeleteOpen] = useState(false);
 
   // Modals state
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
@@ -68,6 +76,29 @@ export default function ActivityCatalogsPage() {
   useEffect(() => {
     loadCatalogs();
   }, [loadCatalogs]);
+
+  // Clear selected when sheet or filters change
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [activeSheetCode, selectedYearId, semesterFilter, gradeFilter]);
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === catalogs.length && catalogs.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(catalogs.map(c => c.id));
+    }
+  };
+
+  const handleToggleSelectOne = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(x => x !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const selectedActivities = catalogs.filter(c => selectedIds.includes(c.id));
 
   const handleDelete = async (item: ActivityCatalogItem) => {
     if (!confirm(`Bạn có chắc chắn muốn xóa hoạt động "${item.name}" khỏi danh mục?`)) return;
@@ -271,35 +302,94 @@ export default function ActivityCatalogsPage() {
         </div>
       </div>
 
+      {/* Bulk Action Bar (Hiển thị khi chọn 1 hoặc nhiều hoạt động) */}
+      {selectedIds.length > 0 && (
+        <div className="bg-gradient-to-r from-teal-900 via-[#003B3A] to-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-xl border border-teal-500/30 flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-teal-400/20 border border-teal-300/30 flex items-center justify-center font-bold text-teal-300">
+              <CheckSquare className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-xs font-black tracking-wide flex items-center gap-2">
+                <span>Đã chọn <strong className="text-teal-300 text-sm font-black">{selectedIds.length}</strong> / {catalogs.length} hoạt động</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/10 text-teal-200">
+                  {currentSheetCfg.title}
+                </span>
+              </div>
+              <div className="text-[11px] text-teal-200/80">
+                Thao tác hàng loạt: Gán người phụ trách Tổ CTHS hoặc xóa các hoạt động đã chọn
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsAssignCTHSOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-teal-950 bg-gradient-to-r from-teal-300 to-emerald-300 hover:brightness-105 shadow-sm shadow-teal-400/20 transition-all cursor-pointer"
+              title="Gán giáo viên/cán bộ Tổ CTHS phụ trách cho các hoạt động đã chọn"
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>Gán GV Tổ CTHS ({selectedIds.length})</span>
+            </button>
+
+            <button
+              onClick={() => setIsBulkDeleteOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/20 transition-all cursor-pointer"
+              title="Xóa vĩnh viễn các hoạt động đã chọn khỏi danh mục"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Xóa hoạt động ({selectedIds.length})</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedIds([])}
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+            >
+              Bỏ chọn
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Data Table */}
       <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs text-left border-collapse">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
               <tr>
-                <th className="py-3 px-3 text-center w-12">STT</th>
+                <th className="py-3 px-3 text-center w-10">
+                  <input
+                    type="checkbox"
+                    checked={catalogs.length > 0 && selectedIds.length === catalogs.length}
+                    onChange={handleToggleSelectAll}
+                    title="Chọn tất cả hoạt động trên bảng"
+                    className="w-4 h-4 rounded text-[#00A19A] border-slate-300 focus:ring-[#00A19A] cursor-pointer"
+                  />
+                </th>
+                <th className="py-3 px-2 text-center w-10">STT</th>
                 <th className="py-3 px-3 w-16">Khối</th>
                 <th className="py-3 px-4 min-w-[200px]">Tên hoạt động ngoại khóa</th>
-                <th className="py-3 px-4 min-w-[180px]">Chủ đề giáo dục</th>
-                <th className="py-3 px-3 min-w-[140px]">Môn chủ trì</th>
-                <th className="py-3 px-3 min-w-[150px]">Môn phối hợp / Tích hợp</th>
-                <th className="py-3 px-3 min-w-[130px]">Thời gian & HK</th>
-                <th className="py-3 px-3 min-w-[150px]">Địa điểm dự kiến</th>
+                <th className="py-3 px-4 min-w-[170px]">Chủ đề giáo dục</th>
+                <th className="py-3 px-3 min-w-[130px]">Môn chủ trì</th>
+                <th className="py-3 px-3 min-w-[140px]">Môn phối hợp / Tích hợp</th>
+                <th className="py-3 px-3 min-w-[120px]">Thời gian & HK</th>
+                <th className="py-3 px-3 min-w-[140px]">Địa điểm dự kiến</th>
+                <th className="py-3 px-3 min-w-[170px]">GV Tổ CTHS phụ trách</th>
                 <th className="py-3 px-3 min-w-[150px]">Cơ sở tiếp nhận (TLHN)</th>
-                <th className="py-3 px-3 text-center min-w-[140px] sticky right-0 bg-slate-50">Thao tác</th>
+                <th className="py-3 px-3 text-center min-w-[130px] sticky right-0 bg-slate-50">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400">
+                  <td colSpan={12} className="py-12 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
                     Đang tải danh mục hoạt động...
                   </td>
                 </tr>
               ) : catalogs.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="py-12 text-center text-slate-400">
+                  <td colSpan={12} className="py-12 text-center text-slate-400">
                     <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
                       <BookOpen className="w-6 h-6" />
                     </div>
@@ -325,10 +415,22 @@ export default function ActivityCatalogsPage() {
                 catalogs.map((act, idx) => {
                   const meta = act.meta || {};
                   const allocatedCampuses = meta.allocatedCampuses || [];
+                  const isSelected = selectedIds.includes(act.id);
 
                   return (
-                    <tr key={act.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                    <tr 
+                      key={act.id} 
+                      className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-teal-50/50' : ''}`}
+                    >
+                      <td className="py-3 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectOne(act.id)}
+                          className="w-4 h-4 rounded text-[#00A19A] border-slate-300 focus:ring-[#00A19A] cursor-pointer"
+                        />
+                      </td>
+                      <td className="py-3 px-2 text-center text-slate-400 font-bold">{idx + 1}</td>
                       <td className="py-3 px-3 font-bold text-slate-800">
                         {Array.isArray(meta.grades) ? meta.grades.join(', ') : meta.grades || '—'}
                       </td>
@@ -360,9 +462,52 @@ export default function ActivityCatalogsPage() {
                       <td className="py-3 px-3 text-slate-600">
                         <div className="flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span className="truncate max-w-[140px]">{meta.expectedLocation || '—'}</span>
+                          <span className="truncate max-w-[130px]">{meta.expectedLocation || '—'}</span>
                         </div>
                       </td>
+
+                      {/* Cột: GV Tổ CTHS Phụ trách */}
+                      <td className="py-3 px-3">
+                        {meta.cthsTeacherName ? (
+                          <div 
+                            onClick={() => {
+                              setSelectedIds([act.id]);
+                              setIsAssignCTHSOpen(true);
+                            }}
+                            className="group cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-teal-50/90 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all shadow-2xs"
+                            title="Nhấn để đổi GV Tổ CTHS phụ trách"
+                          >
+                            <div className="w-5 h-5 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                              {meta.cthsTeacherName.split(' ').slice(-1)[0]?.charAt(0) || 'C'}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-[11px] font-extrabold text-teal-950 group-hover:text-[#003B3A] truncate max-w-[110px]">
+                                {meta.cthsTeacherName}
+                              </div>
+                              {meta.cthsTeacherCode && (
+                                <div className="text-[9px] font-mono text-teal-700">
+                                  {meta.cthsTeacherCode}
+                                </div>
+                              )}
+                            </div>
+                            <Edit3 className="w-3 h-3 text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-0.5" />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedIds([act.id]);
+                              setIsAssignCTHSOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-semibold text-slate-500 hover:text-[#00A19A] hover:bg-teal-50 border border-dashed border-slate-300 hover:border-teal-400 transition-all cursor-pointer"
+                            title="Gán GV thuộc Tổ CTHS phụ trách"
+                          >
+                            <UserCheck className="w-3.5 h-3.5 text-slate-400" />
+                            <span>+ Gán GV</span>
+                          </button>
+                        )}
+                      </td>
+
+                      {/* Cột: Cơ sở tiếp nhận (TLHN) */}
                       <td className="py-3 px-3">
                         {allocatedCampuses.length === 0 ? (
                           <span className="text-[10px] text-slate-400 italic">Chưa đẩy cơ sở</span>
@@ -384,6 +529,8 @@ export default function ActivityCatalogsPage() {
                           </div>
                         )}
                       </td>
+
+                      {/* Cột: Thao tác */}
                       <td className="py-3 px-3 text-center sticky right-0 bg-white shadow-l">
                         <div className="flex items-center justify-center gap-1">
                           <button
@@ -409,7 +556,7 @@ export default function ActivityCatalogsPage() {
                           <button
                             onClick={() => handleDelete(act)}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Xóa"
+                            title="Xóa hoạt động này"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -452,6 +599,28 @@ export default function ActivityCatalogsPage() {
         }}
         onAllocated={loadCatalogs}
         catalogItem={allocatingItem}
+      />
+
+      {/* Modal gán GV Tổ CTHS cho 1 hoặc nhiều hoạt động */}
+      <CatalogAssignCTHSModal
+        isOpen={isAssignCTHSOpen}
+        onClose={() => setIsAssignCTHSOpen(false)}
+        onSuccess={() => {
+          setSelectedIds([]);
+          loadCatalogs();
+        }}
+        selectedActivities={selectedActivities}
+      />
+
+      {/* Modal xác nhận xóa hàng loạt 1 hoặc nhiều hoạt động */}
+      <CatalogBulkDeleteModal
+        isOpen={isBulkDeleteOpen}
+        onClose={() => setIsBulkDeleteOpen(false)}
+        onSuccess={() => {
+          setSelectedIds([]);
+          loadCatalogs();
+        }}
+        selectedActivities={selectedActivities}
       />
     </div>
   );
