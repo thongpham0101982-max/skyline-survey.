@@ -9,7 +9,8 @@ import {
   ExternalLink,
   Flame,
   HeartHandshake,
-  Brain
+  Brain,
+  CheckCircle2
 } from "lucide-react"
 import * as XLSX from "xlsx"
 
@@ -20,17 +21,19 @@ interface Props {
   allTargetStudents: any[]
 }
 
-export function ThkqDrilldownModal({ isOpen, onClose, cellData, allTargetStudents }: Props) {
+export function ThkqDrilldownModal({ isOpen, onClose, cellData, allTargetStudents = [] }: Props) {
   if (!isOpen || !cellData) return null
 
-  // Lọc học sinh thuộc ô Heatmap đã click (điểm < 5.0 của môn + khối + campus)
-  const students = allTargetStudents.filter(s => {
-    const matchSubject = s.subjectId === cellData.subjectId
-    const matchGrade = s.grade === cellData.grade
-    const matchCampus = cellData.campusId === "SYSTEM" || s.campusId === cellData.campusId
-    const matchBelow5 = s.isBelowMoet // score < 5.0
-    return matchSubject && matchGrade && matchCampus && matchBelow5
-  })
+  // Ưu tiên lấy trực tiếp danh sách học sinh < 5 được tính sẵn trong ô của Heatmap
+  const students = (cellData.students && Array.isArray(cellData.students))
+    ? cellData.students
+    : allTargetStudents.filter(s => {
+        const matchSubject = s.subjectId === cellData.subjectId
+        const matchGrade = s.grade === cellData.grade
+        const matchCampus = cellData.campusId === "SYSTEM" || s.campusId === cellData.campusId
+        const matchBelow5 = s.isBelowMoet // score < 5.0
+        return matchSubject && matchGrade && matchCampus && matchBelow5
+      })
 
   // Xuất Excel cho danh sách này
   const handleExport = () => {
@@ -106,13 +109,15 @@ export function ThkqDrilldownModal({ isOpen, onClose, cellData, allTargetStudent
         {/* Nội dung danh sách */}
         <div className="p-5 overflow-y-auto flex-1">
           {students.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-              <p className="text-sm font-semibold text-slate-600">
-                Không tìm thấy thông tin chi tiết học sinh cho ô dữ liệu này
-              </p>
-              <p className="text-xs text-slate-400 mt-1">
-                Có thể do dữ liệu đã được lọc bớt trong danh mục học sinh trọng tâm
+            <div className="text-center py-12 px-4">
+              <div className="h-16 w-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-xs">
+                <CheckCircle2 className="h-8 w-8" />
+              </div>
+              <h4 className="text-base font-bold text-slate-800">
+                Chất lượng đạt chuẩn xuất sắc!
+              </h4>
+              <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
+                100% học sinh ({cellData.total || 0} bài khảo sát) của môn <strong className="text-slate-800">{cellData.subjectName}</strong> tại <strong className="text-slate-800">{cellData.gradeLabel} - {cellData.campusName}</strong> đều đạt điểm từ 5.0 trở lên. Không có học sinh nào bị điểm dưới trung bình.
               </p>
             </div>
           ) : (

@@ -410,8 +410,8 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
         )
       }
 
-      const total = matchingEntries.length
-      const below5 = matchingEntries.filter(e => e.score < MOET_BENCHMARK).length
+      const below5Entries = matchingEntries.filter(e => e.score < MOET_BENCHMARK)
+      const below5 = below5Entries.length
       const rate = total > 0 ? Math.round((below5 / total) * 1000) / 10 : 0
 
       rowCells[col.key] = {
@@ -423,7 +423,27 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
         campusId: col.campusId,
         campusName: col.campusName,
         grade: col.grade,
-        gradeLabel: col.gradeLabel
+        gradeLabel: col.gradeLabel,
+        students: below5Entries.map(e => {
+          const benchmark = getSkylineBenchmark(e.level, e.grade, e.subjectId)
+          return {
+            id: e.id,
+            studentId: e.studentId,
+            studentCode: e.studentCode,
+            studentName: e.studentName,
+            className: e.className,
+            campusId: e.campusId,
+            campusName: e.campusName,
+            subjectId: e.subjectId,
+            subjectName: e.subjectName,
+            score: e.score,
+            skylineBenchmark: benchmark,
+            deltaSkyline: Math.round((e.score - benchmark) * 100) / 100,
+            isCommitment: commitmentStudentIds.has(e.studentId),
+            isPsychological: psychologicalStudentIds.has(e.studentId),
+            homeroomTeacher: e.homeroomTeacher
+          }
+        })
       }
     })
 

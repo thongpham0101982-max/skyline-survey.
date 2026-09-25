@@ -111,6 +111,12 @@ export default async function WeeklyReportsPage() {
     console.error("Error resolving default department:", e)
   }
 
+  // Fetch taskCategories & taskGroups for Weekly Report
+  const [taskCategories, taskGroups] = await Promise.all([
+    prisma.taskCategory.findMany({ orderBy: { name: "asc" } }),
+    prisma.taskGroup.findMany({ orderBy: { name: "asc" } })
+  ])
+
   return (
     <Suspense fallback={<div className="p-8 text-center text-slate-500 font-bold">Đang tải Báo cáo Tuần...</div>}>
       <WeeklyReportClient
@@ -124,6 +130,8 @@ export default async function WeeklyReportsPage() {
         divisions={ACADEMIC_DIVISIONS}
         defaultDeptId={defaultDeptId}
         defaultDivisionCode={defaultDivisionCode}
+        taskCategories={JSON.parse(JSON.stringify(taskCategories))}
+        taskGroups={JSON.parse(JSON.stringify(taskGroups))}
       />
     </Suspense>
   )

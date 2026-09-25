@@ -89,7 +89,16 @@ export async function getAllWeeklyReports(weekNumber: number, month: number, yea
 
 export async function saveWeeklyReport(data: {
   weekNumber: number; month: number; year: number; academicYearId?: string; targetUserId?: string;
-  items: { id?: string; mainTask: string; workContent: string; expectedCompletion?: string; progress: string; proposedSolution?: string }[]
+  items: { 
+    id?: string; 
+    mainTask?: string; 
+    category?: string;
+    taskGroup?: string;
+    workContent: string; 
+    expectedCompletion?: string; 
+    progress: string; 
+    proposedSolution?: string 
+  }[]
 }) {
   try {
     const session = await auth()
@@ -125,8 +134,10 @@ export async function saveWeeklyReport(data: {
             academicYearId: data.academicYearId || null,
             items: {
               create: data.items.map(item => ({
-                mainTask: item.mainTask,
+                mainTask: item.mainTask || item.category || item.taskGroup || "Công việc",
                 workContent: item.workContent,
+                category: item.category || null,
+                taskGroup: item.taskGroup || null,
                 expectedCompletion: item.expectedCompletion || null,
                 progress: item.progress,
                 proposedSolution: item.proposedSolution || ""
@@ -147,8 +158,10 @@ export async function saveWeeklyReport(data: {
           academicYearId: data.academicYearId || null,
           items: {
             create: data.items.map(item => ({
-              mainTask: item.mainTask,
+              mainTask: item.mainTask || item.category || item.taskGroup || "Công việc",
               workContent: item.workContent,
+              category: item.category || null,
+              taskGroup: item.taskGroup || null,
               expectedCompletion: item.expectedCompletion || null,
               progress: item.progress,
               proposedSolution: item.proposedSolution || ""
@@ -746,7 +759,7 @@ export async function getPersonalProgressCards(
         email: resolveUserEmail(staff),
         role: staff.role,
         position: staff.teacher?.position || staff.role || "GV",
-        departmentId: staff.teacher?.departmentRel?.id || staff.teacher?.departmentId || "",
+        departmentId: staff.teacher?.departmentRel?.id || (staff.teacher as any)?.departmentId || "",
         departmentName: staff.teacher?.departmentRel?.name || staff.role || "Chưa phân tổ",
         departmentCode: staff.teacher?.departmentRel?.code || "",
         divisionCode: staff.teacher?.departmentRel?.divisionCode || null,
@@ -1150,5 +1163,138 @@ export async function setTeacherPrimaryDepartment(departmentId: string, teacherI
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };
+  }
+}
+
+export async function getMonthlyTaskGroupProgress(month: number, year: number, deptId?: string) {
+  try {
+    const opScope = await getOperationalScope()
+    let allowedUserIds = opScope.scopedUserIds
+
+    const whereReport: any = { month, year }
+    if (allowedUserIds !== null) {
+      whereReport.userId = { in: allowedUserIds }
+    }
+
+    if (deptId && deptId !== "ALL") {
+      whereReport.user = {
+        OR: [
+          { role: deptId },
+          { teacher: {
+            OR: [
+              { departmentId: deptId },
+              { departmentRel: { OR: [{ id: deptId }, { code: deptId }, { name: deptId }] } },
+              { departmentAssignments: { some: { OR: [{ departmentId: deptId }, { department: { OR: [{ code: deptId }, { name: deptId }] } }] } } }
+            ]
+          } }
+        ]
+      }
+    }
+
+    const reports = await prisma.weeklyReport.findMany({
+      where: whereReport,
+      include: {
+        items: true,
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            role: true,
+            teacher: {
+              select: {
+                departmentRel: { select: { name: true, code: true } }
+              }
+            }
+          }
+        }
+      },
+      orderBy: { weekNumber: "asc" }
+    })
+
+    const taskGroups = await prisma.taskGroup.findMany({ orderBy: { name: "asc" } })
+
+    const groupStats: Record<string, { total: number; completed: number; doing: number; notCompleted: number; proposedSolutions: string[] }> = {}
+    taskGroups.forEach(g => {
+      groupStats[g.name] = { total: 0, completed: 0, doing: 0, notCompleted: 0, proposedSolutions: [] }
+    })
+    groupStats["Khác / Chưa gán"] = { total: 0, completed: 0, doing: 0, notCompleted: 0, proposedSolutions: [] }
+
+    const staffMap: Record<string, any> = {}
+
+    reports.forEach(rpt => {
+      const u = rpt.user
+      if (!staffMap[u.id]) {
+        staffMap[u.id] = {
+          userId: u.id,
+          fullName: u.fullName,
+          email: u.email,
+          departmentName: u.teacher?.departmentRel?.name || u.role,
+          groups: {},
+          totalMonth: 0,
+          completedMonth: 0
+        }
+      }
+
+      rpt.items.forEach(item => {
+        const gName = item.taskGroup || "Khác / Chưa gán"
+        if (!groupStats[gName]) {
+          groupStats[gName] = { total: 0, completed: 0, doing: 0, notCompleted: 0, proposedSolutions: [] }
+        }
+
+        groupStats[gName].total++
+        if (item.progress === "COMPLETED") groupStats[gName].completed++
+        else if (item.progress === "DOING") groupStats[gName].doing++
+        else groupStats[gName].notCompleted++
+
+        if (item.proposedSolution && item.proposedSolution.trim()) {
+          groupStats[gName].proposedSolutions.push(item.proposedSolution.trim())
+        }
+
+        if (!staffMap[u.id].groups[gName]) {
+          staffMap[u.id].groups[gName] = { total: 0, completed: 0, doing: 0, notCompleted: 0 }
+        }
+        staffMap[u.id].groups[gName].total++
+        staffMap[u.id].totalMonth++
+        if (item.progress === "COMPLETED") {
+          staffMap[u.id].groups[gName].completed++
+          staffMap[u.id].completedMonth++
+        }
+      })
+    })
+
+    const recommendations: { groupName: string; priority: "HIGH" | "MEDIUM" | "LOW"; title: string; content: string; proposedSolutions: string[] }[] = []
+
+    Object.entries(groupStats).forEach(([gName, st]) => {
+      if (st.total === 0) return
+      const rate = Math.round((st.completed / st.total) * 100)
+      if (rate < 60 || st.notCompleted > 2) {
+        recommendations.push({
+          groupName: gName,
+          priority: rate < 40 ? "HIGH" : "MEDIUM",
+          title: `Đẩy nhanh tiến độ nhóm "${gName}" (Hoàn thành ${rate}%)`,
+          content: `Nhóm hiện có ${st.notCompleted} đầu việc chưa hoàn thành hoặc chưa bắt đầu. Cần tổ chức rà soát tiến độ và phân bổ thêm nguồn lực hỗ trợ hoàn thành đúng hạn.`,
+          proposedSolutions: st.proposedSolutions.slice(0, 3)
+        })
+      } else if (st.proposedSolutions.length > 0) {
+        recommendations.push({
+          groupName: gName,
+          priority: "LOW",
+          title: `Xử lý kiến nghị / giải pháp của nhóm "${gName}"`,
+          content: `Nhóm đạt tỷ lệ ${rate}%, có ${st.proposedSolutions.length} đề xuất giải pháp cần BĐH / Tổ trưởng phê duyệt và tháo gỡ.`,
+          proposedSolutions: st.proposedSolutions.slice(0, 3)
+        })
+      }
+    })
+
+    return {
+      success: true,
+      groupStats,
+      staffMatrix: Object.values(staffMap),
+      recommendations,
+      allGroups: taskGroups.map(g => g.name)
+    }
+  } catch (e: any) {
+    return { success: false, error: e.message }
   }
 }

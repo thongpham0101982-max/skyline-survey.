@@ -908,39 +908,45 @@ export async function getTaskCategories() {
   }
 }
 
-export async function createTaskCategory(data: { name: string; assignedToRole: string }) {
+export async function createTaskCategory(data: { name: string; assignedToRole: string; groupName?: string }) {
   try {
     const session = await auth()
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
     await prisma.taskCategory.create({
       data: {
         name: data.name.trim(),
-        assignedToRole: data.assignedToRole
+        assignedToRole: data.assignedToRole,
+        groupName: data.groupName?.trim() || null
       }
     })
     revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
   }
 }
 
-export async function updateTaskCategory(id: string, data: { name: string; assignedToRole: string }) {
+export async function updateTaskCategory(id: string, data: { name: string; assignedToRole: string; groupName?: string }) {
   try {
     const session = await auth()
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
     await prisma.taskCategory.update({
       where: { id },
       data: {
         name: data.name.trim(),
-        assignedToRole: data.assignedToRole
+        assignedToRole: data.assignedToRole,
+        groupName: data.groupName?.trim() || null
       }
     })
     revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -950,13 +956,134 @@ export async function updateTaskCategory(id: string, data: { name: string; assig
 export async function deleteTaskCategory(id: string) {
   try {
     const session = await auth()
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
     await prisma.taskCategory.delete({
       where: { id }
     })
     revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function getTaskGroups() {
+  try {
+    let groups = await prisma.taskGroup.findMany({
+      orderBy: { name: "asc" }
+    })
+
+    // Seed default 5 groups if empty
+    if (groups.length === 0) {
+      const defaultNames = [
+        "Khảo thí Phổ thông",
+        "Khảo thí Tổng hợp",
+        "Khảo thí TA&CTQT",
+        "ĐBCL Học sinh",
+        "ĐBCL"
+      ]
+      for (const name of defaultNames) {
+        await prisma.taskGroup.create({
+          data: { name, department: "KT&ĐBCL" }
+        })
+      }
+      groups = await prisma.taskGroup.findMany({ orderBy: { name: "asc" } })
+    }
+
+    return { 
+      success: true, 
+      groups: groups.map(g => ({
+        ...g,
+        memberUserIdsList: g.memberUserIds ? JSON.parse(g.memberUserIds) : []
+      }))
+    }
+  } catch (e: any) {
+    return { success: false, groups: [], error: e.message }
+  }
+}
+
+export async function createTaskGroup(data: { name: string; department?: string; memberUserIds?: string[] }) {
+  try {
+    const session = await auth()
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+    const group = await prisma.taskGroup.create({
+      data: {
+        name: data.name.trim(),
+        department: data.department || "KT&ĐBCL",
+        memberUserIds: data.memberUserIds && data.memberUserIds.length > 0 ? JSON.stringify(data.memberUserIds) : null
+      }
+    })
+    revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
+    return { success: true, group }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function updateTaskGroup(id: string, data: { name: string; department?: string; memberUserIds?: string[] }) {
+  try {
+    const session = await auth()
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+    const group = await prisma.taskGroup.update({
+      where: { id },
+      data: {
+        name: data.name.trim(),
+        department: data.department || "KT&ĐBCL",
+        memberUserIds: data.memberUserIds ? JSON.stringify(data.memberUserIds) : null
+      }
+    })
+    revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
+    return { success: true, group }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function deleteTaskGroup(id: string) {
+  try {
+    const session = await auth()
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+    await prisma.taskGroup.delete({
+      where: { id }
+    })
+    revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function assignStaffToTaskGroup(groupId: string, memberUserIds: string[]) {
+  try {
+    const session = await auth()
+    const opScope = await getOperationalScope()
+    if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
+      return { success: false, error: "Quyền truy cập bị từ chối" }
+    }
+    await prisma.taskGroup.update({
+      where: { id: groupId },
+      data: {
+        memberUserIds: JSON.stringify(memberUserIds)
+      }
+    })
+    revalidatePath("/admin/tasks")
+    revalidatePath("/admin/weekly-reports")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }

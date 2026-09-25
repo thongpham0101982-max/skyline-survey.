@@ -22,7 +22,8 @@ import {
 import { 
   createTask, updateTask, deleteTask, remindTask, updateTaskProgress, 
   getUsersByRole, respondToTask, deleteTasks, createTaskCategory, 
-  updateTaskCategory, deleteTaskCategory, confirmTaskAssignment, rejectTaskAssignment 
+  updateTaskCategory, deleteTaskCategory, confirmTaskAssignment, rejectTaskAssignment,
+  getTaskGroups, createTaskGroup, updateTaskGroup, deleteTaskGroup, assignStaffToTaskGroup
 } from "./actions"
 import { TaskDetailPanel } from "./TaskDetailPanel"
 
@@ -33,7 +34,7 @@ const PROGRESS_OPTIONS = [
   { value: "OVERDUE", label: "Trễ hạn", color: "bg-red-50 text-red-700 border-red-200" },
 ]
 
-export function TasksClient({ initialTasks, years, roles, dbCategories, currentRole, currentUserId, operationalScope }: any) {
+export function TasksClient({ initialTasks, years, roles, dbCategories, initialTaskGroups, allStaffUsers, currentRole, currentUserId, operationalScope }: any) {
   const searchParams = useSearchParams()
   const [tasks, setTasks] = useState(initialTasks || [])
   const [viewMode, setViewMode] = useState<"list" | "kanban" | "timeline" | "cards">("list")
@@ -48,12 +49,24 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   const [filterYear, setFilterYear] = useState("ALL")
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([])
 
-  // Category Manager states
+  // Category & Group Manager states
   const [categoriesList, setCategoriesList] = useState(dbCategories || [])
+  const [taskGroupsList, setTaskGroupsList] = useState<any[]>(initialTaskGroups || [])
   const [showCategoryManager, setShowCategoryManager] = useState(false)
+  const [catTab, setCatTab] = useState<"categories" | "groups">("categories")
   const [catName, setCatName] = useState("")
   const [catRole, setCatRole] = useState(roles?.[0]?.code || "")
+  const [catGroupName, setCatGroupName] = useState("")
   const [catEditId, setCatEditId] = useState<string | null>(null)
+
+  // Task Group CRUD & Assignment states
+  const [groupEditId, setGroupEditId] = useState<string | null>(null)
+  const [groupNameInput, setGroupNameInput] = useState("")
+  const [groupDeptInput, setGroupDeptInput] = useState(roles?.[0]?.code || "KT&ĐBCL")
+  const [selectedGroupForAssign, setSelectedGroupForAssign] = useState<any>(null)
+  const [assignedMemberIds, setAssignedMemberIds] = useState<string[]>([])
+  const [memberSearchQuery, setMemberSearchQuery] = useState("")
+  const [savingGroup, setSavingGroup] = useState(false)
 
   // Form fields (admin)
   const [title, setTitle] = useState("")
@@ -136,7 +149,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
 
   const handleSaveCategory = async () => {
     if (!catName.trim()) return alert("Vui lòng nhập tên danh mục!")
-    const data = { name: catName.trim(), assignedToRole: catRole }
+    const data = { name: catName.trim(), assignedToRole: catRole, groupName: catGroupName || undefined }
     const res = catEditId ? await updateTaskCategory(catEditId, data) : await createTaskCategory(data)
     if (res.success) {
       window.location.reload()
@@ -150,6 +163,64 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
     const res = await deleteTaskCategory(id)
     if (res.success) {
       window.location.reload()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleSaveTaskGroup = async () => {
+    if (!groupNameInput.trim()) return alert("Vui lòng nhập tên nhóm công việc!")
+    setSavingGroup(true)
+    const data = { name: groupNameInput.trim(), department: groupDeptInput }
+    const res = groupEditId ? await updateTaskGroup(groupEditId, data) : await createTaskGroup(data)
+    setSavingGroup(false)
+    if (res.success) {
+      window.location.reload()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleDeleteTaskGroup = async (id: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa nhóm công việc này?")) return
+    const res = await deleteTaskGroup(id)
+    if (res.success) {
+      window.location.reload()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleOpenAssignModal = (group: any) => {
+    setSelectedGroupForAssign(group)
+    let members: string[] = []
+    if (group.memberUserIds) {
+      try {
+        members = typeof group.memberUserIds === "string" ? JSON.parse(group.memberUserIds) : group.memberUserIds
+      } catch (e) {
+        members = []
+      }
+    } else if (Array.isArray(group.memberUserIdsList)) {
+      members = group.memberUserIdsList
+    }
+    setAssignedMemberIds(members || [])
+    setMemberSearchQuery("")
+  }
+
+  const handleToggleMember = (uid: string) => {
+    setAssignedMemberIds(prev => 
+      prev.includes(uid) ? prev.filter(id => id !== uid) : [...prev, uid]
+    )
+  }
+
+  const handleSaveGroupAssignment = async () => {
+    if (!selectedGroupForAssign) return
+    setSavingGroup(true)
+    const res = await assignStaffToTaskGroup(selectedGroupForAssign.id, assignedMemberIds)
+    setSavingGroup(false)
+    if (res.success) {
+      setTaskToast({ msg: `✅ Đã phân công ${assignedMemberIds.length} nhân sự cho nhóm ${selectedGroupForAssign.name}!`, type: "success" })
+      setTimeout(() => { setTaskToast(null); window.location.reload() }, 1500)
     } else {
       alert("Lỗi: " + res.error)
     }
@@ -516,7 +587,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
           >
             Tất cả ({tasks.length})
           </button>
-          {filterCategoriesList.map(cat => {
+          {filterCategoriesList.map((cat: any) => {
             const count = tasks.filter((t: any) => t.category === cat).length
             const isActive = filterCategory === cat
             return (
@@ -1177,100 +1248,395 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
       )}
 
       {/* Category Manager Modal */}
+      {/* Category & Task Group Manager Modal */}
       {showCategoryManager && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
-            <div className="p-5 border-b flex items-center justify-between bg-slate-50">
-              <h3 className="font-extrabold text-base text-slate-800">Quản lý Danh mục Công việc</h3>
-              <button onClick={() => setShowCategoryManager(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+            {/* Header with Navigation Tabs */}
+            <div className="p-5 border-b bg-slate-50 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-800">Quản lý Danh mục & Nhóm Công việc</h3>
+                  <p className="text-xs text-slate-500">Cấu hình danh mục, các nhóm chuyên môn & phân công nhân sự phụ trách</p>
+                </div>
+                <button onClick={() => setShowCategoryManager(false)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl transition-all">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex items-center gap-2 bg-slate-200/70 p-1 rounded-xl">
+                <button
+                  onClick={() => setCatTab("categories")}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
+                    catTab === "categories" ? "bg-white text-slate-800 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <LayoutList className="w-4 h-4 text-[#48BFE3]" /> 1. Danh mục công việc ({categoriesList.length})
+                </button>
+                <button
+                  onClick={() => setCatTab("groups")}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 ${
+                    catTab === "groups" ? "bg-white text-slate-800 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Users className="w-4 h-4 text-emerald-600" /> 2. Nhóm công việc & Gán nhân sự ({taskGroupsList.length})
+                </button>
+              </div>
             </div>
 
-            <div className="p-5 overflow-y-auto space-y-4 flex-1">
-              <div className="p-4 bg-slate-50 border rounded-2xl space-y-3">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  {catEditId ? "Cập nhật danh mục" : "Thêm danh mục mới"}
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Tên danh mục</label>
-                    <input
-                      type="text"
-                      value={catName}
-                      onChange={e => setCatName(e.target.value)}
-                      placeholder="Nhập tên..."
-                      className="w-full border rounded-xl p-2 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#48BFE3]"
-                    />
+            {/* TAB 1: DANH MỤC CÔNG VIỆC */}
+            {catTab === "categories" && (
+              <div className="p-5 overflow-y-auto space-y-4 flex-1">
+                <div className="p-4 bg-slate-50 border rounded-2xl space-y-3">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    {catEditId ? "✏️ Cập nhật danh mục công việc" : "➕ Thêm danh mục công việc mới"}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-1">
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Tên danh mục <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={catName}
+                        onChange={e => setCatName(e.target.value)}
+                        placeholder="Nhập tên danh mục..."
+                        className="w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#48BFE3]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Tổ / Bộ phận</label>
+                      <select
+                        value={catRole}
+                        onChange={e => setCatRole(e.target.value)}
+                        className="w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#48BFE3]"
+                      >
+                        {roles.map((r: any) => (
+                          <option key={r.code} value={r.code}>{r.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Thuộc Nhóm công việc</label>
+                      <select
+                        value={catGroupName}
+                        onChange={e => setCatGroupName(e.target.value)}
+                        className="w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#48BFE3] text-indigo-900"
+                      >
+                        <option value="">-- Chưa phân nhóm --</option>
+                        {taskGroupsList.map((g: any) => (
+                          <option key={g.id || g.name} value={g.name}>{g.name}</option>
+                        ))}
+                        {/* Ensure standard 5 groups exist in options */}
+                        {["Khảo thí Phổ thông", "Khảo thí Tổng hợp", "Khảo thí TA&CTQT", "ĐBCL Học sinh", "ĐBCL"].map(name => (
+                          !taskGroupsList.some((g: any) => g.name === name) && (
+                            <option key={name} value={name}>{name}</option>
+                          )
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 mb-1">Tổ / Bộ phận</label>
-                    <select
-                      value={catRole}
-                      onChange={e => setCatRole(e.target.value)}
-                      className="w-full border rounded-xl p-2 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#48BFE3]"
-                    >
-                      {roles.map((r: any) => (
-                        <option key={r.code} value={r.code}>{r.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                <div className="flex gap-2 justify-end pt-1">
-                  {catEditId && (
+                  <div className="flex gap-2 justify-end pt-1">
+                    {catEditId && (
+                      <button
+                        onClick={() => { setCatEditId(null); setCatName(""); setCatRole(roles?.[0]?.code || ""); setCatGroupName("") }}
+                        className="px-4 py-2 rounded-xl border text-xs font-bold hover:bg-slate-200 transition-all"
+                      >
+                        Hủy sửa
+                      </button>
+                    )}
                     <button
-                      onClick={() => { setCatEditId(null); setCatName(""); setCatRole(roles?.[0]?.code || "") }}
-                      className="px-3 py-1.5 rounded-xl border text-xs font-bold hover:bg-slate-200"
+                      onClick={handleSaveCategory}
+                      className="bg-[#48BFE3] text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-[#007A72] transition-all shadow-sm"
                     >
-                      Hủy sửa
+                      {catEditId ? "Cập nhật" : "Thêm mới"}
                     </button>
-                  )}
-                  <button
-                    onClick={handleSaveCategory}
-                    className="bg-[#48BFE3] text-white px-4 py-1.5 rounded-xl text-xs font-bold hover:bg-[#007A72]"
-                  >
-                    {catEditId ? "Cập nhật" : "Thêm mới"}
-                  </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Danh mục hiện có ({categoriesList.length})</h4>
+                  <div className="border rounded-2xl divide-y divide-slate-100 max-h-[35vh] overflow-y-auto bg-white">
+                    {categoriesList.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-slate-400">Chưa có danh mục nào</div>
+                    ) : (
+                      categoriesList.map((c: any) => (
+                        <div key={c.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                          <div className="space-y-1">
+                            <div className="font-extrabold text-xs text-slate-800">{c.name}</div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">
+                                Tổ: {roles.find((r: any) => r.code === c.assignedToRole)?.name || c.assignedToRole}
+                              </span>
+                              {c.groupName ? (
+                                <span className="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md font-bold">
+                                  📁 Nhóm: {c.groupName}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md italic">
+                                  Chưa gán nhóm
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => { 
+                                setCatEditId(c.id)
+                                setCatName(c.name)
+                                setCatRole(c.assignedToRole)
+                                setCatGroupName(c.groupName || "") 
+                              }}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                              title="Sửa danh mục"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCategory(c.id)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                              title="Xóa danh mục"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
+            )}
 
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Danh sách hiện tại</h4>
-                <div className="border rounded-2xl divide-y divide-slate-100 max-h-[30vh] overflow-y-auto bg-white">
-                  {categoriesList.length === 0 ? (
-                    <div className="p-4 text-center text-xs text-slate-400">Chưa có danh mục nào</div>
-                  ) : (
-                    categoriesList.map((c: any) => (
-                      <div key={c.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                        <div>
-                          <div className="font-bold text-xs text-slate-800">{c.name}</div>
-                          <div className="text-[11px] text-slate-400">Tổ: {roles.find((r: any) => r.code === c.assignedToRole)?.name || c.assignedToRole}</div>
+            {/* TAB 2: NHÓM CÔNG VIỆC & GÁN NHÂN SỰ */}
+            {catTab === "groups" && (
+              <div className="p-5 overflow-y-auto space-y-4 flex-1">
+                {/* Form Add / Edit Group */}
+                <div className="p-4 bg-slate-50 border rounded-2xl space-y-3">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    {groupEditId ? "✏️ Cập nhật Nhóm công việc" : "➕ Thêm Nhóm công việc mới"}
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Tên Nhóm công việc <span className="text-red-500">*</span></label>
+                      <input
+                        type="text"
+                        value={groupNameInput}
+                        onChange={e => setGroupNameInput(e.target.value)}
+                        placeholder="VD: Khảo thí Phổ thông, ĐBCL..."
+                        className="w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Tổ / Bộ phận</label>
+                      <select
+                        value={groupDeptInput}
+                        onChange={e => setGroupDeptInput(e.target.value)}
+                        className="w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-emerald-500"
+                      >
+                        {roles.map((r: any) => (
+                          <option key={r.code} value={r.code}>{r.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end pt-1">
+                    {groupEditId && (
+                      <button
+                        onClick={() => { setGroupEditId(null); setGroupNameInput(""); setGroupDeptInput(roles?.[0]?.code || "KT&ĐBCL") }}
+                        className="px-4 py-2 rounded-xl border text-xs font-bold hover:bg-slate-200 transition-all"
+                      >
+                        Hủy sửa
+                      </button>
+                    )}
+                    <button
+                      onClick={handleSaveTaskGroup}
+                      disabled={savingGroup}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
+                    >
+                      {groupEditId ? "Lưu cập nhật" : "Tạo nhóm"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* List of Groups with Assigned Staff */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    Danh sách Nhóm công việc & Nhân sự phụ trách ({taskGroupsList.length})
+                  </h4>
+                  <div className="space-y-2.5 max-h-[42vh] overflow-y-auto pr-1">
+                    {taskGroupsList.map((g: any) => {
+                      let members: string[] = []
+                      if (g.memberUserIds) {
+                        try {
+                          members = typeof g.memberUserIds === "string" ? JSON.parse(g.memberUserIds) : g.memberUserIds
+                        } catch (e) {
+                          members = []
+                        }
+                      } else if (Array.isArray(g.memberUserIdsList)) {
+                        members = g.memberUserIdsList
+                      }
+
+                      const assignedUsers = (allStaffUsers || []).filter((u: any) => members.includes(u.id))
+
+                      return (
+                        <div key={g.id} className="p-3.5 border rounded-2xl bg-white hover:border-emerald-200 transition-all space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <div className="font-black text-xs text-slate-800 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                {g.name}
+                                <span className="text-[10px] font-normal text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                  {g.department || "KT&ĐBCL"}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleOpenAssignModal(g)}
+                                className="flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                                title="Gán nhân sự vào nhóm này"
+                              >
+                                <Users className="w-3.5 h-3.5" /> Gán nhân sự ({members.length})
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setGroupEditId(g.id)
+                                  setGroupNameInput(g.name)
+                                  setGroupDeptInput(g.department || roles?.[0]?.code || "KT&ĐBCL")
+                                }}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                title="Sửa tên nhóm"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTaskGroup(g.id)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                title="Xóa nhóm"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Member tags */}
+                          <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-100">
+                            <span className="text-[11px] font-bold text-slate-400 mr-1">Nhân sự:</span>
+                            {assignedUsers.length === 0 ? (
+                              <span className="text-[11px] text-amber-600 italic">Chưa có nhân sự nào được gán vào nhóm này</span>
+                            ) : (
+                              assignedUsers.map((u: any) => (
+                                <span key={u.id} className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold px-2 py-0.5 rounded-lg">
+                                  👤 {u.fullName}
+                                </span>
+                              ))
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => { setCatEditId(c.id); setCatName(c.name); setCatRole(c.assignedToRole) }}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCategory(c.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
+            {/* Modal: Gán nhân sự cho Nhóm công việc */}
+            {selectedGroupForAssign && (
+              <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150 border">
+                  <div className="p-4 border-b bg-emerald-50/50 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-extrabold text-sm text-slate-800 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-emerald-600" />
+                        Gán nhân sự cho: <span className="text-emerald-700 font-black">{selectedGroupForAssign.name}</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-500">Đã chọn: <strong>{assignedMemberIds.length}</strong> nhân sự</p>
+                    </div>
+                    <button onClick={() => setSelectedGroupForAssign(null)} className="p-1 text-slate-400 hover:text-slate-600 rounded-lg">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Search Staff */}
+                  <div className="p-3 border-b bg-white">
+                    <div className="relative">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        value={memberSearchQuery}
+                        onChange={e => setMemberSearchQuery(e.target.value)}
+                        placeholder="Tìm kiếm nhân sự theo tên, email..."
+                        className="w-full pl-9 pr-3 py-1.5 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Staff Checklist */}
+                  <div className="p-3 overflow-y-auto divide-y divide-slate-100 flex-1 max-h-[45vh]">
+                    {(allStaffUsers || [])
+                      .filter((u: any) => {
+                        const q = memberSearchQuery.toLowerCase()
+                        return !q || u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+                      })
+                      .map((u: any) => {
+                        const isChecked = assignedMemberIds.includes(u.id)
+                        return (
+                          <label key={u.id} className="p-2.5 flex items-center justify-between hover:bg-slate-50 rounded-xl cursor-pointer transition-colors">
+                            <div className="flex items-center gap-2.5">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => handleToggleMember(u.id)}
+                                className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                              />
+                              <div>
+                                <div className="text-xs font-bold text-slate-800">{u.fullName}</div>
+                                <div className="text-[10px] text-slate-400">{u.email} &bull; {u.role}</div>
+                              </div>
+                            </div>
+                            {isChecked && (
+                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                                Đã gán
+                              </span>
+                            )}
+                          </label>
+                        )
+                      })}
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="p-3 border-t bg-slate-50 flex items-center justify-between">
+                    <button
+                      onClick={() => setAssignedMemberIds([])}
+                      className="text-xs text-slate-500 hover:text-slate-700 font-semibold"
+                    >
+                      Bỏ chọn tất cả
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedGroupForAssign(null)}
+                        className="px-4 py-2 border rounded-xl text-xs font-bold hover:bg-slate-200 transition-all"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        onClick={handleSaveGroupAssignment}
+                        disabled={savingGroup}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-sm"
+                      >
+                        {savingGroup ? "Đang lưu..." : `Lưu phân công (${assignedMemberIds.length})`}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Bottom Close */}
             <div className="p-4 border-t flex justify-end bg-slate-50">
               <button
                 onClick={() => setShowCategoryManager(false)}
-                className="bg-white border text-slate-700 px-5 py-2 rounded-xl text-xs font-bold hover:bg-slate-100"
+                className="bg-white border text-slate-700 px-5 py-2 rounded-xl text-xs font-bold hover:bg-slate-100 transition-all"
               >
                 Đóng
               </button>

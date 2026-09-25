@@ -96,7 +96,7 @@ export default async function TasksPage() {
     }
   }
 
-  const [tasks, years, initialDbCategories] = await Promise.all([
+  const [tasks, years, initialDbCategories, initialTaskGroups, allStaffUsers] = await Promise.all([
     prisma.workTask.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
@@ -112,6 +112,14 @@ export default async function TasksPage() {
     }),
     prisma.taskCategory.findMany({
       orderBy: { name: "asc" }
+    }),
+    prisma.taskGroup.findMany({
+      orderBy: { name: "asc" }
+    }),
+    prisma.user.findMany({
+      where: { role: { not: "PARENT" }, status: "ACTIVE" },
+      select: { id: true, fullName: true, email: true, role: true },
+      orderBy: { fullName: "asc" }
     })
   ])
 
@@ -136,6 +144,25 @@ export default async function TasksPage() {
     }
   }
 
+  let dbTaskGroups = initialTaskGroups;
+  if (dbTaskGroups.length === 0) {
+    const defaultGroups = [
+      { name: "Khảo thí Phổ thông", department: "KT&ĐBCL" },
+      { name: "Khảo thí Tổng hợp", department: "KT&ĐBCL" },
+      { name: "Khảo thí TA&CTQT", department: "KT&ĐBCL" },
+      { name: "ĐBCL Học sinh", department: "KT&ĐBCL" },
+      { name: "ĐBCL", department: "KT&ĐBCL" }
+    ];
+    try {
+      for (const g of defaultGroups) {
+        await prisma.taskGroup.create({ data: g });
+      }
+      dbTaskGroups = await prisma.taskGroup.findMany({ orderBy: { name: "asc" } });
+    } catch (err) {
+      console.error("Auto-seeding TaskGroup failed:", err);
+    }
+  }
+
   return (
     <Suspense fallback={<div className="p-8 text-center text-slate-500">Đang tải dữ liệu Điều hành Công việc...</div>}>
       <TasksClient
@@ -143,6 +170,8 @@ export default async function TasksPage() {
         years={years}
         roles={departmentsList}
         dbCategories={JSON.parse(JSON.stringify(dbCategories))}
+        initialTaskGroups={JSON.parse(JSON.stringify(dbTaskGroups))}
+        allStaffUsers={JSON.parse(JSON.stringify(allStaffUsers))}
         currentRole={role}
         currentUserId={userId}
         operationalScope={JSON.parse(JSON.stringify(opScope))}

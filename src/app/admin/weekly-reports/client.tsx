@@ -12,7 +12,8 @@ import {
   addManagerItemNote, getConsolidatedReports, getDashboardStats, sendWeeklyReportEmailReminders,
   getUserReportHistory, deleteWeeklyReport, getPersonalProgressCards,
   getDepartmentTeachers, assignTeachersToDepartment, removeTeacherFromDepartment,
-  updateTeacherDepartmentPosition, getAllTeachersForAssignment, setTeacherPrimaryDepartment } from "./actions"
+  updateTeacherDepartmentPosition, getAllTeachersForAssignment, setTeacherPrimaryDepartment,
+  getMonthlyTaskGroupProgress } from "./actions"
 import * as XLSX from "xlsx"
 
 function getWeeksOfMonth(month: number, year: number) {
@@ -45,7 +46,9 @@ const PROGRESS = [
 
 interface ReportItem { 
   id?: string; 
-  mainTask: string; 
+  mainTask?: string; 
+  category?: string;
+  taskGroup?: string;
   workContent: string; 
   expectedCompletion?: string; 
   progress: string; 
@@ -72,7 +75,9 @@ export function WeeklyReportClient({
   operationalScope,
   divisions,
   defaultDeptId: initialDefaultDeptId = "",
-  defaultDivisionCode = ""
+  defaultDivisionCode = "",
+  taskCategories = [],
+  taskGroups = []
 }: any) {
   const now = new Date()
   
@@ -123,6 +128,34 @@ export function WeeklyReportClient({
   )
   const [filterDeptId, setFilterDeptId] = useState<string>(resolvedDefaultDeptId || "ALL")
   const [filterTeacherUserId, setFilterTeacherUserId] = useState<string>("ALL")
+
+  // Task Group & Category helpers
+  const availableGroups = useMemo(() => {
+    const defaultList = [
+      "Khảo thí Phổ thông",
+      "Khảo thí Tổng hợp",
+      "Khảo thí TA&CTQT",
+      "ĐBCL Học sinh",
+      "ĐBCL"
+    ]
+    const dbNames = (taskGroups || []).map((g: any) => g.name)
+    return Array.from(new Set([...defaultList, ...dbNames]))
+  }, [taskGroups])
+
+  // Consolidated View Mode: "week" (Tuần) | "month" (Tháng)
+  const [consolidatedViewMode, setConsolidatedViewMode] = useState<"week" | "month">("week")
+  const [filterConsolidatedGroup, setFilterConsolidatedGroup] = useState<string>("ALL")
+  const [monthlyTaskGroupData, setMonthlyTaskGroupData] = useState<any>(null)
+  const [loadingMonthlyGroup, setLoadingMonthlyGroup] = useState(false)
+
+  const loadMonthlyTaskGroup = async () => {
+    setLoadingMonthlyGroup(true)
+    const res = await getMonthlyTaskGroupProgress(month, year, filterDeptId)
+    if (res.success) {
+      setMonthlyTaskGroupData(res)
+    }
+    setLoadingMonthlyGroup(false)
+  }
 
   // Personal Cards State
   const [personalCards, setPersonalCards] = useState<any[]>([])
@@ -301,7 +334,7 @@ export function WeeklyReportClient({
   // Set default configDeptId when configAvailableDepts changes
   useEffect(() => {
     if (configAvailableDepts.length > 0) {
-      if (!configDeptId || !configAvailableDepts.some(d => d.id === configDeptId || d.code === configDeptId)) {
+      if (!configDeptId || !configAvailableDepts.some((d: any) => d.id === configDeptId || d.code === configDeptId)) {
         setConfigDeptId(configAvailableDepts[0].id || configAvailableDepts[0].code)
       }
     } else {
@@ -343,11 +376,14 @@ export function WeeklyReportClient({
   useEffect(() => {
     if (activeTab === "cards") loadPersonalCards()
     else if (activeTab === "personal") loadReport()
-    else if (activeTab === "consolidated") loadConsolidated()
+    else if (activeTab === "consolidated") {
+      if (consolidatedViewMode === "week") loadConsolidated()
+      else loadMonthlyTaskGroup()
+    }
     else if (activeTab === "dashboard") loadDashboard()
     else if (activeTab === "history") loadHistory()
     else if (activeTab === "config") loadConfigDepartmentTeachers()
-  }, [selectedWeek, month, year, viewUserId, activeTab, filterDivisionCode, filterDeptId, filterTeacherUserId, academicYearId, configDeptId])
+  }, [selectedWeek, month, year, viewUserId, activeTab, consolidatedViewMode, filterDivisionCode, filterDeptId, filterTeacherUserId, academicYearId, configDeptId])
 
   const loadPersonalCards = async () => {
     setLoading(true)
@@ -374,6 +410,8 @@ export function WeeklyReportClient({
       setItems(res.report.items.map((i: any) => ({ 
         id: i.id, 
         mainTask: i.mainTask, 
+        category: i.category || "",
+        taskGroup: i.taskGroup || "",
         workContent: i.workContent, 
         expectedCompletion: i.expectedCompletion || "",
         progress: i.progress, 
@@ -385,9 +423,9 @@ export function WeeklyReportClient({
       setManagerComment(res.report.managerComment || "")
     } else { 
       setItems([
-        { mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" },
-        { mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" },
-        { mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" }
+        { taskGroup: "", category: "", mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" },
+        { taskGroup: "", category: "", mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" },
+        { taskGroup: "", category: "", mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: "" }
       ])
       setReportId("")
       setReportStatus("")
@@ -573,7 +611,7 @@ export function WeeklyReportClient({
 
   const addRows = (count: number = 1) => {
     const newRows: ReportItem[] = Array.from({ length: count }, () => ({
-      mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: ""
+      taskGroup: "", category: "", mainTask: "", workContent: "", expectedCompletion: "", progress: "NOT_STARTED", proposedSolution: ""
     }))
     setItems(prev => [...prev, ...newRows])
   }
@@ -586,18 +624,40 @@ export function WeeklyReportClient({
     setItems(items.map((item, i) => i === idx ? { ...item, [field]: value } : item))
   }
 
+  const handleCategoryChange = (idx: number, catName: string) => {
+    const found = taskCategories.find((c: any) => c.name === catName)
+    setItems(prev => prev.map((item, i) => {
+      if (i !== idx) return item
+      const updated = { ...item, category: catName, mainTask: catName }
+      if (found?.groupName) {
+        updated.taskGroup = found.groupName
+      }
+      return updated
+    }))
+  }
+
   const handleSave = async () => {
-    const activeItems = items.filter(i => i.mainTask.trim() || i.workContent.trim() || i.expectedCompletion?.trim())
+    const activeItems = items.filter(i => 
+      (i.taskGroup && i.taskGroup.trim()) || 
+      (i.category && i.category.trim()) || 
+      (i.mainTask && i.mainTask.trim()) || 
+      i.workContent.trim() || 
+      i.expectedCompletion?.trim()
+    )
     if (activeItems.length === 0) return alert("Vui lòng nhập ít nhất 1 công việc!")
     
     // Kiểm tra tính bắt buộc cho các công việc
     for (let i = 0; i < activeItems.length; i++) {
       const it = activeItems[i]
-      if (!it.mainTask.trim()) {
-        return alert(`⚠️ Vui lòng nhập "Task chính" cho công việc ở dòng ${i + 1}!`)
+      if (!it.taskGroup?.trim() && !it.category?.trim() && !it.mainTask?.trim()) {
+        return alert(`⚠️ Vui lòng chọn "Nhóm công việc" hoặc "Danh mục công việc" ở dòng ${i + 1}!`)
+      }
+      if (!it.workContent || !it.workContent.trim()) {
+        return alert(`⚠️ Vui lòng nhập "Nội dung công việc chi tiết" ở dòng ${i + 1}!`)
       }
       if (!it.expectedCompletion || !it.expectedCompletion.trim()) {
-        return alert(`⚠️ Bắt buộc: Vui lòng chọn "Mốc dự kiến hoàn thành" cho Task chính: "${it.mainTask}"!`)
+        const taskName = it.category || it.taskGroup || it.mainTask || `dòng ${i + 1}`
+        return alert(`⚠️ Bắt buộc: Vui lòng chọn "Mốc dự kiến hoàn thành" cho "${taskName}"!`)
       }
     }
 
@@ -609,7 +669,9 @@ export function WeeklyReportClient({
       academicYearId, 
       targetUserId: isManager ? viewUserId : undefined,
       items: activeItems.map(i => ({ 
-        mainTask: i.mainTask, 
+        mainTask: i.category || i.taskGroup || i.mainTask || "Công việc", 
+        category: i.category || "",
+        taskGroup: i.taskGroup || "",
         workContent: i.workContent, 
         expectedCompletion: i.expectedCompletion,
         progress: i.progress, 
@@ -627,17 +689,48 @@ export function WeeklyReportClient({
   }
 
   const exportToExcel = () => {
+    if (consolidatedViewMode === "month" && monthlyTaskGroupData) {
+      // Export Monthly Matrix
+      const matrix = monthlyTaskGroupData.staffMatrix || []
+      const groups = monthlyTaskGroupData.allGroups || []
+      if (matrix.length === 0) return alert("Không có dữ liệu tiến độ tháng để xuất Excel!")
+      
+      const rows = matrix.map((st: any, idx: number) => {
+        const row: any = {
+          "STT": idx + 1,
+          "Họ và Tên": st.fullName,
+          "Tổ / Bộ phận": st.departmentName,
+          "Email": st.email,
+        }
+        groups.forEach((g: string) => {
+          const gData = st.groups?.[g]
+          row[g] = gData && gData.total > 0 ? `${gData.completed}/${gData.total} (${Math.round((gData.completed/gData.total)*100)}%)` : "-"
+        })
+        row["Tổng việc trong tháng"] = st.totalMonth
+        row["Đã hoàn thành"] = st.completedMonth
+        row["Tỷ lệ hoàn thành"] = st.totalMonth > 0 ? `${Math.round((st.completedMonth/st.totalMonth)*100)}%` : "0%"
+        return row
+      })
+      const ws = XLSX.utils.json_to_sheet(rows)
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, `Tien_do_thang_${month}_${year}`)
+      XLSX.writeFile(wb, `Tien_do_nhan_su_theo_nhom_cv_Thang_${month}_${year}.xlsx`)
+      return
+    }
+
     if (consolidatedData.length === 0) return alert("Không có dữ liệu để xuất Excel!")
     const rows: any[] = []
     let stt = 1
     consolidatedData.forEach((report: any) => {
       report.items.forEach((item: any) => {
+        if (filterConsolidatedGroup !== "ALL" && item.taskGroup !== filterConsolidatedGroup) return
         rows.push({
           "STT": stt++,
           "Mã Email": report.user?.email || "",
           "Họ và Tên": report.user?.fullName || "",
           "Chức danh / Tổ": report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role),
-          "Task Chính": item.mainTask,
+          "Nhóm Công Việc": item.taskGroup || "-",
+          "Danh Mục Công Việc": item.category || item.mainTask || "-",
           "Nội Dung Công Việc": item.workContent,
           "Mốc Dự Kiến Hoàn Thành": formatExpectedDate(item.expectedCompletion),
           "Tiến Độ": PROGRESS.find(p => p.value === item.progress)?.label || item.progress,
@@ -938,7 +1031,14 @@ export function WeeklyReportClient({
                         return (
                           <tr key={idx} className="hover:bg-slate-50">
                             <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                            <td className="p-3 font-bold text-indigo-900">{item.mainTask}</td>
+                            <td className="p-3 font-bold text-indigo-900">
+                              {item.taskGroup && (
+                                <span className="block text-[10px] text-teal-700 font-semibold mb-0.5">
+                                  [{item.taskGroup}]
+                                </span>
+                              )}
+                              {item.category || item.mainTask}
+                            </td>
                             <td className="p-3 text-slate-700 leading-relaxed break-words">{item.workContent}</td>
                             <td className="p-3 text-slate-700 font-semibold whitespace-nowrap">
                               {formatExpectedDate(item.expectedCompletion)}
@@ -1046,7 +1146,7 @@ export function WeeklyReportClient({
               onClick={exportToExcel}
               className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-sm font-bold text-xs"
             >
-              <Download className="w-4 h-4" /> Xuất Excel Tổng hợp
+              <Download className="w-4 h-4" /> {consolidatedViewMode === "month" ? "Xuất Excel Tiến độ Tháng" : "Xuất Excel Tổng hợp"}
             </button>
           )}
         </div>
@@ -1747,79 +1847,381 @@ export function WeeklyReportClient({
             </div>
           )}
 
-          {/* ============ TAB: CONSOLIDATED TỔNG HỢP (From User Screenshot) ============ */}
+          {/* ============ TAB: CONSOLIDATED TỔNG HỢP ============ */}
           {activeTab === "consolidated" && isManager && (
-            <div className="space-y-4">
-              <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                      <Table2 className="w-5 h-5 text-[#48BFE3]" /> Tổng hợp báo cáo Tuần {selectedWeek} - Tháng {month}/{year}
-                    </h3>
-                    <p className="text-xs text-slate-400">
-                      {filterDeptId !== "ALL" 
-                        ? `Đang lọc theo: ${roles?.find((r: any) => r.id === filterDeptId || r.code === filterDeptId)?.name} (${consolidatedData.length} báo cáo)`
-                        : `Tổng cộng ${consolidatedData.length} báo cáo nộp trong tuần`
-                      }
-                    </p>
-                  </div>
+            <div className="space-y-5">
+              {/* Mode Switcher: Tuần vs Tháng */}
+              <div className="bg-white rounded-3xl border border-slate-100 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit flex-wrap">
+                  <button
+                    onClick={() => setConsolidatedViewMode("week")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                      consolidatedViewMode === "week"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Calendar className="w-4 h-4 text-[#48BFE3]" />
+                    1. Báo cáo Tổng Hợp Theo Tuần {selectedWeek}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConsolidatedViewMode("month")
+                      loadMonthlyTaskGroup()
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                      consolidatedViewMode === "month"
+                        ? "bg-white text-slate-900 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <BarChart3 className="w-4 h-4 text-emerald-600" />
+                    2. Bảng Tiến Độ Tháng & Gợi Ý Hành Động
+                  </button>
                 </div>
 
-                <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
-                        <th className="p-3 text-center w-12">STT</th>
-                        <th className="p-3 min-w-[150px]">Nhân sự / Tổ</th>
-                        <th className="p-3 min-w-[140px]">Task chính</th>
-                        <th className="p-3 min-w-[220px]">Nội dung công việc</th>
-                        <th className="p-3 min-w-[125px]">Dự kiến HT</th>
-                        <th className="p-3 w-28">Tiến độ</th>
-                        <th className="p-3 min-w-[160px]">Đề xuất giải pháp</th>
-                        <th className="p-3 min-w-[160px]">Nhận xét QL</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y font-medium">
-                      {consolidatedData.length === 0 ? (
-                        <tr>
-                          <td colSpan={8} className="p-8 text-center text-slate-400">
-                            Chưa có báo cáo nào được nộp cho tuần này theo bộ lọc hiện tại!
-                          </td>
-                        </tr>
-                      ) : (
-                        consolidatedData.map((report: any, rIdx: number) => 
-                          report.items.map((item: any, iIdx: number) => {
-                            const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
-                            return (
-                              <tr key={`${report.id}_${item.id || iIdx}`} className="hover:bg-slate-50">
-                                <td className="p-3 text-center text-slate-400 font-bold">{rIdx + 1}.{iIdx + 1}</td>
-                                <td className="p-3 font-bold text-slate-800">
-                                  <div>{report.user?.fullName}</div>
-                                  <div className="text-[10px] text-slate-400 font-normal">
-                                    {report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role)}
-                                  </div>
-                                </td>
-                                <td className="p-3 font-bold text-indigo-900">{item.mainTask}</td>
-                                <td className="p-3 text-slate-700 leading-relaxed">{item.workContent}</td>
-                                <td className="p-3 text-slate-700 font-semibold whitespace-nowrap">
-                                  {formatExpectedDate(item.expectedCompletion)}
-                                </td>
-                                <td className="p-3">
-                                  <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
-                                    {prog.label}
-                                  </span>
-                                </td>
-                                <td className="p-3 text-slate-500 italic">{item.proposedSolution || "-"}</td>
-                                <td className="p-3 text-slate-700">{item.managerNote || report.managerComment || "-"}</td>
-                              </tr>
-                            )
-                          })
-                        )
-                      )}
-                    </tbody>
-                  </table>
+                <div className="flex items-center gap-2">
+                  {consolidatedViewMode === "month" && (
+                    <button
+                      onClick={loadMonthlyTaskGroup}
+                      disabled={loadingMonthlyGroup}
+                      className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                      {loadingMonthlyGroup ? "Đang phân tích..." : "Cập nhật dữ liệu tháng"}
+                    </button>
+                  )}
                 </div>
               </div>
+
+              {/* ----------------- SUB-VIEW: BÁO CÁO TUẦN ----------------- */}
+              {consolidatedViewMode === "week" && (
+                <div className="space-y-4">
+                  {/* Task Group Filter Pills for Week */}
+                  <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-sm space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+                        <Filter className="w-3.5 h-3.5 text-[#48BFE3]" /> Rà soát theo Nhóm công việc:
+                      </span>
+                      <span className="text-xs text-slate-400">
+                        {filterDeptId !== "ALL" 
+                          ? `Tổ: ${roles?.find((r: any) => r.id === filterDeptId || r.code === filterDeptId)?.name} (${consolidatedData.length} báo cáo)`
+                          : `Tổng cộng ${consolidatedData.length} báo cáo nộp trong tuần`
+                        }
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        onClick={() => setFilterConsolidatedGroup("ALL")}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                          filterConsolidatedGroup === "ALL"
+                            ? "bg-slate-800 text-white shadow-sm"
+                            : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                        }`}
+                      >
+                        Tất cả các nhóm
+                      </button>
+                      {availableGroups.map((gName: string) => {
+                        // Count tasks in this group for this week
+                        let groupCount = 0
+                        consolidatedData.forEach((r: any) => {
+                          r.items.forEach((it: any) => {
+                            if (it.taskGroup === gName) groupCount++
+                          })
+                        })
+                        return (
+                          <button
+                            key={gName}
+                            onClick={() => setFilterConsolidatedGroup(gName)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                              filterConsolidatedGroup === gName
+                                ? "bg-[#007A72] text-white shadow-sm"
+                                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                            }`}
+                          >
+                            <span>{gName}</span>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                              filterConsolidatedGroup === gName ? "bg-white/20 text-white" : "bg-white text-slate-600"
+                            }`}>
+                              {groupCount}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Consolidated Week Table */}
+                  <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
+                    <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                            <th className="p-3 text-center w-12">STT</th>
+                            <th className="p-3 min-w-[140px]">Nhân sự / Tổ</th>
+                            <th className="p-3 min-w-[140px]">Nhóm công việc</th>
+                            <th className="p-3 min-w-[140px]">Danh mục công việc</th>
+                            <th className="p-3 min-w-[220px]">Nội dung công việc chi tiết</th>
+                            <th className="p-3 min-w-[110px]">Dự kiến HT</th>
+                            <th className="p-3 w-28">Tiến độ</th>
+                            <th className="p-3 min-w-[150px]">Đề xuất giải pháp</th>
+                            <th className="p-3 min-w-[150px]">Nhận xét QL</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y font-medium">
+                          {consolidatedData.length === 0 ? (
+                            <tr>
+                              <td colSpan={9} className="p-8 text-center text-slate-400">
+                                Chưa có báo cáo nào được nộp cho tuần này theo bộ lọc hiện tại!
+                              </td>
+                            </tr>
+                          ) : (
+                            (() => {
+                              const rows: any[] = []
+                              let count = 0
+                              consolidatedData.forEach((report: any) => {
+                                report.items.forEach((item: any) => {
+                                  if (filterConsolidatedGroup !== "ALL" && item.taskGroup !== filterConsolidatedGroup) return
+                                  count++
+                                  const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
+                                  rows.push(
+                                    <tr key={`${report.id}_${item.id || count}`} className="hover:bg-slate-50">
+                                      <td className="p-3 text-center text-slate-400 font-bold">{count}</td>
+                                      <td className="p-3 font-bold text-slate-800">
+                                        <div>{report.user?.fullName}</div>
+                                        <div className="text-[10px] text-slate-400 font-normal">
+                                          {report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role)}
+                                        </div>
+                                      </td>
+                                      <td className="p-3">
+                                        <span className="px-2 py-1 rounded-lg bg-teal-50 text-teal-800 border border-teal-200 font-bold text-[11px] inline-block">
+                                          {item.taskGroup || "Chưa gán nhóm"}
+                                        </span>
+                                      </td>
+                                      <td className="p-3 font-semibold text-slate-800">
+                                        {item.category || item.mainTask || "-"}
+                                      </td>
+                                      <td className="p-3 text-slate-700 leading-relaxed">{item.workContent}</td>
+                                      <td className="p-3 text-slate-700 font-semibold whitespace-nowrap">
+                                        {formatExpectedDate(item.expectedCompletion)}
+                                      </td>
+                                      <td className="p-3">
+                                        <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
+                                          {prog.label}
+                                        </span>
+                                      </td>
+                                      <td className="p-3 text-slate-500 italic">{item.proposedSolution || "-"}</td>
+                                      <td className="p-3 text-slate-700">{item.managerNote || report.managerComment || "-"}</td>
+                                    </tr>
+                                  )
+                                })
+                              })
+                              if (rows.length === 0) {
+                                return (
+                                  <tr>
+                                    <td colSpan={9} className="p-8 text-center text-slate-400">
+                                      Không có công việc nào thuộc nhóm "{filterConsolidatedGroup}" trong tuần này!
+                                    </td>
+                                  </tr>
+                                )
+                              }
+                              return rows
+                            })()
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ----------------- SUB-VIEW: BẢNG TIẾN ĐỘ THÁNG & GỢI Ý HÀNH ĐỘNG ----------------- */}
+              {consolidatedViewMode === "month" && (
+                <div className="space-y-6">
+                  {/* BẢNG TIẾN ĐỘ CÁ NHÂN THEO NHÓM CV THÁNG */}
+                  <div className="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                          <BarChart3 className="w-5 h-5 text-emerald-600" /> Bảng Tiến Độ Cá Nhân Theo Nhóm Công Việc (Tháng {month}/{year})
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Tỷ lệ hoàn thành công việc theo từng nhóm chuyên môn (Khảo thí & ĐBCL) trong tháng
+                        </p>
+                      </div>
+                    </div>
+
+                    {loadingMonthlyGroup ? (
+                      <div className="p-12 text-center text-slate-400 font-semibold">
+                        Đang tổng hợp dữ liệu tiến độ tháng và tính toán gợi ý hành động...
+                      </div>
+                    ) : !monthlyTaskGroupData || (monthlyTaskGroupData.staffMatrix || []).length === 0 ? (
+                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500">
+                        Chưa có dữ liệu báo cáo tuần nào được ghi nhận trong Tháng {month}/{year}.
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                              <th className="p-3 text-center w-10">STT</th>
+                              <th className="p-3 min-w-[160px]">Họ và Tên Nhân Sự</th>
+                              <th className="p-3 min-w-[130px]">Tổ / Chức Danh</th>
+                              {availableGroups.map((gName: string) => (
+                                <th key={gName} className="p-3 text-center min-w-[130px]">
+                                  {gName}
+                                </th>
+                              ))}
+                              <th className="p-3 text-center min-w-[110px]">Tổng Việc Tháng</th>
+                              <th className="p-3 text-center min-w-[130px]">Tiến Độ Tháng</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y font-medium">
+                            {monthlyTaskGroupData.staffMatrix.map((st: any, sIdx: number) => {
+                              const overallRate = st.totalMonth > 0 ? Math.round((st.completedMonth / st.totalMonth) * 100) : 0
+                              return (
+                                <tr key={st.userId || sIdx} className="hover:bg-slate-50">
+                                  <td className="p-3 text-center text-slate-400 font-bold">{sIdx + 1}</td>
+                                  <td className="p-3 font-bold text-slate-800">
+                                    <div>{st.fullName}</div>
+                                    <div className="text-[10px] text-slate-400 font-normal">{st.email}</div>
+                                  </td>
+                                  <td className="p-3 text-slate-600 font-semibold">{st.departmentName}</td>
+                                  {availableGroups.map((gName: string) => {
+                                    const gData = st.groups?.[gName]
+                                    if (!gData || gData.total === 0) {
+                                      return (
+                                        <td key={gName} className="p-3 text-center text-slate-300 font-medium">
+                                          -
+                                        </td>
+                                      )
+                                    }
+                                    const rate = Math.round((gData.completed / gData.total) * 100)
+                                    return (
+                                      <td key={gName} className="p-3 text-center">
+                                        <div className="font-bold text-slate-700">
+                                          {gData.completed}/{gData.total}
+                                        </div>
+                                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden mt-1">
+                                          <div
+                                            className={`h-full ${
+                                              rate >= 80 ? "bg-emerald-500" : rate >= 50 ? "bg-blue-500" : "bg-amber-500"
+                                            }`}
+                                            style={{ width: `${rate}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-[10px] text-slate-400">{rate}%</span>
+                                      </td>
+                                    )
+                                  })}
+                                  <td className="p-3 text-center font-bold text-slate-800">
+                                    {st.completedMonth} / {st.totalMonth} việc
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                                      overallRate >= 80 
+                                        ? "bg-emerald-100 text-emerald-800 border border-emerald-200" 
+                                        : overallRate >= 50 
+                                          ? "bg-blue-100 text-blue-800 border border-blue-200" 
+                                          : "bg-amber-100 text-amber-800 border border-amber-200"
+                                    }`}>
+                                      {overallRate}% Hoàn thành
+                                    </span>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* KHỐI GỢI Ý HÀNH ĐỘNG TIẾP THEO (AI / ANALYTICS RECOMMENDATIONS) */}
+                  <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 text-white shadow-xl space-y-4">
+                    <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-gradient-to-tr from-amber-400 to-amber-600 rounded-2xl shadow-lg">
+                          <Sparkles className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-extrabold tracking-wide flex items-center gap-2">
+                            GỢI Ý HÀNH ĐỘNG TIẾP THEO CHO BAN ĐIỀU HÀNH & TỔ QUẢN LÝ
+                          </h3>
+                          <p className="text-xs text-slate-300 mt-0.5">
+                            Hệ thống tự động rà soát tiến độ thực tế theo từng nhóm CV trong tháng, phát hiện nhóm công việc nghẽn và tổng hợp các đề xuất giải pháp để đưa ra khuyến nghị xử lý:
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {loadingMonthlyGroup ? (
+                      <div className="p-6 text-center text-slate-400 text-xs">Đang xử lý khuyến nghị...</div>
+                    ) : monthlyTaskGroupData?.recommendations && monthlyTaskGroupData.recommendations.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        {monthlyTaskGroupData.recommendations.map((rec: any, idx: number) => {
+                          const isHigh = rec.priority === "HIGH"
+                          const isMedium = rec.priority === "MEDIUM"
+                          return (
+                            <div 
+                              key={idx}
+                              className={`rounded-2xl p-4 border transition-all ${
+                                isHigh 
+                                  ? "bg-red-950/40 border-red-500/40" 
+                                  : isMedium 
+                                    ? "bg-amber-950/40 border-amber-500/40" 
+                                    : "bg-teal-950/40 border-teal-500/40"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-2">
+                                <span className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full ${
+                                  isHigh 
+                                    ? "bg-red-500 text-white" 
+                                    : isMedium 
+                                      ? "bg-amber-500 text-slate-900" 
+                                      : "bg-teal-500 text-white"
+                                }`}>
+                                  {isHigh ? "🔴 Ưu tiên cao" : isMedium ? "🟡 Cần theo dõi" : "🟢 Đề xuất tháo gỡ"}
+                                </span>
+                                <span className="text-xs font-bold text-slate-300">
+                                  Nhóm: {rec.groupName}
+                                </span>
+                              </div>
+
+                              <h4 className="text-sm font-bold text-white mb-1.5 flex items-center gap-1.5">
+                                <AlertTriangle className={`w-4 h-4 ${isHigh ? "text-red-400" : isMedium ? "text-amber-400" : "text-teal-400"}`} />
+                                {rec.title}
+                              </h4>
+                              <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                                {rec.content}
+                              </p>
+
+                              {rec.proposedSolutions && rec.proposedSolutions.length > 0 && (
+                                <div className="bg-black/30 rounded-xl p-3 border border-white/5 space-y-1.5">
+                                  <p className="text-[11px] font-bold text-amber-300">
+                                    💬 Đề xuất giải pháp từ nhân sự trong nhóm cần xem xét:
+                                  </p>
+                                  <ul className="text-xs text-slate-200 list-disc list-inside space-y-1 italic">
+                                    {rec.proposedSolutions.map((sol: string, sI: number) => (
+                                      <li key={sI}>{sol}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-6 text-center bg-white/5 rounded-2xl border border-white/10 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
+                        <CheckCircle2 className="w-5 h-5" />
+                        Tất cả các nhóm công việc đang bám sát tiến độ hoàn thành tốt trong tháng! Không có điểm nghẽn nghiêm trọng.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1858,84 +2260,125 @@ export function WeeklyReportClient({
                   <thead>
                     <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
                       <th className="p-3 text-center w-10">STT</th>
-                      <th className="p-3 min-w-[160px]">Task chính <span className="text-red-500 font-bold">*</span></th>
-                      <th className="p-3 min-w-[240px]">Nội dung công việc chi tiết</th>
-                      <th className="p-3 min-w-[160px]">
+                      <th className="p-3 min-w-[160px]">Nhóm công việc <span className="text-red-500 font-bold">*</span></th>
+                      <th className="p-3 min-w-[170px]">Danh mục công việc</th>
+                      <th className="p-3 min-w-[240px]">Nội dung công việc chi tiết <span className="text-red-500 font-bold">*</span></th>
+                      <th className="p-3 min-w-[150px]">
                         <span className="flex items-center gap-1 text-slate-700">
                           Mốc dự kiến HT <span className="text-red-500 font-bold">*</span>
                         </span>
                       </th>
                       <th className="p-3 w-36">Tiến độ</th>
                       <th className="p-3 min-w-[180px]">Đề xuất giải pháp (nếu có)</th>
-                      <th className="p-3 text-center w-16">Thao tác</th>
+                      <th className="p-3 text-center w-14">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y font-medium">
-                    {items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/50">
-                        <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
-                        <td className="p-3">
-                          <input
-                            type="text"
-                            value={item.mainTask}
-                            onChange={e => updateItem(idx, "mainTask", e.target.value)}
-                            placeholder="Tên Task chính..."
-                            className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-bold text-slate-800"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <textarea
-                            rows={2}
-                            value={item.workContent}
-                            onChange={e => updateItem(idx, "workContent", e.target.value)}
-                            placeholder="Mô tả công việc thực hiện trong tuần..."
-                            className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-700"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <input
-                            type="date"
-                            value={item.expectedCompletion || ""}
-                            onChange={e => updateItem(idx, "expectedCompletion", e.target.value)}
-                            className={`w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-semibold text-slate-700 transition-all ${
-                              !item.expectedCompletion && (item.mainTask || item.workContent)
-                                ? "border-amber-400 bg-amber-50/50 focus:border-amber-500"
-                                : "border-slate-200 bg-white"
-                            }`}
-                            title="Mốc dự kiến hoàn thành (bắt buộc)"
-                          />
-                        </td>
-                        <td className="p-3">
-                          <select
-                            value={item.progress}
-                            onChange={e => updateItem(idx, "progress", e.target.value)}
-                            className="w-full p-2 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white"
-                          >
-                            {PROGRESS.map(p => (
-                              <option key={p.value} value={p.value}>{p.label}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="p-3">
-                          <input
-                            type="text"
-                            value={item.proposedSolution}
-                            onChange={e => updateItem(idx, "proposedSolution", e.target.value)}
-                            placeholder="Đề xuất giải pháp..."
-                            className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-600 italic"
-                          />
-                        </td>
-                        <td className="p-3 text-center">
-                          <button
-                            onClick={() => removeRow(idx)}
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                            title="Xóa dòng này"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {items.map((item, idx) => {
+                      const relevantCategories = item.taskGroup
+                        ? taskCategories.filter((c: any) => !c.groupName || c.groupName === item.taskGroup)
+                        : taskCategories
+
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50/50">
+                          <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                          
+                          {/* Nhóm công việc */}
+                          <td className="p-3">
+                            <select
+                              value={item.taskGroup || ""}
+                              onChange={e => updateItem(idx, "taskGroup", e.target.value)}
+                              className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-bold text-slate-800 bg-white"
+                            >
+                              <option value="">-- Chọn Nhóm CV --</option>
+                              {availableGroups.map((g: string) => (
+                                <option key={g} value={g}>{g}</option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* Danh mục công việc */}
+                          <td className="p-3">
+                            <select
+                              value={item.category || item.mainTask || ""}
+                              onChange={e => handleCategoryChange(idx, e.target.value)}
+                              className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-medium text-slate-700 bg-white"
+                            >
+                              <option value="">-- Chọn Danh mục --</option>
+                              {relevantCategories.map((c: any) => (
+                                <option key={c.id || c.name} value={c.name}>
+                                  {c.name} {c.groupName ? `(${c.groupName})` : ""}
+                                </option>
+                              ))}
+                              {item.category && !relevantCategories.some((c: any) => c.name === item.category) && (
+                                <option value={item.category}>{item.category}</option>
+                              )}
+                            </select>
+                          </td>
+
+                          {/* Nội dung công việc chi tiết */}
+                          <td className="p-3">
+                            <textarea
+                              rows={2}
+                              value={item.workContent}
+                              onChange={e => updateItem(idx, "workContent", e.target.value)}
+                              placeholder="Mô tả công việc thực hiện trong tuần..."
+                              className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-700"
+                            />
+                          </td>
+
+                          {/* Mốc dự kiến HT */}
+                          <td className="p-3">
+                            <input
+                              type="date"
+                              value={item.expectedCompletion || ""}
+                              onChange={e => updateItem(idx, "expectedCompletion", e.target.value)}
+                              className={`w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] font-semibold text-slate-700 transition-all ${
+                                !item.expectedCompletion && (item.taskGroup || item.category || item.workContent)
+                                  ? "border-amber-400 bg-amber-50/50 focus:border-amber-500"
+                                  : "border-slate-200 bg-white"
+                              }`}
+                              title="Mốc dự kiến hoàn thành (bắt buộc)"
+                            />
+                          </td>
+
+                          {/* Tiến độ */}
+                          <td className="p-3">
+                            <select
+                              value={item.progress}
+                              onChange={e => updateItem(idx, "progress", e.target.value)}
+                              className="w-full p-2 border border-slate-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white"
+                            >
+                              {PROGRESS.map(p => (
+                                <option key={p.value} value={p.value}>{p.label}</option>
+                              ))}
+                            </select>
+                          </td>
+
+                          {/* Đề xuất giải pháp */}
+                          <td className="p-3">
+                            <input
+                              type="text"
+                              value={item.proposedSolution}
+                              onChange={e => updateItem(idx, "proposedSolution", e.target.value)}
+                              placeholder="Đề xuất giải pháp..."
+                              className="w-full p-2 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#48BFE3] text-slate-600 italic"
+                            />
+                          </td>
+
+                          {/* Thao tác */}
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => removeRow(idx)}
+                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                              title="Xóa dòng này"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1994,7 +2437,7 @@ export function WeeklyReportClient({
                           Tuần {rpt.weekNumber} &bull; Tháng {rpt.month}/{rpt.year}
                         </td>
                         <td className="p-3 text-slate-700">
-                          {rpt.items.map((i: any) => i.mainTask).filter(Boolean).join(", ") || "-"}
+                          {rpt.items.map((i: any) => i.taskGroup ? `[${i.taskGroup}] ${i.category || i.mainTask}` : (i.category || i.mainTask)).filter(Boolean).join("; ") || "-"}
                         </td>
                         <td className="p-3 text-center">
                           <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
