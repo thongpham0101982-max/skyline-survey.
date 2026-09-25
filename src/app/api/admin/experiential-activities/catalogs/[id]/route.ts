@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { hasModulePermission } from '@/lib/permissions';
 import { normalizeActivityName } from '@/lib/experiential/name-normalizer';
+import { sendTLHNAllocationNotification } from '@/lib/experiential/email-notification';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,8 +114,41 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     // Action: ALLOCATE_CAMPUSES (Đẩy hoạt động xuống cơ sở)
+    let emailResult: any = null;
     if (action === 'ALLOCATE_CAMPUSES' && Array.isArray(body.allocatedCampuses)) {
       updatedMeta.allocatedCampuses = body.allocatedCampuses;
+
+      // Gửi email thông báo cho GV Tổ TLHN tại các cơ sở được phân bổ
+      if (body.sendEmail !== false && body.allocatedCampuses.length > 0) {
+        try {
+          emailResult = await sendTLHNAllocationNotification({
+            catalogId: existing.id,
+            catalogCode: existing.code,
+            activityName: existing.name,
+            educationLevel: updatedMeta.educationLevel || existing.level,
+            programType: updatedMeta.programType,
+            sheetCode: updatedMeta.sheetCode,
+            grades: updatedMeta.grades,
+            themeName: updatedMeta.themeName,
+            integratedSubjects: updatedMeta.integratedSubjects,
+            primarySubjectName: updatedMeta.primarySubjectName,
+            coopSubjectNames: updatedMeta.coopSubjectNames,
+            educationalContent: updatedMeta.educationalContent,
+            learningOutcomes: updatedMeta.learningOutcomes,
+            organizationFormat: updatedMeta.organizationFormat,
+            timeFrame: updatedMeta.timeFrame,
+            semester: updatedMeta.semester,
+            expectedLocation: updatedMeta.expectedLocation,
+            partners: updatedMeta.partners,
+            cthsTeacherName: updatedMeta.cthsTeacherName,
+            senderName: session.user?.name || 'BP HĐNGLL - Tổ CTHS',
+            senderEmail: session.user?.email,
+            allocatedCampuses: body.allocatedCampuses
+          });
+        } catch (emailErr) {
+          console.error('[ALLOCATE_CAMPUSES] Lỗi khi gửi email cho GV Tổ TLHN:', emailErr);
+        }
+      }
     }
 
     const finalName = name !== undefined ? normalizeActivityName(name.trim()) : existing.name;
@@ -137,7 +171,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         name: updated.name,
         status: updated.status,
         meta: updatedMeta
-      }
+      },
+      emailNotification: emailResult ? {
+        sent: emailResult.success,
+        count: emailResult.count
+      } : null
     });
   } catch (error: any) {
     console.error('Error updating catalog item:', error);

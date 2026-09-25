@@ -605,3 +605,472 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
     return { success: false, error: error?.message };
   }
 }
+
+/**
+ * Payload thông báo phân bổ kế hoạch hoạt động ngoại khóa cho GV Tổ TLHN
+ */
+export interface TLHNAllocationEmailPayload {
+  catalogId: string;
+  catalogCode: string;
+  activityName: string;
+  educationLevel?: string;
+  programType?: string;
+  sheetCode?: string;
+  grades?: string[];
+  themeName?: string;
+  integratedSubjects?: string;
+  primarySubjectName?: string;
+  coopSubjectNames?: string;
+  educationalContent?: string;
+  learningOutcomes?: string;
+  organizationFormat?: string;
+  timeFrame?: string;
+  semester?: number;
+  expectedLocation?: string;
+  partners?: string;
+  cthsTeacherName?: string;
+  senderName?: string;
+  senderEmail?: string;
+  customMessage?: string;
+  allocatedCampuses: Array<{
+    campusId: string;
+    campusCode?: string;
+    campusName?: string;
+    tlhnTeacherId?: string;
+    tlhnTeacherName?: string;
+    tlhnTeacherEmail?: string;
+  }>;
+}
+
+/**
+ * Gửi email thông báo cho GV Tổ TLHN tại các cơ sở khi Ban ĐHCM / BP HĐNGLL - Tổ CTHS phân bổ kế hoạch hoạt động
+ */
+export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmailPayload) {
+  try {
+    const {
+      catalogId,
+      catalogCode,
+      activityName,
+      educationLevel = 'Tiểu học',
+      programType,
+      grades = [],
+      themeName,
+      integratedSubjects,
+      primarySubjectName,
+      coopSubjectNames,
+      educationalContent,
+      learningOutcomes,
+      organizationFormat = 'Trải nghiệm',
+      timeFrame,
+      semester = 1,
+      expectedLocation,
+      partners,
+      cthsTeacherName,
+      senderName = 'BP HĐNGLL - Tổ CTHS',
+      senderEmail,
+      allocatedCampuses = []
+    } = payload;
+
+    if (!allocatedCampuses || allocatedCampuses.length === 0) {
+      console.log('[TLHN Email] Không có cơ sở phân bổ, bỏ qua gửi email.');
+      return { success: true, count: 0 };
+    }
+
+    const campusIds = allocatedCampuses.map(a => a.campusId).filter(Boolean);
+
+    // 1. Tìm các giáo viên thuộc Tổ TLHN tại các cơ sở được phân bổ
+    const tlhnTeachers = await prisma.teacher.findMany({
+      where: {
+        campusId: { in: campusIds },
+        status: 'ACTIVE',
+        OR: [
+          { departmentRel: { name: { contains: 'TLHN' } } },
+          { departmentRel: { name: { contains: 'Tâm lý' } } },
+          { position: { contains: 'TLHN' } },
+          { positions: { contains: 'TLHN' } },
+          { position: { contains: 'Tâm lý' } },
+          { positions: { contains: 'Tâm lý' } },
+          { user: { role: { contains: 'TLHN' } } },
+          { user: { role: { contains: 'HDTN' } } }
+        ]
+      },
+      include: {
+        campus: true,
+        user: true,
+        departmentRel: true
+      }
+    });
+
+    // 2. Thu thập danh sách người nhận email (loại bỏ trùng lặp)
+    const recipientMap = new Map<string, {
+      email: string;
+      teacherName: string;
+      teacherCode: string;
+      campusName: string;
+      campusCode: string;
+    }>();
+
+    // Thêm các GV Tổ TLHN tìm được theo cơ sở
+    tlhnTeachers.forEach(t => {
+      const email = t.email || t.user?.email;
+      if (email && email.includes('@')) {
+        const cleanEmail = email.trim().toLowerCase();
+        recipientMap.set(cleanEmail, {
+          email: cleanEmail,
+          teacherName: t.teacherName || t.user?.fullName || 'Thầy/Cô',
+          teacherCode: t.teacherCode || '',
+          campusName: t.campus?.campusName || '',
+          campusCode: t.campus?.campusCode || ''
+        });
+      }
+    });
+
+    // Thêm các GV có email trực tiếp trong allocatedCampuses (nếu người dùng gán đích danh)
+    allocatedCampuses.forEach(alloc => {
+      if (alloc.tlhnTeacherEmail && alloc.tlhnTeacherEmail.includes('@')) {
+        const cleanEmail = alloc.tlhnTeacherEmail.trim().toLowerCase();
+        if (!recipientMap.has(cleanEmail)) {
+          recipientMap.set(cleanEmail, {
+            email: cleanEmail,
+            teacherName: alloc.tlhnTeacherName || 'Thầy/Cô Tổ TLHN',
+            teacherCode: '',
+            campusName: alloc.campusName || '',
+            campusCode: alloc.campusCode || ''
+          });
+        }
+      }
+    });
+
+    // Nếu một số cơ sở không có GV Tổ TLHN, tìm email của GDCS / Ban Giám hiệu cơ sở để không bỏ sót kế hoạch
+    for (const alloc of allocatedCampuses) {
+      const hasTeacherForCampus = Array.from(recipientMap.values()).some(
+        r => r.campusCode === alloc.campusCode || r.campusName === alloc.campusName
+      );
+      if (!hasTeacherForCampus) {
+        const campusWithMgr = await prisma.campus.findUnique({
+          where: { id: alloc.campusId },
+          include: {
+            manager: true,
+            userAssignments: {
+              where: { role: { in: ['GDCS', 'GIAO_VU_CS', 'GIAO_VU', 'BGH'] } },
+              include: { user: true }
+            }
+          }
+        });
+
+        if (campusWithMgr?.manager?.email) {
+          const mEmail = campusWithMgr.manager.email.trim().toLowerCase();
+          recipientMap.set(mEmail, {
+            email: mEmail,
+            teacherName: campusWithMgr.manager.fullName || 'Ban Giám đốc Cơ sở',
+            teacherCode: '',
+            campusName: campusWithMgr.campusName,
+            campusCode: campusWithMgr.campusCode
+          });
+        }
+
+        campusWithMgr?.userAssignments?.forEach((ua: any) => {
+          if (ua.user?.email) {
+            const uEmail = ua.user.email.trim().toLowerCase();
+            recipientMap.set(uEmail, {
+              email: uEmail,
+              teacherName: ua.user.fullName || 'Cán bộ Cơ sở',
+              teacherCode: '',
+              campusName: campusWithMgr.campusName,
+              campusCode: campusWithMgr.campusCode
+            });
+          }
+        });
+      }
+    }
+
+    const recipients = Array.from(recipientMap.values());
+    if (recipients.length === 0) {
+      console.log('[TLHN Email] Không tìm thấy email của GV Tổ TLHN tại các cơ sở.');
+      return { success: true, count: 0 };
+    }
+
+    const appUrl = process.env.NEXTAUTH_URL || 'https://skyline-survey.vercel.app';
+    const dispatchUrl = `${appUrl}/teacher/experiential-activities`;
+    const campusNamesList = allocatedCampuses.map(a => a.campusName || a.campusCode).filter(Boolean).join(', ');
+    const gradesList = Array.isArray(grades) && grades.length > 0 ? grades.join(', ') : 'Toàn bậc học';
+
+    const fromAddress = senderEmail 
+      ? `"${senderName}" <${senderEmail}>` 
+      : `"Hệ thống Sky-Line SMS - HĐTN" <${process.env.SMTP_FROM || 'thongpn@skylineschool.edu.vn'}>`;
+
+    const emailSubject = `[Sky-line SMS - HĐTN] Kế hoạch hoạt động ngoại khóa từ BP HĐNGLL - Tổ CTHS: ${activityName}`;
+
+    // 3. Gửi email tới từng thầy cô Tổ TLHN
+    const sendPromises = recipients.map(async recipient => {
+      const emailHtml = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${emailSubject}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+    }
+    .wrapper {
+      max-width: 640px;
+      margin: 20px auto;
+      background: #ffffff;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+      border: 1px solid #e2e8f0;
+    }
+    .header {
+      background: linear-gradient(135deg, #003B3A 0%, #005F5B 50%, #00A19A 100%);
+      padding: 32px 30px;
+      color: #ffffff;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+    .header p {
+      margin: 6px 0 0 0;
+      font-size: 13px;
+      color: #e6fffa;
+      font-weight: 500;
+    }
+    .content {
+      padding: 28px 30px;
+    }
+    .greeting {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 16px;
+    }
+    .message-banner {
+      background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
+      border-left: 4px solid #00A19A;
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin: 18px 0 24px 0;
+      border-top: 1px solid #ccfbf1;
+      border-right: 1px solid #ccfbf1;
+      border-bottom: 1px solid #ccfbf1;
+    }
+    .message-banner p {
+      margin: 0;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #003B3A;
+      line-height: 1.6;
+    }
+    .activity-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .activity-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #003B3A;
+      margin-bottom: 14px;
+      border-bottom: 2px solid #00A19A;
+      padding-bottom: 8px;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .info-table td {
+      padding: 8px 6px;
+      vertical-align: top;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+    .info-table tr:last-child td {
+      border-bottom: none;
+    }
+    .info-label {
+      width: 38%;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .info-val {
+      width: 62%;
+      color: #0f172a;
+      font-weight: 600;
+    }
+    .cta-container {
+      text-align: center;
+      margin: 30px 0 20px 0;
+    }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%);
+      color: #ffffff !important;
+      text-decoration: none;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0, 161, 154, 0.35);
+      letter-spacing: 0.02em;
+    }
+    .instruction-box {
+      background: #fffbeb;
+      border: 1px solid #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 14px 18px;
+      border-radius: 12px;
+      font-size: 12.5px;
+      color: #92400e;
+      line-height: 1.55;
+      margin-top: 20px;
+    }
+    .footer {
+      background: #f1f5f9;
+      padding: 22px 30px;
+      font-size: 11.5px;
+      color: #64748b;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <h1>HỆ THỐNG SKY-LINE SMS</h1>
+      <p>Kế hoạch Hoạt động Trải nghiệm & Ngoại khóa</p>
+    </div>
+
+    <div class="content">
+      <div class="greeting">
+        Kính gửi Thầy/Cô <strong>${recipient.teacherName}</strong> ${recipient.campusName ? `(${recipient.campusName})` : ''},
+      </div>
+
+      <!-- NỘI DUNG YÊU CẦU CHÍNH TỪ NGƯỜI DÙNG -->
+      <div class="message-banner">
+        <p>
+          Các thầy cô vừa nhận được Kế hoạch hoạt động ngoại khóa/trải nghiệm từ BP HĐNGLL - Tổ CTHS. Kính nhờ các thầy cô vui lòng triển khai kế hoạch đến GVCN, GVBM liên quan tại cơ sở. Xin cảm ơn.
+        </p>
+      </div>
+
+      <!-- BẢNG TÓM TẮT THÔNG TIN HOẠT ĐỘNG -->
+      <div class="activity-card">
+        <div class="activity-title">
+          📌 ${activityName}
+        </div>
+        <table class="info-table">
+          <tr>
+            <td class="info-label">Mã hoạt động:</td>
+            <td class="info-val" style="font-family: monospace; color: #00A19A;">${catalogCode}</td>
+          </tr>
+          <tr>
+            <td class="info-label">Khối lớp áp dụng:</td>
+            <td class="info-val">${gradesList} (${educationLevel})</td>
+          </tr>
+          ${themeName ? `
+          <tr>
+            <td class="info-label">Chủ đề giáo dục:</td>
+            <td class="info-val">${themeName}</td>
+          </tr>
+          ` : ''}
+          <tr>
+            <td class="info-label">Môn chủ trì:</td>
+            <td class="info-val" style="color: #4338ca;">${primarySubjectName || 'Chưa xác định'}</td>
+          </tr>
+          ${(coopSubjectNames || integratedSubjects) ? `
+          <tr>
+            <td class="info-label">Môn phối hợp / Tích hợp:</td>
+            <td class="info-val">${coopSubjectNames || integratedSubjects}</td>
+          </tr>
+          ` : ''}
+          <tr>
+            <td class="info-label">Thời gian & Học kỳ:</td>
+            <td class="info-val">${timeFrame || 'Trong năm học'} — <strong>Học kỳ ${semester}</strong></td>
+          </tr>
+          ${expectedLocation ? `
+          <tr>
+            <td class="info-label">Địa điểm (dự kiến):</td>
+            <td class="info-val">${expectedLocation}</td>
+          </tr>
+          ` : ''}
+          ${cthsTeacherName ? `
+          <tr>
+            <td class="info-label">Phụ trách BP HĐNGLL/CTHS:</td>
+            <td class="info-val" style="color: #003B3A; font-weight: 700;">${cthsTeacherName}</td>
+          </tr>
+          ` : ''}
+          <tr>
+            <td class="info-label">Cơ sở tiếp nhận:</td>
+            <td class="info-val" style="color: #047857;">${campusNamesList}</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- CTA BUTTON -->
+      <div class="cta-container">
+        <a href="${dispatchUrl}" class="btn" target="_blank">
+          TIẾP NHẬN & TRIỂN KHAI KẾ HOẠCH TẠI CƠ SỞ &rarr;
+        </a>
+      </div>
+
+      <!-- HƯỚNG DẪN THAO TÁC -->
+      <div class="instruction-box">
+        <strong>💡 Nhiệm vụ của GV Tổ TLHN tại Cơ sở:</strong><br/>
+        1. Nhấp vào nút bấm trên hoặc đăng nhập vào Cổng Giáo viên: <em>Quản lý Hoạt động trải nghiệm &rarr; Hoạt động tiếp nhận từ cơ sở</em>.<br/>
+        2. Bấm <strong>"Tiếp nhận"</strong> để xác nhận kế hoạch từ Tổ CTHS.<br/>
+        3. Chọn các lớp tại cơ sở tham gia và thông báo kế hoạch tới <strong>GVCN, GVBM liên quan</strong> để phối hợp thực hiện.
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <p style="margin: 0 0 6px 0; font-weight: 800; color: #003B3A; font-size: 12px;">
+        HỆ THỐNG GIÁO DỤC SKY-LINE • BAN ĐÀO TẠO & HỌC SINH
+      </p>
+      <p style="margin: 0 0 4px 0;">
+        Đơn vị gửi thông báo: <strong>${senderName}</strong>
+      </p>
+      <p style="margin: 0; font-size: 11px; color: #94a3b8;">
+        Email thông báo tự động từ Hệ thống Sky-line SMS. Vui lòng không trả lời trực tiếp email này.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+      `;
+
+      try {
+        await sendEmail({
+          from: fromAddress,
+          to: recipient.email,
+          subject: emailSubject,
+          html: emailHtml
+        });
+        console.log(`[TLHN Email] Đã gửi email kế hoạch HĐTN thành công tới ${recipient.email} (${recipient.teacherName} - ${recipient.campusCode})`);
+      } catch (err: any) {
+        console.error(`[TLHN Email] Lỗi khi gửi email tới ${recipient.email}:`, err?.message);
+      }
+    });
+
+    await Promise.allSettled(sendPromises);
+    return { success: true, count: recipients.length };
+  } catch (error: any) {
+    console.error('[TLHN Email] Lỗi xử lý gửi email phân bổ hoạt động:', error);
+    return { success: false, error: error?.message };
+  }
+}
+
