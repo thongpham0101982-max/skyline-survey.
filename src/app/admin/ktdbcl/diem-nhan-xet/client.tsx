@@ -2991,6 +2991,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         subjects={subjects}
         evalPeriods={EVAL_PERIODS}
         grades={GRADES}
+        savedConfigs={savedConfigs}
       />
 
     </div>
