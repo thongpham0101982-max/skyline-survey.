@@ -13,7 +13,9 @@ import {
   ProgramType,
   EDUCATION_LEVEL_OPTIONS,
   PROGRAM_TYPE_OPTIONS,
-  ActivityEvaluationConfig
+  ActivityEvaluationConfig,
+  CatalogActivityCategory,
+  ACTIVITY_CATEGORY_OPTIONS
 } from '@/lib/experiential/catalog-types';
 import { normalizeActivityName } from '@/lib/experiential/name-normalizer';
 import { CatalogEvaluationConfigModal } from './CatalogEvaluationConfigModal';
@@ -47,6 +49,7 @@ export function CatalogAddEditModal({
   const [formData, setFormData] = useState<any>({
     name: '',
     code: '',
+    activityCategory: 'TRAI_NGHIEM_DU_AN' as CatalogActivityCategory,
     sheetCode: activeSheetCode,
     educationLevel: currentSheetCfg.level,
     educationLevels: [currentSheetCfg.level] as CatalogEducationLevel[],
@@ -114,9 +117,17 @@ export function CatalogAddEditModal({
         ? meta.programTypes
         : [meta.programType || currentSheetCfg.programType];
 
+      const initCategory: CatalogActivityCategory = meta.activityCategory || (
+        (meta.name && (meta.name.toLowerCase().includes('khai mạc') || meta.name.toLowerCase().includes('trung thu') || meta.name.toLowerCase().includes('lễ hội') || meta.name.toLowerCase().includes('ngày hội') || meta.name.toLowerCase().includes('sport day'))) ||
+        (meta.organizationFormat && (meta.organizationFormat.toLowerCase().includes('sự kiện') || meta.organizationFormat.toLowerCase().includes('hội thi')))
+          ? 'HOAT_DONG_SU_KIEN'
+          : 'TRAI_NGHIEM_DU_AN'
+      );
+
       setFormData({
         name: initialData.name || '',
         code: initialData.code || '',
+        activityCategory: initCategory,
         sheetCode: meta.sheetCode || activeSheetCode,
         educationLevel: initEduLevels[0] || currentSheetCfg.level,
         educationLevels: initEduLevels,
@@ -147,6 +158,7 @@ export function CatalogAddEditModal({
       setFormData({
         name: '',
         code: '',
+        activityCategory: 'TRAI_NGHIEM_DU_AN' as CatalogActivityCategory,
         sheetCode: activeSheetCode,
         educationLevel: currentSheetCfg.level,
         educationLevels: [currentSheetCfg.level],
@@ -391,6 +403,74 @@ export function CatalogAddEditModal({
                 <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" />
                 1. Thông tin chung về hoạt động
               </h3>
+
+              {/* Phân loại danh mục hoạt động */}
+              <div className="space-y-2 p-3.5 rounded-2xl bg-gradient-to-r from-teal-50/70 via-purple-50/50 to-indigo-50/60 border border-teal-200/80">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#00A19A]" />
+                    Phân loại danh mục hoạt động <span className="text-rose-500">*</span>
+                  </label>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                    formData.activityCategory === 'HOAT_DONG_SU_KIEN' 
+                      ? 'bg-purple-100 text-purple-700' 
+                      : 'bg-teal-100 text-[#003B3A]'
+                  }`}>
+                    {formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? 'Chỉ tính vai trò & tham gia' : 'Có thiết lập tiêu chí Rubric'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {ACTIVITY_CATEGORY_OPTIONS.map(opt => {
+                    const isSelected = formData.activityCategory === opt.value;
+                    return (
+                      <div
+                        key={opt.value}
+                        onClick={() => {
+                          const updatedEval = opt.value === 'HOAT_DONG_SU_KIEN'
+                            ? {
+                                mode: 'ROLE_BASED' as const,
+                                modeTitle: 'Ghi nhận tham gia & Vai trò học sinh',
+                                hasRoleAssessment: true,
+                                criteria: [],
+                                rolesList: formData.evaluationConfig?.rolesList || [
+                                  'Trưởng nhóm / Điều phối viên học sinh',
+                                  'Phó nhóm / Thư ký ghi chép',
+                                  'Ban tổ chức / Tiết mục văn nghệ',
+                                  'Thành viên tích cực / Nòng cốt',
+                                  'Thành viên tham gia'
+                                ],
+                                completionBenchmark: 'Tham gia đầy đủ sự kiện'
+                              }
+                            : formData.evaluationConfig;
+                          setFormData({ 
+                            ...formData, 
+                            activityCategory: opt.value,
+                            evaluationConfig: updatedEval
+                          });
+                        }}
+                        className={`p-3 rounded-2xl border cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-[#00A19A] bg-white ring-2 ring-[#00A19A]/20 shadow-xs'
+                            : 'border-slate-200/90 bg-white/70 hover:bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`text-xs font-extrabold ${isSelected ? 'text-[#003B3A]' : 'text-slate-800'}`}>
+                            {opt.label}
+                          </span>
+                          <div className={`w-4 h-4 rounded-full flex items-center justify-center ${isSelected ? 'bg-[#00A19A] text-white' : 'border border-slate-300'}`}>
+                            {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-slate-500 leading-relaxed">
+                          {opt.description}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -752,45 +832,70 @@ export function CatalogAddEditModal({
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
                   <Award className="w-3.5 h-3.5 text-amber-500" />
-                  3. Cấu hình đánh giá & Hình thức đánh giá
+                  3. {formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? 'Vai trò học sinh tham gia sự kiện' : 'Cấu hình & Tiêu chí đánh giá'}
                 </h3>
                 {initialData?.id && (
                   <button
                     type="button"
                     onClick={() => setIsEvalConfigModalOpen(true)}
-                    className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-xl border border-indigo-200 transition-all cursor-pointer"
+                    className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                      formData.activityCategory === 'HOAT_DONG_SU_KIEN'
+                        ? 'text-purple-700 bg-purple-50 hover:bg-purple-100 border-purple-200'
+                        : 'text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border-indigo-200'
+                    }`}
                   >
                     <Sliders className="w-3.5 h-3.5" />
-                    <span>Thiết lập chi tiết tiêu chí Rubric</span>
+                    <span>{formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? 'Tùy chỉnh danh sách vai trò HS' : 'Thiết lập chi tiết tiêu chí Rubric'}</span>
                   </button>
                 )}
               </div>
 
-              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-center justify-between">
-                <div>
-                  <div className="text-xs font-bold text-amber-950 flex items-center gap-2">
-                    <span>Hình thức:</span>
-                    <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-extrabold text-[11px]">
-                      {formData.evaluationConfig?.mode === 'PASS_FAIL' ? 'Đạt / Chưa đạt' 
-                        : formData.evaluationConfig?.mode === 'ROLE_BASED' ? 'Theo Vai trò học sinh'
-                        : formData.evaluationConfig?.mode === 'SCORE_10' ? 'Thang điểm 10'
-                        : `Tiêu chí Rubric (${formData.evaluationConfig?.criteria?.length || 3} tiêu chí)`}
-                    </span>
+              {formData.activityCategory === 'HOAT_DONG_SU_KIEN' ? (
+                <div className="p-4 rounded-2xl bg-purple-50/70 border border-purple-200/80 space-y-1.5">
+                  <div className="text-xs font-bold text-purple-950 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-purple-700" />
+                    <span>Hoạt động sự kiện: Chỉ tính vai trò tham gia của học sinh & điểm danh</span>
                   </div>
-                  <div className="text-[11px] text-amber-800 mt-1">
-                    Chuẩn đạt: <strong>{formData.evaluationConfig?.completionBenchmark || 'Điểm TB >= 5.0'}</strong>
-                    {formData.evaluationConfig?.hasRoleAssessment && (
-                      <span className="ml-2 font-medium">• Có đánh giá vai trò (Trưởng nhóm / Thành viên)</span>
-                    )}
+                  <p className="text-[11px] text-purple-900 leading-relaxed">
+                    Học sinh tham gia sự kiện sẽ được GVCN / Ban tổ chức ghi nhận vai trò (Trưởng ban, Diễn viên, Thành viên tích cực...) và điểm danh tham gia. Hệ thống không tính điểm số hay xếp loại kết quả qua Rubric.
+                  </p>
+                  <div className="pt-1 flex flex-wrap gap-1">
+                    {(formData.evaluationConfig?.rolesList || [
+                      'Trưởng nhóm', 'Phó ban', 'Ban tổ chức', 'Thành viên tích cực', 'Thành viên tham gia'
+                    ]).map((r: string, idx: number) => (
+                      <span key={idx} className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white text-purple-800 border border-purple-200">
+                        {r}
+                      </span>
+                    ))}
                   </div>
                 </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-amber-950 flex items-center gap-2">
+                      <span>Hình thức:</span>
+                      <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 font-extrabold text-[11px]">
+                        {formData.evaluationConfig?.mode === 'PASS_FAIL' ? 'Đạt / Chưa đạt' 
+                          : formData.evaluationConfig?.mode === 'ROLE_BASED' ? 'Theo Vai trò học sinh'
+                          : formData.evaluationConfig?.mode === 'SCORE_10' ? 'Thang điểm 10'
+                          : `Tiêu chí Rubric (${formData.evaluationConfig?.criteria?.length || 3} tiêu chí)`}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-amber-800 mt-1">
+                      Chuẩn đạt: <strong>{formData.evaluationConfig?.completionBenchmark || 'Điểm TB >= 5.0'}</strong>
+                      {formData.evaluationConfig?.hasRoleAssessment && (
+                        <span className="ml-2 font-medium">• Có đánh giá vai trò (Trưởng nhóm / Thành viên)</span>
+                      )}
+                    </div>
+                  </div>
 
-                {!initialData?.id && (
-                  <span className="text-[11px] text-slate-400 italic">
-                    (Có thể cấu hình tiêu chí chuyên sâu sau khi tạo)
-                  </span>
-                )}
-              </div>
+                  {!initialData?.id && (
+                    <span className="text-[11px] text-slate-400 italic">
+                      (Có thể cấu hình tiêu chí chuyên sâu sau khi tạo)
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">

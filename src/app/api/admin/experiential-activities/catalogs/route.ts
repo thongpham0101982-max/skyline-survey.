@@ -92,6 +92,44 @@ export async function GET(req: NextRequest) {
         meta.educationLevel = c.level as any;
       }
 
+      // Tự động phân loại: Hoạt động sự kiện vs Trải nghiệm ngoại khóa / Dự án
+      if (!meta.activityCategory) {
+        const text = `${c.name || ''} ${meta.organizationFormat || ''} ${meta.themeName || ''}`.toLowerCase();
+        if (
+          text.includes('sự kiện') || 
+          text.includes('lễ hội') || 
+          text.includes('trung thu') || 
+          text.includes('khai mạc') || 
+          text.includes('sport day') || 
+          text.includes('ngày hội') || 
+          text.includes('bế mạc') ||
+          text.includes('hội diễn') ||
+          text.includes('hội thao')
+        ) {
+          meta.activityCategory = 'HOAT_DONG_SU_KIEN';
+        } else {
+          meta.activityCategory = 'TRAI_NGHIEM_DU_AN';
+        }
+      }
+
+      // Với Hoạt động sự kiện: Chỉ tính vai trò tham gia của học sinh (không bắt buộc criteria rubric)
+      if (meta.activityCategory === 'HOAT_DONG_SU_KIEN' && (!meta.evaluationConfig || meta.evaluationConfig.mode === 'CRITERIA')) {
+        meta.evaluationConfig = {
+          mode: 'ROLE_BASED',
+          modeTitle: 'Ghi nhận tham gia & Vai trò học sinh',
+          hasRoleAssessment: true,
+          criteria: [],
+          rolesList: meta.evaluationConfig?.rolesList || [
+            'Trưởng nhóm / Điều phối viên học sinh',
+            'Phó nhóm / Thư ký ghi chép',
+            'Ban tổ chức / Tiết mục văn nghệ',
+            'Thành viên tích cực / Nòng cốt',
+            'Thành viên tham gia'
+          ],
+          completionBenchmark: 'Tham gia đầy đủ sự kiện'
+        };
+      }
+
       return {
         id: c.id,
         code: c.code,
@@ -112,6 +150,11 @@ export async function GET(req: NextRequest) {
     });
 
     let filtered = parsedCatalogs;
+
+    const categoryParam = searchParams.get('category');
+    if (categoryParam && categoryParam !== 'ALL') {
+      filtered = filtered.filter(item => item.meta.activityCategory === categoryParam);
+    }
 
     if (academicYearId && academicYearId !== 'ALL') {
       filtered = filtered.filter(item => !item.meta.academicYearId || item.meta.academicYearId === academicYearId);

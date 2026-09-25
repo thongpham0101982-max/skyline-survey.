@@ -73,8 +73,34 @@ export const PROGRAM_TYPE_OPTIONS: { value: ProgramType; label: string; shortLab
   { value: 'QUOC_TE', label: 'Hệ Quốc tế', shortLabel: 'Quốc tế' },
 ];
 
+export type CatalogActivityCategory = 'HOAT_DONG_SU_KIEN' | 'TRAI_NGHIEM_DU_AN';
+
+export const ACTIVITY_CATEGORY_OPTIONS: { 
+  value: CatalogActivityCategory; 
+  label: string; 
+  shortLabel: string;
+  description: string; 
+  badgeCls: string;
+}[] = [
+  { 
+    value: 'HOAT_DONG_SU_KIEN', 
+    label: 'Hoạt động sự kiện', 
+    shortLabel: 'Sự kiện',
+    description: 'Chỉ tính vai trò tham gia của học sinh & điểm danh (không chấm điểm rubric / tiêu chí)',
+    badgeCls: 'bg-purple-50 text-purple-700 border-purple-200/80'
+  },
+  { 
+    value: 'TRAI_NGHIEM_DU_AN', 
+    label: 'Trải nghiệm ngoại khóa / Dự án', 
+    shortLabel: 'Trải nghiệm / Dự án',
+    description: 'Có thiết lập danh sách tiêu chí đánh giá (Rubric, trọng số %, thang điểm, sản phẩm học tập)',
+    badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/80'
+  }
+];
+
 export interface ActivityCatalogMeta {
   academicYearId?: string;
+  activityCategory?: CatalogActivityCategory; // 'HOAT_DONG_SU_KIEN' | 'TRAI_NGHIEM_DU_AN'
   educationLevel: CatalogEducationLevel; // Bậc học chính (tương thích ngược)
   educationLevels?: CatalogEducationLevel[]; // Chọn 1 hay nhiều bậc học: MN, TIEU_HOC, THCS, THPT
   programType: ProgramType; // Hệ học chính (tương thích ngược)

@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 // @ts-nocheck
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams, useSearchParams, usePathname } from 'next/navigation';
@@ -192,9 +192,40 @@ export default function ActivityResultInput() {
     }
   };
 
+  const isEventActivity = activity?.activityCategory === 'HOAT_DONG_SU_KIEN' || 
+    activity?.evalMode === 'ROLE_BASED' || 
+    (activity?.meta?.activityCategory === 'HOAT_DONG_SU_KIEN') ||
+    (activity?.name && (
+      activity.name.toLowerCase().includes('khai mạc') || 
+      activity.name.toLowerCase().includes('trung thu') || 
+      activity.name.toLowerCase().includes('lễ hội') || 
+      activity.name.toLowerCase().includes('ngày hội') || 
+      activity.name.toLowerCase().includes('sport day')
+    ));
+
+  const eventRolesList: string[] = (Array.isArray(activity?.rolesList) && activity.rolesList.length > 0)
+    ? activity.rolesList
+    : (Array.isArray(activity?.meta?.evaluationConfig?.rolesList) && activity.meta.evaluationConfig.rolesList.length > 0)
+      ? activity.meta.evaluationConfig.rolesList
+      : [
+          'Trưởng nhóm',
+          'Phó ban',
+          'Ban tổ chức',
+          'Thành viên tích cực',
+          'Thành viên tham gia'
+        ];
+
   // Pre-submission validation
   const handleRequestSubmit = () => {
     const currentClassStudents = students.filter(s => !selectedClassId || s.classId === selectedClassId);
+    
+    // Đối với Hoạt động sự kiện: Chỉ tính vai trò tham gia của học sinh & điểm danh (không yêu cầu điểm rubric)
+    if (isEventActivity) {
+      setUncompletedStudents([]);
+      setShowConfirmSubmitModal(true);
+      return;
+    }
+
     const uncompleted = currentClassStudents.filter(s => {
       if (s.attendance === 'PRESENT') {
         const scores = s.criteriaScores || {};

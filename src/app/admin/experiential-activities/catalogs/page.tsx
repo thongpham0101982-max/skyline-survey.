@@ -12,6 +12,7 @@ import {
   SHEET_CONFIGS, 
   SheetCode, 
   ActivityCatalogItem,
+  CatalogActivityCategory,
   EDUCATION_LEVEL_OPTIONS,
   PROGRAM_TYPE_OPTIONS
 } from '@/lib/experiential/catalog-types';
@@ -22,6 +23,26 @@ import { CatalogAssignCTHSModal } from './components/CatalogAssignCTHSModal';
 import { CatalogBulkDeleteModal } from './components/CatalogBulkDeleteModal';
 import { CatalogEvaluationConfigModal } from './components/CatalogEvaluationConfigModal';
 
+export function getActivityCategory(item: ActivityCatalogItem): CatalogActivityCategory {
+  const meta = item.meta || {};
+  if (meta.activityCategory) return meta.activityCategory;
+  const name = (item.name || meta.name || '').toLowerCase();
+  const format = (meta.organizationFormat || '').toLowerCase();
+  if (
+    name.includes('khai mạc') ||
+    name.includes('trung thu') ||
+    name.includes('lễ hội') ||
+    name.includes('ngày hội') ||
+    name.includes('sport day') ||
+    name.includes('bế mạc') ||
+    format.includes('sự kiện') ||
+    format.includes('hội thi')
+  ) {
+    return 'HOAT_DONG_SU_KIEN';
+  }
+  return 'TRAI_NGHIEM_DU_AN';
+}
+
 export default function ActivityCatalogsPage() {
   const [academicYears, setAcademicYears] = useState<any[]>([]);
   const [selectedYearId, setSelectedYearId] = useState<string>('');
@@ -29,6 +50,7 @@ export default function ActivityCatalogsPage() {
   const [catalogs, setCatalogs] = useState<ActivityCatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'HOAT_DONG_SU_KIEN' | 'TRAI_NGHIEM_DU_AN'>('ALL');
   const [semesterFilter, setSemesterFilter] = useState<'ALL' | '1' | '2'>('ALL');
   const [gradeFilter, setGradeFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'CANCELLED'>('ALL');
@@ -67,11 +89,15 @@ export default function ActivityCatalogsPage() {
     if (search.trim()) url += `&q=${encodeURIComponent(search.trim())}`;
     if (gradeFilter !== 'ALL') url += `&grade=${encodeURIComponent(gradeFilter)}`;
     if (statusFilter !== 'ALL') url += `&status=${statusFilter}`;
+    if (categoryFilter !== 'ALL') url += `&category=${categoryFilter}`;
 
     fetch(url)
       .then(r => r.json())
       .then(data => {
         let list = Array.isArray(data) ? data : [];
+        if (categoryFilter !== 'ALL') {
+          list = list.filter(item => getActivityCategory(item) === categoryFilter);
+        }
         if (semesterFilter !== 'ALL') {
           list = list.filter(item => item.meta?.semester === parseInt(semesterFilter, 10));
         }
@@ -82,7 +108,7 @@ export default function ActivityCatalogsPage() {
         setCatalogs([]);
         setLoading(false);
       });
-  }, [activeSheetCode, selectedYearId, search, semesterFilter, gradeFilter, statusFilter]);
+  }, [activeSheetCode, selectedYearId, search, categoryFilter, semesterFilter, gradeFilter, statusFilter]);
 
   useEffect(() => {
     loadCatalogs();
@@ -91,7 +117,7 @@ export default function ActivityCatalogsPage() {
   // Clear selected when sheet or filters change
   useEffect(() => {
     setSelectedIds([]);
-  }, [activeSheetCode, selectedYearId, semesterFilter, gradeFilter, statusFilter]);
+  }, [activeSheetCode, selectedYearId, categoryFilter, semesterFilter, gradeFilter, statusFilter]);
 
   const handleToggleSelectAll = () => {
     if (selectedIds.length === catalogs.length && catalogs.length > 0) {
@@ -212,6 +238,8 @@ export default function ActivityCatalogsPage() {
 
   // Stats calculation
   const totalInSheet = catalogs.length;
+  const eventCount = catalogs.filter(c => getActivityCategory(c) === 'HOAT_DONG_SU_KIEN').length;
+  const projectCount = catalogs.filter(c => getActivityCategory(c) === 'TRAI_NGHIEM_DU_AN').length;
   const allocatedCount = catalogs.filter(c => c.meta?.allocatedCampuses && c.meta.allocatedCampuses.length > 0).length;
   const hk1Count = catalogs.filter(c => c.meta?.semester === 1).length;
   const hk2Count = catalogs.filter(c => c.meta?.semester === 2).length;
@@ -378,6 +406,84 @@ export default function ActivityCatalogsPage() {
         </button>
       </div>
 
+      {/* Category Switcher Tabs: 1. Hoạt động sự kiện vs 2. Trải nghiệm ngoại khóa / Dự án */}
+      <div className="bg-gradient-to-r from-slate-50 via-purple-50/40 to-teal-50/50 p-2 rounded-2xl border border-slate-200/90 shadow-xs">
+        <div className="text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2 px-2 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-[#00A19A]" />
+          <span>Phân loại danh mục hoạt động</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          {/* Option All */}
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('ALL')}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              categoryFilter === 'ALL'
+                ? 'bg-white border-[#00A19A] text-slate-900 shadow-md ring-2 ring-[#00A19A]/20'
+                : 'bg-white/70 border-slate-200 text-slate-600 hover:bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-black">Tất cả danh mục</span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                {totalInSheet} HĐ
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 line-clamp-1">
+              Toàn bộ hoạt động thuộc phân hệ hiện tại
+            </p>
+          </button>
+
+          {/* Option 1: Hoạt động sự kiện */}
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('HOAT_DONG_SU_KIEN')}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              categoryFilter === 'HOAT_DONG_SU_KIEN'
+                ? 'bg-white border-purple-500 text-purple-950 shadow-md ring-2 ring-purple-400/25'
+                : 'bg-white/70 border-purple-200/70 text-slate-600 hover:bg-white hover:border-purple-300'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-purple-600" />
+                <span className="text-xs font-black text-purple-900">1. Hoạt động sự kiện</span>
+              </div>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                {eventCount} HĐ
+              </span>
+            </div>
+            <p className="text-[11px] text-purple-700 line-clamp-1">
+              Chỉ tính vai trò tham gia của HS & điểm danh • Không thiết lập Rubric
+            </p>
+          </button>
+
+          {/* Option 2: Trải nghiệm ngoại khóa / Dự án */}
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('TRAI_NGHIEM_DU_AN')}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              categoryFilter === 'TRAI_NGHIEM_DU_AN'
+                ? 'bg-white border-teal-600 text-[#003B3A] shadow-md ring-2 ring-teal-500/25'
+                : 'bg-white/70 border-teal-200/70 text-slate-600 hover:bg-white hover:border-teal-300'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-teal-600" />
+                <span className="text-xs font-black text-teal-950">2. Trải nghiệm ngoại khóa / Dự án</span>
+              </div>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                {projectCount} HĐ
+              </span>
+            </div>
+            <p className="text-[11px] text-teal-700 line-clamp-1">
+              Thiết lập Danh sách Tiêu chí Đánh giá Rubric & Sản phẩm học tập
+            </p>
+          </button>
+        </div>
+      </div>
+
       {/* Educational Level & Program Type Tabs (Matching Excel Sheets) */}
       <div className="bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200 flex flex-wrap gap-1.5">
         {SHEET_CONFIGS.map(cfg => {
@@ -411,17 +517,17 @@ export default function ActivityCatalogsPage() {
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tổng hoạt động phân hệ</div>
           <div className="text-xl font-black text-slate-800 mt-1">{totalInSheet} hoạt động</div>
         </div>
+        <div className="bg-white border border-purple-200 rounded-2xl p-4 shadow-xs bg-purple-50/30">
+          <div className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">Hoạt động sự kiện (Vai trò HS)</div>
+          <div className="text-xl font-black text-purple-900 mt-1">{eventCount} hoạt động</div>
+        </div>
+        <div className="bg-white border border-teal-200 rounded-2xl p-4 shadow-xs bg-teal-50/30">
+          <div className="text-[11px] font-bold text-teal-700 uppercase tracking-wider">Trải nghiệm / Dự án (Rubric)</div>
+          <div className="text-xl font-black text-teal-900 mt-1">{projectCount} hoạt động</div>
+        </div>
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
           <div className="text-[11px] font-bold text-[#00A19A] uppercase tracking-wider">Đã đẩy xuống cơ sở</div>
           <div className="text-xl font-black text-[#00A19A] mt-1">{allocatedCount} hoạt động</div>
-        </div>
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-          <div className="text-[11px] font-bold text-indigo-500 uppercase tracking-wider">Hoạt động Học kỳ 1</div>
-          <div className="text-xl font-black text-indigo-700 mt-1">{hk1Count} hoạt động</div>
-        </div>
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-          <div className="text-[11px] font-bold text-amber-500 uppercase tracking-wider">Hoạt động Học kỳ 2</div>
-          <div className="text-xl font-black text-amber-700 mt-1">{hk2Count} hoạt động</div>
         </div>
       </div>
 
@@ -584,6 +690,8 @@ export default function ActivityCatalogsPage() {
                     : [meta.programType || currentSheetCfg.program];
 
                   // Cấu hình đánh giá
+                  const cat = getActivityCategory(act);
+                  const isEvent = cat === 'HOAT_DONG_SU_KIEN';
                   const evalCfg = meta.evaluationConfig;
                   const mode = evalCfg?.mode;
                   const critCount = (mode === 'CRITERIA' && Array.isArray(evalCfg?.criteria)) ? evalCfg.criteria.length : 0;
@@ -610,6 +718,16 @@ export default function ActivityCatalogsPage() {
                           <span className={`font-extrabold text-[13px] ${act.status === 'CANCELLED' ? 'text-slate-400 line-through' : 'text-[#003B3A]'}`}>
                             {act.name}
                           </span>
+                          {/* Badge phân loại danh mục */}
+                          {isEvent ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-100 text-purple-800 border border-purple-200">
+                              Sự kiện (Vai trò HS)
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-teal-100 text-[#003B3A] border border-teal-200">
+                              Trải nghiệm / Dự án
+                            </span>
+                          )}
                           {act.status === 'CANCELLED' ? (
                             <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black uppercase bg-rose-100 text-rose-700 border border-rose-200">
                               Đã hủy
@@ -773,33 +891,49 @@ export default function ActivityCatalogsPage() {
 
                       {/* Cấu hình & Hình thức đánh giá */}
                       <td className="py-3 px-3">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEvalConfigItem(act);
-                            setIsConfigEvalOpen(true);
-                          }}
-                          className={`group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
-                            mode
-                              ? 'bg-teal-50 border-teal-200 text-[#003B3A] hover:bg-teal-100 hover:border-teal-300 shadow-2xs'
-                              : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:text-[#00A19A] hover:border-teal-300 hover:bg-teal-50'
-                          }`}
-                          title="Nhấn để thiết lập Tiêu chí Rubric & Công thức đánh giá"
-                        >
-                          <Award className={`w-3.5 h-3.5 ${mode ? 'text-[#00A19A]' : 'text-slate-400'}`} />
-                          <span className="truncate max-w-[110px]">
-                            {mode === 'CRITERIA'
-                              ? `Rubric (${critCount} TC)`
-                              : mode === 'PASS_FAIL'
-                                ? 'Đạt / C.Đạt'
-                                : mode === 'SCORE_10'
-                                  ? 'Thang 10'
-                                  : mode === 'ROLE_BASED'
-                                    ? 'Theo Vai trò'
-                                    : '+ Cấu hình'}
-                          </span>
-                          <Edit3 className="w-3 h-3 text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                        </button>
+                        {isEvent ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEvalConfigItem(act);
+                              setIsConfigEvalOpen(true);
+                            }}
+                            className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border border-purple-200 text-[11px] font-bold bg-purple-50 text-purple-900 hover:bg-purple-100 hover:border-purple-300 shadow-2xs transition-all cursor-pointer"
+                            title="Hoạt động sự kiện: Chỉ tính vai trò tham gia của học sinh & điểm danh (Không thiết lập Rubric)"
+                          >
+                            <Users className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                            <span className="truncate max-w-[120px]">
+                              Vai trò HS ({evalCfg?.rolesList?.length || 5})
+                            </span>
+                            <Edit3 className="w-3 h-3 text-purple-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEvalConfigItem(act);
+                              setIsConfigEvalOpen(true);
+                            }}
+                            className={`group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
+                              mode
+                                ? 'bg-teal-50 border-teal-200 text-[#003B3A] hover:bg-teal-100 hover:border-teal-300 shadow-2xs'
+                                : 'bg-slate-50 border-dashed border-slate-300 text-slate-500 hover:text-[#00A19A] hover:border-teal-300 hover:bg-teal-50'
+                            }`}
+                            title="Trải nghiệm ngoại khóa / Dự án: Nhấn để thiết lập Danh sách Tiêu chí Rubric & Đánh giá"
+                          >
+                            <Award className={`w-3.5 h-3.5 shrink-0 ${mode ? 'text-[#00A19A]' : 'text-slate-400'}`} />
+                            <span className="truncate max-w-[120px]">
+                              {mode === 'CRITERIA'
+                                ? `Rubric (${critCount} TC)`
+                                : mode === 'PASS_FAIL'
+                                  ? 'Đạt / C.Đạt'
+                                  : mode === 'SCORE_10'
+                                    ? 'Thang 10'
+                                    : '+ Lập Rubric'}
+                            </span>
+                            <Edit3 className="w-3 h-3 text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                          </button>
+                        )}
                       </td>
 
                       {/* Cơ sở tiếp nhận (TLHN) */}
