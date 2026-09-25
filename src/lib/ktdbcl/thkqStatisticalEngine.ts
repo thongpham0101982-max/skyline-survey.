@@ -410,6 +410,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
         )
       }
 
+      const total = matchingEntries.length
       const below5Entries = matchingEntries.filter(e => e.score < MOET_BENCHMARK)
       const below5 = below5Entries.length
       const rate = total > 0 ? Math.round((below5 / total) * 1000) / 10 : 0
