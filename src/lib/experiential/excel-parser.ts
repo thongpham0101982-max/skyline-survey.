@@ -6,6 +6,7 @@ import {
   CatalogEducationLevel, 
   ProgramType 
 } from './catalog-types';
+import { normalizeActivityName } from './name-normalizer';
 
 export const EXCEL_COLUMNS = [
   { key: 'stt', header: 'STT', width: 8 },
@@ -213,7 +214,7 @@ export function parseActivityCatalogWorkbook(buffer: ArrayBuffer | Buffer, acade
         stt: parseInt(sttStr, 10) || (sheetValidCount + sheetErrorCount + 1),
         grade: gradeStr || grades.join(', '),
         grades,
-        activityName,
+        activityName: normalizeActivityName(activityName),
         themeName,
         integratedSubjects,
         educationalContent,

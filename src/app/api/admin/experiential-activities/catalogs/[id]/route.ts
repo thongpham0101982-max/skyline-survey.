@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { hasModulePermission } from '@/lib/permissions';
+import { normalizeActivityName } from '@/lib/experiential/name-normalizer';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,15 +103,26 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     const updatedMeta = { ...currentMeta, ...meta };
 
+    // Đồng bộ nếu có mảng cthsTeachers
+    if (Array.isArray(updatedMeta.cthsTeachers)) {
+      const teachersList = updatedMeta.cthsTeachers;
+      updatedMeta.cthsTeacherName = teachersList.map((t: any) => t.teacherName).filter(Boolean).join(', ');
+      updatedMeta.cthsTeacherId = teachersList[0]?.id || '';
+      updatedMeta.cthsTeacherCode = teachersList[0]?.teacherCode || '';
+      updatedMeta.cthsTeacherEmail = teachersList[0]?.email || '';
+    }
+
     // Action: ALLOCATE_CAMPUSES (Đẩy hoạt động xuống cơ sở)
     if (action === 'ALLOCATE_CAMPUSES' && Array.isArray(body.allocatedCampuses)) {
       updatedMeta.allocatedCampuses = body.allocatedCampuses;
     }
 
+    const finalName = name !== undefined ? normalizeActivityName(name.trim()) : existing.name;
+
     const updated = await prisma.activityCatalog.update({
       where: { id },
       data: {
-        name: name !== undefined ? name.trim() : existing.name,
+        name: finalName,
         level: updatedMeta.educationLevel || existing.level,
         status: body.status !== undefined ? body.status : existing.status,
         description: JSON.stringify(updatedMeta)

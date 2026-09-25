@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
 import { hasModulePermission } from '@/lib/permissions';
 import { ActivityCatalogMeta } from '@/lib/experiential/catalog-types';
+import { normalizeActivityName } from '@/lib/experiential/name-normalizer';
 
 export const dynamic = 'force-dynamic';
 
@@ -196,10 +197,13 @@ export async function POST(req: NextRequest) {
     const existing = await prisma.activityCatalog.findUnique({ where: { code: recordCode } });
     const finalCode = existing ? `${recordCode}-${Math.floor(Math.random() * 1000)}` : recordCode;
 
+    // Chuẩn hóa tên hoạt động theo Sentence Case
+    const normalizedName = normalizeActivityName(name);
+
     const catalog = await prisma.activityCatalog.create({
       data: {
         code: finalCode,
-        name: name.trim(),
+        name: normalizedName,
         groupId: fallbackGroup.id,
         typeId: fallbackType.id,
         level: meta.educationLevel || 'TIEU_HOC',
@@ -232,7 +236,44 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, ids = [], cthsTeacherId, cthsTeacherCode, cthsTeacherName, cthsTeacherEmail, status } = body;
+    const { 
+      action, 
+      ids = [], 
+      teachers = [], 
+      cthsTeacherId, 
+      cthsTeacherCode, 
+      cthsTeacherName, 
+      cthsTeacherEmail, 
+      status 
+    } = body;
+
+    // Action: Chuẩn hóa lại tên các hoạt động (Viết hoa đầu dòng, không viết hoa tất cả)
+    if (action === 'NORMALIZE_NAMES') {
+      const targetQuery = Array.isArray(ids) && ids.length > 0 
+        ? { where: { id: { in: ids } } }
+        : {};
+
+      const itemsToNormalize = await prisma.activityCatalog.findMany(targetQuery);
+      let updatedCount = 0;
+
+      for (const item of itemsToNormalize) {
+        const normalized = normalizeActivityName(item.name);
+        if (normalized !== item.name) {
+          await prisma.activityCatalog.update({
+            where: { id: item.id },
+            data: { name: normalized }
+          });
+          updatedCount++;
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Đã chuẩn hóa thành công ${updatedCount} tên hoạt động theo quy chuẩn viết hoa đầu dòng`,
+        updatedCount,
+        totalChecked: itemsToNormalize.length
+      });
+    }
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: 'Vui lòng chọn ít nhất một hoạt động' }, { status: 400 });
@@ -256,11 +297,37 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    // Action: Gán GV Tổ CTHS hàng loạt
+    // Action: Gán 1 hoặc nhiều GV Tổ CTHS hàng loạt
     if (action === 'BULK_ASSIGN_CTHS') {
       const catalogs = await prisma.activityCatalog.findMany({
         where: { id: { in: ids } }
       });
+
+      // Xác định danh sách giáo viên CTHS được gán (hỗ trợ cả mảng teachers hoặc đơn lẻ)
+      let assignedTeachers: any[] = [];
+      if (Array.isArray(teachers) && teachers.length > 0) {
+        assignedTeachers = teachers.map((t: any) => ({
+          id: t.id,
+          teacherCode: t.teacherCode || '',
+          teacherName: t.teacherName || '',
+          email: t.email || '',
+          phone: t.phone || '',
+          campusCode: t.campusCode || '',
+          campusName: t.campusName || '',
+          departmentName: t.departmentName || '',
+          position: t.position || ''
+        }));
+      } else if (cthsTeacherId) {
+        assignedTeachers = [{
+          id: cthsTeacherId,
+          teacherCode: cthsTeacherCode || '',
+          teacherName: cthsTeacherName || '',
+          email: cthsTeacherEmail || ''
+        }];
+      }
+
+      const combinedNames = assignedTeachers.map(t => t.teacherName).filter(Boolean).join(', ');
+      const primaryTeacher = assignedTeachers[0] || null;
 
       let updatedCount = 0;
       for (const cat of catalogs) {
@@ -273,10 +340,11 @@ export async function PUT(req: NextRequest) {
 
         const updatedMeta = {
           ...currentMeta,
-          cthsTeacherId: cthsTeacherId || '',
-          cthsTeacherCode: cthsTeacherCode || '',
-          cthsTeacherName: cthsTeacherName || '',
-          cthsTeacherEmail: cthsTeacherEmail || ''
+          cthsTeachers: assignedTeachers,
+          cthsTeacherId: primaryTeacher ? primaryTeacher.id : '',
+          cthsTeacherCode: primaryTeacher ? primaryTeacher.teacherCode : '',
+          cthsTeacherName: combinedNames,
+          cthsTeacherEmail: primaryTeacher ? primaryTeacher.email : ''
         };
 
         await prisma.activityCatalog.update({
@@ -288,10 +356,15 @@ export async function PUT(req: NextRequest) {
         updatedCount++;
       }
 
+      const teacherInfoStr = assignedTeachers.length > 0
+        ? `Tổ CTHS: ${combinedNames} (${assignedTeachers.length} GV)`
+        : 'Gỡ bỏ phân công';
+
       return NextResponse.json({
         success: true,
-        message: `Đã gán GV Tổ CTHS (${cthsTeacherName || 'Chưa gán'}) cho ${updatedCount} hoạt động thành công`,
-        count: updatedCount
+        message: `Đã cập nhật phụ trách (${teacherInfoStr}) cho ${updatedCount} hoạt động thành công`,
+        count: updatedCount,
+        assignedCount: assignedTeachers.length
       });
     }
 

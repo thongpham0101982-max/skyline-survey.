@@ -128,6 +128,32 @@ export default function ActivityCatalogsPage() {
     }
   };
 
+  // Chuẩn hóa tên hoạt động (Sentence Case: Viết hoa đầu dòng, không viết hoa tất cả)
+  const handleNormalizeNames = async (targetIds?: string[]) => {
+    const isSelectedOnly = Array.isArray(targetIds) && targetIds.length > 0;
+    const countText = isSelectedOnly ? `${targetIds.length} hoạt động đã chọn` : 'toàn bộ các hoạt động';
+    if (!confirm(`Bạn có muốn chuẩn hóa tên ${countText}? (Quy chuẩn: Viết hoa đầu dòng, không viết hoa tất cả, bảo tồn các từ viết tắt chuyên môn như CTHS, STEM, Sky-Line...)`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/experiential-activities/catalogs', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'NORMALIZE_NAMES',
+          ids: isSelectedOnly ? targetIds : []
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi khi chuẩn hóa tên');
+      toast.success(data.message || 'Chuẩn hóa tên hoạt động thành công');
+      loadCatalogs();
+    } catch (err: any) {
+      toast.error(err.message || 'Lỗi hệ thống');
+    }
+  };
+
   // Đổi trạng thái 1 hoạt động
   const handleToggleSingleStatus = async (item: ActivityCatalogItem) => {
     const nextStatus = item.status === 'CANCELLED' ? 'ACTIVE' : 'CANCELLED';
@@ -223,11 +249,20 @@ export default function ActivityCatalogsPage() {
           </button>
 
           <button
+            onClick={() => handleNormalizeNames()}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-teal-800 bg-teal-50 border border-teal-200 hover:bg-teal-100 shadow-xs transition-all cursor-pointer"
+            title="Chuẩn hóa lại tên tất cả hoạt động: Viết hoa đầu dòng, không viết hoa tất cả"
+          >
+            <Sparkles className="w-4 h-4 text-[#00A19A]" />
+            <span>Chuẩn hóa tên HĐ</span>
+          </button>
+
+          <button
             onClick={() => {
               setEditingItem(null);
               setIsAddEditOpen(true);
             }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:brightness-105 shadow-md shadow-[#00A19A]/25 transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:brightness-105 shadow-md shadow-[#00A19A]/25 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Thêm hoạt động</span>
@@ -431,6 +466,16 @@ export default function ActivityCatalogsPage() {
               <span>Kích hoạt lại ({selectedIds.length})</span>
             </button>
 
+            {/* Nút CHUẨN HÓA TÊN HÀNG LOẠT */}
+            <button
+              onClick={() => handleNormalizeNames(selectedIds)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-teal-900 bg-teal-200 hover:bg-teal-100 shadow-sm transition-all cursor-pointer"
+              title="Chuẩn hóa tên các hoạt động đã chọn (Viết hoa đầu dòng, không viết hoa tất cả)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#003B3A]" />
+              <span>Chuẩn hóa tên ({selectedIds.length})</span>
+            </button>
+
             <button
               onClick={() => setIsBulkDeleteOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-sm shadow-rose-600/20 transition-all cursor-pointer"
@@ -578,32 +623,51 @@ export default function ActivityCatalogsPage() {
                         </div>
                       </td>
 
-                      {/* Cột: GV Tổ CTHS Phụ trách */}
+                      {/* Cột: GV Tổ CTHS Phụ trách (1 hoặc nhiều người) */}
                       <td className="py-3 px-3">
-                        {meta.cthsTeacherName ? (
-                          <div 
-                            onClick={() => {
-                              setSelectedIds([act.id]);
-                              setIsAssignCTHSOpen(true);
-                            }}
-                            className="group cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-teal-50/90 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all shadow-2xs"
-                            title="Nhấn để đổi GV Tổ CTHS phụ trách"
-                          >
-                            <div className="w-5 h-5 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
-                              {meta.cthsTeacherName.split(' ').slice(-1)[0]?.charAt(0) || 'C'}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-[11px] font-extrabold text-teal-950 group-hover:text-[#003B3A] truncate max-w-[110px]">
-                                {meta.cthsTeacherName}
-                              </div>
-                              {meta.cthsTeacherCode && (
-                                <div className="text-[9px] font-mono text-teal-700">
-                                  {meta.cthsTeacherCode}
+                        {meta.cthsTeacherName || (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0) ? (
+                          (() => {
+                            const teacherList = Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0
+                              ? meta.cthsTeachers
+                              : [{
+                                  id: meta.cthsTeacherId || '',
+                                  teacherCode: meta.cthsTeacherCode || '',
+                                  teacherName: meta.cthsTeacherName || ''
+                                }];
+                            const firstTeacher = teacherList[0];
+                            const extraCount = teacherList.length - 1;
+                            const fullTooltip = teacherList.map((t: any) => `${t.teacherName} (${t.teacherCode || 'GV'})`).join('\n');
+
+                            return (
+                              <div 
+                                onClick={() => {
+                                  setSelectedIds([act.id]);
+                                  setIsAssignCTHSOpen(true);
+                                }}
+                                className="group cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-teal-50/90 border border-teal-200 hover:bg-teal-100 hover:border-teal-300 transition-all shadow-2xs"
+                                title={`Nhấn để quản lý GV Tổ CTHS phụ trách:\n${fullTooltip}`}
+                              >
+                                <div className="w-5 h-5 rounded-full bg-[#00A19A] text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                                  {firstTeacher?.teacherName?.split(' ').slice(-1)[0]?.charAt(0) || 'C'}
                                 </div>
-                              )}
-                            </div>
-                            <Edit3 className="w-3 h-3 text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-0.5" />
-                          </div>
+                                <div className="min-w-0">
+                                  <div className="text-[11px] font-extrabold text-teal-950 group-hover:text-[#003B3A] truncate max-w-[120px] flex items-center gap-1">
+                                    <span>{firstTeacher?.teacherName}</span>
+                                    {extraCount > 0 && (
+                                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-teal-200 text-[#003B3A] shrink-0">
+                                        +{extraCount}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[9px] font-mono text-teal-700 truncate max-w-[110px]">
+                                    {firstTeacher?.teacherCode || 'Tổ CTHS'}
+                                    {extraCount > 0 ? ` (${teacherList.length} GV phụ trách)` : ''}
+                                  </div>
+                                </div>
+                                <Edit3 className="w-3 h-3 text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-0.5" />
+                              </div>
+                            );
+                          })()
                         ) : (
                           <button
                             onClick={() => {

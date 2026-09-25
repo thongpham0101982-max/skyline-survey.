@@ -28,6 +28,18 @@ export interface CampusAllocationItem {
   recordId?: string; // Associated ActivityRecord id if created
 }
 
+export interface CTHSTeacherAssignment {
+  id: string;
+  teacherCode: string;
+  teacherName: string;
+  email?: string;
+  phone?: string;
+  campusCode?: string;
+  campusName?: string;
+  departmentName?: string;
+  position?: string;
+}
+
 export interface ActivityCatalogMeta {
   academicYearId?: string;
   educationLevel: CatalogEducationLevel;
@@ -50,9 +62,10 @@ export interface ActivityCatalogMeta {
   deliverables?: string; // Sản phẩm học tập / Dự án
   notes?: string; // Ghi chú
   plainDescription?: string;
-  cthsTeacherId?: string; // GV thuộc Tổ CTHS phụ trách
+  cthsTeachers?: CTHSTeacherAssignment[]; // Danh sách 1 hoặc nhiều GV thuộc Tổ CTHS phụ trách
+  cthsTeacherId?: string; // GV thuộc Tổ CTHS phụ trách (GV đại diện chính / tương thích ngược)
   cthsTeacherCode?: string; // Mã GV Tổ CTHS
-  cthsTeacherName?: string; // Họ tên GV Tổ CTHS phụ trách
+  cthsTeacherName?: string; // Họ tên các GV Tổ CTHS phụ trách (dạng ghép ngăn cách dấu phẩy)
   cthsTeacherEmail?: string; // Email GV Tổ CTHS
   allocatedCampuses?: CampusAllocationItem[];
 }
