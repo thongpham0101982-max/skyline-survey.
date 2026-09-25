@@ -664,6 +664,8 @@ model WeeklyReportItem {
   reportId           String
   mainTask           String
   workContent        String
+  category           String?
+  taskGroup          String?
   expectedCompletion String?
   progress           String       @default("NOT_STARTED")
   proposedSolution   String?
@@ -1088,8 +1090,21 @@ model TaskCategory {
   id             String   @id @default(cuid())
   name           String   @unique
   assignedToRole String
+  groupName      String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model TaskGroup {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  code          String?
+  department    String?  @default("KT&ĐBCL")
+  description   String?
+  memberUserIds String?
+  leaderUserId  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model ObservationSlot {

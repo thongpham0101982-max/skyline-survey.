@@ -15,7 +15,6 @@ import {
   FileSpreadsheet, 
   UserPlus, 
   PieChart,
-  TrendingUp,
   Settings,
   Briefcase,
   ArrowRightLeft,
@@ -87,12 +86,6 @@ export const APP_CATEGORIES = [
         name: "QL Điểm/Nhận xét",
         icon: ClipboardList,
         href: "/admin/ktdbcl/diem-nhan-xet"
-      },
-      {
-        code: "KTDBCL_SCATTER_PLOT",
-        name: "Phân tích Phân tán (Scatter)",
-        icon: TrendingUp,
-        href: "/admin/ktdbcl/scatter-plot"
       },
       {
         code: "KTDBCL_PHAN_TICH_THKQ",
