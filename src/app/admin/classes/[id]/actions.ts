@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { logActivity } from "@/lib/audit"
 import { revalidatePath } from "next/cache"
+import { normalizePersonName } from "@/lib/nameNormalizer"
 
 export async function importStudentsAction(classId: string, data: any[]) {
   const cls = await prisma.class.findUnique({ where: { id: classId } })
@@ -81,10 +82,11 @@ export async function importStudentsAction(classId: string, data: any[]) {
             ? (isSurveyGiaoLuu ? "Học giao lưu theo kết quả khảo sát đầu vào" : "Import diện giao lưu") 
             : null;
 
+          const normalizedName = normalizePersonName(item.studentName);
           await tx.student.create({
             data: {
               studentCode: sCode,
-              studentName: item.studentName,
+              studentName: normalizedName,
               gender: item.gender,
               dateOfBirth: item.dateOfBirth ? new Date(item.dateOfBirth) : null,
               classId: cls.id,
@@ -366,10 +368,12 @@ export async function addStudentAction(classId: string, data: any) {
     const resolvedStudentType = data.studentType === "GIAO_LUU" || isSurveyGiaoLuu ? "GIAO_LUU" : "CHINH_KHOA";
     const resolvedStudentTypeNote = data.studentTypeNote || (resolvedStudentType === "GIAO_LUU" ? (isSurveyGiaoLuu ? "Học giao lưu theo kết quả khảo sát đầu vào" : "Học giao lưu") : null);
 
+    const normalizedStudentName = normalizePersonName(data.studentName);
+
     const student = await prisma.student.create({
       data: {
         studentCode: studentCode,
-        studentName: data.studentName,
+        studentName: normalizedStudentName,
         gender: data.gender,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         classId: cls.id,
@@ -388,9 +392,9 @@ export async function addStudentAction(classId: string, data: any) {
       "Student",
       student.id,
       null,
-      { studentCode, studentName: data.studentName, classId }
+      { studentCode, studentName: normalizedStudentName, classId }
     )
-    await syncAssessmentStudentInfoWithMasterAction(studentCode, data.studentName, data.gender, data.dateOfBirth);
+    await syncAssessmentStudentInfoWithMasterAction(studentCode, normalizedStudentName, data.gender, data.dateOfBirth);
     if (data.vnEduCode) {
       await upsertStudentVnEduMapping(cls.academicYearId, studentCode, data.vnEduCode);
     }
@@ -432,15 +436,18 @@ export async function updateStudentAction(classId: string, studentId: string, da
       }
     }
 
+    const normalizedStudentName = normalizePersonName(data.studentName);
+
     await prisma.student.update({
       where: { id: studentId },
       data: {
         studentCode: studentCode,
-        studentName: data.studentName,
+        studentName: normalizedStudentName,
         gender: data.gender,
         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       }
     })
+    await syncAssessmentStudentInfoWithMasterAction(studentCode, normalizedStudentName, data.gender, data.dateOfBirth);
     const session = await auth()
     await logActivity(
       session?.user?.id || "SYSTEM",
@@ -812,6 +819,79 @@ export async function convertStudentTypeAction(data: {
     };
   } catch (e: any) {
     console.error("Error converting student type:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+/**
+ * Server Action: Chuẩn hóa toàn bộ Họ và Tên học sinh trong một lớp học
+ * Quy chuẩn: Viết hoa chữ cái đầu mỗi từ (Title Case), loại bỏ khoảng trắng dư thừa
+ */
+export async function normalizeClassStudentNamesAction(classId: string) {
+  try {
+    const cls = await prisma.class.findUnique({
+      where: { id: classId },
+      include: {
+        students: true
+      }
+    });
+
+    if (!cls) return { success: false, error: "Lớp học không tồn tại" };
+
+    let updatedCount = 0;
+    const updatedDetails: { id: string; studentCode: string; oldName: string; newName: string }[] = [];
+
+    for (const student of cls.students) {
+      const currentName = student.studentName || "";
+      const normalized = normalizePersonName(currentName);
+
+      if (normalized && normalized !== currentName) {
+        await prisma.student.update({
+          where: { id: student.id },
+          data: { studentName: normalized }
+        });
+
+        // Đồng bộ sang bảng khảo sát đầu vào nếu có
+        await syncAssessmentStudentInfoWithMasterAction(
+          student.studentCode,
+          normalized,
+          student.gender,
+          student.dateOfBirth
+        );
+
+        updatedCount++;
+        updatedDetails.push({
+          id: student.id,
+          studentCode: student.studentCode,
+          oldName: currentName,
+          newName: normalized
+        });
+      }
+    }
+
+    const session = await auth();
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "NORMALIZE_STUDENT_NAMES",
+      "Class",
+      classId,
+      null,
+      { classId, className: cls.className, totalStudents: cls.students.length, updatedCount }
+    );
+
+    revalidatePath(`/admin/classes/${classId}`);
+    return {
+      success: true,
+      updatedCount,
+      totalCount: cls.students.length,
+      updatedDetails,
+      message: updatedCount > 0 
+        ? `Đã chuẩn hóa thành công ${updatedCount}/${cls.students.length} học sinh!`
+        : `Tất cả ${cls.students.length} học sinh trong lớp đã đúng chuẩn Họ và Tên (viết hoa chữ cái đầu mỗi từ).`
+    };
+  } catch (e: any) {
+    console.error("Error normalizing class student names:", e);
     return { success: false, error: e.message };
   }
 }

@@ -38,3 +38,5 @@ export function sortVietnameseStudents<T>(
 ): T[] {
   return [...students].sort((a, b) => compareVietnameseNames(getName(a), getName(b)))
 }
+
+export { normalizePersonName } from "./nameNormalizer"

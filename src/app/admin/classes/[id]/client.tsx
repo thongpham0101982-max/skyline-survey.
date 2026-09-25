@@ -16,9 +16,11 @@ import {
   syncClassStudentsWithSurveysAction, 
   convertStudentTypeAction,
   updateStudentVnEduCodeAction,
-  importVnEduMappingAction
+  importVnEduMappingAction,
+  normalizeClassStudentNamesAction
 } from "./actions"
 import { sortVietnameseStudents } from "@/lib/vietnameseSort"
+import { normalizePersonName } from "@/lib/nameNormalizer"
 
 export function AdminClassStudentsClient({ classId, initialStudents, activeSurveys = [] }: any) {
   const [students, setStudents] = useState(initialStudents)
@@ -40,6 +42,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
   const [convertReason, setConvertReason] = useState("")
   const [convertSyncSurvey, setConvertSyncSurvey] = useState(true)
   const [convertingLoading, setConvertingLoading] = useState(false)
+  const [normalizingNames, setNormalizingNames] = useState(false)
 
   // State cho Ánh xạ VNEdu
   const [uploadingMapping, setUploadingMapping] = useState(false)
@@ -330,7 +333,8 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
 
           const studentCode = String(findVal(row, ["mã học sinh", "mã hs", "ma hs", "studentcode"]) || "").trim() || ("HS-" + Date.now() + "-" + Math.floor(Math.random()*1000));
           const vnEduCode = String(findVal(row, ["mã vnedu", "mã vnedu", "vnedu", "vneducode", "ma vnedu"]) || "").trim();
-          const studentName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "studentname", "full name"]) || "").trim() || "Unnamed";
+          const rawName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "studentname", "full name"]) || "").trim() || "Unnamed";
+          const studentName = normalizePersonName(rawName);
           const gender = String(findVal(row, ["giới tính", "gioi tinh", "gender"]) || "Nam").trim();
           const rawType = String(findVal(row, ["diện học sinh", "dien hoc sinh", "diện hs", "loại học sinh", "loai hoc sinh", "studenttype"]) || "").trim();
           const studentType = (rawType.toLowerCase().includes("giao lưu") || rawType.toLowerCase().includes("giao luu")) ? "GIAO_LUU" : "CHINH_KHOA";
@@ -414,11 +418,13 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
+    const normalizedName = normalizePersonName(formData.studentName);
+    const payload = { ...formData, studentName: normalizedName };
     let res
     if (editingStudent) {
-      res = await updateStudentAction(classId, editingStudent.id, formData)
+      res = await updateStudentAction(classId, editingStudent.id, payload)
     } else {
-      res = await addStudentAction(classId, formData)
+      res = await addStudentAction(classId, payload)
     }
 
     if (res.success) {
@@ -428,6 +434,28 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
       setSubmitting(false)
     }
   }
+
+  const handleNormalizeNames = async () => {
+    if (!confirm("Hệ thống sẽ tự động quét và chuẩn hóa Họ và Tên của tất cả học sinh trong lớp theo định dạng viết hoa chữ cái đầu mỗi từ (Title Case).\n\nBạn có muốn tiếp tục?")) return;
+    setNormalizingNames(true);
+    try {
+      const res = await normalizeClassStudentNamesAction(classId);
+      if (res.success) {
+        if (res.updatedCount && res.updatedCount > 0) {
+          alert(`✅ ${res.message}`);
+          window.location.reload();
+        } else {
+          alert(`ℹ️ ${res.message}`);
+        }
+      } else {
+        alert("Lỗi khi chuẩn hóa Họ và Tên: " + res.error);
+      }
+    } catch (e: any) {
+      alert("Lỗi hệ thống: " + e.message);
+    } finally {
+      setNormalizingNames(false);
+    }
+  };
 
   const openConvertModal = (s: any, targetType: "CHINH_KHOA" | "GIAO_LUU") => {
     setConvertingStudent(s);
@@ -716,6 +744,15 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           >
             <ArrowUpDown className="w-4 h-4 mr-1.5 text-emerald-600" />
             {isAlphaSorted ? "Sắp xếp Alpha: Bật" : "Sắp xếp Alpha: Tắt"}
+          </button>
+          <button
+            onClick={handleNormalizeNames}
+            disabled={normalizingNames}
+            className="flex items-center bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-300 font-semibold py-2 px-3.5 rounded-md transition-colors shadow-sm disabled:opacity-50 text-xs"
+            title="Tự động chuẩn hóa Họ và Tên học sinh trong lớp theo định dạng viết hoa chữ cái đầu mỗi từ"
+          >
+            <Sparkles className={`w-4 h-4 mr-1.5 text-sky-600 ${normalizingNames ? "animate-spin" : ""}`} />
+            {normalizingNames ? "Đang chuẩn hóa..." : "Chuẩn hóa Họ & Tên"}
           </button>
           <button
             onClick={handleSyncSurveys}

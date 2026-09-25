@@ -30,7 +30,8 @@ import {
   Compass,
   Sparkles,
   Grid3X3,
-  Database
+  Database,
+  BarChart3
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -92,6 +93,12 @@ export const APP_CATEGORIES = [
         name: "Phân tích Phân tán (Scatter)",
         icon: TrendingUp,
         href: "/admin/ktdbcl/scatter-plot"
+      },
+      {
+        code: "KTDBCL_PHAN_TICH_THKQ",
+        name: "Phân tích THKQ",
+        icon: BarChart3,
+        href: "/admin/ktdbcl/phan-tich-thkq"
       },
             {
         code: "QL_DGNL",
