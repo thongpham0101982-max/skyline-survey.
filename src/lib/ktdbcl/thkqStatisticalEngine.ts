@@ -145,11 +145,12 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
   }
 
   // Điều kiện lọc theo Lớp/Khối/Cơ sở
-  const classWhere: any = {}
-  if (campusId !== "ALL") classWhere.campusId = campusId
-  if (grade !== "ALL") classWhere.grade = grade
-
-  gradeEntryWhere.class = classWhere
+  if (campusId !== "ALL" || grade !== "ALL") {
+    const classWhere: any = {}
+    if (campusId !== "ALL") classWhere.campusId = campusId
+    if (grade !== "ALL") classWhere.grade = grade
+    gradeEntryWhere.class = classWhere
+  }
 
   const rawEntries = await prisma.subjectGradeEntry.findMany({
     where: gradeEntryWhere,
@@ -181,7 +182,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
           },
           teachers: {
             where: { roleInClass: "GVCN" },
-            include: { teacher: { select: { fullName: true } } }
+            include: { teacher: { select: { teacherName: true } } }
           }
         }
       }
@@ -204,7 +205,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     grade: e.class?.grade || "",
     campusId: e.class?.campusId || "",
     campusName: e.class?.campus?.campusName || "Cơ sở",
-    homeroomTeacher: e.class?.teachers?.[0]?.teacher?.fullName || "",
+    homeroomTeacher: e.class?.teachers?.[0]?.teacher?.teacherName || "",
     score: e.compositeScore ?? null,
     evaluationPeriod: e.evaluationPeriod
   })).filter(e => e.score !== null && !isNaN(e.score))
@@ -226,7 +227,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
                 campus: true,
                 teachers: {
                   where: { roleInClass: "GVCN" },
-                  include: { teacher: { select: { fullName: true } } }
+                  include: { teacher: { select: { teacherName: true } } }
                 }
               }
             }
@@ -250,7 +251,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
       grade: ts.student?.class?.grade || "",
       campusId: ts.student?.class?.campusId || "",
       campusName: ts.student?.class?.campus?.campusName || "Cơ sở",
-      homeroomTeacher: ts.student?.class?.teachers?.[0]?.teacher?.fullName || "",
+      homeroomTeacher: ts.student?.class?.teachers?.[0]?.teacher?.teacherName || "",
       score: ts.score ?? null,
       evaluationPeriod: ts.semester
     })).filter(e => e.score !== null && !isNaN(e.score))
