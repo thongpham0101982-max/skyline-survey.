@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { normalizePersonName } from "@/lib/nameNormalizer"
 
 export async function createTransferOutAction(data: any) {
   try {
@@ -364,7 +365,7 @@ export async function createTransferInAction(data: any) {
       const newStudent = await tx.student.create({
         data: {
           studentCode: studentCode,
-          studentName: data.studentName || assessmentStudent.fullName,
+          studentName: normalizePersonName(data.studentName || assessmentStudent.fullName),
           dateOfBirth: assessmentStudent.dateOfBirth,
           gender: assessmentStudent.gender,
           classId: data.classId,
@@ -660,7 +661,7 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
       const newStudent = await tx.student.create({
         data: {
           studentCode: studentCode,
-          studentName: data.studentName || candidate.fullName,
+          studentName: normalizePersonName(data.studentName || candidate.fullName),
           dateOfBirth: candidate.dateOfBirth,
           gender: candidate.gender,
           classId: data.classId,
@@ -1009,7 +1010,7 @@ export async function completeBatchEnrollmentAction(ids: string[], isPreschool: 
           const newStudent = await tx.student.create({
             data: {
               studentCode: studentCode,
-              studentName: candidate.fullName,
+              studentName: normalizePersonName(candidate.fullName),
               dateOfBirth: candidate.dateOfBirth,
               gender: candidate.gender,
               classId: data.classId,

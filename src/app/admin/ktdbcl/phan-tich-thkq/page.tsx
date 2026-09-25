@@ -11,7 +11,7 @@ export default async function PhanTichThkqPage() {
   const [academicYears, campuses, subjects] = await Promise.all([
     prisma.academicYear.findMany({
       orderBy: { startDate: "desc" },
-      select: { id: true, name: true, yearCode: true, status: true }
+      select: { id: true, name: true, status: true }
     }),
     prisma.campus.findMany({
       where: { status: "ACTIVE" },

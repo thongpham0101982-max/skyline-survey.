@@ -16,9 +16,36 @@ export function normalizePersonName(rawName: string | null | undefined): string 
   // 2. Chuyển toàn bộ về chữ thường chuẩn tiếng Việt
   const lower = clean.toLocaleLowerCase("vi-VN");
 
-  // 3. Viết hoa chữ cái đầu tiên của từ (sau đầu chuỗi hoặc sau khoảng trắng, gạch nối, ngoặc, nháy, v.v.)
-  // Sử dụng Unicode Property Escape \p{L} để nhận diện chính xác mọi ký tự chữ cái tiếng Việt & quốc tế
-  return lower.replace(/(^|[\s\-\(\[\"\'\./])(\p{L})/gu, (match, prefix, char) => {
-    return prefix + char.toLocaleUpperCase("vi-VN");
+  // 3. Tách theo khoảng trắng và viết hoa chữ cái đầu mỗi từ
+  const words = lower.split(" ");
+
+  const capitalizedWords = words.map(word => {
+    if (!word) return "";
+
+    // Xử lý từ ghép có dấu gạch ngang (ví dụ: Jean-Luc, Mai-Anh)
+    if (word.includes("-")) {
+      return word
+        .split("-")
+        .map(part => part ? part.charAt(0).toLocaleUpperCase("vi-VN") + part.slice(1) : "")
+        .join("-");
+    }
+
+    // Xử lý từ ghép có dấu nháy đơn (ví dụ: O'Connor)
+    if (word.includes("'")) {
+      return word
+        .split("'")
+        .map(part => part ? part.charAt(0).toLocaleUpperCase("vi-VN") + part.slice(1) : "")
+        .join("'");
+    }
+
+    // Xử lý nếu từ nằm trong ngoặc tròn (ví dụ: (Bảo))
+    if (word.startsWith("(") && word.length > 1) {
+      return "(" + word.charAt(1).toLocaleUpperCase("vi-VN") + word.slice(2);
+    }
+
+    // Viết hoa chữ cái đầu tiên của từ
+    return word.charAt(0).toLocaleUpperCase("vi-VN") + word.slice(1);
   });
+
+  return capitalizedWords.join(" ").trim();
 }

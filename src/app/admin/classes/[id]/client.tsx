@@ -697,7 +697,15 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                </div>
                <div>
                  <label className="block text-sm font-semibold text-slate-700 mb-1">Họ và Tên *</label>
-                 <input required value={formData.studentName} onChange={e => setFormData({ ...formData, studentName: e.target.value })} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                 <input 
+                    required 
+                    value={formData.studentName} 
+                    onChange={e => setFormData({ ...formData, studentName: e.target.value })} 
+                    onBlur={e => setFormData(prev => ({ ...prev, studentName: normalizePersonName(e.target.value) }))}
+                    placeholder="Ví dụ: Nguyễn Văn A"
+                    className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" 
+                  />
+                  <p className="text-[11px] text-slate-400 mt-1">Hệ thống tự động chuẩn hóa viết hoa chữ cái đầu mỗi từ</p>
                </div>
                <div className="grid grid-cols-2 gap-4">
                  <div>

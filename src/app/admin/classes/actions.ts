@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { getAdminSession } from "@/lib/session"
+import { normalizePersonName } from "@/lib/nameNormalizer"
 
 export async function importClassesAction(data: any[]) {
   const session = await getAdminSession();
@@ -469,7 +470,7 @@ export async function copyStudentsAction(sourceYearId: string, targetYearId: str
         await prisma.student.create({
           data: {
             studentCode: s.studentCode,
-            studentName: s.studentName,
+            studentName: normalizePersonName(s.studentName),
             dateOfBirth: s.dateOfBirth || null,
             gender: s.gender || null,
             classId: targetClassId,
@@ -675,7 +676,7 @@ export async function copyStudentsToTargetClassAction(
         await prisma.student.create({
           data: {
             studentCode: s.studentCode,
-            studentName: s.studentName,
+            studentName: normalizePersonName(s.studentName),
             dateOfBirth: s.dateOfBirth || null,
             gender: s.gender || null,
             classId: targetClassId,
