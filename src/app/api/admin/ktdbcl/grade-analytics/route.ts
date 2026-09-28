@@ -698,6 +698,151 @@ export async function GET(request: Request) {
       })
     })
 
+    // 7.1 BUILD KSĐV COMPARISON MATRIX (Đối sánh Ma trận KSĐV theo Lớp, Học sinh & Môn cam kết)
+    const ksdvMatrixStudents: any[] = []
+    let ksdvMathCommittedTotal = 0
+    let ksdvLitCommittedTotal = 0
+    let ksdvEngCommittedTotal = 0
+    let ksdvImprovedCount = 0
+
+    students.forEach(st => {
+      const cls = filteredClasses.find(c => c.id === st.classId)
+      if (!cls) return
+
+      const cleanCode = (st.studentCode || "").trim().toUpperCase()
+      const entranceInfo = entranceAssessmentMap.get(cleanCode) || null
+      if (!entranceInfo) return
+
+      const hasEntranceCommitment = Boolean(
+        (entranceInfo.admissionCriteria && entranceInfo.admissionCriteria.toLowerCase().includes("cam kết")) ||
+        (entranceInfo.admissionResult && entranceInfo.admissionResult.toLowerCase().includes("cam kết")) ||
+        (entranceInfo.targetType && entranceInfo.targetType.toLowerCase().includes("cam kết")) ||
+        (entranceInfo.directorNote && entranceInfo.directorNote.toLowerCase().includes("cam kết"))
+      )
+
+      if (!hasEntranceCommitment) return
+
+      const committedSubs = parseCommittedSubjects(entranceInfo)
+      const homeroom = cls.homeroomTeacherId ? homeroomMap.get(cls.homeroomTeacherId) : null
+      const homeroomTeacherName = homeroom?.teacherName || "Chưa phân công"
+
+      // Helper to find subject in availableSubjectList
+      const findSubject = (keywords: string[], codes: string[]) => {
+        return availableSubjectList.find(s => {
+          const sName = (s.name || "").toLowerCase()
+          const sCode = (s.code || "").toUpperCase()
+          return codes.includes(sCode) || keywords.some(kw => sName.includes(kw))
+        })
+      }
+
+      // 1. Môn Toán
+      const mathSub = findSubject(["toán"], ["TOA", "MAT"])
+      const isMathCommitted = isSubjectMatchingCommitment(committedSubs, { name: "Toán", code: "TOA" })
+      if (isMathCommitted) ksdvMathCommittedTotal++
+
+      const mathEntry = mathSub ? studentSubjectPeriodMap.get(st.id)?.get(mathSub.id)?.get(currentPeriod) : null
+      const mathCurrentScore = mathEntry?.compositeScore !== null && mathEntry?.compositeScore !== undefined ? Number(mathEntry.compositeScore) : null
+      const mathEntranceScore = entranceInfo.mathScore !== null && entranceInfo.mathScore !== undefined ? Number(entranceInfo.mathScore) : null
+      const mathDelta = (mathCurrentScore !== null && mathEntranceScore !== null) ? Math.round((mathCurrentScore - mathEntranceScore) * 10) / 10 : null
+      const mathTa = mathSub ? taMap.get(`${cls.id}_${mathSub.id}`) : null
+      const mathTeacher = mathTa?.teacher?.teacherName || homeroomTeacherName
+
+      // 2. Môn Tiếng Việt / Ngữ Văn
+      const isPrimary = (cls.level || "").toLowerCase().includes("tiểu học") || (cls.level || "").toLowerCase().includes("tieu hoc") || ["1", "2", "3", "4", "5"].some(g => (cls.grade || "").includes(g))
+      const litSub = isPrimary
+        ? findSubject(["tiếng việt"], ["TVI"])
+        : findSubject(["ngữ văn", "văn"], ["NVA"])
+      const isLitCommitted = isSubjectMatchingCommitment(committedSubs, { name: isPrimary ? "Tiếng Việt" : "Ngữ Văn", code: isPrimary ? "TVI" : "NVA" })
+      if (isLitCommitted) ksdvLitCommittedTotal++
+
+      const litEntry = litSub ? studentSubjectPeriodMap.get(st.id)?.get(litSub.id)?.get(currentPeriod) : null
+      const litCurrentScore = litEntry?.compositeScore !== null && litEntry?.compositeScore !== undefined ? Number(litEntry.compositeScore) : null
+      const litEntranceScore = entranceInfo.literatureScore !== null && entranceInfo.literatureScore !== undefined ? Number(entranceInfo.literatureScore) : null
+      const litDelta = (litCurrentScore !== null && litEntranceScore !== null) ? Math.round((litCurrentScore - litEntranceScore) * 10) / 10 : null
+      const litTa = litSub ? taMap.get(`${cls.id}_${litSub.id}`) : null
+      const litTeacher = litTa?.teacher?.teacherName || homeroomTeacherName
+
+      // 3. Môn Tiếng Anh (Tổng điểm KSĐV Tiếng Anh)
+      const engSub = findSubject(["tiếng anh", "english"], ["TA", "TAV", "ESL"])
+      const isEngCommitted = isSubjectMatchingCommitment(committedSubs, { name: "Tiếng Anh", code: "TA" })
+      if (isEngCommitted) ksdvEngCommittedTotal++
+
+      const engEntry = engSub ? studentSubjectPeriodMap.get(st.id)?.get(engSub.id)?.get(currentPeriod) : null
+      const engCurrentScore = engEntry?.compositeScore !== null && engEntry?.compositeScore !== undefined ? Number(engEntry.compositeScore) : null
+      
+      const engEntranceTotal100 = entranceInfo.totalEnglishScore !== null && entranceInfo.totalEnglishScore !== undefined ? Number(entranceInfo.totalEnglishScore) : (entranceInfo.writtenEnglishScore !== null ? Number(entranceInfo.writtenEnglishScore) : null)
+      const engEntranceScale10 = engEntranceTotal100 !== null ? Math.round((engEntranceTotal100 / 10) * 10) / 10 : null
+      const engDelta = (engCurrentScore !== null && engEntranceScale10 !== null) ? Math.round((engCurrentScore - engEntranceScale10) * 10) / 10 : null
+      const engTa = engSub ? taMap.get(`${cls.id}_${engSub.id}`) : null
+      const engTeacher = engTa?.teacher?.teacherName || homeroomTeacherName
+
+      // Check if student improved in at least one committed subject
+      const hasMathImprovement = isMathCommitted && ((mathDelta !== null && mathDelta >= 0) || (mathCurrentScore !== null && mathCurrentScore >= 6.0))
+      const hasLitImprovement = isLitCommitted && ((litDelta !== null && litDelta >= 0) || (litCurrentScore !== null && litCurrentScore >= 6.0))
+      const hasEngImprovement = isEngCommitted && ((engDelta !== null && engDelta >= 0) || (engCurrentScore !== null && engCurrentScore >= 6.0))
+      if (hasMathImprovement || hasLitImprovement || hasEngImprovement) {
+        ksdvImprovedCount++
+      }
+
+      ksdvMatrixStudents.push({
+        studentId: st.id,
+        studentCode: st.studentCode,
+        studentName: st.studentName,
+        dateOfBirth: st.dateOfBirth,
+        gender: st.gender,
+        classId: cls.id,
+        className: cls.className,
+        grade: cls.grade,
+        level: cls.level,
+        campusName: cls.campus?.campusName || "",
+        campusCode: cls.campus?.campusCode || "",
+        homeroomTeacher: homeroomTeacherName,
+        admissionCriteria: entranceInfo.admissionCriteria || "",
+        admissionResult: entranceInfo.admissionResult || "",
+        directorNote: entranceInfo.directorNote || "",
+        committedSubjects: committedSubs,
+        math: {
+          isCommitted: isMathCommitted,
+          entranceScore: mathEntranceScore,
+          currentScore: mathCurrentScore,
+          delta: mathDelta,
+          teacherName: mathTeacher,
+          subjectName: mathSub?.name || "Toán học"
+        },
+        literature: {
+          isCommitted: isLitCommitted,
+          entranceScore: litEntranceScore,
+          currentScore: litCurrentScore,
+          delta: litDelta,
+          teacherName: litTeacher,
+          subjectName: litSub?.name || (isPrimary ? "Tiếng Việt" : "Ngữ Văn")
+        },
+        english: {
+          isCommitted: isEngCommitted,
+          entranceTotal100: engEntranceTotal100,
+          entranceScale10: engEntranceScale10,
+          oralScore: entranceInfo.oralEnglishScore,
+          writtenScore: entranceInfo.writtenEnglishScore,
+          currentScore: engCurrentScore,
+          delta: engDelta,
+          teacherName: engTeacher,
+          subjectName: "Tổng điểm Tiếng Anh"
+        }
+      })
+    })
+
+    const ksdvMatrix = {
+      students: ksdvMatrixStudents,
+      summary: {
+        totalCommittedStudents: ksdvMatrixStudents.length,
+        committedMathCount: ksdvMathCommittedTotal,
+        committedLitCount: ksdvLitCommittedTotal,
+        committedEngCount: ksdvEngCommittedTotal,
+        improvedCount: ksdvImprovedCount,
+        improvedRate: ksdvMatrixStudents.length > 0 ? Math.round((ksdvImprovedCount / ksdvMatrixStudents.length) * 100) : 0
+      }
+    }
+
     // 8. Multi-period trends and overall distribution calculation
     const distCounts = {
       under_5: 0,
@@ -751,6 +896,7 @@ export async function GET(request: Request) {
       distribution,
       teacherDistributions,
       trackingStudents,
+      ksdvMatrix,
       benchmarks: benchmarkConfigs,
       subjects: availableSubjectList
     })
