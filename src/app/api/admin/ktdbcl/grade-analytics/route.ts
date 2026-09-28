@@ -274,9 +274,17 @@ export async function GET(request: Request) {
     const entranceCodeMap = new Map<string, any>()
     const entranceNameMap = new Map<string, any>()
     const rawAllCommittedCandidates: any[] = []
+    let allClasses: any[] = []
+    let systemStudents: any[] = []
     const p = prisma as any
 
     try {
+      // Query all active classes for this academic year to strictly resolve class & grade
+      allClasses = await prisma.class.findMany({
+        where: { academicYearId, status: "ACTIVE" },
+        include: { campus: true }
+      })
+
       // Find all input assessment periods of the current academic year if configured
       const periods = p.inputAssessmentPeriod?.findMany
         ? await p.inputAssessmentPeriod.findMany({
@@ -286,7 +294,15 @@ export async function GET(request: Request) {
         : []
       const periodIds = periods.map((item: any) => item.id)
 
-      const commitmentOrConditions = [
+      const preschoolPeriods = p.preschoolInputAssessmentPeriod?.findMany
+        ? await p.preschoolInputAssessmentPeriod.findMany({
+            where: academicYearId ? { academicYearId } : {},
+            select: { id: true }
+          })
+        : []
+      const preschoolPeriodIds = preschoolPeriods.map((item: any) => item.id)
+
+      const inputCommitmentConditions = [
         { admissionResult: { contains: "cam kết" } },
         { admissionResult: { contains: "Cam kết" } },
         { admissionResult: { contains: "theo dõi" } },
@@ -303,41 +319,120 @@ export async function GET(request: Request) {
         { admissionCriteria: { contains: "theo dõi" } }
       ]
 
-      const inputStudents = p.inputAssessmentStudent?.findMany
-        ? await p.inputAssessmentStudent.findMany({
-            where: {
-              ...(periodIds.length > 0 ? { periodId: { in: periodIds } } : {}),
-              OR: commitmentOrConditions
-            },
-            include: {
-              enrollmentClass: {
-                include: { campus: true }
+      const preschoolCommitmentConditions = [
+        { admissionResult: { contains: "cam kết" } },
+        { admissionResult: { contains: "Cam kết" } },
+        { admissionResult: { contains: "theo dõi" } },
+        { admissionResult: { contains: "Theo dõi" } },
+        { directorNote: { contains: "Môn cam kết" } },
+        { directorNote: { contains: "Mon cam ket" } },
+        { directorNote: { contains: "cam kết" } },
+        { directorNote: { contains: "Cam kết" } },
+        { directorNote: { contains: "theo dõi" } },
+        { directorNote: { contains: "Theo dõi" } },
+        { admissionCriteria: { contains: "cam kết" } },
+        { admissionCriteria: { contains: "theo dõi" } }
+      ]
+
+      let inputStudents: any[] = []
+      try {
+        if (p.inputAssessmentStudent?.findMany) {
+          if (periodIds.length > 0) {
+            inputStudents = await p.inputAssessmentStudent.findMany({
+              where: {
+                periodId: { in: periodIds },
+                OR: inputCommitmentConditions
               },
-              scores: {
-                select: {
-                  scores: true,
-                  subject: {
-                    select: { name: true, code: true }
-                  }
+              include: {
+                enrollmentClass: {
+                  include: { campus: true }
                 }
               }
-            }
-          })
-        : []
-
-      const preschoolStudents = p.preschoolInputAssessmentStudent?.findMany
-        ? await p.preschoolInputAssessmentStudent.findMany({
-            where: {
-              ...(periodIds.length > 0 ? { periodId: { in: periodIds } } : {}),
-              OR: commitmentOrConditions
-            },
-            include: {
-              enrollmentClass: {
-                include: { campus: true }
+            })
+          }
+          if (inputStudents.length === 0) {
+            inputStudents = await p.inputAssessmentStudent.findMany({
+              where: {
+                OR: inputCommitmentConditions
+              },
+              include: {
+                enrollmentClass: {
+                  include: { campus: true }
+                }
               }
-            }
-          })
-        : []
+            })
+          }
+        }
+      } catch (errInput) {
+        console.warn("Lỗi khi đọc inputAssessmentStudent:", errInput)
+      }
+
+      let preschoolStudents: any[] = []
+      try {
+        if (p.preschoolInputAssessmentStudent?.findMany) {
+          if (preschoolPeriodIds.length > 0) {
+            preschoolStudents = await p.preschoolInputAssessmentStudent.findMany({
+              where: {
+                periodId: { in: preschoolPeriodIds },
+                OR: preschoolCommitmentConditions
+              },
+              include: {
+                enrollmentClass: {
+                  include: { campus: true }
+                }
+              }
+            })
+          }
+          if (preschoolStudents.length === 0) {
+            preschoolStudents = await p.preschoolInputAssessmentStudent.findMany({
+              where: {
+                OR: preschoolCommitmentConditions
+              },
+              include: {
+                enrollmentClass: {
+                  include: { campus: true }
+                }
+              }
+            })
+          }
+        }
+      } catch (errPre) {
+        console.warn("Lỗi khi đọc preschoolInputAssessmentStudent:", errPre)
+      }
+
+      const allStudentCodes = [
+        ...inputStudents.map((s: any) => s.studentCode),
+        ...inputStudents.map((s: any) => s.enrollmentCode),
+        ...preschoolStudents.map((s: any) => s.studentCode),
+        ...preschoolStudents.map((s: any) => s.enrollmentCode)
+      ].filter(Boolean)
+
+      const allFullNames = [
+        ...inputStudents.map((s: any) => s.fullName),
+        ...preschoolStudents.map((s: any) => s.fullName)
+      ].filter(Boolean)
+
+      try {
+        systemStudents = await prisma.student.findMany({
+          where: {
+            OR: [
+              { studentCode: { in: allStudentCodes } },
+              { studentName: { in: allFullNames } }
+            ],
+            academicYearId
+          },
+          include: {
+            class: {
+              include: {
+                campus: true
+              }
+            },
+            campus: true
+          }
+        })
+      } catch (errSys) {
+        console.warn("Lỗi khi đọc systemStudents:", errSys)
+      }
 
       const allEntranceRecords = [...inputStudents, ...preschoolStudents]
 
@@ -347,38 +442,6 @@ export async function GET(request: Request) {
         let writtenEnglishScore = r.writtenEnglishScore
         let oralEnglishScore = r.oralEnglishScore
         let psychologyScore = r.psychologyScore
-
-        if (r.scores && r.scores.length > 0) {
-          r.scores.forEach((sc: any) => {
-            const sName = (sc.subject?.name || "").toLowerCase()
-            const sCode = (sc.subject?.code || "").toLowerCase()
-            let val: any = null
-            try {
-              if (sc.scores) {
-                const parsed = JSON.parse(sc.scores)
-                const vArr = Array.isArray(parsed) ? parsed : [parsed]
-                val = vArr.find((x: any) => x !== undefined && x !== "" && x !== null)
-              }
-            } catch {
-              val = sc.scores
-            }
-            if (val !== null && val !== undefined && val !== "") {
-              const numVal = parseFloat(val)
-              const finalVal = isNaN(numVal) ? val : numVal
-              if (sName.includes("toán") || sCode.includes("math") || sCode === "toa") {
-                if (mathScore == null) mathScore = finalVal
-              } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn") || sCode === "nva" || sCode === "van") {
-                if (literatureScore == null) literatureScore = finalVal
-              } else if (sName.includes("viết") || sCode === "tav") {
-                if (writtenEnglishScore == null) writtenEnglishScore = finalVal
-              } else if (sName.includes("vấn đáp") || sName.includes("nói") || sCode === "tavd") {
-                if (oralEnglishScore == null) oralEnglishScore = finalVal
-              } else if (sName.includes("tâm lý") || sCode === "tly") {
-                if (psychologyScore == null) psychologyScore = finalVal
-              }
-            }
-          })
-        }
 
         const wNum = parseFloat(writtenEnglishScore)
         const oNum = parseFloat(oralEnglishScore)
@@ -831,8 +894,14 @@ export async function GET(request: Request) {
       }
 
       // Check campus filter
-      if (campusId && campusId !== "ALL" && cls.campusId !== campusId) {
-        return
+      if (campusId && campusId !== "ALL") {
+        const isMatch = cls.campusId === campusId ||
+          cls.campus?.id === campusId ||
+          cls.campus?.campusCode === campusId ||
+          (cls.campus?.campusCode && cls.campus.campusCode.toLowerCase() === campusId.toLowerCase()) ||
+          (cls.campus?.campusName && cls.campus.campusName.toLowerCase().includes(campusId.toLowerCase())) ||
+          (cls.className && cls.className.toLowerCase().includes(campusId.toLowerCase()))
+        if (!isMatch) return
       }
 
       // Check level filter
@@ -927,6 +996,8 @@ export async function GET(request: Request) {
         committedSubs.some(s => s.toLowerCase().includes("tâm") || s.toLowerCase().includes("lý") || s.toLowerCase().includes("psychology")) ||
         (cand.directorNote && /tâm lý|tam ly|psychology|tập trung|hành vi/i.test(cand.directorNote)) ||
         (cand.admissionResult && /tâm lý|tam ly|psychology/i.test(cand.admissionResult)) ||
+        (cand.admissionCriteria && /tâm lý|tam ly|psychology/i.test(cand.admissionCriteria)) ||
+        (cand.targetType && /tâm lý|tam ly|psychology/i.test(cand.targetType)) ||
         (cand.psychologyScore !== null && cand.psychologyScore !== undefined && Number(cand.psychologyScore) > 0)
       )
       if (isPsychologyCommitted) ksdvPsychologyCommittedTotal++
@@ -1000,27 +1071,47 @@ export async function GET(request: Request) {
     // Step A: Process all candidate records from rawAllCommittedCandidates (sync from Support & Psychology tag)
     rawAllCommittedCandidates.forEach(cand => {
       // Find matching student in system
-      let matchingSt = students.find(s => 
-        (cand.studentCode && s.studentCode && s.studentCode.trim().toUpperCase() === cand.studentCode.trim().toUpperCase()) ||
-        (cand.enrollmentCode && s.studentCode && s.studentCode.trim().toUpperCase() === cand.enrollmentCode.trim().toUpperCase()) ||
-        (cleanString(s.studentName) === cleanString(cand.fullName))
+      let matchingSt = systemStudents.find((ss: any) => 
+        (ss.studentCode && cand.studentCode && ss.studentCode.trim().toLowerCase() === cand.studentCode.trim().toLowerCase()) ||
+        (ss.studentCode && cand.enrollmentCode && ss.studentCode.trim().toLowerCase() === cand.enrollmentCode.trim().toLowerCase())
       )
 
-      let resolvedClass = matchingSt ? (filteredClasses.find(c => c.id === matchingSt.classId) || classes.find(c => c.id === matchingSt.classId)) : null
+      if (!matchingSt) {
+        matchingSt = systemStudents.find((ss: any) => {
+          if (cleanString(ss.studentName) === cleanString(cand.fullName)) {
+            if (!cand.grade) return true
+            const ssGrade = ss.class?.grade || ss.class?.className?.match(/^(\d+)/)?.[1]
+            const isCleanGrade = cand.grade.replace(/\D/g, "")
+            if (!ssGrade || !isCleanGrade) return true
+            return ssGrade.toString() === isCleanGrade.toString()
+          }
+          return false
+        })
+      }
+
+      if (!matchingSt) {
+        matchingSt = students.find((s: any) => 
+          (cand.studentCode && s.studentCode && s.studentCode.trim().toUpperCase() === cand.studentCode.trim().toUpperCase()) ||
+          (cand.enrollmentCode && s.studentCode && s.studentCode.trim().toUpperCase() === cand.enrollmentCode.trim().toUpperCase()) ||
+          (cleanString(s.studentName) === cleanString(cand.fullName))
+        )
+      }
+
+      let resolvedClass = matchingSt?.class || null
 
       if (!resolvedClass && cand.enrollmentClass) {
-        resolvedClass = classes.find(c => c.id === cand.enrollmentClass.id) || cand.enrollmentClass
+        resolvedClass = (allClasses.find((c: any) => c.id === cand.enrollmentClass.id)) || cand.enrollmentClass
       }
 
       if (!resolvedClass && cand.enrollmentClassId) {
-        resolvedClass = classes.find(c => c.id === cand.enrollmentClassId || c.classCode === cand.enrollmentClassId) || null
+        resolvedClass = allClasses.find((c: any) => c.id === cand.enrollmentClassId || c.classCode === cand.enrollmentClassId) || null
       }
 
       if (!resolvedClass && cand.className && cand.className !== "Chưa xếp lớp" && !cand.className.toLowerCase().includes("chưa xếp")) {
-        resolvedClass = classes.find(c => 
+        resolvedClass = allClasses.find((c: any) => 
           c.className.toLowerCase() === cand.className.toLowerCase() ||
-          c.classCode.toLowerCase() === cand.className.toLowerCase()
-        ) || null
+          c.classCode?.toLowerCase() === cand.className.toLowerCase()
+        ) || (classes.find((c: any) => c.className.toLowerCase() === cand.className.toLowerCase())) || null
       }
 
       processCandidateForMatrix(cand, matchingSt, resolvedClass)
@@ -1038,7 +1129,10 @@ export async function GET(request: Request) {
         (entranceInfo.admissionCriteria && entranceInfo.admissionCriteria.toLowerCase().includes("cam kết")) ||
         (entranceInfo.admissionResult && entranceInfo.admissionResult.toLowerCase().includes("cam kết")) ||
         (entranceInfo.targetType && entranceInfo.targetType.toLowerCase().includes("cam kết")) ||
-        (entranceInfo.directorNote && entranceInfo.directorNote.toLowerCase().includes("cam kết"))
+        (entranceInfo.directorNote && entranceInfo.directorNote.toLowerCase().includes("cam kết")) ||
+        (entranceInfo.admissionResult && /theo dõi/i.test(entranceInfo.admissionResult)) ||
+        (entranceInfo.directorNote && /theo dõi/i.test(entranceInfo.directorNote)) ||
+        (entranceInfo.targetType && /theo dõi/i.test(entranceInfo.targetType))
       )
 
       if (hasEntranceCommitment) {
@@ -1100,7 +1194,7 @@ export async function GET(request: Request) {
       currentAverage: overallAvg,
       totalBelowAverage: trackingStudents.filter(t => t.isBelowAverage).length,
       totalBelowBenchmark: trackingStudents.filter(t => t.isBelowBenchmark).length,
-      totalAdmissionCommitment: trackingStudents.filter(t => t.hasAdmissionCommitment).length,
+      totalAdmissionCommitment: Math.max(ksdvMatrixStudents.length, trackingStudents.filter(t => t.hasAdmissionCommitment).length),
       totalLearningCommitment: trackingStudents.filter(t => t.hasActiveLearningCommitment).length
     }
 
