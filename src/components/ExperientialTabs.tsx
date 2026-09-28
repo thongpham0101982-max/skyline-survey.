@@ -1,10 +1,10 @@
 "use client"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, BarChart3, Layers } from 'lucide-react'
+import { Activity, BarChart3, Layers, Sparkles } from 'lucide-react'
 
 interface ExperientialTabsProps {
-  activeTab: 'catalogs' | 'activities' | 'reports'
+  activeTab: 'catalogs' | 'activities' | 'reports' | 'themes'
 }
 
 export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
@@ -17,6 +17,12 @@ export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
       label: 'Danh mục HĐTN & Ngoại khóa', 
       href: '/admin/experiential-activities/catalogs', 
       icon: Layers 
+    },
+    { 
+      id: 'themes', 
+      label: 'Chủ đề giáo dục', 
+      href: '/admin/experiential-activities/catalogs?tab=themes', 
+      icon: Sparkles 
     },
     { 
       id: 'activities', 

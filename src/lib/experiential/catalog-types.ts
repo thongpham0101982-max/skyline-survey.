@@ -48,16 +48,85 @@ export interface CriterionItem {
   description?: string;
 }
 
-export type EvaluationMode = 'CRITERIA' | 'PASS_FAIL' | 'SCORE_10' | 'ROLE_BASED';
+export type EvaluationMode = 
+  | 'PARTICIPATION_ONLY' // Chế độ 1 – Chỉ ghi nhận tham gia: Điểm danh + Vai trò + Nhận xét
+  | 'COMPLETION_LEVEL'   // Chế độ 2 – Đánh giá mức hoàn thành: Điểm danh + Vai trò + Mức hoàn thành + Nhận xét
+  | 'RUBRIC'             // Chế độ 3 – Đánh giá theo Rubric: Tiêu chí, Trọng số / Đồng trọng số, Điểm kết quả
+  // Tương thích ngược:
+  | 'ROLE_BASED' 
+  | 'PASS_FAIL' 
+  | 'SCORE_10' 
+  | 'CRITERIA';
+
+export interface EvaluationModeOption {
+  value: EvaluationMode;
+  code: string;
+  name: string;
+  shortLabel: string;
+  tagline: string;
+  description: string;
+  badgeCls: string;
+  borderCls: string;
+  bgCls: string;
+  textCls: string;
+  iconName: 'Users' | 'CheckCircle2' | 'Sliders';
+  components: string[]; // Các thành phần đánh giá
+}
+
+export const EVALUATION_MODE_OPTIONS: EvaluationModeOption[] = [
+  {
+    value: 'PARTICIPATION_ONLY',
+    code: 'CHE_DO_1',
+    name: 'Chế độ 1 – Chỉ ghi nhận tham gia',
+    shortLabel: 'Ghi nhận tham gia',
+    tagline: 'Điểm danh + Vai trò + Nhận xét',
+    description: 'Dành cho các sự kiện, lễ hội, đại hội thể thao toàn trường. Không tính điểm số hay tiêu chí.',
+    badgeCls: 'bg-purple-50 text-purple-700 border-purple-200/90',
+    borderCls: 'border-purple-500',
+    bgCls: 'bg-purple-50/50',
+    textCls: 'text-purple-700',
+    iconName: 'Users',
+    components: ['Điểm danh tham gia', 'Vai trò học sinh', 'Nhận xét & Minh chứng']
+  },
+  {
+    value: 'COMPLETION_LEVEL',
+    code: 'CHE_DO_2',
+    name: 'Chế độ 2 – Đánh giá mức hoàn thành',
+    shortLabel: 'Mức hoàn thành',
+    tagline: 'Điểm danh + Vai trò + Mức hoàn thành + Nhận xét',
+    description: 'Dành cho hoạt động rèn luyện kỹ năng, trải nghiệm thực tế. Xếp loại theo các mức hoàn thành.',
+    badgeCls: 'bg-amber-50 text-amber-800 border-amber-200/90',
+    borderCls: 'border-amber-500',
+    bgCls: 'bg-amber-50/50',
+    textCls: 'text-amber-800',
+    iconName: 'CheckCircle2',
+    components: ['Điểm danh tham gia', 'Vai trò học sinh', 'Mức hoàn thành (Tốt / Hoàn thành / Chưa hoàn thành)', 'Nhận xét']
+  },
+  {
+    value: 'RUBRIC',
+    code: 'CHE_DO_3',
+    name: 'Chế độ 3 – Đánh giá theo Rubric',
+    shortLabel: 'Đánh giá Rubric',
+    tagline: 'Tiêu chí chi tiết + Đồng trọng số / Trọng số (Σ = 100%) + Xếp loại',
+    description: 'Dành cho hoạt động dự án học tập, trải nghiệm chuyên sâu có sản phẩm và các tiêu chí định lượng.',
+    badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/90',
+    borderCls: 'border-teal-500',
+    bgCls: 'bg-teal-50/50',
+    textCls: 'text-[#003B3A]',
+    iconName: 'Sliders',
+    components: ['Điểm danh tham gia', 'Vai trò học sinh', 'Bộ tiêu chí Rubric (4 mức)', 'Công thức tính điểm (Đồng trọng số / Trọng số)', 'Sản phẩm dự án & Nhận xét']
+  }
+];
 
 export interface ActivityEvaluationConfig {
   mode: EvaluationMode;
   modeTitle?: string;
   hasRoleAssessment?: boolean; // Đánh giá vai trò học sinh
   criteria?: CriterionItem[];
-  formulaType?: 'AVERAGE' | 'WEIGHTED' | 'HIGHEST' | 'PASS_ALL';
+  formulaType?: 'AVERAGE' | 'WEIGHTED' | 'HIGHEST' | 'PASS_ALL'; // AVERAGE: Đồng trọng số | WEIGHTED: Dùng trọng số
   completionBenchmark?: string; // Ví dụ: "Điểm TB >= 5.0" hoặc "Đạt tất cả tiêu chí"
   rolesList?: string[];
+  completionLevels?: string[]; // Danh sách các mức hoàn thành cho Chế độ 2
 }
 
 export const EDUCATION_LEVEL_OPTIONS: { value: CatalogEducationLevel; label: string; shortLabel: string }[] = [
@@ -308,4 +377,18 @@ export function getEducationalThemeInfo(themeNameOrCode?: string): EducationalTh
     t.name.toLowerCase().includes(normalized) ||
     normalized.includes(t.name.toLowerCase())
   );
+}
+
+export function getEvaluationModeInfo(mode?: EvaluationMode | string): EvaluationModeOption {
+  if (!mode) return EVALUATION_MODE_OPTIONS[0];
+  const m = String(mode).toUpperCase();
+  
+  if (m === 'PARTICIPATION_ONLY' || m === 'ROLE_BASED' || m === 'CHE_DO_1') {
+    return EVALUATION_MODE_OPTIONS[0]; // Chế độ 1
+  }
+  if (m === 'COMPLETION_LEVEL' || m === 'PASS_FAIL' || m === 'CHE_DO_2') {
+    return EVALUATION_MODE_OPTIONS[1]; // Chế độ 2
+  }
+  // Mặc định hoặc RUBRIC, CRITERIA, SCORE_10
+  return EVALUATION_MODE_OPTIONS[2]; // Chế độ 3
 }

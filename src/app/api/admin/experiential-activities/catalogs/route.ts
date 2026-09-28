@@ -160,10 +160,20 @@ export async function GET(req: NextRequest) {
       filtered = filtered.filter(item => !item.meta.academicYearId || item.meta.academicYearId === academicYearId);
     }
     if (level && level !== 'ALL') {
-      filtered = filtered.filter(item => item.meta.educationLevel === level || item.level === level);
+      filtered = filtered.filter(item => {
+        if (Array.isArray(item.meta.educationLevels) && item.meta.educationLevels.length > 0) {
+          return item.meta.educationLevels.includes(level as any);
+        }
+        return item.meta.educationLevel === level || item.level === level;
+      });
     }
     if (programType && programType !== 'ALL') {
-      filtered = filtered.filter(item => item.meta.programType === programType);
+      filtered = filtered.filter(item => {
+        if (Array.isArray(item.meta.programTypes) && item.meta.programTypes.length > 0) {
+          return item.meta.programTypes.includes(programType as any);
+        }
+        return item.meta.programType === programType;
+      });
     }
     if (sheetCode && sheetCode !== 'ALL') {
       filtered = filtered.filter(item => item.meta.sheetCode === sheetCode);

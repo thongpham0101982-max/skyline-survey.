@@ -44,6 +44,42 @@ app.prepare().then(() => {
     console.log(`[Skyline Server] Running 24/7 at http://localhost:${port} and http://192.168.10.239:${port}`);
     
     // =========================================================================
+    // TỰ ĐỘNG TÁI KHỞI ĐỘNG KHI CÓ BẢN BUILD MỚI (CHỐNG VỠ GIAO DIỆN / MẤT CSS)
+    // =========================================================================
+    const buildIdFile = path.join(__dirname, '.next', 'BUILD_ID');
+    let currentBuildId = fs.existsSync(buildIdFile) ? fs.readFileSync(buildIdFile, 'utf8').trim() : null;
+    if (fs.existsSync(buildIdFile)) {
+      let isRestarting = false;
+      fs.watchFile(buildIdFile, { interval: 2000 }, () => {
+        try {
+          if (fs.existsSync(buildIdFile)) {
+            const newBuildId = fs.readFileSync(buildIdFile, 'utf8').trim();
+            if (newBuildId && newBuildId !== currentBuildId && !isRestarting) {
+              isRestarting = true;
+              console.log(`[Skyline Server] Phát hiện bản build mới (${newBuildId} != ${currentBuildId}).`);
+              console.log('[Skyline Server] Đang tự động nạp lại máy chủ để cập nhật CSS và giao diện mới...');
+              
+              if (process.env.pm_id !== undefined) {
+                process.exit(0);
+              } else {
+                const { spawn } = require('child_process');
+                const child = spawn(process.argv[0], process.argv.slice(1), {
+                  detached: true,
+                  stdio: 'ignore',
+                  cwd: __dirname
+                });
+                child.unref();
+                process.exit(0);
+              }
+            }
+          }
+        } catch (watchErr) {
+          console.error('[Skyline Server] Lỗi kiểm tra cập nhật BUILD_ID:', watchErr);
+        }
+      });
+    }
+    
+    // =========================================================================
     // TỰ ĐỘNG SAO LƯU DỮ LIỆU ĐỊNH KỲ (BACKUP SCHEDULE: 23:00 THỨ 6 HẰNG TUẦN)
     // =========================================================================
     const { fork } = require('child_process');

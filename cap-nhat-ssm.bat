@@ -55,10 +55,12 @@ call pm2 restart skyline-portal >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     call pm2 start ecosystem.config.js >nul 2>&1
 )
-ping 127.0.0.1 -n 3 >nul
+:: Chờ Next.js chuẩn bị và lắng nghe cổng 3000 (khoảng 5 giây)
+ping 127.0.0.1 -n 6 >nul
 netstat -aon | findstr ":3000" | findstr "LISTENING" >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     call pm2 save >nul 2>&1
+    echo [OK] Máy chủ SSM đã khởi động thành công trên cổng 3000.
 ) else (
     echo Đang khởi chạy qua dịch vụ nền Node.js...
     if exist "%~dp0chay-ngam.vbs" (
@@ -68,6 +70,7 @@ if %ERRORLEVEL% equ 0 (
     ) else (
         start "Skyline Server" /min node server.js
     )
+    ping 127.0.0.1 -n 5 >nul
 )
 
 echo.
