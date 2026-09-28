@@ -6,7 +6,9 @@ import {
   CatalogEducationLevel, 
   ProgramType,
   ActivityEvaluationConfig,
-  CriterionItem
+  CriterionItem,
+  DEFAULT_EDUCATIONAL_THEMES,
+  getEducationalThemeInfo
 } from './catalog-types';
 import { normalizeActivityName } from './name-normalizer';
 
@@ -70,6 +72,17 @@ export function generateActivityCatalogTemplate(): Uint8Array {
     ws['!cols'] = EXCEL_COLUMNS.map(c => ({ wch: c.width }));
     XLSX.utils.book_append_sheet(wb, ws, config.sheetName);
   });
+
+  // Sheet phụ: Hướng dẫn Danh mục 12 Chủ đề Giáo dục chuẩn của trường
+  const themeRows = DEFAULT_EDUCATIONAL_THEMES.map((t, idx) => ({
+    'STT': idx + 1,
+    'Mã chủ đề': t.code,
+    'Tên chủ đề giáo dục': t.name,
+    'Mô tả & Định hướng giáo dục cốt lõi': t.description
+  }));
+  const wsTheme = XLSX.utils.json_to_sheet(themeRows);
+  wsTheme['!cols'] = [{ wch: 6 }, { wch: 28 }, { wch: 32 }, { wch: 75 }];
+  XLSX.utils.book_append_sheet(wb, wsTheme, 'DanhMuc_ChuDe_GD');
 
   const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
   return buffer;
@@ -335,9 +348,9 @@ export function parseActivityCatalogWorkbook(fileBuffer: Buffer | Uint8Array): P
         grade: gradeStr || grades.join(', '),
         grades,
         activityName: normalizeActivityName(activityName),
-        themeName,
+        themeName: getEducationalThemeInfo(themeName)?.name || themeName,
         integratedSubjects,
-        educationalContent: educationalContent || themeName,
+        educationalContent: educationalContent || getEducationalThemeInfo(themeName)?.name || themeName,
         learningOutcomes: learningOutcomes || 'Hình thành và phát triển phẩm chất, năng lực học sinh',
         organizationFormat: organizationFormat || 'Trải nghiệm',
         timeFrame,

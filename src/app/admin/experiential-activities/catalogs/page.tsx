@@ -14,7 +14,10 @@ import {
   ActivityCatalogItem,
   CatalogActivityCategory,
   EDUCATION_LEVEL_OPTIONS,
-  PROGRAM_TYPE_OPTIONS
+  PROGRAM_TYPE_OPTIONS,
+  DEFAULT_EDUCATIONAL_THEMES,
+  EducationalThemeItem,
+  getEducationalThemeInfo
 } from '@/lib/experiential/catalog-types';
 import { CatalogAddEditModal } from './components/CatalogAddEditModal';
 import { CatalogImportModal } from './components/CatalogImportModal';
@@ -22,6 +25,7 @@ import { CatalogAllocateModal } from './components/CatalogAllocateModal';
 import { CatalogAssignCTHSModal } from './components/CatalogAssignCTHSModal';
 import { CatalogBulkDeleteModal } from './components/CatalogBulkDeleteModal';
 import { CatalogEvaluationConfigModal } from './components/CatalogEvaluationConfigModal';
+import { CatalogThemeConfigModal } from './components/CatalogThemeConfigModal';
 
 export function getActivityCategory(item: ActivityCatalogItem): CatalogActivityCategory {
   const meta = item.meta || {};
@@ -51,6 +55,8 @@ export default function ActivityCatalogsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'HOAT_DONG_SU_KIEN' | 'TRAI_NGHIEM_DU_AN'>('ALL');
+  const [themeFilter, setThemeFilter] = useState<string>('ALL');
+  const [themes, setThemes] = useState<EducationalThemeItem[]>(DEFAULT_EDUCATIONAL_THEMES);
   const [semesterFilter, setSemesterFilter] = useState<'ALL' | '1' | '2'>('ALL');
   const [gradeFilter, setGradeFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'CANCELLED'>('ALL');
@@ -68,6 +74,7 @@ export default function ActivityCatalogsPage() {
   const [allocatingItem, setAllocatingItem] = useState<any>(null);
   const [isConfigEvalOpen, setIsConfigEvalOpen] = useState(false);
   const [evalConfigItem, setEvalConfigItem] = useState<any>(null);
+  const [isThemeConfigOpen, setIsThemeConfigOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/academic-years')
@@ -78,6 +85,14 @@ export default function ActivityCatalogsPage() {
           const active = years.find((y: any) => y.status === 'ACTIVE' && !y.isOff) || years[0];
           setSelectedYearId(active?.id || '');
         }
+      })
+      .catch(() => {});
+
+    // Nạp danh mục chủ đề giáo dục riêng
+    fetch('/api/admin/experiential-activities/catalogs/themes')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) setThemes(data);
       })
       .catch(() => {});
   }, []);
@@ -98,6 +113,13 @@ export default function ActivityCatalogsPage() {
         if (categoryFilter !== 'ALL') {
           list = list.filter(item => getActivityCategory(item) === categoryFilter);
         }
+        if (themeFilter !== 'ALL') {
+          list = list.filter(item => {
+            const itemTheme = (item.meta?.themeName || '').toLowerCase().trim();
+            const filterTheme = themeFilter.toLowerCase().trim();
+            return itemTheme === filterTheme || itemTheme.includes(filterTheme) || filterTheme.includes(itemTheme);
+          });
+        }
         if (semesterFilter !== 'ALL') {
           list = list.filter(item => item.meta?.semester === parseInt(semesterFilter, 10));
         }
@@ -108,7 +130,7 @@ export default function ActivityCatalogsPage() {
         setCatalogs([]);
         setLoading(false);
       });
-  }, [activeSheetCode, selectedYearId, search, categoryFilter, semesterFilter, gradeFilter, statusFilter]);
+  }, [activeSheetCode, selectedYearId, search, categoryFilter, themeFilter, semesterFilter, gradeFilter, statusFilter]);
 
   useEffect(() => {
     loadCatalogs();
@@ -117,7 +139,7 @@ export default function ActivityCatalogsPage() {
   // Clear selected when sheet or filters change
   useEffect(() => {
     setSelectedIds([]);
-  }, [activeSheetCode, selectedYearId, categoryFilter, semesterFilter, gradeFilter, statusFilter]);
+  }, [activeSheetCode, selectedYearId, categoryFilter, themeFilter, semesterFilter, gradeFilter, statusFilter]);
 
   const handleToggleSelectAll = () => {
     if (selectedIds.length === catalogs.length && catalogs.length > 0) {
@@ -382,6 +404,15 @@ function formatProgTypeName(prog: string): string {
           </button>
 
           <button
+            onClick={() => setIsThemeConfigOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-purple-900 bg-purple-50 border border-purple-200 hover:bg-purple-100 shadow-2xs transition-all cursor-pointer"
+            title="Cấu hình danh mục 12 trục chủ đề giáo dục riêng (Phẩm chất, Văn hóa, Kỹ năng, STEM, ...)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+            <span>Cấu hình Chủ đề GD</span>
+          </button>
+
+          <button
             onClick={() => {
               setEditingItem(null);
               setIsAddEditOpen(true);
@@ -626,6 +657,21 @@ function formatProgTypeName(prog: string): string {
             >
               Đã hủy
             </button>
+          </div>
+
+          {/* Theme Filter */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
+            <Tag className="w-3.5 h-3.5 text-slate-400" />
+            <select
+              value={themeFilter}
+              onChange={e => setThemeFilter(e.target.value)}
+              className="text-xs font-bold text-slate-800 bg-transparent focus:outline-hidden cursor-pointer max-w-[190px]"
+            >
+              <option value="ALL">Tất cả chủ đề GD</option>
+              {themes.map(t => (
+                <option key={t.id} value={t.name}>{t.name}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -888,10 +934,26 @@ function formatProgTypeName(prog: string): string {
                       </td>
 
                       {/* Chủ đề giáo dục */}
-                      <td className="py-2.5 px-3 text-slate-600 align-middle">
-                        <span className="line-clamp-2" title={meta.themeName || ''}>
-                          {meta.themeName || <span className="text-slate-400 font-normal italic">—</span>}
-                        </span>
+                      <td className="py-2.5 px-3 align-middle">
+                        {meta.themeName ? (
+                          (() => {
+                            const themeInfo = getEducationalThemeInfo(meta.themeName);
+                            return themeInfo ? (
+                              <span 
+                                className={`inline-block px-2.5 py-1 rounded-xl text-[11px] font-bold border leading-snug ${themeInfo.badgeCls}`}
+                                title={themeInfo.description}
+                              >
+                                {meta.themeName}
+                              </span>
+                            ) : (
+                              <span className="inline-block px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                {meta.themeName}
+                              </span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-slate-400 font-normal italic">—</span>
+                        )}
                       </td>
 
                       {/* Môn phối hợp / Tích hợp */}
@@ -1184,6 +1246,18 @@ function formatProgTypeName(prog: string): string {
         onSaved={loadCatalogs}
         catalogItem={evalConfigItem}
       />
+
+      {/* Modal Cấu hình Chủ đề Giáo dục riêng */}
+      {isThemeConfigOpen && (
+        <CatalogThemeConfigModal
+          isOpen={isThemeConfigOpen}
+          onClose={() => setIsThemeConfigOpen(false)}
+          onThemesUpdated={(updatedThemes) => {
+            setThemes(updatedThemes);
+            loadCatalogs();
+          }}
+        />
+      )}
     </div>
   );
 }

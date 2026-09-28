@@ -15,10 +15,13 @@ import {
   PROGRAM_TYPE_OPTIONS,
   ActivityEvaluationConfig,
   CatalogActivityCategory,
-  ACTIVITY_CATEGORY_OPTIONS
+  ACTIVITY_CATEGORY_OPTIONS,
+  DEFAULT_EDUCATIONAL_THEMES,
+  EducationalThemeItem
 } from '@/lib/experiential/catalog-types';
 import { normalizeActivityName } from '@/lib/experiential/name-normalizer';
 import { CatalogEvaluationConfigModal } from './CatalogEvaluationConfigModal';
+import { CatalogThemeConfigModal } from './CatalogThemeConfigModal';
 
 interface CatalogAddEditModalProps {
   isOpen: boolean;
@@ -83,12 +86,21 @@ export function CatalogAddEditModal({
   const [teacherSearch, setTeacherSearch] = useState('');
   const [filterCTHSOnly, setFilterCTHSOnly] = useState(true);
   const [isEvalConfigModalOpen, setIsEvalConfigModalOpen] = useState(false);
+  const [themes, setThemes] = useState<EducationalThemeItem[]>(DEFAULT_EDUCATIONAL_THEMES);
+  const [isThemeConfigModalOpen, setIsThemeConfigModalOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/experiential-activities/catalogs/cths-teachers')
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setTeachers(data);
+      })
+      .catch(() => {});
+
+    fetch('/api/admin/experiential-activities/catalogs/themes')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) setThemes(data);
       })
       .catch(() => {});
   }, []);
@@ -601,16 +613,72 @@ export function CatalogAddEditModal({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Chủ đề giáo dục
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Giáo dục giá trị di sản văn hóa..."
-                    value={formData.themeName}
-                    onChange={e => setFormData({ ...formData, themeName: e.target.value })}
-                    className="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] transition-all"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700">
+                      Chủ đề giáo dục
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsThemeConfigModalOpen(true)}
+                      className="text-[10px] font-bold text-[#00A19A] hover:underline flex items-center gap-1 cursor-pointer"
+                      title="Mở bảng cấu hình chủ đề giáo dục riêng"
+                    >
+                      <Sparkles className="w-3 h-3" />
+                      <span>Cấu hình chủ đề</span>
+                    </button>
+                  </div>
+                  
+                  <select
+                    value={themes.some(t => t.name === formData.themeName) ? formData.themeName : (formData.themeName ? '__CUSTOM__' : '')}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === '__CUSTOM__') {
+                        setFormData({ ...formData, themeName: formData.themeName || '' });
+                      } else {
+                        setFormData({ ...formData, themeName: val });
+                      }
+                    }}
+                    className="w-full text-xs font-bold text-slate-800 px-3 py-2 rounded-xl border border-slate-200 focus:outline-hidden focus:border-[#00A19A] bg-white transition-all"
+                  >
+                    <option value="">-- Chọn trục chủ đề giáo dục --</option>
+                    {themes.map(t => (
+                      <option key={t.id} value={t.name}>
+                        {t.name}
+                      </option>
+                    ))}
+                    <option value="__CUSTOM__">✍️ Nhập chủ đề tùy biến khác...</option>
+                  </select>
+
+                  {/* Ô nhập chủ đề tự do khi chọn tùy biến hoặc giá trị chưa có trong danh mục */}
+                  {(!themes.some(t => t.name === formData.themeName) && formData.themeName !== undefined) && (
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        placeholder="Nhập tên chủ đề giáo dục tùy biến..."
+                        value={formData.themeName}
+                        onChange={e => setFormData({ ...formData, themeName: e.target.value })}
+                        className="w-full text-xs px-3 py-1.5 rounded-xl border border-slate-300 focus:outline-hidden focus:border-[#00A19A] bg-slate-50 transition-all font-semibold"
+                      />
+                    </div>
+                  )}
+
+                  {/* Preview badge màu chủ đề nếu đã chọn */}
+                  {formData.themeName && (
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      {(() => {
+                        const matched = themes.find(t => t.name === formData.themeName);
+                        return matched ? (
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${matched.badgeCls}`}>
+                            {matched.name}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                            Chủ đề: {formData.themeName}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -949,6 +1017,17 @@ export function CatalogAddEditModal({
             onSaved();
           }}
           catalogItem={initialData}
+        />
+      )}
+
+      {/* Sub-modal: Cấu hình Chủ đề Giáo dục riêng */}
+      {isThemeConfigModalOpen && (
+        <CatalogThemeConfigModal
+          isOpen={isThemeConfigModalOpen}
+          onClose={() => setIsThemeConfigModalOpen(false)}
+          onThemesUpdated={(updatedThemes) => {
+            setThemes(updatedThemes);
+          }}
         />
       )}
     </>

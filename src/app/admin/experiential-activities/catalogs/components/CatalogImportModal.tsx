@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { X, UploadCloud, FileSpreadsheet, CheckCircle2, AlertTriangle, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ParseCatalogResult, ParsedCatalogRow } from '@/lib/experiential/excel-parser';
+import { getEducationalThemeInfo } from '@/lib/experiential/catalog-types';
 
 interface CatalogImportModalProps {
   isOpen: boolean;
@@ -228,7 +229,22 @@ export function CatalogImportModal({
                         <td className="py-2.5 px-3 text-center text-slate-400 font-bold">{r.stt}</td>
                         <td className="py-2.5 px-3 font-bold text-slate-800">{r.grade}</td>
                         <td className="py-2.5 px-3 font-extrabold text-[#003B3A]">{r.activityName}</td>
-                        <td className="py-2.5 px-3 text-slate-600">{r.themeName || '—'}</td>
+                        <td className="py-2.5 px-3">
+                          {r.themeName ? (
+                            (() => {
+                              const tInfo = getEducationalThemeInfo(r.themeName);
+                              return tInfo ? (
+                                <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${tInfo.badgeCls}`}>
+                                  {r.themeName}
+                                </span>
+                              ) : (
+                                <span className="text-slate-600 text-xs">{r.themeName}</span>
+                              );
+                            })()
+                          ) : (
+                            <span className="text-slate-400 italic text-xs">—</span>
+                          )}
+                        </td>
                         <td className="py-2.5 px-3 font-semibold text-indigo-700">{r.primarySubjectName || '—'}</td>
                         <td className="py-2.5 px-3 text-slate-500">{r.organizationFormat} ({r.timeFrame || `HK${r.semester}`})</td>
                         <td className="py-2.5 px-3 text-slate-600">{r.expectedLocation || '—'}</td>

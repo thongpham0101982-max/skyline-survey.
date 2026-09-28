@@ -162,3 +162,150 @@ export const SHEET_CONFIGS: {
   { code: 'THPT_S', sheetName: 'THPT S', title: 'THPT (Hệ S)', level: 'THPT', programType: 'HE_S', defaultGrades: ['10', '11', '12'] },
   { code: 'THPT_QT', sheetName: 'THPT QT', title: 'THPT (Song ngữ / QT)', level: 'THPT', programType: 'SONG_NGU', defaultGrades: ['10', '11', '12'] }
 ];
+
+// Cấu hình Danh mục Chủ đề Giáo dục riêng
+export interface EducationalThemeItem {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  badgeCls: string;
+  borderCls: string;
+  tagColor: string;
+  isSystem?: boolean;
+}
+
+export const DEFAULT_EDUCATIONAL_THEMES: EducationalThemeItem[] = [
+  {
+    id: 'theme_pham_chat',
+    code: 'PHAM_CHAT_GIA_TRI_SONG',
+    name: 'Phẩm chất – Giá trị sống',
+    description: 'Giáo dục nhân cách, lòng biết ơn, trung thực, trách nhiệm, sự tử tế và các giá trị cốt lõi.',
+    badgeCls: 'bg-rose-50 text-rose-800 border-rose-200/80',
+    borderCls: 'border-rose-400',
+    tagColor: '#e11d48',
+    isSystem: true
+  },
+  {
+    id: 'theme_van_hoa',
+    code: 'VAN_HOA_TRUYEN_THONG',
+    name: 'Văn hóa – Truyền thống',
+    description: 'Tìm hiểu phong tục tập quán, lễ hội dân tộc, di sản văn hóa, lịch sử và tự hào dân tộc.',
+    badgeCls: 'bg-amber-50 text-amber-900 border-amber-200/80',
+    borderCls: 'border-amber-400',
+    tagColor: '#d97706',
+    isSystem: true
+  },
+  {
+    id: 'theme_ky_nang_song',
+    code: 'KY_NANG_SONG_XA_HOI',
+    name: 'Kỹ năng sống – Xã hội',
+    description: 'Kỹ năng giao tiếp, ứng xử, làm việc nhóm, quản lý cảm xúc, thích ứng và giải quyết vấn đề.',
+    badgeCls: 'bg-sky-50 text-sky-800 border-sky-200/80',
+    borderCls: 'border-sky-400',
+    tagColor: '#0284c7',
+    isSystem: true
+  },
+  {
+    id: 'theme_suc_khoe',
+    code: 'SUC_KHOE_THE_CHAT',
+    name: 'Sức khỏe – Thể chất',
+    description: 'Rèn luyện thể thao, nâng cao thể lực, dinh dưỡng học đường và lối sống năng động khỏe mạnh.',
+    badgeCls: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+    borderCls: 'border-emerald-400',
+    tagColor: '#059669',
+    isSystem: true
+  },
+  {
+    id: 'theme_an_toan',
+    code: 'AN_TOAN_CONG_DAN',
+    name: 'An toàn – Công dân',
+    description: 'An toàn giao thông, an toàn không gian mạng, phòng chống bạo lực, ý thức và trách nhiệm công dân.',
+    badgeCls: 'bg-orange-50 text-orange-900 border-orange-200/80',
+    borderCls: 'border-orange-400',
+    tagColor: '#ea580c',
+    isSystem: true
+  },
+  {
+    id: 'theme_moi_truong',
+    code: 'MOI_TRUONG_BEN_VUNG',
+    name: 'Môi trường – Bền vững',
+    description: 'Bảo vệ thiên nhiên, ứng phó biến đổi khí hậu, phân loại rác thải, lối sống xanh và phát triển bền vững.',
+    badgeCls: 'bg-teal-50 text-teal-800 border-teal-200/80',
+    borderCls: 'border-teal-400',
+    tagColor: '#0d9488',
+    isSystem: true
+  },
+  {
+    id: 'theme_khoa_hoc_stem',
+    code: 'KHOA_HOC_STEM',
+    name: 'Khoa học – STEM',
+    description: 'Thực hành khoa học, công nghệ, kỹ thuật, toán học và ứng dụng công nghệ số sáng tạo.',
+    badgeCls: 'bg-cyan-50 text-cyan-800 border-cyan-200/80',
+    borderCls: 'border-cyan-400',
+    tagColor: '#0891b2',
+    isSystem: true
+  },
+  {
+    id: 'theme_nghe_thuat',
+    code: 'NGHE_THUAT_SANG_TAO',
+    name: 'Nghệ thuật – Sáng tạo',
+    description: 'Hội họa, âm nhạc, kịch nghệ, thủ công mỹ nghệ, cảm thụ thẩm mỹ và phát triển năng khiếu nghệ thuật.',
+    badgeCls: 'bg-purple-50 text-purple-800 border-purple-200/80',
+    borderCls: 'border-purple-400',
+    tagColor: '#9333ea',
+    isSystem: true
+  },
+  {
+    id: 'theme_hoc_tap',
+    code: 'HOC_TAP_HOC_THUAT',
+    name: 'Học tập – Học thuật',
+    description: 'Phương pháp học tập tự chủ, tư duy phản biện, văn hóa đọc, nghiên cứu khoa học và tri thức chuyên sâu.',
+    badgeCls: 'bg-indigo-50 text-indigo-800 border-indigo-200/80',
+    borderCls: 'border-indigo-400',
+    tagColor: '#4f46e5',
+    isSystem: true
+  },
+  {
+    id: 'theme_huong_nghiep',
+    code: 'HUONG_NGHIEP_TAI_CHINH',
+    name: 'Hướng nghiệp – Tài chính',
+    description: 'Khám phá thế giới nghề nghiệp, định hướng tương lai, kiến thức tài chính thông minh và tinh thần khởi nghiệp.',
+    badgeCls: 'bg-violet-50 text-violet-800 border-violet-200/80',
+    borderCls: 'border-violet-400',
+    tagColor: '#7c3aed',
+    isSystem: true
+  },
+  {
+    id: 'theme_cong_dong',
+    code: 'CONG_DONG_TRACH_NHIEM_XA_HOI',
+    name: 'Cộng đồng – Trách nhiệm xã hội',
+    description: 'Hoạt động thiện nguyện, phục vụ cộng đồng, lan tỏa yêu thương và trách nhiệm công dân đối với xã hội.',
+    badgeCls: 'bg-pink-50 text-pink-800 border-pink-200/80',
+    borderCls: 'border-pink-400',
+    tagColor: '#db2777',
+    isSystem: true
+  },
+  {
+    id: 'theme_hoi_nhap',
+    code: 'HOI_NHAP_QUOC_TE',
+    name: 'Hội nhập quốc tế',
+    description: 'Ngoại ngữ, giao lưu văn hóa quốc tế, phẩm chất công dân toàn cầu và năng lực hội nhập thế giới.',
+    badgeCls: 'bg-blue-50 text-blue-900 border-blue-200/80',
+    borderCls: 'border-blue-400',
+    tagColor: '#2563eb',
+    isSystem: true
+  }
+];
+
+export function getEducationalThemeInfo(themeNameOrCode?: string): EducationalThemeItem | undefined {
+  if (!themeNameOrCode) return undefined;
+  const normalized = themeNameOrCode.trim().toLowerCase();
+  
+  return DEFAULT_EDUCATIONAL_THEMES.find(t => 
+    t.name.toLowerCase() === normalized || 
+    t.code.toLowerCase() === normalized ||
+    t.name.toLowerCase().includes(normalized) ||
+    normalized.includes(t.name.toLowerCase())
+  );
+}
