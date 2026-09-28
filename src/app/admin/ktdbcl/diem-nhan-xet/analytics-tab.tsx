@@ -68,7 +68,7 @@ export function GradeAnalyticsTab({
 
   // Tracking view sub-filter
   const [trackingCategory, setTrackingCategory] = useState<"ALL" | "BELOW_AVG" | "BELOW_BENCHMARK" | "ADMISSION_COMMITMENT" | "LEARNING_COMMITMENT">("ALL")
-  const [ksdvSubjectFilter, setKsdvSubjectFilter] = useState<"ALL" | "MATH" | "LIT" | "ENG">("ALL")
+  const [ksdvSubjectFilter, setKsdvSubjectFilter] = useState<"ALL" | "MATH" | "LIT" | "ENG" | "PSY">("ALL")
 
   // Data states
   const [loading, setLoading] = useState(false)
@@ -105,6 +105,7 @@ export function GradeAnalyticsTab({
         committedMathCount: 0,
         committedLitCount: 0,
         committedEngCount: 0,
+        committedPsychologyCount: 0,
         improvedCount: 0,
         improvedRate: 0
       }
@@ -306,6 +307,8 @@ export function GradeAnalyticsTab({
       list = list.filter(st => st.literature?.isCommitted)
     } else if (ksdvSubjectFilter === "ENG") {
       list = list.filter(st => st.english?.isCommitted)
+    } else if (ksdvSubjectFilter === "PSY") {
+      list = list.filter(st => st.psychology?.isCommitted)
     }
 
     if (searchKeyword.trim()) {
@@ -315,6 +318,7 @@ export function GradeAnalyticsTab({
           (st.studentName || "").toLowerCase().includes(kw) ||
           (st.studentCode || "").toLowerCase().includes(kw) ||
           (st.className || "").toLowerCase().includes(kw) ||
+          (st.campusName || "").toLowerCase().includes(kw) ||
           (st.homeroomTeacher || "").toLowerCase().includes(kw) ||
           (st.math?.teacherName || "").toLowerCase().includes(kw) ||
           (st.literature?.teacherName || "").toLowerCase().includes(kw) ||
@@ -334,11 +338,11 @@ export function GradeAnalyticsTab({
 
     const excelRows = displayedKsdvStudents.map((st, idx) => ({
       "STT": idx + 1,
-      "Mã Học sinh": st.studentCode,
-      "Họ và tên": st.studentName,
-      "Cơ sở": st.campusName || st.campusCode,
+      "Cơ sở": st.campusName || st.campusCode || "",
       "Lớp": st.className,
       "Khối": st.grade,
+      "Mã Học sinh": st.studentCode,
+      "Họ và tên": st.studentName,
       "GVCN": st.homeroomTeacher,
       // 1. Toán
       "Toán - Cam kết": st.math?.isCommitted ? "x" : "",
@@ -359,6 +363,10 @@ export function GradeAnalyticsTab({
       "Tiếng Anh - Điểm Khảo sát": st.english?.currentScore !== null && st.english?.currentScore !== undefined ? st.english.currentScore : "",
       "Tiếng Anh - Độ lệch (GAP)": st.english?.delta !== null && st.english?.delta !== undefined ? (st.english.delta > 0 ? `+${st.english.delta}` : st.english.delta) : "",
       "Tiếng Anh - GVBM": st.english?.teacherName || "",
+      // 4. Cam kết Tâm lý
+      "Tâm lý - Cam kết": st.psychology?.isCommitted ? "x (CHÚ Ý MÀU ĐỎ)" : "",
+      "Tâm lý - Điểm KSĐV": st.psychology?.entranceScore !== null && st.psychology?.entranceScore !== undefined ? st.psychology.entranceScore : "",
+      "Tâm lý - Cảnh báo đối tượng": st.psychology?.isCommitted ? "CẦN THEO DÕI SÁT TÂM LÝ & HÀNH VI" : "",
       // Ghi chú cam kết
       "Tiêu chí tuyển sinh": st.admissionCriteria || "",
       "Kết quả xét tuyển": st.admissionResult || "",
@@ -700,7 +708,7 @@ export function GradeAnalyticsTab({
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-indigo-800">
-              {data.summary.totalAdmissionCommitment + data.summary.totalLearningCommitment}
+              {Math.max(data.ksdvMatrix?.summary?.totalCommittedStudents || 0, data.summary.totalAdmissionCommitment + data.summary.totalLearningCommitment)}
             </span>
             <span className="text-[11px] font-bold text-indigo-600">học sinh</span>
           </div>
@@ -1290,7 +1298,7 @@ export function GradeAnalyticsTab({
       {activeSubView === "ksdv_matrix" && (
         <div className="space-y-4 animate-fadeIn">
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="bg-white p-3.5 rounded-2xl border border-indigo-100 shadow-sm bg-gradient-to-br from-white to-indigo-50/30">
               <span className="text-[11px] font-bold text-indigo-700 block uppercase tracking-wider">HS Cam kết nhập học</span>
               <div className="text-2xl font-black text-indigo-900 mt-1">
@@ -1321,6 +1329,26 @@ export function GradeAnalyticsTab({
                 {data.ksdvMatrix?.summary?.committedEngCount || 0}
               </div>
               <span className="text-[10px] text-slate-400 font-medium">Vấn đáp & Viết</span>
+            </div>
+
+            {/* BỔ SUNG THẺ CAM KẾT TÂM LÝ - MÀU ĐỎ NỔI BẬT */}
+            <div className="bg-red-50/70 p-3.5 rounded-2xl border-2 border-red-300 shadow-sm bg-gradient-to-br from-white via-red-50 to-red-100/40 ring-2 ring-red-100">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-red-700 block uppercase tracking-wider">
+                  Cam kết Tâm lý
+                </span>
+                <span className="flex h-2.5 w-2.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
+                </span>
+              </div>
+              <div className="text-2xl font-black text-red-900 mt-1 flex items-baseline gap-1.5">
+                {data.ksdvMatrix?.summary?.committedPsychologyCount || 0}
+                <span className="text-[11px] font-bold text-red-600">học sinh</span>
+              </div>
+              <span className="text-[10px] text-red-600 font-extrabold flex items-center gap-1 mt-0.5">
+                <span>🚨</span> Cần chú ý theo dõi sát
+              </span>
             </div>
 
             <div className="bg-white p-3.5 rounded-2xl border border-teal-100 shadow-sm bg-gradient-to-br from-white to-teal-50/30">
@@ -1377,6 +1405,22 @@ export function GradeAnalyticsTab({
                 >
                   Tiếng Anh ({data.ksdvMatrix?.summary?.committedEngCount || 0})
                 </button>
+                {/* NÚT LỌC TÂM LÝ - MÀU ĐỎ NỔI BẬT */}
+                <button
+                  onClick={() => setKsdvSubjectFilter("PSY")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                    ksdvSubjectFilter === "PSY"
+                      ? "bg-red-600 text-white shadow-md shadow-red-200 ring-2 ring-red-300"
+                      : "bg-red-50 hover:bg-red-100 text-red-700 border border-red-300"
+                  }`}
+                >
+                  <span>🧠 Tâm lý (Chú ý đỏ)</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    ksdvSubjectFilter === "PSY" ? "bg-white text-red-700" : "bg-red-200 text-red-900"
+                  }`}>
+                    {data.ksdvMatrix?.summary?.committedPsychologyCount || 0}
+                  </span>
+                </button>
               </div>
 
               <div className="text-xs text-slate-500 font-semibold">
@@ -1386,11 +1430,11 @@ export function GradeAnalyticsTab({
 
             {/* Matrix Table */}
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-xs border-collapse min-w-[1250px]">
+              <table className="w-full text-xs border-collapse min-w-[1450px]">
                 <thead>
                   {/* Row 1: Main Subject Groups Header */}
                   <tr className="border-b border-slate-200 bg-slate-100/90 text-slate-700 font-black text-center uppercase tracking-wider text-[11px]">
-                    <th colSpan={5} className="py-2.5 px-3 text-left border-r border-slate-200">
+                    <th colSpan={6} className="py-2.5 px-3 text-left border-r border-slate-200">
                       Thông tin Học sinh & Lớp học
                     </th>
                     <th colSpan={5} className="py-2.5 px-3 bg-blue-100/80 text-blue-900 border-r border-blue-200">
@@ -1402,6 +1446,10 @@ export function GradeAnalyticsTab({
                     <th colSpan={5} className="py-2.5 px-3 bg-violet-100/80 text-violet-900 border-r border-violet-200">
                       🌐 Môn Tiếng Anh (Tổng điểm KSĐV)
                     </th>
+                    {/* NHÓM CỘT TÂM LÝ - MÀU ĐỎ NỔI BẬT */}
+                    <th colSpan={2} className="py-2.5 px-3 bg-red-100 text-red-900 border-r border-red-200">
+                      🧠 Cam kết Tâm lý (Theo dõi)
+                    </th>
                     <th className="py-2.5 px-3 bg-slate-200/70 text-slate-800 text-left">
                       Hồ sơ & Ghi chú Cam kết
                     </th>
@@ -1409,6 +1457,7 @@ export function GradeAnalyticsTab({
                   {/* Row 2: Sub-columns */}
                   <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 font-bold text-[10px]">
                     <th className="py-2 px-2 text-center w-10">STT</th>
+                    <th className="py-2 px-2.5 text-center w-16">Cơ sở</th>
                     <th className="py-2 px-2.5 text-left w-24">Mã HS</th>
                     <th className="py-2 px-3 text-left min-w-[150px]">Họ và tên</th>
                     <th className="py-2 px-2.5 text-left w-24">Lớp</th>
@@ -1435,6 +1484,10 @@ export function GradeAnalyticsTab({
                     <th className="py-2 px-2 text-center w-16 bg-violet-50/50" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
                     <th className="py-2 px-2.5 text-left w-28 bg-violet-50/50 border-r border-violet-200">GVBM Anh</th>
 
+                    {/* Cam kết Tâm lý - Cột Header màu đỏ */}
+                    <th className="py-2 px-1.5 text-center w-14 bg-red-50 text-red-800" title="Cam kết Tâm lý">CK [x]</th>
+                    <th className="py-2 px-2.5 text-center w-24 bg-red-50 text-red-800 border-r border-red-200" title="Điểm / Ghi chú Tâm lý">Điểm/Lưu ý</th>
+
                     {/* Ghi chú */}
                     <th className="py-2 px-3 text-left min-w-[220px]">Chi tiết Cam kết HĐTS</th>
                   </tr>
@@ -1442,167 +1495,219 @@ export function GradeAnalyticsTab({
                 <tbody className="divide-y divide-slate-100">
                   {displayedKsdvStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={21} className="py-12 text-center text-slate-400 font-semibold italic">
+                      <td colSpan={24} className="py-12 text-center text-slate-400 font-semibold italic">
                         Không tìm thấy học sinh diện cam kết đầu vào nào trong phạm vi bộ lọc đã chọn.
                       </td>
                     </tr>
                   ) : (
-                    displayedKsdvStudents.map((st: any, idx: number) => (
-                      <tr key={st.studentId || idx} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-2.5 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>
-                        <td className="py-2.5 px-2.5 font-mono text-[11px] text-slate-600 font-bold">{st.studentCode}</td>
-                        <td className="py-2.5 px-3 font-extrabold text-slate-900">{st.studentName}</td>
-                        <td className="py-2.5 px-2.5">
-                          <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-teal-50 text-[#005B58] border border-teal-200">
-                            {st.className}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-slate-700 font-semibold border-r border-slate-200 text-[11px]">
-                          {st.homeroomTeacher}
-                        </td>
-
-                        {/* MÔN TOÁN */}
-                        <td className="py-2.5 px-1.5 text-center bg-blue-50/20">
-                          {st.math?.isCommitted ? (
-                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs bg-rose-500 text-white shadow-sm" title="Môn có Cam kết đầu vào">
-                              x
+                    displayedKsdvStudents.map((st: any, idx: number) => {
+                      const isPsychologyAlert = Boolean(st.psychology?.isCommitted || st.psychology?.isAlert)
+                      return (
+                        <tr 
+                          key={st.studentId || idx} 
+                          className={`transition-colors ${
+                            isPsychologyAlert 
+                              ? "bg-red-50/30 hover:bg-red-50/60 border-l-4 border-l-red-500" 
+                              : "hover:bg-slate-50/80"
+                          }`}
+                        >
+                          <td className="py-2.5 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>
+                          <td className="py-2.5 px-2 text-center">
+                            <span className="px-2 py-0.5 rounded font-extrabold text-[10px] bg-purple-50 text-purple-700 border border-purple-200">
+                              {st.campusName || st.campusCode || "CS"}
                             </span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2 text-center font-bold text-slate-700 bg-blue-50/20">
-                          {st.math?.entranceScore !== null && st.math?.entranceScore !== undefined ? st.math.entranceScore : "-"}
-                        </td>
-                        <td className="py-2.5 px-2 text-center font-black text-blue-900 bg-blue-50/20">
-                          {st.math?.currentScore !== null && st.math?.currentScore !== undefined ? (
-                            <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 font-extrabold">
-                              {st.math.currentScore}
-                            </span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2 text-center bg-blue-50/20 font-extrabold">
-                          {st.math?.delta !== null && st.math?.delta !== undefined ? (
-                            st.math.delta > 0 ? (
-                              <span className="text-emerald-600 font-black">+{st.math.delta}</span>
-                            ) : st.math.delta < 0 ? (
-                              <span className="text-rose-600 font-black">{st.math.delta}</span>
-                            ) : (
-                              <span className="text-slate-400 font-bold">0</span>
-                            )
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-blue-50/20 border-r border-blue-200 truncate max-w-[120px]" title={st.math?.teacherName}>
-                          {st.math?.teacherName || "-"}
-                        </td>
-
-                        {/* MÔN TIẾNG VIỆT / NGỮ VĂN */}
-                        <td className="py-2.5 px-1.5 text-center bg-emerald-50/20">
-                          {st.literature?.isCommitted ? (
-                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs bg-rose-500 text-white shadow-sm" title="Môn có Cam kết đầu vào">
-                              x
-                            </span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2 text-center font-bold text-slate-700 bg-emerald-50/20">
-                          {st.literature?.entranceScore !== null && st.literature?.entranceScore !== undefined ? st.literature.entranceScore : "-"}
-                        </td>
-                        <td className="py-2.5 px-2 text-center font-black text-emerald-900 bg-emerald-50/20">
-                          {st.literature?.currentScore !== null && st.literature?.currentScore !== undefined ? (
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-extrabold">
-                              {st.literature.currentScore}
-                            </span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2 text-center bg-emerald-50/20 font-extrabold">
-                          {st.literature?.delta !== null && st.literature?.delta !== undefined ? (
-                            st.literature.delta > 0 ? (
-                              <span className="text-emerald-600 font-black">+{st.literature.delta}</span>
-                            ) : st.literature.delta < 0 ? (
-                              <span className="text-rose-600 font-black">{st.literature.delta}</span>
-                            ) : (
-                              <span className="text-slate-400 font-bold">0</span>
-                            )
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-emerald-50/20 border-r border-emerald-200 truncate max-w-[120px]" title={st.literature?.teacherName}>
-                          {st.literature?.teacherName || "-"}
-                        </td>
-
-                        {/* MÔN TIẾNG ANH */}
-                        <td className="py-2.5 px-1.5 text-center bg-violet-50/20">
-                          {st.english?.isCommitted ? (
-                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs bg-rose-500 text-white shadow-sm" title="Môn có Cam kết đầu vào">
-                              x
-                            </span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2.5 text-center font-bold text-slate-800 bg-violet-50/20">
-                          {st.english?.entranceTotal100 !== null && st.english?.entranceTotal100 !== undefined ? (
-                            <div title={`Nói: ${st.english.oralScore ?? "-"} | Viết: ${st.english.writtenScore ?? "-"}`}>
-                              <span className="text-xs font-black text-violet-900">{st.english.entranceTotal100}</span>
-                              <span className="text-[10px] text-slate-400">/100</span>
-                              <span className="text-[10px] text-violet-600 font-bold block">({st.english.entranceScale10}đ)</span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2 text-center font-black text-violet-900 bg-violet-50/20">
-                          {st.english?.currentScore !== null && st.english?.currentScore !== undefined ? (
-                            <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-900 font-extrabold">
-                              {st.english.currentScore}
-                            </span>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2 text-center bg-violet-50/20 font-extrabold">
-                          {st.english?.delta !== null && st.english?.delta !== undefined ? (
-                            st.english.delta > 0 ? (
-                              <span className="text-emerald-600 font-black">+{st.english.delta}</span>
-                            ) : st.english.delta < 0 ? (
-                              <span className="text-rose-600 font-black">{st.english.delta}</span>
-                            ) : (
-                              <span className="text-slate-400 font-bold">0</span>
-                            )
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-violet-50/20 border-r border-violet-200 truncate max-w-[120px]" title={st.english?.teacherName}>
-                          {st.english?.teacherName || "-"}
-                        </td>
-
-                        {/* CHI TIẾT CAM KẾT */}
-                        <td className="py-2.5 px-3">
-                          <div className="space-y-0.5">
-                            {st.admissionCriteria && (
-                              <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                {st.admissionCriteria}
+                          </td>
+                          <td className="py-2.5 px-2.5 font-mono text-[11px] text-slate-600 font-bold">{st.studentCode}</td>
+                          <td className="py-2.5 px-3 font-extrabold text-slate-900">
+                            {st.studentName}
+                            {isPsychologyAlert && (
+                              <span className="ml-1.5 inline-flex items-center px-1.5 py-0.2 rounded-full text-[9px] font-black bg-red-600 text-white shadow-xs">
+                                Tâm lý
                               </span>
                             )}
-                            {st.directorNote && (
-                              <p className="text-[10px] text-slate-600 italic line-clamp-2 leading-tight" title={st.directorNote}>
-                                &quot;{st.directorNote}&quot;
-                              </p>
+                          </td>
+                          <td className="py-2.5 px-2.5">
+                            <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-teal-50 text-[#005B58] border border-teal-200">
+                              {st.className}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 text-slate-700 font-semibold border-r border-slate-200 text-[11px]">
+                            {st.homeroomTeacher}
+                          </td>
+
+                          {/* MÔN TOÁN */}
+                          <td className="py-2.5 px-1.5 text-center bg-blue-50/20">
+                            {st.math?.isCommitted ? (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs bg-rose-500 text-white shadow-sm" title="Môn có Cam kết đầu vào">
+                                x
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 bg-blue-50/20">
+                            {st.math?.entranceScore !== null && st.math?.entranceScore !== undefined ? st.math.entranceScore : "-"}
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-black text-blue-900 bg-blue-50/20">
+                            {st.math?.currentScore !== null && st.math?.currentScore !== undefined ? (
+                              <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 font-extrabold">
+                                {st.math.currentScore}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center bg-blue-50/20 font-extrabold">
+                            {st.math?.delta !== null && st.math?.delta !== undefined ? (
+                              st.math.delta > 0 ? (
+                                <span className="text-emerald-600 font-black">+{st.math.delta}</span>
+                              ) : st.math.delta < 0 ? (
+                                <span className="text-rose-600 font-black">{st.math.delta}</span>
+                              ) : (
+                                <span className="text-slate-400 font-bold">0</span>
+                              )
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-blue-50/20 border-r border-blue-200 truncate max-w-[120px]" title={st.math?.teacherName}>
+                            {st.math?.teacherName || "-"}
+                          </td>
+
+                          {/* MÔN TIẾNG VIỆT / NGỮ VĂN */}
+                          <td className="py-2.5 px-1.5 text-center bg-emerald-50/20">
+                            {st.literature?.isCommitted ? (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs bg-rose-500 text-white shadow-sm" title="Môn có Cam kết đầu vào">
+                                x
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-bold text-slate-700 bg-emerald-50/20">
+                            {st.literature?.entranceScore !== null && st.literature?.entranceScore !== undefined ? st.literature.entranceScore : "-"}
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-black text-emerald-900 bg-emerald-50/20">
+                            {st.literature?.currentScore !== null && st.literature?.currentScore !== undefined ? (
+                              <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 font-extrabold">
+                                {st.literature.currentScore}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center bg-emerald-50/20 font-extrabold">
+                            {st.literature?.delta !== null && st.literature?.delta !== undefined ? (
+                              st.literature.delta > 0 ? (
+                                <span className="text-emerald-600 font-black">+{st.literature.delta}</span>
+                              ) : st.literature.delta < 0 ? (
+                                <span className="text-rose-600 font-black">{st.literature.delta}</span>
+                              ) : (
+                                <span className="text-slate-400 font-bold">0</span>
+                              )
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-emerald-50/20 border-r border-emerald-200 truncate max-w-[120px]" title={st.literature?.teacherName}>
+                            {st.literature?.teacherName || "-"}
+                          </td>
+
+                          {/* MÔN TIẾNG ANH */}
+                          <td className="py-2.5 px-1.5 text-center bg-violet-50/20">
+                            {st.english?.isCommitted ? (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full font-black text-xs bg-rose-500 text-white shadow-sm" title="Môn có Cam kết đầu vào">
+                                x
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2.5 text-center font-bold text-slate-800 bg-violet-50/20">
+                            {st.english?.entranceTotal100 !== null && st.english?.entranceTotal100 !== undefined ? (
+                              <div title={`Nói: ${st.english.oralScore ?? "-"} | Viết: ${st.english.writtenScore ?? "-"}`}>
+                                <span className="text-xs font-black text-violet-900">{st.english.entranceTotal100}</span>
+                                <span className="text-[10px] text-slate-400">/100</span>
+                                <span className="text-[10px] text-violet-600 font-bold block">({st.english.entranceScale10}đ)</span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-black text-violet-900 bg-violet-50/20">
+                            {st.english?.currentScore !== null && st.english?.currentScore !== undefined ? (
+                              <span className="px-1.5 py-0.5 rounded bg-violet-100 text-violet-900 font-extrabold">
+                                {st.english.currentScore}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center bg-violet-50/20 font-extrabold">
+                            {st.english?.delta !== null && st.english?.delta !== undefined ? (
+                              st.english.delta > 0 ? (
+                                <span className="text-emerald-600 font-black">+{st.english.delta}</span>
+                              ) : st.english.delta < 0 ? (
+                                <span className="text-rose-600 font-black">{st.english.delta}</span>
+                              ) : (
+                                <span className="text-slate-400 font-bold">0</span>
+                              )
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-violet-50/20 border-r border-violet-200 truncate max-w-[120px]" title={st.english?.teacherName}>
+                            {st.english?.teacherName || "-"}
+                          </td>
+
+                          {/* CAM KẾT TÂM LÝ - HIỂN THỊ MÀU ĐỎ NỔI BẬT */}
+                          <td className="py-2.5 px-1.5 text-center bg-red-50/30">
+                            {isPsychologyAlert ? (
+                              <span 
+                                className="inline-flex items-center justify-center w-6 h-6 rounded-full font-black text-xs bg-red-600 text-white shadow-md ring-2 ring-red-300 animate-pulse" 
+                                title="Cam kết Tâm lý - Cần theo dõi sát"
+                              >
+                                x
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-2.5 px-2 text-center bg-red-50/30 border-r border-red-200">
+                            {isPsychologyAlert ? (
+                              <div className="space-y-0.5">
+                                {st.psychology?.entranceScore !== null && st.psychology?.entranceScore !== undefined ? (
+                                  <span className="font-black text-red-700 text-xs block">
+                                    {st.psychology.entranceScore}đ
+                                  </span>
+                                ) : null}
+                                <span className="inline-block px-1.5 py-0.2 rounded text-[9px] font-black bg-red-100 text-red-800 border border-red-200">
+                                  🚨 Chú ý đỏ
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+
+                          {/* CHI TIẾT CAM KẾT */}
+                          <td className="py-2.5 px-3">
+                            <div className="space-y-0.5">
+                              {st.admissionCriteria && (
+                                <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                  {st.admissionCriteria}
+                                </span>
+                              )}
+                              {st.directorNote && (
+                                <p className="text-[10px] text-slate-600 italic line-clamp-2 leading-tight" title={st.directorNote}>
+                                  &quot;{st.directorNote}&quot;
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
                   )}
                 </tbody>
               </table>

@@ -154,29 +154,69 @@ export async function GET(request: Request) {
     const studentIds = students.map(s => s.id)
     const studentCodes = students.map(s => s.studentCode).filter(Boolean)
 
+    // Helper: Normalize strings for fuzzy matching without accents & whitespace
+    const cleanString = (str: string | null | undefined): string => {
+      if (!str) return ""
+      return str.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "")
+    }
+
     // Helper: Parse committed subjects from entrance assessment
-    const parseCommittedSubjects = (entranceInfo: any): string[] => {
+    const parseCommittedSubjects = (entranceInfo: any, className?: string, gradeStr?: string): string[] => {
       if (!entranceInfo) return []
       const note = entranceInfo.directorNote || ""
       const result = entranceInfo.admissionResult || ""
       const criteria = entranceInfo.admissionCriteria || ""
       const target = entranceInfo.targetType || ""
-      const fullText = `${note}\n${result}\n${criteria}\n${target}`
+      const fullText = `${note} ${result} ${criteria} ${target}`.trim()
+      if (!fullText) return []
 
-      const match = fullText.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+      let rawSubs: string[] = []
+      const match = fullText.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i)
       if (match && match[1]) {
-        return match[1].split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
+        rawSubs = match[1].split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
       }
 
-      const rawSubs: string[] = []
-      if (/cam kết/i.test(fullText)) {
-        if (/Anh|English/i.test(fullText)) rawSubs.push("Tiếng Anh")
-        if (/Toán|Math/i.test(fullText)) rawSubs.push("Toán học")
-        if (/Tiếng Việt/i.test(fullText)) rawSubs.push("Tiếng Việt")
-        if (/Ngữ văn|Văn/i.test(fullText)) rawSubs.push("Ngữ Văn")
-        if (/Tâm lý/i.test(fullText)) rawSubs.push("Tâm lý")
+      const isPrimary = (className && /^[1-5][._\s]|lớp\s*[1-5]/i.test(className)) ||
+                        (gradeStr && /^(khối\s*)?[1-5]$/i.test(gradeStr))
+
+      if (rawSubs.length === 0) {
+        if (/Toán|Math/i.test(fullText)) rawSubs.push("Toán")
+        if (/Tiếng Việt|TN-XH|Tự nhiên/i.test(fullText)) rawSubs.push("Tiếng Việt")
+        else if (/Ngữ văn|Literature/i.test(fullText)) {
+          rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
+        } else if (/Văn/i.test(fullText)) {
+          rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
+        }
+        if (/Anh|English|ESL/i.test(fullText)) {
+          rawSubs.push("Tiếng Anh")
+        }
+        if (/Tâm lý|Psychology/i.test(fullText)) rawSubs.push("Tâm lý")
       }
-      return rawSubs
+
+      const finalSubs: string[] = []
+      rawSubs.forEach((s) => {
+        const clean = s.trim().replace(/^môn\s+/i, "")
+        const lower = clean.toLowerCase()
+        if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
+          if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh")
+        } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
+          if (!finalSubs.includes("Toán")) finalSubs.push("Toán")
+        } else if (lower.includes("tiếng việt") || lower.includes("tieng viet") || lower === "tv") {
+          if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
+        } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn" || lower.includes("văn")) {
+          const correctSub = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
+          if (!finalSubs.includes(correctSub)) finalSubs.push(correctSub)
+        } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
+          if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
+        } else {
+          if (!finalSubs.includes(clean)) finalSubs.push(clean)
+        }
+      })
+
+      return finalSubs
     }
 
     // Helper: Check if a school survey subject matches committed subjects
@@ -230,94 +270,160 @@ export async function GET(request: Request) {
       })
     }
 
-    // 3. Fetch Entrance Assessment records (InputAssessmentStudent) with commitment notes & scores
-    const entranceAssessmentMap = new Map<string, any>()
+    // 3. Fetch ENTRANCE ASSESSMENT RECORDS (All committed/monitored students matching Support & Psychology tag)
+    const entranceCodeMap = new Map<string, any>()
+    const entranceNameMap = new Map<string, any>()
+    const rawAllCommittedCandidates: any[] = []
     const p = prisma as any
-    if (studentCodes.length > 0 && p.inputAssessmentStudent?.findMany) {
-      try {
-        const entranceRecords = await p.inputAssessmentStudent.findMany({
-          where: {
-            studentCode: { in: studentCodes }
-          },
-          select: {
-            studentCode: true,
-            fullName: true,
-            mathScore: true,
-            literatureScore: true,
-            writtenEnglishScore: true,
-            oralEnglishScore: true,
-            admissionCriteria: true,
-            admissionResult: true,
-            targetType: true,
-            directorNote: true,
-            scores: {
-              select: {
-                scores: true,
-                subject: {
-                  select: {
-                    name: true,
-                    code: true
+
+    try {
+      // Find all input assessment periods of the current academic year if configured
+      const periods = p.inputAssessmentPeriod?.findMany
+        ? await p.inputAssessmentPeriod.findMany({
+            where: academicYearId ? { academicYearId } : {},
+            select: { id: true }
+          })
+        : []
+      const periodIds = periods.map((item: any) => item.id)
+
+      const commitmentOrConditions = [
+        { admissionResult: { contains: "cam kết" } },
+        { admissionResult: { contains: "Cam kết" } },
+        { admissionResult: { contains: "theo dõi" } },
+        { admissionResult: { contains: "Theo dõi" } },
+        { directorNote: { contains: "Môn cam kết" } },
+        { directorNote: { contains: "Mon cam ket" } },
+        { directorNote: { contains: "cam kết" } },
+        { directorNote: { contains: "Cam kết" } },
+        { directorNote: { contains: "theo dõi" } },
+        { directorNote: { contains: "Theo dõi" } },
+        { targetType: { contains: "cam kết" } },
+        { targetType: { contains: "theo dõi" } },
+        { admissionCriteria: { contains: "cam kết" } },
+        { admissionCriteria: { contains: "theo dõi" } }
+      ]
+
+      const inputStudents = p.inputAssessmentStudent?.findMany
+        ? await p.inputAssessmentStudent.findMany({
+            where: {
+              ...(periodIds.length > 0 ? { periodId: { in: periodIds } } : {}),
+              OR: commitmentOrConditions
+            },
+            include: {
+              enrollmentClass: {
+                include: { campus: true }
+              },
+              scores: {
+                select: {
+                  scores: true,
+                  subject: {
+                    select: { name: true, code: true }
                   }
                 }
               }
             }
-          }
-        })
-        entranceRecords.forEach((r: any) => {
-          const cleanCode = (r.studentCode || "").trim().toUpperCase()
-          if (!cleanCode) return
-
-          let mathScore = r.mathScore
-          let literatureScore = r.literatureScore
-          let writtenEnglishScore = r.writtenEnglishScore
-          let oralEnglishScore = r.oralEnglishScore
-
-          if (r.scores && r.scores.length > 0) {
-            r.scores.forEach((sc: any) => {
-              const sName = (sc.subject?.name || "").toLowerCase()
-              const sCode = (sc.subject?.code || "").toLowerCase()
-              let val: any = null
-              try {
-                if (sc.scores) {
-                  const parsed = JSON.parse(sc.scores)
-                  const vArr = Array.isArray(parsed) ? parsed : [parsed]
-                  val = vArr.find((x: any) => x !== undefined && x !== "" && x !== null)
-                }
-              } catch {
-                val = sc.scores
-              }
-              if (val !== null && val !== undefined && val !== "") {
-                const numVal = parseFloat(val)
-                const finalVal = isNaN(numVal) ? val : numVal
-                if (sName.includes("toán") || sCode.includes("math") || sCode === "toa") {
-                  if (mathScore == null) mathScore = finalVal
-                } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn") || sCode === "nva" || sCode === "van") {
-                  if (literatureScore == null) literatureScore = finalVal
-                } else if (sName.includes("viết") || sCode === "tav") {
-                  if (writtenEnglishScore == null) writtenEnglishScore = finalVal
-                } else if (sName.includes("vấn đáp") || sName.includes("nói") || sCode === "tavd") {
-                  if (oralEnglishScore == null) oralEnglishScore = finalVal
-                }
-              }
-            })
-          }
-
-          const wNum = parseFloat(writtenEnglishScore)
-          const oNum = parseFloat(oralEnglishScore)
-          const totalEnglishScore = (!isNaN(wNum) || !isNaN(oNum)) ? (isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum) : null
-
-          entranceAssessmentMap.set(cleanCode, {
-            ...r,
-            mathScore,
-            literatureScore,
-            writtenEnglishScore,
-            oralEnglishScore,
-            totalEnglishScore
           })
-        })
-      } catch (e) {
-        console.warn("Lỗi khi đọc inputAssessmentStudent:", e)
+        : []
+
+      const preschoolStudents = p.preschoolInputAssessmentStudent?.findMany
+        ? await p.preschoolInputAssessmentStudent.findMany({
+            where: {
+              ...(periodIds.length > 0 ? { periodId: { in: periodIds } } : {}),
+              OR: commitmentOrConditions
+            },
+            include: {
+              enrollmentClass: {
+                include: { campus: true }
+              }
+            }
+          })
+        : []
+
+      const allEntranceRecords = [...inputStudents, ...preschoolStudents]
+
+      allEntranceRecords.forEach((r: any) => {
+        let mathScore = r.mathScore
+        let literatureScore = r.literatureScore
+        let writtenEnglishScore = r.writtenEnglishScore
+        let oralEnglishScore = r.oralEnglishScore
+        let psychologyScore = r.psychologyScore
+
+        if (r.scores && r.scores.length > 0) {
+          r.scores.forEach((sc: any) => {
+            const sName = (sc.subject?.name || "").toLowerCase()
+            const sCode = (sc.subject?.code || "").toLowerCase()
+            let val: any = null
+            try {
+              if (sc.scores) {
+                const parsed = JSON.parse(sc.scores)
+                const vArr = Array.isArray(parsed) ? parsed : [parsed]
+                val = vArr.find((x: any) => x !== undefined && x !== "" && x !== null)
+              }
+            } catch {
+              val = sc.scores
+            }
+            if (val !== null && val !== undefined && val !== "") {
+              const numVal = parseFloat(val)
+              const finalVal = isNaN(numVal) ? val : numVal
+              if (sName.includes("toán") || sCode.includes("math") || sCode === "toa") {
+                if (mathScore == null) mathScore = finalVal
+              } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn") || sCode === "nva" || sCode === "van") {
+                if (literatureScore == null) literatureScore = finalVal
+              } else if (sName.includes("viết") || sCode === "tav") {
+                if (writtenEnglishScore == null) writtenEnglishScore = finalVal
+              } else if (sName.includes("vấn đáp") || sName.includes("nói") || sCode === "tavd") {
+                if (oralEnglishScore == null) oralEnglishScore = finalVal
+              } else if (sName.includes("tâm lý") || sCode === "tly") {
+                if (psychologyScore == null) psychologyScore = finalVal
+              }
+            }
+          })
+        }
+
+        const wNum = parseFloat(writtenEnglishScore)
+        const oNum = parseFloat(oralEnglishScore)
+        const totalEnglishScore = (!isNaN(wNum) || !isNaN(oNum)) ? (isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum) : null
+
+        const entry = {
+          ...r,
+          mathScore,
+          literatureScore,
+          writtenEnglishScore,
+          oralEnglishScore,
+          totalEnglishScore,
+          psychologyScore
+        }
+
+        rawAllCommittedCandidates.push(entry)
+
+        if (r.studentCode) {
+          entranceCodeMap.set(r.studentCode.trim().toUpperCase(), entry)
+        }
+        if (r.enrollmentCode) {
+          entranceCodeMap.set(r.enrollmentCode.trim().toUpperCase(), entry)
+        }
+        if (r.fullName) {
+          const normName = cleanString(r.fullName)
+          if (normName) {
+            entranceNameMap.set(normName, entry)
+          }
+        }
+      })
+    } catch (e) {
+      console.warn("Lỗi khi đọc dữ liệu khảo sát đầu vào:", e)
+    }
+
+    // Helper: Lookup entrance assessment record by code or full name
+    const findEntranceInfo = (code: string | null | undefined, name: string | null | undefined): any => {
+      if (code) {
+        const clean = code.trim().toUpperCase()
+        if (entranceCodeMap.has(clean)) return entranceCodeMap.get(clean)
       }
+      if (name) {
+        const norm = cleanString(name)
+        if (entranceNameMap.has(norm)) return entranceNameMap.get(norm)
+      }
+      return null
     }
 
     // 3.1 Fetch StudentLearningCommitment (Cam kết học tập hiện hành)
@@ -607,8 +713,7 @@ export async function GET(request: Request) {
       const cls = filteredClasses.find(c => c.id === st.classId)
       if (!cls) return
 
-      const cleanCode = (st.studentCode || "").trim().toUpperCase()
-      const entranceInfo = entranceAssessmentMap.get(cleanCode) || null
+      const entranceInfo = findEntranceInfo(st.studentCode, st.studentName)
       const learningCommitment = learningCommitmentMap.get(st.id) || null
 
       const hasEntranceCommitment = Boolean(
@@ -620,7 +725,7 @@ export async function GET(request: Request) {
         )
       )
 
-      const committedSubs = hasEntranceCommitment ? parseCommittedSubjects(entranceInfo) : []
+      const committedSubs = hasEntranceCommitment ? parseCommittedSubjects(entranceInfo, cls.className, cls.grade) : []
 
       // Check each relevant subject
       availableSubjectList.forEach(sub => {
@@ -699,82 +804,132 @@ export async function GET(request: Request) {
     })
 
     // 7.1 BUILD KSĐV COMPARISON MATRIX (Đối sánh Ma trận KSĐV theo Lớp, Học sinh & Môn cam kết)
+    // Đồng bộ hoàn toàn với danh sách diện Cam kết / Theo dõi ở tag Hỗ trợ học tập & Tâm lý
     const ksdvMatrixStudents: any[] = []
+    const processedStudentKeys = new Set<string>()
     let ksdvMathCommittedTotal = 0
     let ksdvLitCommittedTotal = 0
     let ksdvEngCommittedTotal = 0
+    let ksdvPsychologyCommittedTotal = 0
     let ksdvImprovedCount = 0
 
-    students.forEach(st => {
-      const cls = filteredClasses.find(c => c.id === st.classId)
+    // Helper to find subject in availableSubjectList
+    const findSubject = (keywords: string[], codes: string[]) => {
+      return availableSubjectList.find(s => {
+        const sName = (s.name || "").toLowerCase()
+        const sCode = (s.code || "").toUpperCase()
+        return codes.includes(sCode) || keywords.some(kw => sName.includes(kw))
+      })
+    }
+
+    // Helper to process and add student into ksdvMatrixStudents
+    const processCandidateForMatrix = (cand: any, matchingSt: any, cls: any) => {
       if (!cls) return
+      const cName = (cls.className || "").trim().toLowerCase()
+      if (!cName || cName === "chưa xếp lớp" || cName.includes("chưa xếp") || cName === "null") {
+        return
+      }
 
-      const cleanCode = (st.studentCode || "").trim().toUpperCase()
-      const entranceInfo = entranceAssessmentMap.get(cleanCode) || null
-      if (!entranceInfo) return
+      // Check campus filter
+      if (campusId && campusId !== "ALL" && cls.campusId !== campusId) {
+        return
+      }
 
-      const hasEntranceCommitment = Boolean(
-        (entranceInfo.admissionCriteria && entranceInfo.admissionCriteria.toLowerCase().includes("cam kết")) ||
-        (entranceInfo.admissionResult && entranceInfo.admissionResult.toLowerCase().includes("cam kết")) ||
-        (entranceInfo.targetType && entranceInfo.targetType.toLowerCase().includes("cam kết")) ||
-        (entranceInfo.directorNote && entranceInfo.directorNote.toLowerCase().includes("cam kết"))
-      )
+      // Check level filter
+      if (levelFilter !== "ALL") {
+        const cLevel = (cls.level || "").toLowerCase()
+        const cGrade = (cls.grade || "").toLowerCase()
+        if (levelFilter === "TieuHoc") {
+          const isMatch = cLevel.includes("tiểu học") || cLevel.includes("tieu hoc") ||
+            ["1", "2", "3", "4", "5"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          if (!isMatch) return
+        } else if (levelFilter === "THCS") {
+          const isMatch = cLevel.includes("thcs") ||
+            ["6", "7", "8", "9"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          if (!isMatch) return
+        } else if (levelFilter === "THPT") {
+          const isMatch = cLevel.includes("thpt") ||
+            ["10", "11", "12"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          if (!isMatch) return
+        } else if (levelFilter === "MamNon") {
+          const isMatch = cLevel.includes("mầm non") || cLevel.includes("mam non") || cLevel.includes("nhà trẻ")
+          if (!isMatch) return
+        }
+      }
 
-      if (!hasEntranceCommitment) return
+      // Check grade filter
+      if (gradeFilter !== "ALL") {
+        const targetNum = gradeFilter.replace(/\D/g, "")
+        const cGrade = (cls.grade || "").trim()
+        const cGradeNum = cGrade.replace(/\D/g, "")
+        const cNameNum = (cName.match(/^(\d+)/) || [])[1] || ""
+        const isMatch = cGrade === gradeFilter || (targetNum && (cGradeNum === targetNum || cNameNum === targetNum))
+        if (!isMatch) return
+      }
 
-      const committedSubs = parseCommittedSubjects(entranceInfo)
+      // Check classId filter
+      if (classId && classId !== "ALL" && cls.id !== classId) {
+        return
+      }
+
+      const stKey = matchingSt?.id || cand.studentCode || cand.enrollmentCode || cleanString(cand.fullName)
+      if (processedStudentKeys.has(stKey)) return
+      processedStudentKeys.add(stKey)
+
+      const committedSubs = parseCommittedSubjects(cand, cls.className, cls.grade)
       const homeroom = cls.homeroomTeacherId ? homeroomMap.get(cls.homeroomTeacherId) : null
       const homeroomTeacherName = homeroom?.teacherName || "Chưa phân công"
 
-      // Helper to find subject in availableSubjectList
-      const findSubject = (keywords: string[], codes: string[]) => {
-        return availableSubjectList.find(s => {
-          const sName = (s.name || "").toLowerCase()
-          const sCode = (s.code || "").toUpperCase()
-          return codes.includes(sCode) || keywords.some(kw => sName.includes(kw))
-        })
-      }
+      const isPrimary = (cls.level || "").toLowerCase().includes("tiểu học") || (cls.level || "").toLowerCase().includes("tieu hoc") || ["1", "2", "3", "4", "5"].some(g => (cls.grade || "").includes(g))
 
       // 1. Môn Toán
       const mathSub = findSubject(["toán"], ["TOA", "MAT"])
-      const isMathCommitted = isSubjectMatchingCommitment(committedSubs, { name: "Toán", code: "TOA" })
+      const isMathCommitted = isSubjectMatchingCommitment(committedSubs, { id: "", name: "Toán", code: "TOA" })
       if (isMathCommitted) ksdvMathCommittedTotal++
 
-      const mathEntry = mathSub ? studentSubjectPeriodMap.get(st.id)?.get(mathSub.id)?.get(currentPeriod) : null
+      const mathEntry = (matchingSt && mathSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(mathSub.id)?.get(currentPeriod) : null
       const mathCurrentScore = mathEntry?.compositeScore !== null && mathEntry?.compositeScore !== undefined ? Number(mathEntry.compositeScore) : null
-      const mathEntranceScore = entranceInfo.mathScore !== null && entranceInfo.mathScore !== undefined ? Number(entranceInfo.mathScore) : null
+      const mathEntranceScore = cand.mathScore !== null && cand.mathScore !== undefined ? Number(cand.mathScore) : null
       const mathDelta = (mathCurrentScore !== null && mathEntranceScore !== null) ? Math.round((mathCurrentScore - mathEntranceScore) * 10) / 10 : null
       const mathTa = mathSub ? taMap.get(`${cls.id}_${mathSub.id}`) : null
       const mathTeacher = mathTa?.teacher?.teacherName || homeroomTeacherName
 
       // 2. Môn Tiếng Việt / Ngữ Văn
-      const isPrimary = (cls.level || "").toLowerCase().includes("tiểu học") || (cls.level || "").toLowerCase().includes("tieu hoc") || ["1", "2", "3", "4", "5"].some(g => (cls.grade || "").includes(g))
       const litSub = isPrimary
         ? findSubject(["tiếng việt"], ["TVI"])
         : findSubject(["ngữ văn", "văn"], ["NVA"])
-      const isLitCommitted = isSubjectMatchingCommitment(committedSubs, { name: isPrimary ? "Tiếng Việt" : "Ngữ Văn", code: isPrimary ? "TVI" : "NVA" })
+      const isLitCommitted = isSubjectMatchingCommitment(committedSubs, { id: "", name: isPrimary ? "Tiếng Việt" : "Ngữ Văn", code: isPrimary ? "TVI" : "NVA" })
       if (isLitCommitted) ksdvLitCommittedTotal++
 
-      const litEntry = litSub ? studentSubjectPeriodMap.get(st.id)?.get(litSub.id)?.get(currentPeriod) : null
+      const litEntry = (matchingSt && litSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(litSub.id)?.get(currentPeriod) : null
       const litCurrentScore = litEntry?.compositeScore !== null && litEntry?.compositeScore !== undefined ? Number(litEntry.compositeScore) : null
-      const litEntranceScore = entranceInfo.literatureScore !== null && entranceInfo.literatureScore !== undefined ? Number(entranceInfo.literatureScore) : null
+      const litEntranceScore = cand.literatureScore !== null && cand.literatureScore !== undefined ? Number(cand.literatureScore) : null
       const litDelta = (litCurrentScore !== null && litEntranceScore !== null) ? Math.round((litCurrentScore - litEntranceScore) * 10) / 10 : null
       const litTa = litSub ? taMap.get(`${cls.id}_${litSub.id}`) : null
       const litTeacher = litTa?.teacher?.teacherName || homeroomTeacherName
 
       // 3. Môn Tiếng Anh (Tổng điểm KSĐV Tiếng Anh)
       const engSub = findSubject(["tiếng anh", "english"], ["TA", "TAV", "ESL"])
-      const isEngCommitted = isSubjectMatchingCommitment(committedSubs, { name: "Tiếng Anh", code: "TA" })
+      const isEngCommitted = isSubjectMatchingCommitment(committedSubs, { id: "", name: "Tiếng Anh", code: "TA" })
       if (isEngCommitted) ksdvEngCommittedTotal++
 
-      const engEntry = engSub ? studentSubjectPeriodMap.get(st.id)?.get(engSub.id)?.get(currentPeriod) : null
+      const engEntry = (matchingSt && engSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(engSub.id)?.get(currentPeriod) : null
       const engCurrentScore = engEntry?.compositeScore !== null && engEntry?.compositeScore !== undefined ? Number(engEntry.compositeScore) : null
       
-      const engEntranceTotal100 = entranceInfo.totalEnglishScore !== null && entranceInfo.totalEnglishScore !== undefined ? Number(entranceInfo.totalEnglishScore) : (entranceInfo.writtenEnglishScore !== null ? Number(entranceInfo.writtenEnglishScore) : null)
+      const engEntranceTotal100 = cand.totalEnglishScore !== null && cand.totalEnglishScore !== undefined ? Number(cand.totalEnglishScore) : (cand.writtenEnglishScore !== null ? Number(cand.writtenEnglishScore) : null)
       const engEntranceScale10 = engEntranceTotal100 !== null ? Math.round((engEntranceTotal100 / 10) * 10) / 10 : null
       const engDelta = (engCurrentScore !== null && engEntranceScale10 !== null) ? Math.round((engCurrentScore - engEntranceScale10) * 10) / 10 : null
       const engTa = engSub ? taMap.get(`${cls.id}_${engSub.id}`) : null
       const engTeacher = engTa?.teacher?.teacherName || homeroomTeacherName
+
+      // 4. CAM KẾT TÂM LÝ (BỔ SUNG MỚI & CHÚ Ý MÀU ĐỎ ĐỐI TƯỢNG NÀY)
+      const isPsychologyCommitted = Boolean(
+        committedSubs.some(s => s.toLowerCase().includes("tâm") || s.toLowerCase().includes("lý") || s.toLowerCase().includes("psychology")) ||
+        (cand.directorNote && /tâm lý|tam ly|psychology|tập trung|hành vi/i.test(cand.directorNote)) ||
+        (cand.admissionResult && /tâm lý|tam ly|psychology/i.test(cand.admissionResult)) ||
+        (cand.psychologyScore !== null && cand.psychologyScore !== undefined && Number(cand.psychologyScore) > 0)
+      )
+      if (isPsychologyCommitted) ksdvPsychologyCommittedTotal++
 
       // Check if student improved in at least one committed subject
       const hasMathImprovement = isMathCommitted && ((mathDelta !== null && mathDelta >= 0) || (mathCurrentScore !== null && mathCurrentScore >= 6.0))
@@ -784,22 +939,26 @@ export async function GET(request: Request) {
         ksdvImprovedCount++
       }
 
+      const displayStudentCode = matchingSt?.studentCode || cand.enrollmentCode || cand.studentCode || "-"
+      const displayStudentName = matchingSt?.studentName || cand.fullName || "Học sinh"
+
       ksdvMatrixStudents.push({
-        studentId: st.id,
-        studentCode: st.studentCode,
-        studentName: st.studentName,
-        dateOfBirth: st.dateOfBirth,
-        gender: st.gender,
+        studentId: matchingSt?.id || cand.id,
+        studentCode: displayStudentCode,
+        studentName: displayStudentName,
+        dateOfBirth: matchingSt?.dateOfBirth || cand.dateOfBirth || null,
+        gender: matchingSt?.gender || cand.gender || null,
         classId: cls.id,
         className: cls.className,
         grade: cls.grade,
         level: cls.level,
-        campusName: cls.campus?.campusName || "",
+        campusId: cls.campusId,
+        campusName: cls.campus?.campusName || cand.admissionCampus || cand.registeredCampus || "",
         campusCode: cls.campus?.campusCode || "",
         homeroomTeacher: homeroomTeacherName,
-        admissionCriteria: entranceInfo.admissionCriteria || "",
-        admissionResult: entranceInfo.admissionResult || "",
-        directorNote: entranceInfo.directorNote || "",
+        admissionCriteria: cand.admissionCriteria || "",
+        admissionResult: cand.admissionResult || "",
+        directorNote: cand.directorNote || "",
         committedSubjects: committedSubs,
         math: {
           isCommitted: isMathCommitted,
@@ -821,14 +980,70 @@ export async function GET(request: Request) {
           isCommitted: isEngCommitted,
           entranceTotal100: engEntranceTotal100,
           entranceScale10: engEntranceScale10,
-          oralScore: entranceInfo.oralEnglishScore,
-          writtenScore: entranceInfo.writtenEnglishScore,
+          oralScore: cand.oralEnglishScore,
+          writtenScore: cand.writtenEnglishScore,
           currentScore: engCurrentScore,
           delta: engDelta,
           teacherName: engTeacher,
           subjectName: "Tổng điểm Tiếng Anh"
+        },
+        // BỔ SUNG CAM KẾT TÂM LÝ - CẢNH BÁO MÀU ĐỎ NỔI BẬT
+        psychology: {
+          isCommitted: isPsychologyCommitted,
+          entranceScore: cand.psychologyScore !== null && cand.psychologyScore !== undefined ? Number(cand.psychologyScore) : null,
+          note: cand.directorNote || cand.admissionResult || "",
+          isAlert: isPsychologyCommitted
         }
       })
+    }
+
+    // Step A: Process all candidate records from rawAllCommittedCandidates (sync from Support & Psychology tag)
+    rawAllCommittedCandidates.forEach(cand => {
+      // Find matching student in system
+      let matchingSt = students.find(s => 
+        (cand.studentCode && s.studentCode && s.studentCode.trim().toUpperCase() === cand.studentCode.trim().toUpperCase()) ||
+        (cand.enrollmentCode && s.studentCode && s.studentCode.trim().toUpperCase() === cand.enrollmentCode.trim().toUpperCase()) ||
+        (cleanString(s.studentName) === cleanString(cand.fullName))
+      )
+
+      let resolvedClass = matchingSt ? (filteredClasses.find(c => c.id === matchingSt.classId) || classes.find(c => c.id === matchingSt.classId)) : null
+
+      if (!resolvedClass && cand.enrollmentClass) {
+        resolvedClass = classes.find(c => c.id === cand.enrollmentClass.id) || cand.enrollmentClass
+      }
+
+      if (!resolvedClass && cand.enrollmentClassId) {
+        resolvedClass = classes.find(c => c.id === cand.enrollmentClassId || c.classCode === cand.enrollmentClassId) || null
+      }
+
+      if (!resolvedClass && cand.className && cand.className !== "Chưa xếp lớp" && !cand.className.toLowerCase().includes("chưa xếp")) {
+        resolvedClass = classes.find(c => 
+          c.className.toLowerCase() === cand.className.toLowerCase() ||
+          c.classCode.toLowerCase() === cand.className.toLowerCase()
+        ) || null
+      }
+
+      processCandidateForMatrix(cand, matchingSt, resolvedClass)
+    })
+
+    // Step B: Check any enrolled students in filteredClasses who have entrance commitment records but not yet in list
+    students.forEach(st => {
+      const cls = filteredClasses.find(c => c.id === st.classId)
+      if (!cls) return
+
+      const entranceInfo = findEntranceInfo(st.studentCode, st.studentName)
+      if (!entranceInfo) return
+
+      const hasEntranceCommitment = Boolean(
+        (entranceInfo.admissionCriteria && entranceInfo.admissionCriteria.toLowerCase().includes("cam kết")) ||
+        (entranceInfo.admissionResult && entranceInfo.admissionResult.toLowerCase().includes("cam kết")) ||
+        (entranceInfo.targetType && entranceInfo.targetType.toLowerCase().includes("cam kết")) ||
+        (entranceInfo.directorNote && entranceInfo.directorNote.toLowerCase().includes("cam kết"))
+      )
+
+      if (hasEntranceCommitment) {
+        processCandidateForMatrix(entranceInfo, st, cls)
+      }
     })
 
     const ksdvMatrix = {
@@ -838,6 +1053,7 @@ export async function GET(request: Request) {
         committedMathCount: ksdvMathCommittedTotal,
         committedLitCount: ksdvLitCommittedTotal,
         committedEngCount: ksdvEngCommittedTotal,
+        committedPsychologyCount: ksdvPsychologyCommittedTotal,
         improvedCount: ksdvImprovedCount,
         improvedRate: ksdvMatrixStudents.length > 0 ? Math.round((ksdvImprovedCount / ksdvMatrixStudents.length) * 100) : 0
       }
