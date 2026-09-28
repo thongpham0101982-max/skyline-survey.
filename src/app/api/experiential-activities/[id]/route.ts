@@ -64,7 +64,15 @@ export async function GET(
     const isMyCreated = !!(teacherRecord && (activity.teacherId === teacherRecord.id || activity.teacher?.userId === session?.user?.id));
     const canManage = isManagement || isMyCreated || hasExpManageUpdate;
 
+    const catalogMeta = parseDbJson<any>(activity.catalog?.description, {});
     const meta = parseDbJson<any>(activity.locationId, {});
+
+    // Determine activity category: ưu tiên meta -> catalogMeta -> evalMode
+    const activityCategory = meta.activityCategory || catalogMeta.activityCategory || (meta.evalMode === 'ROLE_BASED' ? 'HOAT_DONG_SU_KIEN' : 'TRAI_NGHIEM_DU_AN');
+    const themeName = meta.themeName || catalogMeta.themeName || "";
+    const deliverables = meta.deliverables || catalogMeta.deliverables || "";
+    const cthsTeachers = meta.cthsTeachers || catalogMeta.cthsTeachers || [];
+    const evaluationConfig = meta.evaluationConfig || catalogMeta.evaluationConfig || null;
 
     // Parse students from participants
     const students = activity.participants.map((p) => {
@@ -98,6 +106,11 @@ export async function GET(
       campusName: meta.campusName || "",
       selectedCampusIds: meta.selectedCampusIds || (meta.campusId ? [meta.campusId] : []),
       educationLevel: meta.educationLevel || activity.levelId || "PHO_THONG",
+      activityCategory,
+      themeName,
+      deliverables,
+      cthsTeachers,
+      evaluationConfig,
       grades: meta.grades || [],
       subjectId: meta.subjectId || null,
       subjectName: meta.subjectName || null,

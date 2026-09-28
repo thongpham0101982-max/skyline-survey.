@@ -731,8 +731,8 @@ export default function ActivityResultInput() {
                   <th className="py-3.5 px-3 min-w-[130px]">Điểm danh</th>
                   <th className="py-3.5 px-3 min-w-[130px]">Vai trò</th>
 
-                  {/* CRITERIA HEADERS */}
-                  {(activity?.criteria || []).map((crit, idx) => (
+                  {/* CRITERIA HEADERS - Chỉ hiển thị cho Trải nghiệm / Dự án */}
+                  {!isEventActivity && (activity?.criteria || []).map((crit, idx) => (
                     <th key={crit.id} className="py-3.5 px-3 min-w-[180px] text-center border-l border-slate-100 bg-slate-50/90" title={crit.description || crit.name}>
                       <div className="font-black text-slate-800 line-clamp-1">{crit.name}</div>
                       <div className="text-[10px] text-slate-400 font-bold">
@@ -755,7 +755,7 @@ export default function ActivityResultInput() {
               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                 {filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={(isEventActivity ? 5 : 7) + (activity?.criteria?.length || 0)} className="py-12 text-center text-slate-400 font-bold">
+                    <td colSpan={(isEventActivity ? 5 : 7) + (!isEventActivity ? (activity?.criteria?.length || 0) : 0)} className="py-12 text-center text-slate-400 font-bold">
                       Không tìm thấy học sinh nào phù hợp
                     </td>
                   </tr>
@@ -826,8 +826,8 @@ export default function ActivityResultInput() {
                           </select>
                         </td>
 
-                        {/* DYNAMIC CRITERIA 4-LEVEL BUTTONS */}
-                        {(activity?.criteria || []).map(crit => {
+                        {/* DYNAMIC CRITERIA 4-LEVEL BUTTONS - Chỉ hiển thị cho Trải nghiệm / Dự án */}
+                        {!isEventActivity && (activity?.criteria || []).map(crit => {
                           const currentScore = st.criteriaScores?.[crit.id];
 
                           if (isAbsent) {
