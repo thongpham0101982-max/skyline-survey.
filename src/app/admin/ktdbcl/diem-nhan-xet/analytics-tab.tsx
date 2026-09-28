@@ -1624,9 +1624,9 @@ export function GradeAnalyticsTab({
                             )}
                           </td>
                           <td className="py-2.5 px-2.5 text-center font-bold text-slate-800 bg-violet-50/20">
-                            {st.english?.entranceTotal100 !== null && st.english?.entranceTotal100 !== undefined ? (
-                              <div title={`Nói: ${st.english.oralScore ?? "-"} | Viết: ${st.english.writtenScore ?? "-"}`}>
-                                <span className="text-xs font-black text-violet-900">{st.english.entranceTotal100}</span>
+                            {(st.english?.entranceTotal100 !== null && st.english?.entranceTotal100 !== undefined) || (st.english?.entranceScale10 !== null && st.english?.entranceScale10 !== undefined) ? (
+                              <div title={`Nói: ${st.english.oralScore ?? "-"} | Viết: ${st.english.writtenScore ?? "-"}${st.english.eptScore ? ` | EPT: ${st.english.eptScore}` : ""}`}>
+                                <span className="text-xs font-black text-violet-900">{st.english.entranceTotal100 ?? Math.round(Number(st.english.entranceScale10) * 10)}</span>
                                 <span className="text-[10px] text-slate-400">/100</span>
                                 <span className="text-[10px] text-violet-600 font-bold block">({st.english.entranceScale10}đ)</span>
                               </div>

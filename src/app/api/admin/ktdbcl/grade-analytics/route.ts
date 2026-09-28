@@ -337,17 +337,24 @@ export async function GET(request: Request) {
       let inputStudents: any[] = []
       try {
         if (p.inputAssessmentStudent?.findMany) {
+          const includeOpts = {
+            enrollmentClass: {
+              include: { campus: true }
+            },
+            scores: {
+              include: {
+                subject: true
+              }
+            }
+          }
+
           if (periodIds.length > 0) {
             inputStudents = await p.inputAssessmentStudent.findMany({
               where: {
                 periodId: { in: periodIds },
                 OR: inputCommitmentConditions
               },
-              include: {
-                enrollmentClass: {
-                  include: { campus: true }
-                }
-              }
+              include: includeOpts
             })
           }
           if (inputStudents.length === 0) {
@@ -355,11 +362,7 @@ export async function GET(request: Request) {
               where: {
                 OR: inputCommitmentConditions
               },
-              include: {
-                enrollmentClass: {
-                  include: { campus: true }
-                }
-              }
+              include: includeOpts
             })
           }
         }
@@ -442,18 +445,87 @@ export async function GET(request: Request) {
         let writtenEnglishScore = r.writtenEnglishScore
         let oralEnglishScore = r.oralEnglishScore
         let psychologyScore = r.psychologyScore
+        let vietScore: any = null
+        let vanScore: any = null
+        let eptScore: any = null
 
-        const wNum = parseFloat(writtenEnglishScore)
-        const oNum = parseFloat(oralEnglishScore)
-        const totalEnglishScore = (!isNaN(wNum) || !isNaN(oNum)) ? (isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum) : null
+        if (r.scores && r.scores.length > 0) {
+          r.scores.forEach((sc: any) => {
+            const sName = (sc.subject?.name || sc.subjectName || "").toLowerCase()
+            const sCode = (sc.subject?.code || "").toLowerCase()
+            let val: any = null
+            try {
+              if (sc.scores) {
+                const parsed = JSON.parse(sc.scores)
+                const vArr = Array.isArray(parsed) ? parsed : [parsed]
+                val = vArr.find((x: any) => x !== undefined && x !== "" && x !== null)
+              }
+            } catch {
+              val = sc.scores
+            }
+            if (val !== null && val !== undefined && val !== "") {
+              const numVal = parseFloat(val)
+              const finalVal = isNaN(numVal) ? val : numVal
+              if (sName.includes("toán") || sCode.includes("math") || sCode === "toa") {
+                if (mathScore == null) mathScore = finalVal
+              } else if (sName.includes("tiếng việt") || sCode === "tvi") {
+                if (vietScore == null) vietScore = finalVal
+              } else if (sName.includes("ngữ văn") || sCode === "nva" || (sName.includes("văn") && !sName.includes("tiếng việt"))) {
+                if (vanScore == null) vanScore = finalVal
+              } else if (sName.includes("ept") || sCode === "ept") {
+                if (eptScore == null) eptScore = finalVal
+              } else if (sName.includes("viết") || sCode === "tav") {
+                if (writtenEnglishScore == null) writtenEnglishScore = finalVal
+              } else if (sName.includes("vấn đáp") || sName.includes("nói") || sCode === "tavd") {
+                if (oralEnglishScore == null) oralEnglishScore = finalVal
+              } else if (sName.includes("tâm lý") || sCode === "tly") {
+                if (psychologyScore == null) psychologyScore = finalVal
+              }
+            }
+          })
+        }
+
+        if (literatureScore == null) {
+          literatureScore = vietScore ?? vanScore ?? null
+        }
+
+        const wNum = (writtenEnglishScore != null) ? parseFloat(writtenEnglishScore) : NaN
+        const oNum = (oralEnglishScore != null) ? parseFloat(oralEnglishScore) : NaN
+        const eNum = (eptScore != null) ? parseFloat(eptScore) : NaN
+
+        let totalEnglishScore: any = null
+        let totalEnglishScale10: any = null
+
+        if (!isNaN(eNum) && eNum > 0) {
+          totalEnglishScore = eNum
+        } else if (!isNaN(wNum) && !isNaN(oNum)) {
+          totalEnglishScore = Math.round((wNum + oNum) * 10) / 10
+        } else if (!isNaN(wNum)) {
+          totalEnglishScore = wNum
+        } else if (!isNaN(oNum)) {
+          totalEnglishScore = oNum
+        }
+
+        if (totalEnglishScore !== null) {
+          if (totalEnglishScore > 10) {
+            totalEnglishScale10 = Math.round((totalEnglishScore / 10) * 10) / 10
+          } else {
+            totalEnglishScale10 = totalEnglishScore
+            totalEnglishScore = Math.round(totalEnglishScore * 10)
+          }
+        }
 
         const entry = {
           ...r,
           mathScore,
+          vietScore,
+          vanScore,
           literatureScore,
           writtenEnglishScore,
           oralEnglishScore,
+          eptScore,
           totalEnglishScore,
+          totalEnglishScale10,
           psychologyScore
         }
 
@@ -972,7 +1044,9 @@ export async function GET(request: Request) {
 
       const litEntry = (matchingSt && litSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(litSub.id)?.get(currentPeriod) : null
       const litCurrentScore = litEntry?.compositeScore !== null && litEntry?.compositeScore !== undefined ? Number(litEntry.compositeScore) : null
-      const litEntranceScore = cand.literatureScore !== null && cand.literatureScore !== undefined ? Number(cand.literatureScore) : null
+      const litEntranceScore = isPrimary
+        ? (cand.vietScore ?? cand.literatureScore ?? cand.vanScore ?? null)
+        : (cand.vanScore ?? cand.literatureScore ?? cand.vietScore ?? null)
       const litDelta = (litCurrentScore !== null && litEntranceScore !== null) ? Math.round((litCurrentScore - litEntranceScore) * 10) / 10 : null
       const litTa = litSub ? taMap.get(`${cls.id}_${litSub.id}`) : null
       const litTeacher = litTa?.teacher?.teacherName || homeroomTeacherName
@@ -985,8 +1059,12 @@ export async function GET(request: Request) {
       const engEntry = (matchingSt && engSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(engSub.id)?.get(currentPeriod) : null
       const engCurrentScore = engEntry?.compositeScore !== null && engEntry?.compositeScore !== undefined ? Number(engEntry.compositeScore) : null
       
-      const engEntranceTotal100 = cand.totalEnglishScore !== null && cand.totalEnglishScore !== undefined ? Number(cand.totalEnglishScore) : (cand.writtenEnglishScore !== null ? Number(cand.writtenEnglishScore) : null)
-      const engEntranceScale10 = engEntranceTotal100 !== null ? Math.round((engEntranceTotal100 / 10) * 10) / 10 : null
+      const engEntranceTotal100 = cand.totalEnglishScore !== null && cand.totalEnglishScore !== undefined 
+        ? Number(cand.totalEnglishScore) 
+        : (cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined ? Math.round(Number(cand.totalEnglishScale10) * 10) : null)
+      const engEntranceScale10 = cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined 
+        ? Number(cand.totalEnglishScale10) 
+        : (engEntranceTotal100 !== null ? (engEntranceTotal100 > 10 ? Math.round((engEntranceTotal100 / 10) * 10) / 10 : engEntranceTotal100) : null)
       const engDelta = (engCurrentScore !== null && engEntranceScale10 !== null) ? Math.round((engCurrentScore - engEntranceScale10) * 10) / 10 : null
       const engTa = engSub ? taMap.get(`${cls.id}_${engSub.id}`) : null
       const engTeacher = engTa?.teacher?.teacherName || homeroomTeacherName
@@ -1053,6 +1131,7 @@ export async function GET(request: Request) {
           entranceScale10: engEntranceScale10,
           oralScore: cand.oralEnglishScore,
           writtenScore: cand.writtenEnglishScore,
+          eptScore: cand.eptScore,
           currentScore: engCurrentScore,
           delta: engDelta,
           teacherName: engTeacher,
