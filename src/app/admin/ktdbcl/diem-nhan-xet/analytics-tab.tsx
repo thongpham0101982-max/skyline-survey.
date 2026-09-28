@@ -62,7 +62,6 @@ export function GradeAnalyticsTab({
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
   const [selectedClassId, setSelectedClassId] = useState("ALL")
   const [selectedSubjectId, setSelectedSubjectId] = useState("ALL")
-  const [selectedSemester, setSelectedSemester] = useState("ALL")
   const [currentPeriod, setCurrentPeriod] = useState("KSĐN")
   const [baselinePeriod, setBaselinePeriod] = useState("KSĐN")
   const [searchKeyword, setSearchKeyword] = useState("")
@@ -262,7 +261,7 @@ export function GradeAnalyticsTab({
     } else if (trackingCategory === "BELOW_BENCHMARK") {
       list = list.filter(st => st.isBelowBenchmark)
     } else if (trackingCategory === "ADMISSION_COMMITMENT") {
-      list = list.filter(st => st.hasAdmissionCommitment)
+      list = list.filter(st => st.hasAdmissionCommitment && st.currentScore !== null && st.currentScore !== undefined)
     } else if (trackingCategory === "LEARNING_COMMITMENT") {
       list = list.filter(st => st.hasActiveLearningCommitment)
     }
@@ -416,7 +415,7 @@ export function GradeAnalyticsTab({
       "Dưới Chuẩn": st.isBelowBenchmark ? "CÓ" : "KHÔNG",
       "Diện Cam kết đầu vào": st.hasAdmissionCommitment ? "CÓ" : "KHÔNG",
       "Tiêu chí / Diện trúng tuyển": st.entranceInfo?.admissionCriteria || st.entranceInfo?.targetType || "",
-      "Điểm thi đầu vào (Toán - Văn - Anh)": st.entranceInfo ? `T:${st.entranceInfo.mathScore ?? "-"} V:${st.entranceInfo.literatureScore ?? "-"} A:${st.entranceInfo.writtenEnglishScore ?? "-"}` : "",
+      "Điểm thi đầu vào (Toán - Văn - Anh)": st.entranceInfo ? `T:${st.entranceInfo.mathScore ?? "-"} V:${st.entranceInfo.literatureScore ?? "-"} Tổng Anh:${st.entranceInfo.totalEnglishScore ?? st.entranceInfo.writtenEnglishScore ?? "-"}` : "",
       "Ghi chú tuyển sinh / Cam kết": st.entranceInfo?.directorNote || st.learningCommitment?.content || ""
     }))
 
@@ -716,60 +715,19 @@ export function GradeAnalyticsTab({
             </select>
           </div>
 
-          {/* 4. Học kỳ / Kỳ khảo sát */}
+          {/* 4. Kỳ khảo sát */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] font-bold text-slate-700">
-                Học kỳ / Kỳ khảo sát:
-              </label>
-              <select
-                value={selectedSemester}
-                onChange={e => {
-                  const sem = e.target.value
-                  setSelectedSemester(sem)
-                  if (sem === "HK1" && !["KSĐN", "GK1", "CK1"].includes(currentPeriod)) {
-                    setCurrentPeriod("CK1")
-                  } else if (sem === "HK2" && !["GK2", "CK2"].includes(currentPeriod)) {
-                    setCurrentPeriod("CK2")
-                  }
-                }}
-                className="text-[10px] font-bold px-1.5 py-0.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:ring-1 focus:ring-[#005B58] outline-none"
-              >
-                <option value="ALL">Cả năm</option>
-                <option value="HK1">HK 1</option>
-                <option value="HK2">HK 2</option>
-              </select>
-            </div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1">
+              Kỳ khảo sát:
+            </label>
             <select
               value={currentPeriod}
-              onChange={e => {
-                const val = e.target.value
-                setCurrentPeriod(val)
-                const pObj = EVAL_PERIODS.find(p => p.code === val)
-                if (pObj?.semester && selectedSemester !== "ALL" && pObj.semester !== selectedSemester) {
-                  setSelectedSemester(pObj.semester)
-                }
-              }}
+              onChange={e => setCurrentPeriod(e.target.value)}
               className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
             >
-              {selectedSemester === "ALL" ? (
-                <>
-                  <optgroup label="🍂 Học kỳ 1">
-                    {EVAL_PERIODS.filter(p => p.semester === "HK1").map(p => (
-                      <option key={p.code} value={p.code}>{p.name}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="🌱 Học kỳ 2">
-                    {EVAL_PERIODS.filter(p => p.semester === "HK2").map(p => (
-                      <option key={p.code} value={p.code}>{p.name}</option>
-                    ))}
-                  </optgroup>
-                </>
-              ) : (
-                EVAL_PERIODS.filter(p => selectedSemester === "ALL" || p.semester === selectedSemester).map(p => (
-                  <option key={p.code} value={p.code}>{p.name}</option>
-                ))
-              )}
+              {EVAL_PERIODS.map(p => (
+                <option key={p.code} value={p.code}>{p.name}</option>
+              ))}
             </select>
           </div>
 
@@ -1180,7 +1138,7 @@ export function GradeAnalyticsTab({
                           {/* Thông tin bài thi tuyển sinh đầu vào nếu có */}
                           {st.entranceInfo && (
                             <div className="text-[11px] text-slate-500 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                              <span className="font-semibold text-slate-700">Điểm thi đầu vào:</span> Toán: <strong className="text-slate-800">{st.entranceInfo.mathScore ?? "-"}</strong> | Văn: <strong className="text-slate-800">{st.entranceInfo.literatureScore ?? "-"}</strong> | Anh: <strong className="text-slate-800">{st.entranceInfo.writtenEnglishScore ?? "-"}</strong>
+                              <span className="font-semibold text-slate-700">Điểm thi đầu vào:</span> Toán: <strong className="text-slate-800">{st.entranceInfo.mathScore ?? "-"}</strong> | Văn: <strong className="text-slate-800">{st.entranceInfo.literatureScore ?? "-"}</strong> | Tổng điểm Tiếng Anh: <strong className="text-slate-800">{st.entranceInfo.totalEnglishScore !== null && st.entranceInfo.totalEnglishScore !== undefined ? `${st.entranceInfo.totalEnglishScore}${st.entranceInfo.oralEnglishScore != null || st.entranceInfo.writtenEnglishScore != null ? ` (Nói: ${st.entranceInfo.oralEnglishScore ?? "-"}, Viết: ${st.entranceInfo.writtenEnglishScore ?? "-"})` : ""}` : (st.entranceInfo.writtenEnglishScore ?? "-")}</strong>
                               {st.entranceInfo.admissionCriteria && (
                                 <div className="text-[10px] text-indigo-700 font-medium mt-0.5">
                                   Tiêu chí: {st.entranceInfo.admissionCriteria}

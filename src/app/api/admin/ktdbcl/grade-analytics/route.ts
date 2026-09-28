@@ -154,7 +154,83 @@ export async function GET(request: Request) {
     const studentIds = students.map(s => s.id)
     const studentCodes = students.map(s => s.studentCode).filter(Boolean)
 
-    // 3. Fetch Entrance Assessment records (InputAssessmentStudent) with commitment notes
+    // Helper: Parse committed subjects from entrance assessment
+    const parseCommittedSubjects = (entranceInfo: any): string[] => {
+      if (!entranceInfo) return []
+      const note = entranceInfo.directorNote || ""
+      const result = entranceInfo.admissionResult || ""
+      const criteria = entranceInfo.admissionCriteria || ""
+      const target = entranceInfo.targetType || ""
+      const fullText = `${note}\n${result}\n${criteria}\n${target}`
+
+      const match = fullText.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+      if (match && match[1]) {
+        return match[1].split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
+      }
+
+      const rawSubs: string[] = []
+      if (/cam kết/i.test(fullText)) {
+        if (/Anh|English/i.test(fullText)) rawSubs.push("Tiếng Anh")
+        if (/Toán|Math/i.test(fullText)) rawSubs.push("Toán học")
+        if (/Tiếng Việt/i.test(fullText)) rawSubs.push("Tiếng Việt")
+        if (/Ngữ văn|Văn/i.test(fullText)) rawSubs.push("Ngữ Văn")
+        if (/Tâm lý/i.test(fullText)) rawSubs.push("Tâm lý")
+      }
+      return rawSubs
+    }
+
+    // Helper: Check if a school survey subject matches committed subjects
+    const isSubjectMatchingCommitment = (committedSubs: string[], sub: { id: string; name: string; code: string }): boolean => {
+      if (!committedSubs || committedSubs.length === 0) return false
+      const subName = (sub.name || "").toLowerCase().trim()
+      const subCode = (sub.code || "").toLowerCase().trim()
+
+      return committedSubs.some(raw => {
+        const cleanRaw = raw.toLowerCase().trim()
+        // 1. Tiếng Anh / English / Tiếng Anh (viết) / Tiếng Anh (vấn đáp) / ESL
+        if (
+          cleanRaw.includes("anh") ||
+          cleanRaw.includes("english") ||
+          cleanRaw.includes("esl") ||
+          cleanRaw.includes("tav")
+        ) {
+          return (
+            subName.includes("tiếng anh") ||
+            subName.includes("tổng điểm tiếng anh") ||
+            subName.includes("anh") ||
+            subName.includes("english") ||
+            subName.includes("esl") ||
+            subCode === "ta" ||
+            subCode === "tav" ||
+            subCode === "esl"
+          )
+        }
+
+        // 2. Toán / Math
+        if (cleanRaw.includes("toán") || cleanRaw.includes("toan") || cleanRaw.includes("math")) {
+          return subName.includes("toán") || subCode === "toa" || subCode === "mat"
+        }
+
+        // 3. Tiếng Việt
+        if (cleanRaw.includes("tiếng việt") || cleanRaw.includes("tieng viet")) {
+          return subName.includes("tiếng việt") || subCode === "tvi"
+        }
+
+        // 4. Ngữ Văn / Văn / Literature
+        if (cleanRaw.includes("ngữ văn") || cleanRaw.includes("ngu van") || cleanRaw === "văn" || cleanRaw.includes("literature")) {
+          return subName.includes("ngữ văn") || subCode === "nva" || (subName.includes("văn") && !subName.includes("tiếng việt"))
+        }
+
+        // 5. Tâm lý
+        if (cleanRaw.includes("tâm lý") || cleanRaw.includes("tam ly") || cleanRaw.includes("psychology")) {
+          return subName.includes("tâm lý") || subCode === "tly"
+        }
+
+        return subName.includes(cleanRaw) || cleanRaw.includes(subName)
+      })
+    }
+
+    // 3. Fetch Entrance Assessment records (InputAssessmentStudent) with commitment notes & scores
     const entranceAssessmentMap = new Map<string, any>()
     const p = prisma as any
     if (studentCodes.length > 0 && p.inputAssessmentStudent?.findMany) {
@@ -173,12 +249,71 @@ export async function GET(request: Request) {
             admissionCriteria: true,
             admissionResult: true,
             targetType: true,
-            directorNote: true
+            directorNote: true,
+            scores: {
+              select: {
+                scores: true,
+                subject: {
+                  select: {
+                    name: true,
+                    code: true
+                  }
+                }
+              }
+            }
           }
         })
         entranceRecords.forEach((r: any) => {
           const cleanCode = (r.studentCode || "").trim().toUpperCase()
-          if (cleanCode) entranceAssessmentMap.set(cleanCode, r)
+          if (!cleanCode) return
+
+          let mathScore = r.mathScore
+          let literatureScore = r.literatureScore
+          let writtenEnglishScore = r.writtenEnglishScore
+          let oralEnglishScore = r.oralEnglishScore
+
+          if (r.scores && r.scores.length > 0) {
+            r.scores.forEach((sc: any) => {
+              const sName = (sc.subject?.name || "").toLowerCase()
+              const sCode = (sc.subject?.code || "").toLowerCase()
+              let val: any = null
+              try {
+                if (sc.scores) {
+                  const parsed = JSON.parse(sc.scores)
+                  const vArr = Array.isArray(parsed) ? parsed : [parsed]
+                  val = vArr.find((x: any) => x !== undefined && x !== "" && x !== null)
+                }
+              } catch {
+                val = sc.scores
+              }
+              if (val !== null && val !== undefined && val !== "") {
+                const numVal = parseFloat(val)
+                const finalVal = isNaN(numVal) ? val : numVal
+                if (sName.includes("toán") || sCode.includes("math") || sCode === "toa") {
+                  if (mathScore == null) mathScore = finalVal
+                } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn") || sCode === "nva" || sCode === "van") {
+                  if (literatureScore == null) literatureScore = finalVal
+                } else if (sName.includes("viết") || sCode === "tav") {
+                  if (writtenEnglishScore == null) writtenEnglishScore = finalVal
+                } else if (sName.includes("vấn đáp") || sName.includes("nói") || sCode === "tavd") {
+                  if (oralEnglishScore == null) oralEnglishScore = finalVal
+                }
+              }
+            })
+          }
+
+          const wNum = parseFloat(writtenEnglishScore)
+          const oNum = parseFloat(oralEnglishScore)
+          const totalEnglishScore = (!isNaN(wNum) || !isNaN(oNum)) ? (isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum) : null
+
+          entranceAssessmentMap.set(cleanCode, {
+            ...r,
+            mathScore,
+            literatureScore,
+            writtenEnglishScore,
+            oralEnglishScore,
+            totalEnglishScore
+          })
         })
       } catch (e) {
         console.warn("Lỗi khi đọc inputAssessmentStudent:", e)
@@ -476,6 +611,17 @@ export async function GET(request: Request) {
       const entranceInfo = entranceAssessmentMap.get(cleanCode) || null
       const learningCommitment = learningCommitmentMap.get(st.id) || null
 
+      const hasEntranceCommitment = Boolean(
+        entranceInfo && (
+          (entranceInfo.admissionCriteria && entranceInfo.admissionCriteria.toLowerCase().includes("cam kết")) ||
+          (entranceInfo.admissionResult && entranceInfo.admissionResult.toLowerCase().includes("cam kết")) ||
+          (entranceInfo.targetType && entranceInfo.targetType.toLowerCase().includes("cam kết")) ||
+          (entranceInfo.directorNote && entranceInfo.directorNote.toLowerCase().includes("cam kết"))
+        )
+      )
+
+      const committedSubs = hasEntranceCommitment ? parseCommittedSubjects(entranceInfo) : []
+
       // Check each relevant subject
       availableSubjectList.forEach(sub => {
         if (subjectId && subjectId !== "ALL" && sub.id !== subjectId) return
@@ -488,21 +634,17 @@ export async function GET(request: Request) {
 
         const benchmark = resolveBenchmark(cls.level, cls.grade, sub.id, currentPeriod)
 
-        const isBelowAverage = currentScore !== null && currentScore < 5.0
-        const isBelowBenchmark = currentScore !== null && currentScore < benchmark
+        const hasCurrentGrade = currentScore !== null && !isNaN(currentScore)
+        const isBelowAverage = hasCurrentGrade && currentScore < 5.0
+        const isBelowBenchmark = hasCurrentGrade && currentScore < benchmark
         const isAtRiskBaseline = baselineScore !== null && baselineScore < 6.5
 
-        // Determine if student has entrance commitment
-        const hasAdmissionCommitment = Boolean(
-          entranceInfo && (
-            (entranceInfo.admissionCriteria && entranceInfo.admissionCriteria.toLowerCase().includes("cam kết")) ||
-            (entranceInfo.admissionResult && entranceInfo.admissionResult.toLowerCase().includes("cam kết")) ||
-            (entranceInfo.targetType && entranceInfo.targetType.toLowerCase().includes("cam kết")) ||
-            entranceInfo.directorNote
-          )
-        )
+        const isMatchingCommitment = hasEntranceCommitment && isSubjectMatchingCommitment(committedSubs, sub)
 
-        const hasActiveLearningCommitment = Boolean(learningCommitment)
+        // Chỉ đánh dấu hasAdmissionCommitment nếu học sinh có cam kết đầu vào, map đúng môn cam kết và CÓ kết quả khảo sát/định kỳ
+        const hasAdmissionCommitment = Boolean(isMatchingCommitment && hasCurrentGrade)
+
+        const hasActiveLearningCommitment = Boolean(learningCommitment && hasCurrentGrade)
 
         // Include student in tracking list if any flag applies
         if (isBelowAverage || isBelowBenchmark || hasAdmissionCommitment || hasActiveLearningCommitment || isAtRiskBaseline) {
@@ -512,6 +654,12 @@ export async function GET(request: Request) {
           const ta = taMap.get(`${cls.id}_${sub.id}`)
           const homeroom = cls.homeroomTeacherId ? homeroomMap.get(cls.homeroomTeacherId) : null
           const teacherName = ta?.teacher?.teacherName || homeroom?.teacherName || "Chưa phân công"
+
+          // Riêng Tiếng Anh: hiển thị "Tổng điểm Tiếng Anh"
+          const isEnglish = (sub.code || "").toUpperCase() === "TA" ||
+            (sub.code || "").toUpperCase() === "TAV" ||
+            (sub.name || "").toLowerCase().trim() === "tiếng anh"
+          const displaySubjectName = isEnglish ? "Tổng điểm Tiếng Anh" : sub.name
 
           trackingStudents.push({
             studentId: st.id,
@@ -524,7 +672,7 @@ export async function GET(request: Request) {
             grade: cls.grade,
             level: cls.level,
             subjectId: sub.id,
-            subjectName: sub.name,
+            subjectName: displaySubjectName,
             subjectCode: sub.code,
             teacherName,
             currentScore,

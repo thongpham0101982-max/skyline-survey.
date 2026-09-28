@@ -2211,7 +2211,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <div>
                   <label className="block text-[11px] font-bold text-teal-800 mb-1 flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-teal-600" />
-                    Học kỳ / Kỳ khảo sát:
+                    Kỳ khảo sát:
                   </label>
                   <select
                     value={selectedPeriod}

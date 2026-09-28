@@ -681,7 +681,7 @@ export function GradeProgressTab({
           {/* 1. Kỳ khảo sát */}
           <div>
             <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Học kỳ / Kỳ khảo sát:
+              Kỳ khảo sát:
             </label>
             <select
               value={selectedPeriod}
