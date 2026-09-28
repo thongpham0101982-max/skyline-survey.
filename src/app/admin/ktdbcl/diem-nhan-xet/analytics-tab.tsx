@@ -349,20 +349,17 @@ export function GradeAnalyticsTab({
       "Toán - Điểm KSĐV": st.math?.entranceScore !== null && st.math?.entranceScore !== undefined ? st.math.entranceScore : "",
       "Toán - Điểm Khảo sát": st.math?.currentScore !== null && st.math?.currentScore !== undefined ? st.math.currentScore : "",
       "Toán - Độ lệch (GAP)": st.math?.delta !== null && st.math?.delta !== undefined ? (st.math.delta > 0 ? `+${st.math.delta}` : st.math.delta) : "",
-      "Toán - GVBM": st.math?.teacherName || "",
       // 2. Tiếng Việt / Ngữ Văn
       "Văn/TV - Cam kết": st.literature?.isCommitted ? "x" : "",
       "Văn/TV - Điểm KSĐV": st.literature?.entranceScore !== null && st.literature?.entranceScore !== undefined ? st.literature.entranceScore : "",
       "Văn/TV - Điểm Khảo sát": st.literature?.currentScore !== null && st.literature?.currentScore !== undefined ? st.literature.currentScore : "",
       "Văn/TV - Độ lệch (GAP)": st.literature?.delta !== null && st.literature?.delta !== undefined ? (st.literature.delta > 0 ? `+${st.literature.delta}` : st.literature.delta) : "",
-      "Văn/TV - GVBM": st.literature?.teacherName || "",
       // 3. Tiếng Anh
       "Tiếng Anh - Cam kết": st.english?.isCommitted ? "x" : "",
       "Tiếng Anh - Tổng điểm KSĐV (100)": st.english?.entranceTotal100 !== null && st.english?.entranceTotal100 !== undefined ? st.english.entranceTotal100 : "",
       "Tiếng Anh - Điểm KSĐV (quy đổi 10)": st.english?.entranceScale10 !== null && st.english?.entranceScale10 !== undefined ? st.english.entranceScale10 : "",
       "Tiếng Anh - Điểm Khảo sát": st.english?.currentScore !== null && st.english?.currentScore !== undefined ? st.english.currentScore : "",
       "Tiếng Anh - Độ lệch (GAP)": st.english?.delta !== null && st.english?.delta !== undefined ? (st.english.delta > 0 ? `+${st.english.delta}` : st.english.delta) : "",
-      "Tiếng Anh - GVBM": st.english?.teacherName || "",
       // 4. Cam kết Tâm lý
       "Tâm lý - Cam kết": st.psychology?.isCommitted ? "x (CHÚ Ý MÀU ĐỎ)" : "",
       "Tâm lý - Điểm KSĐV": st.psychology?.entranceScore !== null && st.psychology?.entranceScore !== undefined ? st.psychology.entranceScore : "",
@@ -1430,20 +1427,20 @@ export function GradeAnalyticsTab({
 
             {/* Matrix Table */}
             <div className="overflow-x-auto rounded-xl border border-slate-200">
-              <table className="w-full text-xs border-collapse min-w-[1450px]">
+              <table className="w-full text-xs border-collapse min-w-[1250px]">
                 <thead>
                   {/* Row 1: Main Subject Groups Header */}
                   <tr className="border-b border-slate-200 bg-slate-100/90 text-slate-700 font-black text-center uppercase tracking-wider text-[11px]">
                     <th colSpan={6} className="py-2.5 px-3 text-left border-r border-slate-200">
                       Thông tin Học sinh & Lớp học
                     </th>
-                    <th colSpan={5} className="py-2.5 px-3 bg-blue-100/80 text-blue-900 border-r border-blue-200">
+                    <th colSpan={4} className="py-2.5 px-3 bg-blue-100/80 text-blue-900 border-r border-blue-200">
                       📐 Môn Toán học
                     </th>
-                    <th colSpan={5} className="py-2.5 px-3 bg-emerald-100/80 text-emerald-900 border-r border-emerald-200">
+                    <th colSpan={4} className="py-2.5 px-3 bg-emerald-100/80 text-emerald-900 border-r border-emerald-200">
                       📖 Môn Tiếng Việt / Ngữ Văn
                     </th>
-                    <th colSpan={5} className="py-2.5 px-3 bg-violet-100/80 text-violet-900 border-r border-violet-200">
+                    <th colSpan={4} className="py-2.5 px-3 bg-violet-100/80 text-violet-900 border-r border-violet-200">
                       🌐 Môn Tiếng Anh (Tổng điểm KSĐV)
                     </th>
                     {/* NHÓM CỘT TÂM LÝ - MÀU ĐỎ NỔI BẬT */}
@@ -1467,22 +1464,19 @@ export function GradeAnalyticsTab({
                     <th className="py-2 px-1.5 text-center w-12 bg-blue-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
                     <th className="py-2 px-2 text-center w-16 bg-blue-50/50" title="Điểm Khảo sát đầu vào">KSĐV</th>
                     <th className="py-2 px-2 text-center w-16 bg-blue-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
-                    <th className="py-2 px-2 text-center w-16 bg-blue-50/50" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
-                    <th className="py-2 px-2.5 text-left w-28 bg-blue-50/50 border-r border-blue-200">GVBM Toán</th>
+                    <th className="py-2 px-2 text-center w-16 bg-blue-50/50 border-r border-blue-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
                     {/* Tiếng Việt / Ngữ Văn */}
                     <th className="py-2 px-1.5 text-center w-12 bg-emerald-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
                     <th className="py-2 px-2 text-center w-16 bg-emerald-50/50" title="Điểm Khảo sát đầu vào">KSĐV</th>
                     <th className="py-2 px-2 text-center w-16 bg-emerald-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
-                    <th className="py-2 px-2 text-center w-16 bg-emerald-50/50" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
-                    <th className="py-2 px-2.5 text-left w-28 bg-emerald-50/50 border-r border-emerald-200">GVBM Văn/TV</th>
+                    <th className="py-2 px-2 text-center w-16 bg-emerald-50/50 border-r border-emerald-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
                     {/* Tiếng Anh */}
                     <th className="py-2 px-1.5 text-center w-12 bg-violet-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
                     <th className="py-2 px-2.5 text-center w-24 bg-violet-50/50" title="Tổng điểm KSĐV Tiếng Anh (thang 100 & thang 10)">Tổng KSĐV</th>
                     <th className="py-2 px-2 text-center w-16 bg-violet-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
-                    <th className="py-2 px-2 text-center w-16 bg-violet-50/50" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
-                    <th className="py-2 px-2.5 text-left w-28 bg-violet-50/50 border-r border-violet-200">GVBM Anh</th>
+                    <th className="py-2 px-2 text-center w-16 bg-violet-50/50 border-r border-violet-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
                     {/* Cam kết Tâm lý - Cột Header màu đỏ */}
                     <th className="py-2 px-1.5 text-center w-14 bg-red-50 text-red-800" title="Cam kết Tâm lý">CK [x]</th>
@@ -1495,7 +1489,7 @@ export function GradeAnalyticsTab({
                 <tbody className="divide-y divide-slate-100">
                   {displayedKsdvStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={24} className="py-12 text-center text-slate-400 font-semibold italic">
+                      <td colSpan={21} className="py-12 text-center text-slate-400 font-semibold italic">
                         Không tìm thấy học sinh diện cam kết đầu vào nào trong phạm vi bộ lọc đã chọn.
                       </td>
                     </tr>
@@ -1557,7 +1551,7 @@ export function GradeAnalyticsTab({
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-2 text-center bg-blue-50/20 font-extrabold">
+                          <td className="py-2.5 px-2 text-center bg-blue-50/20 font-extrabold border-r border-blue-200">
                             {st.math?.delta !== null && st.math?.delta !== undefined ? (
                               st.math.delta > 0 ? (
                                 <span className="text-emerald-600 font-black">+{st.math.delta}</span>
@@ -1569,9 +1563,6 @@ export function GradeAnalyticsTab({
                             ) : (
                               <span className="text-slate-300">-</span>
                             )}
-                          </td>
-                          <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-blue-50/20 border-r border-blue-200 truncate max-w-[120px]" title={st.math?.teacherName}>
-                            {st.math?.teacherName || "-"}
                           </td>
 
                           {/* MÔN TIẾNG VIỆT / NGỮ VĂN */}
@@ -1596,7 +1587,7 @@ export function GradeAnalyticsTab({
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-2 text-center bg-emerald-50/20 font-extrabold">
+                          <td className="py-2.5 px-2 text-center bg-emerald-50/20 font-extrabold border-r border-emerald-200">
                             {st.literature?.delta !== null && st.literature?.delta !== undefined ? (
                               st.literature.delta > 0 ? (
                                 <span className="text-emerald-600 font-black">+{st.literature.delta}</span>
@@ -1608,9 +1599,6 @@ export function GradeAnalyticsTab({
                             ) : (
                               <span className="text-slate-300">-</span>
                             )}
-                          </td>
-                          <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-emerald-50/20 border-r border-emerald-200 truncate max-w-[120px]" title={st.literature?.teacherName}>
-                            {st.literature?.teacherName || "-"}
                           </td>
 
                           {/* MÔN TIẾNG ANH */}
@@ -1643,7 +1631,7 @@ export function GradeAnalyticsTab({
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-2 text-center bg-violet-50/20 font-extrabold">
+                          <td className="py-2.5 px-2 text-center bg-violet-50/20 font-extrabold border-r border-violet-200">
                             {st.english?.delta !== null && st.english?.delta !== undefined ? (
                               st.english.delta > 0 ? (
                                 <span className="text-emerald-600 font-black">+{st.english.delta}</span>
@@ -1655,9 +1643,6 @@ export function GradeAnalyticsTab({
                             ) : (
                               <span className="text-slate-300">-</span>
                             )}
-                          </td>
-                          <td className="py-2.5 px-2.5 text-slate-700 text-[11px] font-medium bg-violet-50/20 border-r border-violet-200 truncate max-w-[120px]" title={st.english?.teacherName}>
-                            {st.english?.teacherName || "-"}
                           </td>
 
                           {/* CAM KẾT TÂM LÝ - HIỂN THỊ MÀU ĐỎ NỔI BẬT */}
