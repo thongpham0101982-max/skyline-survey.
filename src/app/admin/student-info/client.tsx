@@ -4114,7 +4114,16 @@ export function StudentInfoClient({
                             let oralDisplay: React.ReactNode = oralEnglishVal !== null && oralEnglishVal !== undefined ? oralEnglishVal : "—";
                             let totalScore: number | null = null;
                             
-                            if (!isGrade1) {
+                            if (isGrade1) {
+                              writtenDisplay = "Không áp dụng";
+                              if (oralEnglishVal !== null && oralEnglishVal !== undefined && oralEnglishVal !== "") {
+                                oralDisplay = `${oralEnglishVal}/30`;
+                                const oScore = parseFloat(oralEnglishVal);
+                                if (!isNaN(oScore)) {
+                                  totalScore = Math.round((oScore / 3) * 10) / 10;
+                                }
+                              }
+                            } else {
                               if (writtenEnglishVal !== null && writtenEnglishVal !== undefined && writtenEnglishVal !== "") {
                                 writtenDisplay = `${writtenEnglishVal}/70`;
                               }
@@ -4191,7 +4200,7 @@ export function StudentInfoClient({
                                     <span className="text-3xl font-black text-slate-800 leading-none">
                                       {writtenDisplay}
                                     </span>
-                                    <span className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Thang điểm 10" : "Thang điểm 70"}</span>
+                                    <span className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Không áp dụng (K1)" : "Thang điểm 70"}</span>
                                   </div>
 
                                   {/* English Oral Card */}
@@ -4203,7 +4212,7 @@ export function StudentInfoClient({
                                     <span className="text-3xl font-black text-slate-800 leading-none">
                                       {oralDisplay}
                                     </span>
-                                    <span className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Thang điểm 10" : "Thang điểm 30"}</span>
+                                    <span className="text-[9px] text-slate-400 font-bold">Thang điểm 30</span>
                                   </div>
 
                                   {/* Psychology Card */}

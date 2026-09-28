@@ -467,14 +467,19 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 const isGrade1 = student && String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
                 
                 if (subName.includes("vấn đáp")) {
-                    const maxScore = isGrade1 ? 10 : 30;
+                    const maxScore = 30; // Điểm Tiếng Anh vấn đáp là thang 30 cho tất cả các khối (bao gồm Khối 1)
                     if (numVal > maxScore) {
                         alert(`Điểm Tiếng Anh (vấn đáp) tối đa là ${maxScore} đ!`);
                         val = String(maxScore);
                     }
-                } else if (subName.includes("viết") && numVal > 70) {
-                    alert("Điểm Tiếng Anh (viết) tối đa là 70 đ!");
-                    val = "70";
+                } else if (subName.includes("viết")) {
+                    if (isGrade1) {
+                        alert("Khối 1 không có bài thi Tiếng Anh (viết)!");
+                        val = "";
+                    } else if (numVal > 70) {
+                        alert("Điểm Tiếng Anh (viết) tối đa là 70 đ!");
+                        val = "70";
+                    }
                 } else if (numVal > 10 && !subName.includes("tiếng anh") && !subName.includes("tâm lý")) {
                     // Standard max score for other subjects might be 10, but we just enforce English for now
                 }
@@ -1336,14 +1341,16 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     try { if(currentAssignment?.subject?.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.scores && p.scores[colIdx]) cName = p.scores[colIdx]; } } catch(e){}
                     const isTotal = cName.toLowerCase().includes("tổng");
                     const subNameLower = (currentAssignment?.subject?.name || "").toLowerCase();
+                    const isGrade1 = String(st.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
                     let maxScoreStr = "";
                     if (subNameLower.includes("vấn đáp")) {
-                        const isGrade1 = String(st.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
-                        maxScoreStr = isGrade1 ? " (Max 10)" : " (Max 30)";
+                        maxScoreStr = " (Max 30)";
                     } else if (subNameLower.includes("viết")) {
-                        maxScoreStr = " (Max 70)";
+                        maxScoreStr = isGrade1 ? " (K1: Không thi)" : " (Max 70)";
                     }
                     
+                    const isWrittenDisabled = isGrade1 && subNameLower.includes("viết");
+
                     return (
                         <div key={"sc-input-"+colIdx} className="flex flex-col gap-1.5 w-24 flex-none">
                             <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName + maxScoreStr}>{cName}{maxScoreStr && <span className="text-red-500 font-black ml-0.5">{maxScoreStr}</span>}</span>
@@ -1355,7 +1362,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 <input 
                                     id={`score-input-${idx}-${colIdx}`}
                                     type="number"
-                                    value={st.scoreVals?.[colIdx] || ""}
+                                    disabled={isWrittenDisabled}
+                                    placeholder={isWrittenDisabled ? "Không thi" : ""}
+                                    className={isWrittenDisabled ? "bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 rounded-lg py-1 text-center text-[13px] h-[30px]" : "w-full border border-slate-300 rounded-lg py-1 text-center font-bold text-slate-800 shadow-inner h-[30px] text-[13px] focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all outline-none"}
+                                    value={isWrittenDisabled ? "" : (st.scoreVals?.[colIdx] || "")}
                                     onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
                                     onKeyDown={e => {
                                         if (e.key === "Enter" || e.key === "ArrowDown") {

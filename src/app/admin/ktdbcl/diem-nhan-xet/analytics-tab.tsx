@@ -1474,7 +1474,7 @@ export function GradeAnalyticsTab({
 
                     {/* Tiếng Anh */}
                     <th className="py-2 px-1.5 text-center w-12 bg-violet-50/50" title="Môn có Cam kết đầu vào">CK [x]</th>
-                    <th className="py-2 px-2.5 text-center w-24 bg-violet-50/50" title="Tổng điểm KSĐV Tiếng Anh (thang 100 & thang 10)">Tổng KSĐV</th>
+                    <th className="py-2 px-2.5 text-center w-24 bg-violet-50/50" title="Tổng điểm KSĐV Tiếng Anh (Khối 1: Thang 30; Khối khác: Thang 100 & Quy đổi thang 10)">Tổng KSĐV</th>
                     <th className="py-2 px-2 text-center w-16 bg-violet-50/50" title={`Điểm kiểm tra Kỳ ${currentPeriod}`}>Kỳ {currentPeriod}</th>
                     <th className="py-2 px-2 text-center w-16 bg-violet-50/50 border-r border-violet-200" title="Độ lệch = Điểm kiểm tra - Điểm KSĐV">Độ lệch</th>
 
@@ -1614,8 +1614,17 @@ export function GradeAnalyticsTab({
                           <td className="py-2.5 px-2.5 text-center font-bold text-slate-800 bg-violet-50/20">
                             {(st.english?.entranceTotal100 !== null && st.english?.entranceTotal100 !== undefined) || (st.english?.entranceScale10 !== null && st.english?.entranceScale10 !== undefined) ? (
                               <div title={`Nói: ${st.english.oralScore ?? "-"} | Viết: ${st.english.writtenScore ?? "-"}${st.english.eptScore ? ` | EPT: ${st.english.eptScore}` : ""}`}>
-                                <span className="text-xs font-black text-violet-900">{st.english.entranceTotal100 ?? Math.round(Number(st.english.entranceScale10) * 10)}</span>
-                                <span className="text-[10px] text-slate-400">/100</span>
+                                {st.isGrade1 || st.english?.isGrade1 ? (
+                                  <>
+                                    <span className="text-xs font-black text-violet-900">{st.english.oralScore ?? (st.english.entranceScale10 ? Math.round(Number(st.english.entranceScale10) * 3 * 10) / 10 : "-")}</span>
+                                    <span className="text-[10px] text-slate-400">/30</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="text-xs font-black text-violet-900">{st.english.entranceTotal100 ?? Math.round(Number(st.english.entranceScale10) * 10)}</span>
+                                    <span className="text-[10px] text-slate-400">/100</span>
+                                  </>
+                                )}
                                 <span className="text-[10px] text-violet-600 font-bold block">({st.english.entranceScale10}đ)</span>
                               </div>
                             ) : (

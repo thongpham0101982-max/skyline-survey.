@@ -6553,7 +6553,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       let oralScoreText = "—";
                       let writtenScoreText = "—";
                       
-                      if (!isGrade1 && hasEnglish) {
+                      if (hasEnglish) {
                         scoresList.forEach((sc) => {
                           const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
                           const sCode = (sc.subject?.code || "").toLowerCase();
@@ -6658,7 +6658,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     val = firstVal !== undefined ? firstVal.toString() : "—";
                                     badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
                                     
-                                    if (!isGrade1) {
+                                    if (true) {
                                       const sNameLower = sName.toLowerCase().normalize("NFC");
                                       if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
                                         if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {

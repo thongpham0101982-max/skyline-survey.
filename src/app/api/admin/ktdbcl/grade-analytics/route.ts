@@ -489,34 +489,49 @@ export async function GET(request: Request) {
           literatureScore = vietScore ?? vanScore ?? null
         }
 
-        const wNum = (writtenEnglishScore != null) ? parseFloat(writtenEnglishScore) : NaN
+        const isGrade1 = (() => {
+          const gStr = String(r.grade || r.className || r.enrollmentClass?.className || r.enrollmentClass?.name || "").toLowerCase()
+          const m = gStr.match(/\d+/)
+          return m ? parseInt(m[0], 10) === 1 : false
+        })()
+
+        const wNum = (!isGrade1 && writtenEnglishScore != null) ? parseFloat(writtenEnglishScore) : NaN
         const oNum = (oralEnglishScore != null) ? parseFloat(oralEnglishScore) : NaN
         const eNum = (eptScore != null) ? parseFloat(eptScore) : NaN
 
         let totalEnglishScore: any = null
         let totalEnglishScale10: any = null
 
-        if (!isNaN(eNum) && eNum > 0) {
-          totalEnglishScore = eNum
-        } else if (!isNaN(wNum) && !isNaN(oNum)) {
-          totalEnglishScore = Math.round((wNum + oNum) * 10) / 10
-        } else if (!isNaN(wNum)) {
-          totalEnglishScore = wNum
-        } else if (!isNaN(oNum)) {
-          totalEnglishScore = oNum
-        }
+        if (isGrade1) {
+          // Khối 1: Điểm Tiếng Anh vấn đáp là thang 30, không có Viết
+          if (!isNaN(oNum)) {
+            totalEnglishScale10 = Math.round((oNum / 30) * 10 * 10) / 10
+            totalEnglishScore = Math.round((oNum / 30) * 100 * 10) / 10
+          }
+        } else {
+          if (!isNaN(eNum) && eNum > 0) {
+            totalEnglishScore = eNum
+          } else if (!isNaN(wNum) && !isNaN(oNum)) {
+            totalEnglishScore = Math.round((wNum + oNum) * 10) / 10
+          } else if (!isNaN(wNum)) {
+            totalEnglishScore = wNum
+          } else if (!isNaN(oNum)) {
+            totalEnglishScore = oNum
+          }
 
-        if (totalEnglishScore !== null) {
-          if (totalEnglishScore > 10) {
-            totalEnglishScale10 = Math.round((totalEnglishScore / 10) * 10) / 10
-          } else {
-            totalEnglishScale10 = totalEnglishScore
-            totalEnglishScore = Math.round(totalEnglishScore * 10)
+          if (totalEnglishScore !== null) {
+            if (totalEnglishScore > 10) {
+              totalEnglishScale10 = Math.round((totalEnglishScore / 10) * 10) / 10
+            } else {
+              totalEnglishScale10 = totalEnglishScore
+              totalEnglishScore = Math.round(totalEnglishScore * 10)
+            }
           }
         }
 
         const entry = {
           ...r,
+          isGrade1,
           mathScore,
           vietScore,
           vanScore,
@@ -1059,12 +1074,33 @@ export async function GET(request: Request) {
       const engEntry = (matchingSt && engSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(engSub.id)?.get(currentPeriod) : null
       const engCurrentScore = engEntry?.compositeScore !== null && engEntry?.compositeScore !== undefined ? Number(engEntry.compositeScore) : null
       
-      const engEntranceTotal100 = cand.totalEnglishScore !== null && cand.totalEnglishScore !== undefined 
-        ? Number(cand.totalEnglishScore) 
-        : (cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined ? Math.round(Number(cand.totalEnglishScale10) * 10) : null)
-      const engEntranceScale10 = cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined 
-        ? Number(cand.totalEnglishScale10) 
-        : (engEntranceTotal100 !== null ? (engEntranceTotal100 > 10 ? Math.round((engEntranceTotal100 / 10) * 10) / 10 : engEntranceTotal100) : null)
+      const isGrade1Student = Boolean(
+        cand.isGrade1 || 
+        (cls && String(cls.grade || cls.className || "").match(/\d+/)?.[0] === "1") ||
+        (matchingSt && String(matchingSt.grade || "").match(/\d+/)?.[0] === "1")
+      )
+
+      let engEntranceTotal100: any = null
+      let engEntranceScale10: any = null
+
+      if (isGrade1Student) {
+        // Khối 1: Điểm Vấn đáp là thang 30, không có Viết
+        const oralNum = (cand.oralEnglishScore !== null && cand.oralEnglishScore !== undefined) ? parseFloat(cand.oralEnglishScore) : NaN
+        if (!isNaN(oralNum)) {
+          engEntranceScale10 = Math.round((oralNum / 30) * 10 * 10) / 10
+          engEntranceTotal100 = Math.round((oralNum / 30) * 100 * 10) / 10
+        } else if (cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined) {
+          engEntranceScale10 = Number(cand.totalEnglishScale10)
+          engEntranceTotal100 = Math.round(engEntranceScale10 * 10)
+        }
+      } else {
+        engEntranceTotal100 = cand.totalEnglishScore !== null && cand.totalEnglishScore !== undefined 
+          ? Number(cand.totalEnglishScore) 
+          : (cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined ? Math.round(Number(cand.totalEnglishScale10) * 10) : null)
+        engEntranceScale10 = cand.totalEnglishScale10 !== null && cand.totalEnglishScale10 !== undefined 
+          ? Number(cand.totalEnglishScale10) 
+          : (engEntranceTotal100 !== null ? (engEntranceTotal100 > 10 ? Math.round((engEntranceTotal100 / 10) * 10) / 10 : engEntranceTotal100) : null)
+      }
       const engDelta = (engCurrentScore !== null && engEntranceScale10 !== null) ? Math.round((engCurrentScore - engEntranceScale10) * 10) / 10 : null
       const engTa = engSub ? taMap.get(`${cls.id}_${engSub.id}`) : null
       const engTeacher = engTa?.teacher?.teacherName || homeroomTeacherName
@@ -1101,6 +1137,7 @@ export async function GET(request: Request) {
         className: cls.className,
         grade: cls.grade,
         level: cls.level,
+        isGrade1: isGrade1Student,
         campusId: cls.campusId,
         campusName: cls.campus?.campusName || cand.admissionCampus || cand.registeredCampus || "",
         campusCode: cls.campus?.campusCode || "",
@@ -1127,6 +1164,7 @@ export async function GET(request: Request) {
         },
         english: {
           isCommitted: isEngCommitted,
+          isGrade1: isGrade1Student,
           entranceTotal100: engEntranceTotal100,
           entranceScale10: engEntranceScale10,
           oralScore: cand.oralEnglishScore,

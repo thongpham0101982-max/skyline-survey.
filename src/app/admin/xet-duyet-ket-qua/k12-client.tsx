@@ -7623,7 +7623,7 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                         let oralScoreText = "—";
                         let writtenScoreText = "—";
                         
-                        if (!isGrade1 && hasEnglish) {
+                        if (hasEnglish) {
                           scoresList.forEach((sc) => {
                             const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
                             const sCode = (sc.subject?.code || "").toLowerCase();
