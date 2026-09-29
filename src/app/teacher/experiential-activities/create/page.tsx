@@ -1,9 +1,9 @@
-﻿"use client"
+"use client"
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { 
-  ArrowLeft, Check, CheckCheck, CheckCircle2, ChevronRight, Save, Send, Plus, 
+  ArrowLeft, ArrowRight, Check, CheckCheck, CheckCircle2, ChevronRight, Save, Send, Plus, 
   Trash2, Layers, Calendar, Users, Building2, BookOpen, Clock, 
   Tag, Award, Sparkles, AlertCircle, Info, Shield, Compass, Leaf, User, GraduationCap,
   Mail, AtSign, MessageSquare, Eye, EyeOff, CheckSquare, Square, X
@@ -166,6 +166,19 @@ export default function CreateActivityWizard() {
   // Wizard Step (1 to 4)
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Chuyển hướng hợp nhất: Quy trình chuẩn phân bổ HĐTN là "Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN"
+  useEffect(() => {
+    toast('Đang chuyển tới quy trình chuẩn: Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN', {
+      icon: '🧭',
+      duration: 4000
+    });
+    const targetUrl = `/admin/experiential-activities/catalogs${editId ? `?allocateId=${editId}` : ''}`;
+    const timer = setTimeout(() => {
+      router.replace(targetUrl);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [editId, router]);
 
   // System master data
   const [academicYears, setAcademicYears] = useState([]);
@@ -653,6 +666,30 @@ export default function CreateActivityWizard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50/20 to-sky-50/20 py-8 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto space-y-6">
+
+        {/* BANNER THÔNG BÁO QUY TRÌNH CHUẨN */}
+        <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-[#00A19A] text-white p-4 sm:p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-blue-500/30">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+              <Send className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-black">
+                Quy trình chuẩn: Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN
+              </h3>
+              <p className="text-xs text-blue-100 mt-0.5">
+                Hệ thống đã hợp nhất quy trình: BP HĐNGLL - Tổ CTHS phân bổ kế hoạch trực tiếp từ Danh mục để GV Tổ TLHN các cơ sở tiếp nhận và phân công lớp
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push(`/admin/experiential-activities/catalogs${editId ? `?allocateId=${editId}` : ''}`)}
+            className="px-5 py-2.5 bg-white text-blue-900 hover:bg-blue-50 text-xs font-black rounded-2xl shadow-md transition-all shrink-0 flex items-center gap-2 cursor-pointer"
+          >
+            <span>Mở Modal Đẩy Cơ Sở Ngay</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
 
         {/* TOP HEADER */}
         <div className="flex items-center justify-between">

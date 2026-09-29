@@ -493,12 +493,12 @@ export default function ActivityResultInput() {
                 </button>
 
                 <button
-                  onClick={() => router.push(`${basePath}/create?editId=${id}`)}
-                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-teal-50 hover:text-[#003B3A] border border-slate-200 text-slate-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5"
-                  title="Hiệu chỉnh thông tin, tiêu chí hoặc lớp gán"
+                  onClick={() => router.push(`/admin/experiential-activities/catalogs?allocateId=${activity?.catalogId || id}`)}
+                  className="px-3.5 py-2.5 bg-blue-50 hover:bg-blue-100 hover:text-blue-900 border border-blue-200 text-blue-700 text-xs font-black rounded-xl shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN"
                 >
-                  <Settings className="w-3.5 h-3.5 text-[#00A19A]" />
-                  <span>Hiệu chỉnh kế hoạch</span>
+                  <Send className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Đẩy cơ sở & Báo mail</span>
                 </button>
               </>
             )}

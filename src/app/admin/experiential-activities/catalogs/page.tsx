@@ -5,7 +5,7 @@ import {
   Plus, Search, Download, UploadCloud, Layers, Sparkles, 
   Building2, BookOpen, Calendar, MapPin, Edit3, Trash2, 
   RefreshCw, Award, Tag, Ban, RotateCcw, CheckSquare, 
-  UserCheck, Users, Sliders, CheckCircle2
+  UserCheck, Users, Sliders, CheckCircle2, Send
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ExperientialTabs } from '@/components/ExperientialTabs';
@@ -219,6 +219,18 @@ function ActivityCatalogsContent() {
   useEffect(() => {
     loadCatalogs();
   }, [loadCatalogs]);
+
+  // Tự động mở modal Đẩy Hoạt Động Xuống Cơ Sở nếu có query param allocateId hoặc editId
+  const allocateParamId = searchParams.get('allocateId') || searchParams.get('editId');
+  useEffect(() => {
+    if (allocateParamId && catalogs.length > 0) {
+      const target = catalogs.find(c => c.id === allocateParamId || c.code === allocateParamId);
+      if (target) {
+        setAllocatingItem(target);
+        setIsAllocateOpen(true);
+      }
+    }
+  }, [allocateParamId, catalogs]);
 
   useEffect(() => {
     setSelectedIds([]);
@@ -1106,17 +1118,18 @@ function ActivityCatalogsContent() {
                           {/* Thao tác (Sticky right) */}
                           <td className="py-2.5 px-2 text-center sticky right-0 bg-white/95 backdrop-blur-xs border-l border-slate-200/80 shadow-xs align-middle">
                             <div className="flex items-center justify-center gap-1">
-                              {/* Đẩy cơ sở */}
+                              {/* Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN */}
                               <button
                                 type="button"
                                 onClick={() => {
                                   setAllocatingItem(act);
                                   setIsAllocateOpen(true);
                                 }}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
-                                title="Bàn giao / Đẩy hoạt động xuống cơ sở"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 font-bold text-[11px] transition-all cursor-pointer shadow-2xs shrink-0"
+                                title="Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN"
                               >
-                                <Building2 className="w-3.5 h-3.5" />
+                                <Send className="w-3.5 h-3.5 text-blue-600" />
+                                <span>Đẩy cơ sở</span>
                               </button>
 
                               {/* Chỉnh sửa */}

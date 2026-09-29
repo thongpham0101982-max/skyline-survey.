@@ -2,7 +2,7 @@
 // @ts-nocheck
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Plus, Search, Calendar, Users, ChevronRight, Activity, Trash2, Edit3, Tag, CheckCircle2, Clock, List, LayoutGrid, Sparkles, Filter, FileCheck, Layers, ArrowUpRight, CheckCircle, BarChart3, RefreshCw, X, Eye, FileSpreadsheet, Download, Lock, Unlock, Copy, AlertCircle, Building2, GraduationCap, Shield, Compass, Leaf, User, BookOpen } from "lucide-react";
+import { Plus, Search, Calendar, Users, ChevronRight, Activity, Trash2, Edit3, Tag, CheckCircle2, Clock, List, LayoutGrid, Sparkles, Filter, FileCheck, Layers, ArrowUpRight, CheckCircle, BarChart3, RefreshCw, X, Eye, FileSpreadsheet, Download, Lock, Unlock, Copy, AlertCircle, Building2, GraduationCap, Shield, Compass, Leaf, User, BookOpen, Send } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
 import { ACTIVITY_STRANDS, SKYLINE_ACTIVITY_TYPES } from "@/lib/experiential/constants";
@@ -271,14 +271,14 @@ export default function ExperientialActivitiesList() {
               </button>
 
               <button
-                onClick={() => router.push(`${basePath}/create`)}
-                className="px-6 py-3 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] hover:from-[#002B2A] hover:to-[#008F85] text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-[#00A19A]/25 transition-all flex items-center gap-2.5 group transform active:scale-95"
-                title="Khởi tạo hoạt động trải nghiệm mới cho lớp chủ nhiệm hoặc bộ môn"
+                onClick={() => router.push('/admin/experiential-activities/catalogs')}
+                className="px-6 py-3 bg-gradient-to-r from-blue-700 via-indigo-600 to-[#00A19A] hover:from-blue-800 hover:to-indigo-700 text-white text-xs sm:text-sm font-black rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center gap-2.5 group transform active:scale-95 cursor-pointer"
+                title="Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN từ Danh mục"
               >
-                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform">
-                  <Plus className="w-3.5 h-3.5 text-white" />
+                <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Send className="w-3.5 h-3.5 text-white" />
                 </div>
-                <span>+ Tạo hoạt động</span>
+                <span>Đẩy Hoạt Động Xuống Cơ Sở</span>
               </button>
             </div>
           </div>
@@ -566,11 +566,11 @@ export default function ExperientialActivitiesList() {
                 }
               </p>
               <button
-                onClick={() => router.push(`${basePath}/create`)}
-                className="px-6 py-3 bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white text-xs font-black rounded-2xl shadow-lg shadow-[#00A19A]/25 inline-flex items-center gap-2 mt-2"
+                onClick={() => router.push('/admin/experiential-activities/catalogs')}
+                className="px-6 py-3 bg-gradient-to-r from-blue-700 to-[#00A19A] text-white text-xs font-black rounded-2xl shadow-lg shadow-blue-500/25 inline-flex items-center gap-2 mt-2 cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>Tạo hoạt động mới ngay</span>
+                <Send className="w-4 h-4" />
+                <span>Đi tới Danh mục & Đẩy Cơ Sở</span>
               </button>
             </div>
           </div>
@@ -743,12 +743,13 @@ export default function ExperientialActivitiesList() {
                               <button
                                 onClick={e => {
                                   e.stopPropagation();
-                                  router.push(`${basePath}/create?editId=${act.id}`);
+                                  const targetId = act.catalogId || act.id;
+                                  router.push(`/admin/experiential-activities/catalogs?allocateId=${targetId}`);
                                 }}
-                                className="p-2 rounded-xl bg-slate-100 hover:bg-teal-50 text-slate-600 hover:text-[#00A19A] transition-colors"
-                                title="Hiệu chỉnh kế hoạch hoạt động"
+                                className="p-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors cursor-pointer"
+                                title="Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN"
                               >
-                                <Edit3 className="w-4 h-4 text-[#00A19A]" />
+                                <Send className="w-4 h-4 text-blue-600" />
                               </button>
                               <button
                                 onClick={e => handleDuplicate(e, act)}
@@ -829,12 +830,13 @@ export default function ExperientialActivitiesList() {
                           <button
                             onClick={e => {
                               e.stopPropagation();
-                              router.push(`${basePath}/create?editId=${act.id}`);
+                              const targetId = act.catalogId || act.id;
+                              router.push(`/admin/experiential-activities/catalogs?allocateId=${targetId}`);
                             }}
-                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-teal-50 flex items-center justify-center text-[#00A19A]"
-                            title="Hiệu chỉnh kế hoạch"
+                            className="w-7 h-7 rounded-lg bg-blue-50 hover:bg-blue-100 flex items-center justify-center text-blue-700 cursor-pointer"
+                            title="Đẩy Hoạt Động Xuống Cơ Sở & Báo Mail GV Tổ TLHN"
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
+                            <Send className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={e => handleDuplicate(e, act)}
