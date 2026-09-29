@@ -347,6 +347,154 @@ export async function GET(request: Request) {
         { admissionCriteria: { contains: "theo dõi" } }
       ]
 
+      // Query all admission candidates for the academic year to calculate enrolled counts and rates
+      let allNewAdmissionStudents: any[] = []
+      try {
+        if (p.inputAssessmentStudent?.findMany) {
+          const admWhere: any = periodIds.length > 0 ? { periodId: { in: periodIds } } : {}
+          allNewAdmissionStudents = await p.inputAssessmentStudent.findMany({
+            where: admWhere,
+            select: {
+              id: true,
+              studentCode: true,
+              enrollmentCode: true,
+              fullName: true,
+              className: true,
+              enrollmentClassId: true,
+              grade: true,
+              targetType: true,
+              admissionResult: true,
+              admissionCriteria: true,
+              directorNote: true,
+              registeredCampus: true,
+              admissionCampus: true,
+              enrollmentClass: {
+                select: {
+                  id: true,
+                  className: true,
+                  grade: true,
+                  level: true,
+                  campusId: true,
+                  campus: true
+                }
+              }
+            }
+          })
+        }
+      } catch (errAdm) {
+        console.warn("Lỗi khi đọc allNewAdmissionStudents:", errAdm)
+      }
+
+      // Thống kê Tuyển mới đã nhập học (Toàn trường K1-12 và Tách riêng Khối 1)
+      let totalNewEnrolled = 0
+      let totalCommittedInEnrolled = 0
+      let grade1NewEnrolled = 0
+      let grade1CommittedInEnrolled = 0
+      let otherGradesNewEnrolled = 0
+      let otherGradesCommittedInEnrolled = 0
+
+      // Thống kê theo bộ lọc hiện tại (Campus, Level, Grade, Class)
+      let filteredNewEnrolled = 0
+      let filteredCommittedCount = 0
+      let filteredGrade1NewEnrolled = 0
+      let filteredGrade1CommittedCount = 0
+      let filteredOtherGradesNewEnrolled = 0
+      let filteredOtherGradesCommittedCount = 0
+
+      const byGradeStats: Record<number, { newEnrolled: number; committedCount: number; commitmentRate: number }> = {}
+      for (let g = 1; g <= 12; g++) {
+        byGradeStats[g] = { newEnrolled: 0, committedCount: 0, commitmentRate: 0 }
+      }
+
+      allNewAdmissionStudents.forEach((st: any) => {
+        let cls = st.enrollmentClass || null
+        if (!cls && st.enrollmentClassId) {
+          cls = allClasses.find((c: any) => c.id === st.enrollmentClassId || c.classCode === st.enrollmentClassId) || null
+        }
+        if (!cls && st.className) {
+          const cleanStClassName = st.className.trim().toLowerCase()
+          if (cleanStClassName && cleanStClassName !== "chưa xếp lớp" && !cleanStClassName.includes("chưa xếp")) {
+            cls = allClasses.find((c: any) => c.className?.toLowerCase() === cleanStClassName || c.classCode?.toLowerCase() === cleanStClassName) || null
+          }
+        }
+
+        if (!cls) return
+        const cName = (cls.className || st.className || "").trim().toLowerCase()
+        if (!cName || cName === "chưa xếp lớp" || cName.includes("chưa xếp")) return
+
+        const gradeStr = String(cls.grade || cls.className || st.grade || st.className || "").trim()
+        const gradeNum = parseInt(gradeStr.match(/\d+/)?.[0] || "0", 10)
+        if (gradeNum < 1 || gradeNum > 12) return // CHỈ LẤY KHỐI 1 ĐẾN 12
+
+        const hasCommitment = Boolean(
+          (st.admissionCriteria && /cam kết/i.test(st.admissionCriteria)) ||
+          (st.admissionResult && /cam kết/i.test(st.admissionResult)) ||
+          (st.targetType && /cam kết/i.test(st.targetType)) ||
+          (st.directorNote && /cam kết/i.test(st.directorNote)) ||
+          (st.directorNote && /môn cam kết/i.test(st.directorNote)) ||
+          (st.admissionResult && /theo dõi/i.test(st.admissionResult)) ||
+          (st.directorNote && /theo dõi/i.test(st.directorNote)) ||
+          (st.targetType && /theo dõi/i.test(st.targetType))
+        )
+
+        // Tổng thể K1-12
+        totalNewEnrolled++
+        if (hasCommitment) totalCommittedInEnrolled++
+
+        if (gradeNum === 1) {
+          grade1NewEnrolled++
+          if (hasCommitment) grade1CommittedInEnrolled++
+        } else {
+          otherGradesNewEnrolled++
+          if (hasCommitment) otherGradesCommittedInEnrolled++
+        }
+
+        if (byGradeStats[gradeNum]) {
+          byGradeStats[gradeNum].newEnrolled++
+          if (hasCommitment) byGradeStats[gradeNum].committedCount++
+        }
+
+        // Kiểm tra bộ lọc hiện tại
+        let matchesFilter = true
+        if (campusId && campusId !== "ALL") {
+          const matchCampus = cls.campusId === campusId || cls.campus?.id === campusId || cls.campus?.campusCode === campusId ||
+            (cls.campus?.campusName && cls.campus.campusName.toLowerCase().includes(campusId.toLowerCase()))
+          if (!matchCampus) matchesFilter = false
+        }
+        if (matchesFilter && levelFilter !== "ALL") {
+          const cLevel = (cls.level || "").toLowerCase()
+          if (levelFilter === "TieuHoc" && !(cLevel.includes("tiểu học") || (gradeNum >= 1 && gradeNum <= 5))) matchesFilter = false
+          else if (levelFilter === "THCS" && !(cLevel.includes("thcs") || (gradeNum >= 6 && gradeNum <= 9))) matchesFilter = false
+          else if (levelFilter === "THPT" && !(cLevel.includes("thpt") || (gradeNum >= 10 && gradeNum <= 12))) matchesFilter = false
+          else if (levelFilter === "MamNon") matchesFilter = false
+        }
+        if (matchesFilter && gradeFilter !== "ALL") {
+          const targetNum = gradeFilter.replace(/\D/g, "")
+          if (targetNum && String(gradeNum) !== targetNum) matchesFilter = false
+        }
+        if (matchesFilter && classId && classId !== "ALL") {
+          if (cls.id !== classId) matchesFilter = false
+        }
+
+        if (matchesFilter) {
+          filteredNewEnrolled++
+          if (hasCommitment) filteredCommittedCount++
+          if (gradeNum === 1) {
+            filteredGrade1NewEnrolled++
+            if (hasCommitment) filteredGrade1CommittedCount++
+          } else {
+            filteredOtherGradesNewEnrolled++
+            if (hasCommitment) filteredOtherGradesCommittedCount++
+          }
+        }
+      })
+
+      // Tính tỷ lệ % cho từng khối
+      for (let g = 1; g <= 12; g++) {
+        const item = byGradeStats[g]
+        item.commitmentRate = item.newEnrolled > 0 ? Math.round((item.committedCount / item.newEnrolled) * 1000) / 10 : 0
+      }
+
       let inputStudents: any[] = []
       try {
         if (p.inputAssessmentStudent?.findMany) {
@@ -993,6 +1141,13 @@ export async function GET(request: Request) {
         return
       }
 
+      // CHỈ LẤY HỌC SINH TỪ KHỐI 1 ĐẾN KHỐI 12 (LOẠI BỎ MẦM NON, PRE, NHÀ TRẺ)
+      const gradeStr = String(cls.grade || cls.className || cand.grade || "").trim()
+      const gradeNum = parseInt(gradeStr.match(/\d+/)?.[0] || "0", 10)
+      if (gradeNum < 1 || gradeNum > 12) {
+        return
+      }
+
       // Check campus filter
       if (campusId && campusId !== "ALL") {
         const isMatch = cls.campusId === campusId ||
@@ -1169,8 +1324,9 @@ export async function GET(request: Request) {
         classId: cls.id,
         className: cls.className,
         grade: cls.grade,
+        gradeNum,
         level: cls.level,
-        isGrade1: isGrade1Student,
+        isGrade1: isGrade1Student || gradeNum === 1,
         campusId: cls.campusId,
         campusName: cls.campus?.campusName || cand.admissionCampus || cand.registeredCampus || "",
         campusCode: cls.campus?.campusCode || "",
@@ -1290,10 +1446,59 @@ export async function GET(request: Request) {
       }
     })
 
+    // Tính toán số lượng CKĐV thực tế theo khối từ danh sách học sinh ma trận
+    const matrixGrade1CommittedCount = ksdvMatrixStudents.filter(s => s.gradeNum === 1 || s.isGrade1).length
+    const matrixOtherGradesCommittedCount = ksdvMatrixStudents.filter(s => s.gradeNum && s.gradeNum >= 2 && s.gradeNum <= 12).length
+
+    // Mẫu số: Tổng Tuyển mới Nhập học
+    // Nếu có bộ lọc áp dụng (filteredNewEnrolled > 0), cung cấp cả số liệu theo bộ lọc và toàn hệ thống
+    const effectiveTotalNewEnrolled = filteredNewEnrolled > 0 ? filteredNewEnrolled : totalNewEnrolled
+    const effectiveGrade1NewEnrolled = filteredGrade1NewEnrolled > 0 ? filteredGrade1NewEnrolled : grade1NewEnrolled
+    const effectiveOtherNewEnrolled = filteredOtherGradesNewEnrolled > 0 ? filteredOtherGradesNewEnrolled : otherGradesNewEnrolled
+
+    const totalCommitmentRate = effectiveTotalNewEnrolled > 0 
+      ? Math.round((ksdvMatrixStudents.length / effectiveTotalNewEnrolled) * 1000) / 10 
+      : 0
+    const grade1CommitmentRate = effectiveGrade1NewEnrolled > 0 
+      ? Math.round((matrixGrade1CommittedCount / effectiveGrade1NewEnrolled) * 1000) / 10 
+      : 0
+    const otherGradesCommitmentRate = effectiveOtherNewEnrolled > 0 
+      ? Math.round((matrixOtherGradesCommittedCount / effectiveOtherNewEnrolled) * 1000) / 10 
+      : 0
+
     const ksdvMatrix = {
       students: ksdvMatrixStudents,
       summary: {
+        // 1. Toàn trường K1-12 (hoặc theo bộ lọc hiện tại)
+        totalNewEnrolled: effectiveTotalNewEnrolled,
         totalCommittedStudents: ksdvMatrixStudents.length,
+        totalCommitmentRate,
+
+        // 2. Tách riêng Khối 1
+        grade1NewEnrolled: effectiveGrade1NewEnrolled,
+        grade1CommittedCount: matrixGrade1CommittedCount,
+        grade1CommitmentRate,
+
+        // 3. Khối 2 - 12
+        otherGradesNewEnrolled: effectiveOtherNewEnrolled,
+        otherGradesCommittedCount: matrixOtherGradesCommittedCount,
+        otherGradesCommitmentRate,
+
+        // 4. Số liệu toàn trường chuẩn (kể cả khi đang lọc)
+        systemTotalNewEnrolled: totalNewEnrolled,
+        systemTotalCommittedCount: totalCommittedInEnrolled,
+        systemTotalCommitmentRate: totalNewEnrolled > 0 ? Math.round((totalCommittedInEnrolled / totalNewEnrolled) * 1000) / 10 : 0,
+        systemGrade1NewEnrolled: grade1NewEnrolled,
+        systemGrade1CommittedCount: grade1CommittedInEnrolled,
+        systemGrade1CommitmentRate: grade1NewEnrolled > 0 ? Math.round((grade1CommittedInEnrolled / grade1NewEnrolled) * 1000) / 10 : 0,
+        systemOtherGradesNewEnrolled: otherGradesNewEnrolled,
+        systemOtherGradesCommittedCount: otherGradesCommittedInEnrolled,
+        systemOtherGradesCommitmentRate: otherGradesNewEnrolled > 0 ? Math.round((otherGradesCommittedInEnrolled / otherGradesNewEnrolled) * 1000) / 10 : 0,
+
+        // 5. Thống kê chi tiết theo khối 1 - 12
+        byGradeStats,
+
+        // 6. Thống kê theo môn & tiến bộ
         committedMathCount: ksdvMathCommittedTotal,
         committedLitCount: ksdvLitCommittedTotal,
         committedEngCount: ksdvEngCommittedTotal,

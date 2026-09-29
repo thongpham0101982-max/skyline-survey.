@@ -69,6 +69,7 @@ export function GradeAnalyticsTab({
   // Tracking view sub-filter
   const [trackingCategory, setTrackingCategory] = useState<"ALL" | "BELOW_AVG" | "BELOW_BENCHMARK" | "ADMISSION_COMMITMENT" | "LEARNING_COMMITMENT">("ALL")
   const [ksdvSubjectFilter, setKsdvSubjectFilter] = useState<"ALL" | "MATH" | "LIT" | "ENG" | "PSY">("ALL")
+  const [ksdvGradeScope, setKsdvGradeScope] = useState<"ALL" | "GRADE_1" | "OTHER_GRADES">("ALL")
 
   // Data states
   const [loading, setLoading] = useState(false)
@@ -301,6 +302,15 @@ export function GradeAnalyticsTab({
   // Filtered KSĐV Matrix Students List
   const displayedKsdvStudents = useMemo(() => {
     let list = data.ksdvMatrix?.students || []
+
+    // 1. Lọc theo phạm vi Khối 1 vs Khối 2-12
+    if (ksdvGradeScope === "GRADE_1") {
+      list = list.filter(st => st.isGrade1 || st.gradeNum === 1)
+    } else if (ksdvGradeScope === "OTHER_GRADES") {
+      list = list.filter(st => (!st.isGrade1 && st.gradeNum !== 1) || (st.gradeNum && st.gradeNum >= 2 && st.gradeNum <= 12))
+    }
+
+    // 2. Lọc theo môn
     if (ksdvSubjectFilter === "MATH") {
       list = list.filter(st => st.math?.isCommitted)
     } else if (ksdvSubjectFilter === "LIT") {
@@ -327,7 +337,7 @@ export function GradeAnalyticsTab({
       })
     }
     return list
-  }, [data.ksdvMatrix?.students, ksdvSubjectFilter, searchKeyword])
+  }, [data.ksdvMatrix?.students, ksdvGradeScope, ksdvSubjectFilter, searchKeyword])
 
   // Xuất Excel Ma trận Đối sánh KSĐV
   const handleExportKsdvMatrixExcel = () => {
@@ -1296,40 +1306,111 @@ export function GradeAnalyticsTab({
       {activeSubView === "ksdv_matrix" && (
         <div className="space-y-4 animate-fadeIn">
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="bg-white p-3.5 rounded-2xl border border-indigo-100 shadow-sm bg-gradient-to-br from-white to-indigo-50/30">
-              <span className="text-[11px] font-bold text-indigo-700 block uppercase tracking-wider">HS Cam kết nhập học</span>
-              <div className="text-2xl font-black text-indigo-900 mt-1">
-                {data.ksdvMatrix?.summary?.totalCommittedStudents || 0}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            {/* Card 1: Toàn trường K1-12 */}
+            <div className="bg-white p-3.5 rounded-2xl border-2 border-indigo-200 shadow-sm bg-gradient-to-br from-white via-indigo-50/20 to-indigo-100/40 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-indigo-800 uppercase tracking-wider">
+                  Toàn trường (K1 - 12)
+                </span>
+                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700">
+                  Tỷ lệ CKĐV
+                </span>
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">Hồ sơ cam kết đầu vào</span>
+              <div className="text-2xl font-black text-indigo-950 mt-1 flex items-baseline gap-1.5">
+                {data.ksdvMatrix?.summary?.totalCommitmentRate ?? 0}%
+                <span className="text-xs font-bold text-indigo-600">
+                  ({data.ksdvMatrix?.summary?.totalCommittedStudents || 0}/{data.ksdvMatrix?.summary?.totalNewEnrolled || 0} HS)
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                <div 
+                  className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${Math.min(100, data.ksdvMatrix?.summary?.totalCommitmentRate || 0)}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-slate-500 font-semibold block mt-1.5">
+                CKĐV / Tuyển mới Nhập học
+              </span>
             </div>
 
-            <div className="bg-white p-3.5 rounded-2xl border border-blue-100 shadow-sm bg-gradient-to-br from-white to-blue-50/30">
-              <span className="text-[11px] font-bold text-blue-700 block uppercase tracking-wider">Cam kết môn Toán</span>
-              <div className="text-2xl font-black text-blue-900 mt-1">
-                {data.ksdvMatrix?.summary?.committedMathCount || 0}
+            {/* Card 2: Khối 1 (TÁCH RIÊNG) */}
+            <div className="bg-amber-50/60 p-3.5 rounded-2xl border-2 border-amber-300 shadow-sm bg-gradient-to-br from-white via-amber-50/50 to-amber-100/50 ring-2 ring-amber-100 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-amber-900 uppercase tracking-wider flex items-center gap-1">
+                  🎒 Khối 1 (Tách riêng)
+                </span>
+                <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-white uppercase tracking-wider shadow-xs">
+                  Trọng điểm
+                </span>
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">HS có cam kết Toán</span>
+              <div className="text-2xl font-black text-amber-950 mt-1 flex items-baseline gap-1.5">
+                {data.ksdvMatrix?.summary?.grade1CommitmentRate ?? 0}%
+                <span className="text-xs font-bold text-amber-800">
+                  ({data.ksdvMatrix?.summary?.grade1CommittedCount || 0}/{data.ksdvMatrix?.summary?.grade1NewEnrolled || 0} HS)
+                </span>
+              </div>
+              <div className="w-full bg-amber-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                <div 
+                  className="bg-amber-500 h-1.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${Math.min(100, data.ksdvMatrix?.summary?.grade1CommitmentRate || 0)}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-amber-800 font-bold block mt-1.5">
+                Tỷ lệ CKĐV Tuyển mới Khối 1
+              </span>
             </div>
 
-            <div className="bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-sm bg-gradient-to-br from-white to-emerald-50/30">
-              <span className="text-[11px] font-bold text-emerald-700 block uppercase tracking-wider">Cam kết Tiếng Việt / Văn</span>
-              <div className="text-2xl font-black text-emerald-900 mt-1">
-                {data.ksdvMatrix?.summary?.committedLitCount || 0}
+            {/* Card 3: Khối 2 - 12 */}
+            <div className="bg-white p-3.5 rounded-2xl border border-sky-200 shadow-sm bg-gradient-to-br from-white via-sky-50/20 to-sky-100/30">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black text-sky-800 uppercase tracking-wider">
+                  Khối 2 đến 12
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-700">
+                  K2 - 12
+                </span>
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">HS có cam kết TV / Văn</span>
+              <div className="text-2xl font-black text-sky-950 mt-1 flex items-baseline gap-1.5">
+                {data.ksdvMatrix?.summary?.otherGradesCommitmentRate ?? 0}%
+                <span className="text-xs font-bold text-sky-700">
+                  ({data.ksdvMatrix?.summary?.otherGradesCommittedCount || 0}/{data.ksdvMatrix?.summary?.otherGradesNewEnrolled || 0} HS)
+                </span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                <div 
+                  className="bg-sky-500 h-1.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${Math.min(100, data.ksdvMatrix?.summary?.otherGradesCommitmentRate || 0)}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-slate-500 font-semibold block mt-1.5">
+                Tỷ lệ CKĐV Tuyển mới K2-12
+              </span>
             </div>
 
-            <div className="bg-white p-3.5 rounded-2xl border border-violet-100 shadow-sm bg-gradient-to-br from-white to-violet-50/30">
-              <span className="text-[11px] font-bold text-violet-700 block uppercase tracking-wider">Cam kết Tiếng Anh</span>
-              <div className="text-2xl font-black text-violet-900 mt-1">
-                {data.ksdvMatrix?.summary?.committedEngCount || 0}
+            {/* Card 4: Chi tiết Cam kết các môn học */}
+            <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm bg-gradient-to-br from-white to-slate-50 flex flex-col justify-between">
+              <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
+                Môn Cam kết (K1-12)
+              </span>
+              <div className="space-y-1 my-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-700 font-bold flex items-center gap-1">📐 Toán:</span>
+                  <span className="font-extrabold text-blue-900">{data.ksdvMatrix?.summary?.committedMathCount || 0} HS</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">📖 TV/Văn:</span>
+                  <span className="font-extrabold text-emerald-900">{data.ksdvMatrix?.summary?.committedLitCount || 0} HS</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-violet-700 font-bold flex items-center gap-1">🌐 Tiếng Anh:</span>
+                  <span className="font-extrabold text-violet-900">{data.ksdvMatrix?.summary?.committedEngCount || 0} HS</span>
+                </div>
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">Vấn đáp & Viết</span>
+              <span className="text-[10px] text-slate-400 font-medium">HS có thể cam kết nhiều môn</span>
             </div>
 
-            {/* BỔ SUNG THẺ CAM KẾT TÂM LÝ - MÀU ĐỎ NỔI BẬT */}
+            {/* Card 5: Cam kết Tâm lý - CẢNH BÁO MÀU ĐỎ NỔI BẬT */}
             <div className="bg-red-50/70 p-3.5 rounded-2xl border-2 border-red-300 shadow-sm bg-gradient-to-br from-white via-red-50 to-red-100/40 ring-2 ring-red-100">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-black text-red-700 block uppercase tracking-wider">
@@ -1344,11 +1425,12 @@ export function GradeAnalyticsTab({
                 {data.ksdvMatrix?.summary?.committedPsychologyCount || 0}
                 <span className="text-[11px] font-bold text-red-600">học sinh</span>
               </div>
-              <span className="text-[10px] text-red-600 font-extrabold flex items-center gap-1 mt-0.5">
+              <span className="text-[10px] text-red-600 font-extrabold flex items-center gap-1 mt-1">
                 <span>🚨</span> Cần chú ý theo dõi sát
               </span>
             </div>
 
+            {/* Card 6: Tiến bộ / Đạt chuẩn */}
             <div className="bg-white p-3.5 rounded-2xl border border-teal-100 shadow-sm bg-gradient-to-br from-white to-teal-50/30">
               <span className="text-[11px] font-bold text-teal-700 block uppercase tracking-wider">Tiến bộ / Đạt chuẩn</span>
               <div className="text-2xl font-black text-teal-900 mt-1">
@@ -1359,8 +1441,75 @@ export function GradeAnalyticsTab({
             </div>
           </div>
 
-          {/* Sub-filter pills for subjects */}
+          {/* Sub-filter pills for Grade Scope & Subjects */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            {/* Hàng 1: Bộ lọc Phạm vi Khối (Tách riêng Khối 1 vs Khối 2-12) */}
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-slate-100">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                  <span>🎯</span> Phân loại Khối:
+                </span>
+                <button
+                  onClick={() => setKsdvGradeScope("ALL")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                    ksdvGradeScope === "ALL"
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 ring-2 ring-indigo-300"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  <span>Toàn trường (Khối 1 - 12)</span>
+                  <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
+                    ksdvGradeScope === "ALL" ? "bg-white text-indigo-700" : "bg-slate-200 text-slate-700"
+                  }`}>
+                    {data.ksdvMatrix?.summary?.totalCommittedStudents || 0} / {data.ksdvMatrix?.summary?.totalNewEnrolled || 0} HS ({data.ksdvMatrix?.summary?.totalCommitmentRate ?? 0}%)
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setKsdvGradeScope("GRADE_1")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                    ksdvGradeScope === "GRADE_1"
+                      ? "bg-amber-600 text-white shadow-md shadow-amber-200 ring-2 ring-amber-300"
+                      : "bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300"
+                  }`}
+                >
+                  <span>🎒 Khối 1 (Tách riêng)</span>
+                  <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
+                    ksdvGradeScope === "GRADE_1" ? "bg-white text-amber-800" : "bg-amber-200 text-amber-900"
+                  }`}>
+                    {data.ksdvMatrix?.summary?.grade1CommittedCount || 0} / {data.ksdvMatrix?.summary?.grade1NewEnrolled || 0} HS ({data.ksdvMatrix?.summary?.grade1CommitmentRate ?? 0}%)
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setKsdvGradeScope("OTHER_GRADES")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                    ksdvGradeScope === "OTHER_GRADES"
+                      ? "bg-sky-600 text-white shadow-md shadow-sky-200 ring-2 ring-sky-300"
+                      : "bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-300"
+                  }`}
+                >
+                  <span>🏫 Khối 2 đến 12</span>
+                  <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
+                    ksdvGradeScope === "OTHER_GRADES" ? "bg-white text-sky-800" : "bg-sky-200 text-sky-900"
+                  }`}>
+                    {data.ksdvMatrix?.summary?.otherGradesCommittedCount || 0} / {data.ksdvMatrix?.summary?.otherGradesNewEnrolled || 0} HS ({data.ksdvMatrix?.summary?.otherGradesCommitmentRate ?? 0}%)
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportKsdvMatrixExcel}
+                  className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all"
+                  title="Xuất file Excel danh sách đối sánh KSĐV"
+                >
+                  <span>📊 Xuất Excel Đối sánh</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Hàng 2: Bộ lọc theo Môn học & Tâm lý */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
@@ -1371,7 +1520,7 @@ export function GradeAnalyticsTab({
                       : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                   }`}
                 >
-                  Tất cả HS cam kết ({data.ksdvMatrix?.students?.length || 0})
+                  Tất cả môn cam kết
                 </button>
                 <button
                   onClick={() => setKsdvSubjectFilter("MATH")}
@@ -1422,7 +1571,7 @@ export function GradeAnalyticsTab({
               </div>
 
               <div className="text-xs text-slate-500 font-semibold">
-                Hiển thị: <strong className="text-slate-800">{displayedKsdvStudents.length}</strong> học sinh
+                Đang hiển thị: <strong className="text-slate-800 text-sm font-black">{displayedKsdvStudents.length}</strong> học sinh
               </div>
             </div>
 
@@ -1522,9 +1671,16 @@ export function GradeAnalyticsTab({
                             )}
                           </td>
                           <td className="py-2.5 px-2.5">
-                            <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-teal-50 text-[#005B58] border border-teal-200">
-                              {st.className}
-                            </span>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-teal-50 text-[#005B58] border border-teal-200">
+                                {st.className}
+                              </span>
+                              {(st.isGrade1 || st.gradeNum === 1) && (
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="Học sinh Tuyển mới Khối 1">
+                                  🎒 K1
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-2.5 px-3 text-slate-700 font-semibold border-r border-slate-200 text-[11px]">
                             {st.homeroomTeacher}

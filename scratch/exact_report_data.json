@@ -1,0 +1,3739 @@
+{
+  "summary": {
+    "totalKSDNStudents": 1699,
+    "studentsByLevel": {
+      "Tiểu học": 878,
+      "THCS": 673,
+      "THPT": 148
+    },
+    "totalNewRegistered": 485,
+    "totalNewEnrolled": 292,
+    "totalCommittedEnrolled": 76,
+    "enrollByCampus": {
+      "CS2": 36,
+      "CS1": 90,
+      "CS3": 65,
+      "Khác": 25,
+      "CS5": 62,
+      "CS4": 14
+    }
+  },
+  "dataByLevel": {
+    "Tiểu học": {
+      "Tiếng Việt": {
+        "Khối 2": {
+          "CS3": {
+            "total": 48,
+            "belowAvg": 2,
+            "atBenchmark": 45,
+            "good": 42,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 66,
+            "belowAvg": 1,
+            "atBenchmark": 63,
+            "good": 54,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 32,
+            "belowAvg": 2,
+            "atBenchmark": 25,
+            "good": 22,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 24,
+            "belowAvg": 0,
+            "atBenchmark": 18,
+            "good": 12,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 68,
+            "belowAvg": 0,
+            "atBenchmark": 61,
+            "good": 57,
+            "benchmark": 7
+          }
+        },
+        "Khối 5": {
+          "CS5": {
+            "total": 47,
+            "belowAvg": 1,
+            "atBenchmark": 43,
+            "good": 36,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 38,
+            "belowAvg": 1,
+            "atBenchmark": 35,
+            "good": 28,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 23,
+            "belowAvg": 0,
+            "atBenchmark": 23,
+            "good": 22,
+            "benchmark": 7
+          },
+          "CS3": {
+            "total": 41,
+            "belowAvg": 0,
+            "atBenchmark": 41,
+            "good": 38,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 60,
+            "belowAvg": 2,
+            "atBenchmark": 53,
+            "good": 44,
+            "benchmark": 7
+          }
+        },
+        "Khối 4": {
+          "CS5": {
+            "total": 60,
+            "belowAvg": 1,
+            "atBenchmark": 56,
+            "good": 53,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 57,
+            "belowAvg": 2,
+            "atBenchmark": 53,
+            "good": 43,
+            "benchmark": 7
+          },
+          "CS3": {
+            "total": 44,
+            "belowAvg": 3,
+            "atBenchmark": 38,
+            "good": 36,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 34,
+            "belowAvg": 0,
+            "atBenchmark": 30,
+            "good": 22,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 15,
+            "belowAvg": 0,
+            "atBenchmark": 15,
+            "good": 11,
+            "benchmark": 7
+          }
+        },
+        "Khối 3": {
+          "CS2": {
+            "total": 36,
+            "belowAvg": 0,
+            "atBenchmark": 36,
+            "good": 33,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 28,
+            "belowAvg": 1,
+            "atBenchmark": 25,
+            "good": 22,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 56,
+            "belowAvg": 0,
+            "atBenchmark": 54,
+            "good": 48,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 59,
+            "belowAvg": 1,
+            "atBenchmark": 56,
+            "good": 53,
+            "benchmark": 7
+          },
+          "CS3": {
+            "total": 39,
+            "belowAvg": 3,
+            "atBenchmark": 34,
+            "good": 30,
+            "benchmark": 7
+          }
+        }
+      },
+      "Toán học": {
+        "Khối 4": {
+          "CS5": {
+            "total": 60,
+            "belowAvg": 0,
+            "atBenchmark": 57,
+            "good": 50,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 15,
+            "belowAvg": 0,
+            "atBenchmark": 13,
+            "good": 6,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 56,
+            "belowAvg": 0,
+            "atBenchmark": 52,
+            "good": 43,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 34,
+            "belowAvg": 1,
+            "atBenchmark": 29,
+            "good": 24,
+            "benchmark": 7
+          }
+        },
+        "Khối 2": {
+          "CS5": {
+            "total": 48,
+            "belowAvg": 0,
+            "atBenchmark": 47,
+            "good": 47,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 32,
+            "belowAvg": 0,
+            "atBenchmark": 28,
+            "good": 25,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 24,
+            "belowAvg": 0,
+            "atBenchmark": 22,
+            "good": 21,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 58,
+            "belowAvg": 0,
+            "atBenchmark": 58,
+            "good": 53,
+            "benchmark": 7
+          }
+        },
+        "Khối 5": {
+          "CS5": {
+            "total": 32,
+            "belowAvg": 1,
+            "atBenchmark": 31,
+            "good": 26,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 38,
+            "belowAvg": 1,
+            "atBenchmark": 34,
+            "good": 30,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 23,
+            "belowAvg": 0,
+            "atBenchmark": 22,
+            "good": 20,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 59,
+            "belowAvg": 1,
+            "atBenchmark": 55,
+            "good": 50,
+            "benchmark": 7
+          }
+        },
+        "Khối 3": {
+          "CS2": {
+            "total": 36,
+            "belowAvg": 0,
+            "atBenchmark": 36,
+            "good": 35,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 28,
+            "belowAvg": 0,
+            "atBenchmark": 28,
+            "good": 25,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 56,
+            "belowAvg": 1,
+            "atBenchmark": 55,
+            "good": 51,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 44,
+            "belowAvg": 1,
+            "atBenchmark": 40,
+            "good": 39,
+            "benchmark": 7
+          }
+        }
+      },
+      "Maths": {
+        "Khối 2": {
+          "CS3": {
+            "total": 47,
+            "belowAvg": 0,
+            "atBenchmark": 47,
+            "good": 46,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 10,
+            "belowAvg": 0,
+            "atBenchmark": 10,
+            "good": 10,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 18,
+            "belowAvg": 0,
+            "atBenchmark": 18,
+            "good": 18,
+            "benchmark": 7
+          }
+        },
+        "Khối 5": {
+          "CS3": {
+            "total": 41,
+            "belowAvg": 0,
+            "atBenchmark": 40,
+            "good": 38,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 15,
+            "belowAvg": 1,
+            "atBenchmark": 12,
+            "good": 11,
+            "benchmark": 7
+          }
+        },
+        "Khối 3": {
+          "CS3": {
+            "total": 40,
+            "belowAvg": 1,
+            "atBenchmark": 36,
+            "good": 29,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 15,
+            "belowAvg": 0,
+            "atBenchmark": 14,
+            "good": 14,
+            "benchmark": 7
+          }
+        },
+        "Khối 4": {
+          "CS3": {
+            "total": 44,
+            "belowAvg": 3,
+            "atBenchmark": 38,
+            "good": 26,
+            "benchmark": 7
+          }
+        }
+      },
+      "ESL": {
+        "Khối 3": {
+          "CS3": {
+            "total": 40,
+            "belowAvg": 1,
+            "atBenchmark": 34,
+            "good": 28,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 15,
+            "belowAvg": 0,
+            "atBenchmark": 14,
+            "good": 12,
+            "benchmark": 7
+          }
+        },
+        "Khối 2": {
+          "CS1": {
+            "total": 10,
+            "belowAvg": 2,
+            "atBenchmark": 7,
+            "good": 7,
+            "benchmark": 7
+          },
+          "CS3": {
+            "total": 48,
+            "belowAvg": 0,
+            "atBenchmark": 46,
+            "good": 37,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 18,
+            "belowAvg": 0,
+            "atBenchmark": 18,
+            "good": 17,
+            "benchmark": 7
+          }
+        },
+        "Khối 5": {
+          "CS3": {
+            "total": 41,
+            "belowAvg": 2,
+            "atBenchmark": 38,
+            "good": 36,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 15,
+            "belowAvg": 0,
+            "atBenchmark": 13,
+            "good": 12,
+            "benchmark": 7
+          }
+        },
+        "Khối 4": {
+          "CS3": {
+            "total": 44,
+            "belowAvg": 3,
+            "atBenchmark": 35,
+            "good": 26,
+            "benchmark": 7
+          }
+        }
+      },
+      "Tiếng Anh": {
+        "Khối 4": {
+          "CS5": {
+            "total": 60,
+            "belowAvg": 2,
+            "atBenchmark": 43,
+            "good": 25,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 34,
+            "belowAvg": 0,
+            "atBenchmark": 29,
+            "good": 25,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 56,
+            "belowAvg": 0,
+            "atBenchmark": 46,
+            "good": 41,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 15,
+            "belowAvg": 0,
+            "atBenchmark": 12,
+            "good": 9,
+            "benchmark": 7
+          }
+        },
+        "Khối 5": {
+          "CS5": {
+            "total": 32,
+            "belowAvg": 3,
+            "atBenchmark": 18,
+            "good": 12,
+            "benchmark": 7
+          },
+          "CS4": {
+            "total": 23,
+            "belowAvg": 0,
+            "atBenchmark": 19,
+            "good": 12,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 38,
+            "belowAvg": 0,
+            "atBenchmark": 33,
+            "good": 25,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 60,
+            "belowAvg": 1,
+            "atBenchmark": 51,
+            "good": 41,
+            "benchmark": 7
+          }
+        },
+        "Khối 2": {
+          "CS4": {
+            "total": 24,
+            "belowAvg": 0,
+            "atBenchmark": 19,
+            "good": 16,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 32,
+            "belowAvg": 0,
+            "atBenchmark": 23,
+            "good": 15,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 58,
+            "belowAvg": 2,
+            "atBenchmark": 48,
+            "good": 37,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 49,
+            "belowAvg": 1,
+            "atBenchmark": 37,
+            "good": 29,
+            "benchmark": 7
+          }
+        },
+        "Khối 3": {
+          "CS4": {
+            "total": 28,
+            "belowAvg": 1,
+            "atBenchmark": 24,
+            "good": 19,
+            "benchmark": 7
+          },
+          "CS1": {
+            "total": 56,
+            "belowAvg": 2,
+            "atBenchmark": 43,
+            "good": 33,
+            "benchmark": 7
+          },
+          "CS5": {
+            "total": 44,
+            "belowAvg": 2,
+            "atBenchmark": 29,
+            "good": 19,
+            "benchmark": 7
+          },
+          "CS2": {
+            "total": 36,
+            "belowAvg": 0,
+            "atBenchmark": 30,
+            "good": 26,
+            "benchmark": 7
+          }
+        }
+      }
+    },
+    "THCS": {
+      "Ngữ Văn": {
+        "Khối 7": {
+          "CS1": {
+            "total": 98,
+            "belowAvg": 10,
+            "atBenchmark": 78,
+            "good": 35,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 31,
+            "belowAvg": 1,
+            "atBenchmark": 27,
+            "good": 6,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 10,
+            "belowAvg": 0,
+            "atBenchmark": 9,
+            "good": 5,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 39,
+            "belowAvg": 0,
+            "atBenchmark": 36,
+            "good": 16,
+            "benchmark": 6
+          }
+        },
+        "Khối 9": {
+          "CS1": {
+            "total": 101,
+            "belowAvg": 17,
+            "atBenchmark": 73,
+            "good": 28,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 33,
+            "belowAvg": 7,
+            "atBenchmark": 23,
+            "good": 9,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 18,
+            "belowAvg": 1,
+            "atBenchmark": 16,
+            "good": 6,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 16,
+            "belowAvg": 6,
+            "atBenchmark": 5,
+            "good": 2,
+            "benchmark": 6
+          }
+        },
+        "Khối 8": {
+          "CS5": {
+            "total": 23,
+            "belowAvg": 4,
+            "atBenchmark": 17,
+            "good": 4,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 46,
+            "belowAvg": 1,
+            "atBenchmark": 41,
+            "good": 28,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 14,
+            "belowAvg": 4,
+            "atBenchmark": 10,
+            "good": 4,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 65,
+            "belowAvg": 1,
+            "atBenchmark": 57,
+            "good": 27,
+            "benchmark": 6
+          }
+        },
+        "Khối 6": {
+          "CS1": {
+            "total": 72,
+            "belowAvg": 1,
+            "atBenchmark": 69,
+            "good": 37,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 45,
+            "belowAvg": 1,
+            "atBenchmark": 43,
+            "good": 22,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 40,
+            "belowAvg": 0,
+            "atBenchmark": 40,
+            "good": 31,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 19,
+            "belowAvg": 4,
+            "atBenchmark": 10,
+            "good": 1,
+            "benchmark": 6
+          }
+        }
+      },
+      "Toán học": {
+        "Khối 8": {
+          "CS4": {
+            "total": 14,
+            "belowAvg": 11,
+            "atBenchmark": 2,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 23,
+            "belowAvg": 10,
+            "atBenchmark": 9,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 64,
+            "belowAvg": 24,
+            "atBenchmark": 25,
+            "good": 3,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 46,
+            "belowAvg": 46,
+            "atBenchmark": 0,
+            "good": 0,
+            "benchmark": 6
+          }
+        },
+        "Khối 9": {
+          "CS4": {
+            "total": 16,
+            "belowAvg": 4,
+            "atBenchmark": 11,
+            "good": 3,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 18,
+            "belowAvg": 0,
+            "atBenchmark": 16,
+            "good": 10,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 102,
+            "belowAvg": 15,
+            "atBenchmark": 75,
+            "good": 50,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 33,
+            "belowAvg": 6,
+            "atBenchmark": 22,
+            "good": 5,
+            "benchmark": 6
+          }
+        },
+        "Khối 6": {
+          "CS5": {
+            "total": 45,
+            "belowAvg": 11,
+            "atBenchmark": 31,
+            "good": 20,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 72,
+            "belowAvg": 2,
+            "atBenchmark": 68,
+            "good": 45,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 18,
+            "belowAvg": 3,
+            "atBenchmark": 13,
+            "good": 10,
+            "benchmark": 6
+          }
+        },
+        "Khối 7": {
+          "CS5": {
+            "total": 31,
+            "belowAvg": 0,
+            "atBenchmark": 31,
+            "good": 20,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 99,
+            "belowAvg": 3,
+            "atBenchmark": 89,
+            "good": 68,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 39,
+            "belowAvg": 21,
+            "atBenchmark": 18,
+            "good": 15,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 10,
+            "belowAvg": 1,
+            "atBenchmark": 9,
+            "good": 2,
+            "benchmark": 6
+          }
+        }
+      },
+      "Tiếng Anh": {
+        "Khối 6": {
+          "CS1": {
+            "total": 72,
+            "belowAvg": 5,
+            "atBenchmark": 59,
+            "good": 44,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 19,
+            "belowAvg": 8,
+            "atBenchmark": 10,
+            "good": 1,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 45,
+            "belowAvg": 8,
+            "atBenchmark": 30,
+            "good": 20,
+            "benchmark": 6
+          }
+        },
+        "Khối 7": {
+          "CS1": {
+            "total": 97,
+            "belowAvg": 13,
+            "atBenchmark": 73,
+            "good": 40,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 10,
+            "belowAvg": 3,
+            "atBenchmark": 6,
+            "good": 2,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 32,
+            "belowAvg": 5,
+            "atBenchmark": 25,
+            "good": 15,
+            "benchmark": 6
+          }
+        },
+        "Khối 9": {
+          "CS1": {
+            "total": 102,
+            "belowAvg": 13,
+            "atBenchmark": 84,
+            "good": 55,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 16,
+            "belowAvg": 4,
+            "atBenchmark": 11,
+            "good": 8,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 18,
+            "belowAvg": 3,
+            "atBenchmark": 13,
+            "good": 6,
+            "benchmark": 6
+          }
+        },
+        "Khối 8": {
+          "CS1": {
+            "total": 64,
+            "belowAvg": 10,
+            "atBenchmark": 45,
+            "good": 19,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 14,
+            "belowAvg": 1,
+            "atBenchmark": 11,
+            "good": 6,
+            "benchmark": 6
+          },
+          "CS5": {
+            "total": 23,
+            "belowAvg": 6,
+            "atBenchmark": 12,
+            "good": 3,
+            "benchmark": 6
+          }
+        }
+      },
+      "ESL": {
+        "Khối 8": {
+          "CS3": {
+            "total": 46,
+            "belowAvg": 5,
+            "atBenchmark": 25,
+            "good": 9,
+            "benchmark": 6
+          }
+        },
+        "Khối 9": {
+          "CS3": {
+            "total": 33,
+            "belowAvg": 2,
+            "atBenchmark": 25,
+            "good": 11,
+            "benchmark": 6
+          }
+        },
+        "Khối 7": {
+          "CS3": {
+            "total": 39,
+            "belowAvg": 0,
+            "atBenchmark": 39,
+            "good": 17,
+            "benchmark": 6
+          }
+        },
+        "Khối 6": {
+          "CS3": {
+            "total": 40,
+            "belowAvg": 0,
+            "atBenchmark": 34,
+            "good": 15,
+            "benchmark": 6
+          }
+        }
+      },
+      "Maths": {
+        "Khối 6": {
+          "CS3": {
+            "total": 40,
+            "belowAvg": 6,
+            "atBenchmark": 18,
+            "good": 7,
+            "benchmark": 6
+          }
+        },
+        "Khối 7": {
+          "CS3": {
+            "total": 39,
+            "belowAvg": 1,
+            "atBenchmark": 35,
+            "good": 27,
+            "benchmark": 6
+          }
+        },
+        "Khối 8": {
+          "CS3": {
+            "total": 46,
+            "belowAvg": 2,
+            "atBenchmark": 40,
+            "good": 21,
+            "benchmark": 6
+          }
+        }
+      }
+    },
+    "THPT": {
+      "Toán học": {
+        "Khối 10": {
+          "CS1": {
+            "total": 43,
+            "belowAvg": 9,
+            "atBenchmark": 31,
+            "good": 13,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 10,
+            "belowAvg": 8,
+            "atBenchmark": 1,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 7,
+            "belowAvg": 0,
+            "atBenchmark": 6,
+            "good": 4,
+            "benchmark": 6
+          }
+        },
+        "Khối 12": {
+          "CS3": {
+            "total": 7,
+            "belowAvg": 0,
+            "atBenchmark": 6,
+            "good": 5,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 7,
+            "belowAvg": 1,
+            "atBenchmark": 5,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 46,
+            "belowAvg": 8,
+            "atBenchmark": 27,
+            "good": 5,
+            "benchmark": 6
+          }
+        },
+        "Khối 11": {
+          "CS1": {
+            "total": 17,
+            "belowAvg": 14,
+            "atBenchmark": 1,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 11,
+            "belowAvg": 2,
+            "atBenchmark": 5,
+            "good": 2,
+            "benchmark": 6
+          }
+        }
+      },
+      "Ngữ Văn": {
+        "Khối 10": {
+          "CS1": {
+            "total": 40,
+            "belowAvg": 13,
+            "atBenchmark": 16,
+            "good": 3,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 7,
+            "belowAvg": 0,
+            "atBenchmark": 6,
+            "good": 2,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 9,
+            "belowAvg": 5,
+            "atBenchmark": 1,
+            "good": 1,
+            "benchmark": 6
+          }
+        },
+        "Khối 12": {
+          "CS1": {
+            "total": 44,
+            "belowAvg": 17,
+            "atBenchmark": 14,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 7,
+            "belowAvg": 2,
+            "atBenchmark": 4,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 7,
+            "belowAvg": 4,
+            "atBenchmark": 2,
+            "good": 0,
+            "benchmark": 6
+          }
+        },
+        "Khối 11": {
+          "CS1": {
+            "total": 17,
+            "belowAvg": 14,
+            "atBenchmark": 0,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 11,
+            "belowAvg": 3,
+            "atBenchmark": 7,
+            "good": 1,
+            "benchmark": 6
+          }
+        }
+      },
+      "Tin học / ICT": {
+        "Khối 12": {
+          "CS3": {
+            "total": 3,
+            "belowAvg": 0,
+            "atBenchmark": 3,
+            "good": 3,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 1,
+            "belowAvg": 0,
+            "atBenchmark": 1,
+            "good": 1,
+            "benchmark": 6
+          }
+        }
+      },
+      "Hóa học": {
+        "Khối 12": {
+          "CS1": {
+            "total": 2,
+            "belowAvg": 1,
+            "atBenchmark": 1,
+            "good": 1,
+            "benchmark": 6
+          },
+          "CS3": {
+            "total": 1,
+            "belowAvg": 0,
+            "atBenchmark": 1,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 2,
+            "belowAvg": 1,
+            "atBenchmark": 1,
+            "good": 0,
+            "benchmark": 6
+          }
+        }
+      },
+      "Lịch sử": {
+        "Khối 12": {
+          "CS3": {
+            "total": 2,
+            "belowAvg": 0,
+            "atBenchmark": 1,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 6,
+            "belowAvg": 1,
+            "atBenchmark": 2,
+            "good": 0,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 4,
+            "belowAvg": 1,
+            "atBenchmark": 3,
+            "good": 0,
+            "benchmark": 6
+          }
+        }
+      },
+      "Tiếng Anh": {
+        "Khối 10": {
+          "CS1": {
+            "total": 43,
+            "belowAvg": 15,
+            "atBenchmark": 25,
+            "good": 11,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 9,
+            "belowAvg": 8,
+            "atBenchmark": 1,
+            "good": 1,
+            "benchmark": 6
+          }
+        },
+        "Khối 12": {
+          "CS1": {
+            "total": 46,
+            "belowAvg": 12,
+            "atBenchmark": 22,
+            "good": 4,
+            "benchmark": 6
+          },
+          "CS4": {
+            "total": 7,
+            "belowAvg": 3,
+            "atBenchmark": 3,
+            "good": 0,
+            "benchmark": 6
+          }
+        },
+        "Khối 11": {
+          "CS1": {
+            "total": 17,
+            "belowAvg": 6,
+            "atBenchmark": 7,
+            "good": 3,
+            "benchmark": 6
+          }
+        }
+      },
+      "ESL": {
+        "Khối 10": {
+          "CS3": {
+            "total": 7,
+            "belowAvg": 0,
+            "atBenchmark": 6,
+            "good": 2,
+            "benchmark": 6
+          }
+        },
+        "Khối 11": {
+          "CS3": {
+            "total": 11,
+            "belowAvg": 0,
+            "atBenchmark": 11,
+            "good": 4,
+            "benchmark": 6
+          }
+        },
+        "Khối 12": {
+          "CS3": {
+            "total": 7,
+            "belowAvg": 0,
+            "atBenchmark": 6,
+            "good": 4,
+            "benchmark": 6
+          }
+        }
+      },
+      "Vật lí": {
+        "Khối 12": {
+          "CS3": {
+            "total": 2,
+            "belowAvg": 1,
+            "atBenchmark": 1,
+            "good": 1,
+            "benchmark": 6
+          },
+          "CS1": {
+            "total": 13,
+            "belowAvg": 6,
+            "atBenchmark": 7,
+            "good": 3,
+            "benchmark": 6
+          }
+        }
+      },
+      "Địa lí": {
+        "Khối 12": {
+          "CS1": {
+            "total": 5,
+            "belowAvg": 2,
+            "atBenchmark": 3,
+            "good": 0,
+            "benchmark": 6
+          }
+        }
+      },
+      "Giáo dục Kinh tế và Pháp luật": {
+        "Khối 12": {
+          "CS1": {
+            "total": 28,
+            "belowAvg": 17,
+            "atBenchmark": 4,
+            "good": 0,
+            "benchmark": 6
+          }
+        }
+      },
+      "Sinh học": {
+        "Khối 12": {
+          "CS1": {
+            "total": 2,
+            "belowAvg": 0,
+            "atBenchmark": 2,
+            "good": 2,
+            "benchmark": 6
+          }
+        }
+      }
+    }
+  },
+  "mappedList": [
+    {
+      "id": "cmq9a1r82000713z4g10iq90a",
+      "studentCode": "HS065",
+      "fullName": "Lê Gia Lân",
+      "campus": "CS2",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tâm lý"
+      ],
+      "directorNote": "Môn cam kết: [Tâm lý]\n\nĐạt nhưng yc cam kết tâm lý",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmq9a1v9l000z13z4i0j4dx3v",
+      "studentCode": "HS079",
+      "fullName": "Đào Trần Thảo Linh",
+      "campus": "CS2",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tiếng Việt",
+        "Tâm lý"
+      ],
+      "directorNote": "Môn cam kết: [Tâm lý, Tiếng Việt]\n\nĐạt (Cam kết tâm lý: rèn luyện thêm khả năng tập trung chú ý và ngôn ngữ Tiếng Việt)",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmq9a1weg001713z4409owljj",
+      "studentCode": "HS083",
+      "fullName": "Nguyễn Thanh Phúc",
+      "campus": "CS2",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Cần theo dõi thêm mức độ tập trung chú ý\nCần cải thiện thêm tiếng Anh (Không cần cam kết nhưng gvta sẽ phải tương tác kĩ với PH)\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 06/08/2026 15:57 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: Cần theo dõi thêm mức độ tập trung chú ý\nCần cải thiện thêm tiếng Anh (Không cần cam kết nhưng gvta sẽ phải tương tác kĩ với PH)",
+      "admissionResult": "Đạt",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmq9a9ffz002713z4ab48ghaa",
+      "studentCode": "HS101",
+      "fullName": "Nguyễn Gia Bảo",
+      "campus": "CS1",
+      "className": "9.2_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nTreo KQ KTĐV đợi KQ học tập cuối năm lớp 8 mới quyết địn",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4.25
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 2.3
+        }
+      ]
+    },
+    {
+      "id": "cmq9a9ghi002f13z4qf1qvu4q",
+      "studentCode": "HS105",
+      "fullName": "Lê Nguyên Khang",
+      "campus": "CS1",
+      "className": "2.1_CS1",
+      "grade": "2",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 9
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 8
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 7.9
+        }
+      ]
+    },
+    {
+      "id": "cmq9a9i15002r13z4yz434bf6",
+      "studentCode": "HS111",
+      "fullName": "Phạm Nguyễn Minh Anh",
+      "campus": "CS1",
+      "className": "10.2_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": null
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4.5
+        }
+      ]
+    },
+    {
+      "id": "cmqa9bjp0000hqkrutbz27w85",
+      "studentCode": "HS148",
+      "fullName": "Phan Anh Quân",
+      "campus": "CS3",
+      "className": "9INT_CS3",
+      "grade": "9",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [EPT]\n\nESL, Maths, Science",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 6
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.25
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 5.6
+        }
+      ]
+    },
+    {
+      "id": "cmqa9bnk8001bqkruvwzsixsb",
+      "studentCode": "HS163",
+      "fullName": "Đoàn Ngọc Thảo Chloe",
+      "campus": "CS3",
+      "className": "2.1INT_CS3",
+      "grade": "2",
+      "committedSubjects": [
+        "Tiếng Việt",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Cam kết Tiếng Việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/09/2026 15:26 | Trần Thị Thanh | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Cam kết Tiếng Việt",
+      "admissionResult": "Đạt - Giao lưu",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 4
+        },
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 8
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 9.8
+        }
+      ]
+    },
+    {
+      "id": "cmqa9bqzq001zqkru9243a3eh",
+      "studentCode": "HS175",
+      "fullName": "Hồ Hữu Bách",
+      "campus": "CS3",
+      "className": "4UK_CS3",
+      "grade": "4",
+      "committedSubjects": [
+        "Tiếng Việt"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Việt]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 1.5
+        },
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 3
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 7.8
+        }
+      ]
+    },
+    {
+      "id": "cmqa9eifk0029qkru6t8wgdol",
+      "studentCode": "HS179",
+      "fullName": "Ayesha Mirza",
+      "campus": "CS4",
+      "className": "6S_CS4",
+      "grade": "6",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Việt"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán, Tiếng Việt]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 2.25
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 3.7
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3.8
+        }
+      ]
+    },
+    {
+      "id": "cmqa9g1mk004jqkruqlpgs4wx",
+      "studentCode": "HS218",
+      "fullName": "Mai Minh Minh",
+      "campus": "CS5",
+      "className": "6.5_CS5",
+      "grade": "6",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4.25
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.5
+        }
+      ]
+    },
+    {
+      "id": "cmqa9g745005rqkru1yw41ia2",
+      "studentCode": "HS240",
+      "fullName": "Lâm Minh Khang",
+      "campus": "CS5",
+      "className": "2.5_CS5",
+      "grade": "2",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 9.5
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 7.3
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 6.1
+        }
+      ]
+    },
+    {
+      "id": "cmqangnky00033fsf60yngijh",
+      "studentCode": "HS246",
+      "fullName": "Phan Đình Phùng",
+      "campus": "CS1",
+      "className": "10.1_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Toán",
+        "Ngữ Văn",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4.75
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 2
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.6
+        }
+      ]
+    },
+    {
+      "id": "cmqapk1os0007nz6c3clpte3j",
+      "studentCode": "HS249",
+      "fullName": "Mai Huy Thắng",
+      "campus": "CS1",
+      "className": "7.1_CS1",
+      "grade": "7",
+      "committedSubjects": [
+        "Toán"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán]\n\nĐạt cam kết Toán\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 12/08/2026 08:31 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 8.8
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 8
+        }
+      ]
+    },
+    {
+      "id": "cmqapr2pi0005k49ucnlm0y27",
+      "studentCode": "HS252",
+      "fullName": "Phạm Thùy Gia Hân ",
+      "campus": "CS1",
+      "className": "10.2_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 5.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.7
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 7.25
+        }
+      ]
+    },
+    {
+      "id": "cmqav8ywl0003srxummzrf7d2",
+      "studentCode": "HS256",
+      "fullName": "Nguyễn Bình Phương An",
+      "campus": "CS1",
+      "className": "10.1_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết Anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.25
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.8
+        }
+      ]
+    },
+    {
+      "id": "cmqavg7db0005srxuu2uok43h",
+      "studentCode": "HS257",
+      "fullName": "Lê Bảo Trâm",
+      "campus": "CS1",
+      "className": "7.3_CS1",
+      "grade": "7",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 12/08/2026 08:48 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.9
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 8.3
+        }
+      ]
+    },
+    {
+      "id": "cmqavh57f0001t6k9crbcq4eu",
+      "studentCode": "HS258",
+      "fullName": "Lê Bảo Châu",
+      "campus": "CS1",
+      "className": "9.3_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết Toán; Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 13:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán; Anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 5.2
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3.5
+        }
+      ]
+    },
+    {
+      "id": "cmqk9bk3d0001faz3o4xv4x83",
+      "studentCode": "HS259",
+      "fullName": "Phạm Gia Hương",
+      "campus": "CS1",
+      "className": "10.2_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]\n\nCần cam kết",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 6.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 5.1
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4
+        }
+      ]
+    },
+    {
+      "id": "cmqumepcf0003bopcuf5ecgpr",
+      "studentCode": "HS265",
+      "fullName": "Đỗ An Nhiên ",
+      "campus": "CS1",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmqywy60d0005se5dh2i8rs86",
+      "studentCode": "HS275",
+      "fullName": "Hà Đặng Phước Huy",
+      "campus": "CS1",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmqywz7ey0005m8o2u1z32gu4",
+      "studentCode": "HS276",
+      "fullName": "HÀ ĐẶNG BẢO NGỌC",
+      "campus": "CS4",
+      "className": "3S_CS4",
+      "grade": "3",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 8.3
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 7
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 2.8
+        }
+      ]
+    },
+    {
+      "id": "cmr4peyic00013uqa02511mdz",
+      "studentCode": "HS283",
+      "fullName": "Nguyễn Thị Thu Thúy",
+      "campus": "CS4",
+      "className": "10S_CS4",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4.25
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 1.9
+        }
+      ]
+    },
+    {
+      "id": "cmrbfkbrn00012rhyr4u2s8ut",
+      "studentCode": "HS286",
+      "fullName": "ĐỖ NGUYỄN AN KHÔI",
+      "campus": "CS2",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Chung / Theo dõi"
+      ],
+      "directorNote": "(cần theo dõi mức độ tập trung chú ý)",
+      "admissionResult": "Đạt",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmrbk5mnu0006ze67iezug4cj",
+      "studentCode": "HS288",
+      "fullName": "Trần Hoàng Anh ",
+      "campus": "CS1",
+      "className": "9.2_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 6
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4
+        }
+      ]
+    },
+    {
+      "id": "cmrcxbu5x00026g6vqsx1pdvf",
+      "studentCode": "HS293",
+      "fullName": "Huỳnh Hoàng An",
+      "campus": "CS4",
+      "className": "3S_CS4",
+      "grade": "3",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Việt",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Cam kết Toán, Tiếng việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/09/2026 13:58 | Cao Thanh Trung | Đạt - Giao lưu ➔ Đạt - Giao lưu | Lý do: Cam kết Toán, Tiếng việt\n• 17/09/2026 15:19 | Cao Thanh Trung | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Cam kết Toán, Tiếng việt\n• 06:57 18/09/2026 | Dương Xuân Thắng | Chính khóa ➔ Giao lưu | Lý do: 03/08/2026\t2026-2027\t3S_CS4",
+      "admissionResult": "Đạt - Giao lưu",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 8.3
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 3
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 9.8
+        }
+      ]
+    },
+    {
+      "id": "cmrfpn7110001qbh85z8qq365",
+      "studentCode": "HS306",
+      "fullName": "Nguyễn Ngọc Thiên Bảo",
+      "campus": "CS1",
+      "className": "2.3INT_CS1",
+      "grade": "2",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 8
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 4
+        },
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 10
+        }
+      ]
+    },
+    {
+      "id": "cmrfpp46l0003qbh8rv5g2wm8",
+      "studentCode": "HS307",
+      "fullName": "Nguyễn Thanh Thảo",
+      "campus": "CS1",
+      "className": "9.4_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 5.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.6
+        }
+      ]
+    },
+    {
+      "id": "cmrilevdj0003pcj4ykwin8w9",
+      "studentCode": "HS308",
+      "fullName": "Lê Khánh Hà",
+      "campus": "CS1",
+      "className": "10.2_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 7
+        }
+      ]
+    },
+    {
+      "id": "cmrk1a14p0003zmpmnrq7dham",
+      "studentCode": "HS311",
+      "fullName": "Nguyễn Đại Phúc ",
+      "campus": "CS1",
+      "className": "10.1_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.1
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 6.2
+        }
+      ]
+    },
+    {
+      "id": "cmrmwjd5s00017t091py6xdbt",
+      "studentCode": "HS331",
+      "fullName": "LÊ ĐÌNH SĨ PHÚ",
+      "campus": "CS1",
+      "className": "Chưa rõ",
+      "grade": "6",
+      "committedSubjects": [
+        "Toán"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmrnbzd8f0001g2eblgv255ta",
+      "studentCode": "HS334",
+      "fullName": "Đặng Ái Thiên Vân",
+      "campus": "CS5",
+      "className": "3.6_CS5",
+      "grade": "3",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt, cam kết tăng cường thêm tiếng anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 10
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 9
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 5.6
+        }
+      ]
+    },
+    {
+      "id": "cmrtz6ywz0003usvobumsgdcb",
+      "studentCode": "HS701020014",
+      "fullName": "Ngô Thục Đan",
+      "campus": "CS1",
+      "className": "9.1_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Tâm lý"
+      ],
+      "directorNote": "Môn cam kết: [Tâm lý]\n\nĐạt cam kết tâm lí. Mời PH gặp BGH và T. Đài khi làm thủ tục nhập học.",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 8.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 7.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3
+        }
+      ]
+    },
+    {
+      "id": "cmryk2rua000113tlcvwiyuok",
+      "studentCode": "HS701020024",
+      "fullName": "Bùi Tuấn Anh",
+      "campus": "CS5",
+      "className": "7.5_CS5",
+      "grade": "7",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt, cam kết tăng cường tiếng anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 19/08/2026 16:46 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt, cam kết tăng cường tiếng anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 7.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 3.5
+        }
+      ]
+    },
+    {
+      "id": "cmryncwmi0003a81hfqskkw1h",
+      "studentCode": "HS701020029",
+      "fullName": "Đặng Ngọc Bảo Ngân",
+      "campus": "CS4",
+      "className": "10S_CS4",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3.5
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 2.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 2.5
+        }
+      ]
+    },
+    {
+      "id": "cmryndh8k0005a81h02oc3tex",
+      "studentCode": "HS701020030",
+      "fullName": "Ngô Nhật Khang",
+      "campus": "CS4",
+      "className": "10S_CS4",
+      "grade": "10",
+      "committedSubjects": [
+        "Toán",
+        "Ngữ Văn",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3.5
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 5.75
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 3.1
+        }
+      ]
+    },
+    {
+      "id": "cmrynfkgx0001fvn7ztdigds0",
+      "studentCode": "HS701020033",
+      "fullName": "Võ Hoàng Vi",
+      "campus": "CS4",
+      "className": "6S_CS4",
+      "grade": "6",
+      "committedSubjects": [
+        "Toán"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán]\n\n",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4.75
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 6.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.3
+        }
+      ]
+    },
+    {
+      "id": "cmrynnuyx000h9fun5btuwlc2",
+      "studentCode": "HS701020036",
+      "fullName": "Phan Hải Đăng",
+      "campus": "CS2",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Chung / Theo dõi"
+      ],
+      "directorNote": "theo dõi thêm khả năng phát triển ngôn ngữ\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 06/08/2026 16:25 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: theo dõi thêm khả năng phát triển ngôn ngữ",
+      "admissionResult": "Đạt",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmsoc2gkb0001fzahcjjeyf4t",
+      "studentCode": "HS701020061",
+      "fullName": "Võ Như Quỳnh",
+      "campus": "CS4",
+      "className": "7S_CS4",
+      "grade": "7",
+      "committedSubjects": [
+        "Toán",
+        "Ngữ Văn",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 14:42 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 6
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 2.9
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6
+        }
+      ]
+    },
+    {
+      "id": "cmsocj9qe0001nqfoa5d8n9ie",
+      "studentCode": "HS701020064",
+      "fullName": "Đỗ Thành Nguyên",
+      "campus": "CS4",
+      "className": "10S_CS4",
+      "grade": "10",
+      "committedSubjects": [
+        "Toán",
+        "Ngữ Văn",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 14:51 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 0
+        }
+      ]
+    },
+    {
+      "id": "cmsocoo9t0007nqfowy9nkme7",
+      "studentCode": "HS701020065",
+      "fullName": "Phạm Kiều Anh",
+      "campus": "CS4",
+      "className": "6S_CS4",
+      "grade": "6",
+      "committedSubjects": [
+        "Ngữ Văn",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Ngữ Văn]\n\nĐạt cam kết Ngữ văn\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 14:27 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Ngữ văn",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 7.3
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 9.3
+        }
+      ]
+    },
+    {
+      "id": "cmsr002m600013kj3fmxpdkj4",
+      "studentCode": "HS701020076",
+      "fullName": "Govorushko Mikhail",
+      "campus": "CS3",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tiếng Việt",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Việt]\n\nĐạt cam kết Tiếng Việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 13/08/2026 13:54 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmssdgsq10001eo12h7dghd58",
+      "studentCode": "HS701020085",
+      "fullName": "Lecomte Mailys Mộc Yên",
+      "campus": "CS3",
+      "className": "4INT_CS3",
+      "grade": "4",
+      "committedSubjects": [
+        "Tiếng Việt",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Đạt cam kết Tiếng Việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/09/2026 15:27 | Trần Thị Thanh | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Đạt cam kết Tiếng Việt\n• 14/08/2026 10:40 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+      "admissionResult": "Đạt - Giao lưu",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 7.3
+        }
+      ]
+    },
+    {
+      "id": "cmssk8zaw0001fnej7o3mi960",
+      "studentCode": "HS701020094",
+      "fullName": "Hà Minh Khuê",
+      "campus": "CS3",
+      "className": "5.1INT_CS3",
+      "grade": "5",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nPhần năng lực ngôn ngữ còn hơi yếu so với yêu cầu của chương trình. Nếu theo học hệ S sẽ phù hợp hơn. Trường hợp PH mong muốn học hệ INT, em cần luyện thêm nhiều về từ vựng & ngữ pháp để theo kịp tiến độ chương trình\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 13:35 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Phần năng lực ngôn ngữ còn hơi yếu so với yêu cầu của chương trình. Nếu theo học hệ S sẽ phù hợp hơn. Trường hợp PH mong muốn học hệ INT, em cần luyện thêm nhiều về từ vựng & ngữ pháp để theo kịp tiến độ chương trình",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 8
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 3.6
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 9
+        }
+      ]
+    },
+    {
+      "id": "cmssnr9f000055iyeufa3xrqs",
+      "studentCode": "HS202",
+      "fullName": "Võ Thị Anh Thư",
+      "campus": "CS4",
+      "className": "7S_CS4",
+      "grade": "7",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 15:11 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 2.6
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4.3
+        }
+      ]
+    },
+    {
+      "id": "cmssrof9g000613yefuh4bk07",
+      "studentCode": "HS701020095",
+      "fullName": "Hoàng Bữu Minh Hưng",
+      "campus": "CS2",
+      "className": "3.4_CS2",
+      "grade": "3",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nGhi chú: PH hỗ trợ con bổ trợ thêm các kỹ năng tiếng Anh trong dịp Hè!\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 16:59 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Ghi chú: PH hỗ trợ con bổ trợ thêm các kỹ năng tiếng Anh trong dịp Hè!",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 8
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 8
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 5.5
+        }
+      ]
+    },
+    {
+      "id": "cmstsaue20001g0q3fdi6c055",
+      "studentCode": "HS701020105",
+      "fullName": "Lê Hồ Duy Khang",
+      "campus": "CS2",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tâm lý"
+      ],
+      "directorNote": "Đạt (GVCN theo dõi tâm lý)\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 15/08/2026 10:12 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: Đạt (GVCN theo dõi tâm lý)",
+      "admissionResult": "Đạt",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmstu8q7o000163i3tif32ee3",
+      "studentCode": "HS132",
+      "fullName": "Phạm Gia Hưng",
+      "campus": "CS5",
+      "className": "2.5_CS5",
+      "grade": "7",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 11:22 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 10
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 9.4
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 9.1
+        }
+      ]
+    },
+    {
+      "id": "cmstub33f0001590l5uiqc4rv",
+      "studentCode": "HS116",
+      "fullName": "Lê Nguyệt Cát",
+      "campus": "CS1",
+      "className": "7.4_CS1",
+      "grade": "7",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 11:22 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 8
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 3.7
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 5.3
+        }
+      ]
+    },
+    {
+      "id": "cmstubssv00019a76czsz7hkc",
+      "studentCode": "HS129",
+      "fullName": "Hoàng Bảo Quyên",
+      "campus": "CS1",
+      "className": "9.2_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"Kt thấp quá ko đạt\nHỗ trợ nhập học đạt cam kết để 3 chị em làm thủ tục nhập học sớm\"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 11:46 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Kt thấp quá ko đạt\nHỗ trợ nhập học đạt cam kết để 3 chị em làm thủ tục nhập học sớm\"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 5.25
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.6
+        }
+      ]
+    },
+    {
+      "id": "cmstucfk30003590lp2a24r7b",
+      "studentCode": "HS131",
+      "fullName": "Phạm Gia Bảo",
+      "campus": "CS1",
+      "className": "9.3_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]\n\nĐạt cam kết Toán; Anh\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 11:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán; Anh\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 3.6
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 3.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3.75
+        }
+      ]
+    },
+    {
+      "id": "cmstud0i2000111ml5bd2wiiu",
+      "studentCode": "HS124",
+      "fullName": "Đặng Hoàng Như Ý",
+      "campus": "CS1",
+      "className": "10.2_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 08:23 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 6.8
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": null
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.75
+        }
+      ]
+    },
+    {
+      "id": "cmstudnnz000311mlhnnik78v",
+      "studentCode": "HS126",
+      "fullName": "Phạm Hải Như",
+      "campus": "CS1",
+      "className": "10.2_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (viết), Tiếng Anh (vấn đáp)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 08:23 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4.3
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.6
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4.25
+        }
+      ]
+    },
+    {
+      "id": "cmsy03zh80001elqr6mudq1xr",
+      "studentCode": "HS701020117",
+      "fullName": "Nguyễn Thành Long",
+      "campus": "CS1",
+      "className": "9.3_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"Nên tư vấn học hệ S\nThầy Long: Điểm theo học bạ và ktra như này thì đạt cam kết toán anh (hệ S)\"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 08:57 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Nên tư vấn học hệ S\nThầy Long: Điểm theo học bạ và ktra như này thì đạt cam kết toán anh (hệ S)\"",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 6
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4
+        }
+      ]
+    },
+    {
+      "id": "cmsy2fc270003vsyucpbev32h",
+      "studentCode": "HS701020124",
+      "fullName": "Trần Quang Thiên Ân",
+      "campus": "CS1",
+      "className": "10.1_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Toán"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán]\n\nĐạt cam kết toán\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết toán",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 7.25
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 9
+        }
+      ]
+    },
+    {
+      "id": "cmsy2ot0g0001ry9qr1de3m9y",
+      "studentCode": "HS701020125",
+      "fullName": "Lê Hồ Gia Huy",
+      "campus": "CS1",
+      "className": "10.2_CS1",
+      "grade": "10",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại lần 3\nĐạt cam kết Tiếng Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:42 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại lần 3\nĐạt cam kết Tiếng Anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.4
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 4.5
+        }
+      ]
+    },
+    {
+      "id": "cmsy2s3c40001114l9pwd7dsi",
+      "studentCode": "HS701020126",
+      "fullName": "Trương Lê Hưng Phát",
+      "campus": "CS1",
+      "className": "12.1_CS1",
+      "grade": "12",
+      "committedSubjects": [
+        "Toán"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán]\n\nPhát đạt cam kết toán. Phát đổi môn tổ hợp.\nChưa gửi thư chúc mừng chờ ý kiến Sở\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:44 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Phát đạt cam kết toán. Phát đổi môn tổ hợp.\nChưa gửi thư chúc mừng chờ ý kiến Sở",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 3.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 5.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 5.1
+        },
+        {
+          "subjectName": "Vật lí",
+          "subjectCode": "VLI",
+          "compositeScore": 4
+        }
+      ]
+    },
+    {
+      "id": "cmsy4hdrn0001kkem6semba2f",
+      "studentCode": "HS701020122",
+      "fullName": "Nguyễn Văn Tuấn Kiệt",
+      "campus": "CS1",
+      "className": "9.2_CS1",
+      "grade": "9",
+      "committedSubjects": [
+        "Toán",
+        "Ngữ Văn",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"HS trung bình, hk khá không đạt\n02/06/2026: HS Nguyễn Văn Tuấn Kiệt vừa rồi KTL nhưng kết quả Không Đạt => sau anh Long cân nhắc lại vì gia đình cho nhập học cả 2 bạn nên sẽ hỗ trợ cho bạn Kiệt Đạt cam kết các môn Toán, Anh \nHiện tại PH đã hoàn tất thủ tục nhập học cho 2 bạn, và có lịch hẹn gặp anh Long vào sáng mai\"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:56 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"HS trung bình, hk khá không đạt\n02/06/2026: HS Nguyễn Văn Tuấn Kiệt vừa rồi KTL nhưng kết quả Không Đạt => sau anh Long cân nhắc lại vì gia đình cho nhập học cả 2 bạn nên sẽ hỗ trợ cho bạn Kiệt Đạt cam kết các môn Toán, Anh \nHiện tại PH đã hoàn tất thủ tục nhập học cho 2 bạn, và có lịch hẹn gặp anh Long vào sáng mai\"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 4.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 2.9
+        }
+      ]
+    },
+    {
+      "id": "cmsyejwnv00035lcxu45kr1vq",
+      "studentCode": "HS701020134",
+      "fullName": "Nguyễn Daniil",
+      "campus": "CS1",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tiếng Việt"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Việt]\n\nĐạt cam kết Tiếng Việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:05 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmsyga5uo0001o72056qfw5jh",
+      "studentCode": "HS701020137",
+      "fullName": "Trần Đăng Quang",
+      "campus": "CS1",
+      "className": "6.3_CS1",
+      "grade": "6",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:52 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 6.75
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 5.6
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.5
+        }
+      ]
+    },
+    {
+      "id": "cmsyger10000fubp2yj6dkps4",
+      "studentCode": "HS701020139",
+      "fullName": "Trần Thục Quyên",
+      "campus": "CS1",
+      "className": "7.4_CS1",
+      "grade": "7",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết TA\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 6
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 9
+        }
+      ]
+    },
+    {
+      "id": "cmsygk2xp0003j1ngvpqeybuk",
+      "studentCode": "HS701020140",
+      "fullName": "Lương Bích Ngọc",
+      "campus": "CS1",
+      "className": "6.3_CS1",
+      "grade": "6",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết TA\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7.25
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.8
+        }
+      ]
+    },
+    {
+      "id": "cmsygoq7k0005j1ngk0abtv8g",
+      "studentCode": "HS701020141",
+      "fullName": "Nguyễn Quỳnh Như",
+      "campus": "CS1",
+      "className": "3.1_CS1",
+      "grade": "6",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết TA\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 9
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 9.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 9.1
+        }
+      ]
+    },
+    {
+      "id": "cmt2o1ibb0001t81ckhoko2tp",
+      "studentCode": "HS701020154",
+      "fullName": "Vũ Đức Thịnh",
+      "campus": "CS5",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"ĐẠT \nCam kết bổ sung tiếng anh \"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 21/08/2026 15:44 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"ĐẠT \nCam kết bổ sung tiếng anh \"",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmt2r2kn70001cdjymo1sjv1u",
+      "studentCode": "HS701020159",
+      "fullName": "Nguyễn Minh Anh",
+      "campus": "CS5",
+      "className": "6.5_CS5",
+      "grade": "6",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"Đạt - Tăng cường cam kết tiếng anh \"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 21/08/2026 16:53 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt - Tăng cường cam kết tiếng anh \"",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 6.75
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 8.25
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 5.2
+        }
+      ]
+    },
+    {
+      "id": "cmt2rsvyv0031mq3ztosp760s",
+      "studentCode": "HS701020158",
+      "fullName": "Đỗ Duy Khôi",
+      "campus": "CS5",
+      "className": "6.5_CS5",
+      "grade": "6",
+      "committedSubjects": [
+        "Toán",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]\n\n\"ĐẠT\nHỗ trợ thêm ở nhà\"\n\nKiểm tra lại đợt trước từ kỳ: cmpwam1ub0007ttjirpq54536\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 22/08/2026 08:48 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"ĐẠT\nHỗ trợ thêm ở nhà\"\n\nKiểm tra lại đợt trước từ kỳ: cmpwam1ub0007ttjirpq54536",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 2.25
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 6.75
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.5
+        }
+      ]
+    },
+    {
+      "id": "cmt3urnx30001c9fz60g0x805",
+      "studentCode": "HS701020163",
+      "fullName": "Lê Nguyễn Hoàng Bảo",
+      "campus": "CS5",
+      "className": "7.5_CS5",
+      "grade": "7",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt, cam kết tăng cường tiếng anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 24/08/2026 08:55 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt, cam kết tăng cường tiếng anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 7
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 8.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 3.2
+        }
+      ]
+    },
+    {
+      "id": "cmt3vcaow000595s07wg9ivoe",
+      "studentCode": "HS701020167",
+      "fullName": "Nguyễn Hoàng Đạt",
+      "campus": "CS5",
+      "className": "3.2INT_CS5",
+      "grade": "3",
+      "committedSubjects": [
+        "Chung / Theo dõi"
+      ],
+      "directorNote": "\"ĐẠT\ncho ký thoã thuận cam kết như các hs đã từng học giao lưu\"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 16:08 | Đỗ Quang Trung | Đạt ➔ Đạt - Giao lưu | Lý do: \"ĐẠT\ncho ký thoã thuận cam kết như các hs đã từng học giao lưu\"\n• 24/08/2026 08:56 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt | Lý do: \"ĐẠT",
+      "admissionResult": "Đạt - Giao lưu",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 7.8
+        },
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 6
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 2
+        }
+      ]
+    },
+    {
+      "id": "cmt3vj3uk000b95s04kwikoq8",
+      "studentCode": "HS701020170",
+      "fullName": "Nguyễn Hoàng Phúc",
+      "campus": "CS5",
+      "className": "5.2INT_CS5",
+      "grade": "5",
+      "committedSubjects": [
+        "Chung / Theo dõi"
+      ],
+      "directorNote": "\"ĐẠT\ncho ký thoã thuận cam kết như các hs đã từng học giao lưu\"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 16:07 | Đỗ Quang Trung | Đạt ➔ Đạt - Giao lưu | Lý do: \"ĐẠT\ncho ký thoã thuận cam kết như các hs đã từng học giao lưu\"\n• 24/08/2026 08:56 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt | Lý do: \"ĐẠT",
+      "admissionResult": "Đạt - Giao lưu",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 1
+        },
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 3
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 9.2
+        }
+      ]
+    },
+    {
+      "id": "cmt6l475w0002gzo197zwrv2b",
+      "studentCode": "HS701020166",
+      "fullName": "Trần Minh Huy",
+      "campus": "CS5",
+      "className": "2.6_CS5",
+      "grade": "2",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"Đạt \nCam kết tăng cường thêm Tiếng Anh \"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 24/08/2026 09:06 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt \nCam kết tăng cường thêm Tiếng Anh \"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 10
+        },
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 9.5
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 7.4
+        }
+      ]
+    },
+    {
+      "id": "cmt9jhnpw0004jhkfya6npywn",
+      "studentCode": "HS701020183",
+      "fullName": "Nguyễn Ngọc Minh",
+      "campus": "CS1",
+      "className": "7.2_CS1",
+      "grade": "7",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Anh (viết), Tiếng Anh (vấn đáp)]\n\nĐẠT CK\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 14:12 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: ĐẠT CK",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 5.75
+        },
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4.1
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 8.75
+        }
+      ]
+    },
+    {
+      "id": "cmtb9vzeo0001b367pgpfdfqp",
+      "studentCode": "HS701020184",
+      "fullName": "Phùng Đức Thiên Ân",
+      "campus": "CS3",
+      "className": "3.1INT_CS3",
+      "grade": "3",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Cam kết môn Tiếng Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 08:22 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Cam kết môn Tiếng Anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Việt",
+          "subjectCode": "TVI",
+          "compositeScore": 6
+        },
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 6.55
+        }
+      ]
+    },
+    {
+      "id": "cmtcg8r4200012csibdl65mvs",
+      "studentCode": "HS701020185",
+      "fullName": "Phùng Chí Nam Anh",
+      "campus": "CS3",
+      "className": "8.1INT_CS3",
+      "grade": "8",
+      "committedSubjects": [
+        "Tiếng Anh"
+      ],
+      "directorNote": "Cam kết môn Tiếng Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 08:25 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Cam kết môn Tiếng Anh",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 5
+        },
+        {
+          "subjectName": "ESL",
+          "subjectCode": "ESL",
+          "compositeScore": 3.5
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": null
+        },
+        {
+          "subjectName": "Maths",
+          "subjectCode": "MAT",
+          "compositeScore": 2
+        }
+      ]
+    },
+    {
+      "id": "cmtkwv7h00005buokyyvajmzx",
+      "studentCode": "HS701020186",
+      "fullName": "Nguyễn Đặng Bảo Trâm ",
+      "campus": "CS1",
+      "className": "8.2_CS1",
+      "grade": "8",
+      "committedSubjects": [
+        "Chung / Theo dõi"
+      ],
+      "directorNote": "Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 05/09/2026 09:17 | Tống Thiên Long | Chưa duyệt ➔ Đạt | Lý do: Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí",
+      "admissionResult": "Đạt",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": [
+        {
+          "subjectName": "Tiếng Anh",
+          "subjectCode": "TA",
+          "compositeScore": 4
+        },
+        {
+          "subjectName": "Toán học",
+          "subjectCode": "TOA",
+          "compositeScore": 3
+        },
+        {
+          "subjectName": "Ngữ Văn",
+          "subjectCode": "NVA",
+          "compositeScore": 6.5
+        }
+      ]
+    },
+    {
+      "id": "cmtmpbm6c000512yks2sh1wdh",
+      "studentCode": "HS701020188",
+      "fullName": "Sangadziev Aron",
+      "campus": "CS2",
+      "className": "Chưa rõ",
+      "grade": "1",
+      "committedSubjects": [
+        "Tiếng Việt"
+      ],
+      "directorNote": "Môn cam kết: [Tiếng Việt]\n\n\"Đạt (cam kết Tiếng Việt => sau HK1 đánh giá lại, nếu không đạt yêu cầu môn Tiếng Việt xem xét dừng HĐĐT)\np.s. Lưu ý bổ sung nhận xét của GV Tiếng Việt đối với hs người NN\"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 22/09/2026 11:35 | Phạm Thị Khánh | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt (cam kết Tiếng Việt => sau HK1 đánh giá lại, nếu không đạt yêu cầu môn Tiếng Việt xem xét dừng HĐĐT)\np.s. Lưu ý bổ sung nhận xét của GV Tiếng Việt đối với hs người NN\"",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    },
+    {
+      "id": "cmtxv0xdg000d10nuglzf3vl6",
+      "studentCode": "HS701020195",
+      "fullName": "Ngô Huỳnh Anh Minh",
+      "campus": "CS4",
+      "className": "Chưa rõ",
+      "grade": "6",
+      "committedSubjects": [
+        "Toán",
+        "Ngữ Văn",
+        "Tiếng Anh"
+      ],
+      "directorNote": "Môn cam kết: [Toán học, Ngữ Văn]\n\nĐẠT CK\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 22/09/2026 11:33 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: ĐẠT CK",
+      "admissionResult": "Đạt cam kết",
+      "ksdvMath": null,
+      "ksdvViet": null,
+      "ksdvVan": null,
+      "ksdvEng": null,
+      "ksdvPsychology": null,
+      "ksdnEntries": []
+    }
+  ]
+}
