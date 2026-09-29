@@ -21,7 +21,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    const activity = await prisma.activityRecord.findUnique({
+    let activity = await prisma.activityRecord.findUnique({
       where: { id },
       include: {
         catalog: true,
@@ -44,6 +44,32 @@ export async function GET(
         }
       }
     });
+
+    if (!activity) {
+      activity = await prisma.activityRecord.findFirst({
+        where: { catalogId: id },
+        include: {
+          catalog: true,
+          academicYear: true,
+          teacher: {
+            include: { user: true }
+          },
+          participants: {
+            include: {
+              student: {
+                include: {
+                  class: {
+                    include: {
+                      campus: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+    }
 
     if (!activity) {
       // Tìm trong ActivityCatalog nếu chưa có ActivityRecord
@@ -224,20 +250,257 @@ export async function PUT(
     const body = await req.json();
     const { action } = body;
 
-    const existing = await prisma.activityRecord.findUnique({
+    let existing = await prisma.activityRecord.findUnique({
       where: { id },
-      include: { participants: true }
+      include: { participants: true, teacher: true }
     });
 
     if (!existing) {
-      return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
+      existing = await prisma.activityRecord.findFirst({
+        where: { catalogId: id },
+        include: { participants: true, teacher: true }
+      });
     }
 
     const session = await auth();
     const userRole = (session?.user as any)?.role || '';
     const upperRole = (userRole || '').toUpperCase().trim();
     const hasExpManageUpdate = await hasModulePermission(userRole, ["EXPERIENTIAL_ACTIVITIES", "EXP_ACT_MANAGE"], "canUpdate");
-    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN', 'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'].includes(upperRole);
+    const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN', 'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS', 'TEACHER', 'GV_MN', 'GVNN', 'GIAO_VIEN'].includes(upperRole) || hasExpManageUpdate;
+
+    if (!existing) {
+      // Trường hợp ID là từ ActivityCatalog và người dùng đang triển khai/phát hành từ Catalog
+      const catalog = await prisma.activityCatalog.findUnique({
+        where: { id }
+      });
+
+      if (!catalog) {
+        return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
+      }
+
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      if (!isManagement) {
+        return NextResponse.json({ error: "Bạn không có quyền triển khai hoặc hiệu chỉnh kế hoạch hoạt động này" }, { status: 403 });
+      }
+
+      let teacher = await prisma.teacher.findUnique({
+        where: { userId: session.user.id }
+      });
+
+      if (!teacher && session.user.email) {
+        teacher = await prisma.teacher.findFirst({
+          where: {
+            OR: [
+              { email: session.user.email },
+              { teacherCode: session.user.email },
+              { teacherName: session.user.name || undefined }
+            ]
+          }
+        });
+        if (teacher && !teacher.userId) {
+          await prisma.teacher.update({
+            where: { id: teacher.id },
+            data: { userId: session.user.id }
+          });
+        }
+      }
+
+      if (!teacher) {
+        let defaultCampus = await prisma.campus.findFirst();
+        if (!defaultCampus) {
+          defaultCampus = await prisma.campus.create({
+            data: { id: 'cs1', campusCode: 'CS1', campusName: 'Sky-Line Riverside (CS1)' }
+          });
+        }
+        teacher = await prisma.teacher.create({
+          data: {
+            teacherCode: upperRole.includes('CTHS') ? `CTHS_${session.user.id.slice(-6)}` : `GV_${session.user.id.slice(-6)}`,
+            teacherName: session.user.name || session.user.email || 'Cán bộ CTHS',
+            email: session.user.email || '',
+            user: { connect: { id: session.user.id } },
+            campus: { connect: { id: defaultCampus.id } }
+          }
+        });
+      }
+
+      // Resolve valid AcademicYear
+      let validAcademicYearId = body.academicYearId;
+      if (!validAcademicYearId) {
+        const catMeta = parseDbJson<any>(catalog.description, {});
+        validAcademicYearId = catMeta.academicYearId;
+      }
+      if (!validAcademicYearId) {
+        const activeYear = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } }) || await prisma.academicYear.findFirst();
+        validAcademicYearId = activeYear?.id || '';
+      }
+
+      // Record Code
+      let recordCode = body.code || catalog.code;
+      if (!recordCode || !recordCode.trim()) {
+        recordCode = `HDTN-${Date.now().toString().slice(-6)}`;
+      }
+      const existingCode = await prisma.activityRecord.findUnique({ where: { code: recordCode } });
+      if (existingCode) {
+        recordCode = `${recordCode}-${Date.now().toString().slice(-4)}`;
+      }
+
+      const assignedClasses = body.assignedClasses || [];
+      const actualCampusCodes = Array.from(new Set(
+        assignedClasses.map((c: any) => {
+          if (c.campusCode) return c.campusCode;
+          if (c.className && c.className.includes('_')) return c.className.split('_').pop();
+          return null;
+        }).filter(Boolean)
+      ));
+      const actualGrades = Array.from(new Set(
+        assignedClasses.map((c: any) => c.grade).filter(Boolean)
+      ));
+
+      const resolvedCampusCode = actualCampusCodes.length > 0 ? actualCampusCodes.join(', ') : (body.campusCode || '');
+      const resolvedCampusName = actualCampusCodes.length > 0 ? actualCampusCodes.map((code: any) => `Sky-Line ${code}`).join(', ') : (body.campusName || '');
+      const resolvedGrades = actualGrades.length > 0 ? actualGrades : (body.grades || []);
+
+      const catMeta = parseDbJson<any>(catalog.description, {});
+
+      const fullMetadata = {
+        campusId: body.campusId || teacher.campusId || '',
+        campusCode: resolvedCampusCode,
+        campusName: resolvedCampusName,
+        selectedCampusIds: body.selectedCampusIds || (actualCampusCodes.length > 0 ? actualCampusCodes : []),
+        educationLevel: body.educationLevel || catalog.level || 'PHO_THONG',
+        activityCategory: body.activityCategory || catMeta.activityCategory || 'TRAI_NGHIEM_DU_AN',
+        themeName: body.themeName || catMeta.themeName || '',
+        deliverables: body.deliverables || catMeta.deliverables || '',
+        cthsTeachers: body.cthsTeachers || catMeta.cthsTeachers || [],
+        evaluationConfig: body.evaluationConfig || catMeta.evaluationConfig || null,
+        grades: resolvedGrades,
+        creatorName: session.user.name || teacher.teacherName || session.user.email || 'Giáo viên',
+        creatorEmail: session.user.email || teacher.email || '',
+        creatorUserId: session.user.id,
+        departmentId: body.departmentId || null,
+        departmentName: body.departmentName || null,
+        subjectId: body.subjectId || null,
+        subjectName: body.subjectName || null,
+        timeRange: body.timeRange || '',
+        location: body.location || '',
+        locationText: body.location || '',
+        description: body.description || '',
+        objectives: body.objectives || '',
+        evidenceUrls: body.evidenceUrls || [],
+        strand: body.strand || 'BAN_THAN',
+        activityTypeId: body.activityTypeId || 'SU_KIEN',
+        activityTypeName: body.activityTypeName || catalog.name || 'Hoạt động trải nghiệm',
+        scale: body.scale || 'LOP',
+        evalMode: body.evalMode || 'CRITERIA',
+        criteria: body.criteria || [],
+        formulaType: body.formulaType || 'EQUAL_WEIGHT',
+        thresholds: body.thresholds || { outstanding: 85, good: 70, pass: 50 },
+        mandatoryRules: body.mandatoryRules || [],
+        hasRoleAssessment: body.hasRoleAssessment !== undefined ? body.hasRoleAssessment : true,
+        rolesList: body.rolesList || [],
+        completionBenchmark: body.completionBenchmark || '',
+        deadline: body.deadline || '',
+        emailSettings: body.emailSettings || {},
+        status: body.status || 'ASSIGNED',
+        assignedClasses: assignedClasses.map((cls: any) => ({
+          ...cls,
+          status: cls.status || 'DRAFT',
+          evaluatedStudents: cls.evaluatedStudents || 0
+        }))
+      };
+
+      const newRecord = await prisma.activityRecord.create({
+        data: {
+          code: recordCode,
+          name: (body.name || catalog.name).trim(),
+          catalogId: catalog.id,
+          date: body.date ? new Date(body.date) : new Date(),
+          semester: 1,
+          academicYearId: validAcademicYearId,
+          levelId: body.educationLevel || catalog.level || null,
+          formatId: body.scale || null,
+          organizerId: body.campusId || teacher.campusId || null,
+          teacherId: teacher.id,
+          locationId: JSON.stringify(fullMetadata),
+          status: body.status === 'DRAFT' ? 'DRAFT' : 'SUBMITTED'
+        }
+      });
+
+      // Populate initial ActivityParticipant records
+      const classIds = assignedClasses.map((c: any) => c.classId).filter(Boolean);
+      if (classIds.length > 0) {
+        const students = await prisma.student.findMany({
+          where: {
+            classId: { in: classIds },
+            NOT: { status: { in: ['INACTIVE', 'DELETED', 'CHUYEN_TRUONG', 'THOI_HOC'] } }
+          },
+          select: { id: true, classId: true }
+        });
+
+        if (students.length > 0) {
+          const evalMode = fullMetadata.evalMode || "CRITERIA";
+          const participantRows = students.map(s => ({
+            recordId: newRecord.id,
+            studentId: s.id,
+            roleId: "TV",
+            evalLevelId: evalMode === "PARTICIPATION_ONLY" ? "DAT" : null,
+            note: JSON.stringify({
+              attendance: "PRESENT",
+              roles: ["Thành viên"],
+              criteriaScores: {},
+              calculatedPercent: evalMode === "PARTICIPATION_ONLY" ? 100 : 0,
+              finalResult: evalMode === "PARTICIPATION_ONLY" ? "THAM_GIA" : "CAN_HO_TRO",
+              remarksQuick: [],
+              remarksCustom: ""
+            })
+          }));
+
+          await prisma.activityParticipant.createMany({
+            data: participantRows
+          });
+        }
+      }
+
+      // Email settings
+      const emailSettings = body.emailSettings || {};
+      if (body.status !== 'DRAFT' && assignedClasses.length > 0 && emailSettings.sendEmail !== false) {
+        sendExperientialActivityNotification({
+          activityId: newRecord.id,
+          activityCode: recordCode,
+          activityName: newRecord.name,
+          strand: fullMetadata.strand,
+          activityTypeId: fullMetadata.activityTypeId,
+          activityTypeName: fullMetadata.activityTypeName,
+          subjectId: fullMetadata.subjectId,
+          subjectName: fullMetadata.subjectName,
+          departmentId: fullMetadata.departmentId,
+          departmentName: fullMetadata.departmentName,
+          scale: fullMetadata.scale,
+          evalMode: fullMetadata.evalMode,
+          criteria: fullMetadata.criteria,
+          date: body.date || null,
+          timeRange: fullMetadata.timeRange,
+          location: fullMetadata.location,
+          deadline: fullMetadata.deadline,
+          senderName: emailSettings.senderName,
+          senderEmail: emailSettings.senderEmail,
+          replyTo: emailSettings.replyTo,
+          customMessage: emailSettings.customMessage,
+          includeGdcs: emailSettings.includeGdcs !== false,
+          gdcsEmails: emailSettings.gdcsEmails || [],
+          assignedClasses: fullMetadata.assignedClasses
+        }).catch(e => console.error('[HĐTN Email Trigger Error]:', e));
+      }
+
+      return NextResponse.json({
+        success: true,
+        id: newRecord.id,
+        name: newRecord.name
+      });
+    }
 
     let teacherRecord: any = null;
     if (session?.user?.id) {
@@ -257,7 +520,7 @@ export async function PUT(
       const newStatus = action === "LOCK" ? "LOCKED" : "ASSIGNED";
       const updatedMeta = { ...currentMeta, status: newStatus };
       await prisma.activityRecord.update({
-        where: { id },
+        where: { id: existing.id },
         data: {
           status: newStatus,
           locationId: JSON.stringify(updatedMeta)
@@ -307,6 +570,11 @@ export async function PUT(
       campusName: body.campusName !== undefined ? body.campusName : currentMeta.campusName,
       selectedCampusIds: body.selectedCampusIds !== undefined ? body.selectedCampusIds : currentMeta.selectedCampusIds,
       educationLevel: body.educationLevel !== undefined ? body.educationLevel : currentMeta.educationLevel,
+      activityCategory: body.activityCategory !== undefined ? body.activityCategory : currentMeta.activityCategory,
+      themeName: body.themeName !== undefined ? body.themeName : currentMeta.themeName,
+      deliverables: body.deliverables !== undefined ? body.deliverables : currentMeta.deliverables,
+      cthsTeachers: body.cthsTeachers !== undefined ? body.cthsTeachers : currentMeta.cthsTeachers,
+      evaluationConfig: body.evaluationConfig !== undefined ? body.evaluationConfig : currentMeta.evaluationConfig,
       grades: body.grades !== undefined ? body.grades : currentMeta.grades,
       description: body.description !== undefined ? body.description : currentMeta.description,
       objectives: body.objectives !== undefined ? body.objectives : currentMeta.objectives,
@@ -323,6 +591,9 @@ export async function PUT(
       criteria: body.criteria !== undefined ? body.criteria : currentMeta.criteria,
       thresholds: body.thresholds !== undefined ? body.thresholds : currentMeta.thresholds,
       mandatoryRules: body.mandatoryRules !== undefined ? body.mandatoryRules : currentMeta.mandatoryRules,
+      hasRoleAssessment: body.hasRoleAssessment !== undefined ? body.hasRoleAssessment : currentMeta.hasRoleAssessment,
+      rolesList: body.rolesList !== undefined ? body.rolesList : currentMeta.rolesList,
+      completionBenchmark: body.completionBenchmark !== undefined ? body.completionBenchmark : currentMeta.completionBenchmark,
       deadline: body.deadline !== undefined ? body.deadline : currentMeta.deadline,
       status: body.status !== undefined ? body.status : currentMeta.status,
       assignedClasses: body.assignedClasses !== undefined ? body.assignedClasses : currentMeta.assignedClasses,
@@ -335,7 +606,7 @@ export async function PUT(
 
     // Update ActivityRecord safely without any invalid columns
     const updated = await prisma.activityRecord.update({
-      where: { id },
+      where: { id: existing.id },
       data: {
         name: body.name !== undefined ? body.name.trim() : existing.name,
         date: body.date ? new Date(body.date) : existing.date,
@@ -364,7 +635,7 @@ export async function PUT(
       if (newStudents.length > 0) {
         const evalMode = updatedMeta.evalMode || "CRITERIA";
         const participantRows = newStudents.map(s => ({
-          recordId: id,
+          recordId: existing.id,
           studentId: s.id,
           roleId: "TV",
           evalLevelId: evalMode === "PARTICIPATION_ONLY" ? "DAT" : null,
@@ -443,8 +714,23 @@ export async function DELETE(
     const isManagement = ['ADMIN', 'SUPER_ADMIN', 'KTDBCL', 'GIAO_VU_CS', 'GIAO_VU', 'BGH', 'QLCM', 'GV_HDTN', 'CTHS', 'CONG_TAC_HOC_SINH', 'BAN_CTHS'].includes(upperRole) || hasExpDeletePerm;
 
     const { id } = await params;
-    const existing = await prisma.activityRecord.findUnique({ where: { id } });
+    let existing = await prisma.activityRecord.findUnique({ where: { id } });
     if (!existing) {
+      existing = await prisma.activityRecord.findFirst({ where: { catalogId: id } });
+    }
+
+    if (!existing) {
+      const cat = await prisma.activityCatalog.findUnique({ where: { id } });
+      if (cat) {
+        if (!isManagement) {
+          return NextResponse.json({ error: "Bạn không có quyền xóa danh mục hoạt động này" }, { status: 403 });
+        }
+        await prisma.activityCatalog.update({
+          where: { id },
+          data: { status: 'DELETED' }
+        });
+        return NextResponse.json({ success: true, message: 'Đã xóa danh mục hoạt động' });
+      }
       return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
     }
 
@@ -460,11 +746,11 @@ export async function DELETE(
     }
 
     await prisma.activityParticipant.deleteMany({
-      where: { recordId: id }
+      where: { recordId: existing.id }
     });
 
     await prisma.activityRecord.delete({
-      where: { id }
+      where: { id: existing.id }
     });
 
     return NextResponse.json({ success: true });
