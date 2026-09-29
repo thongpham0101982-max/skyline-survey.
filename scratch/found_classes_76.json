@@ -1,0 +1,2147 @@
+[
+  {
+    "stt": 1,
+    "id": "cmq9a1r82000713z4g10iq90a",
+    "fullName": "Lê Gia Lân",
+    "campus": "CS2",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxg860005hy959c9225s7",
+      "enrollmentClassName": "1.3_CS2",
+      "enrollmentClassCode": "C-26_27-03",
+      "enrollmentCode": "0601021777"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601021777",
+        "name": "Lê Gia Lân",
+        "className": "1.3_CS2",
+        "classCode": "C-26_27-03",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 2,
+    "id": "cmq9a1v9l000z13z4i0j4dx3v",
+    "fullName": "Đào Trần Thảo Linh",
+    "campus": "CS2",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxg860005hy959c9225s7",
+      "enrollmentClassName": "1.3_CS2",
+      "enrollmentClassCode": "C-26_27-03",
+      "enrollmentCode": "0601021457"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601021457",
+        "name": "Đào Trần Thảo Linh",
+        "className": "1.3_CS2",
+        "classCode": "C-26_27-03",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 3,
+    "id": "cmq9a1weg001713z4409owljj",
+    "fullName": "Nguyễn Thanh Phúc",
+    "campus": "CS2",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxgx8000fhy956keqcmpw",
+      "enrollmentClassName": "1.2INT_CS2",
+      "enrollmentClassCode": "C-26_27-08",
+      "enrollmentCode": "0701020104"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701020104",
+        "name": "Nguyễn Thanh Phúc",
+        "className": "1.2INT_CS2",
+        "classCode": "C-26_27-08",
+        "grade": "1"
+      },
+      {
+        "code": "0601051060",
+        "name": "Nguyễn Thanh Phúc",
+        "className": "1.5_CS5",
+        "classCode": "C-26_27-05",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 4,
+    "id": "cmq9a9ffz002713z4ab48ghaa",
+    "fullName": "Nguyễn Gia Bảo",
+    "campus": "CS1",
+    "currentClass": "9.2_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxp8k003lhy95zew8vvt2",
+      "enrollmentClassName": "9.2_CS1",
+      "enrollmentClassCode": "C-26_27-65",
+      "enrollmentCode": "0601012301"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030312",
+        "name": "Nguyễn Gia Bảo",
+        "className": "3INT_CS3",
+        "classCode": "3INT_CS3",
+        "grade": "3"
+      },
+      {
+        "code": "0601050964",
+        "name": "Châu Nguyễn Gia Bảo",
+        "className": "6.5_CS5",
+        "classCode": "6.5_CS5",
+        "grade": "6"
+      },
+      {
+        "code": "0601012301",
+        "name": "Nguyễn Gia Bảo",
+        "className": "9.2_CS1",
+        "classCode": "C-26_27-65",
+        "grade": "9"
+      },
+      {
+        "code": "0701030312",
+        "name": "Nguyễn Gia Bảo",
+        "className": "4INT_CS3",
+        "classCode": "C-26_27-35",
+        "grade": "4"
+      },
+      {
+        "code": "0601050964",
+        "name": "Châu Nguyễn Gia Bảo",
+        "className": "7.5_CS5",
+        "classCode": "C-26_27-55",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 5,
+    "id": "cmq9a9ghi002f13z4qf1qvu4q",
+    "fullName": "Lê Nguyên Khang",
+    "campus": "CS1",
+    "currentClass": "2.1_CS1",
+    "currentGrade": "2",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxh77000jhy95acvin6m0",
+      "enrollmentClassName": "2.1_CS1",
+      "enrollmentClassCode": "C-26_27-10",
+      "enrollmentCode": "0601011426"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601011426",
+        "name": "Lê Nguyên Khang",
+        "className": "2.1_CS1",
+        "classCode": "C-26_27-10",
+        "grade": "2"
+      }
+    ]
+  },
+  {
+    "stt": 6,
+    "id": "cmq9a9i15002r13z4yz434bf6",
+    "fullName": "Phạm Nguyễn Minh Anh",
+    "campus": "CS1",
+    "currentClass": "10.2_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrolynn3000beu9925du5isi",
+      "enrollmentClassName": "10.2_CS1",
+      "enrollmentClassCode": "C-27-1",
+      "enrollmentCode": "0601012314"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012314",
+        "name": "Phạm Nguyễn Minh Anh",
+        "className": "10.2_CS1",
+        "classCode": "C-27-1",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 7,
+    "id": "cmqa9bjp0000hqkrutbz27w85",
+    "fullName": "Phan Anh Quân",
+    "campus": "CS3",
+    "currentClass": "9INT_CS3",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxpxy003vhy95en4mhx3r",
+      "enrollmentClassName": "9INT_CS3",
+      "enrollmentClassCode": "C-26_27-70",
+      "enrollmentCode": "0701030370"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030370",
+        "name": "Phan Anh Quân",
+        "className": "9INT_CS3",
+        "classCode": "C-26_27-70",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 8,
+    "id": "cmqa9bnk8001bqkruvwzsixsb",
+    "fullName": "Đoàn Ngọc Thảo Chloe",
+    "campus": "CS3",
+    "currentClass": "2.1INT_CS3",
+    "currentGrade": "2",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxi8g000xhy95y5uuhjnh",
+      "enrollmentClassName": "2.1INT_CS3",
+      "enrollmentClassCode": "C-26_27-17",
+      "enrollmentCode": "0701030387"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030387",
+        "name": "Đoàn Ngọc Thảo Chloe",
+        "className": "2.1INT_CS3",
+        "classCode": "C-26_27-17",
+        "grade": "2"
+      }
+    ]
+  },
+  {
+    "stt": 9,
+    "id": "cmqa9bqzq001zqkru9243a3eh",
+    "fullName": "Hồ Hữu Bách",
+    "campus": "CS3",
+    "currentClass": "4UK_CS3",
+    "currentGrade": "4",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxkpc001vhy951kzgeacj",
+      "enrollmentClassName": "4UK_CS3",
+      "enrollmentClassCode": "C-26_27-34",
+      "enrollmentCode": "0501030625"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0501030625",
+        "name": "Hồ Hữu Bách",
+        "className": "4UK_CS3",
+        "classCode": "C-26_27-34",
+        "grade": "4"
+      }
+    ]
+  },
+  {
+    "stt": 10,
+    "id": "cmqa9eifk0029qkru6t8wgdol",
+    "fullName": "Ayesha Mirza",
+    "campus": "CS4",
+    "currentClass": "6S_CS4",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxrqz004lhy95l7yu8cl8",
+      "enrollmentClassName": "6S_CS4",
+      "enrollmentClassCode": "C-26_27-83",
+      "enrollmentCode": "0602040593"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040593",
+        "name": "Ayesha Mirza",
+        "className": "6S_CS4",
+        "classCode": "C-26_27-83",
+        "grade": "6"
+      }
+    ]
+  },
+  {
+    "stt": 11,
+    "id": "cmqa9g1mk004jqkruqlpgs4wx",
+    "fullName": "Mai Minh Minh",
+    "campus": "CS5",
+    "currentClass": "6.5_CS5",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxmr3002nhy95lf1ij1ij",
+      "enrollmentClassName": "6.5_CS5",
+      "enrollmentClassCode": "C-26_27-48",
+      "enrollmentCode": "0601051095"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601051095",
+        "name": "Mai Minh Minh",
+        "className": "6.5_CS5",
+        "classCode": "C-26_27-48",
+        "grade": "6"
+      }
+    ]
+  },
+  {
+    "stt": 12,
+    "id": "cmqa9g745005rqkru1yw41ia2",
+    "fullName": "Lâm Minh Khang",
+    "campus": "CS5",
+    "currentClass": "2.5_CS5",
+    "currentGrade": "2",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxhsa000rhy95nu41jox3",
+      "enrollmentClassName": "2.5_CS5",
+      "enrollmentClassCode": "C-26_27-14",
+      "enrollmentCode": "0601051137"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601051137",
+        "name": "Lâm Minh Khang",
+        "className": "2.5_CS5",
+        "classCode": "C-26_27-14",
+        "grade": "2"
+      }
+    ]
+  },
+  {
+    "stt": 13,
+    "id": "cmqangnky00033fsf60yngijh",
+    "fullName": "Phan Đình Phùng",
+    "campus": "CS1",
+    "currentClass": "10.1_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxq2r003xhy95w4x13rfb",
+      "enrollmentClassName": "10.1_CS1",
+      "enrollmentClassCode": "C-26_27-71",
+      "enrollmentCode": "0601012372"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012372",
+        "name": "Phan Đình Phùng",
+        "className": "10.1_CS1",
+        "classCode": "C-26_27-71",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 14,
+    "id": "cmqapk1os0007nz6c3clpte3j",
+    "fullName": "Mai Huy Thắng",
+    "campus": "CS1",
+    "currentClass": "7.1_CS1",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxn77002thy95uo06ijlq",
+      "enrollmentClassName": "7.1_CS1",
+      "enrollmentClassCode": "C-26_27-51",
+      "enrollmentCode": "0601011201"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601011201",
+        "name": "Mai Huy Thắng",
+        "className": "7.1_CS1",
+        "classCode": "C-26_27-51",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 15,
+    "id": "cmqapr2pi0005k49ucnlm0y27",
+    "fullName": "Phạm Thùy Gia Hân ",
+    "campus": "CS1",
+    "currentClass": "10.2_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrolynn3000beu9925du5isi",
+      "enrollmentClassName": "10.2_CS1",
+      "enrollmentClassCode": "C-27-1",
+      "enrollmentCode": "0601012363"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012363",
+        "name": "Phạm Thùy Gia Hân ",
+        "className": "10.2_CS1",
+        "classCode": "C-27-1",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 16,
+    "id": "cmqav8ywl0003srxummzrf7d2",
+    "fullName": "Nguyễn Bình Phương An",
+    "campus": "CS1",
+    "currentClass": "10.1_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxq2r003xhy95w4x13rfb",
+      "enrollmentClassName": "10.1_CS1",
+      "enrollmentClassCode": "C-26_27-71",
+      "enrollmentCode": "0601012381"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012381",
+        "name": "Nguyễn Bình Phương An",
+        "className": "10.1_CS1",
+        "classCode": "C-26_27-71",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 17,
+    "id": "cmqavg7db0005srxuu2uok43h",
+    "fullName": "Lê Bảo Trâm",
+    "campus": "CS1",
+    "currentClass": "7.3_CS1",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxnh8002xhy95ko75j46n",
+      "enrollmentClassName": "7.3_CS1",
+      "enrollmentClassCode": "C-26_27-53",
+      "enrollmentCode": "0601012375"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601050347",
+        "name": "Chu Lê Bảo Trâm",
+        "className": "4.5_CS5",
+        "classCode": "4.5_CS5",
+        "grade": "4"
+      },
+      {
+        "code": "0601011340",
+        "name": "Trần Lê Bảo Trâm",
+        "className": "5.2_CS1",
+        "classCode": "5.2_CS1",
+        "grade": "5"
+      },
+      {
+        "code": "0601011340",
+        "name": "Trần Lê Bảo Trâm",
+        "className": "6.2_CS1",
+        "classCode": "C-26_27-45",
+        "grade": "6"
+      },
+      {
+        "code": "0601012375",
+        "name": "Lê Bảo Trâm",
+        "className": "7.3_CS1",
+        "classCode": "C-26_27-53",
+        "grade": "7"
+      },
+      {
+        "code": "0601050347",
+        "name": "Chu Lê Bảo Trâm",
+        "className": "5.5_CS5",
+        "classCode": "C-26_27-40",
+        "grade": "5"
+      }
+    ]
+  },
+  {
+    "stt": 18,
+    "id": "cmqavh57f0001t6k9crbcq4eu",
+    "fullName": "Lê Bảo Châu",
+    "campus": "CS1",
+    "currentClass": "9.3_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxpdi003nhy95rojg9b1g",
+      "enrollmentClassName": "9.3_CS1",
+      "enrollmentClassCode": "C-26_27-66",
+      "enrollmentCode": "0601012374"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601011593",
+        "name": "Lê Bảo Châu",
+        "className": "4.1_CS1",
+        "classCode": "4.1_CS1",
+        "grade": "4"
+      },
+      {
+        "code": "0601012374",
+        "name": "Lê Bảo Châu",
+        "className": "9.3_CS1",
+        "classCode": "C-26_27-66",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 19,
+    "id": "cmqk9bk3d0001faz3o4xv4x83",
+    "fullName": "Phạm Gia Hương",
+    "campus": "CS1",
+    "currentClass": "10.2_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrolynn3000beu9925du5isi",
+      "enrollmentClassName": "10.2_CS1",
+      "enrollmentClassCode": "C-27-1",
+      "enrollmentCode": "HS259"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012376",
+        "name": "Phạm Gia Hương",
+        "className": "10.2_CS1",
+        "classCode": "C-27-1",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 20,
+    "id": "cmqumepcf0003bopcuf5ecgpr",
+    "fullName": "Đỗ An Nhiên ",
+    "campus": "CS1",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxfe30001hy95gsdba3uu",
+      "enrollmentClassName": "1.1_CS1",
+      "enrollmentClassCode": "C-26_27-01",
+      "enrollmentCode": "0601012390"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012390",
+        "name": "Đỗ An Nhiên ",
+        "className": "1.1_CS1",
+        "classCode": "C-26_27-01",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 21,
+    "id": "cmqywy60d0005se5dh2i8rs86",
+    "fullName": "Hà Đặng Phước Huy",
+    "campus": "CS1",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxr2h004bhy95jirm4pdt",
+      "enrollmentClassName": "1S_CS4",
+      "enrollmentClassCode": "C-26_27-78",
+      "enrollmentCode": "0602040631"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040631",
+        "name": "Hà Đặng Phước Huy",
+        "className": "1S_CS4",
+        "classCode": "C-26_27-78",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 22,
+    "id": "cmqywz7ey0005m8o2u1z32gu4",
+    "fullName": "HÀ ĐẶNG BẢO NGỌC",
+    "campus": "CS4",
+    "currentClass": "3S_CS4",
+    "currentGrade": "3",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxrc8004fhy95bgt3i7ga",
+      "enrollmentClassName": "3S_CS4",
+      "enrollmentClassCode": "C-26_27-80",
+      "enrollmentCode": "0602040630"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040630",
+        "name": "HÀ ĐẶNG BẢO NGỌC",
+        "className": "3S_CS4",
+        "classCode": "C-26_27-80",
+        "grade": "3"
+      }
+    ]
+  },
+  {
+    "stt": 23,
+    "id": "cmr4peyic00013uqa02511mdz",
+    "fullName": "Nguyễn Thị Thu Thúy",
+    "campus": "CS4",
+    "currentClass": "10S_CS4",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxsah004thy95uo6sks2c",
+      "enrollmentClassName": "10S_CS4",
+      "enrollmentClassCode": "C-26_27-87",
+      "enrollmentCode": "HS283"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012397",
+        "name": "Nguyễn Thị Thu Thúy",
+        "className": "10S_CS4",
+        "classCode": "C-26_27-87",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 24,
+    "id": "cmrbfkbrn00012rhyr4u2s8ut",
+    "fullName": "ĐỖ NGUYỄN AN KHÔI",
+    "campus": "CS2",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxg860005hy959c9225s7",
+      "enrollmentClassName": "1.3_CS2",
+      "enrollmentClassCode": "C-26_27-03",
+      "enrollmentCode": "0601021794"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601021794",
+        "name": "ĐỖ NGUYỄN AN KHÔI",
+        "className": "1.3_CS2",
+        "classCode": "C-26_27-03",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 25,
+    "id": "cmrbk5mnu0006ze67iezug4cj",
+    "fullName": "Trần Hoàng Anh ",
+    "campus": "CS1",
+    "currentClass": "9.2_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxp8k003lhy95zew8vvt2",
+      "enrollmentClassName": "9.2_CS1",
+      "enrollmentClassCode": "C-26_27-65",
+      "enrollmentCode": "HS288"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012396",
+        "name": "Trần Hoàng Anh",
+        "className": "9.2_CS1",
+        "classCode": "C-26_27-65",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 26,
+    "id": "cmrcxbu5x00026g6vqsx1pdvf",
+    "fullName": "Huỳnh Hoàng An",
+    "campus": "CS4",
+    "currentClass": "3S_CS4",
+    "currentGrade": "3",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxrc8004fhy95bgt3i7ga",
+      "enrollmentClassName": "3S_CS4",
+      "enrollmentClassCode": "C-26_27-80",
+      "enrollmentCode": "0602040636"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040636",
+        "name": "Huỳnh Hoàng An",
+        "className": "3S_CS4",
+        "classCode": "C-26_27-80",
+        "grade": "3"
+      }
+    ]
+  },
+  {
+    "stt": 27,
+    "id": "cmrfpn7110001qbh85z8qq365",
+    "fullName": "Nguyễn Ngọc Thiên Bảo",
+    "campus": "CS1",
+    "currentClass": "2.3INT_CS1",
+    "currentGrade": "2",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cms8naquk0001md4g7r6hlpc5",
+      "enrollmentClassName": "2.3INT_CS1",
+      "enrollmentClassCode": "C-27-2",
+      "enrollmentCode": "0701010055"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701010055",
+        "name": "Nguyễn Ngọc Thiên Bảo",
+        "className": "2.3INT_CS1",
+        "classCode": "C-27-2",
+        "grade": "2"
+      }
+    ]
+  },
+  {
+    "stt": 28,
+    "id": "cmrfpp46l0003qbh8rv5g2wm8",
+    "fullName": "Nguyễn Thanh Thảo",
+    "campus": "CS1",
+    "currentClass": "9.4_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxpig003phy95e8dfm8pw",
+      "enrollmentClassName": "9.4_CS1",
+      "enrollmentClassCode": "C-26_27-67",
+      "enrollmentCode": "HS307"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012393",
+        "name": "Nguyễn Thanh Thảo",
+        "className": "9.4_CS1",
+        "classCode": "C-26_27-67",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 29,
+    "id": "cmrilevdj0003pcj4ykwin8w9",
+    "fullName": "Lê Khánh Hà",
+    "campus": "CS1",
+    "currentClass": "10.2_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrolynn3000beu9925du5isi",
+      "enrollmentClassName": "10.2_CS1",
+      "enrollmentClassCode": "C-27-1",
+      "enrollmentCode": "0601011617"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601011617",
+        "name": "Lê Khánh Hà",
+        "className": "10.2_CS1",
+        "classCode": "C-27-1",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 30,
+    "id": "cmrk1a14p0003zmpmnrq7dham",
+    "fullName": "Nguyễn Đại Phúc ",
+    "campus": "CS1",
+    "currentClass": "10.1_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxq2r003xhy95w4x13rfb",
+      "enrollmentClassName": "10.1_CS1",
+      "enrollmentClassCode": "C-26_27-71",
+      "enrollmentCode": "0601012381"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012394",
+        "name": "Nguyễn Đại Phúc ",
+        "className": "10.1_CS1",
+        "classCode": "C-26_27-71",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 31,
+    "id": "cmrmwjd5s00017t091py6xdbt",
+    "fullName": "LÊ ĐÌNH SĨ PHÚ",
+    "campus": "CS1",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxm53002fhy95q1b5mqpz",
+      "enrollmentClassName": "6.1_CS1",
+      "enrollmentClassCode": "C-26_27-44",
+      "enrollmentCode": "HS331"
+    },
+    "studentTableMatches": []
+  },
+  {
+    "stt": 32,
+    "id": "cmrnbzd8f0001g2eblgv255ta",
+    "fullName": "Đặng Ái Thiên Vân",
+    "campus": "CS5",
+    "currentClass": "3.6_CS5",
+    "currentGrade": "3",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxj89001bhy95rfeup6yb",
+      "enrollmentClassName": "3.6_CS5",
+      "enrollmentClassCode": "C-26_27-24",
+      "enrollmentCode": "0601051161"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601051161",
+        "name": "Đặng Ái Thiên Vân",
+        "className": "3.6_CS5",
+        "classCode": "C-26_27-24",
+        "grade": "3"
+      }
+    ]
+  },
+  {
+    "stt": 33,
+    "id": "cmrtz6ywz0003usvobumsgdcb",
+    "fullName": "Ngô Thục Đan",
+    "campus": "CS1",
+    "currentClass": "9.1_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxp1y003jhy95vuathz51",
+      "enrollmentClassName": "9.1_CS1",
+      "enrollmentClassCode": "C-26_27-64",
+      "enrollmentCode": "HS701020014"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012399",
+        "name": "Ngô Thục Đan",
+        "className": "9.1_CS1",
+        "classCode": "C-26_27-64",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 34,
+    "id": "cmryk2rua000113tlcvwiyuok",
+    "fullName": "Bùi Tuấn Anh",
+    "campus": "CS5",
+    "currentClass": "7.5_CS5",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxnrm0031hy95esglu3ol",
+      "enrollmentClassName": "7.5_CS5",
+      "enrollmentClassCode": "C-26_27-55",
+      "enrollmentCode": ""
+    },
+    "studentTableMatches": [
+      {
+        "code": "HS701020024",
+        "name": "Bùi Tuấn Anh",
+        "className": "7.5_CS5",
+        "classCode": "C-26_27-55",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 35,
+    "id": "cmryncwmi0003a81hfqskkw1h",
+    "fullName": "Đặng Ngọc Bảo Ngân",
+    "campus": "CS4",
+    "currentClass": "10S_CS4",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxsah004thy95uo6sks2c",
+      "enrollmentClassName": "10S_CS4",
+      "enrollmentClassCode": "C-26_27-87",
+      "enrollmentCode": "0602040624"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040624",
+        "name": "Đặng Ngọc Bảo Ngân",
+        "className": "10S_CS4",
+        "classCode": "C-26_27-87",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 36,
+    "id": "cmryndh8k0005a81h02oc3tex",
+    "fullName": "Ngô Nhật Khang",
+    "campus": "CS4",
+    "currentClass": "10S_CS4",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxsah004thy95uo6sks2c",
+      "enrollmentClassName": "10S_CS4",
+      "enrollmentClassCode": "C-26_27-87",
+      "enrollmentCode": "0602040623"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040623",
+        "name": "Ngô Nhật Khang",
+        "className": "10S_CS4",
+        "classCode": "C-26_27-87",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 37,
+    "id": "cmrynfkgx0001fvn7ztdigds0",
+    "fullName": "Võ Hoàng Vi",
+    "campus": "CS4",
+    "currentClass": "6S_CS4",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxrqz004lhy95l7yu8cl8",
+      "enrollmentClassName": "6S_CS4",
+      "enrollmentClassCode": "C-26_27-83",
+      "enrollmentCode": "0602040627"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040522",
+        "name": "Võ Hoàng Việt",
+        "className": "6S_CS4",
+        "classCode": "6S_CS4",
+        "grade": "6"
+      },
+      {
+        "code": "2509832428",
+        "name": "Võ Hoàng Việt",
+        "className": "6S_CS4",
+        "classCode": "6S_CS4",
+        "grade": "6"
+      },
+      {
+        "code": "0602040627",
+        "name": "Võ Hoàng Vi",
+        "className": "6S_CS4",
+        "classCode": "C-26_27-83",
+        "grade": "6"
+      },
+      {
+        "code": "0602040522",
+        "name": "Võ Hoàng Việt",
+        "className": "7S_CS4",
+        "classCode": "C-26_27-84",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 38,
+    "id": "cmrynnuyx000h9fun5btuwlc2",
+    "fullName": "Phan Hải Đăng",
+    "campus": "CS2",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxg860005hy959c9225s7",
+      "enrollmentClassName": "1.3_CS2",
+      "enrollmentClassCode": "C-26_27-03",
+      "enrollmentCode": "0601021828"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601021828",
+        "name": "Phan Hải Đăng",
+        "className": "1.3_CS2",
+        "classCode": "C-26_27-03",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 39,
+    "id": "cmsoc2gkb0001fzahcjjeyf4t",
+    "fullName": "Võ Như Quỳnh",
+    "campus": "CS4",
+    "currentClass": "7S_CS4",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxrvq004nhy95qhypxkti",
+      "enrollmentClassName": "7S_CS4",
+      "enrollmentClassCode": "C-26_27-84",
+      "enrollmentCode": "0602040642"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040642",
+        "name": "Võ Như Quỳnh",
+        "className": "7S_CS4",
+        "classCode": "C-26_27-84",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 40,
+    "id": "cmsocj9qe0001nqfoa5d8n9ie",
+    "fullName": "Đỗ Thành Nguyên",
+    "campus": "CS4",
+    "currentClass": "10S_CS4",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxsah004thy95uo6sks2c",
+      "enrollmentClassName": "10S_CS4",
+      "enrollmentClassCode": "C-26_27-87",
+      "enrollmentCode": "0602040613"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040613",
+        "name": "Đỗ Thành Nguyên",
+        "className": "10S_CS4",
+        "classCode": "C-26_27-87",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 41,
+    "id": "cmsocoo9t0007nqfowy9nkme7",
+    "fullName": "Phạm Kiều Anh",
+    "campus": "CS4",
+    "currentClass": "6S_CS4",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxrqz004lhy95l7yu8cl8",
+      "enrollmentClassName": "6S_CS4",
+      "enrollmentClassCode": "C-26_27-83",
+      "enrollmentCode": "0602040586"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040586",
+        "name": "Phạm Kiều Anh",
+        "className": "6S_CS4",
+        "classCode": "C-26_27-83",
+        "grade": "6"
+      }
+    ]
+  },
+  {
+    "stt": 42,
+    "id": "cmsr002m600013kj3fmxpdkj4",
+    "fullName": "Govorushko Mikhail",
+    "campus": "CS3",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxgsa000dhy959g3tmexn",
+      "enrollmentClassName": "1.1INT_CS3",
+      "enrollmentClassCode": "C-26_27-07",
+      "enrollmentCode": "0701030397"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030397",
+        "name": "Govorushko Mikhail",
+        "className": "1.1INT_CS3",
+        "classCode": "C-26_27-07",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 43,
+    "id": "cmssdgsq10001eo12h7dghd58",
+    "fullName": "Lecomte Mailys Mộc Yên",
+    "campus": "CS3",
+    "currentClass": "4INT_CS3",
+    "currentGrade": "4",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxku7001xhy95uh7s7n06",
+      "enrollmentClassName": "4INT_CS3",
+      "enrollmentClassCode": "C-26_27-35",
+      "enrollmentCode": "0701030402"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030402",
+        "name": "Lecomte Mailys Mộc Yên",
+        "className": "4INT_CS3",
+        "classCode": "C-26_27-35",
+        "grade": "4"
+      }
+    ]
+  },
+  {
+    "stt": 44,
+    "id": "cmssk8zaw0001fnej7o3mi960",
+    "fullName": "Hà Minh Khuê",
+    "campus": "CS3",
+    "currentClass": "5.1INT_CS3",
+    "currentGrade": "5",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxlux002bhy95cm00x7da",
+      "enrollmentClassName": "5.1INT_CS3",
+      "enrollmentClassCode": "C-26_27-42",
+      "enrollmentCode": "0701030384"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030384",
+        "name": "Hà Minh Khuê",
+        "className": "5.1INT_CS3",
+        "classCode": "C-26_27-42",
+        "grade": "5"
+      }
+    ]
+  },
+  {
+    "stt": 45,
+    "id": "cmssnr9f000055iyeufa3xrqs",
+    "fullName": "Võ Thị Anh Thư",
+    "campus": "CS4",
+    "currentClass": "7S_CS4",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxrvq004nhy95qhypxkti",
+      "enrollmentClassName": "7S_CS4",
+      "enrollmentClassCode": "C-26_27-84",
+      "enrollmentCode": "0602040621"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040621",
+        "name": "Võ Thị Anh Thư",
+        "className": "7S_CS4",
+        "classCode": "C-26_27-84",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 46,
+    "id": "cmssrof9g000613yefuh4bk07",
+    "fullName": "Hoàng Bữu Minh Hưng",
+    "campus": "CS2",
+    "currentClass": "3.4_CS2",
+    "currentGrade": "3",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxiye0017hy95z0jb80d5",
+      "enrollmentClassName": "3.4_CS2",
+      "enrollmentClassCode": "C-26_27-22",
+      "enrollmentCode": "0601012037"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012037",
+        "name": "Hoàng Bữu Minh Hưng",
+        "className": "3.4_CS2",
+        "classCode": "C-26_27-22",
+        "grade": "3"
+      }
+    ]
+  },
+  {
+    "stt": 47,
+    "id": "cmstsaue20001g0q3fdi6c055",
+    "fullName": "Lê Hồ Duy Khang",
+    "campus": "CS2",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxg860005hy959c9225s7",
+      "enrollmentClassName": "1.3_CS2",
+      "enrollmentClassCode": "C-26_27-03",
+      "enrollmentCode": "0601021795"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601021795",
+        "name": "Lê Hồ Duy Khang",
+        "className": "1.3_CS2",
+        "classCode": "C-26_27-03",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 48,
+    "id": "cmstu8q7o000163i3tif32ee3",
+    "fullName": "Phạm Gia Hưng",
+    "campus": "CS5",
+    "currentClass": "2.5_CS5",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxnh8002xhy95ko75j46n",
+      "enrollmentClassName": "7.3_CS1",
+      "enrollmentClassCode": "C-26_27-53",
+      "enrollmentCode": "0601012371"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030326",
+        "name": "Lê Phạm Gia Hưng",
+        "className": "1.1INT_CS3",
+        "classCode": "1.1INT_CS3",
+        "grade": "1"
+      },
+      {
+        "code": "0601050724",
+        "name": "Phạm Gia Hưng",
+        "className": "1.5_CS5",
+        "classCode": "1.5_CS5",
+        "grade": "1"
+      },
+      {
+        "code": "2400519524",
+        "name": "Phạm Gia Hưng",
+        "className": "1.5_CS5",
+        "classCode": "1.5_CS5",
+        "grade": "1"
+      },
+      {
+        "code": "2503625604",
+        "name": "Lê Phạm Gia Hưng",
+        "className": "1.1INT_CS3",
+        "classCode": "1.1INT_CS3",
+        "grade": "1"
+      },
+      {
+        "code": "0701030326",
+        "name": "Lê Phạm Gia Hưng",
+        "className": "2.1INT_CS3",
+        "classCode": "C-26_27-17",
+        "grade": "2"
+      },
+      {
+        "code": "0601050724",
+        "name": "Phạm Gia Hưng",
+        "className": "2.5_CS5",
+        "classCode": "C-26_27-14",
+        "grade": "2"
+      },
+      {
+        "code": "0601012371",
+        "name": "Phạm Gia Hưng",
+        "className": "7.3_CS1",
+        "classCode": "C-26_27-53",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 49,
+    "id": "cmstub33f0001590l5uiqc4rv",
+    "fullName": "Lê Nguyệt Cát",
+    "campus": "CS1",
+    "currentClass": "7.4_CS1",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxnm5002zhy951z0ep01n",
+      "enrollmentClassName": "7.4_CS1",
+      "enrollmentClassCode": "C-26_27-54",
+      "enrollmentCode": "0601012317"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012317",
+        "name": "Lê Nguyệt Cát",
+        "className": "7.4_CS1",
+        "classCode": "C-26_27-54",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 50,
+    "id": "cmstubssv00019a76czsz7hkc",
+    "fullName": "Hoàng Bảo Quyên",
+    "campus": "CS1",
+    "currentClass": "9.2_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxp8k003lhy95zew8vvt2",
+      "enrollmentClassName": "9.2_CS1",
+      "enrollmentClassCode": "C-26_27-65",
+      "enrollmentCode": "0601012338"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012338",
+        "name": "Hoàng Bảo Quyên",
+        "className": "9.2_CS1",
+        "classCode": "C-26_27-65",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 51,
+    "id": "cmstucfk30003590lp2a24r7b",
+    "fullName": "Phạm Gia Bảo",
+    "campus": "CS1",
+    "currentClass": "9.3_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxpdi003nhy95rojg9b1g",
+      "enrollmentClassName": "9.3_CS1",
+      "enrollmentClassCode": "C-26_27-66",
+      "enrollmentCode": "0601012370"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012280",
+        "name": "Phạm Gia Bảo",
+        "className": "6.3_CS1",
+        "classCode": "6.3_CS1",
+        "grade": "6"
+      },
+      {
+        "code": "0601012370",
+        "name": "Phạm Gia Bảo",
+        "className": "9.3_CS1",
+        "classCode": "C-26_27-66",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 52,
+    "id": "cmstud0i2000111ml5bd2wiiu",
+    "fullName": "Đặng Hoàng Như Ý",
+    "campus": "CS1",
+    "currentClass": "10.2_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrolynn3000beu9925du5isi",
+      "enrollmentClassName": "10.2_CS1",
+      "enrollmentClassCode": "C-27-1",
+      "enrollmentCode": "0601012318"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012318",
+        "name": "Đặng Hoàng Như Ý",
+        "className": "10.2_CS1",
+        "classCode": "C-27-1",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 53,
+    "id": "cmstudnnz000311mlhnnik78v",
+    "fullName": "Phạm Hải Như",
+    "campus": "CS1",
+    "currentClass": "10.2_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrolynn3000beu9925du5isi",
+      "enrollmentClassName": "10.2_CS1",
+      "enrollmentClassCode": "C-27-1",
+      "enrollmentCode": "0601012334"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012334",
+        "name": "Phạm Hải Như",
+        "className": "10.2_CS1",
+        "classCode": "C-27-1",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 54,
+    "id": "cmsy03zh80001elqr6mudq1xr",
+    "fullName": "Nguyễn Thành Long",
+    "campus": "CS1",
+    "currentClass": "7.3_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxpdi003nhy95rojg9b1g",
+      "enrollmentClassName": "9.3_CS1",
+      "enrollmentClassCode": "C-26_27-66",
+      "enrollmentCode": "0701030403"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030403",
+        "name": "Nguyễn Thành Long",
+        "className": "9.3_CS1",
+        "classCode": "C-26_27-66",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 55,
+    "id": "cmsy2fc270003vsyucpbev32h",
+    "fullName": "Trần Quang Thiên Ân",
+    "campus": "CS1",
+    "currentClass": "10.1_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxq2r003xhy95w4x13rfb",
+      "enrollmentClassName": "10.1_CS1",
+      "enrollmentClassCode": "C-26_27-71",
+      "enrollmentCode": "0601012369"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012369",
+        "name": "Trần Quang Thiên Ân",
+        "className": "10.1_CS1",
+        "classCode": "C-26_27-71",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 56,
+    "id": "cmsy2ot0g0001ry9qr1de3m9y",
+    "fullName": "Lê Hồ Gia Huy",
+    "campus": "CS1",
+    "currentClass": "10.2_CS1",
+    "currentGrade": "10",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrolynn3000beu9925du5isi",
+      "enrollmentClassName": "10.2_CS1",
+      "enrollmentClassCode": "C-27-1",
+      "enrollmentCode": "0601012312"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012312",
+        "name": "Lê Hồ Gia Huy",
+        "className": "10.2_CS1",
+        "classCode": "C-27-1",
+        "grade": "10"
+      }
+    ]
+  },
+  {
+    "stt": 57,
+    "id": "cmsy2s3c40001114l9pwd7dsi",
+    "fullName": "Trương Lê Hưng Phát",
+    "campus": "CS1",
+    "currentClass": "12.1_CS1",
+    "currentGrade": "12",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxqs90047hy95i2liymbu",
+      "enrollmentClassName": "12.1_CS1",
+      "enrollmentClassCode": "C-26_27-76",
+      "enrollmentCode": "0601012400"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012400",
+        "name": "Trương Lê Hưng Phát",
+        "className": "12.1_CS1",
+        "classCode": "C-26_27-76",
+        "grade": "12"
+      }
+    ]
+  },
+  {
+    "stt": 58,
+    "id": "cmsy4hdrn0001kkem6semba2f",
+    "fullName": "Nguyễn Văn Tuấn Kiệt",
+    "campus": "CS1",
+    "currentClass": "9.2_CS1",
+    "currentGrade": "9",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxp8k003lhy95zew8vvt2",
+      "enrollmentClassName": "9.2_CS1",
+      "enrollmentClassCode": "C-26_27-65",
+      "enrollmentCode": "0601012351"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012351",
+        "name": "Nguyễn Văn Tuấn Kiệt",
+        "className": "9.2_CS1",
+        "classCode": "C-26_27-65",
+        "grade": "9"
+      }
+    ]
+  },
+  {
+    "stt": 59,
+    "id": "cmsyejwnv00035lcxu45kr1vq",
+    "fullName": "Nguyễn Daniil",
+    "campus": "CS1",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxfe30001hy95gsdba3uu",
+      "enrollmentClassName": "1.1_CS1",
+      "enrollmentClassCode": "C-26_27-01",
+      "enrollmentCode": "0601012303"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012303",
+        "name": "Nguyễn Daniil",
+        "className": "1.1_CS1",
+        "classCode": "C-26_27-01",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 60,
+    "id": "cmsyga5uo0001o72056qfw5jh",
+    "fullName": "Trần Đăng Quang",
+    "campus": "CS1",
+    "currentClass": "6.3_CS1",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxmfx002jhy95y1o10sq9",
+      "enrollmentClassName": "6.3_CS1",
+      "enrollmentClassCode": "C-26_27-46",
+      "enrollmentCode": "0601012340"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012340",
+        "name": "Trần Đăng Quang",
+        "className": "6.3_CS1",
+        "classCode": "C-26_27-46",
+        "grade": "6"
+      }
+    ]
+  },
+  {
+    "stt": 61,
+    "id": "cmsyger10000fubp2yj6dkps4",
+    "fullName": "Trần Thục Quyên",
+    "campus": "CS1",
+    "currentClass": "7.4_CS1",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxnm5002zhy951z0ep01n",
+      "enrollmentClassName": "7.4_CS1",
+      "enrollmentClassCode": "C-26_27-54",
+      "enrollmentCode": "0601012347"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012347",
+        "name": "Trần Thục Quyên",
+        "className": "7.4_CS1",
+        "classCode": "C-26_27-54",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 62,
+    "id": "cmsygk2xp0003j1ngvpqeybuk",
+    "fullName": "Lương Bích Ngọc",
+    "campus": "CS1",
+    "currentClass": "6.3_CS1",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxmfx002jhy95y1o10sq9",
+      "enrollmentClassName": "6.3_CS1",
+      "enrollmentClassCode": "C-26_27-46",
+      "enrollmentCode": "0601012348"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012348",
+        "name": "Lương Bích Ngọc",
+        "className": "6.3_CS1",
+        "classCode": "C-26_27-46",
+        "grade": "6"
+      }
+    ]
+  },
+  {
+    "stt": 63,
+    "id": "cmsygoq7k0005j1ngk0abtv8g",
+    "fullName": "Nguyễn Quỳnh Như",
+    "campus": "CS1",
+    "currentClass": "3.1_CS1",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxm53002fhy95q1b5mqpz",
+      "enrollmentClassName": "6.1_CS1",
+      "enrollmentClassCode": "C-26_27-44",
+      "enrollmentCode": "0601012352"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601011972",
+        "name": "Nguyễn Quỳnh Như",
+        "className": "2.1_CS1",
+        "classCode": "2.1_CS1",
+        "grade": "2"
+      },
+      {
+        "code": "0601011972",
+        "name": "Nguyễn Quỳnh Như",
+        "className": "3.1_CS1",
+        "classCode": "C-26_27-19",
+        "grade": "3"
+      },
+      {
+        "code": "0601012352",
+        "name": "Nguyễn Quỳnh Như",
+        "className": "6.1_CS1",
+        "classCode": "C-26_27-44",
+        "grade": "6"
+      }
+    ]
+  },
+  {
+    "stt": 64,
+    "id": "cmt2o1ibb0001t81ckhoko2tp",
+    "fullName": "Vũ Đức Thịnh",
+    "campus": "CS5",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxgi70009hy95pd5cixo7",
+      "enrollmentClassName": "1.5_CS5",
+      "enrollmentClassCode": "C-26_27-05",
+      "enrollmentCode": "0601051050"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601051050",
+        "name": "Vũ Đức Thịnh",
+        "className": "1.5_CS5",
+        "classCode": "C-26_27-05",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 65,
+    "id": "cmt2r2kn70001cdjymo1sjv1u",
+    "fullName": "Nguyễn Minh Anh",
+    "campus": "CS5",
+    "currentClass": "6.5_CS5",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxmr3002nhy95lf1ij1ij",
+      "enrollmentClassName": "6.5_CS5",
+      "enrollmentClassCode": "C-26_27-48",
+      "enrollmentCode": "0601051036"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0501030605",
+        "name": "Nguyễn Minh Anh",
+        "className": "1UK_CS3",
+        "classCode": "1UK_CS3",
+        "grade": "1"
+      },
+      {
+        "code": "0601050795",
+        "name": "Nguyễn Minh Anh",
+        "className": "2.2INT_CS5",
+        "classCode": "2.2INT_CS5",
+        "grade": "2"
+      },
+      {
+        "code": "2512945988",
+        "name": "Nguyễn Minh Anh",
+        "className": "1UK_CS3",
+        "classCode": "1UK_CS3",
+        "grade": "1"
+      },
+      {
+        "code": "0601012314",
+        "name": "Phạm Nguyễn Minh Anh",
+        "className": "10.2_CS1",
+        "classCode": "C-27-1",
+        "grade": "10"
+      },
+      {
+        "code": "0501030605",
+        "name": "Nguyễn Minh Anh",
+        "className": "2UK_CS3",
+        "classCode": "C-26_27-16",
+        "grade": "2"
+      },
+      {
+        "code": "0601050795",
+        "name": "Nguyễn Minh Anh",
+        "className": "3.2INT_CS5",
+        "classCode": "C-26_27-27",
+        "grade": "3"
+      },
+      {
+        "code": "0601051036",
+        "name": "Nguyễn Minh Anh",
+        "className": "6.5_CS5",
+        "classCode": "C-26_27-48",
+        "grade": "6"
+      }
+    ]
+  },
+  {
+    "stt": 66,
+    "id": "cmt2rsvyv0031mq3ztosp760s",
+    "fullName": "Đỗ Duy Khôi",
+    "campus": "CS5",
+    "currentClass": "6.5_CS5",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxmr3002nhy95lf1ij1ij",
+      "enrollmentClassName": "6.5_CS5",
+      "enrollmentClassCode": "C-26_27-48",
+      "enrollmentCode": "0601051037"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601051037",
+        "name": "Đỗ Duy Khôi",
+        "className": "6.5_CS5",
+        "classCode": "C-26_27-48",
+        "grade": "6"
+      }
+    ]
+  },
+  {
+    "stt": 67,
+    "id": "cmt3urnx30001c9fz60g0x805",
+    "fullName": "Lê Nguyễn Hoàng Bảo",
+    "campus": "CS5",
+    "currentClass": "7.5_CS5",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxnrm0031hy95esglu3ol",
+      "enrollmentClassName": "7.5_CS5",
+      "enrollmentClassCode": "C-26_27-55",
+      "enrollmentCode": "0601051152"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601051152",
+        "name": "Lê Nguyễn Hoàng Bảo",
+        "className": "7.5_CS5",
+        "classCode": "C-26_27-55",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 68,
+    "id": "cmt3vcaow000595s07wg9ivoe",
+    "fullName": "Nguyễn Hoàng Đạt",
+    "campus": "CS5",
+    "currentClass": "3.2INT_CS5",
+    "currentGrade": "3",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxjna001hhy95c5zklo20",
+      "enrollmentClassName": "3.2INT_CS5",
+      "enrollmentClassCode": "C-26_27-27",
+      "enrollmentCode": "0701050069"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701050069",
+        "name": "Nguyễn Hoàng Đạt",
+        "className": "3.2INT_CS5",
+        "classCode": "C-26_27-27",
+        "grade": "3"
+      }
+    ]
+  },
+  {
+    "stt": 69,
+    "id": "cmt3vj3uk000b95s04kwikoq8",
+    "fullName": "Nguyễn Hoàng Phúc",
+    "campus": "CS5",
+    "currentClass": "5.2INT_CS5",
+    "currentGrade": "5",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxm03002dhy952mf20ob6",
+      "enrollmentClassName": "5.2INT_CS5",
+      "enrollmentClassCode": "C-26_27-43",
+      "enrollmentCode": "0701050068"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701050068",
+        "name": "Nguyễn Hoàng Phúc",
+        "className": "5.2INT_CS5",
+        "classCode": "C-26_27-43",
+        "grade": "5"
+      }
+    ]
+  },
+  {
+    "stt": 70,
+    "id": "cmt6l475w0002gzo197zwrv2b",
+    "fullName": "Trần Minh Huy",
+    "campus": "CS5",
+    "currentClass": "2.6_CS5",
+    "currentGrade": "2",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxhxc000thy951eoq5jcu",
+      "enrollmentClassName": "2.6_CS5",
+      "enrollmentClassCode": "C-26_27-15",
+      "enrollmentCode": "0601051052"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030411",
+        "name": "Nguyễn Trần Minh Huy",
+        "className": "10Compass_CS3",
+        "classCode": "C-26_27-72",
+        "grade": "10"
+      },
+      {
+        "code": "0601051052",
+        "name": "Trần Minh Huy",
+        "className": "2.6_CS5",
+        "classCode": "C-26_27-15",
+        "grade": "2"
+      }
+    ]
+  },
+  {
+    "stt": 71,
+    "id": "cmt9jhnpw0004jhkfya6npywn",
+    "fullName": "Nguyễn Ngọc Minh",
+    "campus": "CS1",
+    "currentClass": "7.2_CS1",
+    "currentGrade": "7",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxnc5002vhy95uznpwm1a",
+      "enrollmentClassName": "7.2_CS1",
+      "enrollmentClassCode": "C-26_27-52",
+      "enrollmentCode": "0601012418\t"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012153",
+        "name": "Nguyễn Ngọc Minh Khang",
+        "className": "1.1_CS1",
+        "classCode": "1.1_CS1",
+        "grade": "1"
+      },
+      {
+        "code": "0501030595",
+        "name": "Nguyễn Ngọc Minh Châu",
+        "className": "1.1INT_CS3",
+        "classCode": "1.1INT_CS3",
+        "grade": "1"
+      },
+      {
+        "code": "0601050871",
+        "name": "Nguyễn Ngọc Minh Châu",
+        "className": "1.2INT_CS5",
+        "classCode": "1.2INT_CS5",
+        "grade": "1"
+      },
+      {
+        "code": "0601010001",
+        "name": "Nguyễn Ngọc Minh Anh",
+        "className": "4.1_CS1",
+        "classCode": "4.1_CS1",
+        "grade": "4"
+      },
+      {
+        "code": "0601050362",
+        "name": "Nguyễn Ngọc Minh Vy",
+        "className": "4.5_CS5",
+        "classCode": "4.5_CS5",
+        "grade": "4"
+      },
+      {
+        "code": "0601021064",
+        "name": "Nguyễn Ngọc Minh Quân",
+        "className": "7.1_CS1",
+        "classCode": "7.1_CS1",
+        "grade": "7"
+      },
+      {
+        "code": "2503543804",
+        "name": "Nguyễn Ngọc Minh Khang",
+        "className": "1.1_CS1",
+        "classCode": "1.1_CS1",
+        "grade": "1"
+      },
+      {
+        "code": "2503624864",
+        "name": "Nguyễn Ngọc Minh Châu",
+        "className": "1.1INT_CS3",
+        "classCode": "1.1INT_CS3",
+        "grade": "1"
+      },
+      {
+        "code": "2500256784",
+        "name": "Nguyễn Ngọc Minh Châu",
+        "className": "1.2INT_CS5",
+        "classCode": "1.2INT_CS5",
+        "grade": "1"
+      },
+      {
+        "code": "0601012153",
+        "name": "Nguyễn Ngọc Minh Khang",
+        "className": "2.1_CS1",
+        "classCode": "C-26_27-10",
+        "grade": "2"
+      },
+      {
+        "code": "0601010001",
+        "name": "Nguyễn Ngọc Minh Anh",
+        "className": "5.1_CS1",
+        "classCode": "C-26_27-36",
+        "grade": "5"
+      },
+      {
+        "code": "0601021064",
+        "name": "Nguyễn Ngọc Minh Quân",
+        "className": "8.1_CS1",
+        "classCode": "C-26_27-58",
+        "grade": "8"
+      },
+      {
+        "code": "0501030595",
+        "name": "Nguyễn Ngọc Minh Châu",
+        "className": "2.1INT_CS3",
+        "classCode": "C-26_27-17",
+        "grade": "2"
+      },
+      {
+        "code": "0601050871",
+        "name": "Nguyễn Ngọc Minh Châu",
+        "className": "2.2INT_CS5",
+        "classCode": "C-26_27-18",
+        "grade": "2"
+      },
+      {
+        "code": "0601050362",
+        "name": "Nguyễn Ngọc Minh Vy",
+        "className": "5.5_CS5",
+        "classCode": "C-26_27-40",
+        "grade": "5"
+      },
+      {
+        "code": "2201297120",
+        "name": "Nguyễn Ngọc Minh Quân",
+        "className": "8.1_CS1",
+        "classCode": "8.1_CS1",
+        "grade": "8"
+      },
+      {
+        "code": "0601030243",
+        "name": "Nguyễn Ngọc Minh Châu",
+        "className": "WINGS - G1",
+        "classCode": "C-1781581325669-807",
+        "grade": "Mẫu giáo bé"
+      },
+      {
+        "code": "0601051097",
+        "name": "Nguyễn Ngọc Minh Lan",
+        "className": "ROOTS - B2",
+        "classCode": "C-1781581325669-681",
+        "grade": "Nhà trẻ 24-36 tháng"
+      },
+      {
+        "code": "0601012418",
+        "name": "Nguyễn Ngọc Minh",
+        "className": "7.2_CS1",
+        "classCode": "C-26_27-52",
+        "grade": "7"
+      }
+    ]
+  },
+  {
+    "stt": 72,
+    "id": "cmtb9vzeo0001b367pgpfdfqp",
+    "fullName": "Phùng Đức Thiên Ân",
+    "campus": "CS3",
+    "currentClass": "3.1INT_CS3",
+    "currentGrade": "3",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxji9001fhy95desp1wyq",
+      "enrollmentClassName": "3.1INT_CS3",
+      "enrollmentClassCode": "C-26_27-26",
+      "enrollmentCode": "0701030415"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030415",
+        "name": "Phùng Đức Thiên Ân",
+        "className": "3.1INT_CS3",
+        "classCode": "C-26_27-26",
+        "grade": "3"
+      }
+    ]
+  },
+  {
+    "stt": 73,
+    "id": "cmtcg8r4200012csibdl65mvs",
+    "fullName": "Phùng Chí Nam Anh",
+    "campus": "CS3",
+    "currentClass": "8.1INT_CS3",
+    "currentGrade": "8",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxoqm003fhy95yyr4paft",
+      "enrollmentClassName": "8.1INT_CS3",
+      "enrollmentClassCode": "C-26_27-62",
+      "enrollmentCode": "0701030416"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701030416",
+        "name": "Phùng Chí Nam Anh",
+        "className": "8.1INT_CS3",
+        "classCode": "C-26_27-62",
+        "grade": "8"
+      }
+    ]
+  },
+  {
+    "stt": 74,
+    "id": "cmtkwv7h00005buokyyvajmzx",
+    "fullName": "Nguyễn Đặng Bảo Trâm ",
+    "campus": "CS1",
+    "currentClass": "8.2_CS1",
+    "currentGrade": "8",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxobr0039hy9503lkjoc7",
+      "enrollmentClassName": "8.2_CS1",
+      "enrollmentClassCode": "C-26_27-59",
+      "enrollmentCode": "0601012421"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0601012421",
+        "name": "Nguyễn Đặng Bảo Trâm ",
+        "className": "8.2_CS1",
+        "classCode": "C-26_27-59",
+        "grade": "8"
+      }
+    ]
+  },
+  {
+    "stt": 75,
+    "id": "cmtmpbm6c000512yks2sh1wdh",
+    "fullName": "Sangadziev Aron",
+    "campus": "CS2",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "1",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxgx8000fhy956keqcmpw",
+      "enrollmentClassName": "1.2INT_CS2",
+      "enrollmentClassCode": "C-26_27-08",
+      "enrollmentCode": "0701020109"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0701020109",
+        "name": "Sangadziev Aron",
+        "className": "1.2INT_CS2",
+        "classCode": "C-26_27-08",
+        "grade": "1"
+      }
+    ]
+  },
+  {
+    "stt": 76,
+    "id": "cmtxv0xdg000d10nuglzf3vl6",
+    "fullName": "Ngô Huỳnh Anh Minh",
+    "campus": "CS4",
+    "currentClass": "Chưa rõ",
+    "currentGrade": "6",
+    "ias": {
+      "className": null,
+      "enrollmentClassId": "cmrekxrqz004lhy95l7yu8cl8",
+      "enrollmentClassName": "6S_CS4",
+      "enrollmentClassCode": "C-26_27-83",
+      "enrollmentCode": "0602040655"
+    },
+    "studentTableMatches": [
+      {
+        "code": "0602040655",
+        "name": "Ngô Huỳnh Anh Minh",
+        "className": "6S_CS4",
+        "classCode": "C-26_27-83",
+        "grade": "6"
+      }
+    ]
+  }
+]

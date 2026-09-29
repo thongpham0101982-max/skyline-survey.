@@ -908,18 +908,20 @@ export async function getTaskCategories() {
   }
 }
 
-export async function createTaskCategory(data: { name: string; assignedToRole: string; groupName?: string }) {
+export async function createTaskCategory(data: { name: string; assignedToRole: string; groupName?: string; weight?: number }) {
   try {
     const session = await auth()
     const opScope = await getOperationalScope()
     if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
+    const weightVal = typeof data.weight === "number" && !isNaN(data.weight) ? data.weight : (parseFloat(String(data.weight)) || 1.0)
     await prisma.taskCategory.create({
       data: {
         name: data.name.trim(),
         assignedToRole: data.assignedToRole,
-        groupName: data.groupName?.trim() || null
+        groupName: data.groupName?.trim() || null,
+        weight: weightVal > 0 ? weightVal : 1.0
       }
     })
     revalidatePath("/admin/tasks")
@@ -930,19 +932,21 @@ export async function createTaskCategory(data: { name: string; assignedToRole: s
   }
 }
 
-export async function updateTaskCategory(id: string, data: { name: string; assignedToRole: string; groupName?: string }) {
+export async function updateTaskCategory(id: string, data: { name: string; assignedToRole: string; groupName?: string; weight?: number }) {
   try {
     const session = await auth()
     const opScope = await getOperationalScope()
     if (!session?.user || (!opScope.isManager && (session.user as any).role !== "ADMIN")) {
       return { success: false, error: "Quyền truy cập bị từ chối" }
     }
+    const weightVal = typeof data.weight === "number" && !isNaN(data.weight) ? data.weight : (parseFloat(String(data.weight)) || 1.0)
     await prisma.taskCategory.update({
       where: { id },
       data: {
         name: data.name.trim(),
         assignedToRole: data.assignedToRole,
-        groupName: data.groupName?.trim() || null
+        groupName: data.groupName?.trim() || null,
+        weight: weightVal > 0 ? weightVal : 1.0
       }
     })
     revalidatePath("/admin/tasks")

@@ -53,8 +53,8 @@ export function GradeAnalyticsTab({
 }: Props) {
   const router = useRouter()
 
-  // Sub-view navigation state: "teachers" (View 1) | "tracking" (View 2) | "ksdv_matrix" (View 4) | "charts" (View 3)
-  const [activeSubView, setActiveSubView] = useState<"teachers" | "tracking" | "ksdv_matrix" | "charts">("teachers")
+  // Sub-view navigation state: "teachers" | "below_benchmark" | "below_average" | "ksdv_matrix" | "charts"
+  const [activeSubView, setActiveSubView] = useState<"teachers" | "below_benchmark" | "below_average" | "ksdv_matrix" | "charts">("teachers")
 
   // Filter states
   const [selectedCampusId, setSelectedCampusId] = useState("ALL")
@@ -69,7 +69,6 @@ export function GradeAnalyticsTab({
   // Tracking view sub-filter
   const [trackingCategory, setTrackingCategory] = useState<"ALL" | "BELOW_AVG" | "BELOW_BENCHMARK" | "ADMISSION_COMMITMENT" | "LEARNING_COMMITMENT">("ALL")
   const [ksdvSubjectFilter, setKsdvSubjectFilter] = useState<"ALL" | "MATH" | "LIT" | "ENG" | "PSY">("ALL")
-  const [ksdvGradeScope, setKsdvGradeScope] = useState<"ALL" | "GRADE_1" | "OTHER_GRADES">("ALL")
 
   // Data states
   const [loading, setLoading] = useState(false)
@@ -271,19 +270,9 @@ export function GradeAnalyticsTab({
     return list
   }, [data.teacherDistributions, searchKeyword])
 
-  // Filtered Tracking Students List
-  const displayedTrackingStudents = useMemo(() => {
-    let list = data.trackingStudents || []
-    if (trackingCategory === "BELOW_AVG") {
-      list = list.filter(st => st.isBelowAverage)
-    } else if (trackingCategory === "BELOW_BENCHMARK") {
-      list = list.filter(st => st.isBelowBenchmark)
-    } else if (trackingCategory === "ADMISSION_COMMITMENT") {
-      list = list.filter(st => st.hasAdmissionCommitment && st.currentScore !== null && st.currentScore !== undefined)
-    } else if (trackingCategory === "LEARNING_COMMITMENT") {
-      list = list.filter(st => st.hasActiveLearningCommitment)
-    }
-
+  // Filtered Below Benchmark Students List (Chỉ HS Dưới chuẩn môn học, bỏ cam kết)
+  const displayedBelowBenchmarkStudents = useMemo(() => {
+    let list = (data.trackingStudents || []).filter(st => st.isBelowBenchmark)
     if (searchKeyword.trim()) {
       const kw = searchKeyword.trim().toLowerCase()
       list = list.filter(st => {
@@ -297,20 +286,32 @@ export function GradeAnalyticsTab({
       })
     }
     return list
-  }, [data.trackingStudents, trackingCategory, searchKeyword])
+  }, [data.trackingStudents, searchKeyword])
+
+  // Filtered Below Average Students List (Bổ sung mới: HS Dưới ĐTB < 5đ)
+  const displayedBelowAverageStudents = useMemo(() => {
+    let list = (data.trackingStudents || []).filter(st => st.isBelowAverage)
+    if (searchKeyword.trim()) {
+      const kw = searchKeyword.trim().toLowerCase()
+      list = list.filter(st => {
+        return (
+          (st.studentName || "").toLowerCase().includes(kw) ||
+          (st.studentCode || "").toLowerCase().includes(kw) ||
+          (st.className || "").toLowerCase().includes(kw) ||
+          (st.subjectName || "").toLowerCase().includes(kw) ||
+          (st.teacherName || "").toLowerCase().includes(kw)
+        )
+      })
+    }
+    return list
+  }, [data.trackingStudents, searchKeyword])
+
+  // Legacy tracking list (for compatibility)
+  const displayedTrackingStudents = displayedBelowBenchmarkStudents
 
   // Filtered KSĐV Matrix Students List
   const displayedKsdvStudents = useMemo(() => {
     let list = data.ksdvMatrix?.students || []
-
-    // 1. Lọc theo phạm vi Khối 1 vs Khối 2-12
-    if (ksdvGradeScope === "GRADE_1") {
-      list = list.filter(st => st.isGrade1 || st.gradeNum === 1)
-    } else if (ksdvGradeScope === "OTHER_GRADES") {
-      list = list.filter(st => (!st.isGrade1 && st.gradeNum !== 1) || (st.gradeNum && st.gradeNum >= 2 && st.gradeNum <= 12))
-    }
-
-    // 2. Lọc theo môn
     if (ksdvSubjectFilter === "MATH") {
       list = list.filter(st => st.math?.isCommitted)
     } else if (ksdvSubjectFilter === "LIT") {
@@ -337,7 +338,7 @@ export function GradeAnalyticsTab({
       })
     }
     return list
-  }, [data.ksdvMatrix?.students, ksdvGradeScope, ksdvSubjectFilter, searchKeyword])
+  }, [data.ksdvMatrix?.students, ksdvSubjectFilter, searchKeyword])
 
   // Xuất Excel Ma trận Đối sánh KSĐV
   const handleExportKsdvMatrixExcel = () => {
@@ -374,11 +375,10 @@ export function GradeAnalyticsTab({
       "Tâm lý - Cam kết": st.psychology?.isCommitted ? "x (CHÚ Ý MÀU ĐỎ)" : "",
       "Tâm lý - Điểm KSĐV": st.psychology?.entranceScore !== null && st.psychology?.entranceScore !== undefined ? st.psychology.entranceScore : "",
       "Tâm lý - Cảnh báo đối tượng": st.psychology?.isCommitted ? "CẦN THEO DÕI SÁT TÂM LÝ & HÀNH VI" : "",
-      // Ghi chú cam kết & Hồ sơ
-      "Kết quả đầu vào": st.admissionResult || "",
+      // Ghi chú cam kết
       "Tiêu chí tuyển sinh": st.admissionCriteria || "",
-      "Môn cam kết": st.committedSubjects ? st.committedSubjects.join(", ") : "",
-      "Ghi chú cam kết Hội đồng tuyển sinh": st.directorNote ? st.directorNote.split(/---\s*LỊCH SỬ/i)[0].trim() : ""
+      "Kết quả xét tuyển": st.admissionResult || "",
+      "Ghi chú cam kết Hội đồng tuyển sinh": st.directorNote || ""
     }))
 
     const ws = XLSX.utils.json_to_sheet(excelRows)
@@ -498,14 +498,14 @@ export function GradeAnalyticsTab({
     XLSX.writeFile(wb, `Bao_Cao_Pho_Diem_Giao_Vien_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
-  // Export Excel: Tracking List
-  const handleExportTrackingExcel = () => {
-    if (displayedTrackingStudents.length === 0) {
-      alert("Không có học sinh trong danh sách cần xuất!")
+  // Export Excel: HS Dưới Chuẩn (bỏ cam kết)
+  const handleExportBelowBenchmarkExcel = () => {
+    if (displayedBelowBenchmarkStudents.length === 0) {
+      alert("Không có học sinh dưới chuẩn để xuất Excel!")
       return
     }
 
-    const excelRows = displayedTrackingStudents.map((st, idx) => ({
+    const excelRows = displayedBelowBenchmarkStudents.map((st, idx) => ({
       "STT": idx + 1,
       "Cơ sở": st.campusName || "",
       "Mã HS": st.studentCode,
@@ -517,18 +517,41 @@ export function GradeAnalyticsTab({
       "Điểm số": st.currentScore !== null ? st.currentScore : "",
       "Điểm Chuẩn môn": st.benchmark,
       "Độ lệch so với chuẩn": st.benchmarkGap !== null ? st.benchmarkGap : "",
-      "Dưới Trung bình (<5.0)": st.isBelowAverage ? "CÓ" : "KHÔNG",
-      "Dưới Chuẩn": st.isBelowBenchmark ? "CÓ" : "KHÔNG",
-      "Diện Cam kết đầu vào": st.hasAdmissionCommitment ? "CÓ" : "KHÔNG",
-      "Tiêu chí / Diện trúng tuyển": st.entranceInfo?.admissionCriteria || st.entranceInfo?.targetType || "",
-      "Điểm thi đầu vào (Toán - Văn - Anh)": st.entranceInfo ? `T:${st.entranceInfo.mathScore ?? "-"} V:${st.entranceInfo.literatureScore ?? "-"} Tổng Anh:${st.entranceInfo.totalEnglishScore ?? st.entranceInfo.writtenEnglishScore ?? "-"}` : "",
-      "Ghi chú tuyển sinh / Cam kết": st.entranceInfo?.directorNote || st.learningCommitment?.content || ""
+      "Dưới Chuẩn": "CÓ",
+      "Dưới Trung bình (<5.0)": st.isBelowAverage ? "CÓ" : "KHÔNG"
     }))
 
     const ws = XLSX.utils.json_to_sheet(excelRows)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "HS_Duoi_Chuan_Va_Cam_Ket")
-    XLSX.writeFile(wb, `Danh_Sach_HS_Can_Can_Thiep_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+    XLSX.utils.book_append_sheet(wb, ws, "HS_Duoi_Chuan_Mon_Hoc")
+    XLSX.writeFile(wb, `Danh_Sach_HS_Duoi_Chuan_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.xlsx`)
+  }
+
+  // Export Excel: HS Dưới ĐTB (< 5đ)
+  const handleExportBelowAverageExcel = () => {
+    if (displayedBelowAverageStudents.length === 0) {
+      alert("Không có học sinh dưới trung bình để xuất Excel!")
+      return
+    }
+
+    const excelRows = displayedBelowAverageStudents.map((st, idx) => ({
+      "STT": idx + 1,
+      "Cơ sở": st.campusName || "",
+      "Mã HS": st.studentCode,
+      "Họ và tên": st.studentName,
+      "Lớp": st.className,
+      "Khối": st.grade,
+      "Môn học": st.subjectName,
+      "Giáo viên phụ trách": st.teacherName,
+      "Điểm khảo sát (< 5đ)": st.currentScore !== null ? st.currentScore : "",
+      "Điểm Chuẩn môn": st.benchmark,
+      "Độ lệch": st.benchmarkGap !== null ? st.benchmarkGap : ""
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(excelRows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, "HS_Duoi_DTB_Duoi_5d")
+    XLSX.writeFile(wb, `Danh_Sach_HS_Duoi_DTB_${currentPeriod}_${new Date().toISOString().slice(0, 10)}.xlsx`)
   }
 
   const currentYearName = academicYears.find(y => y.id === selectedYearId)?.name || "2026-2027"
@@ -567,28 +590,48 @@ export function GradeAnalyticsTab({
             <span>Chất lượng theo Giáo viên</span>
           </button>
 
+          {/* Tab 2: Chỉ HS Dưới Chuẩn môn học (bỏ cam kết) */}
           <button
-            onClick={() => setActiveSubView("tracking")}
+            onClick={() => setActiveSubView("below_benchmark")}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
-              activeSubView === "tracking"
-                ? "bg-white text-[#005B58] shadow-sm"
+              activeSubView === "below_benchmark"
+                ? "bg-white text-amber-800 shadow-sm ring-1 ring-amber-300"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-            <span>HS Dưới chuẩn & Cam kết</span>
-            {(data.summary.totalBelowBenchmark > 0 || data.summary.totalAdmissionCommitment > 0) && (
+            <span>HS Dưới chuẩn</span>
+            {data.summary.totalBelowBenchmark > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-100 text-amber-800">
-                {data.summary.totalBelowBenchmark + data.summary.totalAdmissionCommitment}
+                {data.summary.totalBelowBenchmark}
               </span>
             )}
           </button>
 
+          {/* Tab 3: Bổ sung mới: HS Dưới ĐTB (< 5đ) */}
+          <button
+            onClick={() => setActiveSubView("below_average")}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              activeSubView === "below_average"
+                ? "bg-white text-rose-800 shadow-sm ring-1 ring-rose-300"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+            <span>HS Dưới ĐTB (&lt; 5đ)</span>
+            {data.summary.totalBelowAverage > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-rose-100 text-rose-800">
+                {data.summary.totalBelowAverage}
+              </span>
+            )}
+          </button>
+
+          {/* Tab 4: Đối sánh KSĐV (Cam kết đầu vào) */}
           <button
             onClick={() => setActiveSubView("ksdv_matrix")}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
               activeSubView === "ksdv_matrix"
-                ? "bg-white text-[#005B58] shadow-sm"
+                ? "bg-white text-indigo-800 shadow-sm ring-1 ring-indigo-300"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -601,6 +644,7 @@ export function GradeAnalyticsTab({
             )}
           </button>
 
+          {/* Tab 5: Biểu đồ Phổ điểm */}
           <button
             onClick={() => setActiveSubView("charts")}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
@@ -618,7 +662,11 @@ export function GradeAnalyticsTab({
       {/* 2. KHỐI KPI CARDS TỔNG HỢP */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3.5">
         {/* KPI 1: Tổng phân công */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm">
+        <div 
+          onClick={() => setActiveSubView("teachers")}
+          className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm cursor-pointer hover:shadow-md hover:border-teal-300 transition-all"
+          title="Nhấp để xem Bảng Chất lượng theo Giáo viên"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-500">Tổng phân công</span>
             <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#005B58] flex items-center justify-center font-bold">
@@ -673,7 +721,11 @@ export function GradeAnalyticsTab({
         </div>
 
         {/* KPI 4: HS Dưới Chuẩn môn học */}
-        <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm bg-gradient-to-br from-white to-amber-50/30">
+        <div 
+          onClick={() => setActiveSubView("below_benchmark")}
+          className="bg-white p-4 rounded-2xl border border-amber-200 shadow-sm bg-gradient-to-br from-white to-amber-50/30 cursor-pointer hover:shadow-md hover:border-amber-400 transition-all"
+          title="Nhấp để xem danh sách Học sinh Dưới chuẩn môn học"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-amber-700">HS Dưới Chuẩn</span>
             <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
@@ -690,7 +742,11 @@ export function GradeAnalyticsTab({
         </div>
 
         {/* KPI 5: HS Dưới Trung bình (< 5.0) */}
-        <div className="bg-white p-4 rounded-2xl border border-rose-200 shadow-sm bg-gradient-to-br from-white to-rose-50/30">
+        <div 
+          onClick={() => setActiveSubView("below_average")}
+          className="bg-white p-4 rounded-2xl border border-rose-200 shadow-sm bg-gradient-to-br from-white to-rose-50/30 cursor-pointer hover:shadow-md hover:border-rose-400 transition-all"
+          title="Nhấp để xem danh sách Học sinh Dưới điểm trung bình (< 5.0đ)"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-rose-700">HS Dưới TB (&lt; 5đ)</span>
             <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold">
@@ -707,7 +763,11 @@ export function GradeAnalyticsTab({
         </div>
 
         {/* KPI 6: HS Diện Cam kết đầu vào */}
-        <div className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-sm bg-gradient-to-br from-white to-indigo-50/30">
+        <div 
+          onClick={() => setActiveSubView("ksdv_matrix")}
+          className="bg-white p-4 rounded-2xl border border-indigo-200 shadow-sm bg-gradient-to-br from-white to-indigo-50/30 cursor-pointer hover:shadow-md hover:border-indigo-400 transition-all"
+          title="Nhấp để xem Ma trận Đối sánh KSĐV (Cam kết đầu vào)"
+        >
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-indigo-800">Diện Cam kết</span>
             <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
@@ -763,13 +823,23 @@ export function GradeAnalyticsTab({
               </button>
             )}
 
-            {activeSubView === "tracking" && (
+            {activeSubView === "below_benchmark" && (
               <button
-                onClick={handleExportTrackingExcel}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+                onClick={handleExportBelowBenchmarkExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Xuất Excel HS Can thiệp</span>
+                <span>Xuất Excel HS Dưới Chuẩn</span>
+              </button>
+            )}
+
+            {activeSubView === "below_average" && (
+              <button
+                onClick={handleExportBelowAverageExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Xuất Excel HS Dưới ĐTB (&lt; 5đ)</span>
               </button>
             )}
 
@@ -1080,13 +1150,25 @@ export function GradeAnalyticsTab({
                                 onClick={() => {
                                   setSelectedClassId(it.classId)
                                   setSelectedSubjectId(it.subjectId)
-                                  setTrackingCategory("BELOW_BENCHMARK")
-                                  setActiveSubView("tracking")
+                                  setActiveSubView("below_benchmark")
                                 }}
                                 className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-bold transition-all border border-amber-200"
                                 title="Xem danh sách các học sinh dưới chuẩn của lớp này"
                               >
                                 {it.count_below_benchmark} HS dưới chuẩn
+                              </button>
+                            )}
+                            {it.count_0_5 > 0 && (
+                              <button
+                                onClick={() => {
+                                  setSelectedClassId(it.classId)
+                                  setSelectedSubjectId(it.subjectId)
+                                  setActiveSubView("below_average")
+                                }}
+                                className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-lg text-xs font-bold transition-all border border-rose-200"
+                                title="Xem danh sách các học sinh dưới trung bình (< 5đ) của lớp này"
+                              >
+                                {it.count_0_5} HS &lt;5đ
                               </button>
                             )}
                           </div>
@@ -1101,99 +1183,60 @@ export function GradeAnalyticsTab({
         </div>
       )}
 
-      {/* 5. VIEW 2: DANH SÁCH HỌC SINH DƯỚI TRUNG BÌNH, DƯỚI CHUẨN & DIỆN CAM KẾT */}
-      {activeSubView === "tracking" && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fadeIn space-y-4 p-5">
-          {/* Sub-tabs for Tracking */}
-          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button
-                onClick={() => setTrackingCategory("ALL")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  trackingCategory === "ALL"
-                    ? "bg-[#005B58] text-white shadow-sm"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                Tất cả HS cần bám sát ({data.trackingStudents?.length || 0})
-              </button>
-
-              <button
-                onClick={() => setTrackingCategory("BELOW_AVG")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  trackingCategory === "BELOW_AVG"
-                    ? "bg-rose-600 text-white shadow-sm"
-                    : "bg-rose-50 text-rose-700 hover:bg-rose-100"
-                }`}
-              >
-                🔴 Dưới Trung bình &lt;5.0đ ({data.summary.totalBelowAverage})
-              </button>
-
-              <button
-                onClick={() => setTrackingCategory("BELOW_BENCHMARK")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  trackingCategory === "BELOW_BENCHMARK"
-                    ? "bg-amber-600 text-white shadow-sm"
-                    : "bg-amber-50 text-amber-800 hover:bg-amber-100"
-                }`}
-              >
-                🟠 Dưới Chuẩn môn ({data.summary.totalBelowBenchmark})
-              </button>
-
-              <button
-                onClick={() => setTrackingCategory("ADMISSION_COMMITMENT")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  trackingCategory === "ADMISSION_COMMITMENT"
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "bg-indigo-50 text-indigo-800 hover:bg-indigo-100"
-                }`}
-              >
-                🎯 Diện Cam kết đầu vào ({data.summary.totalAdmissionCommitment})
-              </button>
-
-              <button
-                onClick={() => setTrackingCategory("LEARNING_COMMITMENT")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  trackingCategory === "LEARNING_COMMITMENT"
-                    ? "bg-purple-600 text-white shadow-sm"
-                    : "bg-purple-50 text-purple-800 hover:bg-purple-100"
-                }`}
-              >
-                📝 Diện Cam kết học tập ({data.summary.totalLearningCommitment})
-              </button>
+      {/* 5. VIEW 2: DANH SÁCH HỌC SINH DƯỚI CHUẨN MÔN HỌC (CHỈ CÓ HS DƯỚI CHUẨN, BỎ CAM KẾT) */}
+      {activeSubView === "below_benchmark" && (
+        <div className="bg-white rounded-2xl border border-amber-200/80 shadow-sm overflow-hidden animate-fadeIn space-y-4 p-5">
+          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-amber-100 pb-3">
+            <div>
+              <h3 className="text-sm font-black text-amber-900 uppercase tracking-wider flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600" />
+                <span>Danh sách Học sinh Dưới chuẩn môn học</span>
+              </h3>
+              <p className="text-xs text-amber-700/80 mt-0.5 font-medium">
+                Tiêu chuẩn kiểm định: Tiểu học &lt; 7.0đ | Trung học &lt; 6.0đ (Hoặc theo cấu hình Chuẩn môn học cụ thể)
+              </p>
             </div>
 
-            <span className="text-xs font-bold text-slate-500">
-              Hiển thị {displayedTrackingStudents.length} học sinh
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
+                Hiển thị: <strong>{displayedBelowBenchmarkStudents.length}</strong> lượt môn dưới chuẩn
+              </span>
+              <button
+                onClick={handleExportBelowBenchmarkExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Xuất Excel HS Dưới Chuẩn</span>
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
+                <tr className="bg-amber-50/60 text-amber-950 font-bold border-b border-amber-200 uppercase tracking-wider text-[10px]">
                   <th className="py-3 px-2 text-center w-8">STT</th>
                   <th className="py-3 px-3">Mã HS</th>
                   <th className="py-3 px-3">Họ và tên học sinh</th>
                   <th className="py-3 px-3">Lớp & Khối</th>
                   <th className="py-3 px-3">Môn học</th>
                   <th className="py-3 px-3">Giáo viên phụ trách</th>
-                  <th className="py-3 px-2 text-center">Điểm số</th>
-                  <th className="py-3 px-2 text-center">Chuẩn</th>
+                  <th className="py-3 px-2 text-center">Điểm khảo sát</th>
+                  <th className="py-3 px-2 text-center">Chuẩn môn</th>
                   <th className="py-3 px-2 text-center">Độ lệch (Gap)</th>
-                  <th className="py-3 px-3">Diện đối tượng & Ghi chú cam kết</th>
+                  <th className="py-3 px-3 text-center">Đánh giá</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {displayedTrackingStudents.length === 0 ? (
+                {displayedBelowBenchmarkStudents.length === 0 ? (
                   <tr>
                     <td colSpan={10} className="py-12 text-center text-slate-400 font-medium">
-                      Không có học sinh nào trong danh mục bám sát này.
+                      Không có học sinh nào dưới chuẩn môn học theo bộ lọc hiện tại.
                     </td>
                   </tr>
                 ) : (
-                  displayedTrackingStudents.map((st, idx) => (
-                    <tr key={`${st.studentId}_${st.subjectId}_${idx}`} className="hover:bg-slate-50/80 transition-colors">
+                  displayedBelowBenchmarkStudents.map((st, idx) => (
+                    <tr key={`benchmark_${st.studentId}_${st.subjectId}_${idx}`} className="hover:bg-amber-50/30 transition-colors">
                       <td className="py-2.5 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>
                       <td className="py-2.5 px-3 font-mono font-medium text-slate-600">{st.studentCode}</td>
                       <td className="py-2.5 px-3 font-bold text-slate-900">{st.studentName}</td>
@@ -1211,12 +1254,10 @@ export function GradeAnalyticsTab({
                       {/* Điểm số */}
                       <td className="py-2.5 px-2 text-center">
                         {st.currentScore !== null ? (
-                          <span className={`font-black text-xs px-2 py-0.5 rounded ${
+                          <span className={`font-black text-xs px-2.5 py-0.5 rounded ${
                             st.currentScore < 5.0
-                              ? "bg-rose-100 text-rose-800"
-                              : st.currentScore < st.benchmark
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-emerald-100 text-emerald-800"
+                              ? "bg-rose-100 text-rose-800 border border-rose-300"
+                              : "bg-amber-100 text-amber-800 border border-amber-300"
                           }`}>
                             {st.currentScore}
                           </span>
@@ -1241,57 +1282,117 @@ export function GradeAnalyticsTab({
                         )}
                       </td>
 
-                      {/* Diện đối tượng & Ghi chú */}
+                      {/* Đánh giá */}
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                          Dưới chuẩn ({st.benchmarkGap}đ)
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* 5.1 VIEW 3: DANH SÁCH HỌC SINH DƯỚI ĐIỂM TRUNG BÌNH (< 5.0đ) (BỔ SUNG MỚI) */}
+      {activeSubView === "below_average" && (
+        <div className="bg-white rounded-2xl border border-rose-200 shadow-sm overflow-hidden animate-fadeIn space-y-4 p-5">
+          <div className="flex items-center justify-between flex-wrap gap-2 border-b border-rose-100 pb-3">
+            <div>
+              <h3 className="text-sm font-black text-rose-900 uppercase tracking-wider flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600" />
+                <span>Danh sách Học sinh Dưới điểm Trung bình (&lt; 5.0đ)</span>
+              </h3>
+              <p className="text-xs text-rose-700/80 mt-0.5 font-medium">
+                Nhóm học sinh có điểm khảo sát dưới 5.0đ — Đơn vị / Tổ chuyên môn / GVBM cần lên kế hoạch phụ đạo bồi dưỡng cấp tốc
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-rose-800 bg-rose-50 px-3 py-1.5 rounded-xl border border-rose-200">
+                Hiển thị: <strong>{displayedBelowAverageStudents.length}</strong> lượt môn &lt; 5.0đ
+              </span>
+              <button
+                onClick={handleExportBelowAverageExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Xuất Excel HS Dưới ĐTB</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-rose-50/70 text-rose-950 font-bold border-b border-rose-200 uppercase tracking-wider text-[10px]">
+                  <th className="py-3 px-2 text-center w-8">STT</th>
+                  <th className="py-3 px-3">Mã HS</th>
+                  <th className="py-3 px-3">Họ và tên học sinh</th>
+                  <th className="py-3 px-3">Lớp & Khối</th>
+                  <th className="py-3 px-3">Môn học</th>
+                  <th className="py-3 px-3">Giáo viên phụ trách</th>
+                  <th className="py-3 px-2 text-center">Điểm khảo sát (&lt;5đ)</th>
+                  <th className="py-3 px-2 text-center">Chuẩn môn</th>
+                  <th className="py-3 px-2 text-center">Độ lệch (Gap)</th>
+                  <th className="py-3 px-3 text-center">Mức độ ưu tiên can thiệp</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {displayedBelowAverageStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="py-12 text-center text-slate-400 font-medium">
+                      Không có học sinh nào dưới điểm trung bình (&lt; 5.0đ) theo bộ lọc hiện tại.
+                    </td>
+                  </tr>
+                ) : (
+                  displayedBelowAverageStudents.map((st, idx) => (
+                    <tr key={`avg_${st.studentId}_${st.subjectId}_${idx}`} className="hover:bg-rose-50/40 transition-colors">
+                      <td className="py-2.5 px-2 text-center text-slate-400 font-medium">{idx + 1}</td>
+                      <td className="py-2.5 px-3 font-mono font-medium text-slate-600">{st.studentCode}</td>
+                      <td className="py-2.5 px-3 font-bold text-slate-900">{st.studentName}</td>
                       <td className="py-2.5 px-3">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {st.hasAdmissionCommitment && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200" title={st.entranceInfo?.directorNote || "Học sinh có cam kết tuyển sinh"}>
-                                <Sparkles className="w-3 h-3 text-indigo-600" />
-                                🎯 Cam kết đầu vào
-                              </span>
-                            )}
-                            {st.hasActiveLearningCommitment && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                                📝 Cam kết học tập
-                              </span>
-                            )}
-                            {st.isBelowAverage && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
-                                Dưới 5.0
-                              </span>
-                            )}
-                            {st.isBelowBenchmark && !st.isBelowAverage && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
-                                Dưới chuẩn
-                              </span>
-                            )}
-                          </div>
+                        <span className="font-extrabold text-teal-900 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 text-[11px] whitespace-nowrap">
+                          {st.className}
+                        </span>
+                        {st.campusName && (
+                          <div className="text-[10px] text-slate-400 font-medium mt-0.5 whitespace-nowrap">{st.campusName}</div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-slate-800">{st.subjectName}</td>
+                      <td className="py-2.5 px-3 text-slate-700">{st.teacherName}</td>
 
-                          {/* Thông tin bài thi tuyển sinh đầu vào nếu có */}
-                          {st.entranceInfo && (
-                            <div className="text-[11px] text-slate-500 bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                              <span className="font-semibold text-slate-700">Điểm thi đầu vào:</span> Toán: <strong className="text-slate-800">{st.entranceInfo.mathScore ?? "-"}</strong> | Văn: <strong className="text-slate-800">{st.entranceInfo.literatureScore ?? "-"}</strong> | Tổng điểm Tiếng Anh: <strong className="text-slate-800">{st.entranceInfo.totalEnglishScore !== null && st.entranceInfo.totalEnglishScore !== undefined ? `${st.entranceInfo.totalEnglishScore}${st.entranceInfo.oralEnglishScore != null || st.entranceInfo.writtenEnglishScore != null ? ` (Nói: ${st.entranceInfo.oralEnglishScore ?? "-"}, Viết: ${st.entranceInfo.writtenEnglishScore ?? "-"})` : ""}` : (st.entranceInfo.writtenEnglishScore ?? "-")}</strong>
-                              {st.entranceInfo.admissionCriteria && (
-                                <div className="text-[10px] text-indigo-700 font-medium mt-0.5">
-                                  Tiêu chí: {st.entranceInfo.admissionCriteria}
-                                </div>
-                              )}
-                              {st.entranceInfo.directorNote && (
-                                <div className="text-[10px] text-slate-600 italic mt-0.5">
-                                  &quot;{st.entranceInfo.directorNote}&quot;
-                                </div>
-                              )}
-                            </div>
-                          )}
+                      {/* Điểm số */}
+                      <td className="py-2.5 px-2 text-center">
+                        <span className="font-black text-xs px-2.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 ring-2 ring-rose-100 shadow-2xs">
+                          {st.currentScore}đ
+                        </span>
+                      </td>
 
-                          {/* Thông tin cam kết học tập hiện hành */}
-                          {st.learningCommitment && (
-                            <div className="text-[10px] text-purple-800 bg-purple-50/70 p-1.5 rounded border border-purple-100 italic">
-                              Cam kết: {st.learningCommitment.content} (GV: {st.learningCommitment.teacherName})
-                            </div>
-                          )}
-                        </div>
+                      {/* Chuẩn */}
+                      <td className="py-2.5 px-2 text-center font-bold text-slate-700">
+                        {st.benchmark}đ
+                      </td>
+
+                      {/* Độ lệch */}
+                      <td className="py-2.5 px-2 text-center">
+                        {st.benchmarkGap !== null ? (
+                          <span className="font-bold text-rose-600">
+                            {st.benchmarkGap}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">—</span>
+                        )}
+                      </td>
+
+                      {/* Mức độ ưu tiên can thiệp */}
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-extrabold bg-red-100 text-red-800 border border-red-200 animate-pulse">
+                          🚨 Phụ đạo gấp
+                        </span>
                       </td>
                     </tr>
                   ))
@@ -1306,111 +1407,40 @@ export function GradeAnalyticsTab({
       {activeSubView === "ksdv_matrix" && (
         <div className="space-y-4 animate-fadeIn">
           {/* KPI Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-            {/* Card 1: Toàn trường K1-12 */}
-            <div className="bg-white p-3.5 rounded-2xl border-2 border-indigo-200 shadow-sm bg-gradient-to-br from-white via-indigo-50/20 to-indigo-100/40 relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-indigo-800 uppercase tracking-wider">
-                  Toàn trường (K1 - 12)
-                </span>
-                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700">
-                  Tỷ lệ CKĐV
-                </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="bg-white p-3.5 rounded-2xl border border-indigo-100 shadow-sm bg-gradient-to-br from-white to-indigo-50/30">
+              <span className="text-[11px] font-bold text-indigo-700 block uppercase tracking-wider">HS Cam kết nhập học</span>
+              <div className="text-2xl font-black text-indigo-900 mt-1">
+                {data.ksdvMatrix?.summary?.totalCommittedStudents || 0}
               </div>
-              <div className="text-2xl font-black text-indigo-950 mt-1 flex items-baseline gap-1.5">
-                {data.ksdvMatrix?.summary?.totalCommitmentRate ?? 0}%
-                <span className="text-xs font-bold text-indigo-600">
-                  ({data.ksdvMatrix?.summary?.totalCommittedStudents || 0}/{data.ksdvMatrix?.summary?.totalNewEnrolled || 0} HS)
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                <div 
-                  className="bg-indigo-600 h-1.5 rounded-full transition-all duration-500" 
-                  style={{ width: `${Math.min(100, data.ksdvMatrix?.summary?.totalCommitmentRate || 0)}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-slate-500 font-semibold block mt-1.5">
-                CKĐV / Tuyển mới Nhập học
-              </span>
+              <span className="text-[10px] text-slate-400 font-medium">Hồ sơ cam kết đầu vào</span>
             </div>
 
-            {/* Card 2: Khối 1 (TÁCH RIÊNG) */}
-            <div className="bg-amber-50/60 p-3.5 rounded-2xl border-2 border-amber-300 shadow-sm bg-gradient-to-br from-white via-amber-50/50 to-amber-100/50 ring-2 ring-amber-100 relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-amber-900 uppercase tracking-wider flex items-center gap-1">
-                  🎒 Khối 1 (Tách riêng)
-                </span>
-                <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-white uppercase tracking-wider shadow-xs">
-                  Trọng điểm
-                </span>
+            <div className="bg-white p-3.5 rounded-2xl border border-blue-100 shadow-sm bg-gradient-to-br from-white to-blue-50/30">
+              <span className="text-[11px] font-bold text-blue-700 block uppercase tracking-wider">Cam kết môn Toán</span>
+              <div className="text-2xl font-black text-blue-900 mt-1">
+                {data.ksdvMatrix?.summary?.committedMathCount || 0}
               </div>
-              <div className="text-2xl font-black text-amber-950 mt-1 flex items-baseline gap-1.5">
-                {data.ksdvMatrix?.summary?.grade1CommitmentRate ?? 0}%
-                <span className="text-xs font-bold text-amber-800">
-                  ({data.ksdvMatrix?.summary?.grade1CommittedCount || 0}/{data.ksdvMatrix?.summary?.grade1NewEnrolled || 0} HS)
-                </span>
-              </div>
-              <div className="w-full bg-amber-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                <div 
-                  className="bg-amber-500 h-1.5 rounded-full transition-all duration-500" 
-                  style={{ width: `${Math.min(100, data.ksdvMatrix?.summary?.grade1CommitmentRate || 0)}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-amber-800 font-bold block mt-1.5">
-                Tỷ lệ CKĐV Tuyển mới Khối 1
-              </span>
+              <span className="text-[10px] text-slate-400 font-medium">HS có cam kết Toán</span>
             </div>
 
-            {/* Card 3: Khối 2 - 12 */}
-            <div className="bg-white p-3.5 rounded-2xl border border-sky-200 shadow-sm bg-gradient-to-br from-white via-sky-50/20 to-sky-100/30">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black text-sky-800 uppercase tracking-wider">
-                  Khối 2 đến 12
-                </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-700">
-                  K2 - 12
-                </span>
+            <div className="bg-white p-3.5 rounded-2xl border border-emerald-100 shadow-sm bg-gradient-to-br from-white to-emerald-50/30">
+              <span className="text-[11px] font-bold text-emerald-700 block uppercase tracking-wider">Cam kết Tiếng Việt / Văn</span>
+              <div className="text-2xl font-black text-emerald-900 mt-1">
+                {data.ksdvMatrix?.summary?.committedLitCount || 0}
               </div>
-              <div className="text-2xl font-black text-sky-950 mt-1 flex items-baseline gap-1.5">
-                {data.ksdvMatrix?.summary?.otherGradesCommitmentRate ?? 0}%
-                <span className="text-xs font-bold text-sky-700">
-                  ({data.ksdvMatrix?.summary?.otherGradesCommittedCount || 0}/{data.ksdvMatrix?.summary?.otherGradesNewEnrolled || 0} HS)
-                </span>
-              </div>
-              <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
-                <div 
-                  className="bg-sky-500 h-1.5 rounded-full transition-all duration-500" 
-                  style={{ width: `${Math.min(100, data.ksdvMatrix?.summary?.otherGradesCommitmentRate || 0)}%` }}
-                />
-              </div>
-              <span className="text-[10px] text-slate-500 font-semibold block mt-1.5">
-                Tỷ lệ CKĐV Tuyển mới K2-12
-              </span>
+              <span className="text-[10px] text-slate-400 font-medium">HS có cam kết TV / Văn</span>
             </div>
 
-            {/* Card 4: Chi tiết Cam kết các môn học */}
-            <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm bg-gradient-to-br from-white to-slate-50 flex flex-col justify-between">
-              <span className="text-[11px] font-bold text-slate-700 block uppercase tracking-wider">
-                Môn Cam kết (K1-12)
-              </span>
-              <div className="space-y-1 my-1 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-700 font-bold flex items-center gap-1">📐 Toán:</span>
-                  <span className="font-extrabold text-blue-900">{data.ksdvMatrix?.summary?.committedMathCount || 0} HS</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">📖 TV/Văn:</span>
-                  <span className="font-extrabold text-emerald-900">{data.ksdvMatrix?.summary?.committedLitCount || 0} HS</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-violet-700 font-bold flex items-center gap-1">🌐 Tiếng Anh:</span>
-                  <span className="font-extrabold text-violet-900">{data.ksdvMatrix?.summary?.committedEngCount || 0} HS</span>
-                </div>
+            <div className="bg-white p-3.5 rounded-2xl border border-violet-100 shadow-sm bg-gradient-to-br from-white to-violet-50/30">
+              <span className="text-[11px] font-bold text-violet-700 block uppercase tracking-wider">Cam kết Tiếng Anh</span>
+              <div className="text-2xl font-black text-violet-900 mt-1">
+                {data.ksdvMatrix?.summary?.committedEngCount || 0}
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">HS có thể cam kết nhiều môn</span>
+              <span className="text-[10px] text-slate-400 font-medium">Vấn đáp & Viết</span>
             </div>
 
-            {/* Card 5: Cam kết Tâm lý - CẢNH BÁO MÀU ĐỎ NỔI BẬT */}
+            {/* BỔ SUNG THẺ CAM KẾT TÂM LÝ - MÀU ĐỎ NỔI BẬT */}
             <div className="bg-red-50/70 p-3.5 rounded-2xl border-2 border-red-300 shadow-sm bg-gradient-to-br from-white via-red-50 to-red-100/40 ring-2 ring-red-100">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-black text-red-700 block uppercase tracking-wider">
@@ -1425,12 +1455,11 @@ export function GradeAnalyticsTab({
                 {data.ksdvMatrix?.summary?.committedPsychologyCount || 0}
                 <span className="text-[11px] font-bold text-red-600">học sinh</span>
               </div>
-              <span className="text-[10px] text-red-600 font-extrabold flex items-center gap-1 mt-1">
+              <span className="text-[10px] text-red-600 font-extrabold flex items-center gap-1 mt-0.5">
                 <span>🚨</span> Cần chú ý theo dõi sát
               </span>
             </div>
 
-            {/* Card 6: Tiến bộ / Đạt chuẩn */}
             <div className="bg-white p-3.5 rounded-2xl border border-teal-100 shadow-sm bg-gradient-to-br from-white to-teal-50/30">
               <span className="text-[11px] font-bold text-teal-700 block uppercase tracking-wider">Tiến bộ / Đạt chuẩn</span>
               <div className="text-2xl font-black text-teal-900 mt-1">
@@ -1441,75 +1470,8 @@ export function GradeAnalyticsTab({
             </div>
           </div>
 
-          {/* Sub-filter pills for Grade Scope & Subjects */}
+          {/* Sub-filter pills for subjects */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-            {/* Hàng 1: Bộ lọc Phạm vi Khối (Tách riêng Khối 1 vs Khối 2-12) */}
-            <div className="flex items-center justify-between flex-wrap gap-2 pb-2.5 border-b border-slate-100">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                  <span>🎯</span> Phân loại Khối:
-                </span>
-                <button
-                  onClick={() => setKsdvGradeScope("ALL")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
-                    ksdvGradeScope === "ALL"
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 ring-2 ring-indigo-300"
-                      : "bg-slate-100 hover:bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  <span>Toàn trường (Khối 1 - 12)</span>
-                  <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
-                    ksdvGradeScope === "ALL" ? "bg-white text-indigo-700" : "bg-slate-200 text-slate-700"
-                  }`}>
-                    {data.ksdvMatrix?.summary?.totalCommittedStudents || 0} / {data.ksdvMatrix?.summary?.totalNewEnrolled || 0} HS ({data.ksdvMatrix?.summary?.totalCommitmentRate ?? 0}%)
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => setKsdvGradeScope("GRADE_1")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
-                    ksdvGradeScope === "GRADE_1"
-                      ? "bg-amber-600 text-white shadow-md shadow-amber-200 ring-2 ring-amber-300"
-                      : "bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300"
-                  }`}
-                >
-                  <span>🎒 Khối 1 (Tách riêng)</span>
-                  <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
-                    ksdvGradeScope === "GRADE_1" ? "bg-white text-amber-800" : "bg-amber-200 text-amber-900"
-                  }`}>
-                    {data.ksdvMatrix?.summary?.grade1CommittedCount || 0} / {data.ksdvMatrix?.summary?.grade1NewEnrolled || 0} HS ({data.ksdvMatrix?.summary?.grade1CommitmentRate ?? 0}%)
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => setKsdvGradeScope("OTHER_GRADES")}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
-                    ksdvGradeScope === "OTHER_GRADES"
-                      ? "bg-sky-600 text-white shadow-md shadow-sky-200 ring-2 ring-sky-300"
-                      : "bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-300"
-                  }`}
-                >
-                  <span>🏫 Khối 2 đến 12</span>
-                  <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-black ${
-                    ksdvGradeScope === "OTHER_GRADES" ? "bg-white text-sky-800" : "bg-sky-200 text-sky-900"
-                  }`}>
-                    {data.ksdvMatrix?.summary?.otherGradesCommittedCount || 0} / {data.ksdvMatrix?.summary?.otherGradesNewEnrolled || 0} HS ({data.ksdvMatrix?.summary?.otherGradesCommitmentRate ?? 0}%)
-                  </span>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleExportKsdvMatrixExcel}
-                  className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 transition-all"
-                  title="Xuất file Excel danh sách đối sánh KSĐV"
-                >
-                  <span>📊 Xuất Excel Đối sánh</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Hàng 2: Bộ lọc theo Môn học & Tâm lý */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
@@ -1520,7 +1482,7 @@ export function GradeAnalyticsTab({
                       : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                   }`}
                 >
-                  Tất cả môn cam kết
+                  Tất cả HS cam kết ({data.ksdvMatrix?.students?.length || 0})
                 </button>
                 <button
                   onClick={() => setKsdvSubjectFilter("MATH")}
@@ -1571,7 +1533,7 @@ export function GradeAnalyticsTab({
               </div>
 
               <div className="text-xs text-slate-500 font-semibold">
-                Đang hiển thị: <strong className="text-slate-800 text-sm font-black">{displayedKsdvStudents.length}</strong> học sinh
+                Hiển thị: <strong className="text-slate-800">{displayedKsdvStudents.length}</strong> học sinh
               </div>
             </div>
 
@@ -1671,16 +1633,9 @@ export function GradeAnalyticsTab({
                             )}
                           </td>
                           <td className="py-2.5 px-2.5">
-                            <div className="flex items-center gap-1 flex-wrap">
-                              <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-teal-50 text-[#005B58] border border-teal-200">
-                                {st.className}
-                              </span>
-                              {(st.isGrade1 || st.gradeNum === 1) && (
-                                <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs" title="Học sinh Tuyển mới Khối 1">
-                                  🎒 K1
-                                </span>
-                              )}
-                            </div>
+                            <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-teal-50 text-[#005B58] border border-teal-200">
+                              {st.className}
+                            </span>
                           </td>
                           <td className="py-2.5 px-3 text-slate-700 font-semibold border-r border-slate-200 text-[11px]">
                             {st.homeroomTeacher}

@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   X, Save, Award, CheckCircle2, Sliders, Plus, Trash2, 
-  Sparkles, Users, AlertCircle, Info, Calculator, Check, ArrowRight
+  Sparkles, Users, AlertCircle, Info, Calculator, Check, ArrowRight, RotateCcw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { 
   ActivityEvaluationConfig, 
   CriterionItem, 
-  EvaluationMode,
-  EVALUATION_MODE_OPTIONS,
+  EvaluationMode, 
+  EVALUATION_MODE_OPTIONS, 
   ActivityCatalogItem 
 } from '@/lib/experiential/catalog-types';
 
@@ -26,7 +26,7 @@ const DEFAULT_CRITERIA: CriterionItem[] = [
   { id: 'crit-3', name: 'Chất lượng sản phẩm học tập / Dự án trải nghiệm', weight: 30, maxScore: 10, description: 'Sản phẩm sáng tạo, chỉn chu, đạt yêu cầu của bài học' },
 ];
 
-const DEFAULT_EVENT_ROLES = [
+export const DEFAULT_EVENT_ROLES = [
   'Trưởng nhóm / Điều phối viên học sinh',
   'Phó ban / Thư ký ghi chép',
   'Ban tổ chức / Tiết mục văn nghệ',
@@ -35,7 +35,7 @@ const DEFAULT_EVENT_ROLES = [
   'Thành viên tham gia'
 ];
 
-const PRESET_EVENT_ROLES = [
+export const PRESET_EVENT_ROLES = [
   'MC / Dẫn chương trình',
   'Đội trưởng thi đấu',
   'Diễn viên văn nghệ',
@@ -62,7 +62,11 @@ export function CatalogEvaluationConfigModal({
   const [criteria, setCriteria] = useState<CriterionItem[]>(DEFAULT_CRITERIA);
   const [formulaType, setFormulaType] = useState<'AVERAGE' | 'WEIGHTED'>('WEIGHTED');
   const [completionBenchmark, setCompletionBenchmark] = useState<string>('Điểm TB >= 5.0');
-  const [rolesList, setRolesList] = useState<string[]>(DEFAULT_EVENT_ROLES);
+  
+  // Quản lý danh mục vai trò khả dụng và danh sách vai trò ĐÃ ĐƯỢC CHỌN
+  const [availableRoles, setAvailableRoles] = useState<string[]>(DEFAULT_EVENT_ROLES);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>(DEFAULT_EVENT_ROLES);
+  
   const [completionLevels, setCompletionLevels] = useState<string[]>(DEFAULT_COMPLETION_LEVELS);
   const [newRoleInput, setNewRoleInput] = useState('');
   const [saving, setSaving] = useState(false);
@@ -87,7 +91,14 @@ export function CatalogEvaluationConfigModal({
         setCriteria(Array.isArray(cfg.criteria) && cfg.criteria.length > 0 ? cfg.criteria : DEFAULT_CRITERIA);
         setFormulaType(cfg.formulaType === 'AVERAGE' ? 'AVERAGE' : 'WEIGHTED');
         setCompletionBenchmark(cfg.completionBenchmark || (isEvent ? 'Tham gia đầy đủ sự kiện' : 'Điểm TB >= 5.0'));
-        setRolesList(Array.isArray(cfg.rolesList) && cfg.rolesList.length > 0 ? cfg.rolesList : DEFAULT_EVENT_ROLES);
+        
+        const initialSelected = Array.isArray(cfg.rolesList) && cfg.rolesList.length > 0 
+          ? cfg.rolesList 
+          : DEFAULT_EVENT_ROLES;
+        const allRoles = Array.from(new Set([...DEFAULT_EVENT_ROLES, ...initialSelected]));
+        setAvailableRoles(allRoles);
+        setSelectedRoles(initialSelected);
+
         setCompletionLevels(Array.isArray(cfg.completionLevels) && cfg.completionLevels.length > 0 ? cfg.completionLevels : DEFAULT_COMPLETION_LEVELS);
       } else {
         if (isEvent) {
@@ -100,7 +111,8 @@ export function CatalogEvaluationConfigModal({
         setHasRoleAssessment(true);
         setCriteria(DEFAULT_CRITERIA);
         setFormulaType('WEIGHTED');
-        setRolesList(DEFAULT_EVENT_ROLES);
+        setAvailableRoles(DEFAULT_EVENT_ROLES);
+        setSelectedRoles(DEFAULT_EVENT_ROLES);
         setCompletionLevels(DEFAULT_COMPLETION_LEVELS);
       }
     }
@@ -149,28 +161,71 @@ export function CatalogEvaluationConfigModal({
     setCriteria(criteria.filter((_, idx) => idx !== index));
   };
 
-  // Quản lý vai trò
+  // Quản lý và lựa chọn vai trò học sinh
+  const toggleRole = (role: string) => {
+    if (selectedRoles.includes(role)) {
+      if (selectedRoles.length <= 1) {
+        toast.error('Phải chọn ít nhất 1 vai trò học sinh cho hoạt động');
+        return;
+      }
+      setSelectedRoles(selectedRoles.filter(r => r !== role));
+    } else {
+      setSelectedRoles([...selectedRoles, role]);
+    }
+  };
+
+  const handleSelectAllStandardRoles = () => {
+    const newSelected = Array.from(new Set([...selectedRoles, ...DEFAULT_EVENT_ROLES]));
+    setSelectedRoles(newSelected);
+    toast.success('Đã chọn cả 6 vai trò chuẩn');
+  };
+
+  const handleSelectAll = () => {
+    setSelectedRoles([...availableRoles]);
+    toast.success('Đã chọn tất cả vai trò khả dụng');
+  };
+
+  const handleDeselectAllExceptOne = () => {
+    const keepRole = DEFAULT_EVENT_ROLES[5] || 'Thành viên tham gia';
+    setSelectedRoles([keepRole]);
+    toast('Đã chọn duy nhất: ' + keepRole);
+  };
+
+  const handleResetDefaultRoles = () => {
+    setAvailableRoles(DEFAULT_EVENT_ROLES);
+    setSelectedRoles(DEFAULT_EVENT_ROLES);
+    toast.success('Đã khôi phục 6 vai trò chuẩn mặc định');
+  };
+
   const handleAddRole = (roleName: string) => {
     const trimmed = roleName.trim();
     if (!trimmed) return;
-    if (rolesList.includes(trimmed)) {
-      toast.error('Vai trò này đã có trong danh sách');
-      return;
+    if (!availableRoles.includes(trimmed)) {
+      setAvailableRoles(prev => [...prev, trimmed]);
     }
-    setRolesList([...rolesList, trimmed]);
+    if (!selectedRoles.includes(trimmed)) {
+      setSelectedRoles(prev => [...prev, trimmed]);
+    }
     setNewRoleInput('');
+    toast.success(`Đã thêm & chọn: ${trimmed}`);
   };
 
-  const handleRemoveRole = (roleIndex: number) => {
-    if (rolesList.length <= 1) {
-      toast.error('Phải giữ lại ít nhất 1 vai trò');
+  const handleRemoveCustomRole = (roleToRemove: string) => {
+    if (DEFAULT_EVENT_ROLES.includes(roleToRemove)) {
+      toast.error('Không thể xóa vai trò chuẩn của hệ thống');
       return;
     }
-    setRolesList(rolesList.filter((_, idx) => idx !== roleIndex));
+    setAvailableRoles(prev => prev.filter(r => r !== roleToRemove));
+    setSelectedRoles(prev => prev.filter(r => r !== roleToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (selectedRoles.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 vai trò học sinh cho hoạt động!');
+      return;
+    }
 
     if (mode === 'RUBRIC' && formulaType === 'WEIGHTED' && totalWeight !== 100) {
       toast.error(`Tổng trọng số hiện tại là ${totalWeight}%. Yêu cầu tổng trọng số các tiêu chí phải đúng 100%!`);
@@ -188,7 +243,7 @@ export function CatalogEvaluationConfigModal({
         criteria: mode === 'RUBRIC' ? criteria : [],
         formulaType: mode === 'RUBRIC' ? formulaType : 'AVERAGE',
         completionBenchmark,
-        rolesList: rolesList,
+        rolesList: selectedRoles,
         completionLevels: mode === 'COMPLETION_LEVEL' ? completionLevels : []
       };
 
@@ -537,73 +592,175 @@ export function CatalogEvaluationConfigModal({
           )}
 
           {/* ======================================================== */}
-          {/* 3. THIẾT LẬP DANH SÁCH VAI TRÒ HỌC SINH (CHUNG)          */}
+          {/* 2. THIẾT LẬP & LỰA CHỌN DANH MỤC VAI TRÒ HỌC SINH (6 VT) */}
           {/* ======================================================== */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-slate-500" />
-                <span>2. Danh mục Vai trò Học sinh ({rolesList.length} vai trò)</span>
-              </label>
-              <span className="text-[11px] text-slate-400 font-medium">GV lựa chọn khi chấm điểm danh & tham gia</span>
-            </div>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3.5">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-[#00A19A]" />
+                    <span>2. Danh mục Vai trò Học sinh ({selectedRoles.length} vai trò đã chọn)</span>
+                  </label>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border ${
+                    selectedRoles.length === 6 
+                      ? 'bg-teal-100 text-[#003B3A] border-teal-300' 
+                      : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                  }`}>
+                    {selectedRoles.length === 6 ? 'Đủ 6 vai trò chuẩn' : `Đã chọn: ${selectedRoles.length}/${availableRoles.length} vai trò`}
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                  Bấm vào từng vai trò để <strong>chọn</strong> hoặc <strong>bỏ chọn</strong>. Giáo viên sẽ sử dụng các vai trò đã chọn này để điểm danh và đánh giá học sinh.
+                </p>
+              </div>
 
-            {/* Tags vai trò */}
-            <div className="flex flex-wrap gap-1.5">
-              {rolesList.map((role, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-white text-slate-700 border border-slate-200/90 shadow-2xs"
-                >
-                  <span>{role}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveRole(idx)}
-                    className="text-slate-400 hover:text-rose-600 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-
-            {/* Thêm vai trò mới */}
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="text"
-                value={newRoleInput}
-                onChange={(e) => setNewRoleInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddRole(newRoleInput);
-                  }
-                }}
-                placeholder="Nhập vai trò học sinh mới..."
-                className="flex-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#00A19A]"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddRole(newRoleInput)}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-colors cursor-pointer"
-              >
-                + Thêm vai trò
-              </button>
-            </div>
-
-            {/* Gợi ý nhanh */}
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <span className="text-[10px] font-bold text-slate-400">Gợi ý nhanh:</span>
-              {PRESET_EVENT_ROLES.map((r, idx) => (
+              {/* Nút thao tác nhanh */}
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <button
-                  key={idx}
                   type="button"
-                  onClick={() => handleAddRole(r)}
-                  className="text-[10px] px-2 py-0.5 rounded-md bg-slate-200/60 hover:bg-slate-200 text-slate-600 font-medium transition-colors"
+                  onClick={handleSelectAllStandardRoles}
+                  className="px-2.5 py-1 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#003B3A] border border-teal-300 text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title="Chọn đầy đủ 6 vai trò chuẩn của nhà trường"
                 >
-                  + {r}
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Chọn 6 vai trò chuẩn</span>
                 </button>
-              ))}
+
+                <button
+                  type="button"
+                  onClick={handleSelectAll}
+                  className="px-2.5 py-1 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                >
+                  Chọn tất cả
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDeselectAllExceptOne}
+                  className="px-2.5 py-1 rounded-xl bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-slate-200 hover:border-rose-200 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                  title="Chỉ giữ lại vai trò tối thiểu (Thành viên tham gia)"
+                >
+                  Bỏ chọn bớt
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResetDefaultRoles}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-all cursor-pointer"
+                  title="Khôi phục lại 6 vai trò chuẩn mặc định"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* LƯỚI DANH SÁCH VAI TRÒ - CHO PHÉP CLICK CHỌN TRỰC TIẾP */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {availableRoles.map((role) => {
+                const isSelected = selectedRoles.includes(role);
+                const isDefaultStandard = DEFAULT_EVENT_ROLES.includes(role);
+
+                return (
+                  <div
+                    key={role}
+                    onClick={() => toggleRole(role)}
+                    className={`group relative flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer select-none ${
+                      isSelected
+                        ? 'bg-teal-50/90 border-teal-400 shadow-2xs text-[#003B3A] ring-1 ring-teal-400/40'
+                        : 'bg-white border-slate-200/90 text-slate-400 hover:border-slate-300 hover:text-slate-600 hover:bg-slate-50/80'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 pr-1">
+                      {/* Checkbox trực quan */}
+                      <div className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 transition-all ${
+                        isSelected 
+                          ? 'bg-[#00A19A] text-white shadow-2xs' 
+                          : 'border-2 border-slate-300 bg-white group-hover:border-slate-400'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
+
+                      <span className={`text-xs truncate ${isSelected ? 'font-bold text-slate-800' : 'font-medium'}`} title={role}>
+                        {role}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isDefaultStandard ? (
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider ${
+                          isSelected ? 'bg-teal-200/80 text-teal-900' : 'bg-slate-100 text-slate-400'
+                        }`}>
+                          Chuẩn
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveCustomRole(role);
+                          }}
+                          className="p-1 rounded text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Xóa vai trò tùy biến này"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Thêm vai trò mới & Gợi ý */}
+            <div className="pt-2 border-t border-slate-200/60 space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={newRoleInput}
+                  onChange={(e) => setNewRoleInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddRole(newRoleInput);
+                    }
+                  }}
+                  placeholder="Nhập thêm vai trò học sinh khác..."
+                  className="flex-1 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#00A19A]"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddRole(newRoleInput)}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm vai trò</span>
+                </button>
+              </div>
+
+              {/* Gợi ý nhanh */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] font-bold text-slate-400">Gợi ý nhanh:</span>
+                {PRESET_EVENT_ROLES.map((r, idx) => {
+                  const isAlreadyAdded = availableRoles.includes(r);
+                  const isSelected = selectedRoles.includes(r);
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleAddRole(r)}
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-medium transition-colors cursor-pointer flex items-center gap-1 ${
+                        isAlreadyAdded && isSelected
+                          ? 'bg-teal-100 text-teal-800 border border-teal-200'
+                          : 'bg-slate-200/60 hover:bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {isAlreadyAdded && isSelected ? '✓ ' : '+ '}
+                      {r}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

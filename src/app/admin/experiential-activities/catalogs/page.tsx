@@ -1054,7 +1054,7 @@ function ActivityCatalogsContent() {
 
                               let badgeText = 'Chưa thiết lập';
                               if (isParticipation) {
-                                badgeText = `CĐ1: Ghi nhận (${evalCfg?.rolesList?.length || 5} VT)`;
+                                badgeText = `CĐ1: Ghi nhận (${evalCfg?.rolesList?.length || 6} VT)`;
                               } else if (isCompletion) {
                                 badgeText = 'CĐ2: Mức hoàn thành';
                               } else if (isRubric) {

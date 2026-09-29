@@ -57,6 +57,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
   const [catName, setCatName] = useState("")
   const [catRole, setCatRole] = useState(roles?.[0]?.code || "")
   const [catGroupName, setCatGroupName] = useState("")
+  const [catWeight, setCatWeight] = useState<number | string>(1.0)
   const [catEditId, setCatEditId] = useState<string | null>(null)
 
   // Task Group CRUD & Assignment states
@@ -149,7 +150,13 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
 
   const handleSaveCategory = async () => {
     if (!catName.trim()) return alert("Vui lòng nhập tên danh mục!")
-    const data = { name: catName.trim(), assignedToRole: catRole, groupName: catGroupName || undefined }
+    const weightVal = parseFloat(String(catWeight)) || 1.0
+    const data = { 
+      name: catName.trim(), 
+      assignedToRole: catRole, 
+      groupName: catGroupName || undefined,
+      weight: weightVal > 0 ? weightVal : 1.0
+    }
     const res = catEditId ? await updateTaskCategory(catEditId, data) : await createTaskCategory(data)
     if (res.success) {
       window.location.reload()
@@ -1292,7 +1299,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
                   <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                     {catEditId ? "✏️ Cập nhật danh mục công việc" : "➕ Thêm danh mục công việc mới"}
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div className="sm:col-span-1">
                       <label className="block text-xs font-bold text-slate-600 mb-1">Tên danh mục <span className="text-red-500">*</span></label>
                       <input
@@ -1301,6 +1308,21 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
                         onChange={e => setCatName(e.target.value)}
                         placeholder="Nhập tên danh mục..."
                         className="w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#48BFE3]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">
+                        Trọng số (Hệ số KPI)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        max="10"
+                        value={catWeight}
+                        onChange={e => setCatWeight(e.target.value)}
+                        placeholder="1.0 (Chuẩn)"
+                        className="w-full border rounded-xl p-2.5 text-xs outline-none bg-white font-bold text-amber-900 focus:ring-2 focus:ring-[#48BFE3]"
                       />
                     </div>
                     <div>
@@ -1338,7 +1360,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
                   <div className="flex gap-2 justify-end pt-1">
                     {catEditId && (
                       <button
-                        onClick={() => { setCatEditId(null); setCatName(""); setCatRole(roles?.[0]?.code || ""); setCatGroupName("") }}
+                        onClick={() => { setCatEditId(null); setCatName(""); setCatRole(roles?.[0]?.code || ""); setCatGroupName(""); setCatWeight(1.0) }}
                         className="px-4 py-2 rounded-xl border text-xs font-bold hover:bg-slate-200 transition-all"
                       >
                         Hủy sửa
@@ -1362,7 +1384,12 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
                       categoriesList.map((c: any) => (
                         <div key={c.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-colors">
                           <div className="space-y-1">
-                            <div className="font-extrabold text-xs text-slate-800">{c.name}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-xs text-slate-800">{c.name}</span>
+                              <span className="text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md font-extrabold flex items-center gap-1 shadow-2xs">
+                                ⚖️ Trọng số: x{c.weight ?? 1.0}
+                              </span>
+                            </div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">
                                 Tổ: {roles.find((r: any) => r.code === c.assignedToRole)?.name || c.assignedToRole}
@@ -1384,7 +1411,8 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
                                 setCatEditId(c.id)
                                 setCatName(c.name)
                                 setCatRole(c.assignedToRole)
-                                setCatGroupName(c.groupName || "") 
+                                setCatGroupName(c.groupName || "")
+                                setCatWeight(c.weight ?? 1.0)
                               }}
                               className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                               title="Sửa danh mục"

@@ -1,0 +1,3962 @@
+[
+  {
+    "stt": 1,
+    "id": "cmq9a1r82000713z4g10iq90a",
+    "name": "Lê Gia Lân",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tâm lý"
+    ],
+    "isPsychology": true,
+    "records": [
+      {
+        "id": "cmq9a1r82000713z4g10iq90a",
+        "isOriginalId": true,
+        "studentCode": "HS065",
+        "grade": "1",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tâm lý]\n\nĐạt nhưng yc cam kết tâm lý",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "7"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 2,
+    "id": "cmq9a1v9l000z13z4i0j4dx3v",
+    "name": "Đào Trần Thảo Linh",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tâm lý",
+      "Tiếng Việt"
+    ],
+    "isPsychology": true,
+    "records": [
+      {
+        "id": "cmq9a1v9l000z13z4i0j4dx3v",
+        "isOriginalId": true,
+        "studentCode": "HS079",
+        "grade": "1",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tâm lý, Tiếng Việt]\n\nĐạt (Cam kết tâm lý: rèn luyện thêm khả năng tập trung chú ý và ngôn ngữ Tiếng Việt)",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 1
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "9"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 3,
+    "id": "cmq9a1weg001713z4409owljj",
+    "name": "Nguyễn Thanh Phúc",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a1weg001713z4409owljj",
+        "isOriginalId": true,
+        "studentCode": "HS083",
+        "grade": "1",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt",
+        "note": "Cần theo dõi thêm mức độ tập trung chú ý\nCần cải thiện thêm tiếng Anh (Không cần cam kết nhưng gvta sẽ phải tương tác kĩ với PH)\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 06/08/2026 15:57 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: Cần theo dõi thêm mức độ tập trung chú ý\nCần cải thiện thêm tiếng Anh (Không cần cam kết nhưng gvta sẽ phải tương tác kĩ với PH)",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 4,
+    "id": "cmq9a9ffz002713z4ab48ghaa",
+    "name": "Nguyễn Gia Bảo",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.2_CS1",
+    "committed": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a9ffz002713z4ab48ghaa",
+        "isOriginalId": true,
+        "studentCode": "HS101",
+        "grade": "9",
+        "className": null,
+        "criteria": "ĐẶC BIỆT",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nTreo KQ KTĐV đợi KQ học tập cuối năm lớp 8 mới quyết địn",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "4"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "6"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 5,
+    "id": "cmq9a9ghi002f13z4qf1qvu4q",
+    "name": "Lê Nguyên Khang",
+    "campus": "CS1",
+    "grade": "2",
+    "className": "2.1_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a9ghi002f13z4qf1qvu4q",
+        "isOriginalId": true,
+        "studentCode": "HS105",
+        "grade": "2",
+        "className": null,
+        "criteria": "TUYỂN THẲNG",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 6,
+    "id": "cmq9a9i15002r13z4yz434bf6",
+    "name": "Phạm Nguyễn Minh Anh",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a9i15002r13z4yz434bf6",
+        "isOriginalId": true,
+        "studentCode": "HS111",
+        "grade": "10",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "8"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "6"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "8.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 7,
+    "id": "cmqa9bjp0000hqkrutbz27w85",
+    "name": "Phan Anh Quân",
+    "campus": "CS3",
+    "grade": "9",
+    "className": "9INT_CS3",
+    "committed": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqa9bjp0000hqkrutbz27w85",
+        "isOriginalId": true,
+        "studentCode": "HS148",
+        "grade": "9",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [EPT]\n\nESL, Maths, Science",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "41"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 8,
+    "id": "cmqa9bnk8001bqkruvwzsixsb",
+    "name": "Đoàn Ngọc Thảo Chloe",
+    "campus": "CS3",
+    "grade": "2",
+    "className": "2.1INT_CS3",
+    "committed": [
+      "Tiếng Việt",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqa9bnk8001bqkruvwzsixsb",
+        "isOriginalId": true,
+        "studentCode": "HS163",
+        "grade": "2",
+        "className": null,
+        "criteria": "ĐẶC BIỆT",
+        "result": "Đạt - Giao lưu",
+        "note": "Cam kết Tiếng Việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/09/2026 15:26 | Trần Thị Thanh | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Cam kết Tiếng Việt",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 3
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "84"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 9,
+    "id": "cmqa9bqzq001zqkru9243a3eh",
+    "name": "Hồ Hữu Bách",
+    "campus": "CS3",
+    "grade": "4",
+    "className": "4UK_CS3",
+    "committed": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqa9bqzq001zqkru9243a3eh",
+        "isOriginalId": true,
+        "studentCode": "HS175",
+        "grade": "4",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Việt]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "3"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "82"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 10,
+    "id": "cmqa9eifk0029qkru6t8wgdol",
+    "name": "Ayesha Mirza",
+    "campus": "CS4",
+    "grade": "6",
+    "className": "6S_CS4",
+    "committed": [
+      "Toán",
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqa9eifk0029qkru6t8wgdol",
+        "isOriginalId": true,
+        "studentCode": "HS179",
+        "grade": "6",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán, Tiếng Việt]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "25"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "38"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "4"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 11,
+    "id": "cmqa9g1mk004jqkruqlpgs4wx",
+    "name": "Mai Minh Minh",
+    "campus": "CS5",
+    "grade": "6",
+    "className": "6.5_CS5",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqa9g1mk004jqkruqlpgs4wx",
+        "isOriginalId": true,
+        "studentCode": "HS218",
+        "grade": "6",
+        "className": null,
+        "criteria": "TUYỂN THẲNG",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "24"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 12,
+    "id": "cmqa9g745005rqkru1yw41ia2",
+    "name": "Lâm Minh Khang",
+    "campus": "CS5",
+    "grade": "2",
+    "className": "2.5_CS5",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqa9g745005rqkru1yw41ia2",
+        "isOriginalId": true,
+        "studentCode": "HS240",
+        "grade": "2",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "51"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "7"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "9"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 13,
+    "id": "cmqangnky00033fsf60yngijh",
+    "name": "Phan Đình Phùng",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.1_CS1",
+    "committed": [
+      "Tiếng Anh",
+      "Toán",
+      "Ngữ Văn"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqangnky00033fsf60yngijh",
+        "isOriginalId": true,
+        "studentCode": "HS246",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "5"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "10"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 14,
+    "id": "cmqapk1os0007nz6c3clpte3j",
+    "name": "Mai Huy Thắng",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.1_CS1",
+    "committed": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqapk1os0007nz6c3clpte3j",
+        "isOriginalId": true,
+        "studentCode": "HS249",
+        "grade": "7",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán]\n\nĐạt cam kết Toán\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 12/08/2026 08:31 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "18"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "62"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "8"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 15,
+    "id": "cmqapr2pi0005k49ucnlm0y27",
+    "name": "Phạm Thùy Gia Hân ",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqapr2pi0005k49ucnlm0y27",
+        "isOriginalId": true,
+        "studentCode": "HS252",
+        "grade": "10",
+        "className": null,
+        "criteria": null,
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 1
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "9"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "11"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "5"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "8"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 16,
+    "id": "cmqav8ywl0003srxummzrf7d2",
+    "name": "Nguyễn Bình Phương An",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.1_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqav8ywl0003srxummzrf7d2",
+        "isOriginalId": true,
+        "studentCode": "HS256",
+        "grade": "10",
+        "className": null,
+        "criteria": "Tuyển thẳng",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết Anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 17,
+    "id": "cmqavg7db0005srxuu2uok43h",
+    "name": "Lê Bảo Trâm",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.3_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqavg7db0005srxuu2uok43h",
+        "isOriginalId": true,
+        "studentCode": "HS257",
+        "grade": "7",
+        "className": null,
+        "criteria": "Tuyển thẳng",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 12/08/2026 08:48 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "6"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "36"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 18,
+    "id": "cmqavh57f0001t6k9crbcq4eu",
+    "name": "Lê Bảo Châu",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.3_CS1",
+    "committed": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqavh57f0001t6k9crbcq4eu",
+        "isOriginalId": true,
+        "studentCode": "HS258",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết Toán; Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 13:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán; Anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "5"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "14"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "2"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 19,
+    "id": "cmqk9bk3d0001faz3o4xv4x83",
+    "name": "Phạm Gia Hương",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "committed": [
+      "Tiếng Anh",
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqk9bk3d0001faz3o4xv4x83",
+        "isOriginalId": true,
+        "studentCode": "HS259",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]\n\nCần cam kết",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "28"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "3"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "7.25"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 20,
+    "id": "cmqumepcf0003bopcuf5ecgpr",
+    "name": "Đỗ An Nhiên ",
+    "campus": "CS1",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqumepcf0003bopcuf5ecgpr",
+        "isOriginalId": true,
+        "studentCode": "HS265",
+        "grade": "1",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "3"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 21,
+    "id": "cmqywy60d0005se5dh2i8rs86",
+    "name": "Hà Đặng Phước Huy",
+    "campus": "CS1",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqywy60d0005se5dh2i8rs86",
+        "isOriginalId": true,
+        "studentCode": "HS275",
+        "grade": "1",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "2"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 22,
+    "id": "cmqywz7ey0005m8o2u1z32gu4",
+    "name": "HÀ ĐẶNG BẢO NGỌC",
+    "campus": "CS4",
+    "grade": "3",
+    "className": "3S_CS4",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqywz7ey0005m8o2u1z32gu4",
+        "isOriginalId": true,
+        "studentCode": "HS276",
+        "grade": "3",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "5"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "35"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "9"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "6"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 23,
+    "id": "cmr4peyic00013uqa02511mdz",
+    "name": "Nguyễn Thị Thu Thúy",
+    "campus": "CS4",
+    "grade": "10",
+    "className": "10S_CS4",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmr4peyic00013uqa02511mdz",
+        "isOriginalId": true,
+        "studentCode": "HS283",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "8"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "5"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 24,
+    "id": "cmrbfkbrn00012rhyr4u2s8ut",
+    "name": "ĐỖ NGUYỄN AN KHÔI",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Chung / Theo dõi"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrbfkbrn00012rhyr4u2s8ut",
+        "isOriginalId": true,
+        "studentCode": "HS286",
+        "grade": "1",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt",
+        "note": "(cần theo dõi mức độ tập trung chú ý)",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 1
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "7"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 25,
+    "id": "cmrbk5mnu0006ze67iezug4cj",
+    "name": "Trần Hoàng Anh ",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.2_CS1",
+    "committed": [
+      "Tiếng Anh",
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrbk5mnu0006ze67iezug4cj",
+        "isOriginalId": true,
+        "studentCode": "HS288",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 4
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 26,
+    "id": "cmrcxbu5x00026g6vqsx1pdvf",
+    "name": "Huỳnh Hoàng An",
+    "campus": "CS4",
+    "grade": "3",
+    "className": "3S_CS4",
+    "committed": [
+      "Toán",
+      "Tiếng Việt",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrcxbu5x00026g6vqsx1pdvf",
+        "isOriginalId": true,
+        "studentCode": "HS293",
+        "grade": "3",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt - Giao lưu",
+        "note": "Cam kết Toán, Tiếng việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/09/2026 13:58 | Cao Thanh Trung | Đạt - Giao lưu ➔ Đạt - Giao lưu | Lý do: Cam kết Toán, Tiếng việt\n• 17/09/2026 15:19 | Cao Thanh Trung | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Cam kết Toán, Tiếng việt\n• 06:57 18/09/2026 | Dương Xuân Thắng | Chính khóa ➔ Giao lưu | Lý do: 03/08/2026\t2026-2027\t3S_CS4",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "28"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "59"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "5"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "4.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 27,
+    "id": "cmrfpn7110001qbh85z8qq365",
+    "name": "Nguyễn Ngọc Thiên Bảo",
+    "campus": "CS1",
+    "grade": "2",
+    "className": "2.3INT_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrfpn7110001qbh85z8qq365",
+        "isOriginalId": true,
+        "studentCode": "HS306",
+        "grade": "2",
+        "className": null,
+        "criteria": "Tuyển thẳng",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "3"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "36"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 28,
+    "id": "cmrfpp46l0003qbh8rv5g2wm8",
+    "name": "Nguyễn Thanh Thảo",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.4_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrfpp46l0003qbh8rv5g2wm8",
+        "isOriginalId": true,
+        "studentCode": "HS307",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 29,
+    "id": "cmrilevdj0003pcj4ykwin8w9",
+    "name": "Lê Khánh Hà",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "committed": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrilevdj0003pcj4ykwin8w9",
+        "isOriginalId": true,
+        "studentCode": "HS308",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "7"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 30,
+    "id": "cmrk1a14p0003zmpmnrq7dham",
+    "name": "Nguyễn Đại Phúc ",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.1_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrk1a14p0003zmpmnrq7dham",
+        "isOriginalId": true,
+        "studentCode": "HS311",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "12"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "32"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 31,
+    "id": "cmrmwjd5s00017t091py6xdbt",
+    "name": "LÊ ĐÌNH SĨ PHÚ",
+    "campus": "CS1",
+    "grade": "6",
+    "className": "Chưa rõ",
+    "committed": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrmwjd5s00017t091py6xdbt",
+        "isOriginalId": true,
+        "studentCode": "HS331",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "18"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "32"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 32,
+    "id": "cmrnbzd8f0001g2eblgv255ta",
+    "name": "Đặng Ái Thiên Vân",
+    "campus": "CS5",
+    "grade": "3",
+    "className": "3.6_CS5",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrnbzd8f0001g2eblgv255ta",
+        "isOriginalId": true,
+        "studentCode": "HS334",
+        "grade": "3",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt, cam kết tăng cường thêm tiếng anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "2"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "37"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "10"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "8"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 33,
+    "id": "cmrtz6ywz0003usvobumsgdcb",
+    "name": "Ngô Thục Đan",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.1_CS1",
+    "committed": [
+      "Tâm lý"
+    ],
+    "isPsychology": true,
+    "records": [
+      {
+        "id": "cmrtz6ywz0003usvobumsgdcb",
+        "isOriginalId": true,
+        "studentCode": "HS701020014",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tâm lý]\n\nĐạt cam kết tâm lí. Mời PH gặp BGH và T. Đài khi làm thủ tục nhập học.",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 10
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "15"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "50"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 34,
+    "id": "cmryk2rua000113tlcvwiyuok",
+    "name": "Bùi Tuấn Anh",
+    "campus": "CS5",
+    "grade": "7",
+    "className": "7.5_CS5",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmryk2rua000113tlcvwiyuok",
+        "isOriginalId": true,
+        "studentCode": "HS701020024",
+        "grade": "7",
+        "className": null,
+        "criteria": "Tuyển thẳng",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt, cam kết tăng cường tiếng anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 19/08/2026 16:46 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt, cam kết tăng cường tiếng anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "2"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "18"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 35,
+    "id": "cmryncwmi0003a81hfqskkw1h",
+    "name": "Đặng Ngọc Bảo Ngân",
+    "campus": "CS4",
+    "grade": "10",
+    "className": "10S_CS4",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmryncwmi0003a81hfqskkw1h",
+        "isOriginalId": true,
+        "studentCode": "HS701020029",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "6"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "12.4"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 36,
+    "id": "cmryndh8k0005a81h02oc3tex",
+    "name": "Ngô Nhật Khang",
+    "campus": "CS4",
+    "grade": "10",
+    "className": "10S_CS4",
+    "committed": [
+      "Tiếng Anh",
+      "Toán",
+      "Ngữ Văn"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmryndh8k0005a81h02oc3tex",
+        "isOriginalId": true,
+        "studentCode": "HS701020030",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "7"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "10.8"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "4.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 37,
+    "id": "cmrynfkgx0001fvn7ztdigds0",
+    "name": "Võ Hoàng Vi",
+    "campus": "CS4",
+    "grade": "6",
+    "className": "6S_CS4",
+    "committed": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrynfkgx0001fvn7ztdigds0",
+        "isOriginalId": true,
+        "studentCode": "HS701020033",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "25"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "60"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "3"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5.25"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 38,
+    "id": "cmrynnuyx000h9fun5btuwlc2",
+    "name": "Phan Hải Đăng",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Chung / Theo dõi"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmrynnuyx000h9fun5btuwlc2",
+        "isOriginalId": true,
+        "studentCode": "HS701020036",
+        "grade": "1",
+        "className": null,
+        "criteria": null,
+        "result": "Đạt",
+        "note": "theo dõi thêm khả năng phát triển ngôn ngữ\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 06/08/2026 16:25 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: theo dõi thêm khả năng phát triển ngôn ngữ",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 39,
+    "id": "cmsoc2gkb0001fzahcjjeyf4t",
+    "name": "Võ Như Quỳnh",
+    "campus": "CS4",
+    "grade": "7",
+    "className": "7S_CS4",
+    "committed": [
+      "Toán",
+      "Ngữ Văn",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsoc2gkb0001fzahcjjeyf4t",
+        "isOriginalId": true,
+        "studentCode": "HS701020061",
+        "grade": "7",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 14:42 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 2
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "14"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "28"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4.5"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 40,
+    "id": "cmsocj9qe0001nqfoa5d8n9ie",
+    "name": "Đỗ Thành Nguyên",
+    "campus": "CS4",
+    "grade": "10",
+    "className": "10S_CS4",
+    "committed": [
+      "Toán",
+      "Ngữ Văn",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsocj9qe0001nqfoa5d8n9ie",
+        "isOriginalId": true,
+        "studentCode": "HS701020064",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 14:51 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "2"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "8"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "1.5"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 41,
+    "id": "cmsocoo9t0007nqfowy9nkme7",
+    "name": "Phạm Kiều Anh",
+    "campus": "CS4",
+    "grade": "6",
+    "className": "6S_CS4",
+    "committed": [
+      "Ngữ Văn"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsocoo9t0007nqfowy9nkme7",
+        "isOriginalId": true,
+        "studentCode": "HS701020065",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Ngữ Văn]\n\nĐạt cam kết Ngữ văn\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 14:27 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Ngữ văn",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "28"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "58"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "8"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "4"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 42,
+    "id": "cmsr002m600013kj3fmxpdkj4",
+    "name": "Govorushko Mikhail",
+    "campus": "CS3",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsr002m600013kj3fmxpdkj4",
+        "isOriginalId": true,
+        "studentCode": "HS701020076",
+        "grade": "1",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Việt]\n\nĐạt cam kết Tiếng Việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 13/08/2026 13:54 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "9.5"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 43,
+    "id": "cmssdgsq10001eo12h7dghd58",
+    "name": "Lecomte Mailys Mộc Yên",
+    "campus": "CS3",
+    "grade": "4",
+    "className": "4INT_CS3",
+    "committed": [
+      "Tiếng Việt",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmssdgsq10001eo12h7dghd58",
+        "isOriginalId": true,
+        "studentCode": "HS701020085",
+        "grade": "4",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt - Giao lưu",
+        "note": "Đạt cam kết Tiếng Việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/09/2026 15:27 | Trần Thị Thanh | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Đạt cam kết Tiếng Việt\n• 14/08/2026 10:40 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "96"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 44,
+    "id": "cmssk8zaw0001fnej7o3mi960",
+    "name": "Hà Minh Khuê",
+    "campus": "CS3",
+    "grade": "5",
+    "className": "5.1INT_CS3",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmssk8zaw0001fnej7o3mi960",
+        "isOriginalId": true,
+        "studentCode": "HS701020094",
+        "grade": "5",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nPhần năng lực ngôn ngữ còn hơi yếu so với yêu cầu của chương trình. Nếu theo học hệ S sẽ phù hợp hơn. Trường hợp PH mong muốn học hệ INT, em cần luyện thêm nhiều về từ vựng & ngữ pháp để theo kịp tiến độ chương trình\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 13:35 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Phần năng lực ngôn ngữ còn hơi yếu so với yêu cầu của chương trình. Nếu theo học hệ S sẽ phù hợp hơn. Trường hợp PH mong muốn học hệ INT, em cần luyện thêm nhiều về từ vựng & ngữ pháp để theo kịp tiến độ chương trình",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "7"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "46"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 45,
+    "id": "cmssnr9f000055iyeufa3xrqs",
+    "name": "Võ Thị Anh Thư",
+    "campus": "CS4",
+    "grade": "7",
+    "className": "7S_CS4",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmqa9eos5003jqkrusu9mlydl",
+        "isOriginalId": false,
+        "studentCode": "HS202",
+        "grade": "7",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "Môn kiểm tra lại: [Môn Toán]\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 31/07/2026 18:19 | Cao Thanh Trung | Không đạt ➔ Không đạt - Kiểm tra lại | Lý do: Hiệu chỉnh kết quả xét duyệt",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "0"
+          }
+        }
+      },
+      {
+        "id": "cmssnr9f000055iyeufa3xrqs",
+        "isOriginalId": true,
+        "studentCode": "HS202",
+        "grade": "7",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 15:11 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TOA": {
+            "name": "Toán học",
+            "val": "8"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 46,
+    "id": "cmssrof9g000613yefuh4bk07",
+    "name": "Hoàng Bữu Minh Hưng",
+    "campus": "CS2",
+    "grade": "3",
+    "className": "3.4_CS2",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmssrof9g000613yefuh4bk07",
+        "isOriginalId": true,
+        "studentCode": "HS701020095",
+        "grade": "3",
+        "className": null,
+        "criteria": "Tuyển thẳng",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nGhi chú: PH hỗ trợ con bổ trợ thêm các kỹ năng tiếng Anh trong dịp Hè!\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/08/2026 16:59 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Ghi chú: PH hỗ trợ con bổ trợ thêm các kỹ năng tiếng Anh trong dịp Hè!",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "30"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "42"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 47,
+    "id": "cmstsaue20001g0q3fdi6c055",
+    "name": "Lê Hồ Duy Khang",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tâm lý"
+    ],
+    "isPsychology": true,
+    "records": [
+      {
+        "id": "cmstsaue20001g0q3fdi6c055",
+        "isOriginalId": true,
+        "studentCode": "HS701020105",
+        "grade": "1",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt",
+        "note": "Đạt (GVCN theo dõi tâm lý)\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 15/08/2026 10:12 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: Đạt (GVCN theo dõi tâm lý)",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "8.5"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 48,
+    "id": "cmstu8q7o000163i3tif32ee3",
+    "name": "Phạm Gia Hưng",
+    "campus": "CS5",
+    "grade": "7",
+    "className": "2.5_CS5",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmstu8q7o000163i3tif32ee3",
+        "isOriginalId": true,
+        "studentCode": "HS132",
+        "grade": "7",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 11:22 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "16"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "2.3"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "4"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 49,
+    "id": "cmstub33f0001590l5uiqc4rv",
+    "name": "Lê Nguyệt Cát",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.4_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a9jbj003113z47jo1uskb",
+        "isOriginalId": false,
+        "studentCode": "HS116",
+        "grade": "7",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "Môn kiểm tra lại: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 1
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "5"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      },
+      {
+        "id": "cmstub33f0001590l5uiqc4rv",
+        "isOriginalId": true,
+        "studentCode": "HS116",
+        "grade": "7",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 11:22 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "16"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "5"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 50,
+    "id": "cmstubssv00019a76czsz7hkc",
+    "name": "Hoàng Bảo Quyên",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.2_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a9moh003r13z4qsrh37ee",
+        "isOriginalId": false,
+        "studentCode": "HS129",
+        "grade": "9",
+        "className": null,
+        "criteria": "TUYỂN THẲNG",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "Môn kiểm tra lại: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          }
+        }
+      },
+      {
+        "id": "cmstubssv00019a76czsz7hkc",
+        "isOriginalId": true,
+        "studentCode": "HS129",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"Kt thấp quá ko đạt\nHỗ trợ nhập học đạt cam kết để 3 chị em làm thủ tục nhập học sớm\"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 11:46 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Kt thấp quá ko đạt\nHỗ trợ nhập học đạt cam kết để 3 chị em làm thủ tục nhập học sớm\"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "8"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "14"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 51,
+    "id": "cmstucfk30003590lp2a24r7b",
+    "name": "Phạm Gia Bảo",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.3_CS1",
+    "committed": [
+      "Tiếng Anh",
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a9n85003v13z489ldt2hl",
+        "isOriginalId": false,
+        "studentCode": "HS131",
+        "grade": "9",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "Môn kiểm tra lại: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      },
+      {
+        "id": "cmstucfk30003590lp2a24r7b",
+        "isOriginalId": true,
+        "studentCode": "HS131",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]\n\nĐạt cam kết Toán; Anh\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 11:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán; Anh\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "4"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "6"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 52,
+    "id": "cmstud0i2000111ml5bd2wiiu",
+    "name": "Đặng Hoàng Như Ý",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a9ldq003h13z407wts4ri",
+        "isOriginalId": false,
+        "studentCode": "HS124",
+        "grade": "10",
+        "className": null,
+        "criteria": "KSĐV",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "Môn kiểm tra lại: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          }
+        }
+      },
+      {
+        "id": "cmstud0i2000111ml5bd2wiiu",
+        "isOriginalId": true,
+        "studentCode": "HS124",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 08:23 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "36"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 53,
+    "id": "cmstudnnz000311mlhnnik78v",
+    "name": "Phạm Hải Như",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmq9a9lwo003l13z4x4z6wgsh",
+        "isOriginalId": false,
+        "studentCode": "HS126",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "Môn kiểm tra lại: [Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "5"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "4.5"
+          }
+        }
+      },
+      {
+        "id": "cmstudnnz000311mlhnnik78v",
+        "isOriginalId": true,
+        "studentCode": "HS126",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (viết), Tiếng Anh (vấn đáp)]\n\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 17/08/2026 08:23 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "8"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "38"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 54,
+    "id": "cmsy03zh80001elqr6mudq1xr",
+    "name": "Nguyễn Thành Long",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "7.3_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsy03zh80001elqr6mudq1xr",
+        "isOriginalId": true,
+        "studentCode": "HS701020117",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"Nên tư vấn học hệ S\nThầy Long: Điểm theo học bạ và ktra như này thì đạt cam kết toán anh (hệ S)\"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 08:57 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Nên tư vấn học hệ S\nThầy Long: Điểm theo học bạ và ktra như này thì đạt cam kết toán anh (hệ S)\"",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "8.25"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "28"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 55,
+    "id": "cmsy2fc270003vsyucpbev32h",
+    "name": "Trần Quang Thiên Ân",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.1_CS1",
+    "committed": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsy2fc270003vsyucpbev32h",
+        "isOriginalId": true,
+        "studentCode": "HS701020124",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán]\n\nĐạt cam kết toán\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết toán",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "15"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "62"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "3"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 56,
+    "id": "cmsy2ot0g0001ry9qr1de3m9y",
+    "name": "Lê Hồ Gia Huy",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsy2ot0g0001ry9qr1de3m9y",
+        "isOriginalId": true,
+        "studentCode": "HS701020125",
+        "grade": "10",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nKiểm tra lại lần 3\nĐạt cam kết Tiếng Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:42 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại lần 3\nĐạt cam kết Tiếng Anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "7"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "20"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 57,
+    "id": "cmsy2s3c40001114l9pwd7dsi",
+    "name": "Trương Lê Hưng Phát",
+    "campus": "CS1",
+    "grade": "12",
+    "className": "12.1_CS1",
+    "committed": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsy2s3c40001114l9pwd7dsi",
+        "isOriginalId": true,
+        "studentCode": "HS701020126",
+        "grade": "12",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán]\n\nPhát đạt cam kết toán. Phát đổi môn tổ hợp.\nChưa gửi thư chúc mừng chờ ý kiến Sở\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:44 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Phát đạt cam kết toán. Phát đổi môn tổ hợp.\nChưa gửi thư chúc mừng chờ ý kiến Sở",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "12"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "40"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 58,
+    "id": "cmsy4hdrn0001kkem6semba2f",
+    "name": "Nguyễn Văn Tuấn Kiệt",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.2_CS1",
+    "committed": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsy27caa0001bmkh1lv661mf",
+        "isOriginalId": false,
+        "studentCode": "HS701020122",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:43 | Tống Thiên Long | Chưa duyệt ➔ Không đạt - Kiểm tra lại | Lý do: Xét duyệt kết quả",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "7"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "10"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "3"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5.5"
+          }
+        }
+      },
+      {
+        "id": "cmsy4hdrn0001kkem6semba2f",
+        "isOriginalId": true,
+        "studentCode": "HS701020122",
+        "grade": "9",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"HS trung bình, hk khá không đạt\n02/06/2026: HS Nguyễn Văn Tuấn Kiệt vừa rồi KTL nhưng kết quả Không Đạt => sau anh Long cân nhắc lại vì gia đình cho nhập học cả 2 bạn nên sẽ hỗ trợ cho bạn Kiệt Đạt cam kết các môn Toán, Anh \nHiện tại PH đã hoàn tất thủ tục nhập học cho 2 bạn, và có lịch hẹn gặp anh Long vào sáng mai\"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 10:56 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"HS trung bình, hk khá không đạt\n02/06/2026: HS Nguyễn Văn Tuấn Kiệt vừa rồi KTL nhưng kết quả Không Đạt => sau anh Long cân nhắc lại vì gia đình cho nhập học cả 2 bạn nên sẽ hỗ trợ cho bạn Kiệt Đạt cam kết các môn Toán, Anh \nHiện tại PH đã hoàn tất thủ tục nhập học cho 2 bạn, và có lịch hẹn gặp anh Long vào sáng mai\"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "7"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "28"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 59,
+    "id": "cmsyejwnv00035lcxu45kr1vq",
+    "name": "Nguyễn Daniil",
+    "campus": "CS1",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsyejwnv00035lcxu45kr1vq",
+        "isOriginalId": true,
+        "studentCode": "HS701020134",
+        "grade": "1",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Việt]\n\nĐạt cam kết Tiếng Việt\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:05 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "4"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 60,
+    "id": "cmsyga5uo0001o72056qfw5jh",
+    "name": "Trần Đăng Quang",
+    "campus": "CS1",
+    "grade": "6",
+    "className": "6.3_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsyga5uo0001o72056qfw5jh",
+        "isOriginalId": true,
+        "studentCode": "HS701020137",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:52 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "21"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "22"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "10"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "7.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 61,
+    "id": "cmsyger10000fubp2yj6dkps4",
+    "name": "Trần Thục Quyên",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.4_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsyger10000fubp2yj6dkps4",
+        "isOriginalId": true,
+        "studentCode": "HS701020139",
+        "grade": "7",
+        "className": null,
+        "criteria": "Tuyển thẳng",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết TA\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "13"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "30"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 62,
+    "id": "cmsygk2xp0003j1ngvpqeybuk",
+    "name": "Lương Bích Ngọc",
+    "campus": "CS1",
+    "grade": "6",
+    "className": "6.3_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsygk2xp0003j1ngvpqeybuk",
+        "isOriginalId": true,
+        "studentCode": "HS701020140",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết TA\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "16"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "27"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "8.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 63,
+    "id": "cmsygoq7k0005j1ngk0abtv8g",
+    "name": "Nguyễn Quỳnh Như",
+    "campus": "CS1",
+    "grade": "6",
+    "className": "3.1_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmsygoq7k0005j1ngk0abtv8g",
+        "isOriginalId": true,
+        "studentCode": "HS701020141",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt cam kết TA\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "16"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "23"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "3"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "7"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 64,
+    "id": "cmt2o1ibb0001t81ckhoko2tp",
+    "name": "Vũ Đức Thịnh",
+    "campus": "CS5",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmt2o1ibb0001t81ckhoko2tp",
+        "isOriginalId": true,
+        "studentCode": "HS701020154",
+        "grade": "1",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"ĐẠT \nCam kết bổ sung tiếng anh \"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 21/08/2026 15:44 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"ĐẠT \nCam kết bổ sung tiếng anh \"",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "3"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 65,
+    "id": "cmt2r2kn70001cdjymo1sjv1u",
+    "name": "Nguyễn Minh Anh",
+    "campus": "CS5",
+    "grade": "6",
+    "className": "6.5_CS5",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmt2r2kn70001cdjymo1sjv1u",
+        "isOriginalId": true,
+        "studentCode": "HS701020159",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"Đạt - Tăng cường cam kết tiếng anh \"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 21/08/2026 16:53 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt - Tăng cường cam kết tiếng anh \"",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "20"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "9"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 66,
+    "id": "cmt2rsvyv0031mq3ztosp760s",
+    "name": "Đỗ Duy Khôi",
+    "campus": "CS5",
+    "grade": "6",
+    "className": "6.5_CS5",
+    "committed": [
+      "Tiếng Anh",
+      "Toán"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmt2qzrry00013wevcufhegv2",
+        "isOriginalId": false,
+        "studentCode": "HS701020158",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "Môn kiểm tra lại: [Tiếng Anh (vấn đáp), Tiếng Việt, Tiếng Anh (viết), Môn Toán]\n\n\"Kiểm tra lại Điểm thấp \"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 21/08/2026 16:52 | Đỗ Quang Trung | Chưa duyệt ➔ Không đạt - Kiểm tra lại | Lý do: \"Kiểm tra lại Điểm thấp \"",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "26"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "3"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "3"
+          }
+        }
+      },
+      {
+        "id": "cmt2rsvyv0031mq3ztosp760s",
+        "isOriginalId": true,
+        "studentCode": "HS701020158",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]\n\n\"ĐẠT\nHỗ trợ thêm ở nhà\"\n\nKiểm tra lại đợt trước từ kỳ: cmpwam1ub0007ttjirpq54536\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 22/08/2026 08:48 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"ĐẠT\nHỗ trợ thêm ở nhà\"\n\nKiểm tra lại đợt trước từ kỳ: cmpwam1ub0007ttjirpq54536",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "45"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "7"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 67,
+    "id": "cmt3urnx30001c9fz60g0x805",
+    "name": "Lê Nguyễn Hoàng Bảo",
+    "campus": "CS5",
+    "grade": "7",
+    "className": "7.5_CS5",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmt3urnx30001c9fz60g0x805",
+        "isOriginalId": true,
+        "studentCode": "HS701020163",
+        "grade": "7",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\nĐạt, cam kết tăng cường tiếng anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 24/08/2026 08:55 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt, cam kết tăng cường tiếng anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "5"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 68,
+    "id": "cmt3vcaow000595s07wg9ivoe",
+    "name": "Nguyễn Hoàng Đạt",
+    "campus": "CS5",
+    "grade": "3",
+    "className": "3.2INT_CS5",
+    "committed": [
+      "Chung / Theo dõi"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmt3vcaow000595s07wg9ivoe",
+        "isOriginalId": true,
+        "studentCode": "HS701020167",
+        "grade": "3",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt - Giao lưu",
+        "note": "\"ĐẠT\ncho ký thoã thuận cam kết như các hs đã từng học giao lưu\"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 16:08 | Đỗ Quang Trung | Đạt ➔ Đạt - Giao lưu | Lý do: \"ĐẠT\ncho ký thoã thuận cam kết như các hs đã từng học giao lưu\"\n• 24/08/2026 08:56 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt | Lý do: \"ĐẠT",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "66"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "2"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "1"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "66"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 69,
+    "id": "cmt3vj3uk000b95s04kwikoq8",
+    "name": "Nguyễn Hoàng Phúc",
+    "campus": "CS5",
+    "grade": "5",
+    "className": "5.2INT_CS5",
+    "committed": [
+      "Chung / Theo dõi"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmt3vj3uk000b95s04kwikoq8",
+        "isOriginalId": true,
+        "studentCode": "HS701020170",
+        "grade": "5",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt - Giao lưu",
+        "note": "\"ĐẠT\ncho ký thoã thuận cam kết như các hs đã từng học giao lưu\"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 16:07 | Đỗ Quang Trung | Đạt ➔ Đạt - Giao lưu | Lý do: \"ĐẠT\ncho ký thoã thuận cam kết như các hs đã từng học giao lưu\"\n• 24/08/2026 08:56 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt | Lý do: \"ĐẠT",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": -4
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "1"
+          },
+          "TVI": {
+            "name": "Tiếng Việt",
+            "val": "1"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "72"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 70,
+    "id": "cmt6l475w0002gzo197zwrv2b",
+    "name": "Trần Minh Huy",
+    "campus": "CS5",
+    "grade": "2",
+    "className": "2.6_CS5",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmt3v8xoh000395s06zusjdg7",
+        "isOriginalId": false,
+        "studentCode": "HS701020166",
+        "grade": "2",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Không đạt - Kiểm tra lại",
+        "note": "Môn kiểm tra lại: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), EPT]\n\nCháu vào hệ int sẽ đuối hơn so với các bạn, phụ huynh nên cân nhắc. Có thể đăng ký hệ s trước. Khi nào đi học thực tế, có khảo sát trực tiếp, nếu phù hợp chuyển qua hệ int vẫn được\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 24/08/2026 08:53 | Đỗ Quang Trung | Chưa duyệt ➔ Không đạt - Kiểm tra lại | Lý do: Cháu vào hệ int sẽ đuối hơn so với các bạn, phụ huynh nên cân nhắc. Có thể đăng ký hệ s trước. Khi nào đi học thực tế, có khảo sát trực tiếp, nếu phù hợp chuyển qua hệ int vẫn được",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "EPT": {
+            "name": "EPT",
+            "val": "94"
+          }
+        }
+      },
+      {
+        "id": "cmt6l475w0002gzo197zwrv2b",
+        "isOriginalId": true,
+        "studentCode": "HS701020166",
+        "grade": "2",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]\n\n\"Đạt \nCam kết tăng cường thêm Tiếng Anh \"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 24/08/2026 09:06 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt \nCam kết tăng cường thêm Tiếng Anh \"\nKiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "20"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "70"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 71,
+    "id": "cmt9jhnpw0004jhkfya6npywn",
+    "name": "Nguyễn Ngọc Minh",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.2_CS1",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmt9jhnpw0004jhkfya6npywn",
+        "isOriginalId": true,
+        "studentCode": "HS701020183",
+        "grade": "7",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Anh (viết), Tiếng Anh (vấn đáp)]\n\nĐẠT CK\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 14:12 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: ĐẠT CK",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 3
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "6"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "7"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 72,
+    "id": "cmtb9vzeo0001b367pgpfdfqp",
+    "name": "Phùng Đức Thiên Ân",
+    "campus": "CS3",
+    "grade": "3",
+    "className": "3.1INT_CS3",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmtb9vzeo0001b367pgpfdfqp",
+        "isOriginalId": true,
+        "studentCode": "HS701020184",
+        "grade": "3",
+        "className": null,
+        "criteria": "Tuyển thẳng",
+        "result": "Đạt cam kết",
+        "note": "Cam kết môn Tiếng Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 08:22 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Cam kết môn Tiếng Anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "30"
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "36"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 73,
+    "id": "cmtcg8r4200012csibdl65mvs",
+    "name": "Phùng Chí Nam Anh",
+    "campus": "CS3",
+    "grade": "8",
+    "className": "8.1INT_CS3",
+    "committed": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmtcg8r4200012csibdl65mvs",
+        "isOriginalId": true,
+        "studentCode": "HS701020185",
+        "grade": "8",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Cam kết môn Tiếng Anh\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 14/09/2026 08:25 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Cam kết môn Tiếng Anh",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 5
+          },
+          "EPT": {
+            "name": "EPT",
+            "val": "30"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 74,
+    "id": "cmtkwv7h00005buokyyvajmzx",
+    "name": "Nguyễn Đặng Bảo Trâm ",
+    "campus": "CS1",
+    "grade": "8",
+    "className": "8.2_CS1",
+    "committed": [
+      "Chung / Theo dõi"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmtkwv7h00005buokyyvajmzx",
+        "isOriginalId": true,
+        "studentCode": "HS701020186",
+        "grade": "8",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt",
+        "note": "Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 05/09/2026 09:17 | Tống Thiên Long | Chưa duyệt ➔ Đạt | Lý do: Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 6
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "10"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "38"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "7"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "6.5"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 75,
+    "id": "cmtmpbm6c000512yks2sh1wdh",
+    "name": "Sangadziev Aron",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "Chưa rõ",
+    "committed": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmtmpbm6c000512yks2sh1wdh",
+        "isOriginalId": true,
+        "studentCode": "HS701020188",
+        "grade": "1",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Tiếng Việt]\n\n\"Đạt (cam kết Tiếng Việt => sau HK1 đánh giá lại, nếu không đạt yêu cầu môn Tiếng Việt xem xét dừng HĐĐT)\np.s. Lưu ý bổ sung nhận xét của GV Tiếng Việt đối với hs người NN\"\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 22/09/2026 11:35 | Phạm Thị Khánh | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt (cam kết Tiếng Việt => sau HK1 đánh giá lại, nếu không đạt yêu cầu môn Tiếng Việt xem xét dừng HĐĐT)\np.s. Lưu ý bổ sung nhận xét của GV Tiếng Việt đối với hs người NN\"",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "8"
+          },
+          "TCI": {
+            "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+            "val": "3"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "stt": 76,
+    "id": "cmtxv0xdg000d10nuglzf3vl6",
+    "name": "Ngô Huỳnh Anh Minh",
+    "campus": "CS4",
+    "grade": "6",
+    "className": "Chưa rõ",
+    "committed": [
+      "Toán",
+      "Ngữ Văn"
+    ],
+    "isPsychology": false,
+    "records": [
+      {
+        "id": "cmtxv0xdg000d10nuglzf3vl6",
+        "isOriginalId": true,
+        "studentCode": "HS701020195",
+        "grade": "6",
+        "className": null,
+        "criteria": "Khảo sát",
+        "result": "Đạt cam kết",
+        "note": "Môn cam kết: [Toán học, Ngữ Văn]\n\nĐẠT CK\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n• 22/09/2026 11:33 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: ĐẠT CK",
+        "isAbsent": 0,
+        "directScores": {
+          "math": null,
+          "engW": null,
+          "engO": null,
+          "lit": null,
+          "psy": null
+        },
+        "sasScores": {
+          "TLY": {
+            "name": "Tâm lý",
+            "val": 0
+          },
+          "TAvd": {
+            "name": "Tiếng Anh (vấn đáp)",
+            "val": "29"
+          },
+          "TAv": {
+            "name": "Tiếng Anh (viết)",
+            "val": "67"
+          },
+          "TOA": {
+            "name": "Toán học",
+            "val": "4"
+          },
+          "NVA": {
+            "name": "Ngữ Văn",
+            "val": "5"
+          }
+        }
+      }
+    ]
+  }
+]

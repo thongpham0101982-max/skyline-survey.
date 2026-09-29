@@ -4048,6 +4048,7 @@ export function StudentInfoClient({
                             let writtenEnglishVal: any = selectedStudent.writtenEnglishScore;
                             let oralEnglishVal: any = selectedStudent.oralEnglishScore;
                             let psychologyVal: any = selectedStudent.psychologyScore;
+                            let eptVal: any = selectedStudent.eptScore || null;
                             
                             let oralEnglishComment = "";
                             let psychologyConclusion = "";
@@ -4076,10 +4077,13 @@ export function StudentInfoClient({
                                   mathVal = scoreVal;
                                 } else if (sNameLower.includes("tiếng việt") || sNameLower.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van")) {
                                   literatureVal = scoreVal;
-                                } else if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
-                                  if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                } else if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl") || sCode.includes("ept") || sNameLower.includes("ept")) {
+                                  if (sCode.includes("ept") || sNameLower.includes("ept")) {
+                                    eptVal = scoreVal;
+                                    if (writtenEnglishVal == null) writtenEnglishVal = scoreVal;
+                                  } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt") || sCode === "tav") {
                                     writtenEnglishVal = scoreVal;
-                                  } else if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                                  } else if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd") || sCode === "tavd") {
                                     oralEnglishVal = scoreVal;
                                     oralEnglishComment = sc.comments || "";
                                   }
@@ -4120,21 +4124,31 @@ export function StudentInfoClient({
                                 oralDisplay = `${oralEnglishVal}/30`;
                                 const oScore = parseFloat(oralEnglishVal);
                                 if (!isNaN(oScore)) {
-                                  totalScore = Math.round((oScore / 3) * 10) / 10;
+                                  totalScore = Math.round((oScore / 30) * 100 * 10) / 10;
                                 }
                               }
                             } else {
-                              if (writtenEnglishVal !== null && writtenEnglishVal !== undefined && writtenEnglishVal !== "") {
+                              if (eptVal !== null && eptVal !== undefined && eptVal !== "") {
+                                writtenDisplay = `${eptVal}/100`;
+                              } else if (writtenEnglishVal !== null && writtenEnglishVal !== undefined && writtenEnglishVal !== "") {
                                 writtenDisplay = `${writtenEnglishVal}/70`;
                               }
                               if (oralEnglishVal !== null && oralEnglishVal !== undefined && oralEnglishVal !== "") {
                                 oralDisplay = `${oralEnglishVal}/30`;
                               }
                               
-                              const wScore = parseFloat(writtenEnglishVal);
-                              const oScore = parseFloat(oralEnglishVal);
-                              if (!isNaN(wScore) || !isNaN(oScore)) {
-                                totalScore = (isNaN(wScore) ? 0 : wScore) + (isNaN(oScore) ? 0 : oScore);
+                              if (eptVal !== null && eptVal !== undefined && eptVal !== "") {
+                                totalScore = parseFloat(eptVal);
+                              } else {
+                                const wScore = parseFloat(writtenEnglishVal);
+                                const oScore = parseFloat(oralEnglishVal);
+                                if (!isNaN(wScore) && !isNaN(oScore)) {
+                                  totalScore = Math.round((wScore + oScore) * 10) / 10;
+                                } else if (!isNaN(wScore)) {
+                                  totalScore = wScore;
+                                } else if (!isNaN(oScore)) {
+                                  totalScore = oScore;
+                                }
                               }
                             }
 
@@ -4200,7 +4214,7 @@ export function StudentInfoClient({
                                     <span className="text-3xl font-black text-slate-800 leading-none">
                                       {writtenDisplay}
                                     </span>
-                                    <span className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Không áp dụng (K1)" : "Thang điểm 70"}</span>
+                                    <span className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Không áp dụng (K1)" : (eptVal !== null && eptVal !== undefined ? "Thang điểm 100 (EPT)" : "Thang điểm 70")}</span>
                                   </div>
 
                                   {/* English Oral Card */}

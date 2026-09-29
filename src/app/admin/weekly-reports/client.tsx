@@ -5,7 +5,8 @@ import {
   Star, Target, BookmarkCheck, CheckCheck, FileText, Plus, Trash2, Save, Send, Calendar, MessageSquare, 
   CheckCircle2, Clock, AlertTriangle, MinusCircle, User, BarChart3, 
   Users, TrendingUp, ClipboardList, Table2, Bell, Download, Copy, History, Edit3, Eye, Search, Filter, X,
-  UserCheck, AlertCircle, Sparkles, ChevronRight, Layers, ArrowRight, Check, Settings, UserPlus, Shield
+  UserCheck, AlertCircle, Sparkles, ChevronRight, Layers, ArrowRight, Check, Settings, UserPlus, Shield,
+  Award, Trophy, Percent
 } from "lucide-react"
 import { 
   getWeeklyReport, getAllWeeklyReports, saveWeeklyReport, addManagerComment, 
@@ -13,7 +14,9 @@ import {
   getUserReportHistory, deleteWeeklyReport, getPersonalProgressCards,
   getDepartmentTeachers, assignTeachersToDepartment, removeTeacherFromDepartment,
   updateTeacherDepartmentPosition, getAllTeachersForAssignment, setTeacherPrimaryDepartment,
-  getMonthlyTaskGroupProgress } from "./actions"
+  getMonthlyTaskGroupProgress, addDirectorItemEvaluation, saveDirectorReportComment,
+  getMonthlyQualityKpiSummary
+} from "./actions"
 import * as XLSX from "xlsx"
 
 function getWeeksOfMonth(month: number, year: number) {
@@ -142,11 +145,28 @@ export function WeeklyReportClient({
     return Array.from(new Set([...defaultList, ...dbNames]))
   }, [taskGroups])
 
-  // Consolidated View Mode: "week" (Tuần) | "month" (Tháng)
-  const [consolidatedViewMode, setConsolidatedViewMode] = useState<"week" | "month">("week")
+  // Consolidated View Mode: "week" (Tuần) | "month" (Tháng) | "kpi" (KPI Tháng)
+  const [consolidatedViewMode, setConsolidatedViewMode] = useState<"week" | "month" | "kpi">("week")
   const [filterConsolidatedGroup, setFilterConsolidatedGroup] = useState<string>("ALL")
   const [monthlyTaskGroupData, setMonthlyTaskGroupData] = useState<any>(null)
   const [loadingMonthlyGroup, setLoadingMonthlyGroup] = useState(false)
+  const [monthlyKpiData, setMonthlyKpiData] = useState<any>(null)
+  const [loadingMonthlyKpi, setLoadingMonthlyKpi] = useState(false)
+  const [kpiSearch, setKpiSearch] = useState("")
+  const [kpiFilterGrade, setKpiFilterGrade] = useState("ALL")
+  const [selectedStaffForKpiDetail, setSelectedStaffForKpiDetail] = useState<any | null>(null)
+
+  // Quick Director evaluation modal state
+  const [evaluatingDirectorItem, setEvaluatingDirectorItem] = useState<any | null>(null)
+  const [evaluatingDirectorReport, setEvaluatingDirectorReport] = useState<any | null>(null)
+  const [evalRating, setEvalRating] = useState("GOOD")
+  const [evalQualityScore, setEvalQualityScore] = useState<number | string>(8.5)
+  const [evalNote, setEvalNote] = useState("")
+  const [submittingEvaluation, setSubmittingEvaluation] = useState(false)
+
+  // Director comment in Personal Card modal
+  const [modalDirectorCommentInput, setModalDirectorCommentInput] = useState("")
+  const [modalSavingDirectorComment, setModalSavingDirectorComment] = useState(false)
 
   const loadMonthlyTaskGroup = async () => {
     setLoadingMonthlyGroup(true)
@@ -155,6 +175,15 @@ export function WeeklyReportClient({
       setMonthlyTaskGroupData(res)
     }
     setLoadingMonthlyGroup(false)
+  }
+
+  const loadMonthlyKpi = async () => {
+    setLoadingMonthlyKpi(true)
+    const res = await getMonthlyQualityKpiSummary(month, year, filterDeptId, filterDivisionCode)
+    if (res.success) {
+      setMonthlyKpiData(res)
+    }
+    setLoadingMonthlyKpi(false)
   }
 
   // Personal Cards State
@@ -378,7 +407,8 @@ export function WeeklyReportClient({
     else if (activeTab === "personal") loadReport()
     else if (activeTab === "consolidated") {
       if (consolidatedViewMode === "week") loadConsolidated()
-      else loadMonthlyTaskGroup()
+      else if (consolidatedViewMode === "month") loadMonthlyTaskGroup()
+      else if (consolidatedViewMode === "kpi") loadMonthlyKpi()
     }
     else if (activeTab === "dashboard") loadDashboard()
     else if (activeTab === "history") loadHistory()
@@ -532,11 +562,13 @@ export function WeeklyReportClient({
   const handleOpenCardReportModal = async (card: any) => {
     setSelectedStaffForModal(card)
     setModalCommentInput(card.managerComment || "")
+    setModalDirectorCommentInput(card.directorComment || "")
     setModalReportData(null)
     if (card.reportId) {
       const res = await getWeeklyReport(card.userId, selectedWeek, month, year)
       if (res.success && res.report) {
         setModalReportData(res.report)
+        setModalDirectorCommentInput(res.report.directorComment || card.directorComment || "")
       }
     }
   }
@@ -551,10 +583,74 @@ export function WeeklyReportClient({
     const res = await addManagerComment(selectedStaffForModal.reportId, modalCommentInput.trim())
     setModalSavingComment(false)
     if (res.success) {
-      setToastMsg({ msg: "✅ Đã lưu nhận xét chỉ đạo thành công!", type: "success" })
+      setToastMsg({ msg: "✅ Đã lưu nhận xét chỉ đạo của Ban Quản Lý thành công!", type: "success" })
       setTimeout(() => setToastMsg(null), 3000)
-      setSelectedStaffForModal(null)
       loadPersonalCards()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleSaveModalDirectorComment = async () => {
+    if (!selectedStaffForModal?.reportId) {
+      alert("Nhân sự này chưa nộp báo cáo tuần để đánh giá!")
+      return
+    }
+    setModalSavingDirectorComment(true)
+    const res = await saveDirectorReportComment(selectedStaffForModal.reportId, modalDirectorCommentInput.trim())
+    setModalSavingDirectorComment(false)
+    if (res.success) {
+      setToastMsg({ msg: "⭐ Đã lưu đánh giá & ý kiến Giám Đốc Ban thành công!", type: "success" })
+      setTimeout(() => setToastMsg(null), 3000)
+      loadPersonalCards()
+      if (consolidatedViewMode === "week") loadConsolidated()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const handleOpenDirectorEvaluationModal = (item: any, report: any) => {
+    setEvaluatingDirectorItem(item)
+    setEvaluatingDirectorReport(report)
+    setEvalRating(item.directorRating || "GOOD")
+    setEvalQualityScore(item.qualityScore ?? (item.directorRating === "EXCELLENT" ? 10 : item.directorRating === "GOOD" ? 8.5 : item.directorRating === "SATISFACTORY" ? 7.0 : item.directorRating === "NEEDS_IMPROVEMENT" ? 5.0 : 8.5))
+    setEvalNote(item.directorNote || "")
+  }
+
+  const handleSaveDirectorEvaluation = async () => {
+    if (!evaluatingDirectorItem?.id) return
+    setSubmittingEvaluation(true)
+    const scoreVal = typeof evalQualityScore === "number" ? evalQualityScore : parseFloat(String(evalQualityScore))
+    const res = await addDirectorItemEvaluation(evaluatingDirectorItem.id, {
+      directorNote: evalNote.trim(),
+      directorRating: evalRating,
+      qualityScore: !isNaN(scoreVal) ? scoreVal : null
+    })
+    setSubmittingEvaluation(false)
+    if (res.success) {
+      setToastMsg({ msg: "⭐ Đã cập nhật đánh giá của Giám Đốc Ban thành công!", type: "success" })
+      setTimeout(() => setToastMsg(null), 3500)
+      setConsolidatedData((prev: any[]) => prev.map((rpt: any) => {
+        if (rpt.id === evaluatingDirectorReport?.id) {
+          return {
+            ...rpt,
+            items: rpt.items.map((it: any) => {
+              if (it.id === evaluatingDirectorItem.id) {
+                return {
+                  ...it,
+                  directorNote: evalNote.trim(),
+                  directorRating: evalRating,
+                  qualityScore: !isNaN(scoreVal) ? scoreVal : null
+                }
+              }
+              return it
+            })
+          }
+        }
+        return rpt
+      }))
+      setEvaluatingDirectorItem(null)
+      setEvaluatingDirectorReport(null)
     } else {
       alert("Lỗi: " + res.error)
     }
@@ -724,6 +820,9 @@ export function WeeklyReportClient({
     consolidatedData.forEach((report: any) => {
       report.items.forEach((item: any) => {
         if (filterConsolidatedGroup !== "ALL" && item.taskGroup !== filterConsolidatedGroup) return
+        const catObj = (taskCategories || []).find((c: any) => c.name?.trim().toLowerCase() === (item.category || item.mainTask || "").trim().toLowerCase())
+        const weight = catObj?.weight || 1.0
+
         rows.push({
           "STT": stt++,
           "Mã Email": report.user?.email || "",
@@ -731,11 +830,19 @@ export function WeeklyReportClient({
           "Chức danh / Tổ": report.user?.teacher?.departmentRel?.name || getRoleName(report.user?.role),
           "Nhóm Công Việc": item.taskGroup || "-",
           "Danh Mục Công Việc": item.category || item.mainTask || "-",
+          "Trọng Số": `x${weight}`,
           "Nội Dung Công Việc": item.workContent,
           "Mốc Dự Kiến Hoàn Thành": formatExpectedDate(item.expectedCompletion),
           "Tiến Độ": PROGRESS.find(p => p.value === item.progress)?.label || item.progress,
           "Đề Xuất Giải Pháp": item.proposedSolution || "",
-          "Nhận Xét Của QL": item.managerNote || ""
+          "Nhận Xét Của QL": item.managerNote || "",
+          "Đánh Giá Của GĐB": item.directorNote || report.directorComment || "",
+          "Xếp Loại GĐB": item.directorRating ? (
+            item.directorRating === "EXCELLENT" ? "Xuất sắc (10đ)" :
+            item.directorRating === "GOOD" ? "Tốt (8.5đ)" :
+            item.directorRating === "SATISFACTORY" ? "Đạt chuẩn (7đ)" : "Cần cải thiện (5đ)"
+          ) : "",
+          "Điểm Chất Lượng": item.qualityScore ?? ""
         })
       })
     })
@@ -743,6 +850,41 @@ export function WeeklyReportClient({
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, `BaoCaoTuan_${selectedWeek}_${month}_${year}`)
     XLSX.writeFile(wb, `BaoCaoTuan_Tuan${selectedWeek}_Thang${month}_${year}.xlsx`)
+  }
+
+  // Handler: Export Monthly KPI Report to Excel
+  const handleExportKpiExcel = () => {
+    if (!monthlyKpiData || !monthlyKpiData.staffKpis || monthlyKpiData.staffKpis.length === 0) {
+      alert("Không có dữ liệu KPI tháng để xuất Excel!")
+      return
+    }
+
+    const rows: any[] = []
+    let stt = 1
+    monthlyKpiData.staffKpis.forEach((st: any) => {
+      rows.push({
+        "STT": stt++,
+        "Mã / Email": st.email,
+        "Họ và Tên": st.fullName,
+        "Tổ / Bộ phận": st.departmentName,
+        "Chức vụ": st.position,
+        "Tổng Số Việc Tháng": st.totalTasks,
+        "Số Việc Hoàn Thành": st.completedTasks,
+        "Số Việc Đang Làm": st.doingTasks,
+        "Số Việc Chưa Xong": st.notCompletedTasks,
+        "Tổng Trọng Số Đảm Nhận": st.totalWeight,
+        "Tỷ Lệ Hoàn Thành Có Trọng Số (%)": `${st.weightedProgressRate}%`,
+        "Điểm KPI Tháng (Thang 10)": st.avgKpiScore,
+        "Xếp Loại KPI": `${st.kpiGrade} - ${st.kpiGradeLabel}`,
+        "Số Việc Được GĐB Đánh Giá": st.directorEvaluatedCount,
+        "Ý Kiến / Chỉ Đạo Của GĐB": st.directorComments.join("; ") || "Đã rà soát chất lượng"
+      })
+    })
+
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, `KPI_Thang_${month}_${year}`)
+    XLSX.writeFile(wb, `BaoCao_KPI_ChatLuong_Thang${month}_${year}.xlsx`)
   }
 
   // Filtered Cards
@@ -1089,6 +1231,30 @@ export function WeeklyReportClient({
                       className="bg-[#48BFE3] hover:bg-[#007A72] text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
                     >
                       <Save className="w-4 h-4" /> {modalSavingComment ? "Đang lưu..." : "Lưu nhận xét chỉ đạo"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {modalReportData && (
+                <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl space-y-3">
+                  <label className="block text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                    <Award className="w-4 h-4 text-amber-600" /> Đánh giá & Nhận xét của Giám Đốc Ban (GĐB):
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={modalDirectorCommentInput}
+                    onChange={e => setModalDirectorCommentInput(e.target.value)}
+                    placeholder="Nhập ý kiến đánh giá chất lượng công việc, chỉ đạo định hướng từ Giám Đốc Ban..."
+                    className="w-full p-3 border border-amber-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500 bg-white text-slate-800"
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveModalDirectorComment}
+                      disabled={modalSavingDirectorComment}
+                      className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                      <Save className="w-4 h-4" /> {modalSavingDirectorComment ? "Đang lưu..." : "Lưu đánh giá GĐB"}
                     </button>
                   </div>
                 </div>
@@ -1878,6 +2044,20 @@ export function WeeklyReportClient({
                     <BarChart3 className="w-4 h-4 text-emerald-600" />
                     2. Bảng Tiến Độ Tháng & Gợi Ý Hành Động
                   </button>
+                  <button
+                    onClick={() => {
+                      setConsolidatedViewMode("kpi")
+                      loadMonthlyKpi()
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                      consolidatedViewMode === "kpi"
+                        ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Award className={`w-4 h-4 ${consolidatedViewMode === "kpi" ? "text-white" : "text-amber-600"}`} />
+                    3. Tự Tổng Hợp Chất Lượng CV & Đánh Giá KPIs Tháng
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -1890,6 +2070,25 @@ export function WeeklyReportClient({
                       <Sparkles className="w-3.5 h-3.5 text-teal-600" />
                       {loadingMonthlyGroup ? "Đang phân tích..." : "Cập nhật dữ liệu tháng"}
                     </button>
+                  )}
+                  {consolidatedViewMode === "kpi" && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={loadMonthlyKpi}
+                        disabled={loadingMonthlyKpi}
+                        className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                        {loadingMonthlyKpi ? "Đang tổng hợp..." : "Cập nhật dữ liệu KPI"}
+                      </button>
+                      <button
+                        onClick={handleExportKpiExcel}
+                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Xuất Excel KPI Tháng
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1967,12 +2166,18 @@ export function WeeklyReportClient({
                             <th className="p-3 w-28">Tiến độ</th>
                             <th className="p-3 min-w-[150px]">Đề xuất giải pháp</th>
                             <th className="p-3 min-w-[150px]">Nhận xét QL</th>
+                            <th className="p-3 min-w-[210px] text-amber-900 bg-amber-50/70 border-b border-amber-200">
+                              <div className="flex items-center gap-1.5">
+                                <Award className="w-3.5 h-3.5 text-amber-600" />
+                                <span>Đánh Giá Của GĐB</span>
+                              </div>
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y font-medium">
                           {consolidatedData.length === 0 ? (
                             <tr>
-                              <td colSpan={9} className="p-8 text-center text-slate-400">
+                              <td colSpan={10} className="p-8 text-center text-slate-400">
                                 Chưa có báo cáo nào được nộp cho tuần này theo bộ lọc hiện tại!
                               </td>
                             </tr>
@@ -1985,8 +2190,11 @@ export function WeeklyReportClient({
                                   if (filterConsolidatedGroup !== "ALL" && item.taskGroup !== filterConsolidatedGroup) return
                                   count++
                                   const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
+                                  const catObj = (taskCategories || []).find((c: any) => c.name?.trim().toLowerCase() === (item.category || item.mainTask || "").trim().toLowerCase())
+                                  const weight = catObj?.weight || 1.0
+
                                   rows.push(
-                                    <tr key={`${report.id}_${item.id || count}`} className="hover:bg-slate-50">
+                                    <tr key={`${report.id}_${item.id || count}`} className="hover:bg-slate-50 transition-colors">
                                       <td className="p-3 text-center text-slate-400 font-bold">{count}</td>
                                       <td className="p-3 font-bold text-slate-800">
                                         <div>{report.user?.fullName}</div>
@@ -2000,7 +2208,10 @@ export function WeeklyReportClient({
                                         </span>
                                       </td>
                                       <td className="p-3 font-semibold text-slate-800">
-                                        {item.category || item.mainTask || "-"}
+                                        <div>{item.category || item.mainTask || "-"}</div>
+                                        <span className="inline-block mt-1 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
+                                          ⚖️ Trọng số: x{weight}
+                                        </span>
                                       </td>
                                       <td className="p-3 text-slate-700 leading-relaxed">{item.workContent}</td>
                                       <td className="p-3 text-slate-700 font-semibold whitespace-nowrap">
@@ -2013,6 +2224,37 @@ export function WeeklyReportClient({
                                       </td>
                                       <td className="p-3 text-slate-500 italic">{item.proposedSolution || "-"}</td>
                                       <td className="p-3 text-slate-700">{item.managerNote || report.managerComment || "-"}</td>
+                                      <td className="p-3 bg-amber-50/25 border-l border-amber-100">
+                                        <div className="space-y-1.5">
+                                          {item.directorRating && (
+                                            <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${
+                                              item.directorRating === "EXCELLENT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+                                              item.directorRating === "GOOD" ? "bg-blue-100 text-blue-800 border-blue-300" :
+                                              item.directorRating === "SATISFACTORY" ? "bg-amber-100 text-amber-800 border-amber-300" :
+                                              "bg-rose-100 text-rose-800 border-rose-300"
+                                            }`}>
+                                              {item.directorRating === "EXCELLENT" ? "⭐ Xuất sắc (10đ)" :
+                                               item.directorRating === "GOOD" ? "✅ Tốt (8.5đ)" :
+                                               item.directorRating === "SATISFACTORY" ? "⚠️ Đạt chuẩn (7đ)" :
+                                               "❌ Cần cải thiện (5đ)"}
+                                            </span>
+                                          )}
+                                          <div className="text-xs text-slate-800 font-medium leading-relaxed">
+                                            {item.directorNote || report.directorComment || (
+                                              <span className="text-slate-400 italic text-[11px]">Chưa có đánh giá</span>
+                                            )}
+                                          </div>
+                                          {isManager && (
+                                            <button
+                                              onClick={() => handleOpenDirectorEvaluationModal(item, report)}
+                                              className="inline-flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-900 font-bold hover:underline mt-1"
+                                            >
+                                              <Edit3 className="w-3 h-3" />
+                                              {item.directorNote || item.directorRating ? "Sửa đánh giá GĐB" : "+ GĐB đánh giá"}
+                                            </button>
+                                          )}
+                                        </div>
+                                      </td>
                                     </tr>
                                   )
                                 })
@@ -2020,7 +2262,7 @@ export function WeeklyReportClient({
                               if (rows.length === 0) {
                                 return (
                                   <tr>
-                                    <td colSpan={9} className="p-8 text-center text-slate-400">
+                                    <td colSpan={10} className="p-8 text-center text-slate-400">
                                       Không có công việc nào thuộc nhóm "{filterConsolidatedGroup}" trong tuần này!
                                     </td>
                                   </tr>
@@ -2217,6 +2459,237 @@ export function WeeklyReportClient({
                       <div className="p-6 text-center bg-white/5 rounded-2xl border border-white/10 text-emerald-300 text-xs font-bold flex items-center justify-center gap-2">
                         <CheckCircle2 className="w-5 h-5" />
                         Tất cả các nhóm công việc đang bám sát tiến độ hoàn thành tốt trong tháng! Không có điểm nghẽn nghiêm trọng.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ----------------- SUB-VIEW: TỰ TỔNG HỢP CHẤT LƯỢNG CV & ĐÁNH GIÁ KPIS THÁNG ----------------- */}
+              {consolidatedViewMode === "kpi" && (
+                <div className="space-y-6">
+                  {/* BẢNG TỔNG QUAN CHỈ SỐ KPI THÁNG */}
+                  <div className="bg-white rounded-3xl border border-slate-100 p-5 sm:p-6 shadow-sm space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                      <div>
+                        <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                          <Award className="w-5 h-5 text-amber-500" /> Bảng Tự Động Tổng Hợp Chất Lượng Công Việc & KPIs Tháng {month}/{year}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Hệ thống tự động quy đổi trọng số danh mục (Task Weight), tỷ lệ hoàn thành và tổng hợp điểm đánh giá của Giám Đốc Ban để xếp loại KPI nhân sự.
+                        </p>
+                      </div>
+                    </div>
+
+                    {loadingMonthlyKpi ? (
+                      <div className="p-12 text-center text-slate-400 font-semibold">
+                        Đang tổng hợp dữ liệu chất lượng công việc, trọng số và tính toán chỉ số KPI tháng...
+                      </div>
+                    ) : !monthlyKpiData || (monthlyKpiData.staffKpis || []).length === 0 ? (
+                      <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-500">
+                        Chưa có dữ liệu báo cáo công việc nào được ghi nhận trong Tháng {month}/{year}.
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* 4 Cards Summary */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/70 shadow-2xs">
+                            <div className="flex items-center justify-between text-indigo-700 mb-2">
+                              <span className="text-xs font-bold uppercase tracking-wider">Tổng nhân sự</span>
+                              <Users className="w-4 h-4" />
+                            </div>
+                            <div className="text-2xl font-black text-indigo-950">
+                              {monthlyKpiData.summary?.totalStaff || 0}
+                            </div>
+                            <div className="text-[11px] text-indigo-700/80 font-medium mt-1">
+                              Tổng cộng {monthlyKpiData.summary?.totalTasksMonth || 0} đầu việc tháng
+                            </div>
+                          </div>
+
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/70 shadow-2xs">
+                            <div className="flex items-center justify-between text-amber-800 mb-2">
+                              <span className="text-xs font-bold uppercase tracking-wider">Điểm KPI Trung Bình</span>
+                              <Award className="w-4 h-4 text-amber-600" />
+                            </div>
+                            <div className="text-2xl font-black text-amber-950 flex items-baseline gap-1.5">
+                              <span>{monthlyKpiData.summary?.avgKpiScore || 0}</span>
+                              <span className="text-xs font-bold text-amber-700">/ 10.0</span>
+                            </div>
+                            <div className="text-[11px] text-amber-800 font-medium mt-1">
+                              Hoàn thành có trọng số: <strong>{monthlyKpiData.summary?.avgCompletionRate || 0}%</strong>
+                            </div>
+                          </div>
+
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/70 shadow-2xs">
+                            <div className="flex items-center justify-between text-emerald-700 mb-2">
+                              <span className="text-xs font-bold uppercase tracking-wider">Xếp loại A (Xuất sắc)</span>
+                              <Trophy className="w-4 h-4 text-emerald-600" />
+                            </div>
+                            <div className="text-2xl font-black text-emerald-950">
+                              {monthlyKpiData.summary?.gradeACount || 0}
+                            </div>
+                            <div className="text-[11px] text-emerald-700/80 font-medium mt-1">
+                              Hạng B (Hoàn thành tốt): <strong>{monthlyKpiData.summary?.gradeBCount || 0}</strong> nhân sự
+                            </div>
+                          </div>
+
+                          <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100/60 border border-slate-200 shadow-2xs">
+                            <div className="flex items-center justify-between text-slate-700 mb-2">
+                              <span className="text-xs font-bold uppercase tracking-wider">Hạng C & D</span>
+                              <AlertCircle className="w-4 h-4 text-slate-500" />
+                            </div>
+                            <div className="text-2xl font-black text-slate-800">
+                              {(monthlyKpiData.summary?.gradeCCount || 0) + (monthlyKpiData.summary?.gradeDCount || 0)}
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-medium mt-1">
+                              Hạng C: {monthlyKpiData.summary?.gradeCCount || 0} | Cần cải thiện: {monthlyKpiData.summary?.gradeDCount || 0}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Search & Filter Bar */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+                          <div className="flex items-center gap-2 flex-1 max-w-md">
+                            <div className="relative flex-1">
+                              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                              <input
+                                type="text"
+                                value={kpiSearch}
+                                onChange={e => setKpiSearch(e.target.value)}
+                                placeholder="Tìm theo tên nhân sự, email, chức danh..."
+                                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-bold text-slate-500 mr-1">Lọc xếp loại:</span>
+                            {["ALL", "A", "B", "C", "D"].map(g => (
+                              <button
+                                key={g}
+                                onClick={() => setKpiFilterGrade(g)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                                  kpiFilterGrade === g
+                                    ? "bg-slate-800 text-white shadow-xs"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                                }`}
+                              >
+                                {g === "ALL" ? "Tất cả" : `Hạng ${g}`}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* BẢNG CHI TIẾT ĐÁNH GIÁ CHẤT LƯỢNG CV & KPI THÁNG */}
+                        <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                                <th className="p-3 text-center w-10">STT</th>
+                                <th className="p-3 min-w-[170px]">Họ và Tên Nhân Sự</th>
+                                <th className="p-3 min-w-[130px]">Tổ / Chức Danh</th>
+                                <th className="p-3 text-center min-w-[100px]">Tổng Việc</th>
+                                <th className="p-3 text-center min-w-[100px]">Trọng Số (ΣW)</th>
+                                <th className="p-3 text-center min-w-[130px]">Tiến Độ Có Trọng Số</th>
+                                <th className="p-3 text-center min-w-[120px]">Điểm KPI Tháng</th>
+                                <th className="p-3 text-center min-w-[120px]">Xếp Loại KPI</th>
+                                <th className="p-3 min-w-[200px]">Đánh Giá / Ý Kiến GĐB</th>
+                                <th className="p-3 text-center min-w-[100px]">Thao Tác</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y font-medium">
+                              {(() => {
+                                const filtered = (monthlyKpiData.staffKpis || []).filter((st: any) => {
+                                  const q = kpiSearch.trim().toLowerCase()
+                                  const matchQ = !q || st.fullName.toLowerCase().includes(q) || st.email.toLowerCase().includes(q) || st.departmentName?.toLowerCase().includes(q)
+                                  const matchG = kpiFilterGrade === "ALL" || st.kpiGrade === kpiFilterGrade
+                                  return matchQ && matchG
+                                })
+
+                                if (filtered.length === 0) {
+                                  return (
+                                    <tr>
+                                      <td colSpan={10} className="p-8 text-center text-slate-400">
+                                        Không tìm thấy nhân sự phù hợp với điều kiện tìm kiếm/lọc!
+                                      </td>
+                                    </tr>
+                                  )
+                                }
+
+                                return filtered.map((st: any, idx: number) => (
+                                  <tr key={st.userId || idx} className="hover:bg-slate-50 transition-colors">
+                                    <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                                    <td className="p-3 font-bold text-slate-800">
+                                      <div>{st.fullName}</div>
+                                      <div className="text-[10px] text-slate-400 font-normal">{st.email}</div>
+                                    </td>
+                                    <td className="p-3 text-slate-600 font-semibold">
+                                      <div>{st.departmentName}</div>
+                                      <div className="text-[10px] text-slate-400">{st.position}</div>
+                                    </td>
+                                    <td className="p-3 text-center font-bold text-slate-700">
+                                      <div>{st.completedTasks}/{st.totalTasks}</div>
+                                      <div className="text-[10px] text-slate-400 font-normal">việc hoàn thành</div>
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      <span className="font-extrabold text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 text-[11px]">
+                                        x{st.totalWeight}
+                                      </span>
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      <div className="font-extrabold text-slate-800">{st.weightedProgressRate}%</div>
+                                      <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1 max-w-[90px] mx-auto">
+                                        <div
+                                          className={`h-full ${
+                                            st.weightedProgressRate >= 80 ? "bg-emerald-500" :
+                                            st.weightedProgressRate >= 50 ? "bg-blue-500" : "bg-amber-500"
+                                          }`}
+                                          style={{ width: `${st.weightedProgressRate}%` }}
+                                        />
+                                      </div>
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      <span className="text-base font-black text-slate-900">
+                                        {st.avgKpiScore}
+                                      </span>
+                                      <span className="text-[10px] text-slate-400 font-bold"> / 10</span>
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      <span className={`inline-block px-2.5 py-1 rounded-xl text-xs font-black border ${st.kpiColor} shadow-2xs`}>
+                                        {st.kpiGrade} - {st.kpiGradeLabel}
+                                      </span>
+                                    </td>
+                                    <td className="p-3 text-slate-700">
+                                      {st.directorComments && st.directorComments.length > 0 ? (
+                                        <div className="space-y-1 text-xs font-medium">
+                                          {st.directorComments.slice(0, 2).map((dc: string, dIdx: number) => (
+                                            <div key={dIdx} className="text-amber-950 bg-amber-50/80 p-1.5 rounded-lg border border-amber-200/60 leading-tight">
+                                              {dc}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : st.directorEvaluatedCount > 0 ? (
+                                        <span className="text-emerald-700 text-xs font-bold flex items-center gap-1">
+                                          <Check className="w-3.5 h-3.5" /> GĐB đã đánh giá {st.directorEvaluatedCount} việc
+                                        </span>
+                                      ) : (
+                                        <span className="text-slate-400 italic text-[11px]">Đánh giá theo tiến độ chuẩn</span>
+                                      )}
+                                    </td>
+                                    <td className="p-3 text-center">
+                                      <button
+                                        onClick={() => setSelectedStaffForKpiDetail(st)}
+                                        className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs inline-flex items-center gap-1 transition-all"
+                                      >
+                                        <Eye className="w-3.5 h-3.5 text-[#48BFE3]" /> Chi tiết
+                                      </button>
+                                    </td>
+                                  </tr>
+                                ))
+                              })()}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -2477,6 +2950,245 @@ export function WeeklyReportClient({
             </div>
           )}
         </>
+      )}
+
+      {/* ============ MODAL: ĐÁNH GIÁ CHỈ ĐẠO CỦA GIÁM ĐỐC BAN (GĐB) ============ */}
+      {evaluatingDirectorItem && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-amber-100 text-amber-800 rounded-2xl">
+                  <Award className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">
+                    Đánh Giá & Nhận Xét Của Giám Đốc Ban (GĐB)
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Nhân sự: <strong>{evaluatingDirectorReport?.user?.fullName}</strong> - Tuần {selectedWeek} Tháng {month}/{year}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setEvaluatingDirectorItem(null); setEvaluatingDirectorReport(null) }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Task Info Context */}
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5 text-xs">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-extrabold text-slate-800">
+                  {evaluatingDirectorItem.category || evaluatingDirectorItem.mainTask || "Công việc"}
+                </span>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                  Trọng số: x{(() => {
+                    const c = (taskCategories || []).find((x: any) => x.name?.trim().toLowerCase() === (evaluatingDirectorItem.category || evaluatingDirectorItem.mainTask || "").trim().toLowerCase())
+                    return c?.weight || 1.0
+                  })()}
+                </span>
+              </div>
+              <p className="text-slate-600 leading-relaxed font-medium">
+                {evaluatingDirectorItem.workContent}
+              </p>
+              <div className="flex items-center gap-2 pt-1 text-[11px] text-slate-500">
+                <span>Tiến độ: <strong>{evaluatingDirectorItem.progress}</strong></span>
+                {evaluatingDirectorItem.expectedCompletion && (
+                  <span>• Dự kiến: <strong>{formatExpectedDate(evaluatingDirectorItem.expectedCompletion)}</strong></span>
+                )}
+              </div>
+            </div>
+
+            {/* Rating Selector */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Xếp loại chất lượng công việc của GĐB:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "EXCELLENT", label: "⭐ Xuất sắc (10đ)", score: 10, color: "border-emerald-500 bg-emerald-50 text-emerald-900" },
+                    { value: "GOOD", label: "✅ Hoàn thành tốt (8.5đ)", score: 8.5, color: "border-blue-500 bg-blue-50 text-blue-900" },
+                    { value: "SATISFACTORY", label: "⚠️ Đạt chuẩn (7.0đ)", score: 7.0, color: "border-amber-500 bg-amber-50 text-amber-900" },
+                    { value: "NEEDS_IMPROVEMENT", label: "❌ Cần cải thiện (5.0đ)", score: 5.0, color: "border-rose-500 bg-rose-50 text-rose-900" },
+                  ].map(r => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      onClick={() => { setEvalRating(r.value); setEvalQualityScore(r.score) }}
+                      className={`p-2.5 rounded-xl border text-xs font-extrabold text-left transition-all ${
+                        evalRating === r.value ? `${r.color} ring-2 ring-amber-400 shadow-xs` : "border-slate-200 hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Điểm chất lượng cụ thể (Thang điểm 1 - 10):
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="1"
+                  max="10"
+                  value={evalQualityScore}
+                  onChange={e => setEvalQualityScore(e.target.value)}
+                  className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-extrabold text-slate-800 outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Ý kiến chỉ đạo / Nhận xét của Giám Đốc Ban:
+                </label>
+                <textarea
+                  rows={3}
+                  value={evalNote}
+                  onChange={e => setEvalNote(e.target.value)}
+                  placeholder="Nhập ý kiến đánh giá chất lượng, định hướng xử lý từ Giám Đốc Ban..."
+                  className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-500 text-slate-800 leading-relaxed font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => { setEvaluatingDirectorItem(null); setEvaluatingDirectorReport(null) }}
+                className="px-4 py-2 border rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveDirectorEvaluation}
+                disabled={submittingEvaluation}
+                className="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5"
+              >
+                <Save className="w-4 h-4" />
+                {submittingEvaluation ? "Đang lưu..." : "Lưu đánh giá GĐB"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============ MODAL: CHI TIẾT CÔNG VIỆC & BẢNG ĐIỂM KPI THÁNG ============ */}
+      {selectedStaffForKpiDetail && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                  <Award className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-800">
+                    Chi Tiết Công Việc & Điểm KPI Tháng {month}/{year}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Nhân sự: <strong>{selectedStaffForKpiDetail.fullName}</strong> ({selectedStaffForKpiDetail.departmentName} - {selectedStaffForKpiDetail.position})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedStaffForKpiDetail(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Top Score Banner */}
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className={`px-4 py-2 rounded-2xl text-base font-black border ${selectedStaffForKpiDetail.kpiColor} shadow-sm`}>
+                  Hạng {selectedStaffForKpiDetail.kpiGrade}: {selectedStaffForKpiDetail.kpiGradeLabel}
+                </span>
+                <div>
+                  <div className="text-sm font-bold text-slate-800">
+                    Điểm KPI: <span className="text-lg text-amber-900 font-black">{selectedStaffForKpiDetail.avgKpiScore}</span> / 10.0
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Tỷ lệ hoàn thành có trọng số: <strong>{selectedStaffForKpiDetail.weightedProgressRate}%</strong> | Tổng trọng số: <strong>x{selectedStaffForKpiDetail.totalWeight}</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="text-xs text-slate-600 bg-white/80 p-2.5 rounded-xl border border-amber-200 font-medium">
+                Công thức: Điểm KPI = Σ(Điểm CV × Trọng số) / Σ(Trọng số)
+              </div>
+            </div>
+
+            {/* List of Tasks in Month */}
+            <div className="overflow-y-auto flex-1 border border-slate-200 rounded-2xl">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase sticky top-0 bg-slate-50 z-10">
+                    <th className="p-2.5 text-center w-10">Tuần</th>
+                    <th className="p-2.5 min-w-[120px]">Danh mục & Trọng số</th>
+                    <th className="p-2.5 min-w-[200px]">Nội dung công việc</th>
+                    <th className="p-2.5 w-24">Tiến độ</th>
+                    <th className="p-2.5 min-w-[130px]">Nhận xét QL</th>
+                    <th className="p-2.5 min-w-[170px] bg-amber-50/70 text-amber-900">Đánh giá GĐB & Điểm</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y font-medium">
+                  {selectedStaffForKpiDetail.tasks?.map((t: any, tIdx: number) => {
+                    const prog = PROGRESS.find(p => p.value === t.progress) || PROGRESS[0]
+                    return (
+                      <tr key={t.id || tIdx} className="hover:bg-slate-50">
+                        <td className="p-2.5 text-center font-bold text-slate-500">T{t.weekNumber}</td>
+                        <td className="p-2.5">
+                          <div className="font-extrabold text-slate-800">{t.category || t.mainTask || "-"}</div>
+                          <span className="inline-block mt-0.5 text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                            ⚖️ Trọng số: x{t.weight}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-slate-700 leading-relaxed">{t.workContent}</td>
+                        <td className="p-2.5">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${prog.color}`}>
+                            {prog.label}
+                          </span>
+                        </td>
+                        <td className="p-2.5 text-slate-600">{t.managerNote || "-"}</td>
+                        <td className="p-2.5 bg-amber-50/20">
+                          <div className="space-y-1">
+                            {t.directorRating && (
+                              <span className="inline-block px-1.5 py-0.2 text-[9px] font-bold rounded bg-amber-100 text-amber-900 border border-amber-200">
+                                {t.directorRating} ({t.qualityScore}đ)
+                              </span>
+                            )}
+                            <div className="text-[11px] text-slate-800 font-medium">
+                              {t.directorNote || (
+                                <span className="text-slate-400 italic">Điểm quy đổi: {t.qualityScore}đ</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex items-center justify-end pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setSelectedStaffForKpiDetail(null)}
+                className="bg-slate-200 hover:bg-slate-300 text-slate-700 px-5 py-2 rounded-xl text-xs font-bold"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -4,7 +4,7 @@
     "fullName": "Lê Gia Lân",
     "studentCode": "HS065",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tâm lý"
@@ -28,17 +28,14 @@
       "scale10": 2.3
     },
     "ksdvEngScale10": 2.3,
-    "ksdvEngTotal": 23.3,
-    "ksdvStatus": "Cam kết Tâm lý",
-    "missingCommitted": [],
-    "missingReason": "Chỉ cam kết theo dõi tâm lý lứa tuổi, không khảo sát văn hóa"
+    "ksdnScores": {}
   },
   {
     "id": "cmq9a1v9l000z13z4i0j4dx3v",
     "fullName": "Đào Trần Thảo Linh",
     "studentCode": "HS079",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tâm lý",
@@ -63,19 +60,14 @@
       "scale10": 3
     },
     "ksdvEngScale10": 3,
-    "ksdvEngTotal": 30,
-    "ksdvStatus": "Cam kết Tâm lý",
-    "missingCommitted": [
-      "Tiếng Việt"
-    ],
-    "missingReason": "Chỉ cam kết theo dõi tâm lý lứa tuổi, không khảo sát văn hóa"
+    "ksdnScores": {}
   },
   {
     "id": "cmq9a1weg001713z4409owljj",
     "fullName": "Nguyễn Thanh Phúc",
     "studentCode": "HS083",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.2INT_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Anh"
@@ -99,10 +91,7 @@
       "scale10": 1.7
     },
     "ksdvEngScale10": 1.7,
-    "ksdvEngTotal": 16.7,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {}
   },
   {
     "id": "cmq9a9ffz002713z4ab48ghaa",
@@ -131,13 +120,16 @@
       "oral": 4,
       "ept": null,
       "totalScore": 10,
-      "scale10": 1
+      "scale10": 10
     },
-    "ksdvEngScale10": 1,
-    "ksdvEngTotal": 10,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdvEngScale10": 10,
+    "ksdnScores": {
+      "TVI": 8.5,
+      "Tiếng Việt": 8.5,
+      "MAT": 9,
+      "Maths": 9,
+      "ESL": 8
+    }
   },
   {
     "id": "cmq9a9ghi002f13z4qf1qvu4q",
@@ -167,12 +159,14 @@
       "scale10": null
     },
     "ksdvEngScale10": null,
-    "ksdvEngTotal": null,
-    "ksdvStatus": "Chưa có điểm KSĐV",
-    "missingCommitted": [
-      "Tiếng Anh"
-    ],
-    "missingReason": "Diện Tuyển thẳng (không phải thi khảo sát đầu vào)"
+    "ksdnScores": {
+      "TOA": 9,
+      "Toán học": 9,
+      "TVI": 8,
+      "Tiếng Việt": 8,
+      "TA": 7.9,
+      "Tiếng Anh": 7.9
+    }
   },
   {
     "id": "cmq9a9i15002r13z4yz434bf6",
@@ -203,10 +197,14 @@
       "scale10": 2.7
     },
     "ksdvEngScale10": 2.7,
-    "ksdvEngTotal": 26.7,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 5,
+      "Ngữ Văn": 5,
+      "TA": null,
+      "Tiếng Anh": null,
+      "TOA": 4.5,
+      "Toán học": 4.5
+    }
   },
   {
     "id": "cmqa9bjp0000hqkrutbz27w85",
@@ -238,12 +236,13 @@
       "scale10": 4.1
     },
     "ksdvEngScale10": 4.1,
-    "ksdvEngTotal": 41,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Toán"
-    ],
-    "missingReason": "Hệ Quốc tế (chỉ thi EPT 41/100, không thi Toán đề chung)"
+    "ksdnScores": {
+      "NVA": 6,
+      "Ngữ Văn": 6,
+      "TOA": 6.25,
+      "Toán học": 6.25,
+      "ESL": 5.6
+    }
   },
   {
     "id": "cmqa9bnk8001bqkruvwzsixsb",
@@ -275,12 +274,13 @@
       "scale10": 8.4
     },
     "ksdvEngScale10": 8.4,
-    "ksdvEngTotal": 84,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Việt"
-    ],
-    "missingReason": "Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)"
+    "ksdnScores": {
+      "TVI": 4,
+      "Tiếng Việt": 4,
+      "MAT": 8,
+      "Maths": 8,
+      "ESL": 9.8
+    }
   },
   {
     "id": "cmqa9bqzq001zqkru9243a3eh",
@@ -311,10 +311,13 @@
       "scale10": 8.2
     },
     "ksdvEngScale10": 8.2,
-    "ksdvEngTotal": 82,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TVI": 1.5,
+      "Tiếng Việt": 1.5,
+      "MAT": 3,
+      "Maths": 3,
+      "ESL": 7.8
+    }
   },
   {
     "id": "cmqa9eifk0029qkru6t8wgdol",
@@ -345,11 +348,14 @@
       "scale10": 6.3
     },
     "ksdvEngScale10": 6.3,
-    "ksdvEngTotal": 63,
-    "ksdvViet": null,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 2.25,
+      "Ngữ Văn": 2.25,
+      "TA": 3.7,
+      "Tiếng Anh": 3.7,
+      "TOA": 3.8,
+      "Toán học": 3.8
+    }
   },
   {
     "id": "cmqa9g1mk004jqkruqlpgs4wx",
@@ -380,10 +386,14 @@
       "scale10": 3.4
     },
     "ksdvEngScale10": 3.4,
-    "ksdvEngTotal": 34,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 4.25,
+      "Toán học": 4.25,
+      "NVA": 7.5,
+      "Ngữ Văn": 7.5,
+      "TA": 4.5,
+      "Tiếng Anh": 4.5
+    }
   },
   {
     "id": "cmqa9g745005rqkru1yw41ia2",
@@ -414,10 +424,14 @@
       "scale10": 6.1
     },
     "ksdvEngScale10": 6.1,
-    "ksdvEngTotal": 61,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 9.5,
+      "Toán học": 9.5,
+      "TVI": 7.3,
+      "Tiếng Việt": 7.3,
+      "TA": 6.1,
+      "Tiếng Anh": 6.1
+    }
   },
   {
     "id": "cmqangnky00033fsf60yngijh",
@@ -450,10 +464,14 @@
       "scale10": 1.5
     },
     "ksdvEngScale10": 1.5,
-    "ksdvEngTotal": 15,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 4.75,
+      "Toán học": 4.75,
+      "NVA": 2,
+      "Ngữ Văn": 2,
+      "TA": 4.6,
+      "Tiếng Anh": 4.6
+    }
   },
   {
     "id": "cmqapk1os0007nz6c3clpte3j",
@@ -484,12 +502,14 @@
       "scale10": 8
     },
     "ksdvEngScale10": 8,
-    "ksdvEngTotal": 80,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Toán"
-    ],
-    "missingReason": "Được bảo lưu/miễn thi Toán (đã có điểm Văn 8.0, Anh 8.0)"
+    "ksdnScores": {
+      "NVA": 7,
+      "Ngữ Văn": 7,
+      "TA": 8.8,
+      "Tiếng Anh": 8.8,
+      "TOA": 8,
+      "Toán học": 8
+    }
   },
   {
     "id": "cmqapr2pi0005k49ucnlm0y27",
@@ -520,10 +540,14 @@
       "scale10": 2
     },
     "ksdvEngScale10": 2,
-    "ksdvEngTotal": 20,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 5.5,
+      "Ngữ Văn": 5.5,
+      "TA": 4.7,
+      "Tiếng Anh": 4.7,
+      "TOA": 7.25,
+      "Toán học": 7.25
+    }
   },
   {
     "id": "cmqav8ywl0003srxummzrf7d2",
@@ -554,10 +578,14 @@
       "scale10": 1.5
     },
     "ksdvEngScale10": 1.5,
-    "ksdvEngTotal": 15,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 6.25,
+      "Toán học": 6.25,
+      "NVA": 5,
+      "Ngữ Văn": 5,
+      "TA": 4.8,
+      "Tiếng Anh": 4.8
+    }
   },
   {
     "id": "cmqavg7db0005srxuu2uok43h",
@@ -588,10 +616,14 @@
       "scale10": 4.2
     },
     "ksdvEngScale10": 4.2,
-    "ksdvEngTotal": 42,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 7.5,
+      "Ngữ Văn": 7.5,
+      "TA": 4.9,
+      "Tiếng Anh": 4.9,
+      "TOA": 8.3,
+      "Toán học": 8.3
+    }
   },
   {
     "id": "cmqavh57f0001t6k9crbcq4eu",
@@ -623,10 +655,14 @@
       "scale10": 1.9
     },
     "ksdvEngScale10": 1.9,
-    "ksdvEngTotal": 19,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TA": 5.2,
+      "Tiếng Anh": 5.2,
+      "NVA": 4.5,
+      "Ngữ Văn": 4.5,
+      "TOA": 3.5,
+      "Toán học": 3.5
+    }
   },
   {
     "id": "cmqk9bk3d0001faz3o4xv4x83",
@@ -658,17 +694,21 @@
       "scale10": 3.8
     },
     "ksdvEngScale10": 3.8,
-    "ksdvEngTotal": 38,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 6.5,
+      "Ngữ Văn": 6.5,
+      "TA": 5.1,
+      "Tiếng Anh": 5.1,
+      "TOA": 4,
+      "Toán học": 4
+    }
   },
   {
     "id": "cmqumepcf0003bopcuf5ecgpr",
     "fullName": "Đỗ An Nhiên ",
     "studentCode": "HS265",
     "campus": "CS1",
-    "className": "Chưa rõ",
+    "className": "1.1_CS1",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Anh"
@@ -692,17 +732,14 @@
       "scale10": 1
     },
     "ksdvEngScale10": 1,
-    "ksdvEngTotal": 10,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {}
   },
   {
     "id": "cmqywy60d0005se5dh2i8rs86",
     "fullName": "Hà Đặng Phước Huy",
     "studentCode": "HS275",
     "campus": "CS1",
-    "className": "Chưa rõ",
+    "className": "1S_CS4",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Anh"
@@ -726,10 +763,7 @@
       "scale10": 3.3
     },
     "ksdvEngScale10": 3.3,
-    "ksdvEngTotal": 33.3,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {}
   },
   {
     "id": "cmqywz7ey0005m8o2u1z32gu4",
@@ -760,10 +794,14 @@
       "scale10": 4
     },
     "ksdvEngScale10": 4,
-    "ksdvEngTotal": 40,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 8.3,
+      "Toán học": 8.3,
+      "TVI": 7,
+      "Tiếng Việt": 7,
+      "TA": 2.8,
+      "Tiếng Anh": 2.8
+    }
   },
   {
     "id": "cmr4peyic00013uqa02511mdz",
@@ -794,17 +832,21 @@
       "scale10": 1.8
     },
     "ksdvEngScale10": 1.8,
-    "ksdvEngTotal": 18,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 4.25,
+      "Toán học": 4.25,
+      "NVA": 4,
+      "Ngữ Văn": 4,
+      "TA": 1.9,
+      "Tiếng Anh": 1.9
+    }
   },
   {
     "id": "cmrbfkbrn00012rhyr4u2s8ut",
     "fullName": "ĐỖ NGUYỄN AN KHÔI",
     "studentCode": "HS286",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Chung / Theo dõi"
@@ -828,10 +870,7 @@
       "scale10": 2.3
     },
     "ksdvEngScale10": 2.3,
-    "ksdvEngTotal": 23.3,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {}
   },
   {
     "id": "cmrbk5mnu0006ze67iezug4cj",
@@ -862,12 +901,14 @@
       "scale10": null
     },
     "ksdvEngScale10": null,
-    "ksdvEngTotal": null,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Anh"
-    ],
-    "missingReason": "Môn Tiếng Anh chưa nhập điểm trên hệ thống (đã có điểm Toán, Văn)"
+    "ksdnScores": {
+      "NVA": 6,
+      "Ngữ Văn": 6,
+      "TOA": 6.5,
+      "Toán học": 6.5,
+      "TA": 4,
+      "Tiếng Anh": 4
+    }
   },
   {
     "id": "cmrcxbu5x00026g6vqsx1pdvf",
@@ -900,10 +941,14 @@
       "scale10": 8.7
     },
     "ksdvEngScale10": 8.7,
-    "ksdvEngTotal": 87,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 8.3,
+      "Toán học": 8.3,
+      "TVI": 3,
+      "Tiếng Việt": 3,
+      "TA": 9.8,
+      "Tiếng Anh": 9.8
+    }
   },
   {
     "id": "cmrfpn7110001qbh85z8qq365",
@@ -934,10 +979,13 @@
       "scale10": 3.9
     },
     "ksdvEngScale10": 3.9,
-    "ksdvEngTotal": 39,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TVI": 8,
+      "Tiếng Việt": 8,
+      "ESL": 4,
+      "MAT": 10,
+      "Maths": 10
+    }
   },
   {
     "id": "cmrfpp46l0003qbh8rv5g2wm8",
@@ -967,12 +1015,14 @@
       "scale10": null
     },
     "ksdvEngScale10": null,
-    "ksdvEngTotal": null,
-    "ksdvStatus": "Chưa có điểm KSĐV",
-    "missingCommitted": [
-      "Tiếng Anh"
-    ],
-    "missingReason": "Chưa cập nhật điểm bài thi Tiếng Anh trên hệ thống"
+    "ksdnScores": {
+      "NVA": 5.5,
+      "Ngữ Văn": 5.5,
+      "TOA": 5,
+      "Toán học": 5,
+      "TA": 4.6,
+      "Tiếng Anh": 4.6
+    }
   },
   {
     "id": "cmrilevdj0003pcj4ykwin8w9",
@@ -1003,12 +1053,14 @@
       "scale10": null
     },
     "ksdvEngScale10": null,
-    "ksdvEngTotal": null,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Anh"
-    ],
-    "missingReason": "Môn Tiếng Anh chưa nhập điểm trên hệ thống (đã có điểm Toán, Văn)"
+    "ksdnScores": {
+      "NVA": 4.5,
+      "Ngữ Văn": 4.5,
+      "TA": 4,
+      "Tiếng Anh": 4,
+      "TOA": 7,
+      "Toán học": 7
+    }
   },
   {
     "id": "cmrk1a14p0003zmpmnrq7dham",
@@ -1039,17 +1091,21 @@
       "scale10": 4.4
     },
     "ksdvEngScale10": 4.4,
-    "ksdvEngTotal": 44,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 6.1,
+      "Toán học": 6.1,
+      "NVA": 7,
+      "Ngữ Văn": 7,
+      "TA": 6.2,
+      "Tiếng Anh": 6.2
+    }
   },
   {
     "id": "cmrmwjd5s00017t091py6xdbt",
     "fullName": "LÊ ĐÌNH SĨ PHÚ",
     "studentCode": "HS331",
     "campus": "CS1",
-    "className": "Chưa rõ",
+    "className": "6.1_CS1",
     "grade": "6",
     "committedSubjects": [
       "Toán"
@@ -1057,7 +1113,7 @@
     "isPsychology": false,
     "ksdvMath": 4,
     "ksdvViet": 5,
-    "ksdvVan": 5,
+    "ksdvVan": null,
     "ksdvEng": 18,
     "ksdvPsy": "Đã khảo sát",
     "ksdnMath": null,
@@ -1073,10 +1129,7 @@
       "scale10": 5
     },
     "ksdvEngScale10": 5,
-    "ksdvEngTotal": 50,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {}
   },
   {
     "id": "cmrnbzd8f0001g2eblgv255ta",
@@ -1107,10 +1160,14 @@
       "scale10": 3.9
     },
     "ksdvEngScale10": 3.9,
-    "ksdvEngTotal": 39,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 10,
+      "Toán học": 10,
+      "TVI": 9,
+      "Tiếng Việt": 9,
+      "TA": 5.6,
+      "Tiếng Anh": 5.6
+    }
   },
   {
     "id": "cmrtz6ywz0003usvobumsgdcb",
@@ -1141,10 +1198,14 @@
       "scale10": 6.5
     },
     "ksdvEngScale10": 6.5,
-    "ksdvEngTotal": 65,
-    "ksdvStatus": "Cam kết Tâm lý",
-    "missingCommitted": [],
-    "missingReason": "Chỉ cam kết theo dõi tâm lý lứa tuổi, không khảo sát văn hóa"
+    "ksdnScores": {
+      "NVA": 8.5,
+      "Ngữ Văn": 8.5,
+      "TA": 7.5,
+      "Tiếng Anh": 7.5,
+      "TOA": 3,
+      "Toán học": 3
+    }
   },
   {
     "id": "cmryk2rua000113tlcvwiyuok",
@@ -1175,10 +1236,14 @@
       "scale10": 2
     },
     "ksdvEngScale10": 2,
-    "ksdvEngTotal": 20,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 7.5,
+      "Ngữ Văn": 7.5,
+      "TOA": 7.5,
+      "Toán học": 7.5,
+      "TA": 3.5,
+      "Tiếng Anh": 3.5
+    }
   },
   {
     "id": "cmryncwmi0003a81hfqskkw1h",
@@ -1209,10 +1274,14 @@
       "scale10": 1.8
     },
     "ksdvEngScale10": 1.8,
-    "ksdvEngTotal": 18.4,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 3.5,
+      "Toán học": 3.5,
+      "NVA": 2.5,
+      "Ngữ Văn": 2.5,
+      "TA": 2.5,
+      "Tiếng Anh": 2.5
+    }
   },
   {
     "id": "cmryndh8k0005a81h02oc3tex",
@@ -1245,10 +1314,14 @@
       "scale10": 1.8
     },
     "ksdvEngScale10": 1.8,
-    "ksdvEngTotal": 17.8,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 3.5,
+      "Toán học": 3.5,
+      "NVA": 5.75,
+      "Ngữ Văn": 5.75,
+      "TA": 3.1,
+      "Tiếng Anh": 3.1
+    }
   },
   {
     "id": "cmrynfkgx0001fvn7ztdigds0",
@@ -1279,17 +1352,21 @@
       "scale10": 8.5
     },
     "ksdvEngScale10": 8.5,
-    "ksdvEngTotal": 85,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 4.75,
+      "Ngữ Văn": 4.75,
+      "TA": 6.5,
+      "Tiếng Anh": 6.5,
+      "TOA": 6.3,
+      "Toán học": 6.3
+    }
   },
   {
     "id": "cmrynnuyx000h9fun5btuwlc2",
     "fullName": "Phan Hải Đăng",
     "studentCode": "HS701020036",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Chung / Theo dõi"
@@ -1313,10 +1390,7 @@
       "scale10": null
     },
     "ksdvEngScale10": null,
-    "ksdvEngTotal": null,
-    "ksdvStatus": "Chưa có điểm KSĐV",
-    "missingCommitted": [],
-    "missingReason": "Cam kết theo dõi phát triển ngôn ngữ (chưa thi khảo sát văn hóa)"
+    "ksdnScores": {}
   },
   {
     "id": "cmsoc2gkb0001fzahcjjeyf4t",
@@ -1349,10 +1423,14 @@
       "scale10": 4.2
     },
     "ksdvEngScale10": 4.2,
-    "ksdvEngTotal": 42,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 6,
+      "Ngữ Văn": 6,
+      "TA": 2.9,
+      "Tiếng Anh": 2.9,
+      "TOA": 6,
+      "Toán học": 6
+    }
   },
   {
     "id": "cmsocj9qe0001nqfoa5d8n9ie",
@@ -1382,13 +1460,13 @@
       "oral": 2,
       "ept": null,
       "totalScore": 10,
-      "scale10": 1
+      "scale10": 10
     },
-    "ksdvEngScale10": 1,
-    "ksdvEngTotal": 10,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdvEngScale10": 10,
+    "ksdnScores": {
+      "TOA": 0,
+      "Toán học": 0
+    }
   },
   {
     "id": "cmsocoo9t0007nqfowy9nkme7",
@@ -1403,7 +1481,7 @@
     "isPsychology": false,
     "ksdvMath": 8,
     "ksdvViet": 4,
-    "ksdvVan": 4,
+    "ksdvVan": null,
     "ksdvEng": 28,
     "ksdvPsy": -4,
     "ksdnMath": 9.3,
@@ -1419,17 +1497,21 @@
       "scale10": 8.6
     },
     "ksdvEngScale10": 8.6,
-    "ksdvEngTotal": 86,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 7,
+      "Ngữ Văn": 7,
+      "TA": 7.3,
+      "Tiếng Anh": 7.3,
+      "TOA": 9.3,
+      "Toán học": 9.3
+    }
   },
   {
     "id": "cmsr002m600013kj3fmxpdkj4",
     "fullName": "Govorushko Mikhail",
     "studentCode": "HS701020076",
     "campus": "CS3",
-    "className": "Chưa rõ",
+    "className": "1.1INT_CS3",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Việt"
@@ -1453,12 +1535,7 @@
       "scale10": 3.2
     },
     "ksdvEngScale10": 3.2,
-    "ksdvEngTotal": 31.7,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Việt"
-    ],
-    "missingReason": "Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)"
+    "ksdnScores": {}
   },
   {
     "id": "cmssdgsq10001eo12h7dghd58",
@@ -1490,12 +1567,13 @@
       "scale10": 9.6
     },
     "ksdvEngScale10": 9.6,
-    "ksdvEngTotal": 96,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Việt"
-    ],
-    "missingReason": "Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)"
+    "ksdnScores": {
+      "TVI": 5,
+      "Tiếng Việt": 5,
+      "MAT": 5,
+      "Maths": 5,
+      "ESL": 7.3
+    }
   },
   {
     "id": "cmssk8zaw0001fnej7o3mi960",
@@ -1526,10 +1604,13 @@
       "scale10": 4.6
     },
     "ksdvEngScale10": 4.6,
-    "ksdvEngTotal": 46,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "MAT": 8,
+      "Maths": 8,
+      "ESL": 3.6,
+      "TVI": 9,
+      "Tiếng Việt": 9
+    }
   },
   {
     "id": "cmssnr9f000055iyeufa3xrqs",
@@ -1560,12 +1641,14 @@
       "scale10": null
     },
     "ksdvEngScale10": null,
-    "ksdvEngTotal": null,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Anh"
-    ],
-    "missingReason": "Thi lại Toán đạt 8.0; môn Tiếng Anh chưa nhập điểm trên hệ thống"
+    "ksdnScores": {
+      "NVA": 7.5,
+      "Ngữ Văn": 7.5,
+      "TA": 2.6,
+      "Tiếng Anh": 2.6,
+      "TOA": 4.3,
+      "Toán học": 4.3
+    }
   },
   {
     "id": "cmssrof9g000613yefuh4bk07",
@@ -1596,17 +1679,21 @@
       "scale10": 4.2
     },
     "ksdvEngScale10": 4.2,
-    "ksdvEngTotal": 42,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 8,
+      "Toán học": 8,
+      "TVI": 8,
+      "Tiếng Việt": 8,
+      "TA": 5.5,
+      "Tiếng Anh": 5.5
+    }
   },
   {
     "id": "cmstsaue20001g0q3fdi6c055",
     "fullName": "Lê Hồ Duy Khang",
     "studentCode": "HS701020105",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tâm lý"
@@ -1630,10 +1717,7 @@
       "scale10": 2.8
     },
     "ksdvEngScale10": 2.8,
-    "ksdvEngTotal": 28.3,
-    "ksdvStatus": "Cam kết Tâm lý",
-    "missingCommitted": [],
-    "missingReason": "Chỉ cam kết theo dõi tâm lý lứa tuổi, không khảo sát văn hóa"
+    "ksdnScores": {}
   },
   {
     "id": "cmstu8q7o000163i3tif32ee3",
@@ -1664,10 +1748,14 @@
       "scale10": 2.6
     },
     "ksdvEngScale10": 2.6,
-    "ksdvEngTotal": 26,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 4.5,
+      "Ngữ Văn": 4.5,
+      "TA": 0.7,
+      "Tiếng Anh": 0.7,
+      "TOA": 5,
+      "Toán học": 5
+    }
   },
   {
     "id": "cmstub33f0001590l5uiqc4rv",
@@ -1698,10 +1786,14 @@
       "scale10": 2.6
     },
     "ksdvEngScale10": 2.6,
-    "ksdvEngTotal": 26,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 8,
+      "Ngữ Văn": 8,
+      "TA": 3.7,
+      "Tiếng Anh": 3.7,
+      "TOA": 5.3,
+      "Toán học": 5.3
+    }
   },
   {
     "id": "cmstubssv00019a76czsz7hkc",
@@ -1732,10 +1824,14 @@
       "scale10": 2.2
     },
     "ksdvEngScale10": 2.2,
-    "ksdvEngTotal": 22,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 4,
+      "Ngữ Văn": 4,
+      "TOA": 5.25,
+      "Toán học": 5.25,
+      "TA": 4.6,
+      "Tiếng Anh": 4.6
+    }
   },
   {
     "id": "cmstucfk30003590lp2a24r7b",
@@ -1764,13 +1860,17 @@
       "oral": 4,
       "ept": null,
       "totalScore": 10,
-      "scale10": 1
+      "scale10": 10
     },
-    "ksdvEngScale10": 1,
-    "ksdvEngTotal": 10,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdvEngScale10": 10,
+    "ksdnScores": {
+      "TA": 3.6,
+      "Tiếng Anh": 3.6,
+      "NVA": 3.5,
+      "Ngữ Văn": 3.5,
+      "TOA": 3.75,
+      "Toán học": 3.75
+    }
   },
   {
     "id": "cmstud0i2000111ml5bd2wiiu",
@@ -1801,10 +1901,14 @@
       "scale10": 4.6
     },
     "ksdvEngScale10": 4.6,
-    "ksdvEngTotal": 46,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 6.8,
+      "Ngữ Văn": 6.8,
+      "TA": null,
+      "Tiếng Anh": null,
+      "TOA": 6.75,
+      "Toán học": 6.75
+    }
   },
   {
     "id": "cmstudnnz000311mlhnnik78v",
@@ -1817,7 +1921,7 @@
       "Tiếng Anh"
     ],
     "isPsychology": false,
-    "ksdvMath": 5,
+    "ksdvMath": null,
     "ksdvViet": null,
     "ksdvVan": 5,
     "ksdvEng": 8,
@@ -1835,10 +1939,14 @@
       "scale10": 4.6
     },
     "ksdvEngScale10": 4.6,
-    "ksdvEngTotal": 46,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 4.3,
+      "Ngữ Văn": 4.3,
+      "TA": 4.6,
+      "Tiếng Anh": 4.6,
+      "TOA": 4.25,
+      "Toán học": 4.25
+    }
   },
   {
     "id": "cmsy03zh80001elqr6mudq1xr",
@@ -1869,10 +1977,14 @@
       "scale10": 2.8
     },
     "ksdvEngScale10": 2.8,
-    "ksdvEngTotal": 28,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TA": 6,
+      "Tiếng Anh": 6,
+      "NVA": 4.5,
+      "Ngữ Văn": 4.5,
+      "TOA": 4,
+      "Toán học": 4
+    }
   },
   {
     "id": "cmsy2fc270003vsyucpbev32h",
@@ -1903,10 +2015,14 @@
       "scale10": 7.7
     },
     "ksdvEngScale10": 7.7,
-    "ksdvEngTotal": 77,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 7.25,
+      "Toán học": 7.25,
+      "NVA": 4,
+      "Ngữ Văn": 4,
+      "TA": 9,
+      "Tiếng Anh": 9
+    }
   },
   {
     "id": "cmsy2ot0g0001ry9qr1de3m9y",
@@ -1937,10 +2053,14 @@
       "scale10": 2.7
     },
     "ksdvEngScale10": 2.7,
-    "ksdvEngTotal": 27,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 5,
+      "Ngữ Văn": 5,
+      "TA": 4.4,
+      "Tiếng Anh": 4.4,
+      "TOA": 4.5,
+      "Toán học": 4.5
+    }
   },
   {
     "id": "cmsy2s3c40001114l9pwd7dsi",
@@ -1971,10 +2091,16 @@
       "scale10": 5.2
     },
     "ksdvEngScale10": 5.2,
-    "ksdvEngTotal": 52,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 3.5,
+      "Ngữ Văn": 3.5,
+      "TA": 5.5,
+      "Tiếng Anh": 5.5,
+      "TOA": 5.1,
+      "Toán học": 5.1,
+      "VLI": 4,
+      "Vật lí": 4
+    }
   },
   {
     "id": "cmsy4hdrn0001kkem6semba2f",
@@ -1990,7 +2116,7 @@
     "isPsychology": false,
     "ksdvMath": 5,
     "ksdvViet": null,
-    "ksdvVan": 5.5,
+    "ksdvVan": null,
     "ksdvEng": 7,
     "ksdvPsy": null,
     "ksdnMath": 3,
@@ -2006,17 +2132,21 @@
       "scale10": 3.5
     },
     "ksdvEngScale10": 3.5,
-    "ksdvEngTotal": 35,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 4.5,
+      "Ngữ Văn": 4.5,
+      "TOA": 3,
+      "Toán học": 3,
+      "TA": 2.9,
+      "Tiếng Anh": 2.9
+    }
   },
   {
     "id": "cmsyejwnv00035lcxu45kr1vq",
     "fullName": "Nguyễn Daniil",
     "studentCode": "HS701020134",
     "campus": "CS1",
-    "className": "Chưa rõ",
+    "className": "1.1_CS1",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Việt"
@@ -2040,12 +2170,7 @@
       "scale10": 1.3
     },
     "ksdvEngScale10": 1.3,
-    "ksdvEngTotal": 13.3,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Việt"
-    ],
-    "missingReason": "Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)"
+    "ksdnScores": {}
   },
   {
     "id": "cmsyga5uo0001o72056qfw5jh",
@@ -2076,10 +2201,14 @@
       "scale10": 4.3
     },
     "ksdvEngScale10": 4.3,
-    "ksdvEngTotal": 43,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 6.75,
+      "Ngữ Văn": 6.75,
+      "TA": 5.6,
+      "Tiếng Anh": 5.6,
+      "TOA": 6.5,
+      "Toán học": 6.5
+    }
   },
   {
     "id": "cmsyger10000fubp2yj6dkps4",
@@ -2110,10 +2239,14 @@
       "scale10": 4.3
     },
     "ksdvEngScale10": 4.3,
-    "ksdvEngTotal": 43,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 7.5,
+      "Ngữ Văn": 7.5,
+      "TA": 6,
+      "Tiếng Anh": 6,
+      "TOA": 9,
+      "Toán học": 9
+    }
   },
   {
     "id": "cmsygk2xp0003j1ngvpqeybuk",
@@ -2144,10 +2277,14 @@
       "scale10": 4.3
     },
     "ksdvEngScale10": 4.3,
-    "ksdvEngTotal": 43,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 7.25,
+      "Ngữ Văn": 7.25,
+      "TA": 5,
+      "Tiếng Anh": 5,
+      "TOA": 6.8,
+      "Toán học": 6.8
+    }
   },
   {
     "id": "cmsygoq7k0005j1ngk0abtv8g",
@@ -2178,17 +2315,21 @@
       "scale10": 3.9
     },
     "ksdvEngScale10": 3.9,
-    "ksdvEngTotal": 39,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 7,
+      "Ngữ Văn": 7,
+      "TOA": 5,
+      "Toán học": 5,
+      "TA": 4,
+      "Tiếng Anh": 4
+    }
   },
   {
     "id": "cmt2o1ibb0001t81ckhoko2tp",
     "fullName": "Vũ Đức Thịnh",
     "studentCode": "HS701020154",
     "campus": "CS5",
-    "className": "Chưa rõ",
+    "className": "1.5_CS5",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Anh"
@@ -2212,10 +2353,7 @@
       "scale10": 1
     },
     "ksdvEngScale10": 1,
-    "ksdvEngTotal": 10,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {}
   },
   {
     "id": "cmt2r2kn70001cdjymo1sjv1u",
@@ -2230,7 +2368,7 @@
     "isPsychology": false,
     "ksdvMath": 4,
     "ksdvViet": 9,
-    "ksdvVan": 9,
+    "ksdvVan": null,
     "ksdvEng": 10,
     "ksdvPsy": -4,
     "ksdnMath": 6.75,
@@ -2246,10 +2384,14 @@
       "scale10": 3
     },
     "ksdvEngScale10": 3,
-    "ksdvEngTotal": 30,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 6.75,
+      "Toán học": 6.75,
+      "NVA": 8.25,
+      "Ngữ Văn": 8.25,
+      "TA": 5.2,
+      "Tiếng Anh": 5.2
+    }
   },
   {
     "id": "cmt2rsvyv0031mq3ztosp760s",
@@ -2265,7 +2407,7 @@
     "isPsychology": false,
     "ksdvMath": 4,
     "ksdvViet": 7,
-    "ksdvVan": 3,
+    "ksdvVan": null,
     "ksdvEng": 10,
     "ksdvPsy": -4,
     "ksdnMath": 2.25,
@@ -2281,10 +2423,14 @@
       "scale10": 5.5
     },
     "ksdvEngScale10": 5.5,
-    "ksdvEngTotal": 55,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 2.25,
+      "Toán học": 2.25,
+      "NVA": 6.75,
+      "Ngữ Văn": 6.75,
+      "TA": 4.5,
+      "Tiếng Anh": 4.5
+    }
   },
   {
     "id": "cmt3urnx30001c9fz60g0x805",
@@ -2315,10 +2461,14 @@
       "scale10": 1.7
     },
     "ksdvEngScale10": 1.7,
-    "ksdvEngTotal": 16.7,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 7,
+      "Ngữ Văn": 7,
+      "TOA": 8.5,
+      "Toán học": 8.5,
+      "TA": 3.2,
+      "Tiếng Anh": 3.2
+    }
   },
   {
     "id": "cmt3vcaow000595s07wg9ivoe",
@@ -2349,10 +2499,13 @@
       "scale10": 6.6
     },
     "ksdvEngScale10": 6.6,
-    "ksdvEngTotal": 66,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "ESL": 7.8,
+      "MAT": 6,
+      "Maths": 6,
+      "TVI": 2,
+      "Tiếng Việt": 2
+    }
   },
   {
     "id": "cmt3vj3uk000b95s04kwikoq8",
@@ -2383,10 +2536,13 @@
       "scale10": 7.2
     },
     "ksdvEngScale10": 7.2,
-    "ksdvEngTotal": 72,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TVI": 1,
+      "Tiếng Việt": 1,
+      "MAT": 3,
+      "Maths": 3,
+      "ESL": 9.2
+    }
   },
   {
     "id": "cmt6l475w0002gzo197zwrv2b",
@@ -2417,10 +2573,14 @@
       "scale10": 7
     },
     "ksdvEngScale10": 7,
-    "ksdvEngTotal": 70,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TOA": 10,
+      "Toán học": 10,
+      "TVI": 9.5,
+      "Tiếng Việt": 9.5,
+      "TA": 7.4,
+      "Tiếng Anh": 7.4
+    }
   },
   {
     "id": "cmt9jhnpw0004jhkfya6npywn",
@@ -2450,12 +2610,14 @@
       "scale10": null
     },
     "ksdvEngScale10": null,
-    "ksdvEngTotal": null,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Anh"
-    ],
-    "missingReason": "Môn Tiếng Anh chưa nhập điểm trên hệ thống (đã có điểm Toán, Văn)"
+    "ksdnScores": {
+      "NVA": 5.75,
+      "Ngữ Văn": 5.75,
+      "TA": 4.1,
+      "Tiếng Anh": 4.1,
+      "TOA": 8.75,
+      "Toán học": 8.75
+    }
   },
   {
     "id": "cmtb9vzeo0001b367pgpfdfqp",
@@ -2486,10 +2648,13 @@
       "scale10": 3.6
     },
     "ksdvEngScale10": 3.6,
-    "ksdvEngTotal": 36,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TVI": 6,
+      "Tiếng Việt": 6,
+      "MAT": 5,
+      "Maths": 5,
+      "ESL": 6.55
+    }
   },
   {
     "id": "cmtcg8r4200012csibdl65mvs",
@@ -2520,10 +2685,15 @@
       "scale10": 3
     },
     "ksdvEngScale10": 3,
-    "ksdvEngTotal": 30,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "NVA": 5,
+      "Ngữ Văn": 5,
+      "ESL": 3.5,
+      "TOA": null,
+      "Toán học": null,
+      "MAT": 2,
+      "Maths": 2
+    }
   },
   {
     "id": "cmtkwv7h00005buokyyvajmzx",
@@ -2554,17 +2724,21 @@
       "scale10": 4.8
     },
     "ksdvEngScale10": 4.8,
-    "ksdvEngTotal": 48,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {
+      "TA": 4,
+      "Tiếng Anh": 4,
+      "TOA": 3,
+      "Toán học": 3,
+      "NVA": 6.5,
+      "Ngữ Văn": 6.5
+    }
   },
   {
     "id": "cmtmpbm6c000512yks2sh1wdh",
     "fullName": "Sangadziev Aron",
     "studentCode": "HS701020188",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.2INT_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Việt"
@@ -2588,19 +2762,14 @@
       "scale10": 2.7
     },
     "ksdvEngScale10": 2.7,
-    "ksdvEngTotal": 26.7,
-    "ksdvStatus": "Thiếu môn CKĐV",
-    "missingCommitted": [
-      "Tiếng Việt"
-    ],
-    "missingReason": "Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)"
+    "ksdnScores": {}
   },
   {
     "id": "cmtxv0xdg000d10nuglzf3vl6",
     "fullName": "Ngô Huỳnh Anh Minh",
     "studentCode": "HS701020195",
     "campus": "CS4",
-    "className": "Chưa rõ",
+    "className": "6S_CS4",
     "grade": "6",
     "committedSubjects": [
       "Toán",
@@ -2625,9 +2794,6 @@
       "scale10": 9.6
     },
     "ksdvEngScale10": 9.6,
-    "ksdvEngTotal": 96,
-    "ksdvStatus": "Đủ điểm",
-    "missingCommitted": [],
-    "missingReason": ""
+    "ksdnScores": {}
   }
 ]

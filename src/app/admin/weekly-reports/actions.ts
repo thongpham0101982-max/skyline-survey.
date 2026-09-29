@@ -97,7 +97,11 @@ export async function saveWeeklyReport(data: {
     workContent: string; 
     expectedCompletion?: string; 
     progress: string; 
-    proposedSolution?: string 
+    proposedSolution?: string;
+    managerNote?: string;
+    directorNote?: string;
+    directorRating?: string;
+    qualityScore?: number | null;
   }[]
 }) {
   try {
@@ -140,7 +144,11 @@ export async function saveWeeklyReport(data: {
                 taskGroup: item.taskGroup || null,
                 expectedCompletion: item.expectedCompletion || null,
                 progress: item.progress,
-                proposedSolution: item.proposedSolution || ""
+                proposedSolution: item.proposedSolution || "",
+                managerNote: item.managerNote || null,
+                directorNote: item.directorNote || null,
+                directorRating: item.directorRating || null,
+                qualityScore: item.qualityScore !== undefined ? item.qualityScore : null
               }))
             }
           },
@@ -164,7 +172,11 @@ export async function saveWeeklyReport(data: {
               taskGroup: item.taskGroup || null,
               expectedCompletion: item.expectedCompletion || null,
               progress: item.progress,
-              proposedSolution: item.proposedSolution || ""
+              proposedSolution: item.proposedSolution || "",
+              managerNote: item.managerNote || null,
+              directorNote: item.directorNote || null,
+              directorRating: item.directorRating || null,
+              qualityScore: item.qualityScore !== undefined ? item.qualityScore : null
             }))
           }
         },
@@ -246,6 +258,90 @@ export async function addManagerItemNote(itemId: string, managerNote: string) {
       where: { id: itemId },
       data: { managerNote }
     })
+    revalidatePath("/admin/weekly-reports")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function addDirectorItemEvaluation(itemId: string, data: { directorNote?: string; directorRating?: string; qualityScore?: number | null }) {
+  try {
+    const session = await auth()
+    if (!session?.user) return { success: false, error: "Chưa đăng nhập" }
+    
+    const opScope = await getOperationalScope()
+    if (!opScope.isManager && (session.user as any).role !== "ADMIN") {
+      return { success: false, error: "Chỉ GĐB / Quản lý mới có quyền đánh giá" }
+    }
+
+    const item = await prisma.weeklyReportItem.findUnique({
+      where: { id: itemId },
+      include: { report: { select: { userId: true, weekNumber: true, month: true } } }
+    })
+    if (!item) return { success: false, error: "Không tìm thấy mục báo cáo" }
+
+    const updateData: any = {}
+    if (data.directorNote !== undefined) updateData.directorNote = data.directorNote
+    if (data.directorRating !== undefined) updateData.directorRating = data.directorRating
+    if (data.qualityScore !== undefined) updateData.qualityScore = data.qualityScore
+
+    await prisma.weeklyReportItem.update({
+      where: { id: itemId },
+      data: updateData
+    })
+
+    if (data.directorNote && data.directorNote.trim()) {
+      await prisma.notification.create({
+        data: {
+          userId: item.report.userId,
+          title: `[Ý kiến Giám Đốc Ban] Báo cáo Tuần ${item.report.weekNumber} Tháng ${item.report.month}`,
+          message: `GĐB đã đánh giá công việc "${item.mainTask || item.workContent.substring(0, 35)}": ${data.directorNote.substring(0, 80)}`,
+          isRead: false,
+          link: "/admin/weekly-reports"
+        }
+      }).catch(() => {})
+    }
+
+    revalidatePath("/admin/weekly-reports")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function saveDirectorReportComment(reportId: string, directorComment: string) {
+  try {
+    const session = await auth()
+    if (!session?.user) return { success: false, error: "Chưa đăng nhập" }
+    
+    const opScope = await getOperationalScope()
+    if (!opScope.isManager && (session.user as any).role !== "ADMIN") {
+      return { success: false, error: "Chỉ GĐB / Quản lý mới có quyền nhận xét" }
+    }
+
+    const report = await prisma.weeklyReport.findUnique({
+      where: { id: reportId }
+    })
+    if (!report) return { success: false, error: "Không tìm thấy báo cáo" }
+
+    await prisma.weeklyReport.update({
+      where: { id: reportId },
+      data: { directorComment }
+    })
+
+    if (directorComment.trim()) {
+      await prisma.notification.create({
+        data: {
+          userId: report.userId,
+          title: `[Đánh giá Giám Đốc Ban] Tuần ${report.weekNumber} Tháng ${report.month}`,
+          message: `Giám đốc ban đã gửi ý kiến đánh giá báo cáo tuần: ${directorComment.substring(0, 100)}`,
+          isRead: false,
+          link: "/admin/weekly-reports"
+        }
+      }).catch(() => {})
+    }
+
     revalidatePath("/admin/weekly-reports")
     return { success: true }
   } catch (e: any) {
@@ -1296,5 +1392,255 @@ export async function getMonthlyTaskGroupProgress(month: number, year: number, d
     }
   } catch (e: any) {
     return { success: false, error: e.message }
+  }
+}
+
+export async function getMonthlyQualityKpiSummary(month: number, year: number, deptId?: string, divisionCode?: string) {
+  try {
+    const opScope = await getOperationalScope()
+    let allowedUserIds = opScope.scopedUserIds
+
+    // If divisionCode filter is passed (by Admin/Head)
+    if (divisionCode && divisionCode !== "ALL") {
+      const deptsInDiv = await prisma.department.findMany({
+        where: { divisionCode, status: "ACTIVE" },
+        select: { id: true, code: true, name: true }
+      })
+      const deptIds = deptsInDiv.map(d => d.id)
+      const deptCodes = deptsInDiv.map(d => d.code)
+      const deptNames = deptsInDiv.map(d => d.name)
+
+      const teachers = await prisma.teacher.findMany({
+        where: {
+          OR: [
+            { departmentId: { in: deptIds } },
+            { departmentAssignments: { some: { departmentId: { in: deptIds } } } }
+          ]
+        },
+        select: { userId: true }
+      })
+      const uIds = new Set(teachers.map(t => t.userId))
+      const extraUsers = await prisma.user.findMany({
+        where: { role: { in: [...deptCodes, ...deptNames] }, status: "ACTIVE" },
+        select: { id: true }
+      })
+      extraUsers.forEach(u => uIds.add(u.id))
+
+      if (allowedUserIds !== null) {
+        allowedUserIds = allowedUserIds.filter(id => uIds.has(id))
+      } else {
+        allowedUserIds = Array.from(uIds)
+      }
+    }
+
+    const whereReport: any = { month, year }
+    if (allowedUserIds !== null) {
+      whereReport.userId = { in: allowedUserIds }
+    }
+
+    if (deptId && deptId !== "ALL") {
+      whereReport.user = {
+        OR: [
+          { role: deptId },
+          { teacher: {
+            OR: [
+              { departmentId: deptId },
+              { departmentRel: { OR: [{ id: deptId }, { code: deptId }, { name: deptId }] } },
+              { departmentAssignments: { some: { OR: [{ departmentId: deptId }, { department: { OR: [{ code: deptId }, { name: deptId }] } }] } } }
+            ]
+          } }
+        ]
+      }
+    }
+
+    const [reports, taskCategories, taskGroups] = await Promise.all([
+      prisma.weeklyReport.findMany({
+        where: whereReport,
+        include: {
+          items: true,
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              role: true,
+              teacher: {
+                select: {
+                  position: true,
+                  departmentRel: { select: { name: true, code: true } }
+                }
+              }
+            }
+          }
+        },
+        orderBy: { weekNumber: "asc" }
+      }),
+      prisma.taskCategory.findMany({ orderBy: { name: "asc" } }),
+      prisma.taskGroup.findMany({ orderBy: { name: "asc" } })
+    ])
+
+    // Build category weight lookup
+    const catWeightMap = new Map<string, number>()
+    taskCategories.forEach(c => {
+      catWeightMap.set(c.name.trim().toLowerCase(), c.weight || 1.0)
+    })
+
+    const staffMap: Record<string, any> = {}
+
+    reports.forEach(rpt => {
+      const u = rpt.user
+      if (!staffMap[u.id]) {
+        staffMap[u.id] = {
+          userId: u.id,
+          fullName: u.fullName,
+          email: u.email,
+          departmentName: u.teacher?.departmentRel?.name || u.role,
+          position: u.teacher?.position || "Nhân sự",
+          totalTasks: 0,
+          completedTasks: 0,
+          doingTasks: 0,
+          notCompletedTasks: 0,
+          totalWeight: 0,
+          weightedCompletedScore: 0,
+          totalQualityScoreSum: 0,
+          directorEvaluatedCount: 0,
+          directorComments: [] as string[],
+          tasks: [] as any[]
+        }
+      }
+
+      if (rpt.directorComment && rpt.directorComment.trim() && !staffMap[u.id].directorComments.includes(rpt.directorComment.trim())) {
+        staffMap[u.id].directorComments.push(`[Tuần ${rpt.weekNumber}]: ${rpt.directorComment.trim()}`)
+      }
+
+      rpt.items.forEach(item => {
+        const catName = (item.category || item.mainTask || "").trim().toLowerCase()
+        const weight = catWeightMap.get(catName) || 1.0
+
+        staffMap[u.id].totalTasks++
+        staffMap[u.id].totalWeight += weight
+
+        let progressRate = 0
+        if (item.progress === "COMPLETED") {
+          progressRate = 1.0
+          staffMap[u.id].completedTasks++
+        } else if (item.progress === "DOING") {
+          progressRate = 0.5
+          staffMap[u.id].doingTasks++
+        } else {
+          progressRate = 0.0
+          staffMap[u.id].notCompletedTasks++
+        }
+
+        staffMap[u.id].weightedCompletedScore += (progressRate * weight)
+
+        // Quality score: from director rating / qualityScore, or baseline from progress
+        let itemQualityScore = item.qualityScore
+        if (itemQualityScore === null || itemQualityScore === undefined) {
+          if (item.directorRating === "EXCELLENT") itemQualityScore = 10
+          else if (item.directorRating === "GOOD") itemQualityScore = 8.5
+          else if (item.directorRating === "SATISFACTORY") itemQualityScore = 7.0
+          else if (item.directorRating === "NEEDS_IMPROVEMENT") itemQualityScore = 5.0
+          else {
+            if (item.progress === "COMPLETED") itemQualityScore = 9.0
+            else if (item.progress === "DOING") itemQualityScore = 6.0
+            else itemQualityScore = 3.5
+          }
+        } else {
+          staffMap[u.id].directorEvaluatedCount++
+        }
+
+        if (item.directorNote || item.directorRating) {
+          staffMap[u.id].directorEvaluatedCount++
+        }
+
+        staffMap[u.id].totalQualityScoreSum += (itemQualityScore * weight)
+
+        staffMap[u.id].tasks.push({
+          id: item.id,
+          weekNumber: rpt.weekNumber,
+          mainTask: item.mainTask,
+          category: item.category,
+          taskGroup: item.taskGroup,
+          workContent: item.workContent,
+          expectedCompletion: item.expectedCompletion,
+          progress: item.progress,
+          weight,
+          managerNote: item.managerNote,
+          directorNote: item.directorNote,
+          directorRating: item.directorRating,
+          qualityScore: itemQualityScore
+        })
+      })
+    })
+
+    const staffKpis = Object.values(staffMap).map(st => {
+      const weightedProgressRate = st.totalWeight > 0 ? Math.round((st.weightedCompletedScore / st.totalWeight) * 100) : 0
+      const avgKpiScore = st.totalWeight > 0 ? Number((st.totalQualityScoreSum / st.totalWeight).toFixed(1)) : 0
+
+      // KPI grading
+      let kpiGrade = "C"
+      let kpiGradeLabel = "Hoàn thành"
+      let kpiColor = "text-amber-700 bg-amber-50 border-amber-300"
+
+      if (avgKpiScore >= 9.0) {
+        kpiGrade = "A"
+        kpiGradeLabel = "Xuất sắc"
+        kpiColor = "text-emerald-700 bg-emerald-50 border-emerald-300"
+      } else if (avgKpiScore >= 7.5) {
+        kpiGrade = "B"
+        kpiGradeLabel = "Hoàn thành tốt"
+        kpiColor = "text-blue-700 bg-blue-50 border-blue-300"
+      } else if (avgKpiScore >= 6.0) {
+        kpiGrade = "C"
+        kpiGradeLabel = "Hoàn thành"
+        kpiColor = "text-amber-700 bg-amber-50 border-amber-300"
+      } else {
+        kpiGrade = "D"
+        kpiGradeLabel = "Cần cải thiện"
+        kpiColor = "text-rose-700 bg-rose-50 border-rose-300"
+      }
+
+      return {
+        ...st,
+        totalWeight: Number(st.totalWeight.toFixed(1)),
+        weightedProgressRate,
+        avgKpiScore,
+        kpiGrade,
+        kpiGradeLabel,
+        kpiColor
+      }
+    })
+
+    // Sort by KPI Score desc
+    staffKpis.sort((a, b) => b.avgKpiScore - a.avgKpiScore)
+
+    // Summary statistics
+    const totalStaff = staffKpis.length
+    const totalTasksMonth = staffKpis.reduce((acc, s) => acc + s.totalTasks, 0)
+    const gradeACount = staffKpis.filter(s => s.kpiGrade === "A").length
+    const gradeBCount = staffKpis.filter(s => s.kpiGrade === "B").length
+    const gradeCCount = staffKpis.filter(s => s.kpiGrade === "C").length
+    const gradeDCount = staffKpis.filter(s => s.kpiGrade === "D").length
+    const avgKpiScore = totalStaff > 0 ? Number((staffKpis.reduce((acc, s) => acc + s.avgKpiScore, 0) / totalStaff).toFixed(1)) : 0
+    const avgCompletionRate = totalStaff > 0 ? Math.round(staffKpis.reduce((acc, s) => acc + s.weightedProgressRate, 0) / totalStaff) : 0
+
+    return {
+      success: true,
+      staffKpis,
+      summary: {
+        totalStaff,
+        totalTasksMonth,
+        gradeACount,
+        gradeBCount,
+        gradeCCount,
+        gradeDCount,
+        avgKpiScore,
+        avgCompletionRate
+      },
+      taskCategories: JSON.parse(JSON.stringify(taskCategories))
+    }
+  } catch (e: any) {
+    return { success: false, error: e.message, staffKpis: [] }
   }
 }
