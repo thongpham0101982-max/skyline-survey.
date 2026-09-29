@@ -2,9 +2,9 @@
   {
     "id": "cmq9a1r82000713z4g10iq90a",
     "fullName": "Lê Gia Lân",
-    "studentCode": "HS065",
+    "studentCode": "0601021777",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tâm lý"
@@ -36,9 +36,9 @@
   {
     "id": "cmq9a1v9l000z13z4i0j4dx3v",
     "fullName": "Đào Trần Thảo Linh",
-    "studentCode": "HS079",
+    "studentCode": "0601021457",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tâm lý",
@@ -73,9 +73,9 @@
   {
     "id": "cmq9a1weg001713z4409owljj",
     "fullName": "Nguyễn Thanh Phúc",
-    "studentCode": "HS083",
+    "studentCode": "0701020104",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.2INT_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Anh"
@@ -107,7 +107,7 @@
   {
     "id": "cmq9a9ffz002713z4ab48ghaa",
     "fullName": "Nguyễn Gia Bảo",
-    "studentCode": "HS101",
+    "studentCode": "0701030312",
     "campus": "CS1",
     "className": "9.2_CS1",
     "grade": "9",
@@ -142,7 +142,7 @@
   {
     "id": "cmq9a9ghi002f13z4qf1qvu4q",
     "fullName": "Lê Nguyên Khang",
-    "studentCode": "HS105",
+    "studentCode": "0601011426",
     "campus": "CS1",
     "className": "2.1_CS1",
     "grade": "2",
@@ -177,7 +177,7 @@
   {
     "id": "cmq9a9i15002r13z4yz434bf6",
     "fullName": "Phạm Nguyễn Minh Anh",
-    "studentCode": "HS111",
+    "studentCode": "0601012314",
     "campus": "CS1",
     "className": "10.2_CS1",
     "grade": "10",
@@ -211,7 +211,7 @@
   {
     "id": "cmqa9bjp0000hqkrutbz27w85",
     "fullName": "Phan Anh Quân",
-    "studentCode": "HS148",
+    "studentCode": "0701030370",
     "campus": "CS3",
     "className": "9INT_CS3",
     "grade": "9",
@@ -248,7 +248,7 @@
   {
     "id": "cmqa9bnk8001bqkruvwzsixsb",
     "fullName": "Đoàn Ngọc Thảo Chloe",
-    "studentCode": "HS163",
+    "studentCode": "0701030387",
     "campus": "CS3",
     "className": "2.1INT_CS3",
     "grade": "2",
@@ -285,7 +285,7 @@
   {
     "id": "cmqa9bqzq001zqkru9243a3eh",
     "fullName": "Hồ Hữu Bách",
-    "studentCode": "HS175",
+    "studentCode": "0501030625",
     "campus": "CS3",
     "className": "4UK_CS3",
     "grade": "4",
@@ -319,7 +319,7 @@
   {
     "id": "cmqa9eifk0029qkru6t8wgdol",
     "fullName": "Ayesha Mirza",
-    "studentCode": "HS179",
+    "studentCode": "0602040593",
     "campus": "CS4",
     "className": "6S_CS4",
     "grade": "6",
@@ -354,7 +354,7 @@
   {
     "id": "cmqa9g1mk004jqkruqlpgs4wx",
     "fullName": "Mai Minh Minh",
-    "studentCode": "HS218",
+    "studentCode": "0601051095",
     "campus": "CS5",
     "className": "6.5_CS5",
     "grade": "6",
@@ -388,7 +388,7 @@
   {
     "id": "cmqa9g745005rqkru1yw41ia2",
     "fullName": "Lâm Minh Khang",
-    "studentCode": "HS240",
+    "studentCode": "0601051137",
     "campus": "CS5",
     "className": "2.5_CS5",
     "grade": "2",
@@ -422,7 +422,7 @@
   {
     "id": "cmqangnky00033fsf60yngijh",
     "fullName": "Phan Đình Phùng",
-    "studentCode": "HS246",
+    "studentCode": "0601012372",
     "campus": "CS1",
     "className": "10.1_CS1",
     "grade": "10",
@@ -458,7 +458,7 @@
   {
     "id": "cmqapk1os0007nz6c3clpte3j",
     "fullName": "Mai Huy Thắng",
-    "studentCode": "HS249",
+    "studentCode": "0601011201",
     "campus": "CS1",
     "className": "7.1_CS1",
     "grade": "7",
@@ -494,7 +494,7 @@
   {
     "id": "cmqapr2pi0005k49ucnlm0y27",
     "fullName": "Phạm Thùy Gia Hân ",
-    "studentCode": "HS252",
+    "studentCode": "0601012363",
     "campus": "CS1",
     "className": "10.2_CS1",
     "grade": "10",
@@ -528,7 +528,7 @@
   {
     "id": "cmqav8ywl0003srxummzrf7d2",
     "fullName": "Nguyễn Bình Phương An",
-    "studentCode": "HS256",
+    "studentCode": "0601012381",
     "campus": "CS1",
     "className": "10.1_CS1",
     "grade": "10",
@@ -562,7 +562,7 @@
   {
     "id": "cmqavg7db0005srxuu2uok43h",
     "fullName": "Lê Bảo Trâm",
-    "studentCode": "HS257",
+    "studentCode": "0601050347",
     "campus": "CS1",
     "className": "7.3_CS1",
     "grade": "7",
@@ -596,7 +596,7 @@
   {
     "id": "cmqavh57f0001t6k9crbcq4eu",
     "fullName": "Lê Bảo Châu",
-    "studentCode": "HS258",
+    "studentCode": "0601011593",
     "campus": "CS1",
     "className": "9.3_CS1",
     "grade": "9",
@@ -631,7 +631,7 @@
   {
     "id": "cmqk9bk3d0001faz3o4xv4x83",
     "fullName": "Phạm Gia Hương",
-    "studentCode": "HS259",
+    "studentCode": "0601012376",
     "campus": "CS1",
     "className": "10.2_CS1",
     "grade": "10",
@@ -666,9 +666,9 @@
   {
     "id": "cmqumepcf0003bopcuf5ecgpr",
     "fullName": "Đỗ An Nhiên ",
-    "studentCode": "HS265",
+    "studentCode": "0601012390",
     "campus": "CS1",
-    "className": "Chưa rõ",
+    "className": "1.1_CS1",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Anh"
@@ -700,9 +700,9 @@
   {
     "id": "cmqywy60d0005se5dh2i8rs86",
     "fullName": "Hà Đặng Phước Huy",
-    "studentCode": "HS275",
+    "studentCode": "0602040631",
     "campus": "CS1",
-    "className": "Chưa rõ",
+    "className": "1S_CS4",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Anh"
@@ -734,7 +734,7 @@
   {
     "id": "cmqywz7ey0005m8o2u1z32gu4",
     "fullName": "HÀ ĐẶNG BẢO NGỌC",
-    "studentCode": "HS276",
+    "studentCode": "0602040630",
     "campus": "CS4",
     "className": "3S_CS4",
     "grade": "3",
@@ -768,7 +768,7 @@
   {
     "id": "cmr4peyic00013uqa02511mdz",
     "fullName": "Nguyễn Thị Thu Thúy",
-    "studentCode": "HS283",
+    "studentCode": "0601012397",
     "campus": "CS4",
     "className": "10S_CS4",
     "grade": "10",
@@ -802,9 +802,9 @@
   {
     "id": "cmrbfkbrn00012rhyr4u2s8ut",
     "fullName": "ĐỖ NGUYỄN AN KHÔI",
-    "studentCode": "HS286",
+    "studentCode": "0601021794",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Chung / Theo dõi"
@@ -836,7 +836,7 @@
   {
     "id": "cmrbk5mnu0006ze67iezug4cj",
     "fullName": "Trần Hoàng Anh ",
-    "studentCode": "HS288",
+    "studentCode": "0601012396",
     "campus": "CS1",
     "className": "9.2_CS1",
     "grade": "9",
@@ -872,7 +872,7 @@
   {
     "id": "cmrcxbu5x00026g6vqsx1pdvf",
     "fullName": "Huỳnh Hoàng An",
-    "studentCode": "HS293",
+    "studentCode": "0602040636",
     "campus": "CS4",
     "className": "3S_CS4",
     "grade": "3",
@@ -908,7 +908,7 @@
   {
     "id": "cmrfpn7110001qbh85z8qq365",
     "fullName": "Nguyễn Ngọc Thiên Bảo",
-    "studentCode": "HS306",
+    "studentCode": "0701010055",
     "campus": "CS1",
     "className": "2.3INT_CS1",
     "grade": "2",
@@ -942,7 +942,7 @@
   {
     "id": "cmrfpp46l0003qbh8rv5g2wm8",
     "fullName": "Nguyễn Thanh Thảo",
-    "studentCode": "HS307",
+    "studentCode": "0601012393",
     "campus": "CS1",
     "className": "9.4_CS1",
     "grade": "9",
@@ -977,7 +977,7 @@
   {
     "id": "cmrilevdj0003pcj4ykwin8w9",
     "fullName": "Lê Khánh Hà",
-    "studentCode": "HS308",
+    "studentCode": "0601011617",
     "campus": "CS1",
     "className": "10.2_CS1",
     "grade": "10",
@@ -1013,7 +1013,7 @@
   {
     "id": "cmrk1a14p0003zmpmnrq7dham",
     "fullName": "Nguyễn Đại Phúc ",
-    "studentCode": "HS311",
+    "studentCode": "0601012394",
     "campus": "CS1",
     "className": "10.1_CS1",
     "grade": "10",
@@ -1049,7 +1049,7 @@
     "fullName": "LÊ ĐÌNH SĨ PHÚ",
     "studentCode": "HS331",
     "campus": "CS1",
-    "className": "Chưa rõ",
+    "className": "6.1_CS1",
     "grade": "6",
     "committedSubjects": [
       "Toán"
@@ -1081,7 +1081,7 @@
   {
     "id": "cmrnbzd8f0001g2eblgv255ta",
     "fullName": "Đặng Ái Thiên Vân",
-    "studentCode": "HS334",
+    "studentCode": "0601051161",
     "campus": "CS5",
     "className": "3.6_CS5",
     "grade": "3",
@@ -1115,7 +1115,7 @@
   {
     "id": "cmrtz6ywz0003usvobumsgdcb",
     "fullName": "Ngô Thục Đan",
-    "studentCode": "HS701020014",
+    "studentCode": "0601012399",
     "campus": "CS1",
     "className": "9.1_CS1",
     "grade": "9",
@@ -1183,7 +1183,7 @@
   {
     "id": "cmryncwmi0003a81hfqskkw1h",
     "fullName": "Đặng Ngọc Bảo Ngân",
-    "studentCode": "HS701020029",
+    "studentCode": "0602040624",
     "campus": "CS4",
     "className": "10S_CS4",
     "grade": "10",
@@ -1217,7 +1217,7 @@
   {
     "id": "cmryndh8k0005a81h02oc3tex",
     "fullName": "Ngô Nhật Khang",
-    "studentCode": "HS701020030",
+    "studentCode": "0602040623",
     "campus": "CS4",
     "className": "10S_CS4",
     "grade": "10",
@@ -1253,7 +1253,7 @@
   {
     "id": "cmrynfkgx0001fvn7ztdigds0",
     "fullName": "Võ Hoàng Vi",
-    "studentCode": "HS701020033",
+    "studentCode": "0602040522",
     "campus": "CS4",
     "className": "6S_CS4",
     "grade": "6",
@@ -1287,9 +1287,9 @@
   {
     "id": "cmrynnuyx000h9fun5btuwlc2",
     "fullName": "Phan Hải Đăng",
-    "studentCode": "HS701020036",
+    "studentCode": "0601021828",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Chung / Theo dõi"
@@ -1321,7 +1321,7 @@
   {
     "id": "cmsoc2gkb0001fzahcjjeyf4t",
     "fullName": "Võ Như Quỳnh",
-    "studentCode": "HS701020061",
+    "studentCode": "0602040642",
     "campus": "CS4",
     "className": "7S_CS4",
     "grade": "7",
@@ -1357,7 +1357,7 @@
   {
     "id": "cmsocj9qe0001nqfoa5d8n9ie",
     "fullName": "Đỗ Thành Nguyên",
-    "studentCode": "HS701020064",
+    "studentCode": "0602040613",
     "campus": "CS4",
     "className": "10S_CS4",
     "grade": "10",
@@ -1393,7 +1393,7 @@
   {
     "id": "cmsocoo9t0007nqfowy9nkme7",
     "fullName": "Phạm Kiều Anh",
-    "studentCode": "HS701020065",
+    "studentCode": "0602040586",
     "campus": "CS4",
     "className": "6S_CS4",
     "grade": "6",
@@ -1427,9 +1427,9 @@
   {
     "id": "cmsr002m600013kj3fmxpdkj4",
     "fullName": "Govorushko Mikhail",
-    "studentCode": "HS701020076",
+    "studentCode": "0701030397",
     "campus": "CS3",
-    "className": "Chưa rõ",
+    "className": "1.1INT_CS3",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Việt"
@@ -1463,7 +1463,7 @@
   {
     "id": "cmssdgsq10001eo12h7dghd58",
     "fullName": "Lecomte Mailys Mộc Yên",
-    "studentCode": "HS701020085",
+    "studentCode": "0701030402",
     "campus": "CS3",
     "className": "4INT_CS3",
     "grade": "4",
@@ -1500,7 +1500,7 @@
   {
     "id": "cmssk8zaw0001fnej7o3mi960",
     "fullName": "Hà Minh Khuê",
-    "studentCode": "HS701020094",
+    "studentCode": "0701030384",
     "campus": "CS3",
     "className": "5.1INT_CS3",
     "grade": "5",
@@ -1534,7 +1534,7 @@
   {
     "id": "cmssnr9f000055iyeufa3xrqs",
     "fullName": "Võ Thị Anh Thư",
-    "studentCode": "HS202",
+    "studentCode": "0602040621",
     "campus": "CS4",
     "className": "7S_CS4",
     "grade": "7",
@@ -1570,7 +1570,7 @@
   {
     "id": "cmssrof9g000613yefuh4bk07",
     "fullName": "Hoàng Bữu Minh Hưng",
-    "studentCode": "HS701020095",
+    "studentCode": "0601012037",
     "campus": "CS2",
     "className": "3.4_CS2",
     "grade": "3",
@@ -1604,9 +1604,9 @@
   {
     "id": "cmstsaue20001g0q3fdi6c055",
     "fullName": "Lê Hồ Duy Khang",
-    "studentCode": "HS701020105",
+    "studentCode": "0601021795",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.3_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tâm lý"
@@ -1638,7 +1638,7 @@
   {
     "id": "cmstu8q7o000163i3tif32ee3",
     "fullName": "Phạm Gia Hưng",
-    "studentCode": "HS132",
+    "studentCode": "0701030326",
     "campus": "CS5",
     "className": "2.5_CS5",
     "grade": "7",
@@ -1672,7 +1672,7 @@
   {
     "id": "cmstub33f0001590l5uiqc4rv",
     "fullName": "Lê Nguyệt Cát",
-    "studentCode": "HS116",
+    "studentCode": "0601012317",
     "campus": "CS1",
     "className": "7.4_CS1",
     "grade": "7",
@@ -1706,7 +1706,7 @@
   {
     "id": "cmstubssv00019a76czsz7hkc",
     "fullName": "Hoàng Bảo Quyên",
-    "studentCode": "HS129",
+    "studentCode": "0601012338",
     "campus": "CS1",
     "className": "9.2_CS1",
     "grade": "9",
@@ -1740,7 +1740,7 @@
   {
     "id": "cmstucfk30003590lp2a24r7b",
     "fullName": "Phạm Gia Bảo",
-    "studentCode": "HS131",
+    "studentCode": "0601012280",
     "campus": "CS1",
     "className": "9.3_CS1",
     "grade": "9",
@@ -1775,7 +1775,7 @@
   {
     "id": "cmstud0i2000111ml5bd2wiiu",
     "fullName": "Đặng Hoàng Như Ý",
-    "studentCode": "HS124",
+    "studentCode": "0601012318",
     "campus": "CS1",
     "className": "10.2_CS1",
     "grade": "10",
@@ -1809,7 +1809,7 @@
   {
     "id": "cmstudnnz000311mlhnnik78v",
     "fullName": "Phạm Hải Như",
-    "studentCode": "HS126",
+    "studentCode": "0601012334",
     "campus": "CS1",
     "className": "10.2_CS1",
     "grade": "10",
@@ -1843,7 +1843,7 @@
   {
     "id": "cmsy03zh80001elqr6mudq1xr",
     "fullName": "Nguyễn Thành Long",
-    "studentCode": "HS701020117",
+    "studentCode": "0701030403",
     "campus": "CS1",
     "className": "7.3_CS1",
     "grade": "9",
@@ -1877,7 +1877,7 @@
   {
     "id": "cmsy2fc270003vsyucpbev32h",
     "fullName": "Trần Quang Thiên Ân",
-    "studentCode": "HS701020124",
+    "studentCode": "0601012369",
     "campus": "CS1",
     "className": "10.1_CS1",
     "grade": "10",
@@ -1911,7 +1911,7 @@
   {
     "id": "cmsy2ot0g0001ry9qr1de3m9y",
     "fullName": "Lê Hồ Gia Huy",
-    "studentCode": "HS701020125",
+    "studentCode": "0601012312",
     "campus": "CS1",
     "className": "10.2_CS1",
     "grade": "10",
@@ -1945,7 +1945,7 @@
   {
     "id": "cmsy2s3c40001114l9pwd7dsi",
     "fullName": "Trương Lê Hưng Phát",
-    "studentCode": "HS701020126",
+    "studentCode": "0601012400",
     "campus": "CS1",
     "className": "12.1_CS1",
     "grade": "12",
@@ -1979,7 +1979,7 @@
   {
     "id": "cmsy4hdrn0001kkem6semba2f",
     "fullName": "Nguyễn Văn Tuấn Kiệt",
-    "studentCode": "HS701020122",
+    "studentCode": "0601012351",
     "campus": "CS1",
     "className": "9.2_CS1",
     "grade": "9",
@@ -2014,9 +2014,9 @@
   {
     "id": "cmsyejwnv00035lcxu45kr1vq",
     "fullName": "Nguyễn Daniil",
-    "studentCode": "HS701020134",
+    "studentCode": "0601012303",
     "campus": "CS1",
-    "className": "Chưa rõ",
+    "className": "1.1_CS1",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Việt"
@@ -2050,7 +2050,7 @@
   {
     "id": "cmsyga5uo0001o72056qfw5jh",
     "fullName": "Trần Đăng Quang",
-    "studentCode": "HS701020137",
+    "studentCode": "0601012340",
     "campus": "CS1",
     "className": "6.3_CS1",
     "grade": "6",
@@ -2084,7 +2084,7 @@
   {
     "id": "cmsyger10000fubp2yj6dkps4",
     "fullName": "Trần Thục Quyên",
-    "studentCode": "HS701020139",
+    "studentCode": "0601012347",
     "campus": "CS1",
     "className": "7.4_CS1",
     "grade": "7",
@@ -2118,7 +2118,7 @@
   {
     "id": "cmsygk2xp0003j1ngvpqeybuk",
     "fullName": "Lương Bích Ngọc",
-    "studentCode": "HS701020140",
+    "studentCode": "0601012348",
     "campus": "CS1",
     "className": "6.3_CS1",
     "grade": "6",
@@ -2152,7 +2152,7 @@
   {
     "id": "cmsygoq7k0005j1ngk0abtv8g",
     "fullName": "Nguyễn Quỳnh Như",
-    "studentCode": "HS701020141",
+    "studentCode": "0601011972",
     "campus": "CS1",
     "className": "3.1_CS1",
     "grade": "6",
@@ -2186,9 +2186,9 @@
   {
     "id": "cmt2o1ibb0001t81ckhoko2tp",
     "fullName": "Vũ Đức Thịnh",
-    "studentCode": "HS701020154",
+    "studentCode": "0601051050",
     "campus": "CS5",
-    "className": "Chưa rõ",
+    "className": "1.5_CS5",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Anh"
@@ -2220,7 +2220,7 @@
   {
     "id": "cmt2r2kn70001cdjymo1sjv1u",
     "fullName": "Nguyễn Minh Anh",
-    "studentCode": "HS701020159",
+    "studentCode": "0501030605",
     "campus": "CS5",
     "className": "6.5_CS5",
     "grade": "6",
@@ -2254,7 +2254,7 @@
   {
     "id": "cmt2rsvyv0031mq3ztosp760s",
     "fullName": "Đỗ Duy Khôi",
-    "studentCode": "HS701020158",
+    "studentCode": "0601051037",
     "campus": "CS5",
     "className": "6.5_CS5",
     "grade": "6",
@@ -2289,7 +2289,7 @@
   {
     "id": "cmt3urnx30001c9fz60g0x805",
     "fullName": "Lê Nguyễn Hoàng Bảo",
-    "studentCode": "HS701020163",
+    "studentCode": "0601051152",
     "campus": "CS5",
     "className": "7.5_CS5",
     "grade": "7",
@@ -2323,7 +2323,7 @@
   {
     "id": "cmt3vcaow000595s07wg9ivoe",
     "fullName": "Nguyễn Hoàng Đạt",
-    "studentCode": "HS701020167",
+    "studentCode": "0701050069",
     "campus": "CS5",
     "className": "3.2INT_CS5",
     "grade": "3",
@@ -2357,7 +2357,7 @@
   {
     "id": "cmt3vj3uk000b95s04kwikoq8",
     "fullName": "Nguyễn Hoàng Phúc",
-    "studentCode": "HS701020170",
+    "studentCode": "0701050068",
     "campus": "CS5",
     "className": "5.2INT_CS5",
     "grade": "5",
@@ -2391,7 +2391,7 @@
   {
     "id": "cmt6l475w0002gzo197zwrv2b",
     "fullName": "Trần Minh Huy",
-    "studentCode": "HS701020166",
+    "studentCode": "0701030411",
     "campus": "CS5",
     "className": "2.6_CS5",
     "grade": "2",
@@ -2425,7 +2425,7 @@
   {
     "id": "cmt9jhnpw0004jhkfya6npywn",
     "fullName": "Nguyễn Ngọc Minh",
-    "studentCode": "HS701020183",
+    "studentCode": "0601012153",
     "campus": "CS1",
     "className": "7.2_CS1",
     "grade": "7",
@@ -2460,7 +2460,7 @@
   {
     "id": "cmtb9vzeo0001b367pgpfdfqp",
     "fullName": "Phùng Đức Thiên Ân",
-    "studentCode": "HS701020184",
+    "studentCode": "0701030415",
     "campus": "CS3",
     "className": "3.1INT_CS3",
     "grade": "3",
@@ -2494,7 +2494,7 @@
   {
     "id": "cmtcg8r4200012csibdl65mvs",
     "fullName": "Phùng Chí Nam Anh",
-    "studentCode": "HS701020185",
+    "studentCode": "0701030416",
     "campus": "CS3",
     "className": "8.1INT_CS3",
     "grade": "8",
@@ -2528,7 +2528,7 @@
   {
     "id": "cmtkwv7h00005buokyyvajmzx",
     "fullName": "Nguyễn Đặng Bảo Trâm ",
-    "studentCode": "HS701020186",
+    "studentCode": "0601012421",
     "campus": "CS1",
     "className": "8.2_CS1",
     "grade": "8",
@@ -2562,9 +2562,9 @@
   {
     "id": "cmtmpbm6c000512yks2sh1wdh",
     "fullName": "Sangadziev Aron",
-    "studentCode": "HS701020188",
+    "studentCode": "0701020109",
     "campus": "CS2",
-    "className": "Chưa rõ",
+    "className": "1.2INT_CS2",
     "grade": "1",
     "committedSubjects": [
       "Tiếng Việt"
@@ -2598,9 +2598,9 @@
   {
     "id": "cmtxv0xdg000d10nuglzf3vl6",
     "fullName": "Ngô Huỳnh Anh Minh",
-    "studentCode": "HS701020195",
+    "studentCode": "0602040655",
     "campus": "CS4",
-    "className": "Chưa rõ",
+    "className": "6S_CS4",
     "grade": "6",
     "committedSubjects": [
       "Toán",

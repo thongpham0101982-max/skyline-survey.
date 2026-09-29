@@ -1177,7 +1177,10 @@ function ActivityCatalogsContent() {
         }}
         onSaved={loadCatalogs}
         editingItem={editingItem}
+        initialData={editingItem}
         defaultSheetCode="TH_S"
+        activeSheetCode="TH_S"
+        academicYearId={selectedYearId}
       />
 
       <CatalogImportModal

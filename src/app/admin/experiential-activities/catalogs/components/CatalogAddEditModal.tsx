@@ -28,8 +28,10 @@ interface CatalogAddEditModalProps {
   onClose: () => void;
   onSaved: () => void;
   initialData?: any;
-  activeSheetCode: SheetCode;
-  academicYearId: string;
+  editingItem?: any;
+  activeSheetCode?: SheetCode;
+  defaultSheetCode?: SheetCode;
+  academicYearId?: string;
 }
 
 const ALL_GRADES = [
@@ -44,10 +46,14 @@ export function CatalogAddEditModal({
   onClose,
   onSaved,
   initialData,
+  editingItem,
   activeSheetCode,
+  defaultSheetCode,
   academicYearId
 }: CatalogAddEditModalProps) {
-  const currentSheetCfg = SHEET_CONFIGS.find(s => s.code === activeSheetCode) || SHEET_CONFIGS[1];
+  const currentItem = editingItem || initialData || null;
+  const currentSheetCode = activeSheetCode || defaultSheetCode || 'TH_S';
+  const currentSheetCfg = SHEET_CONFIGS.find(s => s.code === currentSheetCode) || SHEET_CONFIGS[1];
 
   const [formData, setFormData] = useState<any>({
     name: '',
@@ -106,8 +112,10 @@ export function CatalogAddEditModal({
   }, []);
 
   useEffect(() => {
-    if (initialData) {
-      const meta = initialData.meta || {};
+    if (!isOpen) return;
+
+    if (currentItem) {
+      const meta = currentItem.meta || {};
       
       let initTeachers: CTHSTeacherAssignment[] = [];
       if (Array.isArray(meta.cthsTeachers) && meta.cthsTeachers.length > 0) {
@@ -123,37 +131,37 @@ export function CatalogAddEditModal({
 
       const initEduLevels: CatalogEducationLevel[] = Array.isArray(meta.educationLevels) && meta.educationLevels.length > 0
         ? meta.educationLevels
-        : [meta.educationLevel || currentSheetCfg.level];
+        : (currentItem.educationLevel ? [currentItem.educationLevel] : [meta.educationLevel || currentSheetCfg.level]);
 
       const initProgramTypes: ProgramType[] = Array.isArray(meta.programTypes) && meta.programTypes.length > 0
         ? meta.programTypes
-        : [meta.programType || currentSheetCfg.programType];
+        : (currentItem.programType ? [currentItem.programType] : [meta.programType || currentSheetCfg.programType]);
 
-      const initCategory: CatalogActivityCategory = meta.activityCategory || (
-        (meta.name && (meta.name.toLowerCase().includes('khai mạc') || meta.name.toLowerCase().includes('trung thu') || meta.name.toLowerCase().includes('lễ hội') || meta.name.toLowerCase().includes('ngày hội') || meta.name.toLowerCase().includes('sport day'))) ||
+      const initCategory: CatalogActivityCategory = meta.activityCategory || currentItem.activityCategory || (
+        (currentItem.name && (currentItem.name.toLowerCase().includes('khai mạc') || currentItem.name.toLowerCase().includes('trung thu') || currentItem.name.toLowerCase().includes('lễ hội') || currentItem.name.toLowerCase().includes('ngày hội') || currentItem.name.toLowerCase().includes('sport day'))) ||
         (meta.organizationFormat && (meta.organizationFormat.toLowerCase().includes('sự kiện') || meta.organizationFormat.toLowerCase().includes('hội thi')))
           ? 'HOAT_DONG_SU_KIEN'
           : 'TRAI_NGHIEM_DU_AN'
       );
 
       setFormData({
-        name: initialData.name || '',
-        code: initialData.code || '',
+        name: currentItem.name || meta.name || '',
+        code: currentItem.code || meta.code || '',
         activityCategory: initCategory,
-        sheetCode: meta.sheetCode || activeSheetCode,
+        sheetCode: meta.sheetCode || currentSheetCode,
         educationLevel: initEduLevels[0] || currentSheetCfg.level,
         educationLevels: initEduLevels,
         programType: initProgramTypes[0] || currentSheetCfg.programType,
         programTypes: initProgramTypes,
-        grades: Array.isArray(meta.grades) && meta.grades.length > 0 ? meta.grades : currentSheetCfg.defaultGrades,
-        themeName: meta.themeName || '',
-        integratedSubjects: meta.integratedSubjects || '',
+        grades: Array.isArray(meta.grades) && meta.grades.length > 0 ? meta.grades : (currentItem.grade ? [currentItem.grade] : currentSheetCfg.defaultGrades),
+        themeName: meta.themeName || currentItem.theme || '',
+        integratedSubjects: meta.integratedSubjects || currentItem.integratedSubjects || '',
         educationalContent: meta.educationalContent || '',
         learningOutcomes: meta.learningOutcomes || '',
         organizationFormat: meta.organizationFormat || 'Trải nghiệm',
-        timeFrame: meta.timeFrame || 'Tháng 10',
-        semester: meta.semester || 1,
-        expectedLocation: meta.expectedLocation || '',
+        timeFrame: meta.timeFrame || currentItem.timeFrame || 'Tháng 10',
+        semester: meta.semester || currentItem.semester || 1,
+        expectedLocation: meta.expectedLocation || currentItem.location || '',
         partners: meta.partners || '',
         primarySubjectName: meta.primarySubjectName || '',
         coopSubjectNames: meta.coopSubjectNames || '',
@@ -171,7 +179,7 @@ export function CatalogAddEditModal({
         name: '',
         code: '',
         activityCategory: 'TRAI_NGHIEM_DU_AN' as CatalogActivityCategory,
-        sheetCode: activeSheetCode,
+        sheetCode: currentSheetCode,
         educationLevel: currentSheetCfg.level,
         educationLevels: [currentSheetCfg.level],
         programType: currentSheetCfg.programType,
@@ -199,7 +207,7 @@ export function CatalogAddEditModal({
       });
     }
     setIsTeacherPickerOpen(false);
-  }, [initialData, activeSheetCode, isOpen]);
+  }, [currentItem, currentSheetCode, isOpen]);
 
   const filteredTeachers = useMemo(() => {
     let list = teachers;
@@ -353,11 +361,11 @@ export function CatalogAddEditModal({
         }
       };
 
-      const url = initialData?.id 
-        ? `/api/admin/experiential-activities/catalogs/${initialData.id}`
+      const url = currentItem?.id 
+        ? `/api/admin/experiential-activities/catalogs/${currentItem.id}`
         : '/api/admin/experiential-activities/catalogs';
 
-      const method = initialData?.id ? 'PUT' : 'POST';
+      const method = currentItem?.id ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
         method,
@@ -370,7 +378,7 @@ export function CatalogAddEditModal({
         throw new Error(err.error || 'Lỗi khi lưu thông tin');
       }
 
-      toast.success(initialData?.id ? 'Đã cập nhật hoạt động thành công' : 'Đã thêm mới hoạt động thành công');
+      toast.success(currentItem?.id ? 'Đã cập nhật hoạt động thành công' : 'Đã thêm mới hoạt động thành công');
       onSaved();
       onClose();
     } catch (err: any) {
@@ -392,7 +400,7 @@ export function CatalogAddEditModal({
               </div>
               <div>
                 <h2 className="text-base font-extrabold text-slate-800">
-                  {initialData ? 'Chỉnh sửa Hoạt động Ngoại khóa' : 'Thêm mới Hoạt động Ngoại khóa'}
+                  {currentItem ? 'Chỉnh sửa Hoạt động Ngoại khóa' : 'Thêm mới Hoạt động Ngoại khóa'}
                 </h2>
                 <p className="text-xs text-slate-500 font-medium">
                   Hệ thống quản lý HĐTN • Cấu hình Đa bậc học, Đa hệ học & Thiết lập tiêu chí đánh giá
@@ -957,7 +965,7 @@ export function CatalogAddEditModal({
                     </div>
                   </div>
 
-                  {!initialData?.id && (
+                  {!currentItem?.id && (
                     <span className="text-[11px] text-slate-400 italic">
                       (Có thể cấu hình tiêu chí chuyên sâu sau khi tạo)
                     </span>
@@ -1000,7 +1008,7 @@ export function CatalogAddEditModal({
                 className="px-5 py-2 text-xs font-bold text-white bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:brightness-105 rounded-xl shadow-md shadow-[#00A19A]/20 transition-all flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
               >
                 <Save className="w-4 h-4" />
-                <span>{saving ? 'Đang lưu...' : (initialData ? 'Cập nhật hoạt động' : 'Tạo mới hoạt động')}</span>
+                <span>{saving ? 'Đang lưu...' : (currentItem ? 'Cập nhật hoạt động' : 'Tạo mới hoạt động')}</span>
               </button>
             </div>
           </div>
@@ -1008,7 +1016,7 @@ export function CatalogAddEditModal({
       </div>
 
       {/* Sub-modal: Thiết lập Tiêu chí & Công thức đánh giá */}
-      {isEvalConfigModalOpen && initialData && (
+      {isEvalConfigModalOpen && currentItem && (
         <CatalogEvaluationConfigModal
           isOpen={isEvalConfigModalOpen}
           onClose={() => setIsEvalConfigModalOpen(false)}
@@ -1016,7 +1024,7 @@ export function CatalogAddEditModal({
             setIsEvalConfigModalOpen(false);
             onSaved();
           }}
-          catalogItem={initialData}
+          catalogItem={currentItem}
         />
       )}
 
