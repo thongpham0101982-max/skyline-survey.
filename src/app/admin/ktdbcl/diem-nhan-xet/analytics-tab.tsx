@@ -364,10 +364,11 @@ export function GradeAnalyticsTab({
       "Tâm lý - Cam kết": st.psychology?.isCommitted ? "x (CHÚ Ý MÀU ĐỎ)" : "",
       "Tâm lý - Điểm KSĐV": st.psychology?.entranceScore !== null && st.psychology?.entranceScore !== undefined ? st.psychology.entranceScore : "",
       "Tâm lý - Cảnh báo đối tượng": st.psychology?.isCommitted ? "CẦN THEO DÕI SÁT TÂM LÝ & HÀNH VI" : "",
-      // Ghi chú cam kết
+      // Ghi chú cam kết & Hồ sơ
+      "Kết quả đầu vào": st.admissionResult || "",
       "Tiêu chí tuyển sinh": st.admissionCriteria || "",
-      "Kết quả xét tuyển": st.admissionResult || "",
-      "Ghi chú cam kết Hội đồng tuyển sinh": st.directorNote || ""
+      "Môn cam kết": st.committedSubjects ? st.committedSubjects.join(", ") : "",
+      "Ghi chú cam kết Hội đồng tuyển sinh": st.directorNote ? st.directorNote.split(/---\s*LỊCH SỬ/i)[0].trim() : ""
     }))
 
     const ws = XLSX.utils.json_to_sheet(excelRows)

@@ -166,55 +166,69 @@ export async function GET(request: Request) {
     // Helper: Parse committed subjects from entrance assessment
     const parseCommittedSubjects = (entranceInfo: any, className?: string, gradeStr?: string): string[] => {
       if (!entranceInfo) return []
-      const note = entranceInfo.directorNote || ""
+      const rawNote = entranceInfo.directorNote || ""
+      // Clean out approval history lines so teacher names like "Trần Thị Thanh" don't trigger "Tiếng Anh"
+      const cleanNote = rawNote.split(/---\s*LỊCH SỬ/i)[0].trim()
       const result = entranceInfo.admissionResult || ""
       const criteria = entranceInfo.admissionCriteria || ""
-      const target = entranceInfo.targetType || ""
-      const fullText = `${note} ${result} ${criteria} ${target}`.trim()
-      if (!fullText) return []
 
-      let rawSubs: string[] = []
-      const match = fullText.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i)
-      if (match && match[1]) {
-        rawSubs = match[1].split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
-      }
+      const textToScan = `${cleanNote} ${result}`.trim()
+      if (!textToScan) return []
 
       const isPrimary = (className && /^[1-5][._\s]|lớp\s*[1-5]/i.test(className)) ||
                         (gradeStr && /^(khối\s*)?[1-5]$/i.test(gradeStr))
 
+      let rawSubs: string[] = []
+      // 1. Match "Môn cam kết: [...]" or "Cam kết: [...]" or "Môn cam kết [...]"
+      const match = textToScan.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại)\s*[:：]?\s*\[?([^\]\r\n]+)\]?/i)
+      if (match && match[1]) {
+        rawSubs = match[1].split(/[,;+&]/).map((s: string) => s.trim()).filter(Boolean)
+      }
+
+      // 2. If no explicit "Môn cam kết: [...]", scan cleanNote for subject keywords
       if (rawSubs.length === 0) {
-        if (/Toán|Math/i.test(fullText)) rawSubs.push("Toán")
-        if (/Tiếng Việt|TN-XH|Tự nhiên/i.test(fullText)) rawSubs.push("Tiếng Việt")
-        else if (/Ngữ văn|Literature/i.test(fullText)) {
-          rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
-        } else if (/Văn/i.test(fullText)) {
-          rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
-        }
-        if (/Anh|English|ESL/i.test(fullText)) {
-          rawSubs.push("Tiếng Anh")
-        }
-        if (/Tâm lý|Psychology/i.test(fullText)) rawSubs.push("Tâm lý")
+        if (/(?:môn\s+)?toán|\bmaths?\b/i.test(cleanNote)) rawSubs.push("Toán")
+        if (/tiếng việt|\btv\b|ngôn ngữ/i.test(cleanNote)) rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
+        else if (/ngữ văn|\bvăn\b|\bliterature\b/i.test(cleanNote)) rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
+        if (/(?:tiếng\s+)?anh|\benglish\b|\besl\b|\btav\b|\bept\b/i.test(cleanNote)) rawSubs.push("Tiếng Anh")
+        if (/tâm lý|tâm lí|tập trung chú ý/i.test(cleanNote)) rawSubs.push("Tâm lý")
       }
 
       const finalSubs: string[] = []
       rawSubs.forEach((s) => {
         const clean = s.trim().replace(/^môn\s+/i, "")
         const lower = clean.toLowerCase()
-        if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
+        if (lower.includes("anh") || lower.includes("english") || lower.includes("esl") || lower === "ept" || lower.includes("tav")) {
           if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh")
         } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
           if (!finalSubs.includes("Toán")) finalSubs.push("Toán")
         } else if (lower.includes("tiếng việt") || lower.includes("tieng viet") || lower === "tv") {
-          if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
+          const subName = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
+          if (!finalSubs.includes(subName)) finalSubs.push(subName)
         } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn" || lower.includes("văn")) {
-          const correctSub = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
-          if (!finalSubs.includes(correctSub)) finalSubs.push(correctSub)
-        } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
+          const subName = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
+          if (!finalSubs.includes(subName)) finalSubs.push(subName)
+        } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology") || lower.includes("tập trung")) {
           if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
-        } else {
+        } else if (clean) {
           if (!finalSubs.includes(clean)) finalSubs.push(clean)
         }
       })
+
+      // Secondary check: Additional subjects mentioned in cleanNote text
+      if (/(?:cam kết|theo dõi|cải thiện|hỗ trợ)\s+(?:thêm\s+)?(?:tiếng\s+)?anh/i.test(cleanNote) && !finalSubs.includes("Tiếng Anh")) {
+        finalSubs.push("Tiếng Anh")
+      }
+      if (/(?:cam kết|theo dõi|hỗ trợ)\s+(?:thêm\s+)?(?:tiếng việt|ngữ văn|văn)/i.test(cleanNote)) {
+        const subName = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
+        if (!finalSubs.includes(subName)) finalSubs.push(subName)
+      }
+      if (/(?:cam kết|theo dõi|hỗ trợ)\s+(?:thêm\s+)?toán/i.test(cleanNote) && !finalSubs.includes("Toán")) {
+        finalSubs.push("Toán")
+      }
+      if (/(?:cam kết|theo dõi|tư vấn|yc cam kết)\s+(?:tâm lý|tâm lí|mức độ tập trung|khả năng tập trung)/i.test(cleanNote) && !finalSubs.includes("Tâm lý")) {
+        finalSubs.push("Tâm lý")
+      }
 
       return finalSubs
     }
@@ -227,12 +241,13 @@ export async function GET(request: Request) {
 
       return committedSubs.some(raw => {
         const cleanRaw = raw.toLowerCase().trim()
-        // 1. Tiếng Anh / English / Tiếng Anh (viết) / Tiếng Anh (vấn đáp) / ESL
+        // 1. Tiếng Anh / English / Tiếng Anh (viết) / Tiếng Anh (vấn đáp) / ESL / EPT
         if (
           cleanRaw.includes("anh") ||
           cleanRaw.includes("english") ||
           cleanRaw.includes("esl") ||
-          cleanRaw.includes("tav")
+          cleanRaw.includes("tav") ||
+          cleanRaw === "ept"
         ) {
           return (
             subName.includes("tiếng anh") ||
@@ -246,22 +261,20 @@ export async function GET(request: Request) {
           )
         }
 
-        // 2. Toán / Math
+        // 2. Toán / Math / Maths
         if (cleanRaw.includes("toán") || cleanRaw.includes("toan") || cleanRaw.includes("math")) {
           return subName.includes("toán") || subCode === "toa" || subCode === "mat"
         }
 
-        // 3. Tiếng Việt
-        if (cleanRaw.includes("tiếng việt") || cleanRaw.includes("tieng viet")) {
-          return subName.includes("tiếng việt") || subCode === "tvi"
+        // 3. Tiếng Việt & Ngữ Văn (tương hỗ cho nhau giữa Cấp 1 và Cấp 2/3)
+        if (cleanRaw.includes("tiếng việt") || cleanRaw.includes("tieng viet") || cleanRaw === "tv") {
+          return subName.includes("tiếng việt") || subName.includes("ngữ văn") || subName.includes("văn") || subCode === "tvi" || subCode === "nva"
         }
-
-        // 4. Ngữ Văn / Văn / Literature
         if (cleanRaw.includes("ngữ văn") || cleanRaw.includes("ngu van") || cleanRaw === "văn" || cleanRaw.includes("literature")) {
-          return subName.includes("ngữ văn") || subCode === "nva" || (subName.includes("văn") && !subName.includes("tiếng việt"))
+          return subName.includes("ngữ văn") || subName.includes("tiếng việt") || subName.includes("văn") || subCode === "nva" || subCode === "tvi"
         }
 
-        // 5. Tâm lý
+        // 4. Tâm lý
         if (cleanRaw.includes("tâm lý") || cleanRaw.includes("tam ly") || cleanRaw.includes("psychology")) {
           return subName.includes("tâm lý") || subCode === "tly"
         }
@@ -1038,27 +1051,45 @@ export async function GET(request: Request) {
 
       const isPrimary = (cls.level || "").toLowerCase().includes("tiểu học") || (cls.level || "").toLowerCase().includes("tieu hoc") || ["1", "2", "3", "4", "5"].some(g => (cls.grade || "").includes(g))
 
+      // Helper to find student score across multiple candidate subject codes
+      const findStudentScoreForSubjectCodes = (studentId: string, codes: string[], names: string[]) => {
+        if (!studentId || !studentSubjectPeriodMap.has(studentId)) return null
+        const stPeriodMap = studentSubjectPeriodMap.get(studentId)!
+        for (const [sId, pMap] of stPeriodMap.entries()) {
+          const sObj = subjectMap.get(sId)
+          if (sObj) {
+            const code = (sObj.code || "").toUpperCase()
+            const name = (sObj.name || "").toLowerCase()
+            if (codes.includes(code) || names.some(n => name.includes(n))) {
+              const entry = pMap.get(currentPeriod)
+              if (entry && entry.compositeScore !== null && entry.compositeScore !== undefined) {
+                return { score: Number(entry.compositeScore), subject: sObj }
+              }
+            }
+          }
+        }
+        return null
+      }
+
       // 1. Môn Toán
-      const mathSub = findSubject(["toán"], ["TOA", "MAT"])
+      const mathResolved = matchingSt ? findStudentScoreForSubjectCodes(matchingSt.id, ["TOA", "MAT"], ["toán", "math"]) : null
+      const mathSub = mathResolved?.subject || findSubject(["toán", "math"], ["TOA", "MAT"])
       const isMathCommitted = isSubjectMatchingCommitment(committedSubs, { id: "", name: "Toán", code: "TOA" })
       if (isMathCommitted) ksdvMathCommittedTotal++
 
-      const mathEntry = (matchingSt && mathSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(mathSub.id)?.get(currentPeriod) : null
-      const mathCurrentScore = mathEntry?.compositeScore !== null && mathEntry?.compositeScore !== undefined ? Number(mathEntry.compositeScore) : null
+      const mathCurrentScore = mathResolved?.score ?? ((matchingSt && mathSub) ? (studentSubjectPeriodMap.get(matchingSt.id)?.get(mathSub.id)?.get(currentPeriod)?.compositeScore ? Number(studentSubjectPeriodMap.get(matchingSt.id)!.get(mathSub.id)!.get(currentPeriod)!.compositeScore) : null) : null)
       const mathEntranceScore = cand.mathScore !== null && cand.mathScore !== undefined ? Number(cand.mathScore) : null
       const mathDelta = (mathCurrentScore !== null && mathEntranceScore !== null) ? Math.round((mathCurrentScore - mathEntranceScore) * 10) / 10 : null
       const mathTa = mathSub ? taMap.get(`${cls.id}_${mathSub.id}`) : null
       const mathTeacher = mathTa?.teacher?.teacherName || homeroomTeacherName
 
       // 2. Môn Tiếng Việt / Ngữ Văn
-      const litSub = isPrimary
-        ? findSubject(["tiếng việt"], ["TVI"])
-        : findSubject(["ngữ văn", "văn"], ["NVA"])
+      const litResolved = matchingSt ? findStudentScoreForSubjectCodes(matchingSt.id, ["TVI", "NVA"], ["tiếng việt", "ngữ văn", "văn"]) : null
+      const litSub = litResolved?.subject || (isPrimary ? findSubject(["tiếng việt"], ["TVI"]) : findSubject(["ngữ văn", "văn"], ["NVA"]))
       const isLitCommitted = isSubjectMatchingCommitment(committedSubs, { id: "", name: isPrimary ? "Tiếng Việt" : "Ngữ Văn", code: isPrimary ? "TVI" : "NVA" })
       if (isLitCommitted) ksdvLitCommittedTotal++
 
-      const litEntry = (matchingSt && litSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(litSub.id)?.get(currentPeriod) : null
-      const litCurrentScore = litEntry?.compositeScore !== null && litEntry?.compositeScore !== undefined ? Number(litEntry.compositeScore) : null
+      const litCurrentScore = litResolved?.score ?? ((matchingSt && litSub) ? (studentSubjectPeriodMap.get(matchingSt.id)?.get(litSub.id)?.get(currentPeriod)?.compositeScore ? Number(studentSubjectPeriodMap.get(matchingSt.id)!.get(litSub.id)!.get(currentPeriod)!.compositeScore) : null) : null)
       const litEntranceScore = isPrimary
         ? (cand.vietScore ?? cand.literatureScore ?? cand.vanScore ?? null)
         : (cand.vanScore ?? cand.literatureScore ?? cand.vietScore ?? null)
@@ -1067,12 +1098,12 @@ export async function GET(request: Request) {
       const litTeacher = litTa?.teacher?.teacherName || homeroomTeacherName
 
       // 3. Môn Tiếng Anh (Tổng điểm KSĐV Tiếng Anh)
-      const engSub = findSubject(["tiếng anh", "english"], ["TA", "TAV", "ESL"])
+      const engResolved = matchingSt ? findStudentScoreForSubjectCodes(matchingSt.id, ["TA", "TAV", "ESL", "ELA"], ["tiếng anh", "english", "esl", "ela"]) : null
+      const engSub = engResolved?.subject || findSubject(["tiếng anh", "english", "esl"], ["TA", "TAV", "ESL"])
       const isEngCommitted = isSubjectMatchingCommitment(committedSubs, { id: "", name: "Tiếng Anh", code: "TA" })
       if (isEngCommitted) ksdvEngCommittedTotal++
 
-      const engEntry = (matchingSt && engSub) ? studentSubjectPeriodMap.get(matchingSt.id)?.get(engSub.id)?.get(currentPeriod) : null
-      const engCurrentScore = engEntry?.compositeScore !== null && engEntry?.compositeScore !== undefined ? Number(engEntry.compositeScore) : null
+      const engCurrentScore = engResolved?.score ?? ((matchingSt && engSub) ? (studentSubjectPeriodMap.get(matchingSt.id)?.get(engSub.id)?.get(currentPeriod)?.compositeScore ? Number(studentSubjectPeriodMap.get(matchingSt.id)!.get(engSub.id)!.get(currentPeriod)!.compositeScore) : null) : null)
       
       const isGrade1Student = Boolean(
         cand.isGrade1 || 
@@ -1105,14 +1136,16 @@ export async function GET(request: Request) {
       const engTa = engSub ? taMap.get(`${cls.id}_${engSub.id}`) : null
       const engTeacher = engTa?.teacher?.teacherName || homeroomTeacherName
 
-      // 4. CAM KẾT TÂM LÝ (BỔ SUNG MỚI & CHÚ Ý MÀU ĐỎ ĐỐI TƯỢNG NÀY)
+      // 4. CAM KẾT TÂM LÝ (THEO DÕI) - CHỈ ĐÁNH DẤU ĐỎ ĐÚNG ĐỐI TƯỢNG CÓ YÊU CẦU HOẶC NGUY CƠ CAO
+      const cleanDirectorNote = (cand.directorNote || "").split(/---\s*LỊCH SỬ/i)[0].trim()
       const isPsychologyCommitted = Boolean(
+        // 1. Có trong danh sách môn cam kết chính thức
         committedSubs.some(s => s.toLowerCase().includes("tâm") || s.toLowerCase().includes("lý") || s.toLowerCase().includes("psychology")) ||
-        (cand.directorNote && /tâm lý|tam ly|psychology|tập trung|hành vi/i.test(cand.directorNote)) ||
-        (cand.admissionResult && /tâm lý|tam ly|psychology/i.test(cand.admissionResult)) ||
-        (cand.admissionCriteria && /tâm lý|tam ly|psychology/i.test(cand.admissionCriteria)) ||
-        (cand.targetType && /tâm lý|tam ly|psychology/i.test(cand.targetType)) ||
-        (cand.psychologyScore !== null && cand.psychologyScore !== undefined && Number(cand.psychologyScore) > 0)
+        // 2. Ghi chú HĐTS yêu cầu cam kết hoặc theo dõi tâm lý / hành vi / mức độ tập trung
+        /(?:cam kết|theo dõi|tư vấn|lưu ý|hỗ trợ|yc cam kết)\s+(?:tâm lý|tâm lí|hành vi|mức độ tập trung|tập trung chú ý)/i.test(cleanDirectorNote) ||
+        /(?:theo dõi|quan sát)\s+(?:thêm\s+)?(?:tâm lý|tập trung)/i.test(cleanDirectorNote) ||
+        // 3. Hoặc điểm khảo sát tâm lý thuộc mức nguy cơ cao (> 31)
+        (cand.psychologyScore !== null && cand.psychologyScore !== undefined && Number(cand.psychologyScore) > 31)
       )
       if (isPsychologyCommitted) ksdvPsychologyCommittedTotal++
 
