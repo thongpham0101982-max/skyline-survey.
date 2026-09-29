@@ -89,7 +89,7 @@
           },
           "CS1": {
             "total": 60,
-            "belowAvg": 2,
+            "belowAvg": 1,
             "atBenchmark": 53,
             "good": 44,
             "benchmark": 7
@@ -105,7 +105,7 @@
           },
           "CS1": {
             "total": 57,
-            "belowAvg": 2,
+            "belowAvg": 1,
             "atBenchmark": 53,
             "good": 43,
             "benchmark": 7
@@ -285,7 +285,7 @@
           },
           "CS5": {
             "total": 44,
-            "belowAvg": 1,
+            "belowAvg": 0,
             "atBenchmark": 40,
             "good": 39,
             "benchmark": 7
@@ -509,7 +509,7 @@
           },
           "CS5": {
             "total": 49,
-            "belowAvg": 1,
+            "belowAvg": 0,
             "atBenchmark": 37,
             "good": 29,
             "benchmark": 7
@@ -553,120 +553,120 @@
           "CS1": {
             "total": 98,
             "belowAvg": 10,
-            "atBenchmark": 78,
+            "atBenchmark": 88,
             "good": 35,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 31,
             "belowAvg": 1,
-            "atBenchmark": 27,
+            "atBenchmark": 30,
             "good": 6,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 10,
             "belowAvg": 0,
-            "atBenchmark": 9,
+            "atBenchmark": 10,
             "good": 5,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 39,
             "belowAvg": 0,
-            "atBenchmark": 36,
+            "atBenchmark": 39,
             "good": 16,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 9": {
           "CS1": {
             "total": 101,
             "belowAvg": 17,
-            "atBenchmark": 73,
+            "atBenchmark": 84,
             "good": 28,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 33,
             "belowAvg": 7,
-            "atBenchmark": 23,
+            "atBenchmark": 26,
             "good": 9,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 18,
             "belowAvg": 1,
-            "atBenchmark": 16,
+            "atBenchmark": 17,
             "good": 6,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 16,
             "belowAvg": 6,
-            "atBenchmark": 5,
+            "atBenchmark": 10,
             "good": 2,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 8": {
           "CS5": {
             "total": 23,
             "belowAvg": 4,
-            "atBenchmark": 17,
+            "atBenchmark": 19,
             "good": 4,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 46,
             "belowAvg": 1,
-            "atBenchmark": 41,
+            "atBenchmark": 45,
             "good": 28,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 14,
             "belowAvg": 4,
             "atBenchmark": 10,
             "good": 4,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 65,
             "belowAvg": 1,
-            "atBenchmark": 57,
+            "atBenchmark": 64,
             "good": 27,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 6": {
           "CS1": {
             "total": 72,
             "belowAvg": 1,
-            "atBenchmark": 69,
+            "atBenchmark": 71,
             "good": 37,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 45,
             "belowAvg": 1,
-            "atBenchmark": 43,
+            "atBenchmark": 44,
             "good": 22,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 40,
             "belowAvg": 0,
             "atBenchmark": 40,
             "good": 31,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 19,
             "belowAvg": 4,
-            "atBenchmark": 10,
+            "atBenchmark": 15,
             "good": 1,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -675,83 +675,83 @@
           "CS4": {
             "total": 14,
             "belowAvg": 11,
-            "atBenchmark": 2,
+            "atBenchmark": 3,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 23,
             "belowAvg": 10,
-            "atBenchmark": 9,
+            "atBenchmark": 13,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 64,
             "belowAvg": 24,
-            "atBenchmark": 25,
+            "atBenchmark": 40,
             "good": 3,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 46,
-            "belowAvg": 46,
+            "belowAvg": 0,
             "atBenchmark": 0,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 9": {
           "CS4": {
             "total": 16,
             "belowAvg": 4,
-            "atBenchmark": 11,
+            "atBenchmark": 12,
             "good": 3,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 18,
             "belowAvg": 0,
-            "atBenchmark": 16,
+            "atBenchmark": 18,
             "good": 10,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 102,
             "belowAvg": 15,
-            "atBenchmark": 75,
+            "atBenchmark": 87,
             "good": 50,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 33,
             "belowAvg": 6,
-            "atBenchmark": 22,
+            "atBenchmark": 27,
             "good": 5,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 6": {
           "CS5": {
             "total": 45,
             "belowAvg": 11,
-            "atBenchmark": 31,
+            "atBenchmark": 34,
             "good": 20,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 72,
             "belowAvg": 2,
-            "atBenchmark": 68,
+            "atBenchmark": 70,
             "good": 45,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 18,
             "belowAvg": 3,
-            "atBenchmark": 13,
+            "atBenchmark": 15,
             "good": 10,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 7": {
@@ -760,28 +760,28 @@
             "belowAvg": 0,
             "atBenchmark": 31,
             "good": 20,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 99,
-            "belowAvg": 3,
-            "atBenchmark": 89,
+            "belowAvg": 2,
+            "atBenchmark": 96,
             "good": 68,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 39,
-            "belowAvg": 21,
+            "belowAvg": 1,
             "atBenchmark": 18,
             "good": 15,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 10,
             "belowAvg": 1,
             "atBenchmark": 9,
             "good": 2,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -790,92 +790,92 @@
           "CS1": {
             "total": 72,
             "belowAvg": 5,
-            "atBenchmark": 59,
+            "atBenchmark": 67,
             "good": 44,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 19,
             "belowAvg": 8,
-            "atBenchmark": 10,
+            "atBenchmark": 11,
             "good": 1,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 45,
             "belowAvg": 8,
-            "atBenchmark": 30,
+            "atBenchmark": 37,
             "good": 20,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 7": {
           "CS1": {
             "total": 97,
             "belowAvg": 13,
-            "atBenchmark": 73,
+            "atBenchmark": 84,
             "good": 40,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 10,
             "belowAvg": 3,
-            "atBenchmark": 6,
+            "atBenchmark": 7,
             "good": 2,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 32,
             "belowAvg": 5,
-            "atBenchmark": 25,
+            "atBenchmark": 27,
             "good": 15,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 9": {
           "CS1": {
             "total": 102,
             "belowAvg": 13,
-            "atBenchmark": 84,
+            "atBenchmark": 89,
             "good": 55,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 16,
             "belowAvg": 4,
-            "atBenchmark": 11,
+            "atBenchmark": 12,
             "good": 8,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 18,
             "belowAvg": 3,
-            "atBenchmark": 13,
+            "atBenchmark": 15,
             "good": 6,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 8": {
           "CS1": {
             "total": 64,
             "belowAvg": 10,
-            "atBenchmark": 45,
+            "atBenchmark": 54,
             "good": 19,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 14,
             "belowAvg": 1,
-            "atBenchmark": 11,
+            "atBenchmark": 13,
             "good": 6,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS5": {
             "total": 23,
             "belowAvg": 6,
-            "atBenchmark": 12,
+            "atBenchmark": 17,
             "good": 3,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -884,18 +884,18 @@
           "CS3": {
             "total": 46,
             "belowAvg": 5,
-            "atBenchmark": 25,
+            "atBenchmark": 41,
             "good": 9,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 9": {
           "CS3": {
             "total": 33,
             "belowAvg": 2,
-            "atBenchmark": 25,
+            "atBenchmark": 31,
             "good": 11,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 7": {
@@ -904,16 +904,16 @@
             "belowAvg": 0,
             "atBenchmark": 39,
             "good": 17,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 6": {
           "CS3": {
             "total": 40,
             "belowAvg": 0,
-            "atBenchmark": 34,
+            "atBenchmark": 40,
             "good": 15,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -922,27 +922,27 @@
           "CS3": {
             "total": 40,
             "belowAvg": 6,
-            "atBenchmark": 18,
+            "atBenchmark": 34,
             "good": 7,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 7": {
           "CS3": {
             "total": 39,
             "belowAvg": 1,
-            "atBenchmark": 35,
+            "atBenchmark": 38,
             "good": 27,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 8": {
           "CS3": {
             "total": 46,
             "belowAvg": 2,
-            "atBenchmark": 40,
+            "atBenchmark": 44,
             "good": 21,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       }
@@ -953,62 +953,62 @@
           "CS1": {
             "total": 43,
             "belowAvg": 9,
-            "atBenchmark": 31,
+            "atBenchmark": 34,
             "good": 13,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 10,
             "belowAvg": 8,
-            "atBenchmark": 1,
+            "atBenchmark": 2,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 7,
             "belowAvg": 0,
-            "atBenchmark": 6,
+            "atBenchmark": 7,
             "good": 4,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 12": {
           "CS3": {
             "total": 7,
             "belowAvg": 0,
-            "atBenchmark": 6,
+            "atBenchmark": 7,
             "good": 5,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 7,
             "belowAvg": 1,
-            "atBenchmark": 5,
+            "atBenchmark": 6,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 46,
             "belowAvg": 8,
-            "atBenchmark": 27,
+            "atBenchmark": 38,
             "good": 5,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 11": {
           "CS1": {
             "total": 17,
             "belowAvg": 14,
-            "atBenchmark": 1,
+            "atBenchmark": 3,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 11,
             "belowAvg": 2,
-            "atBenchmark": 5,
+            "atBenchmark": 9,
             "good": 2,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1017,62 +1017,62 @@
           "CS1": {
             "total": 40,
             "belowAvg": 13,
-            "atBenchmark": 16,
+            "atBenchmark": 27,
             "good": 3,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 7,
             "belowAvg": 0,
-            "atBenchmark": 6,
+            "atBenchmark": 7,
             "good": 2,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 9,
             "belowAvg": 5,
-            "atBenchmark": 1,
+            "atBenchmark": 4,
             "good": 1,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 12": {
           "CS1": {
             "total": 44,
             "belowAvg": 17,
-            "atBenchmark": 14,
+            "atBenchmark": 27,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 7,
             "belowAvg": 2,
-            "atBenchmark": 4,
+            "atBenchmark": 5,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 7,
             "belowAvg": 4,
-            "atBenchmark": 2,
+            "atBenchmark": 3,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 11": {
           "CS1": {
             "total": 17,
             "belowAvg": 14,
-            "atBenchmark": 0,
+            "atBenchmark": 3,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 11,
             "belowAvg": 3,
-            "atBenchmark": 7,
+            "atBenchmark": 8,
             "good": 1,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1083,14 +1083,14 @@
             "belowAvg": 0,
             "atBenchmark": 3,
             "good": 3,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 1,
             "belowAvg": 0,
             "atBenchmark": 1,
             "good": 1,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1101,21 +1101,21 @@
             "belowAvg": 1,
             "atBenchmark": 1,
             "good": 1,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS3": {
             "total": 1,
             "belowAvg": 0,
             "atBenchmark": 1,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 2,
             "belowAvg": 1,
             "atBenchmark": 1,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1124,23 +1124,23 @@
           "CS3": {
             "total": 2,
             "belowAvg": 0,
-            "atBenchmark": 1,
+            "atBenchmark": 2,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 6,
             "belowAvg": 1,
-            "atBenchmark": 2,
+            "atBenchmark": 5,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 4,
             "belowAvg": 1,
             "atBenchmark": 3,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1148,42 +1148,42 @@
         "Khối 10": {
           "CS1": {
             "total": 43,
-            "belowAvg": 15,
-            "atBenchmark": 25,
+            "belowAvg": 13,
+            "atBenchmark": 28,
             "good": 11,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 9,
             "belowAvg": 8,
             "atBenchmark": 1,
             "good": 1,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 12": {
           "CS1": {
             "total": 46,
             "belowAvg": 12,
-            "atBenchmark": 22,
+            "atBenchmark": 34,
             "good": 4,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS4": {
             "total": 7,
             "belowAvg": 3,
-            "atBenchmark": 3,
+            "atBenchmark": 4,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 11": {
           "CS1": {
             "total": 17,
             "belowAvg": 6,
-            "atBenchmark": 7,
+            "atBenchmark": 11,
             "good": 3,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1192,9 +1192,9 @@
           "CS3": {
             "total": 7,
             "belowAvg": 0,
-            "atBenchmark": 6,
+            "atBenchmark": 7,
             "good": 2,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 11": {
@@ -1203,16 +1203,16 @@
             "belowAvg": 0,
             "atBenchmark": 11,
             "good": 4,
-            "benchmark": 6
+            "benchmark": 5
           }
         },
         "Khối 12": {
           "CS3": {
             "total": 7,
             "belowAvg": 0,
-            "atBenchmark": 6,
+            "atBenchmark": 7,
             "good": 4,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1223,14 +1223,14 @@
             "belowAvg": 1,
             "atBenchmark": 1,
             "good": 1,
-            "benchmark": 6
+            "benchmark": 5
           },
           "CS1": {
             "total": 13,
             "belowAvg": 6,
             "atBenchmark": 7,
             "good": 3,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1241,7 +1241,7 @@
             "belowAvg": 2,
             "atBenchmark": 3,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1250,9 +1250,9 @@
           "CS1": {
             "total": 28,
             "belowAvg": 17,
-            "atBenchmark": 4,
+            "atBenchmark": 11,
             "good": 0,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       },
@@ -1263,7 +1263,7 @@
             "belowAvg": 0,
             "atBenchmark": 2,
             "good": 2,
-            "benchmark": 6
+            "benchmark": 5
           }
         }
       }
@@ -3735,5 +3735,25 @@
       "ksdvPsychology": null,
       "ksdnEntries": []
     }
-  ]
+  ],
+  "totalsByLevel": {
+    "Tiểu học": {
+      "total": 2624,
+      "belowAvg": 49,
+      "atBenchmark": 2335,
+      "good": 2002
+    },
+    "THCS": {
+      "total": 2095,
+      "belowAvg": 243,
+      "atBenchmark": 1785,
+      "good": 838
+    },
+    "THPT": {
+      "total": 508,
+      "belowAvg": 172,
+      "atBenchmark": 334,
+      "good": 76
+    }
+  }
 }

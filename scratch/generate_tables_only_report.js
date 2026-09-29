@@ -43,31 +43,39 @@ ckdvData.forEach(st => {
   let ksdvStr = '';
   let ksdnStr = '';
 
+  const ksdnParts = [];
+  if (st.ksdnMath != null) ksdnParts.push(`Toán: ${st.ksdnMath}`);
+  if (st.ksdnViet != null) ksdnParts.push(`Tiếng Việt: ${st.ksdnViet}`);
+  if (st.ksdnVan != null) ksdnParts.push(`Ngữ Văn: ${st.ksdnVan}`);
+  if (st.ksdnEng != null) ksdnParts.push(`Tiếng Anh: ${st.ksdnEng}`);
+
   if (st.isPsychology) {
-    ksdvStr = '<span class="badge badge-psychology">HS Cam kết tâm lý</span>';
-    ksdnStr = '—';
-    note = 'Theo dõi phát triển tâm lý lứa tuổi';
-  } else {
     const ksdvParts = [];
-    const ksdnParts = [];
-
     if (st.ksdvMath != null) ksdvParts.push(`Toán: ${st.ksdvMath}`);
-    if (st.ksdnMath != null) ksdnParts.push(`Toán: ${st.ksdnMath}`);
-
     if (st.ksdvViet != null) ksdvParts.push(`Tiếng Việt: ${st.ksdvViet}`);
-    if (st.ksdnViet != null) ksdnParts.push(`Tiếng Việt: ${st.ksdnViet}`);
-
     if (st.ksdvVan != null) ksdvParts.push(`Ngữ Văn: ${st.ksdvVan}`);
-    if (st.ksdnVan != null) ksdnParts.push(`Ngữ Văn: ${st.ksdnVan}`);
+    if (st.ksdvEngScale10 != null) ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)}`);
 
-    // English: Show both Scale 10 and raw Total Score
-    if (st.ksdvEngScale10 != null && st.ksdvEngTotal != null) {
-      ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)} (Tổng: ${st.ksdvEngTotal})`);
-    } else if (st.ksdvEngScale10 != null) {
-      ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)}`);
+    if (ksdvParts.length > 0) {
+      ksdvStr = `${ksdvParts.join('; ')} <span class="badge badge-psychology">Theo dõi tâm lý</span>`;
+    } else {
+      ksdvStr = '<span class="badge badge-psychology">Theo dõi tâm lý lứa tuổi</span>';
     }
 
-    if (st.ksdnEng != null) ksdnParts.push(`Tiếng Anh: ${st.ksdnEng}`);
+    if (ksdnParts.length > 0) {
+      ksdnStr = ksdnParts.join('; ');
+      note = `Đạt chuẩn KSĐN (Toán: ${st.ksdnMath}, Văn: ${st.ksdnVan}, Anh: ${st.ksdnEng})`;
+    } else {
+      ksdnStr = `Chưa có bài KSĐN (Khối ${st.grade || '1'})`;
+      note = 'Theo dõi phát triển tâm lý lứa tuổi';
+    }
+  } else {
+    const ksdvParts = [];
+
+    if (st.ksdvMath != null) ksdvParts.push(`Toán: ${st.ksdvMath}`);
+    if (st.ksdvViet != null) ksdvParts.push(`Tiếng Việt: ${st.ksdvViet}`);
+    if (st.ksdvVan != null) ksdvParts.push(`Ngữ Văn: ${st.ksdvVan}`);
+    if (st.ksdvEngScale10 != null) ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)}`);
 
     // If completely missing
     if (st.ksdvStatus === 'Chưa có điểm KSĐV') {
@@ -86,7 +94,7 @@ ckdvData.forEach(st => {
       }
     }
 
-    ksdnStr = ksdnParts.join('; ') || 'Chưa có bài KSĐN';
+    ksdnStr = ksdnParts.join('; ') || `Chưa có bài KSĐN (Khối ${st.grade || '1'})`;
 
     if (st.ksdvStatus !== 'Chưa có điểm KSĐV') {
       if (st.ksdnEng != null && st.ksdvEngScale10 != null) {
@@ -186,8 +194,8 @@ let htmlBody = `
               <td>2.624</td>
               <td><strong>2.335</strong></td>
               <td><span class="badge badge-success">89.0%</span></td>
-              <td>53</td>
-              <td>2.0%</td>
+              <td>49</td>
+              <td>1.9%</td>
               <td><strong>2.002</strong></td>
               <td><span class="badge badge-growth">76.3%</span></td>
             </tr>
@@ -200,8 +208,8 @@ let htmlBody = `
               <td>2.095</td>
               <td><strong>1.785</strong></td>
               <td><span class="badge badge-success">85.2%</span></td>
-              <td>310</td>
-              <td>14.8%</td>
+              <td>243</td>
+              <td>11.6%</td>
               <td><strong>838</strong></td>
               <td><span class="badge badge-growth">40.0%</span></td>
             </tr>
@@ -214,8 +222,8 @@ let htmlBody = `
               <td>508</td>
               <td><strong>334</strong></td>
               <td><span class="badge badge-warning">65.7%</span></td>
-              <td>174</td>
-              <td>34.3%</td>
+              <td>172</td>
+              <td>33.9%</td>
               <td><strong>76</strong></td>
               <td><span class="badge badge-growth">15.0%</span></td>
             </tr>
@@ -228,8 +236,8 @@ let htmlBody = `
               <td><strong>5.227</strong></td>
               <td><strong>4.454</strong></td>
               <td><strong>85.2%</strong></td>
-              <td><strong>537</strong></td>
-              <td><strong>10.3%</strong></td>
+              <td><strong>464</strong></td>
+              <td><strong>8.9%</strong></td>
               <td><strong>2.916</strong></td>
               <td><strong>55.8%</strong></td>
             </tr>
@@ -372,147 +380,6 @@ function renderLevelSection(lvlName, secId, secNum, benchDesc) {
 renderLevelSection('Tiểu học', 'sec-tiểu học', 'PHẦN II', '≥ 7.0');
 renderLevelSection('THCS', 'sec-thcs', 'PHẦN III', '≥ 5.0');
 renderLevelSection('THPT', 'sec-thpt', 'PHẦN IV', '≥ 5.0');
-
-// Bổ sung Phần Chuyên đề THPT (7 môn tự chọn Khối 12)
-htmlBody += `
-    <!-- BẢNG CHUYÊN ĐỀ: 7 MÔN TỰ CHỌN THPT (KHỐI 12) -->
-    <section class="report-section" id="sec-thpt-electives" style="margin-top: 15px;">
-      <div class="section-header">
-        <span class="section-badge">CHUYÊN ĐỀ THPT</span>
-        <h2 class="section-title">THỐNG KÊ CHI TIẾT 7 MÔN TỰ CHỌN KHỐI 12 THEO CƠ SỞ (NGOÀI TOÁN - VĂN - ANH)</h2>
-      </div>
-
-      <div class="alert alert-note">
-        • <strong>Đối tượng khảo sát:</strong> Học sinh Khối 12 tham gia làm bài khảo sát định hướng tốt nghiệp THPT theo tổ hợp môn tự chọn (Khoa học Tự nhiên & Khoa học Xã hội).<br>
-        • <strong>Các môn khảo sát:</strong> Vật lí, Hóa học, Sinh học, Lịch sử, Địa lí, GD Kinh tế & Pháp luật (GDKT&PL), Tin học.<br>
-        • <strong>Chuẩn đạt điểm:</strong> Điểm Đạt chuẩn là <code>≥ 5.0</code>. Điểm Dưới trung bình là <code>&lt; 5.0</code>. Điểm Giỏi là <code>8.0 - 10.0</code>.
-      </div>
-
-      <div class="table-container">
-        <table class="report-table">
-          <thead>
-            <tr>
-              <th style="width: 50px;">STT</th>
-              <th>Cơ sở</th>
-              <th>Môn học tự chọn</th>
-              <th>Khối lớp</th>
-              <th>Số HS khảo sát</th>
-              <th>Điểm dưới TB (&lt; 5.0)</th>
-              <th>Tỷ lệ &lt; 5.0</th>
-              <th>Điểm Chuẩn (≥ 5.0)</th>
-              <th>Tỷ lệ Đạt chuẩn</th>
-              <th>Điểm 8 - 10 (Giỏi)</th>
-              <th>Tỷ lệ Giỏi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td><strong>CS1</strong></td>
-              <td>Vật lí</td>
-              <td>Khối 12</td>
-              <td>13</td>
-              <td>2</td>
-              <td><span class="badge badge-danger">15.4%</span></td>
-              <td><strong>11</strong></td>
-              <td><span class="badge badge-success">84.6%</span></td>
-              <td>2</td>
-              <td><span class="badge badge-growth">15.4%</span></td>
-            </tr>
-            <tr>
-              <td>2</td>
-              <td><strong>CS1</strong></td>
-              <td>Hóa học</td>
-              <td>Khối 12</td>
-              <td>11</td>
-              <td>4</td>
-              <td><span class="badge badge-danger">36.4%</span></td>
-              <td><strong>7</strong></td>
-              <td><span class="badge badge-warning">63.6%</span></td>
-              <td>2</td>
-              <td><span class="badge badge-growth">18.2%</span></td>
-            </tr>
-            <tr>
-              <td>3</td>
-              <td><strong>CS1</strong></td>
-              <td>Sinh học</td>
-              <td>Khối 12</td>
-              <td>10</td>
-              <td>0</td>
-              <td>0.0%</td>
-              <td><strong>10</strong></td>
-              <td><span class="badge badge-success">100.0%</span></td>
-              <td>3</td>
-              <td><span class="badge badge-growth">30.0%</span></td>
-            </tr>
-            <tr>
-              <td>4</td>
-              <td><strong>CS1</strong></td>
-              <td>Lịch sử</td>
-              <td>Khối 12</td>
-              <td>11</td>
-              <td>5</td>
-              <td><span class="badge badge-danger">45.5%</span></td>
-              <td><strong>6</strong></td>
-              <td><span class="badge badge-warning">54.5%</span></td>
-              <td>0</td>
-              <td>0.0%</td>
-            </tr>
-            <tr>
-              <td>5</td>
-              <td><strong>CS1</strong></td>
-              <td>Địa lí</td>
-              <td>Khối 12</td>
-              <td>11</td>
-              <td>0</td>
-              <td>0.0%</td>
-              <td><strong>11</strong></td>
-              <td><span class="badge badge-success">100.0%</span></td>
-              <td>2</td>
-              <td><span class="badge badge-growth">18.2%</span></td>
-            </tr>
-            <tr>
-              <td>6</td>
-              <td><strong>CS1</strong></td>
-              <td>GD Kinh tế & Pháp luật</td>
-              <td>Khối 12</td>
-              <td>11</td>
-              <td>0</td>
-              <td>0.0%</td>
-              <td><strong>11</strong></td>
-              <td><span class="badge badge-success">100.0%</span></td>
-              <td>3</td>
-              <td><span class="badge badge-growth">27.3%</span></td>
-            </tr>
-            <tr>
-              <td>7</td>
-              <td><strong>CS1</strong></td>
-              <td>Tin học / ICT</td>
-              <td>Khối 12</td>
-              <td>4</td>
-              <td>1</td>
-              <td><span class="badge badge-danger">25.0%</span></td>
-              <td><strong>3</strong></td>
-              <td><span class="badge badge-warning">75.0%</span></td>
-              <td>0</td>
-              <td>0.0%</td>
-            </tr>
-            <tr class="subtotal-row">
-              <td>-</td>
-              <td colspan="3"><strong>TỔNG 7 MÔN TỰ CHỌN KHỐI 12 TẠI CS1</strong></td>
-              <td><strong>71</strong></td>
-              <td><strong>12</strong></td>
-              <td><span class="badge badge-danger">16.9%</span></td>
-              <td><strong>59</strong></td>
-              <td><span class="badge badge-success">83.1%</span></td>
-              <td><strong>12</strong></td>
-              <td><span class="badge badge-growth">16.9%</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-`;
 
 // PHẦN V: HỌC SINH CAM KẾT ĐẦU VÀO ĐÃ NHẬP HỌC (76 HS)
 htmlBody += `
@@ -1131,7 +998,6 @@ const fullHtml = `<!DOCTYPE html>
     <a href="#sec-tiểu học" class="nav-chip">II. Bậc Tiểu học</a>
     <a href="#sec-thcs" class="nav-chip">III. Bậc THCS</a>
     <a href="#sec-thpt" class="nav-chip">IV. Bậc THPT</a>
-    <a href="#sec-thpt-electives" class="nav-chip">Chuyên đề 7 Môn K12</a>
     <a href="#sec-ckdv" class="nav-chip">V. Map 76 HS CKĐV & Thống kê thiếu điểm</a>
   </nav>
 
@@ -1142,7 +1008,7 @@ const fullHtml = `<!DOCTYPE html>
       <span class="hero-tag">CSDL CHUẨN XÁC HỆ THỐNG SSM • NĂM HỌC 2026 - 2027</span>
       <h1 class="hero-title">BÁO CÁO THỐNG KÊ KỲ KHẢO SÁT ĐẦU NĂM (KSĐN)<br>& MAP ĐIỂM 76 HỌC SINH CAM KẾT ĐẦU VÀO ĐÃ NHẬP HỌC</h1>
       <p class="hero-subtitle">
-        Thống kê chi tiết kết quả khảo sát từ Khối 2 đến Khối 12 phân tách theo từng Bậc học và Cơ sở; bổ sung chuyên đề 7 môn tự chọn Khối 12; đối sánh kết quả Khảo sát đầu vào (KSĐV) với Khảo sát đầu năm (KSĐN) của 76 học sinh diện Cam kết đầu vào đã nhập học; phân tích chi tiết nhóm học sinh chưa có điểm hoặc thiếu điểm môn cam kết.
+        Thống kê chi tiết kết quả khảo sát từ Khối 2 đến Khối 12 phân tách theo từng Bậc học và Cơ sở (Bậc THPT bao gồm cả 3 môn chung và 7 môn tự chọn Khối 12); đối sánh kết quả Khảo sát đầu vào (KSĐV) với Khảo sát đầu năm (KSĐN) của 76 học sinh diện Cam kết đầu vào đã nhập học; phân tích chi tiết nhóm học sinh chưa có điểm hoặc thiếu điểm môn cam kết.
       </p>
     </section>
 

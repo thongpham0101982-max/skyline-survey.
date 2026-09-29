@@ -337,6 +337,102 @@ export async function GET(req: Request) {
       };
     });
 
+    // =========================================================================
+    // NẠP THÊM CÁC HOẠT ĐỘNG TỪ DANH MỤC (ACTIVITY CATALOG) NẾU CHƯA TRIỂN KHAI
+    // =========================================================================
+    try {
+      const catalogs = await prisma.activityCatalog.findMany({
+        where: {
+          status: { not: 'DELETED' }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      for (const cat of catalogs) {
+        // Tránh trùng lặp nếu đã có ActivityRecord tương ứng
+        const hasRecord = activities.some(a => a.catalogId === cat.id || (a.code && a.code === cat.code));
+        if (hasRecord) continue;
+
+        let catMeta: any = {};
+        try {
+          if (cat.description && cat.description.startsWith('{')) {
+            catMeta = JSON.parse(cat.description);
+          }
+        } catch {}
+
+        if (academicYearId && catMeta.academicYearId && catMeta.academicYearId !== academicYearId) {
+          continue;
+        }
+
+        const evalCfg = catMeta.evaluationConfig || {};
+        const isEventCat = catMeta.activityCategory === 'HOAT_DONG_SU_KIEN';
+        const catGrades = Array.isArray(catMeta.grades) ? catMeta.grades : [];
+
+        formatted.push({
+          id: cat.id,
+          code: cat.code || '',
+          name: cat.name,
+          catalogName: cat.name,
+          academicYearId: catMeta.academicYearId || academicYearId || '',
+          academicYearName: '',
+          campusId: '',
+          campusCode: 'Toàn trường',
+          campusName: 'Toàn trường',
+          educationLevel: catMeta.educationLevels?.[0] || cat.level || '',
+          grades: catGrades,
+          departmentId: null,
+          departmentName: null,
+          subjectId: null,
+          subjectName: catMeta.primarySubjectName || null,
+          tcmOrSubjectLabel: catMeta.primarySubjectName || catMeta.integratedSubjects || 'Toàn trường',
+          date: '',
+          timeRange: catMeta.timeFrame || '',
+          location: catMeta.expectedLocation || 'Theo kế hoạch',
+          teacherId: catMeta.cthsTeacherId || '',
+          teacherName: catMeta.cthsTeacherName || 'BP HĐNGLL - Tổ CTHS',
+          creatorName: catMeta.cthsTeacherName || 'BP HĐNGLL - Tổ CTHS',
+          creatorEmail: catMeta.cthsTeacherEmail || '',
+          creatorRole: 'CTHS',
+          description: catMeta.notes || catMeta.educationalContent || '',
+          objectives: catMeta.learningOutcomes || '',
+          strand: 'BAN_THAN',
+          activityTypeId: isEventCat ? 'SU_KIEN' : 'DU_AN',
+          activityTypeName: isEventCat ? 'Hoạt động sự kiện' : 'Trải nghiệm / Dự án',
+          scale: 'TOAN_TRUONG',
+          evalMode: evalCfg.mode || (isEventCat ? 'ROLE_BASED' : 'CRITERIA'),
+          criteria: evalCfg.criteria || [],
+          formulaType: evalCfg.formulaType === 'AVERAGE' ? 'EQUAL_WEIGHT' : 'WEIGHTED',
+          thresholds: { outstanding: 85, good: 70, pass: 50 },
+          mandatoryRules: [],
+          deadline: '',
+          status: 'ASSIGNED',
+          assignedClasses: [],
+          myAssignedClass: null,
+          isGVBM: true,
+          isGVCN: true,
+          hasTcmOrSubject: true,
+          assignedRole: isManagement ? 'ADMIN' : 'GVCN',
+          roleBadgeLabel: isEventCat ? '🎪 Sự kiện ngoại khóa' : '🌟 Kế hoạch HĐTN',
+          roleBadgeTheme: isEventCat ? 'purple' : 'teal',
+          matchedRoleLabel: isEventCat ? '🎪 Sự kiện ngoại khóa' : '🌟 Kế hoạch HĐTN',
+          isMyCreated: true,
+          isAssignedToMe: true,
+          canManage: true,
+          isTeacherOnly: false,
+          participantsCount: 0,
+          totalClassesCount: catGrades.length,
+          completedClassesCount: 0,
+          inProgressClassesCount: 0,
+          isVisibleToTeacher: true,
+          isFromCatalog: true,
+          createdAt: cat.createdAt.toISOString(),
+          updatedAt: cat.updatedAt.toISOString()
+        });
+      }
+    } catch (catErr) {
+      console.error('Error fetching activity catalogs in list API:', catErr);
+    }
+
     // For regular teachers, strictly filter to ONLY visible activities
     let result = formatted;
     if (!isManagement) {

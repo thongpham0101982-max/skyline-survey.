@@ -16,10 +16,10 @@ const summaryRows = [
   ['Ngày trích xuất dữ liệu: 29/09/2026'],
   [],
   ['STT', 'Bậc học', 'Quy mô Khối', 'Chuẩn Đạt điểm', 'Tổng số HS', 'Tổng lượt bài thi', 'Số bài Đạt chuẩn', 'Tỷ lệ Đạt chuẩn', 'Số bài Dưới TB (< 5.0)', 'Tỷ lệ Dưới TB', 'Số bài Giỏi (8-10)', 'Tỷ lệ Giỏi'],
-  [1, 'Tiểu học', 'Khối 2 - 5', 'Điểm ≥ 7.0', 878, 2624, 2335, '89.0%', 53, '2.0%', 2002, '76.3%'],
-  [2, 'THCS', 'Khối 6 - 9', 'Điểm ≥ 5.0', 673, 2095, 1785, '85.2%', 310, '14.8%', 838, '40.0%'],
-  [3, 'THPT', 'Khối 10 - 12', 'Điểm ≥ 5.0', 148, 508, 334, '65.7%', 174, '34.3%', 76, '15.0%'],
-  ['-', 'TOÀN TRƯỜNG', 'Khối 2 - 12', 'Theo bậc học', 1699, 5227, 4454, '85.2%', 537, '10.3%', 2916, '55.8%'],
+  [1, 'Tiểu học', 'Khối 2 - 5', 'Điểm ≥ 7.0', 878, 2624, 2335, '89.0%', 49, '1.9%', 2002, '76.3%'],
+  [2, 'THCS', 'Khối 6 - 9', 'Điểm ≥ 5.0', 673, 2095, 1785, '85.2%', 243, '11.6%', 838, '40.0%'],
+  [3, 'THPT', 'Khối 10 - 12', 'Điểm ≥ 5.0', 148, 508, 334, '65.7%', 172, '33.9%', 76, '15.0%'],
+  ['-', 'TOÀN TRƯỜNG', 'Khối 2 - 12', 'Theo bậc học', 1699, 5227, 4454, '85.2%', 464, '8.9%', 2916, '55.8%'],
   [],
   ['THỐNG KÊ HỌC SINH CAM KẾT ĐẦU VÀO (CKĐV) ĐÃ HOÀN TẤT NHẬP HỌC (COMPLETED)'],
   ['STT', 'Cơ sở trường', 'Số HS Tuyển mới Nhập học', 'Số HS CKĐV ĐÃ NHẬP HỌC', 'Tỷ lệ CKĐV / Tuyển mới', 'Môn cam kết chủ đạo'],
@@ -160,25 +160,7 @@ createLevelSheet('Tiểu học', '≥ 7.0', 'Tieu_Hoc_Theo_CS');
 createLevelSheet('THCS', '≥ 5.0', 'THCS_Theo_CS');
 createLevelSheet('THPT', '≥ 5.0', 'THPT_Theo_CS');
 
-// 2. Sheet 7 Môn Tự Chọn THPT Khối 12
-const thptElectivesRows = [
-  ['THỐNG KÊ CHI TIẾT 7 MÔN TỰ CHỌN KHỐI 12 THEO CƠ SỞ (NGOÀI TOÁN - VĂN - ANH)'],
-  ['* Áp dụng cho học sinh Khối 12 làm bài khảo sát định hướng tốt nghiệp THPT theo tổ hợp môn'],
-  [],
-  ['STT', 'Cơ sở', 'Môn học tự chọn', 'Khối lớp', 'Số HS khảo sát', 'Điểm dưới TB (< 5.0)', 'Tỷ lệ < 5.0', 'Điểm Chuẩn (≥ 5.0)', 'Tỷ lệ Đạt chuẩn', 'Điểm 8 đến 10 (Giỏi)', 'Tỷ lệ Giỏi'],
-  [1, 'CS1', 'Vật lí', 'Khối 12', 13, 2, '15.4%', 11, '84.6%', 2, '15.4%'],
-  [2, 'CS1', 'Hóa học', 'Khối 12', 11, 4, '36.4%', 7, '63.6%', 2, '18.2%'],
-  [3, 'CS1', 'Sinh học', 'Khối 12', 10, 0, '0.0%', 10, '100.0%', 3, '30.0%'],
-  [4, 'CS1', 'Lịch sử', 'Khối 12', 11, 5, '45.5%', 6, '54.5%', 0, '0.0%'],
-  [5, 'CS1', 'Địa lí', 'Khối 12', 11, 0, '0.0%', 11, '100.0%', 2, '18.2%'],
-  [6, 'CS1', 'GD Kinh tế & Pháp luật', 'Khối 12', 11, 0, '0.0%', 11, '100.0%', 3, '27.3%'],
-  [7, 'CS1', 'Tin học / ICT', 'Khối 12', 4, 1, '25.0%', 3, '75.0%', 0, '0.0%'],
-  ['-', 'CS1', 'TỔNG 7 MÔN TỰ CHỌN K12', 'Khối 12', 71, 12, '16.9%', 59, '83.1%', 12, '16.9%']
-];
-const wsElectives = XLSX.utils.aoa_to_sheet(thptElectivesRows);
-XLSX.utils.book_append_sheet(wb, wsElectives, 'THPT_7_Mon_Tu_Chon_K12');
-
-// 3. Sheet MỚI: Thống kê Học Sinh Chưa Đủ Điểm KSĐV
+// 2. Sheet Thống kê Học Sinh Chưa Đủ Điểm KSĐV
 const missingStudents = ckdvData.filter(s => s.ksdvStatus !== 'Đủ điểm');
 const missingRows = [
   ['BẢNG THỐNG KÊ CHI TIẾT HỌC SINH CKĐV CHƯA CÓ ĐIỂM KSĐV HOẶC THIẾU MÔN CAM KẾT'],

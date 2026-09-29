@@ -46,7 +46,72 @@ export async function GET(
     });
 
     if (!activity) {
-      return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
+      // Tìm trong ActivityCatalog nếu chưa có ActivityRecord
+      const catalog = await prisma.activityCatalog.findUnique({
+        where: { id },
+        include: {
+          group: true,
+          type: true,
+          theme: true
+        }
+      });
+
+      if (!catalog) {
+        return NextResponse.json({ error: "Không tìm thấy hoạt động" }, { status: 404 });
+      }
+
+      const catMeta = parseDbJson<any>(catalog.description, {});
+      const evalCfg = catMeta.evaluationConfig || {};
+      const isEvent = catMeta.activityCategory === 'HOAT_DONG_SU_KIEN';
+
+      return NextResponse.json({
+        id: catalog.id,
+        code: catalog.code,
+        name: catalog.name,
+        academicYearId: catMeta.academicYearId || "",
+        campusId: "",
+        campusCode: "Toàn trường",
+        campusName: "Toàn trường",
+        selectedCampusIds: [],
+        educationLevel: catMeta.educationLevels?.[0] || catalog.level || "PHO_THONG",
+        activityCategory: catMeta.activityCategory || (isEvent ? 'HOAT_DONG_SU_KIEN' : 'TRAI_NGHIEM_DU_AN'),
+        themeName: catMeta.themeName || "",
+        deliverables: catMeta.deliverables || "",
+        cthsTeachers: catMeta.cthsTeachers || [],
+        evaluationConfig: evalCfg,
+        grades: catMeta.grades || [],
+        subjectId: null,
+        subjectName: catMeta.primarySubjectName || null,
+        date: "",
+        timeRange: catMeta.timeFrame || "",
+        location: catMeta.expectedLocation || "Theo kế hoạch",
+        description: catMeta.notes || catMeta.educationalContent || "",
+        objectives: catMeta.learningOutcomes || "",
+        evidenceUrls: [],
+        strand: "BAN_THAN",
+        activityTypeId: isEvent ? "SU_KIEN" : "DU_AN",
+        activityTypeName: isEvent ? "Hoạt động sự kiện" : "Trải nghiệm / Dự án",
+        scale: "TOAN_TRUONG",
+        evalMode: evalCfg.mode || (isEvent ? "ROLE_BASED" : "CRITERIA"),
+        formulaType: evalCfg.formulaType === 'AVERAGE' ? 'EQUAL_WEIGHT' : 'WEIGHTED',
+        criteria: evalCfg.criteria || [],
+        thresholds: { outstanding: 85, good: 70, pass: 50 },
+        mandatoryRules: [],
+        hasRoleAssessment: true,
+        rolesList: evalCfg.rolesList || [],
+        completionBenchmark: evalCfg.completionBenchmark || '',
+        status: "ASSIGNED",
+        deadline: "",
+        assignedClasses: [],
+        emailSettings: null,
+        creatorName: catMeta.cthsTeacherName || "BP HĐNGLL - Tổ CTHS",
+        creatorEmail: catMeta.cthsTeacherEmail || null,
+        creatorRole: "CTHS",
+        creatorUserId: null,
+        canManage: true,
+        isMyCreated: true,
+        students: []
+      });
     }
 
     const session = await auth();
