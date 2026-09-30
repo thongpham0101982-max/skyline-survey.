@@ -745,6 +745,15 @@ export function AdminTongHopClient({
     return `${yyyy}-${mm}`;
   }, []);
 
+  // Dedicated Modal & Email states for GĐCS
+  const [isGdcsEmailModalOpen, setIsGdcsEmailModalOpen] = useState(false);
+  const [selectedGdcsForEmail, setSelectedGdcsForEmail] = useState<any>(null);
+  const [gdcsEmailMode, setGdcsEmailMode] = useState<"single" | "batch" | "summary">("single");
+  const [gdcsEmailTo, setGdcsEmailTo] = useState("");
+  const [gdcsEmailCc, setGdcsEmailCc] = useState("bankhaothi@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
+  const [gdcsEmailNotes, setGdcsEmailNotes] = useState("");
+  const [sendingGdcsEmail, setSendingGdcsEmail] = useState(false);
+
   // Cấu hình Tự động gửi email đến TTCM vào ngày cuối cùng của tháng
   const [isAutoEmailModalOpen, setIsAutoEmailModalOpen] = useState(false);
   const [autoEmailConfig, setAutoEmailConfig] = useState<{
@@ -2188,12 +2197,71 @@ export function AdminTongHopClient({
   }, [gdcsMonthlyData]);
 
   const openEmailModalForGDCS = (gdcs: any) => {
-    setSelectedTeacherId(gdcs.id);
-    setEmailTo(gdcs.email || "");
-    setEmailCc("bankhaothi@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
-    setEmailMonth(gdcsMonth !== "all" ? gdcsMonth : (selectedMonth !== "all" ? selectedMonth : (availableMonths[0] || "all")));
-    setEmailNotes(`[Thông báo tiến độ dự giờ] Kính gửi GĐCS ${gdcs.name} (${gdcs.campus}). Tiến độ dự giờ kỳ này: đã dự ${gdcs.totalAttended}/${gdcs.reqObserved} tiết (${gdcs.progressPct}% chỉ tiêu). Số phiếu đã hoàn tất đánh giá: ${gdcs.evaluatedCount}, số phiếu tồn đọng cần chấm: ${gdcs.pendingCount}.`);
-    setIsEmailModalOpen(true);
+    setSelectedGdcsForEmail(gdcs);
+    setGdcsEmailMode("single");
+    setGdcsEmailTo(gdcs.email || "");
+    setGdcsEmailCc("bankhaothi@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
+    setGdcsEmailNotes(`Kính gửi Thầy/Cô ${gdcs.name} (${gdcs.campus}). Ban Đào tạo & Khảo thí ĐBCL xin gửi thông báo cập nhật tiến độ số tiết dự giờ và tiết dạy trong kỳ.`);
+    setIsGdcsEmailModalOpen(true);
+  };
+
+  const openBatchEmailModalForGDCS = () => {
+    setSelectedGdcsForEmail(null);
+    setGdcsEmailMode("batch");
+    setGdcsEmailTo("");
+    setGdcsEmailCc("bankhaothi@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
+    setGdcsEmailNotes("Kính gửi Quý Giám đốc Cơ sở. Ban Đào tạo & Khảo thí ĐBCL xin gửi thông báo đối chiếu tiến độ số tiết dự giờ và tiết dạy định kỳ của Quý Thầy/Cô.");
+    setIsGdcsEmailModalOpen(true);
+  };
+
+  const openSummaryEmailModalForGDCS = () => {
+    setSelectedGdcsForEmail(null);
+    setGdcsEmailMode("summary");
+    setGdcsEmailTo("bgh@skylineschool.edu.vn");
+    setGdcsEmailCc("bankhaothi@skylineschool.edu.vn");
+    setGdcsEmailNotes("Kính gửi Ban Giám Hiệu & Ban Điều Hành Chuyên Môn. Hệ thống xin gửi báo cáo tổng hợp tiến độ thực hiện chỉ tiêu dự giờ của 5 Giám đốc Cơ sở toàn trường.");
+    setIsGdcsEmailModalOpen(true);
+  };
+
+  const handleSendGdcsEmail = async () => {
+    if (gdcsEmailMode === "single" && (!gdcsEmailTo || !gdcsEmailTo.includes("@"))) {
+      toast.error("Vui lòng nhập địa chỉ email người nhận hợp lệ");
+      return;
+    }
+    if (gdcsEmailMode === "summary" && (!gdcsEmailTo || !gdcsEmailTo.includes("@"))) {
+      toast.error("Vui lòng nhập địa chỉ email nhận báo cáo tổng hợp");
+      return;
+    }
+
+    setSendingGdcsEmail(true);
+    try {
+      const res = await fetch("/api/admin/du-gio/send-gdcs-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: gdcsEmailMode,
+          gdcs: selectedGdcsForEmail,
+          gdcsList: filteredGdcsMonthlyData,
+          overallStats: gdcsOverallStats,
+          toEmail: gdcsEmailTo,
+          customCc: gdcsEmailCc,
+          month: gdcsMonth,
+          notes: gdcsEmailNotes
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || "Đã gửi email báo cáo thành công!");
+        setIsGdcsEmailModalOpen(false);
+      } else {
+        toast.error(data.error || "Gửi email thất bại");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi kết nối khi gửi email");
+    } finally {
+      setSendingGdcsEmail(false);
+    }
   };
 
   // Render function for GĐCS Tracking Section
@@ -2274,14 +2342,26 @@ export function AdminTongHopClient({
                 />
               </div>
 
-              {/* Nút gửi email báo cáo toàn khối */}
+              {/* Nút gửi email từng GĐCS đồng loạt */}
               <button
                 type="button"
-                onClick={openAllDeptsEmailModal}
-                className="px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                onClick={openBatchEmailModalForGDCS}
+                className="px-3.5 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                title="Gửi email thông báo số tiết dự và dạy riêng cho từng Giám đốc Cơ sở"
               >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Báo cáo cho Ban ĐHCM</span>
+                <Mail className="w-3.5 h-3.5 text-teal-300" />
+                <span>Gửi email cho 5 GĐCS</span>
+              </button>
+
+              {/* Nút gửi email báo cáo tổng hợp toàn khối */}
+              <button
+                type="button"
+                onClick={openSummaryEmailModalForGDCS}
+                className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
+                title="Gửi bảng tổng hợp tiến độ 5 GĐCS cho Ban Giám Hiệu / Ban ĐHCM"
+              >
+                <Send className="w-3.5 h-3.5 text-slate-600" />
+                <span>Báo cáo Ban ĐHCM</span>
               </button>
             </div>
           </div>
@@ -2362,6 +2442,28 @@ export function AdminTongHopClient({
               <p className="text-xs text-slate-500 mt-1">
                 Nhấn vào dòng hoặc nút <strong>Xem chi tiết</strong> để mở danh sách toàn bộ các tiết dự giờ của GĐCS đó
               </p>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={openBatchEmailModalForGDCS}
+                className="px-3.5 py-1.5 rounded-xl border border-teal-300 bg-teal-50 hover:bg-teal-100 text-[#003B3A] font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                title="Gửi email riêng thông báo tiến độ cho từng Giám đốc Cơ sở"
+              >
+                <Mail className="w-3.5 h-3.5 text-teal-700" />
+                <span>Gửi email 5 GĐCS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={openSummaryEmailModalForGDCS}
+                className="px-3.5 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                title="Gửi báo cáo tổng hợp tiến độ 5 GĐCS về Ban ĐHCM / BGH"
+              >
+                <Send className="w-3.5 h-3.5 text-[#48BFE3]" />
+                <span>Báo cáo Ban ĐHCM</span>
+              </button>
             </div>
           </div>
 
@@ -5976,6 +6078,336 @@ export function AdminTongHopClient({
                   <>
                     <Send className="w-3.5 h-3.5 text-[#48BFE3]" />
                     <span>Xác nhận Gửi Email cho TTCM</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Chuyên Biệt: Gửi Email Báo Cáo Số Tiết Dự & Dạy đến GĐCS */}
+      {isGdcsEmailModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-3xl w-full p-5 sm:p-6 space-y-4 my-auto animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 bg-gradient-to-br from-[#003B3A] to-[#48BFE3] text-white rounded-xl shadow-xs">
+                  <ShieldCheck className="w-4 h-4 text-emerald-300" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-800">
+                    {gdcsEmailMode === "single"
+                      ? `Gửi Email Tiến Độ Dự Giờ & Dạy - GĐCS ${selectedGdcsForEmail?.name}`
+                      : gdcsEmailMode === "batch"
+                      ? "Gửi Email Thông Báo Tiến Độ Cho 5 Giám Đốc Cơ Sở"
+                      : "Gửi Báo Cáo Tổng Hợp Tiến Độ Khối GĐCS Cho Ban ĐHCM"}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {gdcsEmailMode === "single"
+                      ? `Cơ sở: ${selectedGdcsForEmail?.campus} • Mã NV: ${selectedGdcsForEmail?.teacherCode}`
+                      : gdcsEmailMode === "batch"
+                      ? "Hệ thống sẽ gửi riêng email kèm chi tiết các tiết dự giờ đến hòm thư từng GĐCS"
+                      : "Gửi bảng tổng hợp đối chiếu chỉ tiêu dự giờ toàn bộ 5 Giám đốc Cơ sở"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGdcsEmailModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setGdcsEmailMode("single");
+                  if (!selectedGdcsForEmail && filteredGdcsMonthlyData.length > 0) {
+                    setSelectedGdcsForEmail(filteredGdcsMonthlyData[0]);
+                    setGdcsEmailTo(filteredGdcsMonthlyData[0].email || "");
+                  }
+                }}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  gdcsEmailMode === "single"
+                    ? "bg-white text-slate-900 shadow-2xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                }`}
+              >
+                Gửi 1 GĐCS
+              </button>
+              <button
+                type="button"
+                onClick={() => setGdcsEmailMode("batch")}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  gdcsEmailMode === "batch"
+                    ? "bg-[#003B3A] text-white shadow-2xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                }`}
+              >
+                Gửi riêng 5 GĐCS (Đồng loạt)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setGdcsEmailMode("summary");
+                  setGdcsEmailTo("bgh@skylineschool.edu.vn");
+                }}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  gdcsEmailMode === "summary"
+                    ? "bg-white text-slate-900 shadow-2xs font-extrabold"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                }`}
+              >
+                Báo cáo tổng hợp (BGH)
+              </button>
+            </div>
+
+            {/* Scrollable Form Body */}
+            <div className="space-y-3.5 overflow-y-auto pr-1 flex-1">
+              {/* Row 1: Target GĐCS or Recipient Email */}
+              {gdcsEmailMode === "single" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider block">
+                      Chọn Giám đốc Cơ sở:
+                    </label>
+                    <select
+                      value={selectedGdcsForEmail?.id || ""}
+                      onChange={(e) => {
+                        const target = filteredGdcsMonthlyData.find((g: any) => g.id === e.target.value);
+                        if (target) {
+                          setSelectedGdcsForEmail(target);
+                          setGdcsEmailTo(target.email || "");
+                        }
+                      }}
+                      className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none cursor-pointer"
+                    >
+                      {filteredGdcsMonthlyData.map((g: any) => (
+                        <option key={g.id} value={g.id}>
+                          {g.name} - {g.campus} ({g.email || "Chưa có email"})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider block">
+                      Email người nhận (To): *
+                    </label>
+                    <input
+                      type="email"
+                      value={gdcsEmailTo}
+                      onChange={e => setGdcsEmailTo(e.target.value)}
+                      placeholder="Nhập email GĐCS..."
+                      className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                    />
+                  </div>
+                </div>
+              ) : gdcsEmailMode === "batch" ? (
+                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                    <span>Danh sách 5 Giám đốc Cơ sở nhận email riêng:</span>
+                    <span className="text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200 text-[10px]">
+                      {filteredGdcsMonthlyData.filter((g: any) => g.email && g.email.includes("@")).length}/5 có email
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {filteredGdcsMonthlyData.map((g: any, idx: number) => (
+                      <div key={g.id} className="p-2 bg-white rounded-xl border border-slate-200/80 flex items-center justify-between">
+                        <div>
+                          <div className="font-bold text-slate-900">{idx + 1}. {g.name}</div>
+                          <div className="text-[10px] text-slate-500 font-mono">{g.email || "Chưa có email"}</div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+                          {g.campus}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1 sm:col-span-2">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider block">
+                      Email Ban ĐHCM / Ban Giám Hiệu nhận báo cáo (To): *
+                    </label>
+                    <input
+                      type="email"
+                      value={gdcsEmailTo}
+                      onChange={e => setGdcsEmailTo(e.target.value)}
+                      placeholder="VD: bgh@skylineschool.edu.vn..."
+                      className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Row 2: CC and Month */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    Đồng kính gửi (CC) (Tùy chọn)
+                  </label>
+                  <input
+                    type="text"
+                    value={gdcsEmailCc}
+                    onChange={e => setGdcsEmailCc(e.target.value)}
+                    placeholder="VD: bankhaothi@skylineschool.edu.vn..."
+                    className="w-full text-xs font-medium p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    Kỳ báo cáo
+                  </label>
+                  <select
+                    value={gdcsMonth}
+                    onChange={e => setGdcsMonth(e.target.value)}
+                    className="w-full text-xs font-bold p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none cursor-pointer"
+                  >
+                    <option value="all">Toàn bộ năm học</option>
+                    {availableMonths.map(m => {
+                      const [yyyy, mm] = m.split("-");
+                      return (
+                        <option key={m} value={m}>
+                          Tháng {mm}/{yyyy}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                  Ghi chú / Nhắc nhở thêm:
+                </label>
+                <textarea
+                  rows={2}
+                  value={gdcsEmailNotes}
+                  onChange={e => setGdcsEmailNotes(e.target.value)}
+                  placeholder="Nhập nội dung chỉ đạo hoặc lưu ý kèm theo..."
+                  className="w-full text-xs font-medium p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none resize-none"
+                />
+              </div>
+
+              {/* Single Mode Live Preview */}
+              {gdcsEmailMode === "single" && selectedGdcsForEmail && (
+                <div className="space-y-2">
+                  <div className="p-3 bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl border border-teal-200 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                    <div>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase block">Đã tham gia dự</span>
+                      <strong className="text-sm font-black text-[#003B3A]">
+                        {selectedGdcsForEmail.totalAttended} / {selectedGdcsForEmail.reqObserved} tiết
+                      </strong>
+                      <span className="text-[9px] text-teal-700 block font-semibold">({selectedGdcsForEmail.progressPct}%)</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase block">Số tiết dạy</span>
+                      <strong className="text-sm font-black text-slate-800">
+                        {selectedGdcsForEmail.totalTaught || 0} tiết
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase block">Dự chéo cơ sở</span>
+                      <strong className="text-sm font-black text-indigo-700">
+                        {selectedGdcsForEmail.crossCount || 0} tiết
+                      </strong>
+                      <span className="text-[9px] text-indigo-600 block font-semibold">
+                        ({selectedGdcsForEmail.totalAttended > 0 ? Math.round((selectedGdcsForEmail.crossCount / selectedGdcsForEmail.totalAttended) * 100) : 0}%)
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-500 font-bold uppercase block">Phiếu đánh giá</span>
+                      <strong className={`text-sm font-black ${selectedGdcsForEmail.pendingCount > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+                        {selectedGdcsForEmail.evaluatedCount} đã nộp
+                      </strong>
+                      {selectedGdcsForEmail.pendingCount > 0 && (
+                        <span className="text-[9px] text-rose-600 block font-bold">
+                          ⚠️ {selectedGdcsForEmail.pendingCount} phiếu chờ chấm
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* List of slots preview */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                    <table className="w-full text-left border-collapse text-[11px]">
+                      <thead className="bg-slate-50 sticky top-0 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200">
+                        <tr>
+                          <th className="p-2 text-center w-8">STT</th>
+                          <th className="p-2">Ngày & Tiết</th>
+                          <th className="p-2">GV được dự</th>
+                          <th className="p-2">Môn / Lớp</th>
+                          <th className="p-2 text-center">Cơ sở</th>
+                          <th className="p-2 text-center">Điểm số</th>
+                          <th className="p-2 text-center">Trạng thái</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {selectedGdcsForEmail.details?.map((d: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="p-2 text-center font-bold text-slate-400">{idx + 1}</td>
+                            <td className="p-2">
+                              <span className="font-bold text-slate-800">{d.date}</span>
+                              <span className="text-[10px] text-slate-400 block">Tiết {d.period}</span>
+                            </td>
+                            <td className="p-2 font-semibold text-slate-900">{d.hostTeacherName}</td>
+                            <td className="p-2 text-slate-600">{d.subjectName} ({d.className})</td>
+                            <td className="p-2 text-center text-slate-700">{d.campusName}</td>
+                            <td className="p-2 text-center font-bold text-slate-800">{d.evalScore !== null ? `${d.evalScore}/20đ` : "—"}</td>
+                            <td className="p-2 text-center font-bold">
+                              {d.evalStatus === "FINAL" || d.evalStatus === "COMPLETED" 
+                                ? <span className="text-emerald-700">✓ Đã nộp</span>
+                                : <span className="text-amber-700">⏳ Chờ nộp</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsGdcsEmailModalOpen(false)}
+                disabled={sendingGdcsEmail}
+                className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 font-bold text-xs cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSendGdcsEmail}
+                disabled={sendingGdcsEmail}
+                className="px-5 py-2.5 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-black text-xs shadow-md flex items-center gap-1.5 disabled:opacity-50 transition-all cursor-pointer"
+              >
+                {sendingGdcsEmail ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Đang gửi email...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5 text-[#48BFE3]" />
+                    <span>
+                      {gdcsEmailMode === "single"
+                        ? `Xác nhận gửi email cho GĐCS ${selectedGdcsForEmail?.name || ""}`
+                        : gdcsEmailMode === "batch"
+                        ? "Xác nhận gửi email riêng cho cả 5 GĐCS"
+                        : "Xác nhận gửi báo cáo tổng hợp đến BGH"}
+                    </span>
                   </>
                 )}
               </button>
