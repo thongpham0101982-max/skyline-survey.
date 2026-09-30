@@ -145,7 +145,8 @@ export function AdminTongHopClient({
     ? currentTeacher.departmentId
     : (activeDepartments.find(d => d.id === initialFilters.deptId)?.id || activeDepartments[0]?.id || "");
 
-  const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
+  const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId);
+  const selectedDeptName = departments.find(d => d.id === selectedDeptId)?.name || "Chưa xác định";
 
   useEffect(() => {
     if (!isRestrictedTTCM) {
@@ -602,7 +603,6 @@ export function AdminTongHopClient({
     return sum / passedEvals.length;
   };
 
-  const selectedDeptName = departments.find(d => d.id === selectedDeptId)?.name || "Chưa xác định";
 
   const selTeacherSlots = useMemo(() => {
     if (!selectedTeacherId) return [];
