@@ -7605,12 +7605,35 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                       {(() => {
                         const scoresList = [...(selectedReportStudent.scores || [])];
                         
-                        const getNumericGrade = (g) => {
+                        const getNumericGrade = (g: any) => {
                           if (!g) return null;
                           const match = g.toString().match(/\d+/);
                           return match ? parseInt(match[0], 10) : null;
                         };
-                        const isGrade1 = getNumericGrade(selectedReportStudent.grade) === 1;
+                        const studentNumGrade = getNumericGrade(selectedReportStudent.grade);
+                        const isGrade1 = studentNumGrade === 1;
+                        const isGrade2 = studentNumGrade === 2;
+                        
+                        const parseMaxFromComment = (commentVal: any) => {
+                          if (!commentVal) return null;
+                          let text = "";
+                          if (Array.isArray(commentVal)) {
+                            text = commentVal.join(" ");
+                          } else if (typeof commentVal === "string") {
+                            try {
+                              const p = JSON.parse(commentVal);
+                              text = Array.isArray(p) ? p.join(" ") : String(p || "");
+                            } catch {
+                              text = commentVal;
+                            }
+                          }
+                          const m = text.match(/(?:Note:\s*)?(?:\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/i);
+                          if (m && m[1]) {
+                            const num = parseFloat(m[1]);
+                            if (!isNaN(num) && num > 0) return num;
+                          }
+                          return null;
+                        };
                         
                         const hasEnglish = scoresList.some((sc) => {
                           const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
@@ -7618,10 +7641,15 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           return sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl");
                         });
                         
-                        let oralScoreVal = null;
-                        let writtenScoreVal = null;
+                        let hasOralSubject = false;
+                        let hasWrittenSubject = false;
+                        let oralScoreVal: number | null = null;
+                        let writtenScoreVal: number | null = null;
                         let oralScoreText = "—";
                         let writtenScoreText = "—";
+                        let oralMaxScore = isGrade2 ? 10 : (studentNumGrade && studentNumGrade >= 7 ? 20 : 30);
+                        let writtenMaxScore = (studentNumGrade && studentNumGrade >= 7 ? 80 : 70);
+                        let totalMaxScore = 100;
                         
                         if (hasEnglish) {
                           scoresList.forEach((sc) => {
@@ -7637,12 +7665,27 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                 }
                               } catch {}
                               
+                              const maxFromCmt = parseMaxFromComment(sc.comments);
+                              
                               if (sName.includes("vấn đáp") || sName.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                                hasOralSubject = true;
+                                if (maxFromCmt) {
+                                  oralMaxScore = maxFromCmt;
+                                } else if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
+                                  const num = parseFloat(scoreVal);
+                                  if (!isNaN(num) && num <= 10 && (isGrade1 || isGrade2 || (studentNumGrade && studentNumGrade <= 5))) {
+                                    oralMaxScore = 10;
+                                  }
+                                }
                                 if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
                                   oralScoreVal = parseFloat(scoreVal);
                                   oralScoreText = scoreVal.toString();
                                 }
                               } else if (sName.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                hasWrittenSubject = true;
+                                if (maxFromCmt) {
+                                  writtenMaxScore = maxFromCmt;
+                                }
                                 if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
                                   writtenScoreVal = parseFloat(scoreVal);
                                   writtenScoreText = scoreVal.toString();
@@ -7652,8 +7695,27 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           });
                           
                           let totalVal = "—";
-                          if (oralScoreVal !== null || writtenScoreVal !== null) {
-                            totalVal = ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString();
+                          
+                          if (hasOralSubject && hasWrittenSubject) {
+                            if (oralScoreVal !== null || writtenScoreVal !== null) {
+                              const sum = (oralScoreVal || 0) + (writtenScoreVal || 0);
+                              totalVal = (Math.round(sum * 10) / 10).toString();
+                              totalMaxScore = oralMaxScore + writtenMaxScore;
+                            }
+                          } else if (hasOralSubject && !hasWrittenSubject) {
+                            totalMaxScore = oralMaxScore;
+                            if (oralScoreVal !== null) {
+                              totalVal = String(oralScoreVal);
+                            }
+                          } else if (!hasOralSubject && hasWrittenSubject) {
+                            totalMaxScore = writtenMaxScore;
+                            if (writtenScoreVal !== null) {
+                              totalVal = String(writtenScoreVal);
+                            }
+                          } else if (oralScoreVal !== null || writtenScoreVal !== null) {
+                            const sum = (oralScoreVal || 0) + (writtenScoreVal || 0);
+                            totalVal = (Math.round(sum * 10) / 10).toString();
+                            totalMaxScore = (oralScoreVal !== null ? oralMaxScore : 0) + (writtenScoreVal !== null ? writtenMaxScore : 0) || 100;
                           }
                           
                           if (!scoresList.some(s => s.id === "tong_diem_tieng_anh")) {
@@ -7742,16 +7804,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                             val = firstVal !== undefined ? firstVal.toString() : "—";
                                             badgeColor = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
                                             
-                                            if (!isGrade1) {
-                                              const sNameLower = sName.toLowerCase().normalize("NFC");
-                                              if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
-                                                if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
-                                                  val = firstVal !== undefined ? `${firstVal}/30` : "—/30";
-                                                } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
-                                                  val = firstVal !== undefined ? `${firstVal}/70` : "—/70";
-                                                } else if (sc.id === "tong_diem_tieng_anh") {
-                                                  val = firstVal !== undefined && firstVal !== "—" ? `${firstVal}/100` : "—/100";
-                                                }
+                                            const sNameLower = sName.toLowerCase().normalize("NFC");
+                                            if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                                              if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                                                val = firstVal !== undefined ? `${firstVal}/${oralMaxScore}` : `—/${oralMaxScore}`;
+                                              } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                                val = firstVal !== undefined ? `${firstVal}/${writtenMaxScore}` : `—/${writtenMaxScore}`;
+                                              } else if (sc.id === "tong_diem_tieng_anh") {
+                                                val = firstVal !== undefined && firstVal !== "—" ? `${firstVal}/${totalMaxScore}` : `—/${totalMaxScore}`;
                                               }
                                             }
                                           }
@@ -7842,20 +7902,25 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                             <div className="text-center shadow-sm flex flex-col justify-between text-slate-600 text-xs font-semibold">
                                               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Vấn đáp)</span>
                                               <div className="text-lg font-black mt-1 leading-none text-slate-800">
-                                                {oralScoreText !== "—" ? `${oralScoreText}/30` : "—/30"}
+                                                {hasOralSubject ? (oralScoreText !== "—" ? `${oralScoreText}/${oralMaxScore}` : `—/${oralMaxScore}`) : "Không khảo sát"}
                                               </div>
                                             </div>
                                             <div className="text-center shadow-sm flex flex-col justify-between text-slate-600 text-xs font-semibold">
                                               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Viết)</span>
                                               <div className="text-lg font-black mt-1 leading-none text-slate-800">
-                                                {writtenScoreText !== "—" ? `${writtenScoreText}/70` : "—/70"}
+                                                {hasWrittenSubject ? (writtenScoreText !== "—" ? `${writtenScoreText}/${writtenMaxScore}` : `—/${writtenMaxScore}`) : "Không khảo sát"}
                                               </div>
                                             </div>
                                             <div className="text-center shadow-sm flex flex-col justify-between text-indigo-700 text-xs font-semibold">
                                               <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tổng điểm</span>
                                               <div className="text-lg font-black mt-1 leading-none text-indigo-700">
-                                                {totalVal !== "—" ? `${totalVal}/100` : "—/100"}
+                                                {totalVal !== "—" ? `${totalVal}/${totalMaxScore}` : `—/${totalMaxScore}`}
                                               </div>
+                                              {totalVal !== "—" && totalMaxScore === 10 && (
+                                                <span className="text-[8px] text-indigo-500 font-bold mt-1 block">
+                                                  Quy đổi: {parseFloat(totalVal) * 10}/100
+                                                </span>
+                                              )}
                                             </div>
                                           </div>
                                         </div>
@@ -8188,13 +8253,13 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                               let displayVal = val !== undefined && val !== "" && val !== null ? val : "—";
                                               if (subCode.includes("nltd")) {
                                                 displayVal = val !== undefined && val !== "" && val !== null ? `${val}%` : "—%";
-                                              } else if (!isGrade1) {
+                                              } else {
                                                 const sNameLower = subName.toLowerCase().normalize("NFC");
                                                 if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
                                                   if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("speaking") || subCode.includes("oral") || subCode.includes("vd")) {
-                                                    displayVal = val !== undefined && val !== "" && val !== null ? `${val}/30` : "—/30";
-                                                  } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
-                                                    displayVal = val !== undefined && val !== "" && val !== null ? `${val}/70` : "—/70";
+                                                    displayVal = val !== undefined && val !== "" && val !== null ? `${val}/${oralMaxScore}` : `—/${oralMaxScore}`;
+                                                  } else if (sNameLower.includes("viết") || subCode.includes("writing") || subCode.includes("written") || subCode.includes("vt")) {
+                                                    displayVal = val !== undefined && val !== "" && val !== null ? `${val}/${writtenMaxScore}` : `—/${writtenMaxScore}`;
                                                   }
                                                 }
                                               }

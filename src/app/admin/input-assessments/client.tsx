@@ -6658,16 +6658,14 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                     val = firstVal !== undefined ? firstVal.toString() : "—";
                                     badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
                                     
-                                    if (true) {
-                                      const sNameLower = sName.toLowerCase().normalize("NFC");
-                                      if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
-                                        if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
-                                          val = firstVal !== undefined ? `${firstVal}/30` : "—/30";
-                                        } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
-                                          val = firstVal !== undefined ? `${firstVal}/70` : "—/70";
-                                        } else if (sc.id === "tong_diem_tieng_anh") {
-                                          val = firstVal !== undefined && firstVal !== "—" ? `${firstVal}/100` : "—/100";
-                                        }
+                                    const sNameLower = sName.toLowerCase().normalize("NFC");
+                                    if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                                      if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                                        val = firstVal !== undefined ? `${firstVal}/${oralMaxScore}` : `—/${oralMaxScore}`;
+                                      } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                        val = firstVal !== undefined ? `${firstVal}/${writtenMaxScore}` : `—/${writtenMaxScore}`;
+                                      } else if (sc.id === "tong_diem_tieng_anh") {
+                                        val = firstVal !== undefined && firstVal !== "—" ? `${firstVal}/${totalMaxScore}` : `—/${totalMaxScore}`;
                                       }
                                     }
                                   }

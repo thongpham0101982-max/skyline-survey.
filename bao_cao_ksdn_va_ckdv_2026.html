@@ -277,6 +277,88 @@
     .badge-growth { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
     .badge-psychology { background-color: var(--purple-bg); color: var(--purple); border: 1px solid #ddd6fe; font-weight: 700; }
 
+    /* Color coding for committed subjects & synchronized scores */
+    .badge-sub {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 11.5px;
+      margin: 2px 3px 2px 0;
+      white-space: nowrap;
+    }
+    .score-highlight {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 12.5px;
+      margin: 2px 3px 2px 0;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .score-dim {
+      display: inline-block;
+      padding: 2px 6px;
+      color: #64748b;
+      font-weight: 500;
+      font-size: 11.5px;
+      margin: 2px 2px;
+      white-space: nowrap;
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+
+    /* Tiếng Anh: Blue Theme */
+    .badge-eng, .score-eng {
+      background: #eff6ff !important;
+      color: #1d4ed8 !important;
+      border: 1.5px solid #93c5fd !important;
+    }
+
+    /* Toán: Emerald Theme */
+    .badge-math, .score-math {
+      background: #ecfdf5 !important;
+      color: #047857 !important;
+      border: 1.5px solid #86efac !important;
+    }
+
+    /* Tiếng Việt: Orange Theme */
+    .badge-viet, .score-viet {
+      background: #fff7ed !important;
+      color: #c2410c !important;
+      border: 1.5px solid #fdba74 !important;
+    }
+
+    /* Ngữ Văn: Rose Theme */
+    .badge-van, .score-van {
+      background: #fff1f2 !important;
+      color: #be123c !important;
+      border: 1.5px solid #fecdd3 !important;
+    }
+
+    /* Tâm lý: Purple Theme */
+    .badge-psy, .score-psy {
+      background: #faf5ff !important;
+      color: #7e22ce !important;
+      border: 1.5px solid #d8b4fe !important;
+    }
+
+    .badge-other {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    .missing-text {
+      color: #b45309;
+      font-size: 11px;
+      font-style: italic;
+      display: inline-block;
+      margin-left: 4px;
+    }
+
     /* Filter Bar */
     .filter-bar {
       background: white; border-radius: 10px; padding: 12px 16px; border: 1px solid var(--gray-200);
@@ -328,8 +410,8 @@
       </div>
     </div>
     <div class="action-buttons">
-      <button class="btn btn-outline" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">⬆ Đầu trang</button>
-      <button class="btn btn-primary" onclick="window.print()">🖨 In Báo Cáo / Xuất PDF</button>
+      <button class="btn btn-outline" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">Lên đầu trang</button>
+      <button class="btn btn-primary" onclick="window.print()">In Báo Cáo / Xuất PDF</button>
     </div>
   </header>
 
@@ -488,7 +570,7 @@
         • <strong>Cấu trúc bảng:</strong> Tách riêng từng cơ sở từ CS1 đến CS5; từng môn theo khối; có hàng <strong>Tổng cơ sở</strong> và hàng <strong>Tổng toàn bậc học</strong>.
       </div>
   
-      <h3 class="campus-title">🏫 CƠ SỞ: CS1 - BẬC TIỂU HỌC</h3>
+      <h3 class="campus-title">CƠ SỞ: CS1 - BẬC TIỂU HỌC</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -705,7 +787,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS2 - BẬC TIỂU HỌC</h3>
+      <h3 class="campus-title">CƠ SỞ: CS2 - BẬC TIỂU HỌC</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -896,7 +978,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS3 - BẬC TIỂU HỌC</h3>
+      <h3 class="campus-title">CƠ SỞ: CS3 - BẬC TIỂU HỌC</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -1087,7 +1169,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS4 - BẬC TIỂU HỌC</h3>
+      <h3 class="campus-title">CƠ SỞ: CS4 - BẬC TIỂU HỌC</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -1278,7 +1360,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS5 - BẬC TIỂU HỌC</h3>
+      <h3 class="campus-title">CƠ SỞ: CS5 - BẬC TIỂU HỌC</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -1551,7 +1633,7 @@
         <table class="report-table">
           <tbody>
             <tr class="total-row" style="font-size: 14.5px;">
-              <td style="width: 50px;">★</td>
+              <td style="width: 50px;">-</td>
               <td><strong>TỔNG TOÀN BẬC TIỂU HỌC (TẤT CẢ CƠ SỞ)</strong></td>
               <td><strong>Khối thuộc bậc</strong></td>
               <td><strong>2624</strong> lượt</td>
@@ -1579,7 +1661,7 @@
         • <strong>Cấu trúc bảng:</strong> Tách riêng từng cơ sở từ CS1 đến CS5; từng môn theo khối; có hàng <strong>Tổng cơ sở</strong> và hàng <strong>Tổng toàn bậc học</strong>.
       </div>
   
-      <h3 class="campus-title">🏫 CƠ SỞ: CS1 - BẬC THCS</h3>
+      <h3 class="campus-title">CƠ SỞ: CS1 - BẬC THCS</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -1770,7 +1852,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS3 - BẬC THCS</h3>
+      <h3 class="campus-title">CƠ SỞ: CS3 - BẬC THCS</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -1987,7 +2069,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS4 - BẬC THCS</h3>
+      <h3 class="campus-title">CƠ SỞ: CS4 - BẬC THCS</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -2178,7 +2260,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS5 - BẬC THCS</h3>
+      <h3 class="campus-title">CƠ SỞ: CS5 - BẬC THCS</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -2373,7 +2455,7 @@
         <table class="report-table">
           <tbody>
             <tr class="total-row" style="font-size: 14.5px;">
-              <td style="width: 50px;">★</td>
+              <td style="width: 50px;">-</td>
               <td><strong>TỔNG TOÀN BẬC THCS (TẤT CẢ CƠ SỞ)</strong></td>
               <td><strong>Khối thuộc bậc</strong></td>
               <td><strong>2095</strong> lượt</td>
@@ -2401,7 +2483,7 @@
         • <strong>Cấu trúc bảng:</strong> Tách riêng từng cơ sở từ CS1 đến CS5; từng môn theo khối; có hàng <strong>Tổng cơ sở</strong> và hàng <strong>Tổng toàn bậc học</strong>.
       </div>
   
-      <h3 class="campus-title">🏫 CƠ SỞ: CS1 - BẬC THPT</h3>
+      <h3 class="campus-title">CƠ SỞ: CS1 - BẬC THPT</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -2644,7 +2726,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS3 - BẬC THPT</h3>
+      <h3 class="campus-title">CƠ SỞ: CS3 - BẬC THPT</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -2848,7 +2930,7 @@
         </table>
       </div>
     
-      <h3 class="campus-title">🏫 CƠ SỞ: CS4 - BẬC THPT</h3>
+      <h3 class="campus-title">CƠ SỞ: CS4 - BẬC THPT</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -2991,7 +3073,7 @@
         <table class="report-table">
           <tbody>
             <tr class="total-row" style="font-size: 14.5px;">
-              <td style="width: 50px;">★</td>
+              <td style="width: 50px;">-</td>
               <td><strong>TỔNG TOÀN BẬC THPT (TẤT CẢ CƠ SỞ)</strong></td>
               <td><strong>Khối thuộc bậc</strong></td>
               <td><strong>508</strong> lượt</td>
@@ -3105,259 +3187,19 @@
         </table>
       </div>
 
-      <!-- BẢNG CHUYÊN ĐỀ MỚI: THỐNG KÊ HỌC SINH CHƯA CÓ / THIẾU ĐIỂM KSĐV -->
-      <h3 class="sub-section-title" style="margin-top: 36px; color: #b45309;">2. Bảng Thống kê Chi tiết Học sinh Chưa có Điểm KSĐV & Thiếu Điểm Môn Cam Kết (18 học sinh)</h3>
-      
-      <div class="alert alert-note" style="border-left-color: #d97706; background-color: #fffbeb;">
-        <strong>Phân loại nguyên nhân hồ sơ khảo sát đầu vào:</strong><br>
-        • <strong>Hoàn toàn chưa có điểm KSĐV (3 HS):</strong> Gồm 01 HS diện Tuyển thẳng (Lê Nguyên Khang - KSĐN đạt loại Giỏi: Toán 9.0, Tiếng Việt 8.0, Tiếng Anh 7.9); 01 HS Khối 1 cam kết theo dõi phát triển ngôn ngữ (Phan Hải Đăng); và 01 HS chưa cập nhật điểm bài thi Tiếng Anh trên hệ thống (Nguyễn Thanh Thảo).<br>
-        • <strong>Thiếu môn cam kết đầu vào (11 HS):</strong> Gồm 05 HS quốc tịch nước ngoài / song ngữ nhập học cần bồi dưỡng Tiếng Việt (chưa qua thi khảo sát Tiếng Việt đầu vào); 04 HS chưa nhập điểm môn Tiếng Anh trên hệ thống (đã có điểm Toán, Văn); 01 HS hệ Quốc tế chỉ thi bài EPT (Phan Anh Quân); 01 HS diện bảo lưu/miễn thi Toán (Mai Huy Thắng).<br>
-        • <strong>Cam kết Tâm lý (4 HS):</strong> Học sinh chỉ cam kết theo dõi tâm lý lứa tuổi, không thuộc diện cam kết văn hóa.
-      </div>
-
-      <div class="table-container">
-        <table class="report-table">
-          <thead>
-            <tr style="background: #fef3c7;">
-              <th style="width: 45px;">STT</th>
-              <th>Cơ sở</th>
-              <th>Họ và tên</th>
-              <th>Lớp & Khối</th>
-              <th>Môn Cam Kết</th>
-              <th>Phân loại Tình trạng</th>
-              <th>Điểm KSĐV Hiện Có</th>
-              <th>Điểm KSĐN Thực Tế</th>
-              <th>Nguyên nhân / Căn cứ Hồ sơ Tuyển sinh</th>
-            </tr>
-          </thead>
-          <tbody>
-
-            <tr>
-              <td>1</td>
-              <td><strong>CS1</strong></td>
-              <td><strong>Lê Nguyên Khang</strong></td>
-              <td><code>2.1_CS1</code> (Khối 2)</td>
-              <td>Tiếng Anh</td>
-              <td><span class="badge badge-danger">Chưa có điểm KSĐV</span></td>
-              <td><strong>—</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 9; Tiếng Việt: 8; Anh: 7.9</strong></td>
-              <td>Diện Tuyển thẳng (không phải thi khảo sát đầu vào)</td>
-            </tr>
-  
-            <tr>
-              <td>2</td>
-              <td><strong>CS1</strong></td>
-              <td><strong>Mai Huy Thắng</strong></td>
-              <td><code>7.1_CS1</code> (Khối 7)</td>
-              <td>Toán</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Ngữ Văn: 8; Anh: 8.0 (Tổng: 80)</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 8; Ngữ Văn: 7; Anh: 8.8</strong></td>
-              <td>Được bảo lưu/miễn thi Toán (đã có điểm Văn 8.0, Anh 8.0)</td>
-            </tr>
-  
-            <tr>
-              <td>3</td>
-              <td><strong>CS1</strong></td>
-              <td><strong>Trần Hoàng Anh </strong></td>
-              <td><code>9.2_CS1</code> (Khối 9)</td>
-              <td>Tiếng Anh, Toán</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Toán: 4; Ngữ Văn: 6.5</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 6.5; Ngữ Văn: 6; Anh: 4</strong></td>
-              <td>Môn Tiếng Anh chưa nhập điểm trên hệ thống (đã có điểm Toán, Văn)</td>
-            </tr>
-  
-            <tr>
-              <td>4</td>
-              <td><strong>CS1</strong></td>
-              <td><strong>Nguyễn Thanh Thảo</strong></td>
-              <td><code>9.4_CS1</code> (Khối 9)</td>
-              <td>Tiếng Anh</td>
-              <td><span class="badge badge-danger">Chưa có điểm KSĐV</span></td>
-              <td><strong>—</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 5; Ngữ Văn: 5.5; Anh: 4.6</strong></td>
-              <td>Chưa cập nhật điểm bài thi Tiếng Anh trên hệ thống</td>
-            </tr>
-  
-            <tr>
-              <td>5</td>
-              <td><strong>CS1</strong></td>
-              <td><strong>Lê Khánh Hà</strong></td>
-              <td><code>10.2_CS1</code> (Khối 10)</td>
-              <td>Toán, Tiếng Anh</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Toán: 4; Ngữ Văn: 7</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 7; Ngữ Văn: 4.5; Anh: 4</strong></td>
-              <td>Môn Tiếng Anh chưa nhập điểm trên hệ thống (đã có điểm Toán, Văn)</td>
-            </tr>
-  
-            <tr>
-              <td>6</td>
-              <td><strong>CS1</strong></td>
-              <td><strong>Ngô Thục Đan</strong></td>
-              <td><code>9.1_CS1</code> (Khối 9)</td>
-              <td>Tâm lý</td>
-              <td><span class="badge badge-psychology">Cam kết Tâm lý</span></td>
-              <td><strong>Toán: 5; Anh: 6.5 (Tổng: 65)</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 3; Ngữ Văn: 8.5; Anh: 7.5</strong></td>
-              <td>Chỉ cam kết theo dõi tâm lý lứa tuổi, không khảo sát văn hóa</td>
-            </tr>
-  
-            <tr>
-              <td>7</td>
-              <td><strong>CS1</strong></td>
-              <td><strong>Nguyễn Daniil</strong></td>
-              <td><code>1.1_CS1</code> (Khối 1)</td>
-              <td>Tiếng Việt</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Anh: 1.3 (Tổng: 13.3)</strong></td>
-              <td><strong style="color: #1e3a8a;">—</strong></td>
-              <td>Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)</td>
-            </tr>
-  
-            <tr>
-              <td>8</td>
-              <td><strong>CS1</strong></td>
-              <td><strong>Nguyễn Ngọc Minh</strong></td>
-              <td><code>7.2_CS1</code> (Khối 7)</td>
-              <td>Tiếng Anh</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Toán: 6; Ngữ Văn: 7</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 8.75; Ngữ Văn: 5.75; Anh: 4.1</strong></td>
-              <td>Môn Tiếng Anh chưa nhập điểm trên hệ thống (đã có điểm Toán, Văn)</td>
-            </tr>
-  
-            <tr>
-              <td>9</td>
-              <td><strong>CS2</strong></td>
-              <td><strong>Lê Gia Lân</strong></td>
-              <td><code>1.3_CS2</code> (Khối 1)</td>
-              <td>Tâm lý</td>
-              <td><span class="badge badge-psychology">Cam kết Tâm lý</span></td>
-              <td><strong>Anh: 2.3 (Tổng: 23.3)</strong></td>
-              <td><strong style="color: #1e3a8a;">—</strong></td>
-              <td>Chỉ cam kết theo dõi tâm lý lứa tuổi, không khảo sát văn hóa</td>
-            </tr>
-  
-            <tr>
-              <td>10</td>
-              <td><strong>CS2</strong></td>
-              <td><strong>Đào Trần Thảo Linh</strong></td>
-              <td><code>1.3_CS2</code> (Khối 1)</td>
-              <td>Tâm lý, Tiếng Việt</td>
-              <td><span class="badge badge-psychology">Cam kết Tâm lý</span></td>
-              <td><strong>Anh: 3.0 (Tổng: 30)</strong></td>
-              <td><strong style="color: #1e3a8a;">—</strong></td>
-              <td>Chỉ cam kết theo dõi tâm lý lứa tuổi, không khảo sát văn hóa</td>
-            </tr>
-  
-            <tr>
-              <td>11</td>
-              <td><strong>CS2</strong></td>
-              <td><strong>Phan Hải Đăng</strong></td>
-              <td><code>1.3_CS2</code> (Khối 1)</td>
-              <td>Chung / Theo dõi</td>
-              <td><span class="badge badge-danger">Chưa có điểm KSĐV</span></td>
-              <td><strong>—</strong></td>
-              <td><strong style="color: #1e3a8a;">—</strong></td>
-              <td>Cam kết theo dõi phát triển ngôn ngữ (chưa thi khảo sát văn hóa)</td>
-            </tr>
-  
-            <tr>
-              <td>12</td>
-              <td><strong>CS2</strong></td>
-              <td><strong>Lê Hồ Duy Khang</strong></td>
-              <td><code>1.3_CS2</code> (Khối 1)</td>
-              <td>Tâm lý</td>
-              <td><span class="badge badge-psychology">Cam kết Tâm lý</span></td>
-              <td><strong>Anh: 2.8 (Tổng: 28.3)</strong></td>
-              <td><strong style="color: #1e3a8a;">—</strong></td>
-              <td>Chỉ cam kết theo dõi tâm lý lứa tuổi, không khảo sát văn hóa</td>
-            </tr>
-  
-            <tr>
-              <td>13</td>
-              <td><strong>CS2</strong></td>
-              <td><strong>Sangadziev Aron</strong></td>
-              <td><code>1.2INT_CS2</code> (Khối 1)</td>
-              <td>Tiếng Việt</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Anh: 2.7 (Tổng: 26.7)</strong></td>
-              <td><strong style="color: #1e3a8a;">—</strong></td>
-              <td>Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)</td>
-            </tr>
-  
-            <tr>
-              <td>14</td>
-              <td><strong>CS3</strong></td>
-              <td><strong>Phan Anh Quân</strong></td>
-              <td><code>9INT_CS3</code> (Khối 9)</td>
-              <td>Toán, Tiếng Anh</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Ngữ Văn: 5; Anh: 4.1 (Tổng: 41)</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 6.25; Ngữ Văn: 6; Anh: 5.6</strong></td>
-              <td>Hệ Quốc tế (chỉ thi EPT 41/100, không thi Toán đề chung)</td>
-            </tr>
-  
-            <tr>
-              <td>15</td>
-              <td><strong>CS3</strong></td>
-              <td><strong>Đoàn Ngọc Thảo Chloe</strong></td>
-              <td><code>2.1INT_CS3</code> (Khối 2)</td>
-              <td>Tiếng Việt, Tiếng Anh</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Anh: 8.4 (Tổng: 84)</strong></td>
-              <td><strong style="color: #1e3a8a;">Tiếng Việt: 4; Anh: 9.8</strong></td>
-              <td>Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)</td>
-            </tr>
-  
-            <tr>
-              <td>16</td>
-              <td><strong>CS3</strong></td>
-              <td><strong>Govorushko Mikhail</strong></td>
-              <td><code>1.1INT_CS3</code> (Khối 1)</td>
-              <td>Tiếng Việt</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Anh: 3.2 (Tổng: 31.7)</strong></td>
-              <td><strong style="color: #1e3a8a;">—</strong></td>
-              <td>Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)</td>
-            </tr>
-  
-            <tr>
-              <td>17</td>
-              <td><strong>CS3</strong></td>
-              <td><strong>Lecomte Mailys Mộc Yên</strong></td>
-              <td><code>4INT_CS3</code> (Khối 4)</td>
-              <td>Tiếng Việt, Tiếng Anh</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Anh: 9.6 (Tổng: 96)</strong></td>
-              <td><strong style="color: #1e3a8a;">Tiếng Việt: 5; Anh: 7.3</strong></td>
-              <td>Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)</td>
-            </tr>
-  
-            <tr>
-              <td>18</td>
-              <td><strong>CS4</strong></td>
-              <td><strong>Võ Thị Anh Thư</strong></td>
-              <td><code>7S_CS4</code> (Khối 7)</td>
-              <td>Tiếng Anh</td>
-              <td><span class="badge badge-warning">Thiếu môn CKĐV</span></td>
-              <td><strong>Toán: 8</strong></td>
-              <td><strong style="color: #1e3a8a;">Toán: 4.3; Ngữ Văn: 7.5; Anh: 2.6</strong></td>
-              <td>Thi lại Toán đạt 8.0; môn Tiếng Anh chưa nhập điểm trên hệ thống</td>
-            </tr>
-  
-          </tbody>
-        </table>
-      </div>
-
       <!-- Bảng chi tiết 76 học sinh -->
-      <h3 class="sub-section-title" style="margin-top: 36px;">3. Danh sách Chi tiết 76 Học sinh CKĐV Nhập học - Map Điểm KSĐV vs KSĐN theo Từng Cơ sở</h3>
+      <h3 class="sub-section-title" style="margin-top: 36px;">2. Danh sách Chi tiết 76 Học sinh CKĐV Nhập học - Map Điểm KSĐV vs KSĐN theo Từng Cơ sở</h3>
       
       <div class="alert alert-note">
-        • <strong>Điểm Tiếng Anh KSĐV:</strong> Được lấy trực tiếp từ <strong>Cột Tổng điểm</strong> (Thang 100) và <strong>quy đổi chuẩn xác về Thang 10 (Scale 10)</strong> theo công thức: <code>Scale 10 = Tổng điểm / 10</code> (hiển thị cả Scale 10 và Cột Tổng điểm gốc, ví dụ: <code>Tiếng Anh: 4.1 (Tổng: 41)</code>).<br>
-        • <strong>Học sinh diện Cam kết Tâm lý:</strong> Cột điểm hiển thị rõ diện theo dõi tâm lý lứa tuổi.<br>
+        • <strong>Quy ước màu sắc nhận diện đồng bộ (Visual Color-Coding):</strong> Học sinh cam kết môn nào thì <strong>bôi màu môn đó, và đồng màu với các môn KSĐV và KSĐN để nhận biết tức thì</strong>:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-math">Môn Toán</span>: Đồng bộ sắc Xanh Ngọc (Emerald)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-viet">Tiếng Việt</span>: Đồng bộ sắc Cam (Amber)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-van">Ngữ Văn</span>: Đồng bộ sắc Đỏ Hồng (Rose)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-eng">Tiếng Anh</span>: Đồng bộ sắc Xanh Dương (Blue)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-psy">Tâm lý</span>: Đồng bộ sắc Tím (Purple)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <em>Các môn khảo sát khác (không cam kết):</em> Hiển thị màu trung tính nhạt để người đọc tập trung tối đa vào môn cam kết.<br>
+        • <strong>Điểm Tiếng Anh KSĐV:</strong> Được lấy trực tiếp từ Cột Tổng điểm và <strong>quy đổi chuẩn xác về Thang 10 (Scale 10)</strong> theo công thức: <code>Scale 10 = Tổng điểm / 10</code> (ví dụ: <code>Tiếng Anh: 4.1</code>).<br>
+        • <strong>Học sinh diện Cam kết Tâm lý:</strong> Hiển thị đầy đủ điểm KSĐN thực tế của học sinh (nếu có tham gia kỳ khảo sát) để theo dõi sát sao sự tiến bộ toàn diện.<br>
         • <strong>Học sinh chưa có điểm / thiếu điểm môn cam kết:</strong> Được chú thích cụ thể lý do (tuyển thẳng, học sinh nước ngoài, chờ cập nhật bài thi...).
       </div>
 
@@ -3372,958 +3214,1325 @@
           <button class="filter-tab" onclick="filterCampus('CS5', this)">CS5 (12)</button>
         </div>
         <div class="search-box">
-          <span>🔍&nbsp;</span>
           <input type="text" id="ckdvSearchInput" placeholder="Tìm tên học sinh, lớp, môn CKĐV..." onkeyup="searchStudent()">
         </div>
       </div>
 
       <div class="ckdv-campus-section" data-campus="CS1">
-        <h4 class="campus-title">🏫 CƠ SỞ CS1 (36 học sinh)</h4>
+        <h4 class="campus-title">CƠ SỞ CS1 (36 học sinh)</h4>
         <div class="table-container">
           <table class="report-table ckdv-table">
             <thead>
               <tr>
-                <th style="width: 50px;">STT</th>
+                <th style="width: 45px;">STT</th>
                 <th>Họ và tên</th>
-                <th>Lớp</th>
-                <th>Khối</th>
-                <th>Môn CKĐV</th>
-                <th>Điểm KSĐV Môn Cam Kết (Thang 10 & Cột Tổng điểm)</th>
-                <th>Điểm KSĐN Môn Tương Ứng</th>
-                <th>Ghi chú & Trạng thái</th>
+                <th style="width: 90px;">Lớp</th>
+                <th style="width: 75px;">Khối</th>
+                <th style="width: 110px;">Môn CKĐV</th>
+                <th style="width: 130px;">Điểm KSĐV</th>
+                <th style="width: 120px;">Điểm KSĐN</th>
+                <th style="width: 130px;">Tiến bộ</th>
+                <th style="width: 110px;">Đạt chuẩn</th>
               </tr>
             </thead>
             <tbody>
   
               <tr>
-                <td>1</td>
-                <td><strong>Nguyễn Gia Bảo</strong></td>
-                <td><code>9.2_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Toán, Tiếng Anh</td>
-                <td><strong>Toán: 4; Ngữ Văn: 6.5; Tiếng Anh: 1.0 (Tổng: 10)</strong></td>
-                <td><strong>Toán: 3.5; Tiếng Việt: 8.5; Ngữ Văn: 4.25; Tiếng Anh: 8</strong></td>
-                <td><span class="badge badge-growth">Bứt phá ngoạn mục (+7)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">1</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Nguyễn Gia Bảo</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>9.2_CS1</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">3.5</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>2</td>
-                <td><strong>Lê Nguyên Khang</strong></td>
-                <td><code>2.1_CS1</code></td>
-                <td>Khối 2</td>
-                <td>Tiếng Anh</td>
-                <td><strong><span class="badge badge-warning">Chưa có điểm KSĐV</span></strong></td>
-                <td><strong>Toán: 9; Tiếng Việt: 8; Tiếng Anh: 7.9</strong></td>
-                <td><span class="badge badge-success">Tuyển thẳng (KSĐN: Đạt xuất sắc)</span></td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.0</span></td>
+                <td><span class="score-highlight score-eng">8</span></td>
+                <td><span class="badge badge-success">Bứt phá (+7)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>3</td>
-                <td><strong>Phạm Nguyễn Minh Anh</strong></td>
-                <td><code>10.2_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 6; Ngữ Văn: 8.5; Tiếng Anh: 2.7 (Tổng: 26.7)</strong></td>
-                <td><strong>Toán: 4.5; Ngữ Văn: 5</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Toán (4.5)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">2</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lê Nguyên Khang</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>2.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 2</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">0.4</span></td>
+                <td><span class="score-highlight score-eng">7.9</span></td>
+                <td><span class="badge badge-success">Bứt phá (+7.5)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>4</td>
-                <td><strong>Phan Đình Phùng</strong></td>
-                <td><code>10.1_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh, Toán, Ngữ Văn</td>
-                <td><strong>Toán: 4; Ngữ Văn: 3; Tiếng Anh: 1.5 (Tổng: 15)</strong></td>
-                <td><strong>Toán: 4.75; Ngữ Văn: 2; Tiếng Anh: 4.6</strong></td>
-                <td><span class="badge badge-growth">Bứt phá ngoạn mục (+3.1)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">3</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Phạm Nguyễn Minh Anh</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10.2_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.7</span></td>
+                <td><span class="missing-text">Chưa thi</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
               </tr>
-    
+        
               <tr>
-                <td>5</td>
-                <td><strong>Mai Huy Thắng</strong></td>
-                <td><code>7.1_CS1</code></td>
-                <td>Khối 7</td>
-                <td>Toán</td>
-                <td><strong>Ngữ Văn: 8; Tiếng Anh: 8.0 (Tổng: 80) <span style="color: #b45309; font-size: 11px;">(Toán: Chưa có điểm)</span></strong></td>
-                <td><strong>Toán: 8; Ngữ Văn: 7; Tiếng Anh: 8.8</strong></td>
-                <td><span class="badge badge-success">Đạt chuẩn môn Anh (8.8)</span></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">4</td>
+                <td rowspan="3" style="vertical-align: middle;"><strong>Phan Đình Phùng</strong></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;"><code>10.1_CS1</code></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.5</span></td>
+                <td><span class="score-highlight score-eng">4.6</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+3.1)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>6</td>
-                <td><strong>Phạm Thùy Gia Hân </strong></td>
-                <td><code>10.2_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 5; Ngữ Văn: 8; Tiếng Anh: 2.0 (Tổng: 20)</strong></td>
-                <td><strong>Toán: 7.25; Ngữ Văn: 5.5; Tiếng Anh: 4.7</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+2.7)</span></td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">4.75</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+0.8)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>7</td>
-                <td><strong>Nguyễn Bình Phương An</strong></td>
-                <td><code>10.1_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 1.5 (Tổng: 15)</strong></td>
-                <td><strong>Toán: 6.25; Ngữ Văn: 5; Tiếng Anh: 4.8</strong></td>
-                <td><span class="badge badge-growth">Bứt phá ngoạn mục (+3.3)</span></td>
+                <td><span class="badge-sub badge-van">Ngữ Văn</span></td>
+                <td><span class="score-highlight score-van">3</span></td>
+                <td><span class="score-highlight score-van">2</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>8</td>
-                <td><strong>Lê Bảo Trâm</strong></td>
-                <td><code>7.3_CS1</code></td>
-                <td>Khối 7</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 4.2 (Tổng: 42)</strong></td>
-                <td><strong>Toán: 8.3; Ngữ Văn: 7.5; Tiếng Anh: 4.9</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (4.9)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">5</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Mai Huy Thắng</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4.5</span></td>
+                <td><span class="score-highlight score-math">8</span></td>
+                <td><span class="badge badge-success">Bứt phá (+3.5)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>9</td>
-                <td><strong>Lê Bảo Châu</strong></td>
-                <td><code>9.3_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Toán, Tiếng Anh</td>
-                <td><strong>Toán: 2; Ngữ Văn: 6.5; Tiếng Anh: 1.9 (Tổng: 19)</strong></td>
-                <td><strong>Toán: 3.5; Ngữ Văn: 4.5; Tiếng Anh: 5.2</strong></td>
-                <td><span class="badge badge-growth">Bứt phá ngoạn mục (+3.3)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">6</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Phạm Thùy Gia Hân </strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10.2_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.0</span></td>
+                <td><span class="score-highlight score-eng">4.7</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+2.7)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>10</td>
-                <td><strong>Phạm Gia Hương</strong></td>
-                <td><code>10.2_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh, Toán</td>
-                <td><strong>Toán: 3; Ngữ Văn: 7.25; Tiếng Anh: 3.8 (Tổng: 38)</strong></td>
-                <td><strong>Toán: 4; Ngữ Văn: 6.5; Tiếng Anh: 5.1</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.3)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">7</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Bình Phương An</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.5</span></td>
+                <td><span class="score-highlight score-eng">4.8</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+3.3)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>11</td>
-                <td><strong>Đỗ An Nhiên </strong></td>
-                <td><code>1.1_CS1</code></td>
-                <td>Khối 1</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 1.0 (Tổng: 10)</strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">8</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lê Bảo Trâm</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7.3_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.2</span></td>
+                <td><span class="score-highlight score-eng">7.5</span></td>
+                <td><span class="badge badge-success">Bứt phá (+3.3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>12</td>
-                <td><strong>Hà Đặng Phước Huy</strong></td>
-                <td><code>1S_CS4</code></td>
-                <td>Khối 1</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 3.3 (Tổng: 33.3)</strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">9</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Lê Bảo Châu</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>9.3_CS1</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">2</span></td>
+                <td><span class="score-highlight score-math">3.5</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+1.5)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>13</td>
-                <td><strong>Trần Hoàng Anh </strong></td>
-                <td><code>9.2_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Tiếng Anh, Toán</td>
-                <td><strong>Toán: 4; Ngữ Văn: 6.5 <span style="color: #b45309; font-size: 11px;">(Tiếng Anh: Chưa có điểm)</span></strong></td>
-                <td><strong>Toán: 6.5; Ngữ Văn: 6; Tiếng Anh: 4</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ tốt môn Toán (+2.5)</span></td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.9</span></td>
+                <td><span class="score-highlight score-eng">5.2</span></td>
+                <td><span class="badge badge-success">Bứt phá (+3.3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>14</td>
-                <td><strong>Nguyễn Ngọc Thiên Bảo</strong></td>
-                <td><code>2.3INT_CS1</code></td>
-                <td>Khối 2</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 3.9 (Tổng: 39)</strong></td>
-                <td><strong>Tiếng Việt: 8; Tiếng Anh: 4</strong></td>
-                <td><span class="badge badge-danger">Chưa đạt chuẩn Tiểu học (4)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">10</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Phạm Gia Hương</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>10.2_CS1</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.8</span></td>
+                <td><span class="score-highlight score-eng">5.1</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>15</td>
-                <td><strong>Nguyễn Thanh Thảo</strong></td>
-                <td><code>9.4_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Tiếng Anh</td>
-                <td><strong><span class="badge badge-warning">Chưa có điểm KSĐV</span></strong></td>
-                <td><strong>Toán: 5; Ngữ Văn: 5.5; Tiếng Anh: 4.6</strong></td>
-                <td>Chờ cập nhật điểm bài thi KSĐV</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">3</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+1)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>16</td>
-                <td><strong>Lê Khánh Hà</strong></td>
-                <td><code>10.2_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Toán, Tiếng Anh</td>
-                <td><strong>Toán: 4; Ngữ Văn: 7 <span style="color: #b45309; font-size: 11px;">(Tiếng Anh: Chưa có điểm)</span></strong></td>
-                <td><strong>Toán: 7; Ngữ Văn: 4.5; Tiếng Anh: 4</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ tốt môn Toán (+3)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">11</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Đỗ An Nhiên </strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.0</span></td>
+                <td><span class="missing-text">Chưa thi (Khối 1)</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
               </tr>
-    
+        
               <tr>
-                <td>17</td>
-                <td><strong>Nguyễn Đại Phúc </strong></td>
-                <td><code>10.1_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 4.4 (Tổng: 44)</strong></td>
-                <td><strong>Toán: 6.1; Ngữ Văn: 7; Tiếng Anh: 6.2</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.8)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">12</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Hà Đặng Phước Huy</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1S_CS4</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.3</span></td>
+                <td><span class="missing-text">Chưa thi (Khối 1)</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
               </tr>
-    
+        
               <tr>
-                <td>18</td>
-                <td><strong>LÊ ĐÌNH SĨ PHÚ</strong></td>
-                <td><code>6.1_CS1</code></td>
-                <td>Khối 6</td>
-                <td>Toán</td>
-                <td><strong>Toán: 4; Tiếng Việt: 5; Ngữ Văn: 5; Tiếng Anh: 5.0 (Tổng: 50)</strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">13</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Trần Hoàng Anh </strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>9.2_CS1</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.0</span></td>
+                <td><span class="score-highlight score-eng">4</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+2)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>19</td>
-                <td><strong>Ngô Thục Đan</strong></td>
-                <td><code>9.1_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Tâm lý</td>
-                <td><strong><span class="badge badge-psychology">HS Cam kết tâm lý</span></strong></td>
-                <td><strong>—</strong></td>
-                <td><span class="badge badge-psychology">🧠 HS Cam kết tâm lý</span></td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">6.5</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+2.5)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>20</td>
-                <td><strong>Lê Nguyệt Cát</strong></td>
-                <td><code>7.4_CS1</code></td>
-                <td>Khối 7</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 5; Ngữ Văn: 6.5; Tiếng Anh: 2.6 (Tổng: 26)</strong></td>
-                <td><strong>Toán: 5.3; Ngữ Văn: 8; Tiếng Anh: 3.7</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.1)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">14</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Ngọc Thiên Bảo</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>2.3INT_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 2</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.9</span></td>
+                <td><span class="score-highlight score-eng">4</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ (+0.1)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>21</td>
-                <td><strong>Hoàng Bảo Quyên</strong></td>
-                <td><code>9.2_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 2.2 (Tổng: 22)</strong></td>
-                <td><strong>Toán: 5.25; Ngữ Văn: 4; Tiếng Anh: 4.6</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+2.4)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">15</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Thanh Thảo</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>9.4_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="score-highlight score-eng">4.6</span></td>
+                <td><span class="badge badge-dim">Chưa có KSĐV</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>22</td>
-                <td><strong>Phạm Gia Bảo</strong></td>
-                <td><code>9.3_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Tiếng Anh, Toán</td>
-                <td><strong>Toán: 4; Ngữ Văn: 6.5; Tiếng Anh: 1.0 (Tổng: 10)</strong></td>
-                <td><strong>Toán: 3.75; Ngữ Văn: 3.5; Tiếng Anh: 3.6</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+2.6)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">16</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Lê Khánh Hà</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>10.2_CS1</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">7</span></td>
+                <td><span class="badge badge-success">Bứt phá (+3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>23</td>
-                <td><strong>Đặng Hoàng Như Ý</strong></td>
-                <td><code>10.2_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 4.6 (Tổng: 46)</strong></td>
-                <td><strong>Toán: 6.75; Ngữ Văn: 6.8</strong></td>
-                <td></td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.2</span></td>
+                <td><span class="score-highlight score-eng">4</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+2.8)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>24</td>
-                <td><strong>Phạm Hải Như</strong></td>
-                <td><code>10.2_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 5; Ngữ Văn: 5; Tiếng Anh: 4.6 (Tổng: 46)</strong></td>
-                <td><strong>Toán: 4.25; Ngữ Văn: 4.3; Tiếng Anh: 4.6</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (4.6)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">17</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Đại Phúc </strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.4</span></td>
+                <td><span class="score-highlight score-eng">6.2</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.8)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>25</td>
-                <td><strong>Nguyễn Thành Long</strong></td>
-                <td><code>7.3_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Ngữ Văn: 8.25; Tiếng Anh: 2.8 (Tổng: 28)</strong></td>
-                <td><strong>Toán: 4; Ngữ Văn: 4.5; Tiếng Anh: 5.1</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+2.3)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">18</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lê Đình Sĩ Phú</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>6.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">6</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+2)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>26</td>
-                <td><strong>Trần Quang Thiên Ân</strong></td>
-                <td><code>10.1_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Toán</td>
-                <td><strong>Toán: 3; Ngữ Văn: 6.5; Tiếng Anh: 7.7 (Tổng: 77)</strong></td>
-                <td><strong>Toán: 7.25; Ngữ Văn: 4; Tiếng Anh: 9</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.3)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">19</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Ngô Thục Đan</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>9.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-psy">Tâm lý</span></td>
+                <td><span class="score-highlight score-psy">Theo dõi tâm lý</span></td>
+                <td><span class="score-highlight score-psy">Toán: 3; Văn: 8.5; Anh: 7.5</span></td>
+                <td><span class="badge badge-success">Theo dõi tốt</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>27</td>
-                <td><strong>Lê Hồ Gia Huy</strong></td>
-                <td><code>10.2_CS1</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 2.7 (Tổng: 27)</strong></td>
-                <td><strong>Toán: 4.5; Ngữ Văn: 5; Tiếng Anh: 4.4</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.7)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">20</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lê Nguyệt Cát</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7.4_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.6</span></td>
+                <td><span class="score-highlight score-eng">3.7</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+1.1)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>28</td>
-                <td><strong>Trương Lê Hưng Phát</strong></td>
-                <td><code>12.1_CS1</code></td>
-                <td>Khối 12</td>
-                <td>Toán</td>
-                <td><strong>Toán: 4; Ngữ Văn: 6.5; Tiếng Anh: 5.2 (Tổng: 52)</strong></td>
-                <td><strong>Toán: 5.1; Ngữ Văn: 3.5; Tiếng Anh: 5.5</strong></td>
-                <td><span class="badge badge-success">Đạt chuẩn môn Anh (5.5)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">21</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Hoàng Bảo Quyên</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>9.2_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.2</span></td>
+                <td><span class="score-highlight score-eng">4.6</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+2.4)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>29</td>
-                <td><strong>Nguyễn Văn Tuấn Kiệt</strong></td>
-                <td><code>9.2_CS1</code></td>
-                <td>Khối 9</td>
-                <td>Toán, Tiếng Anh</td>
-                <td><strong>Toán: 5; Ngữ Văn: 5.5; Tiếng Anh: 3.5 (Tổng: 35)</strong></td>
-                <td><strong>Toán: 3; Ngữ Văn: 4.5; Tiếng Anh: 2.9</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (2.9)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">22</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Phạm Gia Bảo</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>9.3_CS1</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.0</span></td>
+                <td><span class="score-highlight score-eng">3.6</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+2.6)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>30</td>
-                <td><strong>Nguyễn Daniil</strong></td>
-                <td><code>1.1_CS1</code></td>
-                <td>Khối 1</td>
-                <td>Tiếng Việt</td>
-                <td><strong>Tiếng Anh: 1.3 (Tổng: 13.3) <span style="color: #b45309; font-size: 11px;">(Tiếng Việt: Chưa có điểm)</span></strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td><span class="badge badge-warning">Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)</span></td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">3.75</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>31</td>
-                <td><strong>Trần Đăng Quang</strong></td>
-                <td><code>6.3_CS1</code></td>
-                <td>Khối 6</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 10; Ngữ Văn: 7.5; Tiếng Anh: 4.3 (Tổng: 43)</strong></td>
-                <td><strong>Toán: 6.5; Ngữ Văn: 6.75; Tiếng Anh: 5.6</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.3)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">23</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Đặng Hoàng Như Ý</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10.2_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.6</span></td>
+                <td><span class="missing-text">Chưa thi</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
               </tr>
-    
+        
               <tr>
-                <td>32</td>
-                <td><strong>Trần Thục Quyên</strong></td>
-                <td><code>7.4_CS1</code></td>
-                <td>Khối 7</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 4.3 (Tổng: 43)</strong></td>
-                <td><strong>Toán: 9; Ngữ Văn: 7.5; Tiếng Anh: 6</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.7)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">24</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Phạm Hải Như</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10.2_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.6</span></td>
+                <td><span class="score-highlight score-eng">4.6</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>33</td>
-                <td><strong>Lương Bích Ngọc</strong></td>
-                <td><code>6.3_CS1</code></td>
-                <td>Khối 6</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 4; Ngữ Văn: 8.5; Tiếng Anh: 4.3 (Tổng: 43)</strong></td>
-                <td><strong>Toán: 6.8; Ngữ Văn: 7.25; Tiếng Anh: 5</strong></td>
-                <td><span class="badge badge-success">Đạt chuẩn môn Anh (5)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">25</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Thành Long</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7.3_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.8</span></td>
+                <td><span class="score-highlight score-eng">6</span></td>
+                <td><span class="badge badge-success">Bứt phá (+3.2)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>34</td>
-                <td><strong>Nguyễn Quỳnh Như</strong></td>
-                <td><code>3.1_CS1</code></td>
-                <td>Khối 6</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 3; Ngữ Văn: 7; Tiếng Anh: 3.9 (Tổng: 39)</strong></td>
-                <td><strong>Toán: 5; Tiếng Việt: 9.5; Ngữ Văn: 7; Tiếng Anh: 9.1</strong></td>
-                <td><span class="badge badge-growth">Bứt phá ngoạn mục (+5.2)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">26</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Trần Quang Thiên Ân</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">3</span></td>
+                <td><span class="score-highlight score-math">7.25</span></td>
+                <td><span class="badge badge-success">Bứt phá (+4.3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>35</td>
-                <td><strong>Nguyễn Ngọc Minh</strong></td>
-                <td><code>7.2_CS1</code></td>
-                <td>Khối 7</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 6; Ngữ Văn: 7 <span style="color: #b45309; font-size: 11px;">(Tiếng Anh: Chưa có điểm)</span></strong></td>
-                <td><strong>Toán: 8.75; Ngữ Văn: 5.75; Tiếng Anh: 4.1</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ tốt môn Toán (+2.8)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">27</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lê Hồ Gia Huy</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10.2_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.7</span></td>
+                <td><span class="score-highlight score-eng">4.4</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+1.7)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>36</td>
-                <td><strong>Nguyễn Đặng Bảo Trâm </strong></td>
-                <td><code>8.2_CS1</code></td>
-                <td>Khối 8</td>
-                <td>Chung / Theo dõi</td>
-                <td><strong>Toán: 7; Ngữ Văn: 6.5; Tiếng Anh: 4.8 (Tổng: 48)</strong></td>
-                <td><strong>Toán: 3; Ngữ Văn: 6.5; Tiếng Anh: 4</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (4)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">28</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Trương Lê Hưng Phát</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>12.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 12</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">5.1</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.1)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
+              <tr>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">29</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Nguyễn Văn Tuấn Kiệt</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>9.2_CS1</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">5</span></td>
+                <td><span class="score-highlight score-math">3</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
+              </tr>
+        
+              <tr>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.5</span></td>
+                <td><span class="score-highlight score-eng">2.9</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">30</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Daniil</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="missing-text">Chưa thi (Khối 1)</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">31</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Trần Đăng Quang</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>6.3_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.3</span></td>
+                <td><span class="score-highlight score-eng">5.6</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">32</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Trần Thục Quyên</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7.4_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.3</span></td>
+                <td><span class="score-highlight score-eng">6</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.7)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">33</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lương Bích Ngọc</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>6.3_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.3</span></td>
+                <td><span class="score-highlight score-eng">5</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+0.7)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">34</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Quỳnh Như</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>3.1_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.9</span></td>
+                <td><span class="score-highlight score-eng">9.1</span></td>
+                <td><span class="badge badge-success">Bứt phá (+5.2)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">35</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Ngọc Minh</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7.2_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.3</span></td>
+                <td><span class="score-highlight score-eng">8.9</span></td>
+                <td><span class="badge badge-success">Bứt phá (+6.6)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">36</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Đặng Bảo Trâm </strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>8.2_CS1</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 8</td>
+                <td><span class="badge-sub badge-other">Chung / Theo dõi</span></td>
+                <td><span class="score-highlight score-dim">Theo dõi chung</span></td>
+                <td><span class="missing-text">—</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
+              </tr>
+        
             </tbody>
+            <tfoot>
+              <tr class="summary-sub-row" style="background: #f8fafc; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e293b; text-align: right;">HS Cam kết theo môn:</td>
+                <td colspan="5" style="color: #334155; font-weight: 500;"><strong>Tiếng Anh:</strong> 29 HS &nbsp;|&nbsp; <strong>Toán:</strong> 12 HS &nbsp;|&nbsp; <strong>Tiếng Việt:</strong> 1 HS &nbsp;|&nbsp; <strong>Ngữ Văn:</strong> 1 HS &nbsp;|&nbsp; <strong>Tâm lý:</strong> 1 HS &nbsp;|&nbsp; <strong>Khác:</strong> 1 HS</td>
+              </tr>
+              <tr class="summary-progress-row" style="background: #f0fdf4; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #166534; text-align: right;">Tổng số môn Tiến bộ:</td>
+                <td colspan="5" style="font-weight: 700; color: #15803d;">
+                  19 / 38 lượt môn (50.0%)
+                </td>
+              </tr>
+              <tr class="summary-benchmark-row" style="background: #eff6ff; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e40af; text-align: right;">Tổng số môn Đạt chuẩn:</td>
+                <td colspan="5" style="font-weight: 700; color: #1d4ed8;">
+                  19 / 38 lượt môn (50.0%)
+                  <span style="font-weight: 400; color: #64748b; font-size: 11.5px; margin-left: 8px;">(Đạt chuẩn: 19 | Trung bình: 0 | Dưới TB: 19)</span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
   
       <div class="ckdv-campus-section" data-campus="CS2">
-        <h4 class="campus-title">🏫 CƠ SỞ CS2 (8 học sinh)</h4>
+        <h4 class="campus-title">CƠ SỞ CS2 (8 học sinh)</h4>
         <div class="table-container">
           <table class="report-table ckdv-table">
             <thead>
               <tr>
-                <th style="width: 50px;">STT</th>
+                <th style="width: 45px;">STT</th>
                 <th>Họ và tên</th>
-                <th>Lớp</th>
-                <th>Khối</th>
-                <th>Môn CKĐV</th>
-                <th>Điểm KSĐV Môn Cam Kết (Thang 10 & Cột Tổng điểm)</th>
-                <th>Điểm KSĐN Môn Tương Ứng</th>
-                <th>Ghi chú & Trạng thái</th>
+                <th style="width: 90px;">Lớp</th>
+                <th style="width: 75px;">Khối</th>
+                <th style="width: 110px;">Môn CKĐV</th>
+                <th style="width: 130px;">Điểm KSĐV</th>
+                <th style="width: 120px;">Điểm KSĐN</th>
+                <th style="width: 130px;">Tiến bộ</th>
+                <th style="width: 110px;">Đạt chuẩn</th>
               </tr>
             </thead>
             <tbody>
   
               <tr>
-                <td>1</td>
-                <td><strong>Lê Gia Lân</strong></td>
-                <td><code>1.3_CS2</code></td>
-                <td>Khối 1</td>
-                <td>Tâm lý</td>
-                <td><strong><span class="badge badge-psychology">HS Cam kết tâm lý</span></strong></td>
-                <td><strong>—</strong></td>
-                <td><span class="badge badge-psychology">🧠 HS Cam kết tâm lý</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">1</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lê Gia Lân</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.3_CS2</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-psy">Tâm lý</span></td>
+                <td><span class="score-highlight score-psy">Theo dõi tâm lý</span></td>
+                <td><span class="missing-text">Chưa có bài KSĐN (Khối 1)</span></td>
+                <td><span class="badge badge-psychology">Theo dõi tâm lý</span></td>
+                <td><span class="badge badge-psychology">Theo dõi tâm lý</span></td>
               </tr>
-    
+        
               <tr>
-                <td>2</td>
-                <td><strong>Đào Trần Thảo Linh</strong></td>
-                <td><code>1.3_CS2</code></td>
-                <td>Khối 1</td>
-                <td>Tâm lý, Tiếng Việt</td>
-                <td><strong><span class="badge badge-psychology">HS Cam kết tâm lý</span></strong></td>
-                <td><strong>—</strong></td>
-                <td><span class="badge badge-psychology">🧠 HS Cam kết tâm lý</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">2</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Đào Trần Thảo Linh</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>1.3_CS2</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-psy">Tâm lý</span></td>
+                <td><span class="score-highlight score-psy">Theo dõi tâm lý</span></td>
+                <td><span class="missing-text">Chưa có bài KSĐN (Khối 1)</span></td>
+                <td><span class="badge badge-psychology">Theo dõi tâm lý</span></td>
+                <td><span class="badge badge-psychology">Theo dõi tâm lý</span></td>
               </tr>
-    
+        
               <tr>
-                <td>3</td>
-                <td><strong>Nguyễn Thanh Phúc</strong></td>
-                <td><code>1.2INT_CS2</code></td>
-                <td>Khối 1</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 1.7 (Tổng: 16.7)</strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td></td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="missing-text">Chưa thi (Khối 1)</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
               </tr>
-    
+        
               <tr>
-                <td>4</td>
-                <td><strong>ĐỖ NGUYỄN AN KHÔI</strong></td>
-                <td><code>1.3_CS2</code></td>
-                <td>Khối 1</td>
-                <td>Chung / Theo dõi</td>
-                <td><strong>Tiếng Anh: 2.3 (Tổng: 23.3)</strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">3</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Thanh Phúc</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.2INT_CS2</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.7</span></td>
+                <td><span class="missing-text">Chưa thi (Khối 1)</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
               </tr>
-    
+        
               <tr>
-                <td>5</td>
-                <td><strong>Phan Hải Đăng</strong></td>
-                <td><code>1.3_CS2</code></td>
-                <td>Khối 1</td>
-                <td>Chung / Theo dõi</td>
-                <td><strong><span class="badge badge-warning">Chưa có điểm KSĐV</span></strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td>Theo dõi ngôn ngữ Khối 1</td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">4</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>ĐỖ NGUYỄN AN KHÔI</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.3_CS2</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-other">Chung / Theo dõi</span></td>
+                <td><span class="score-highlight score-dim">Theo dõi chung</span></td>
+                <td><span class="missing-text">—</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
               </tr>
-    
+        
               <tr>
-                <td>6</td>
-                <td><strong>Hoàng Bữu Minh Hưng</strong></td>
-                <td><code>3.4_CS2</code></td>
-                <td>Khối 3</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 4.2 (Tổng: 42)</strong></td>
-                <td><strong>Toán: 8; Tiếng Việt: 8; Tiếng Anh: 5.5</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.3)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">5</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Phan Hải Đăng</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.3_CS2</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-other">Chung / Theo dõi</span></td>
+                <td><span class="score-highlight score-dim">Theo dõi chung</span></td>
+                <td><span class="missing-text">—</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
               </tr>
-    
+        
               <tr>
-                <td>7</td>
-                <td><strong>Lê Hồ Duy Khang</strong></td>
-                <td><code>1.3_CS2</code></td>
-                <td>Khối 1</td>
-                <td>Tâm lý</td>
-                <td><strong><span class="badge badge-psychology">HS Cam kết tâm lý</span></strong></td>
-                <td><strong>—</strong></td>
-                <td><span class="badge badge-psychology">🧠 HS Cam kết tâm lý</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">6</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Hoàng Bữu Minh Hưng</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>3.4_CS2</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 3</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.2</span></td>
+                <td><span class="score-highlight score-eng">5.5</span></td>
+                <td><span class="badge badge-growth">Tiến bộ (+1.3)</span></td>
+                <td><span class="badge badge-warning">Trung bình</span></td>
               </tr>
-    
+        
               <tr>
-                <td>8</td>
-                <td><strong>Sangadziev Aron</strong></td>
-                <td><code>1.2INT_CS2</code></td>
-                <td>Khối 1</td>
-                <td>Tiếng Việt</td>
-                <td><strong>Tiếng Anh: 2.7 (Tổng: 26.7) <span style="color: #b45309; font-size: 11px;">(Tiếng Việt: Chưa có điểm)</span></strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td><span class="badge badge-warning">Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">7</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lê Hồ Duy Khang</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.3_CS2</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-psy">Tâm lý</span></td>
+                <td><span class="score-highlight score-psy">Theo dõi tâm lý</span></td>
+                <td><span class="missing-text">Chưa có bài KSĐN (Khối 1)</span></td>
+                <td><span class="badge badge-psychology">Theo dõi tâm lý</span></td>
+                <td><span class="badge badge-psychology">Theo dõi tâm lý</span></td>
               </tr>
-    
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">8</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Sangadziev Aron</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.2INT_CS2</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="missing-text">Chưa thi (Khối 1)</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
+              </tr>
+        
             </tbody>
+            <tfoot>
+              <tr class="summary-sub-row" style="background: #f8fafc; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e293b; text-align: right;">HS Cam kết theo môn:</td>
+                <td colspan="5" style="color: #334155; font-weight: 500;"><strong>Tiếng Anh:</strong> 2 HS &nbsp;|&nbsp; <strong>Tiếng Việt:</strong> 2 HS &nbsp;|&nbsp; <strong>Tâm lý:</strong> 3 HS &nbsp;|&nbsp; <strong>Khác:</strong> 2 HS</td>
+              </tr>
+              <tr class="summary-progress-row" style="background: #f0fdf4; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #166534; text-align: right;">Tổng số môn Tiến bộ:</td>
+                <td colspan="5" style="font-weight: 700; color: #15803d;">
+                  1 / 1 lượt môn (100.0%)
+                </td>
+              </tr>
+              <tr class="summary-benchmark-row" style="background: #eff6ff; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e40af; text-align: right;">Tổng số môn Đạt chuẩn:</td>
+                <td colspan="5" style="font-weight: 700; color: #1d4ed8;">
+                  0 / 1 lượt môn (0.0%)
+                  <span style="font-weight: 400; color: #64748b; font-size: 11.5px; margin-left: 8px;">(Đạt chuẩn: 0 | Trung bình: 1 | Dưới TB: 0)</span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
   
       <div class="ckdv-campus-section" data-campus="CS3">
-        <h4 class="campus-title">🏫 CƠ SỞ CS3 (8 học sinh)</h4>
+        <h4 class="campus-title">CƠ SỞ CS3 (8 học sinh)</h4>
         <div class="table-container">
           <table class="report-table ckdv-table">
             <thead>
               <tr>
-                <th style="width: 50px;">STT</th>
+                <th style="width: 45px;">STT</th>
                 <th>Họ và tên</th>
-                <th>Lớp</th>
-                <th>Khối</th>
-                <th>Môn CKĐV</th>
-                <th>Điểm KSĐV Môn Cam Kết (Thang 10 & Cột Tổng điểm)</th>
-                <th>Điểm KSĐN Môn Tương Ứng</th>
-                <th>Ghi chú & Trạng thái</th>
+                <th style="width: 90px;">Lớp</th>
+                <th style="width: 75px;">Khối</th>
+                <th style="width: 110px;">Môn CKĐV</th>
+                <th style="width: 130px;">Điểm KSĐV</th>
+                <th style="width: 120px;">Điểm KSĐN</th>
+                <th style="width: 130px;">Tiến bộ</th>
+                <th style="width: 110px;">Đạt chuẩn</th>
               </tr>
             </thead>
             <tbody>
   
               <tr>
-                <td>1</td>
-                <td><strong>Phan Anh Quân</strong></td>
-                <td><code>9INT_CS3</code></td>
-                <td>Khối 9</td>
-                <td>Toán, Tiếng Anh</td>
-                <td><strong>Ngữ Văn: 5; Tiếng Anh: 4.1 (Tổng: 41) <span style="color: #b45309; font-size: 11px;">(Toán: Chưa có điểm)</span></strong></td>
-                <td><strong>Toán: 6.25; Ngữ Văn: 6; Tiếng Anh: 5.6</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.5)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">1</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Phan Anh Quân</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>9INT_CS3</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 9</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="score-highlight score-math">6.25</span></td>
+                <td><span class="badge badge-dim">Chưa có KSĐV</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>2</td>
-                <td><strong>Đoàn Ngọc Thảo Chloe</strong></td>
-                <td><code>2.1INT_CS3</code></td>
-                <td>Khối 2</td>
-                <td>Tiếng Việt, Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 8.4 (Tổng: 84) <span style="color: #b45309; font-size: 11px;">(Tiếng Việt: Chưa có điểm)</span></strong></td>
-                <td><strong>Tiếng Việt: 4; Tiếng Anh: 9.8</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.4)</span></td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.1</span></td>
+                <td><span class="score-highlight score-eng">5.6</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.5)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>3</td>
-                <td><strong>Hồ Hữu Bách</strong></td>
-                <td><code>4UK_CS3</code></td>
-                <td>Khối 4</td>
-                <td>Tiếng Việt</td>
-                <td><strong>Tiếng Việt: 3; Tiếng Anh: 8.2 (Tổng: 82)</strong></td>
-                <td><strong>Tiếng Việt: 1.5; Tiếng Anh: 7.8</strong></td>
-                <td><span class="badge badge-success">Đạt chuẩn môn Anh (7.8)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">2</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Đoàn Ngọc Thảo Chloe</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>2.1INT_CS3</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 2</td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="score-highlight score-viet">4</span></td>
+                <td><span class="badge badge-dim">Chưa có KSĐV</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>4</td>
-                <td><strong>Govorushko Mikhail</strong></td>
-                <td><code>1.1INT_CS3</code></td>
-                <td>Khối 1</td>
-                <td>Tiếng Việt</td>
-                <td><strong>Tiếng Anh: 3.2 (Tổng: 31.7) <span style="color: #b45309; font-size: 11px;">(Tiếng Việt: Chưa có điểm)</span></strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td><span class="badge badge-warning">Học sinh nước ngoài / song ngữ (chưa qua khảo sát Tiếng Việt đầu vào)</span></td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">8.4</span></td>
+                <td><span class="score-highlight score-eng">9.8</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.4)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>5</td>
-                <td><strong>Lecomte Mailys Mộc Yên</strong></td>
-                <td><code>4INT_CS3</code></td>
-                <td>Khối 4</td>
-                <td>Tiếng Việt, Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 9.6 (Tổng: 96) <span style="color: #b45309; font-size: 11px;">(Tiếng Việt: Chưa có điểm)</span></strong></td>
-                <td><strong>Tiếng Việt: 5; Tiếng Anh: 7.3</strong></td>
-                <td><span class="badge badge-success">Đạt chuẩn môn Anh (7.3)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">3</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Hồ Hữu Bách</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>4UK_CS3</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 4</td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="score-highlight score-viet">3</span></td>
+                <td><span class="score-highlight score-viet">1.5</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>6</td>
-                <td><strong>Hà Minh Khuê</strong></td>
-                <td><code>5.1INT_CS3</code></td>
-                <td>Khối 5</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Việt: 7; Tiếng Anh: 4.6 (Tổng: 46)</strong></td>
-                <td><strong>Tiếng Việt: 9; Tiếng Anh: 3.6</strong></td>
-                <td><span class="badge badge-danger">Chưa đạt chuẩn Tiểu học (3.6)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">4</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Govorushko Mikhail</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.1INT_CS3</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="missing-text">Chưa thi (Khối 1)</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
               </tr>
-    
+        
               <tr>
-                <td>7</td>
-                <td><strong>Phùng Đức Thiên Ân</strong></td>
-                <td><code>3.1INT_CS3</code></td>
-                <td>Khối 3</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 3.6 (Tổng: 36)</strong></td>
-                <td><strong>Tiếng Việt: 6; Tiếng Anh: 6.55</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+2.9)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">5</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Lecomte Mailys Mộc Yên</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>4INT_CS3</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 4</td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="score-highlight score-viet">5</span></td>
+                <td><span class="badge badge-dim">Chưa có KSĐV</span></td>
+                <td><span class="badge badge-warning">Trung bình</span></td>
               </tr>
-    
+        
               <tr>
-                <td>8</td>
-                <td><strong>Phùng Chí Nam Anh</strong></td>
-                <td><code>8.1INT_CS3</code></td>
-                <td>Khối 8</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 3.0 (Tổng: 30)</strong></td>
-                <td><strong>Ngữ Văn: 5; Tiếng Anh: 3.5</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (3.5)</span></td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">9.6</span></td>
+                <td><span class="score-highlight score-eng">7.3</span></td>
+                <td><span class="badge badge-warning">Không tăng (-2.3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">6</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Hà Minh Khuê</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>5.1INT_CS3</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 5</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.6</span></td>
+                <td><span class="score-highlight score-eng">3.6</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">7</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Phùng Đức Thiên Ân</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>3.1INT_CS3</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 3</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.6</span></td>
+                <td><span class="score-highlight score-eng">6.55</span></td>
+                <td><span class="badge badge-growth">Tiến bộ (+2.9)</span></td>
+                <td><span class="badge badge-warning">Trung bình</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">8</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Phùng Chí Nam Anh</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>8.1INT_CS3</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 8</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.0</span></td>
+                <td><span class="score-highlight score-eng">3.5</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+0.5)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
+              </tr>
+        
             </tbody>
+            <tfoot>
+              <tr class="summary-sub-row" style="background: #f8fafc; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e293b; text-align: right;">HS Cam kết theo môn:</td>
+                <td colspan="5" style="color: #334155; font-weight: 500;"><strong>Tiếng Anh:</strong> 6 HS &nbsp;|&nbsp; <strong>Toán:</strong> 1 HS &nbsp;|&nbsp; <strong>Tiếng Việt:</strong> 4 HS</td>
+              </tr>
+              <tr class="summary-progress-row" style="background: #f0fdf4; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #166534; text-align: right;">Tổng số môn Tiến bộ:</td>
+                <td colspan="5" style="font-weight: 700; color: #15803d;">
+                  3 / 7 lượt môn (42.9%)
+                </td>
+              </tr>
+              <tr class="summary-benchmark-row" style="background: #eff6ff; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e40af; text-align: right;">Tổng số môn Đạt chuẩn:</td>
+                <td colspan="5" style="font-weight: 700; color: #1d4ed8;">
+                  3 / 7 lượt môn (42.9%)
+                  <span style="font-weight: 400; color: #64748b; font-size: 11.5px; margin-left: 8px;">(Đạt chuẩn: 3 | Trung bình: 1 | Dưới TB: 3)</span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
   
       <div class="ckdv-campus-section" data-campus="CS4">
-        <h4 class="campus-title">🏫 CƠ SỞ CS4 (12 học sinh)</h4>
+        <h4 class="campus-title">CƠ SỞ CS4 (12 học sinh)</h4>
         <div class="table-container">
           <table class="report-table ckdv-table">
             <thead>
               <tr>
-                <th style="width: 50px;">STT</th>
+                <th style="width: 45px;">STT</th>
                 <th>Họ và tên</th>
-                <th>Lớp</th>
-                <th>Khối</th>
-                <th>Môn CKĐV</th>
-                <th>Điểm KSĐV Môn Cam Kết (Thang 10 & Cột Tổng điểm)</th>
-                <th>Điểm KSĐN Môn Tương Ứng</th>
-                <th>Ghi chú & Trạng thái</th>
+                <th style="width: 90px;">Lớp</th>
+                <th style="width: 75px;">Khối</th>
+                <th style="width: 110px;">Môn CKĐV</th>
+                <th style="width: 130px;">Điểm KSĐV</th>
+                <th style="width: 120px;">Điểm KSĐN</th>
+                <th style="width: 130px;">Tiến bộ</th>
+                <th style="width: 110px;">Đạt chuẩn</th>
               </tr>
             </thead>
             <tbody>
   
               <tr>
-                <td>1</td>
-                <td><strong>Ayesha Mirza</strong></td>
-                <td><code>6S_CS4</code></td>
-                <td>Khối 6</td>
-                <td>Toán, Tiếng Việt</td>
-                <td><strong>Toán: 4; Ngữ Văn: 4; Tiếng Anh: 6.3 (Tổng: 63)</strong></td>
-                <td><strong>Toán: 3.8; Ngữ Văn: 2.25; Tiếng Anh: 3.7</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (3.7)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">1</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Ayesha Mirza</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>6S_CS4</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">3.8</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>2</td>
-                <td><strong>HÀ ĐẶNG BẢO NGỌC</strong></td>
-                <td><code>3S_CS4</code></td>
-                <td>Khối 3</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 9; Tiếng Việt: 6; Tiếng Anh: 4.0 (Tổng: 40)</strong></td>
-                <td><strong>Toán: 8.3; Tiếng Việt: 7; Tiếng Anh: 2.8</strong></td>
-                <td><span class="badge badge-danger">Chưa đạt chuẩn Tiểu học (2.8)</span></td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="missing-text">Chưa có điểm</span></td>
+                <td><span class="missing-text">Chưa thi</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
               </tr>
-    
+        
               <tr>
-                <td>3</td>
-                <td><strong>Nguyễn Thị Thu Thúy</strong></td>
-                <td><code>10S_CS4</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 5; Ngữ Văn: 5.5; Tiếng Anh: 1.8 (Tổng: 18)</strong></td>
-                <td><strong>Toán: 4.25; Ngữ Văn: 4; Tiếng Anh: 1.9</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (1.9)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">2</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>HÀ ĐẶNG BẢO NGỌC</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>3S_CS4</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 3</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.0</span></td>
+                <td><span class="score-highlight score-eng">2.8</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>4</td>
-                <td><strong>Huỳnh Hoàng An</strong></td>
-                <td><code>3S_CS4</code></td>
-                <td>Khối 3</td>
-                <td>Toán, Tiếng Việt, Tiếng Anh</td>
-                <td><strong>Toán: 5; Tiếng Việt: 4.5; Tiếng Anh: 8.7 (Tổng: 87)</strong></td>
-                <td><strong>Toán: 8.3; Tiếng Việt: 3; Tiếng Anh: 9.8</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.1)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">3</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Thị Thu Thúy</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10S_CS4</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.8</span></td>
+                <td><span class="score-highlight score-eng">1.9</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+0.1)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>5</td>
-                <td><strong>Đặng Ngọc Bảo Ngân</strong></td>
-                <td><code>10S_CS4</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 1.8 (Tổng: 18.4)</strong></td>
-                <td><strong>Toán: 3.5; Ngữ Văn: 2.5; Tiếng Anh: 2.5</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (2.5)</span></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">4</td>
+                <td rowspan="3" style="vertical-align: middle;"><strong>Huỳnh Hoàng An</strong></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;"><code>3S_CS4</code></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">Khối 3</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">5</span></td>
+                <td><span class="score-highlight score-math">8.3</span></td>
+                <td><span class="badge badge-success">Bứt phá (+3.3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>6</td>
-                <td><strong>Ngô Nhật Khang</strong></td>
-                <td><code>10S_CS4</code></td>
-                <td>Khối 10</td>
-                <td>Tiếng Anh, Toán, Ngữ Văn</td>
-                <td><strong>Toán: 4; Ngữ Văn: 4.5; Tiếng Anh: 1.8 (Tổng: 17.8)</strong></td>
-                <td><strong>Toán: 3.5; Ngữ Văn: 5.75; Tiếng Anh: 3.1</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.3)</span></td>
+                <td><span class="badge-sub badge-viet">Tiếng Việt</span></td>
+                <td><span class="score-highlight score-viet">4.5</span></td>
+                <td><span class="score-highlight score-viet">3</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>7</td>
-                <td><strong>Võ Hoàng Vi</strong></td>
-                <td><code>6S_CS4</code></td>
-                <td>Khối 6</td>
-                <td>Toán</td>
-                <td><strong>Toán: 3; Ngữ Văn: 5.25; Tiếng Anh: 8.5 (Tổng: 85)</strong></td>
-                <td><strong>Toán: 6.3; Ngữ Văn: 4.75; Tiếng Anh: 6.5</strong></td>
-                <td><span class="badge badge-success">Đạt chuẩn môn Anh (6.5)</span></td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">8.7</span></td>
+                <td><span class="score-highlight score-eng">9.8</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.1)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>8</td>
-                <td><strong>Võ Như Quỳnh</strong></td>
-                <td><code>7S_CS4</code></td>
-                <td>Khối 7</td>
-                <td>Toán, Ngữ Văn, Tiếng Anh</td>
-                <td><strong>Toán: 4.5; Ngữ Văn: 5; Tiếng Anh: 4.2 (Tổng: 42)</strong></td>
-                <td><strong>Toán: 6; Ngữ Văn: 6; Tiếng Anh: 2.9</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (2.9)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">5</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Đặng Ngọc Bảo Ngân</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>10S_CS4</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.8</span></td>
+                <td><span class="score-highlight score-eng">2.5</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+0.7)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>9</td>
-                <td><strong>Đỗ Thành Nguyên</strong></td>
-                <td><code>10S_CS4</code></td>
-                <td>Khối 10</td>
-                <td>Toán, Ngữ Văn, Tiếng Anh</td>
-                <td><strong>Toán: 1.5; Ngữ Văn: 5; Tiếng Anh: 1.0 (Tổng: 10)</strong></td>
-                <td><strong>Toán: 0</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Toán (0)</span></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">6</td>
+                <td rowspan="3" style="vertical-align: middle;"><strong>Ngô Nhật Khang</strong></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;"><code>10S_CS4</code></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.8</span></td>
+                <td><span class="score-highlight score-eng">3.1</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+1.3)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>10</td>
-                <td><strong>Phạm Kiều Anh</strong></td>
-                <td><code>6S_CS4</code></td>
-                <td>Khối 6</td>
-                <td>Ngữ Văn</td>
-                <td><strong>Toán: 8; Tiếng Việt: 4; Ngữ Văn: 4; Tiếng Anh: 8.6 (Tổng: 86)</strong></td>
-                <td><strong>Toán: 9.3; Ngữ Văn: 7; Tiếng Anh: 7.3</strong></td>
-                <td><span class="badge badge-success">Đạt chuẩn môn Anh (7.3)</span></td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">3.5</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>11</td>
-                <td><strong>Võ Thị Anh Thư</strong></td>
-                <td><code>7S_CS4</code></td>
-                <td>Khối 7</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 8 <span style="color: #b45309; font-size: 11px;">(Tiếng Anh: Chưa có điểm)</span></strong></td>
-                <td><strong>Toán: 4.3; Ngữ Văn: 7.5; Tiếng Anh: 2.6</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Toán (4.3)</span></td>
+                <td><span class="badge-sub badge-van">Ngữ Văn</span></td>
+                <td><span class="score-highlight score-van">4.5</span></td>
+                <td><span class="score-highlight score-van">5.75</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>12</td>
-                <td><strong>Ngô Huỳnh Anh Minh</strong></td>
-                <td><code>6S_CS4</code></td>
-                <td>Khối 6</td>
-                <td>Toán, Ngữ Văn</td>
-                <td><strong>Toán: 4; Ngữ Văn: 5; Tiếng Anh: 9.6 (Tổng: 96)</strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">7</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Võ Hoàng Vi</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>6S_CS4</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">3</span></td>
+                <td><span class="score-highlight score-math">6</span></td>
+                <td><span class="badge badge-success">Bứt phá (+3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
+              <tr>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">8</td>
+                <td rowspan="3" style="vertical-align: middle;"><strong>Võ Như Quỳnh</strong></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;"><code>7S_CS4</code></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4.5</span></td>
+                <td><span class="score-highlight score-math">6</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.5)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
+              <tr>
+                <td><span class="badge-sub badge-van">Ngữ Văn</span></td>
+                <td><span class="score-highlight score-van">5</span></td>
+                <td><span class="score-highlight score-van">6</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
+              <tr>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">4.2</span></td>
+                <td><span class="score-highlight score-eng">2.9</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">9</td>
+                <td rowspan="3" style="vertical-align: middle;"><strong>Đỗ Thành Nguyên</strong></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;"><code>10S_CS4</code></td>
+                <td rowspan="3" style="text-align: center; vertical-align: middle;">Khối 10</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">1.5</span></td>
+                <td><span class="score-highlight score-math">0</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
+              </tr>
+        
+              <tr>
+                <td><span class="badge-sub badge-van">Ngữ Văn</span></td>
+                <td><span class="score-highlight score-van">5</span></td>
+                <td><span class="missing-text">Chưa thi</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
+              </tr>
+        
+              <tr>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.0</span></td>
+                <td><span class="missing-text">Chưa thi</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">10</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Phạm Kiều Anh</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>6S_CS4</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-van">Ngữ Văn</span></td>
+                <td><span class="score-highlight score-van">4</span></td>
+                <td><span class="score-highlight score-van">7</span></td>
+                <td><span class="badge badge-success">Bứt phá (+3)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">11</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Võ Thị Anh Thư</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7S_CS4</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.5</span></td>
+                <td><span class="score-highlight score-eng">2.6</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+0.1)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
+              </tr>
+        
+              <tr>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">12</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Ngô Huỳnh Anh Minh</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>6S_CS4</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="missing-text">Chưa thi</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
+              </tr>
+        
+              <tr>
+                <td><span class="badge-sub badge-van">Ngữ Văn</span></td>
+                <td><span class="score-highlight score-van">5</span></td>
+                <td><span class="missing-text">Chưa thi</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
+              </tr>
+        
             </tbody>
+            <tfoot>
+              <tr class="summary-sub-row" style="background: #f8fafc; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e293b; text-align: right;">HS Cam kết theo môn:</td>
+                <td colspan="5" style="color: #334155; font-weight: 500;"><strong>Tiếng Anh:</strong> 8 HS &nbsp;|&nbsp; <strong>Toán:</strong> 7 HS &nbsp;|&nbsp; <strong>Tiếng Việt:</strong> 2 HS &nbsp;|&nbsp; <strong>Ngữ Văn:</strong> 5 HS</td>
+              </tr>
+              <tr class="summary-progress-row" style="background: #f0fdf4; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #166534; text-align: right;">Tổng số môn Tiến bộ:</td>
+                <td colspan="5" style="font-weight: 700; color: #15803d;">
+                  7 / 17 lượt môn (41.2%)
+                </td>
+              </tr>
+              <tr class="summary-benchmark-row" style="background: #eff6ff; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e40af; text-align: right;">Tổng số môn Đạt chuẩn:</td>
+                <td colspan="5" style="font-weight: 700; color: #1d4ed8;">
+                  7 / 17 lượt môn (41.2%)
+                  <span style="font-weight: 400; color: #64748b; font-size: 11.5px; margin-left: 8px;">(Đạt chuẩn: 7 | Trung bình: 0 | Dưới TB: 10)</span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
   
       <div class="ckdv-campus-section" data-campus="CS5">
-        <h4 class="campus-title">🏫 CƠ SỞ CS5 (12 học sinh)</h4>
+        <h4 class="campus-title">CƠ SỞ CS5 (12 học sinh)</h4>
         <div class="table-container">
           <table class="report-table ckdv-table">
             <thead>
               <tr>
-                <th style="width: 50px;">STT</th>
+                <th style="width: 45px;">STT</th>
                 <th>Họ và tên</th>
-                <th>Lớp</th>
-                <th>Khối</th>
-                <th>Môn CKĐV</th>
-                <th>Điểm KSĐV Môn Cam Kết (Thang 10 & Cột Tổng điểm)</th>
-                <th>Điểm KSĐN Môn Tương Ứng</th>
-                <th>Ghi chú & Trạng thái</th>
+                <th style="width: 90px;">Lớp</th>
+                <th style="width: 75px;">Khối</th>
+                <th style="width: 110px;">Môn CKĐV</th>
+                <th style="width: 130px;">Điểm KSĐV</th>
+                <th style="width: 120px;">Điểm KSĐN</th>
+                <th style="width: 130px;">Tiến bộ</th>
+                <th style="width: 110px;">Đạt chuẩn</th>
               </tr>
             </thead>
             <tbody>
   
               <tr>
-                <td>1</td>
-                <td><strong>Mai Minh Minh</strong></td>
-                <td><code>6.5_CS5</code></td>
-                <td>Khối 6</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 3.4 (Tổng: 34)</strong></td>
-                <td><strong>Toán: 4.25; Ngữ Văn: 7.5; Tiếng Anh: 4.5</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.1)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">1</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Mai Minh Minh</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>6.5_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.4</span></td>
+                <td><span class="score-highlight score-eng">4.5</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+1.1)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>2</td>
-                <td><strong>Lâm Minh Khang</strong></td>
-                <td><code>2.5_CS5</code></td>
-                <td>Khối 2</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 7; Tiếng Việt: 9; Tiếng Anh: 6.1 (Tổng: 61)</strong></td>
-                <td><strong>Toán: 9.5; Tiếng Việt: 7.3; Tiếng Anh: 6.1</strong></td>
-                <td><span class="badge badge-danger">Chưa đạt chuẩn Tiểu học (6.1)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">2</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lâm Minh Khang</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>2.5_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 2</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">6.1</span></td>
+                <td><span class="score-highlight score-eng">6.1</span></td>
+                <td><span class="badge badge-warning">Không tăng (0)</span></td>
+                <td><span class="badge badge-warning">Trung bình</span></td>
               </tr>
-    
+        
               <tr>
-                <td>3</td>
-                <td><strong>Đặng Ái Thiên Vân</strong></td>
-                <td><code>3.6_CS5</code></td>
-                <td>Khối 3</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 10; Tiếng Việt: 8; Tiếng Anh: 3.9 (Tổng: 39)</strong></td>
-                <td><strong>Toán: 10; Tiếng Việt: 9; Tiếng Anh: 5.6</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.7)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">3</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Đặng Ái Thiên Vân</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>3.6_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 3</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.9</span></td>
+                <td><span class="score-highlight score-eng">5.6</span></td>
+                <td><span class="badge badge-growth">Tiến bộ (+1.7)</span></td>
+                <td><span class="badge badge-warning">Trung bình</span></td>
               </tr>
-    
+        
               <tr>
-                <td>4</td>
-                <td><strong>Bùi Tuấn Anh</strong></td>
-                <td><code>7.5_CS5</code></td>
-                <td>Khối 7</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 2.0 (Tổng: 20)</strong></td>
-                <td><strong>Toán: 7.5; Ngữ Văn: 7.5; Tiếng Anh: 3.5</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.5)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">4</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Bùi Tuấn Anh</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7.5_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.0</span></td>
+                <td><span class="score-highlight score-eng">3.5</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+1.5)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>5</td>
-                <td><strong>Phạm Gia Hưng</strong></td>
-                <td><code>2.5_CS5</code></td>
-                <td>Khối 7</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 2.3; Ngữ Văn: 4; Tiếng Anh: 2.6 (Tổng: 26)</strong></td>
-                <td><strong>Toán: 5; Tiếng Việt: 9.4; Ngữ Văn: 4.5; Tiếng Anh: 9.1</strong></td>
-                <td><span class="badge badge-growth">Bứt phá ngoạn mục (+6.5)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">5</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Phạm Gia Hưng</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>2.5_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">2.6</span></td>
+                <td><span class="score-highlight score-eng">6.8</span></td>
+                <td><span class="badge badge-success">Bứt phá (+4.2)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>6</td>
-                <td><strong>Vũ Đức Thịnh</strong></td>
-                <td><code>1.5_CS5</code></td>
-                <td>Khối 1</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 1.0 (Tổng: 10)</strong></td>
-                <td><strong>Chưa có bài KSĐN</strong></td>
-                <td></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">6</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Vũ Đức Thịnh</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>1.5_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 1</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.0</span></td>
+                <td><span class="missing-text">Chưa thi (Khối 1)</span></td>
+                <td><span class="badge badge-dim">Khối 1</span></td>
+                <td><span class="badge badge-dim">Chưa KSĐN (Khối 1)</span></td>
               </tr>
-    
+        
               <tr>
-                <td>7</td>
-                <td><strong>Nguyễn Minh Anh</strong></td>
-                <td><code>6.5_CS5</code></td>
-                <td>Khối 6</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Toán: 4; Tiếng Việt: 9; Ngữ Văn: 9; Tiếng Anh: 3.0 (Tổng: 30)</strong></td>
-                <td><strong>Toán: 6.75; Tiếng Việt: 10; Ngữ Văn: 8.25; Tiếng Anh: 8.7</strong></td>
-                <td><span class="badge badge-growth">Bứt phá ngoạn mục (+5.7)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">7</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Minh Anh</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>6.5_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">3.0</span></td>
+                <td><span class="score-highlight score-eng">9.2</span></td>
+                <td><span class="badge badge-success">Bứt phá (+6.2)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
               </tr>
-    
+        
               <tr>
-                <td>8</td>
-                <td><strong>Đỗ Duy Khôi</strong></td>
-                <td><code>6.5_CS5</code></td>
-                <td>Khối 6</td>
-                <td>Tiếng Anh, Toán</td>
-                <td><strong>Toán: 4; Tiếng Việt: 7; Ngữ Văn: 3; Tiếng Anh: 5.5 (Tổng: 55)</strong></td>
-                <td><strong>Toán: 2.25; Ngữ Văn: 6.75; Tiếng Anh: 4.5</strong></td>
-                <td><span class="badge badge-danger">Dưới TB môn Anh (4.5)</span></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">8</td>
+                <td rowspan="2" style="vertical-align: middle;"><strong>Đỗ Duy Khôi</strong></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;"><code>6.5_CS5</code></td>
+                <td rowspan="2" style="text-align: center; vertical-align: middle;">Khối 6</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">5.5</span></td>
+                <td><span class="score-highlight score-eng">4.5</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>9</td>
-                <td><strong>Lê Nguyễn Hoàng Bảo</strong></td>
-                <td><code>7.5_CS5</code></td>
-                <td>Khối 7</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Ngữ Văn: 5; Tiếng Anh: 1.7 (Tổng: 16.7)</strong></td>
-                <td><strong>Toán: 8.5; Ngữ Văn: 7; Tiếng Anh: 3.2</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.5)</span></td>
+                <td><span class="badge-sub badge-math">Toán</span></td>
+                <td><span class="score-highlight score-math">4</span></td>
+                <td><span class="score-highlight score-math">2.25</span></td>
+                <td><span class="badge badge-danger">Chưa tiến bộ</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>10</td>
-                <td><strong>Nguyễn Hoàng Đạt</strong></td>
-                <td><code>3.2INT_CS5</code></td>
-                <td>Khối 3</td>
-                <td>Chung / Theo dõi</td>
-                <td><strong>Toán: 2; Tiếng Việt: 1; Tiếng Anh: 6.6 (Tổng: 66)</strong></td>
-                <td><strong>Tiếng Việt: 2; Tiếng Anh: 7.8</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+1.2)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">9</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Lê Nguyễn Hoàng Bảo</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>7.5_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 7</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">1.7</span></td>
+                <td><span class="score-highlight score-eng">3.2</span></td>
+                <td><span class="badge badge-warning">Tăng nhẹ (+1.5)</span></td>
+                <td><span class="badge badge-danger">Dưới TB</span></td>
               </tr>
-    
+        
               <tr>
-                <td>11</td>
-                <td><strong>Nguyễn Hoàng Phúc</strong></td>
-                <td><code>5.2INT_CS5</code></td>
-                <td>Khối 5</td>
-                <td>Chung / Theo dõi</td>
-                <td><strong>Toán: 1; Tiếng Việt: 1; Tiếng Anh: 7.2 (Tổng: 72)</strong></td>
-                <td><strong>Tiếng Việt: 1; Tiếng Anh: 9.2</strong></td>
-                <td><span class="badge badge-growth">Tiến bộ rõ rệt (+2)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">10</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Hoàng Đạt</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>3.2INT_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 3</td>
+                <td><span class="badge-sub badge-other">Chung / Theo dõi</span></td>
+                <td><span class="score-highlight score-dim">Theo dõi chung</span></td>
+                <td><span class="missing-text">—</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
               </tr>
-    
+        
               <tr>
-                <td>12</td>
-                <td><strong>Trần Minh Huy</strong></td>
-                <td><code>2.6_CS5</code></td>
-                <td>Khối 2</td>
-                <td>Tiếng Anh</td>
-                <td><strong>Tiếng Anh: 7.0 (Tổng: 70)</strong></td>
-                <td><strong>Toán: 10; Tiếng Việt: 9.5; Tiếng Anh: 7.4</strong></td>
-                <td><span class="badge badge-success">Đạt chuẩn môn Anh (7.4)</span></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">11</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Nguyễn Hoàng Phúc</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>5.2INT_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 5</td>
+                <td><span class="badge-sub badge-other">Chung / Theo dõi</span></td>
+                <td><span class="score-highlight score-dim">Theo dõi chung</span></td>
+                <td><span class="missing-text">—</span></td>
+                <td><span class="badge badge-dim">Chưa thi KSĐN</span></td>
+                <td><span class="badge badge-dim">Chưa có bài KSĐN</span></td>
               </tr>
-    
+        
+              <tr>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">12</td>
+                <td rowspan="1" style="vertical-align: middle;"><strong>Trần Minh Huy</strong></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;"><code>2.6_CS5</code></td>
+                <td rowspan="1" style="text-align: center; vertical-align: middle;">Khối 2</td>
+                <td><span class="badge-sub badge-eng">Tiếng Anh</span></td>
+                <td><span class="score-highlight score-eng">7.0</span></td>
+                <td><span class="score-highlight score-eng">8.7</span></td>
+                <td><span class="badge badge-success">Tiến bộ (+1.7)</span></td>
+                <td><span class="badge badge-success">Đạt chuẩn</span></td>
+              </tr>
+        
             </tbody>
+            <tfoot>
+              <tr class="summary-sub-row" style="background: #f8fafc; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e293b; text-align: right;">HS Cam kết theo môn:</td>
+                <td colspan="5" style="color: #334155; font-weight: 500;"><strong>Tiếng Anh:</strong> 10 HS &nbsp;|&nbsp; <strong>Toán:</strong> 1 HS &nbsp;|&nbsp; <strong>Khác:</strong> 2 HS</td>
+              </tr>
+              <tr class="summary-progress-row" style="background: #f0fdf4; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #166534; text-align: right;">Tổng số môn Tiến bộ:</td>
+                <td colspan="5" style="font-weight: 700; color: #15803d;">
+                  4 / 10 lượt môn (40.0%)
+                </td>
+              </tr>
+              <tr class="summary-benchmark-row" style="background: #eff6ff; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e40af; text-align: right;">Tổng số môn Đạt chuẩn:</td>
+                <td colspan="5" style="font-weight: 700; color: #1d4ed8;">
+                  3 / 10 lượt môn (30.0%)
+                  <span style="font-weight: 400; color: #64748b; font-size: 11.5px; margin-left: 8px;">(Đạt chuẩn: 3 | Trung bình: 2 | Dưới TB: 5)</span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>

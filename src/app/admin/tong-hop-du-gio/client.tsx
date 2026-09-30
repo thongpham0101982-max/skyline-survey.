@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo, useEffect, useCallback } from "react"
+import React, { useState, useMemo, useEffect, useCallback, Fragment } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { updateTeacherObservationTargets } from "@/app/teacher/du-gio/actions"
 import toast, { Toaster } from "react-hot-toast"
@@ -98,12 +98,14 @@ export function AdminTongHopClient({
     router.push(`${pathname}?${params.toString()}`)
   }
 
+  const isRestrictedTTCM = Boolean(isTTCM && !isSuperAdmin && !isHeadOfAcademic && !isTBP && !isGDCS);
+
   const rawBlock = (searchParams.get("block") || "").toLowerCase().trim()
   const [activeBlockTab, setActiveBlockTab] = useState(() => {
     if (["mammon", "mam-non", "mamnon", "mn"].includes(rawBlock)) return "Mầm non";
     if (["dieuhan", "dieuhanh", "dieu-hanh", "dh"].includes(rawBlock)) return "Điều hành";
     if (["k12", "pho-thong", "phothong"].includes(rawBlock)) return "Phổ thông K-12";
-    if (isTTCM && currentTeacher?.departmentId) {
+    if (isRestrictedTTCM && currentTeacher?.departmentId) {
       const d = departments.find(dept => dept.id === currentTeacher.departmentId);
       if (d) {
         if (d.blockCM === "Mầm Non") return "Mầm non";
@@ -120,14 +122,14 @@ export function AdminTongHopClient({
   }, [rawBlock]);
 
   const availableBlocks = useMemo(() => {
-    if (isTTCM && currentTeacher?.departmentId) {
+    if (isRestrictedTTCM && currentTeacher?.departmentId) {
       const d = departments.find(dept => dept.id === currentTeacher.departmentId);
       if (d?.blockCM === "Mầm Non") return ["Mầm non"];
       if (d?.blockCM === "Điều hành") return ["Điều hành"];
       return ["Phổ thông K-12"];
     }
     return ["Phổ thông K-12", "Mầm non", "Điều hành"];
-  }, [isTTCM, currentTeacher, departments]);
+  }, [isRestrictedTTCM, currentTeacher, departments]);
 
   const activeDepartments = useMemo(() => {
     return departments.filter(dept => {
@@ -139,14 +141,14 @@ export function AdminTongHopClient({
     });
   }, [departments, activeBlockTab]);
 
-  const initialDeptId = isTTCM
-    ? (currentTeacher?.departmentId || "")
+  const initialDeptId = (isRestrictedTTCM && currentTeacher?.departmentId)
+    ? currentTeacher.departmentId
     : (activeDepartments.find(d => d.id === initialFilters.deptId)?.id || activeDepartments[0]?.id || "");
 
   const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
 
   useEffect(() => {
-    if (!isTTCM) {
+    if (!isRestrictedTTCM) {
       const newDepts = departments.filter(dept => {
         if (!dept.blockCM || dept.blockCM === "" || dept.blockCM === "Hỗ trợ người học") return false;
         if (activeBlockTab === "Phổ thông K-12" && dept.blockCM !== "Phổ thông") return false;
@@ -157,10 +159,21 @@ export function AdminTongHopClient({
       setSelectedDeptId(newDepts[0]?.id || "");
       setSelectedTeacherId(null);
     }
-  }, [activeBlockTab, departments, isTTCM]);
+  }, [activeBlockTab, departments, isRestrictedTTCM]);
 
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
   const [activeDetailTab, setActiveDetailTab] = useState<"lich-su" | "lich-su-du" | "tien-do-to" | "phan-tich" | "to-cm">("lich-su")
+
+  // State to toggle between Department Progress and GDCS Executive Tracking
+  const [tienDoViewMode, setTienDoViewMode] = useState<"to-cm" | "gdcs">(() => {
+    return activeBlockTab === "Điều hành" ? "gdcs" : "to-cm";
+  })
+
+  useEffect(() => {
+    if (activeBlockTab === "Điều hành") {
+      setTienDoViewMode("gdcs");
+    }
+  }, [activeBlockTab]);
 
   // Top-level Navigation Tab state ("tong-hop" | "ma-tran" | "bang-ke" | "dbcl")
   const [mainTab, setMainTab] = useState<"tong-hop" | "ma-tran" | "bang-ke" | "dbcl">(() => {
@@ -438,7 +451,7 @@ export function AdminTongHopClient({
   }, [teachersList, initialSlots, selectedMonth]);
 
   const handleTabChange = (tab: string) => {
-    if (isTTCM) return;
+    if (isRestrictedTTCM && availableBlocks.length <= 1) return;
     setActiveBlockTab(tab);
     setSelectedTeacherId(null);
     setSearchTeacherQuery("");
@@ -451,6 +464,11 @@ export function AdminTongHopClient({
       return true;
     });
     setSelectedDeptId(newActiveDepts[0]?.id || "");
+
+    const blockKey = tab === "Mầm non" ? "mamnon" : tab === "Điều hành" ? "dieuhan" : "k12";
+    const params = new URLSearchParams(window.location.search);
+    params.set("block", blockKey);
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
   const deptTeachers = useMemo(() => {
@@ -958,21 +976,32 @@ export function AdminTongHopClient({
       }
     });
 
-    // 2. From teachersList: any teacher whose position or assignment is TTCM / Tổ trưởng
+    // 2. From teachersList: any teacher whose position or assignment is TTCM / Tổ trưởng / GĐCS
     (teachersList || []).forEach((t: any) => {
       const pos = (t.position || "").toUpperCase().trim();
+      const roleUpper = (t.user?.role || "").toUpperCase().trim();
+      const obsUpper = (t.observerType || "").toUpperCase().trim();
+      const deptName = (t.departmentRel?.name || t.department?.name || "").toUpperCase().trim();
+
       const isTT = pos === "TTCM" || pos.includes("TTCM") || pos.includes("TỔ TRƯỞNG") || pos.includes("TO TRUONG") ||
         t.observerType === "TTCM" ||
         t.departmentAssignments?.some((da: any) => {
           const p = (da.position || "").toUpperCase().trim();
           return p === "TTCM" || p.includes("TTCM") || p.includes("TỔ TRƯỞNG") || p.includes("TO TRUONG");
         });
-      if (isTT && !ttcmMap.has(t.id)) {
+
+      const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(pos) ||
+        pos.includes("GIÁM ĐỐC") || pos.includes("GIAM DOC") ||
+        roleUpper === "GDCS" ||
+        obsUpper === "GĐCS" || obsUpper === "GDCS" || obsUpper.includes("GIÁM ĐỐC") ||
+        deptName === "GĐCS";
+
+      if ((isTT || isGDCS) && !ttcmMap.has(t.id)) {
         ttcmMap.set(t.id, {
           ...t,
           deptId: t.departmentId,
-          deptName: getTeacherDeptName(t),
-          block: getTeacherBlock(t)
+          deptName: isGDCS ? "GĐCS" : getTeacherDeptName(t),
+          block: isGDCS ? "Điều hành" : getTeacherBlock(t)
         });
       }
     });
@@ -1029,7 +1058,7 @@ export function AdminTongHopClient({
         ? configuredObserved
         : getPresetTarget(observerType);
 
-      const campusStats: Record<string, { periods: number; surprisePeriods: number }> = {};
+      const campusStats: Record<string, { periods: number; surprisePeriods: number; evaluatedPeriods?: number; pendingPeriods?: number }> = {};
       let totalObserved = 0;
       let totalSurprise = 0;
       let internalObserved = 0;
@@ -1049,13 +1078,16 @@ export function AdminTongHopClient({
         const increment = slot.isDoublePeriod ? 2 : 1;
 
         slot.registrations?.forEach((reg: any) => {
-          if (reg.teacherId === ttcm.id && reg.isApproved && reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT") {
+          if (reg.teacherId === ttcm.id && reg.isApproved) {
+            const hasEval = reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT";
             const observedCampus = getSlotCampusName(slot);
             if (!campusStats[observedCampus]) {
-              campusStats[observedCampus] = { periods: 0, surprisePeriods: 0 };
+              campusStats[observedCampus] = { periods: 0, surprisePeriods: 0, evaluatedPeriods: 0, pendingPeriods: 0 };
             }
             campusStats[observedCampus].periods += increment;
             if (isSurprise) campusStats[observedCampus].surprisePeriods += increment;
+            if (hasEval) campusStats[observedCampus].evaluatedPeriods = (campusStats[observedCampus].evaluatedPeriods || 0) + increment;
+            else campusStats[observedCampus].pendingPeriods = (campusStats[observedCampus].pendingPeriods || 0) + increment;
 
             totalObserved += increment;
             if (isSurprise) totalSurprise += increment;
@@ -1909,6 +1941,753 @@ export function AdminTongHopClient({
     } finally {
       setSendingEmail(false);
     }
+  };
+
+  // =========================================================================
+  // CHUYÊN BIỆT: THỐNG KÊ & THEO DÕI TIẾN ĐỘ DỰ GIỜ CHỨC VỤ GIÁM ĐỐC CƠ SỞ (GĐCS)
+  // =========================================================================
+  const [gdcsMonth, setGdcsMonth] = useState<string>("all");
+  const [gdcsCampusFilter, setGdcsCampusFilter] = useState<string>("all");
+  const [gdcsSearchQuery, setGdcsSearchQuery] = useState<string>("");
+  const [expandedGdcsId, setExpandedGdcsId] = useState<string | null>(null);
+
+  // Sync gdcsMonth with selectedMonth
+  useEffect(() => {
+    setGdcsMonth(selectedMonth);
+  }, [selectedMonth]);
+
+  // List of all GĐCS teachers across system
+  const gdcsTeachersList = useMemo(() => {
+    return (teachersList || []).filter((t: any) => {
+      const posUpper = (t.position || "").toUpperCase().trim();
+      const roleUpper = (t.user?.role || "").toUpperCase().trim();
+      const obsUpper = (t.observerType || "").toUpperCase().trim();
+      const deptName = (t.departmentRel?.name || t.department?.name || "").toUpperCase().trim();
+      return (
+        ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(posUpper) ||
+        posUpper.includes("GIÁM ĐỐC") || posUpper.includes("GIAM DOC") ||
+        roleUpper === "GDCS" ||
+        obsUpper === "GĐCS" || obsUpper === "GDCS" || obsUpper.includes("GIÁM ĐỐC") ||
+        deptName === "GĐCS" ||
+        t.departmentAssignments?.some((da: any) => {
+          const dp = (da.position || "").toUpperCase().trim();
+          const dn = (da.department?.name || "").toUpperCase().trim();
+          return dp.includes("GĐCS") || dp.includes("GDCS") || dn === "GĐCS";
+        })
+      );
+    }).sort((a: any, b: any) => {
+      const cA = getTeacherCampusName(a);
+      const cB = getTeacherCampusName(b);
+      return cA.localeCompare(cB, "vi");
+    });
+  }, [teachersList, campuses]);
+
+  // Helper for campus styling
+  const getCampusBadge = (campusName: string) => {
+    const c = (campusName || "").toUpperCase();
+    if (c.includes("CS1") || c.includes("RIVERSIDE")) {
+      return { label: "CS1 - Riverside", bg: "bg-blue-50 text-blue-700 border-blue-200" };
+    }
+    if (c.includes("CS2") || c.includes("TRUNG TÂM") || c.includes("TRUNG TAM")) {
+      return { label: "CS2 - Trung tâm", bg: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+    }
+    if (c.includes("CS3") || c.includes("QUỐC TẾ") || c.includes("QUOC TE")) {
+      return { label: "CS3 - Quốc tế", bg: "bg-amber-50 text-amber-700 border-amber-200" };
+    }
+    if (c.includes("CS4") || c.includes("BEACH")) {
+      return { label: "CS4 - Beach", bg: "bg-purple-50 text-purple-700 border-purple-200" };
+    }
+    if (c.includes("CS5") || c.includes("HILL") || c.includes("HỘI AN") || c.includes("HOI AN")) {
+      return { label: "CS5 - Hill Hội An", bg: "bg-rose-50 text-rose-700 border-rose-200" };
+    }
+    return { label: campusName || "Cơ sở chưa rõ", bg: "bg-slate-100 text-slate-700 border-slate-200" };
+  };
+
+  // Compute monthly data for each GDCS
+  const gdcsMonthlyData = useMemo(() => {
+    const activeM = gdcsMonth;
+    return gdcsTeachersList.map((gdcs: any) => {
+      const homeCampus = getTeacherCampusName(gdcs);
+      const reqObserved = gdcs.requiredObserved || 4;
+      const targetUnit = gdcs.observedUnit || "tháng";
+
+      let totalAttended = 0;
+      let internalCount = 0;
+      let crossCount = 0;
+      let surpriseCount = 0;
+      let evaluatedCount = 0;
+      let pendingCount = 0;
+      let totalScoreSum = 0;
+
+      const slotDetails: any[] = [];
+
+      (initialSlots || []).forEach((slot: any) => {
+        if (activeM !== "all") {
+          if (!slot.date) return;
+          const d = new Date(slot.date);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          if (`${yyyy}-${mm}` !== activeM) return;
+        }
+
+        const isSurprise = isSurpriseSlot(slot);
+        const increment = slot.isDoublePeriod ? 2 : 1;
+
+        slot.registrations?.forEach((reg: any) => {
+          if (reg.teacherId === gdcs.id && reg.isApproved) {
+            const hasEval = reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT";
+            const slotCampus = getSlotCampusName(slot);
+            const isInternal = slotCampus === homeCampus;
+
+            totalAttended += increment;
+            if (isInternal) internalCount += increment;
+            else crossCount += increment;
+
+            if (isSurprise) surpriseCount += increment;
+
+            if (hasEval) {
+              evaluatedCount += increment;
+              const sc = reg.evaluation?.totalScore;
+              if (sc !== null && sc !== undefined) {
+                totalScoreSum += (sc * increment);
+              }
+            } else {
+              pendingCount += increment;
+            }
+
+            slotDetails.push({
+              id: slot.id,
+              regId: reg.id,
+              date: slot.date,
+              period: slot.startTime ? `${slot.startTime} - ${slot.endTime || ""}` : (slot.period || "Tiết dự"),
+              hostTeacherName: slot.teacher?.teacherName || slot.teacherName || "Chưa rõ GV",
+              hostTeacherCode: slot.teacher?.teacherCode || "",
+              subjectName: slot.subjectName || "Chưa rõ môn",
+              className: slot.className || "Chưa rõ lớp",
+              campusName: slotCampus,
+              isInternal,
+              isSurprise,
+              isDoublePeriod: slot.isDoublePeriod,
+              increment,
+              evaluated: !!hasEval,
+              score: reg.evaluation?.totalScore,
+              rating: reg.evaluation?.overallRating,
+              status: slot.status
+            });
+          }
+        });
+      });
+
+      // Sort details by date desc
+      slotDetails.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+
+      const progressPct = reqObserved > 0 ? Math.round((totalAttended / reqObserved) * 100) : (totalAttended > 0 ? 100 : 0);
+      const avgScore = evaluatedCount > 0 ? Number((totalScoreSum / evaluatedCount).toFixed(1)) : null;
+
+      let statusKey: "completed" | "surpassed_pending" | "in_progress" | "not_started" = "not_started";
+      let statusLabel = "Chưa thực hiện";
+      let statusBadgeClass = "bg-slate-100 text-slate-700 border-slate-200";
+
+      if (totalAttended >= reqObserved && pendingCount === 0) {
+        statusKey = "completed";
+        statusLabel = "Đạt chỉ tiêu";
+        statusBadgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200";
+      } else if (totalAttended >= reqObserved && pendingCount > 0) {
+        statusKey = "surpassed_pending";
+        statusLabel = `Vượt số lượng (${pendingCount} chờ chấm)`;
+        statusBadgeClass = "bg-amber-50 text-amber-800 border-amber-200";
+      } else if (totalAttended > 0) {
+        statusKey = "in_progress";
+        statusLabel = `Đang thực hiện (${totalAttended}/${reqObserved})`;
+        statusBadgeClass = "bg-sky-50 text-sky-800 border-sky-200";
+      }
+
+      return {
+        id: gdcs.id,
+        teacher: gdcs,
+        name: gdcs.teacherName,
+        teacherCode: gdcs.teacherCode,
+        email: gdcs.email,
+        position: gdcs.position || "GĐCS",
+        campus: homeCampus,
+        reqObserved,
+        targetUnit,
+        totalAttended,
+        internalCount,
+        crossCount,
+        surpriseCount,
+        evaluatedCount,
+        pendingCount,
+        avgScore,
+        progressPct,
+        statusKey,
+        statusLabel,
+        statusBadgeClass,
+        details: slotDetails
+      };
+    });
+  }, [gdcsTeachersList, gdcsMonth, initialSlots, campuses]);
+
+  // Filtered GDCS data based on campus filter and search query
+  const filteredGdcsMonthlyData = useMemo(() => {
+    return gdcsMonthlyData.filter(item => {
+      const matchCampus = gdcsCampusFilter === "all" || item.campus.toLowerCase().includes(gdcsCampusFilter.toLowerCase());
+      const matchQuery = !gdcsSearchQuery ||
+        item.name.toLowerCase().includes(gdcsSearchQuery.toLowerCase()) ||
+        item.teacherCode.toLowerCase().includes(gdcsSearchQuery.toLowerCase()) ||
+        item.campus.toLowerCase().includes(gdcsSearchQuery.toLowerCase());
+      return matchCampus && matchQuery;
+    });
+  }, [gdcsMonthlyData, gdcsCampusFilter, gdcsSearchQuery]);
+
+  // Overall aggregate stats across all GĐCS
+  const gdcsOverallStats = useMemo(() => {
+    const totalGdcs = gdcsMonthlyData.length;
+    const totalTarget = gdcsMonthlyData.reduce((s, g) => s + g.reqObserved, 0);
+    const totalAttended = gdcsMonthlyData.reduce((s, g) => s + g.totalAttended, 0);
+    const totalInternal = gdcsMonthlyData.reduce((s, g) => s + g.internalCount, 0);
+    const totalCross = gdcsMonthlyData.reduce((s, g) => s + g.crossCount, 0);
+    const totalEvaluated = gdcsMonthlyData.reduce((s, g) => s + g.evaluatedCount, 0);
+    const totalPending = gdcsMonthlyData.reduce((s, g) => s + g.pendingCount, 0);
+    const totalSurprise = gdcsMonthlyData.reduce((s, g) => s + g.surpriseCount, 0);
+
+    const overallProgress = totalTarget > 0 ? Math.round((totalAttended / totalTarget) * 100) : 0;
+    const crossRate = totalAttended > 0 ? Math.round((totalCross / totalAttended) * 100) : 0;
+
+    const evaluatedItems = gdcsMonthlyData.filter(g => g.avgScore !== null);
+    const avgScore = evaluatedItems.length > 0
+      ? Number((evaluatedItems.reduce((s, g) => s + (g.avgScore || 0), 0) / evaluatedItems.length).toFixed(1))
+      : null;
+
+    const metCount = gdcsMonthlyData.filter(g => g.totalAttended >= g.reqObserved).length;
+
+    return {
+      totalGdcs,
+      totalTarget,
+      totalAttended,
+      totalInternal,
+      totalCross,
+      totalEvaluated,
+      totalPending,
+      totalSurprise,
+      overallProgress,
+      crossRate,
+      avgScore,
+      metCount
+    };
+  }, [gdcsMonthlyData]);
+
+  const openEmailModalForGDCS = (gdcs: any) => {
+    setSelectedTeacherId(gdcs.id);
+    setEmailTo(gdcs.email || "");
+    setEmailCc("bankhaothi@skylineschool.edu.vn, bgh@skylineschool.edu.vn");
+    setEmailMonth(gdcsMonth !== "all" ? gdcsMonth : (selectedMonth !== "all" ? selectedMonth : (availableMonths[0] || "all")));
+    setEmailNotes(`[Thông báo tiến độ dự giờ] Kính gửi GĐCS ${gdcs.name} (${gdcs.campus}). Tiến độ dự giờ kỳ này: đã dự ${gdcs.totalAttended}/${gdcs.reqObserved} tiết (${gdcs.progressPct}% chỉ tiêu). Số phiếu đã hoàn tất đánh giá: ${gdcs.evaluatedCount}, số phiếu tồn đọng cần chấm: ${gdcs.pendingCount}.`);
+    setIsEmailModalOpen(true);
+  };
+
+  // Render function for GĐCS Tracking Section
+  const renderGDCSTrackingSection = () => {
+    const periodLabel = gdcsMonth === "all" ? "Toàn bộ năm học" : `Tháng ${gdcsMonth.split("-")[1]}/${gdcsMonth.split("-")[0]}`;
+
+    return (
+      <div className="space-y-5">
+        {/* 1. Header Banner & Filter Row */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="p-2 rounded-xl bg-teal-50 border border-teal-200 text-[#003B3A]">
+                  <ShieldCheck className="w-5 h-5 text-[#003B3A]" />
+                </span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                    <span>Thống kê & Theo dõi Tiến độ Dự giờ Chức vụ GĐCS</span>
+                    <span className="px-2 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-[#003B3A] text-xs font-semibold">
+                      5 Cơ sở
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Theo dõi định kỳ chỉ tiêu <strong>4 tiết/tháng</strong>, kiểm soát phiếu đánh giá và phân bổ dự giờ chéo giữa các cơ sở
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Tools */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Lọc tháng */}
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs">
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-[11px] font-semibold text-slate-500">Kỳ:</span>
+                <select
+                  value={gdcsMonth}
+                  onChange={(e) => setGdcsMonth(e.target.value)}
+                  className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer text-xs"
+                >
+                  <option value="all">Toàn bộ năm học</option>
+                  {availableMonths.map(m => (
+                    <option key={m} value={m}>
+                      Tháng {m.split("-")[1]}/{m.split("-")[0]}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Lọc Cơ sở */}
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs">
+                <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-[11px] font-semibold text-slate-500">Cơ sở:</span>
+                <select
+                  value={gdcsCampusFilter}
+                  onChange={(e) => setGdcsCampusFilter(e.target.value)}
+                  className="bg-transparent font-semibold text-slate-800 outline-none cursor-pointer text-xs"
+                >
+                  <option value="all">Tất cả cơ sở</option>
+                  <option value="CS1">CS1 - Riverside</option>
+                  <option value="CS2">CS2 - Trung tâm</option>
+                  <option value="CS3">CS3 - Quốc tế</option>
+                  <option value="CS4">CS4 - Beach</option>
+                  <option value="CS5">CS5 - Hill Hội An</option>
+                </select>
+              </div>
+
+              {/* Tìm kiếm tên GĐCS */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Tìm GĐCS..."
+                  value={gdcsSearchQuery}
+                  onChange={(e) => setGdcsSearchQuery(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-teal-600 focus:bg-white transition-all w-32 sm:w-40"
+                />
+              </div>
+
+              {/* Nút gửi email báo cáo toàn khối */}
+              <button
+                type="button"
+                onClick={openAllDeptsEmailModal}
+                className="px-3 py-1.5 rounded-xl bg-[#003B3A] hover:bg-[#002d2c] text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>Báo cáo cho Ban ĐHCM</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 2. 5 Thẻ KPI Thống Kê Tổng Quan Khối GĐCS */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-100">
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tổng GĐCS phụ trách</div>
+              <div className="text-xl font-black text-slate-900 mt-1 flex items-baseline gap-1">
+                <span>{gdcsOverallStats.totalGdcs}</span>
+                <span className="text-[11px] font-normal text-slate-500">cơ sở</span>
+              </div>
+              <div className="text-[10px] text-teal-800 font-medium mt-0.5">
+                Chỉ tiêu: 4 tiết/tháng
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tổng tiết đã dự</div>
+              <div className="text-xl font-black text-teal-900 mt-1 flex items-baseline gap-1">
+                <span>{gdcsOverallStats.totalAttended}</span>
+                <span className="text-[11px] font-normal text-slate-500">/ {gdcsOverallStats.totalTarget} tiết</span>
+              </div>
+              <div className="text-[10px] text-slate-600 mt-0.5 flex items-center gap-1">
+                <span>Đạt</span>
+                <strong className={gdcsOverallStats.overallProgress >= 100 ? "text-emerald-700" : "text-amber-700"}>
+                  {gdcsOverallStats.overallProgress}%
+                </strong>
+                <span>chỉ tiêu</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tỷ lệ dự chéo cơ sở</div>
+              <div className="text-xl font-black text-indigo-900 mt-1 flex items-baseline gap-1">
+                <span>{gdcsOverallStats.totalCross}</span>
+                <span className="text-[11px] font-normal text-slate-500">/ {gdcsOverallStats.totalAttended} tiết</span>
+              </div>
+              <div className="text-[10px] text-indigo-700 font-medium mt-0.5">
+                {gdcsOverallStats.crossRate}% dự chéo cơ sở
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Đã hoàn thành đánh giá</div>
+              <div className="text-xl font-black text-emerald-900 mt-1 flex items-baseline gap-1">
+                <span>{gdcsOverallStats.totalEvaluated}</span>
+                <span className="text-[11px] font-normal text-slate-500">tiết</span>
+              </div>
+              <div className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                {gdcsOverallStats.avgScore ? `ĐTB: ${gdcsOverallStats.avgScore}/20đ` : "Đạt chuẩn"}
+              </div>
+            </div>
+
+            <div className={`rounded-xl p-3 border ${gdcsOverallStats.totalPending > 0 ? "bg-amber-50/70 border-amber-200" : "bg-slate-50 border-slate-200/80"}`}>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-900">Phiếu chờ hoàn tất</div>
+              <div className="text-xl font-black text-amber-900 mt-1 flex items-baseline gap-1">
+                <span>{gdcsOverallStats.totalPending}</span>
+                <span className="text-[11px] font-normal text-amber-700">phiếu</span>
+              </div>
+              <div className="text-[10px] text-amber-800 font-medium mt-0.5">
+                {gdcsOverallStats.totalPending > 0 ? "Cần hoàn tất chấm điểm" : "100% phiếu đã hoàn tất"}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Bảng Danh Sách 5 Giám Đốc Cơ Sở (GĐCS) */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="p-4 bg-slate-50/80 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                <span>Bảng theo dõi tiến độ dự giờ 5 Giám đốc Cơ sở</span>
+                <span className="px-2 py-0.5 rounded bg-teal-50 text-[#003B3A] font-bold text-[11px] border border-teal-200">
+                  {periodLabel}
+                </span>
+              </h4>
+              <p className="text-xs text-slate-500 mt-1">
+                Nhấn vào dòng hoặc nút <strong>Xem chi tiết</strong> để mở danh sách toàn bộ các tiết dự giờ của GĐCS đó
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50 text-[11px] font-bold uppercase text-slate-600 tracking-wider">
+                  <th className="py-3 px-3 text-center w-12">STT</th>
+                  <th className="py-3 px-4 min-w-[200px]">Giám đốc Cơ sở</th>
+                  <th className="py-3 px-3 text-center min-w-[120px]">Cơ sở phụ trách</th>
+                  <th className="py-3 px-3 text-center min-w-[100px]">Chỉ tiêu</th>
+                  <th className="py-3 px-3 text-center min-w-[130px]">Đã tham gia dự</th>
+                  <th className="py-3 px-3 text-center min-w-[120px]">Đã đánh giá</th>
+                  <th className="py-3 px-3 text-center min-w-[120px]">Phiếu chưa nộp</th>
+                  <th className="py-3 px-3 text-center min-w-[140px]">Tiến độ</th>
+                  <th className="py-3 px-3 text-center min-w-[150px]">Đánh giá trạng thái</th>
+                  <th className="py-3 px-3 text-center min-w-[120px]">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredGdcsMonthlyData.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="py-8 text-center text-slate-400">
+                      Không tìm thấy dữ liệu Giám đốc Cơ sở phù hợp
+                    </td>
+                  </tr>
+                ) : (
+                  filteredGdcsMonthlyData.map((gdcs, idx) => {
+                    const badge = getCampusBadge(gdcs.campus);
+                    const isExpanded = expandedGdcsId === gdcs.id;
+
+                    return (
+                      <Fragment key={gdcs.id}>
+                        <tr
+                          onClick={() => setExpandedGdcsId(isExpanded ? null : gdcs.id)}
+                          className={`hover:bg-teal-50/30 cursor-pointer transition-colors ${
+                            isExpanded ? "bg-teal-50/50" : ""
+                          }`}
+                        >
+                          <td className="py-3 px-3 text-center font-medium text-slate-400">
+                            {idx + 1}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <span>{gdcs.name}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 text-[10px] font-mono font-medium">
+                                {gdcs.teacherCode}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                              <span className="text-slate-600 font-medium">{gdcs.position}</span>
+                              <span>&bull;</span>
+                              <span className="text-slate-400 truncate max-w-[180px]">{gdcs.email || "Chưa có email"}</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-bold border ${badge.bg}`}>
+                              {badge.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center font-bold text-slate-800">
+                            {gdcs.reqObserved} tiết
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <div>
+                              <span className={`font-bold text-sm ${gdcs.totalAttended >= gdcs.reqObserved ? "text-teal-800" : (gdcs.totalAttended > 0 ? "text-sky-800" : "text-slate-500")}`}>
+                                {gdcs.totalAttended} tiết
+                              </span>
+                              {gdcs.totalAttended > 0 && (
+                                <div className="text-[10px] text-slate-500 mt-0.5 flex items-center justify-center gap-1 flex-wrap">
+                                  {gdcs.internalCount > 0 && (
+                                    <span className="text-emerald-700 font-medium">NB: {gdcs.internalCount}</span>
+                                  )}
+                                  {gdcs.crossCount > 0 && (
+                                    <span className="text-indigo-700 font-medium">Chéo: {gdcs.crossCount}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <div>
+                              <span className="font-bold text-emerald-800">
+                                {gdcs.evaluatedCount} tiết
+                              </span>
+                              {gdcs.avgScore !== null && (
+                                <div className="text-[10px] text-emerald-700 font-semibold mt-0.5">
+                                  ĐTB: {gdcs.avgScore}đ
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {gdcs.pendingCount > 0 ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold">
+                                <AlertTriangle className="w-3 h-3 text-amber-600" />
+                                <span>{gdcs.pendingCount} phiếu</span>
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-medium">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3">
+                            <div className="w-full max-w-[120px] mx-auto space-y-1">
+                              <div className="flex items-center justify-between text-[10px] font-semibold text-slate-600">
+                                <span>{gdcs.totalAttended}/{gdcs.reqObserved}</span>
+                                <span>{gdcs.progressPct}%</span>
+                              </div>
+                              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${
+                                    gdcs.progressPct >= 100
+                                      ? "bg-emerald-600"
+                                      : gdcs.progressPct >= 50
+                                      ? "bg-teal-600"
+                                      : gdcs.progressPct > 0
+                                      ? "bg-sky-500"
+                                      : "bg-slate-300"
+                                  }`}
+                                  style={{ width: `${Math.min(gdcs.progressPct, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className={`inline-block px-2.5 py-1 rounded-full text-[11px] font-semibold border ${gdcs.statusBadgeClass}`}>
+                              {gdcs.statusLabel}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setExpandedGdcsId(isExpanded ? null : gdcs.id)}
+                                className={`px-2 py-1 rounded border text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                  isExpanded
+                                    ? "bg-[#003B3A] text-white border-[#003B3A]"
+                                    : "border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-slate-700 hover:text-teal-800"
+                                }`}
+                                title="Xem chi tiết các tiết dự giờ"
+                              >
+                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                                <span>{gdcs.details.length} tiết</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => openEmailModalForGDCS(gdcs)}
+                                className="p-1 rounded border border-slate-200 hover:border-teal-600 hover:bg-teal-50 text-slate-600 hover:text-teal-800 transition-colors"
+                                title={`Gửi email thông báo/nhắc nhở cho GĐCS ${gdcs.name}`}
+                              >
+                                <Mail className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Expandable Details Row */}
+                        {isExpanded && (
+                          <tr className="bg-slate-50/70">
+                            <td colSpan={10} className="p-4 sm:p-5 border-t border-b border-teal-100">
+                              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                                  <div className="flex items-center gap-2">
+                                    <Eye className="w-4 h-4 text-teal-700" />
+                                    <h5 className="text-xs font-bold uppercase text-slate-800 tracking-wider">
+                                      Chi tiết các tiết dự giờ của GĐCS {gdcs.name} ({badge.label}) - {periodLabel}
+                                    </h5>
+                                    <span className="px-2 py-0.2 rounded-full bg-teal-50 text-teal-800 text-[10px] font-bold border border-teal-200">
+                                      {gdcs.details.length} tiết dự
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedTeacherId(gdcs.id);
+                                      setActiveDetailTab("lich-su-du");
+                                    }}
+                                    className="text-xs text-teal-700 hover:text-teal-900 font-semibold underline self-start sm:self-auto cursor-pointer"
+                                  >
+                                    Xem trên hồ sơ chi tiết &rarr;
+                                  </button>
+                                </div>
+
+                                {gdcs.details.length === 0 ? (
+                                  <div className="py-6 text-center text-slate-400 text-xs">
+                                    Chưa ghi nhận lượt dự giờ nào của GĐCS trong kỳ báo cáo này.
+                                  </div>
+                                ) : (
+                                  <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-xs border-collapse">
+                                      <thead>
+                                        <tr className="bg-slate-50 text-[10px] font-bold uppercase text-slate-600 border-b border-slate-200">
+                                          <th className="py-2 px-2.5 text-center w-10">STT</th>
+                                          <th className="py-2 px-3 min-w-[100px]">Ngày & Tiết</th>
+                                          <th className="py-2 px-3 min-w-[140px]">Giáo viên được dự</th>
+                                          <th className="py-2 px-3 min-w-[130px]">Môn học & Lớp</th>
+                                          <th className="py-2 px-3 text-center min-w-[100px]">Cơ sở</th>
+                                          <th className="py-2 px-3 text-center min-w-[100px]">Hình thức</th>
+                                          <th className="py-2 px-3 text-center min-w-[100px]">Điểm & Xếp loại</th>
+                                          <th className="py-2 px-3 text-center min-w-[120px]">Trạng thái phiếu</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100">
+                                        {gdcs.details.map((slot: any, sIdx: number) => {
+                                          const slotDateStr = slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "N/A";
+                                          const slotBadge = getCampusBadge(slot.campusName);
+
+                                          return (
+                                            <tr key={slot.id || sIdx} className="hover:bg-slate-50/80">
+                                              <td className="py-2 px-2.5 text-center text-slate-400 font-mono">
+                                                {sIdx + 1}
+                                              </td>
+                                              <td className="py-2 px-3">
+                                                <div className="font-semibold text-slate-800">{slotDateStr}</div>
+                                                <div className="text-[10px] text-slate-400">{slot.period}</div>
+                                              </td>
+                                              <td className="py-2 px-3">
+                                                <div className="font-semibold text-slate-900">{slot.hostTeacherName}</div>
+                                                {slot.hostTeacherCode && (
+                                                  <div className="text-[10px] text-slate-400 font-mono">{slot.hostTeacherCode}</div>
+                                                )}
+                                              </td>
+                                              <td className="py-2 px-3">
+                                                <div className="font-semibold text-teal-900">{slot.subjectName}</div>
+                                                <div className="text-[10px] text-slate-500 font-mono">{slot.className}</div>
+                                              </td>
+                                              <td className="py-2 px-3 text-center">
+                                                <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${slotBadge.bg}`}>
+                                                  {slotBadge.label}
+                                                </span>
+                                              </td>
+                                              <td className="py-2 px-3 text-center">
+                                                <div className="space-y-0.5">
+                                                  <span className={`inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold ${
+                                                    slot.isInternal
+                                                      ? "bg-slate-100 text-slate-700"
+                                                      : "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                                  }`}>
+                                                    {slot.isInternal ? "Nội bộ CS" : "Dự chéo CS"}
+                                                  </span>
+                                                  {slot.isSurprise && (
+                                                    <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                                      Đột xuất
+                                                    </span>
+                                                  )}
+                                                </div>
+                                              </td>
+                                              <td className="py-2 px-3 text-center">
+                                                {slot.score !== null && slot.score !== undefined ? (
+                                                  <div>
+                                                    <span className="font-bold text-slate-900">{slot.score}đ</span>
+                                                    {slot.rating && (
+                                                      <span className="block text-[10px] text-emerald-700 font-medium">
+                                                        ({slot.rating})
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                ) : (
+                                                  <span className="text-slate-400">-</span>
+                                                )}
+                                              </td>
+                                              <td className="py-2 px-3 text-center">
+                                                {slot.evaluated ? (
+                                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-semibold">
+                                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                                    <span>Đã hoàn tất</span>
+                                                  </span>
+                                                ) : (
+                                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-bold">
+                                                    <Clock className="w-3 h-3 text-amber-600" />
+                                                    <span>Chờ nộp phiếu</span>
+                                                  </span>
+                                                )}
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })
+                )}
+              </tbody>
+              <tfoot className="bg-slate-50 font-bold text-xs border-t border-slate-200 text-slate-800">
+                <tr>
+                  <td colSpan={3} className="py-3 px-4 uppercase text-slate-700 font-bold">
+                    Tổng cộng toàn khối GĐCS ({gdcsOverallStats.totalGdcs} Cơ sở)
+                  </td>
+                  <td className="py-3 px-3 text-center font-bold text-slate-900">
+                    {gdcsOverallStats.totalTarget} tiết
+                  </td>
+                  <td className="py-3 px-3 text-center font-bold text-teal-900">
+                    <div>
+                      <span>{gdcsOverallStats.totalAttended} tiết</span>
+                      <div className="text-[10px] font-normal text-slate-500">
+                        (NB: {gdcsOverallStats.totalInternal} • Chéo: {gdcsOverallStats.totalCross})
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-3 text-center font-bold text-emerald-900">
+                    <div>
+                      <span>{gdcsOverallStats.totalEvaluated} tiết</span>
+                      {gdcsOverallStats.avgScore && (
+                        <div className="text-[10px] font-normal text-emerald-700">
+                          ĐTB: {gdcsOverallStats.avgScore}đ
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3 px-3 text-center font-bold text-amber-900">
+                    {gdcsOverallStats.totalPending > 0 ? `${gdcsOverallStats.totalPending} phiếu` : "-"}
+                  </td>
+                  <td className="py-3 px-3 text-center font-bold">
+                    <span className={gdcsOverallStats.overallProgress >= 100 ? "text-emerald-700" : "text-amber-700"}>
+                      {gdcsOverallStats.overallProgress}%
+                    </span>
+                  </td>
+                  <td className="py-3 px-3 text-center font-semibold text-slate-700">
+                    {gdcsOverallStats.metCount}/{gdcsOverallStats.totalGdcs} đạt chỉ tiêu
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const filteredSlots = useMemo(() => {
@@ -3645,7 +4424,7 @@ export function AdminTongHopClient({
           academicYears={academicYears}
           selectedYearId={filterAcademicYearId}
           currentTeacher={currentTeacher}
-          isTTCM={isTTCM}
+          isTTCM={isRestrictedTTCM}
           isSuperAdmin={isSuperAdmin}
           isHeadOfAcademic={isHeadOfAcademic}
           isTBP={isTBP}
@@ -3730,10 +4509,11 @@ export function AdminTongHopClient({
                     return (
                       <button
                         key={tab}
+                        type="button"
                         onClick={() => handleTabChange(tab)}
-                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${isActive
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${isActive
                             ? "bg-[#003B3A] text-white shadow-xs"
-                            : "text-slate-600 hover:text-slate-900"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                           }`}
                       >
                         <span>{tab}</span>
@@ -3749,7 +4529,7 @@ export function AdminTongHopClient({
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Tổ chuyên môn</label>
-                    {isTTCM ? (
+                    {isRestrictedTTCM ? (
                       <div className="text-xs font-bold p-2 bg-teal-50 border border-teal-200 text-teal-900 rounded-xl truncate">
                         {selectedDeptName}
                       </div>
@@ -3757,7 +4537,7 @@ export function AdminTongHopClient({
                       <select
                         value={selectedDeptId}
                         onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); }}
-                        className="w-full text-xs font-bold p-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none truncate"
+                        className="w-full text-xs font-bold p-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none truncate cursor-pointer"
                       >
                         {activeDepartments.map(dept => (
                           <option key={dept.id} value={dept.id}>{dept.name}</option>
@@ -3965,7 +4745,7 @@ export function AdminTongHopClient({
                           : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                         }`}
                     >
-                      <span>Tiến độ Tổ CM</span>
+                      <span>{activeBlockTab === "Điều hành" ? "Tiến độ GĐCS & Khối" : "Tiến độ Tổ CM"}</span>
                       <span className={`ml-1.5 px-1.5 py-0.2 rounded text-[10px] ${activeDetailTab === "tien-do-to" ? "bg-teal-50 text-teal-800 border border-teal-200 font-bold" : "bg-slate-200 text-slate-600"}`}>
                         {deptTeachers.length} GV
                       </span>
@@ -3995,10 +4775,16 @@ export function AdminTongHopClient({
                   </div>
                 </div>
               ) : (
-                <div className="bg-white p-8 rounded-3xl border border-slate-200/90 text-center py-12">
-                  <User className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                  <p className="text-xs font-black text-slate-600 uppercase">Vui lòng chọn giáo viên để xem chi tiết</p>
-                </div>
+                activeBlockTab === "Điều hành" ? (
+                  <div className="space-y-6">
+                    {renderGDCSTrackingSection()}
+                  </div>
+                ) : (
+                  <div className="bg-white p-8 rounded-3xl border border-slate-200/90 text-center py-12">
+                    <User className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs font-black text-slate-600 uppercase">Vui lòng chọn giáo viên để xem chi tiết</p>
+                  </div>
+                )
               )}
 
               {/* TAB 1: Lịch sử tiết dạy */}
@@ -4400,12 +5186,60 @@ export function AdminTongHopClient({
                 </div>
               )}
 
-              {/* TAB 3: Báo cáo & Tiến độ Tổ Chuyên Môn */}
+              {/* TAB 3: Báo cáo & Tiến độ Tổ Chuyên Môn / GĐCS */}
               {activeDetailTab === "tien-do-to" && (
                 <div className="space-y-6">
 
-                  {/* BẢNG 1: BẢNG THỐNG KÊ TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN THEO THÁNG */}
-                  <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                  {/* Switcher Pill Bar for Department Progress vs GDCS Executive Progress */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-2.5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setTienDoViewMode("to-cm")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          tienDoViewMode === "to-cm"
+                            ? "bg-white text-slate-900 shadow-2xs font-bold"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                        }`}
+                      >
+                        <span>Tiến độ Tổ chuyên môn ({allDepartmentsSummary.length})</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTienDoViewMode("gdcs")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                          tienDoViewMode === "gdcs"
+                            ? "bg-[#003B3A] text-white shadow-2xs font-bold"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
+                        }`}
+                      >
+                        <span className="flex items-center gap-1.5">
+                          <ShieldCheck className="w-3.5 h-3.5 text-amber-300" />
+                          <span>Tiến độ Giám đốc Cơ sở (GĐCS)</span>
+                          <span className="px-1.5 py-0.2 rounded bg-amber-400 text-slate-900 text-[10px] font-bold">5 CS</span>
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {tienDoViewMode === "to-cm" && (
+                        <button
+                          onClick={openAllDeptsEmailModal}
+                          className="px-3.5 py-1.5 rounded-lg bg-[#003B3A] hover:bg-[#002d2c] text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>Báo cáo cho Ban ĐHCM</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {tienDoViewMode === "gdcs" ? (
+                    renderGDCSTrackingSection()
+                  ) : (
+                    <>
+                      {/* BẢNG 1: BẢNG THỐNG KÊ TIẾN ĐỘ CÁC TỔ CHUYÊN MÔN THEO THÁNG */}
+                      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
                     <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
@@ -4648,8 +5482,10 @@ export function AdminTongHopClient({
                       </table>
                     </div>
                   </div>
-                </div>
+                </>
               )}
+            </div>
+          )}
 
 
 
