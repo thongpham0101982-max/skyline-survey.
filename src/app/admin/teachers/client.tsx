@@ -17,7 +17,10 @@ function PositionBadge({ position, positions }: { position?: string | null, posi
         if (pos === "TTCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 text-[10px] font-black border border-amber-200">TTCM</span>;
         if (pos === "TPTCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-teal-50 text-teal-700 text-[10px] font-black border border-teal-200">TPTCM</span>;
         if (pos === "TBP") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[10px] font-black border border-indigo-200">TBP</span>;
-        if (pos === "TB_DHCM" || pos === "Ban ĐHCM" || pos === "QLCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-black border border-purple-200">Ban ĐHCM</span>;
+        if (pos === "TB_DHCM" || pos === "Ban ĐHCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-black border border-purple-200">Ban ĐHCM</span>;
+        if (pos === "BGH" || pos === "BGH_CS" || pos === "BGH_K12") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[10px] font-black border border-amber-300">BGH Phổ thông</span>;
+        if (pos === "BGH_MN" || pos === "BGHMN") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-pink-100 text-pink-900 text-[10px] font-black border border-pink-300">BGH Mầm non</span>;
+        if (pos === "QLCM") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-purple-100 text-purple-800 text-[10px] font-black border border-purple-200">QLCM Cơ sở</span>;
         if (pos === "GĐCS" || pos === "GDCS") return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-rose-50 text-rose-700 text-[10px] font-black border border-rose-200">GĐCS</span>;
         return <span key={pos} className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[10px] font-bold">{pos || "GV"}</span>;
       })}
@@ -28,12 +31,13 @@ import { useState, useRef, useMemo } from "react"
 import {
   Plus, Trash2, Edit2, Check, X, Upload, Download,
   Key, GraduationCap, Search, Users, UserCheck, Building2, Mail,
-  Filter, RefreshCw, ShieldCheck, AlertCircle, Layers
+  Filter, RefreshCw, ShieldCheck, AlertCircle, Layers, Crown
 } from "lucide-react"
 import {
   createTeacherAction, updateTeacherAction, deleteTeacherAction,
   importTeachersAction, resetTeacherPasswordAction, assignTeachersToRoleAction
 } from "./actions"
+import BghAssignmentModal from "./BghAssignmentModal"
 
 const EMPTY_NEW = {
   teacherCode: "", teacherName: "",
@@ -90,6 +94,7 @@ export function TeacherManagerClient({
   const [editingId, setEditingId] = useState(null)
   const [editForm, setEditForm] = useState(EMPTY_EDIT)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showBghModal, setShowBghModal] = useState(false)
   const [newForm, setNewForm] = useState(() => {
     if (isCampusLocked && defaultCampusId) {
       const campusName = (campuses || []).find((c) => c.id === defaultCampusId)?.campusName || ""
@@ -431,6 +436,12 @@ export function TeacherManagerClient({
               <Upload className="w-4 h-4" />{importing ? "Đang xử lý..." : "Import Excel"}
               <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileImport} className="hidden" disabled={importing} />
             </label>
+            <button
+              onClick={() => setShowBghModal(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:brightness-110 text-white rounded-xl text-sm font-black transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-md shadow-amber-500/20"
+            >
+              <Crown className="w-4 h-4" />Phân Quyền BGH Cơ Sở
+            </button>
             <button onClick={() => { setShowAddForm(true); setErrorMsg("") }}
               className="flex items-center gap-1.5 px-5 py-2.5 bg-gradient-to-r from-[#003B3A] to-[#48BFE3] hover:brightness-110 text-white rounded-xl text-sm font-black transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-md shadow-[#48BFE3]/15">
               <Plus className="w-4 h-4" />Thêm GV Mới
@@ -524,6 +535,9 @@ export function TeacherManagerClient({
                 <option value="TPTCM">TPTCM (Tổ phó CM)</option>
                 <option value="TBP">TBP (Trưởng Bộ Phận)</option>
                 <option value="TB_DHCM">Trưởng Ban ĐHCM</option>
+                <option value="BGH">BGH (Ban Giám Hiệu Phổ thông)</option>
+                <option value="BGH_MN">BGH_MN (Ban Giám Hiệu Mầm non)</option>
+                <option value="QLCM">QLCM (Quản lý CM Cơ sở)</option>
                 <option value="GĐCS">GĐCS (Giám đốc CS)</option>
               </select>
             </div>
@@ -896,6 +910,9 @@ export function TeacherManagerClient({
                             <option value="TPTCM">TPTCM (Tổ phó CM)</option>
                             <option value="TBP">TBP (Trưởng Bộ Phận)</option>
                             <option value="TB_DHCM">Trưởng Ban ĐHCM</option>
+                            <option value="BGH">BGH (Ban Giám Hiệu Phổ thông)</option>
+                            <option value="BGH_MN">BGH_MN (Ban Giám Hiệu Mầm non)</option>
+                            <option value="QLCM">QLCM (Quản lý CM Cơ sở)</option>
                             <option value="GĐCS">GĐCS (Giám đốc CS)</option>
                           </select>
                         ) : (
@@ -1016,6 +1033,15 @@ export function TeacherManagerClient({
           </div>
         )}
       </div>
+
+      {/* Modal Phân quyền BGH Cơ sở */}
+      <BghAssignmentModal
+        isOpen={showBghModal}
+        onClose={() => setShowBghModal(false)}
+        allTeachers={teachers}
+        campuses={campuses}
+        onSuccess={() => window.location.reload()}
+      />
     </div>
   )
 }

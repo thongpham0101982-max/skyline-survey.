@@ -3747,7 +3747,16 @@ export async function createSurpriseObservation(data: {
     const isBGHMN = ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(currentTeacher?.position || "") ||
                     ["BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non"].includes(roleCode);
 
-    if (!isAdminOrLeader && !isTTCM && !isQLCM && !isBGHMN && !isTBP) {
+    const isBGH_K12 = ["BGH", "BGH_CS", "BGH_K12", "HIEU_TRUONG", "HIEU_PHO", "BAN_GIAM_HIEU"].includes(currentTeacher?.position || "") ||
+                      ["BGH", "BGH_CS", "BGH_K12", "HIEU_TRUONG", "HIEU_PHO"].includes(roleCode);
+
+    const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(currentTeacher?.position || "") ||
+                   ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(roleCode);
+
+    const isSystemAdmin = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "BAN_DHCM", "DHCM"].includes(roleCode) ||
+                          ["ADMIN", "KT_DBCL"].includes(currentTeacher?.position || "");
+
+    if (!isAdminOrLeader && !isTTCM && !isQLCM && !isBGHMN && !isBGH_K12 && !isGDCS && !isTBP) {
       return { success: false, error: "Bạn không có quyền thực hiện chức năng Dự giờ đột xuất." }
     }
 
@@ -3763,7 +3772,37 @@ export async function createSurpriseObservation(data: {
     })
     if (!hostTeacher) return { success: false, error: "Không tìm thấy giáo viên được dự giờ." }
 
-    // 1. Kiểm tra phạm vi nếu là TBP (chỉ được dự giờ GV thuộc Bộ phận phụ trách)
+    // Kiểm tra khối của giáo viên được dự giờ (Mầm non vs Phổ thông)
+    const hostDivCodes = new Set<string>();
+    if (hostTeacher.departmentRel?.divisionCode) hostDivCodes.add(normalizeDivisionCode(hostTeacher.departmentRel.divisionCode));
+    hostTeacher.departmentAssignments?.forEach((da: any) => {
+      if (da.department?.divisionCode) hostDivCodes.add(normalizeDivisionCode(da.department.divisionCode));
+    });
+    hostTeacher.divisionAssignments?.forEach((da: any) => {
+      if (da.divisionCode) hostDivCodes.add(normalizeDivisionCode(da.divisionCode));
+    });
+    const isHostMamNon = hostDivCodes.has("BP_MAM_NON") || hostTeacher.departmentRel?.code === "MAM_NON";
+
+    // 1. Kiểm tra phạm vi cơ sở (Campus) nếu là lãnh đạo cơ sở (BGH, BGHMN, GDCS, QLCM)
+    if (!isSystemAdmin && (isBGH_K12 || isBGHMN || isGDCS || isQLCM)) {
+      const myCampusId = currentTeacher.campusId;
+      if (myCampusId && hostTeacher.campusId && myCampusId !== hostTeacher.campusId) {
+        return { success: false, error: "Lãnh đạo / Ban Giám Hiệu chỉ có quyền dự giờ giáo viên thuộc cơ sở của mình." };
+      }
+    }
+
+    // 2. Phân định rạch ròi Khối học (Phổ thông vs Mầm non)
+    if (isBGHMN) {
+      if (!isHostMamNon) {
+        return { success: false, error: "Ban Giám Hiệu Mầm non chỉ có quyền thực hiện dự giờ cho Giáo viên thuộc Khối Mầm non." };
+      }
+    } else if (isBGH_K12 || (isQLCM && !hostDivCodes.has("BP_MAM_NON") && currentTeacher.departmentRel?.divisionCode !== "BP_MAM_NON")) {
+      if (isHostMamNon) {
+        return { success: false, error: "Ban Giám Hiệu Phổ thông chỉ có quyền thực hiện dự giờ cho Giáo viên thuộc Khối Phổ thông (không bao gồm Khối Mầm non)." };
+      }
+    }
+
+    // 3. Kiểm tra phạm vi nếu là TBP (chỉ được dự giờ GV thuộc Bộ phận phụ trách)
     if (isTBP && !isAdminOrLeader) {
       const myDivCodes = new Set<string>();
       currentTeacher.divisionAssignments?.forEach((da: any) => {
@@ -3774,14 +3813,6 @@ export async function createSurpriseObservation(data: {
       }
       const isSuperDiv = Array.from(myDivCodes).some(dc => ["BAN_GD", "BAN_KT_DBCL", "BAN_DHCM", "BAN_TT"].includes(dc));
       if (!isSuperDiv) {
-        const hostDivCodes = new Set<string>();
-        if (hostTeacher.departmentRel?.divisionCode) hostDivCodes.add(normalizeDivisionCode(hostTeacher.departmentRel.divisionCode));
-        hostTeacher.departmentAssignments?.forEach((da: any) => {
-          if (da.department?.divisionCode) hostDivCodes.add(normalizeDivisionCode(da.department.divisionCode));
-        });
-        hostTeacher.divisionAssignments?.forEach((da: any) => {
-          if (da.divisionCode) hostDivCodes.add(normalizeDivisionCode(da.divisionCode));
-        });
         const hasMatchingDiv = Array.from(myDivCodes).some(dc => hostDivCodes.has(dc));
         const isSamePrimaryDept = currentTeacher.departmentId && hostTeacher.departmentId === currentTeacher.departmentId;
         if (!hasMatchingDiv && !isSamePrimaryDept) {
@@ -3790,8 +3821,9 @@ export async function createSurpriseObservation(data: {
       }
     }
 
-    // 2. Kiểm tra phạm vi nếu là TTCM / QLCM (chỉ được dự giờ GV thuộc Tổ chuyên môn của mình)
-    if (!isAdminOrLeader && (isTTCM || isQLCM) && !isTBP) {
+    // 4. Kiểm tra phạm vi nếu là TTCM thuần túy (chỉ được dự giờ GV thuộc Tổ chuyên môn của mình)
+    const isCampusLeaderScope = (isBGH_K12 || isGDCS || (isQLCM && currentTeacher.campusId && currentTeacher.campusId === hostTeacher.campusId));
+    if (!isAdminOrLeader && (isTTCM || isQLCM) && !isTBP && !isCampusLeaderScope) {
       const ttcmDeptIds = new Set<string>()
       if (currentTeacher.departmentId) ttcmDeptIds.add(currentTeacher.departmentId)
       if (currentTeacher.departmentAssignments) {

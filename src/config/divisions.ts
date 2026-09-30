@@ -105,6 +105,9 @@ export interface AcademicPosition {
 
 export const ACADEMIC_POSITIONS: AcademicPosition[] = [
   { code: "GĐCS", label: "GĐCS (Giám đốc Cơ sở)", shortLabel: "GĐCS", color: "rose", level: 1 },
+  { code: "BGH", label: "BGH (Ban Giám Hiệu Phổ thông)", shortLabel: "BGH", color: "indigo", level: 2 },
+  { code: "BGH_MN", label: "BGH Mầm non", shortLabel: "BGH MN", color: "amber", level: 2 },
+  { code: "QLCM", label: "QLCM (Quản lý Chuyên môn Cơ sở)", shortLabel: "QLCM", color: "purple", level: 2 },
   { code: "TB_DHCM", label: "Trưởng Ban ĐHCM (Toàn quyền các BP)", shortLabel: "Trưởng Ban ĐHCM", color: "purple", level: 2 },
   { code: "Ban ĐHCM", label: "Ban Điều Hành Chuyên Môn", shortLabel: "Ban ĐHCM", color: "purple", level: 2 },
   { code: "TBP", label: "Trưởng Bộ Phận / Trưởng Ban (TBP)", shortLabel: "TBP", color: "indigo", level: 3 },
