@@ -98,7 +98,7 @@ export function AdminTongHopClient({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const isRestrictedTTCM = Boolean(isTTCM && !isSuperAdmin && !isHeadOfAcademic && !isTBP && !isGDCS);
+  const isRestrictedTTCM = false;
 
   const rawBlock = (searchParams.get("block") || "").toLowerCase().trim()
   const [activeBlockTab, setActiveBlockTab] = useState(() => {
@@ -451,7 +451,6 @@ export function AdminTongHopClient({
   }, [teachersList, initialSlots, selectedMonth]);
 
   const handleTabChange = (tab: string) => {
-    if (isRestrictedTTCM && availableBlocks.length <= 1) return;
     setActiveBlockTab(tab);
     setSelectedTeacherId(null);
     setSearchTeacherQuery("");
@@ -472,8 +471,19 @@ export function AdminTongHopClient({
   };
 
   const deptTeachers = useMemo(() => {
-    return teachersList.filter((t: any) => t.departmentId === selectedDeptId);
-  }, [teachersList, selectedDeptId]);
+    return teachersList.filter((t: any) => {
+      if (t.departmentId === selectedDeptId) return true;
+      if (selectedDeptName === "GĐCS") {
+        const pos = (t.position || "").toUpperCase();
+        return pos.includes("GĐCS") || pos.includes("GDCS") || pos.includes("GIÁM ĐỐC");
+      }
+      if (selectedDeptName === "BGHMN") {
+        const pos = (t.position || "").toUpperCase();
+        return pos.includes("BGHMN") || (pos.includes("MẦM NON") && (pos.includes("HIỆU") || pos.includes("PHÓ")));
+      }
+      return false;
+    });
+  }, [teachersList, selectedDeptId, selectedDeptName]);
 
   const filteredDeptTeachers = useMemo(() => {
     return deptTeachers.filter((t: any) =>
@@ -4510,7 +4520,11 @@ export function AdminTongHopClient({
                       <button
                         key={tab}
                         type="button"
-                        onClick={() => handleTabChange(tab)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleTabChange(tab);
+                        }}
                         className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${isActive
                             ? "bg-[#003B3A] text-white shadow-xs"
                             : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
@@ -4529,21 +4543,15 @@ export function AdminTongHopClient({
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">Tổ chuyên môn</label>
-                    {isRestrictedTTCM ? (
-                      <div className="text-xs font-bold p-2 bg-teal-50 border border-teal-200 text-teal-900 rounded-xl truncate">
-                        {selectedDeptName}
-                      </div>
-                    ) : (
-                      <select
-                        value={selectedDeptId}
-                        onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); }}
-                        className="w-full text-xs font-bold p-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none truncate cursor-pointer"
-                      >
-                        {activeDepartments.map(dept => (
-                          <option key={dept.id} value={dept.id}>{dept.name}</option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={selectedDeptId}
+                      onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); }}
+                      className="w-full text-xs font-bold p-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 focus:bg-white focus:border-[#48BFE3] outline-none truncate cursor-pointer"
+                    >
+                      {activeDepartments.map(dept => (
+                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-1">

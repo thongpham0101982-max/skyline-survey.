@@ -95,7 +95,7 @@ export default async function AdminTongHopPage(props: {
       campuses={refDataResult.campuses || []}
       classes={refDataResult.classes || []}
       initialFilters={{ level, grade, period, date, campusId, divisionCode, deptId, academicYearId }}
-      isTTCM={isTTCM && !isSuperAdmin && !isHeadOfAcademic && !isTBP && !isGDCS}
+      isTTCM={false}
       isSuperAdmin={isSuperAdmin}
       isHeadOfAcademic={isHeadOfAcademic}
       isTBP={isTBP}
