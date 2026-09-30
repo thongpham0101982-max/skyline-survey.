@@ -2074,10 +2074,18 @@ export function AdminTongHopClient({
               pendingCount += increment;
             }
 
+            const evalScore = reg.evaluation?.totalScore !== null && reg.evaluation?.totalScore !== undefined ? Number(reg.evaluation.totalScore) : null;
+            const evalRating = reg.evaluation?.overallRating || null;
+            const evalStatus = reg.evaluation ? (reg.evaluation.reEvaluationStatus || "COMPLETED") : "PENDING";
+            const formattedDate = slot.date
+              ? (typeof slot.date === "string" ? slot.date.split("T")[0] : new Date(slot.date).toLocaleDateString("vi-VN"))
+              : "—";
+
             slotDetails.push({
               id: slot.id,
               regId: reg.id,
-              date: slot.date,
+              date: formattedDate,
+              rawDate: slot.date,
               period: slot.startTime ? `${slot.startTime} - ${slot.endTime || ""}` : (slot.period || "Tiết dự"),
               hostTeacherName: slot.teacher?.teacherName || slot.teacherName || "Chưa rõ GV",
               hostTeacherCode: slot.teacher?.teacherCode || "",
@@ -2089,9 +2097,12 @@ export function AdminTongHopClient({
               isDoublePeriod: slot.isDoublePeriod,
               increment,
               evaluated: !!hasEval,
-              score: reg.evaluation?.totalScore,
-              rating: reg.evaluation?.overallRating,
-              status: slot.status
+              score: evalScore,
+              evalScore,
+              rating: evalRating,
+              evalRating,
+              status: slot.status,
+              evalStatus
             });
           }
         });
@@ -6356,13 +6367,15 @@ export function AdminTongHopClient({
                           <tr key={idx} className="hover:bg-slate-50">
                             <td className="p-2 text-center font-bold text-slate-400">{idx + 1}</td>
                             <td className="p-2">
-                              <span className="font-bold text-slate-800">{d.date}</span>
-                              <span className="text-[10px] text-slate-400 block">Tiết {d.period}</span>
+                              <span className="font-bold text-slate-800">
+                                {typeof d.date === "string" ? d.date : (d.date ? String(d.date) : "—")}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block">Tiết {String(d.period || "")}</span>
                             </td>
-                            <td className="p-2 font-semibold text-slate-900">{d.hostTeacherName}</td>
-                            <td className="p-2 text-slate-600">{d.subjectName} ({d.className})</td>
-                            <td className="p-2 text-center text-slate-700">{d.campusName}</td>
-                            <td className="p-2 text-center font-bold text-slate-800">{d.evalScore !== null ? `${d.evalScore}/20đ` : "—"}</td>
+                            <td className="p-2 font-semibold text-slate-900">{String(d.hostTeacherName || "—")}</td>
+                            <td className="p-2 text-slate-600">{String(d.subjectName || "—")} ({String(d.className || "—")})</td>
+                            <td className="p-2 text-center text-slate-700">{String(d.campusName || "—")}</td>
+                            <td className="p-2 text-center font-bold text-slate-800">{d.evalScore !== null && d.evalScore !== undefined ? `${d.evalScore}/20đ` : "—"}</td>
                             <td className="p-2 text-center font-bold">
                               {d.evalStatus === "FINAL" || d.evalStatus === "COMPLETED" 
                                 ? <span className="text-emerald-700">✓ Đã nộp</span>
