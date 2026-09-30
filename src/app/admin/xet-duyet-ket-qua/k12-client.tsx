@@ -1328,6 +1328,244 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [emailStudents, setEmailStudents] = useState<any[]>([]);
   const [emailSending, setEmailSending] = useState(false);
   const [emailSendingStatus, setEmailSendingStatus] = useState("");
+
+  // ============= ADMIN SCORE ENTRY & EDIT STATE =============
+  const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+  const [editingScoreRecord, setEditingScoreRecord] = useState<any>(null);
+  const [editingSubjectObj, setEditingSubjectObj] = useState<any>(null);
+  const [isNewSubjectMode, setIsNewSubjectMode] = useState(false);
+  const [scoreInputs, setScoreInputs] = useState<string[]>([]);
+  const [commentInputs, setCommentInputs] = useState<string[]>([]);
+  const [teacherNameInput, setTeacherNameInput] = useState("");
+  const [isSavingScore, setIsSavingScore] = useState(false);
+  const [isDeleteScoreConfirmOpen, setIsDeleteScoreConfirmOpen] = useState(false);
+
+  const handleOpenEditScore = (sc: any) => {
+    if (!sc || sc.id === "tong_diem_tieng_anh") return;
+    const subj = sc.subject || (Array.isArray(subjectsList) ? subjectsList.find((s: any) => s.id === sc.subjectId) : null) || {};
+    setEditingScoreRecord(sc);
+    setEditingSubjectObj(subj);
+    setIsNewSubjectMode(false);
+
+    let parsedScores: any[] = [];
+    try {
+      if (sc.scores) {
+        const p = JSON.parse(sc.scores);
+        parsedScores = Array.isArray(p) ? p : [p];
+      }
+    } catch {
+      parsedScores = [sc.scores];
+    }
+
+    const sCode = (subj.code || "").toLowerCase();
+    const sName = (subj.name || "").toLowerCase();
+    const isPsych = sCode.includes("tly") || sName.includes("tâm lý");
+
+    if (isPsych) {
+      const scNum = parsedScores[6] !== undefined ? parsedScores[6] : (parsedScores[20] !== undefined ? parsedScores[20] : "0");
+      setScoreInputs([String(scNum)]);
+    } else {
+      const colCount = Math.max(subj.scoreColumns || 1, 1);
+      const arr = Array(colCount).fill("");
+      for (let i = 0; i < colCount; i++) {
+        if (parsedScores[i] !== undefined && parsedScores[i] !== null && parsedScores[i] !== "") {
+          arr[i] = String(parsedScores[i]);
+        }
+      }
+      setScoreInputs(arr);
+    }
+
+    let parsedComments: any[] = [];
+    try {
+      if (sc.comments) {
+        const p = JSON.parse(sc.comments);
+        parsedComments = Array.isArray(p) ? p : [p];
+      }
+    } catch {
+      parsedComments = [sc.comments];
+    }
+    const commCount = isPsych ? 2 : Math.max(subj.commentColumns || 1, 1);
+    const commArr = Array(commCount).fill("");
+    for (let i = 0; i < commCount; i++) {
+      if (parsedComments[i] !== undefined && parsedComments[i] !== null) {
+        commArr[i] = String(parsedComments[i]);
+      }
+    }
+    setCommentInputs(commArr);
+
+    setTeacherNameInput(sc.teacherName || currentUser?.fullName || "");
+    setIsScoreModalOpen(true);
+  };
+
+  const handleOpenAddScore = () => {
+    if (!selectedReportStudent) return;
+    const existingSubjIds = (selectedReportStudent.scores || []).map((sc: any) => sc.subjectId || sc.subject?.id);
+    const available = (subjectsList || []).filter((s: any) => s.status !== "INACTIVE" && !existingSubjIds.includes(s.id));
+    const initialSubj = available[0] || (subjectsList || [])[0];
+    if (!initialSubj) {
+      notify("Không tìm thấy môn khảo sát nào để nhập điểm!", "err");
+      return;
+    }
+
+    setEditingScoreRecord(null);
+    setEditingSubjectObj(initialSubj);
+    setIsNewSubjectMode(true);
+
+    const sCode = (initialSubj.code || "").toLowerCase();
+    const sName = (initialSubj.name || "").toLowerCase();
+    const isPsych = sCode.includes("tly") || sName.includes("tâm lý");
+
+    const colCount = isPsych ? 1 : Math.max(initialSubj.scoreColumns || 1, 1);
+    const commCount = isPsych ? 2 : Math.max(initialSubj.commentColumns || 1, 1);
+
+    setScoreInputs(Array(colCount).fill(""));
+    setCommentInputs(Array(commCount).fill(""));
+    setTeacherNameInput(currentUser?.fullName || "Admin");
+    setIsScoreModalOpen(true);
+  };
+
+  const handleSelectNewSubject = (subjId: string) => {
+    const found = (subjectsList || []).find((s: any) => s.id === subjId);
+    if (!found) return;
+    setEditingSubjectObj(found);
+    const sCode = (found.code || "").toLowerCase();
+    const sName = (found.name || "").toLowerCase();
+    const isPsych = sCode.includes("tly") || sName.includes("tâm lý");
+
+    const colCount = isPsych ? 1 : Math.max(found.scoreColumns || 1, 1);
+    const commCount = isPsych ? 2 : Math.max(found.commentColumns || 1, 1);
+
+    setScoreInputs(Array(colCount).fill(""));
+    setCommentInputs(Array(commCount).fill(""));
+  };
+
+  const handleSaveScoreSubmit = async () => {
+    if (!selectedReportStudent || !editingSubjectObj) return;
+    setIsSavingScore(true);
+
+    try {
+      const sCode = (editingSubjectObj.code || "").toLowerCase();
+      const sName = (editingSubjectObj.name || "").toLowerCase();
+      const isPsych = sCode.includes("tly") || sName.includes("tâm lý");
+
+      let finalScoresPayload: any[] = [];
+      if (isPsych) {
+        let baseArr: any[] = [];
+        if (editingScoreRecord?.scores) {
+          try {
+            const p = JSON.parse(editingScoreRecord.scores);
+            if (Array.isArray(p)) baseArr = [...p];
+          } catch {}
+        }
+        while (baseArr.length <= 6) baseArr.push("0");
+        const numVal = scoreInputs[0] ? parseFloat(scoreInputs[0]) || 0 : 0;
+        baseArr[6] = String(numVal);
+        if (baseArr.length > 20) baseArr[20] = String(numVal);
+        finalScoresPayload = baseArr;
+      } else {
+        finalScoresPayload = scoreInputs.map(v => v !== undefined && v !== null ? String(v).trim() : "");
+      }
+
+      const finalCommentsPayload = commentInputs.map(c => c !== undefined && c !== null ? String(c).trim() : "");
+      const finalTeacher = teacherNameInput.trim() || currentUser?.fullName || "Admin";
+
+      const res = await fetch("/api/teacher-assessments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: selectedReportStudent.id,
+          subjectId: editingSubjectObj.id,
+          scores: finalScoresPayload,
+          comments: finalCommentsPayload,
+          teacherName: finalTeacher
+        })
+      });
+
+      const resData = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        notify("Đã lưu điểm môn " + editingSubjectObj.name + " thành công!", "ok");
+
+        setReportStudents(prev => prev.map(s => {
+          if (s.id !== selectedReportStudent.id) return s;
+          const currentScores = s.scores || [];
+          const existIdx = currentScores.findIndex((item: any) => item.subjectId === editingSubjectObj.id || item.subject?.id === editingSubjectObj.id);
+
+          let updatedScoresList;
+          if (existIdx >= 0) {
+            updatedScoresList = [...currentScores];
+            updatedScoresList[existIdx] = {
+              ...updatedScoresList[existIdx],
+              scores: JSON.stringify(finalScoresPayload),
+              comments: JSON.stringify(finalCommentsPayload),
+              teacherName: finalTeacher,
+              updatedAt: new Date().toISOString(),
+              subject: editingSubjectObj
+            };
+          } else {
+            updatedScoresList = [
+              ...currentScores,
+              {
+                id: resData.id || ("sc_" + Date.now()),
+                studentId: s.id,
+                subjectId: editingSubjectObj.id,
+                scores: JSON.stringify(finalScoresPayload),
+                comments: JSON.stringify(finalCommentsPayload),
+                teacherName: finalTeacher,
+                updatedAt: new Date().toISOString(),
+                subject: editingSubjectObj
+              }
+            ];
+          }
+          return { ...s, scores: updatedScoresList };
+        }));
+
+        setActiveSubjectId(editingSubjectObj.id);
+        setIsScoreModalOpen(false);
+      } else {
+        notify(resData.error || "Có lỗi khi lưu điểm!", "err");
+      }
+    } catch (err: any) {
+      notify("Lỗi kết nối khi lưu điểm: " + (err.message || err), "err");
+    }
+    setIsSavingScore(false);
+  };
+
+  const handleDeleteScoreSubmit = async () => {
+    if (!selectedReportStudent || !editingSubjectObj) return;
+    setIsSavingScore(true);
+
+    try {
+      const res = await fetch("/api/teacher-assessments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deleteScore",
+          studentId: selectedReportStudent.id,
+          subjectId: editingSubjectObj.id
+        })
+      });
+
+      if (res.ok) {
+        notify("Đã xóa điểm môn " + editingSubjectObj.name + "!", "ok");
+        setReportStudents(prev => prev.map(s => {
+          if (s.id !== selectedReportStudent.id) return s;
+          return {
+            ...s,
+            scores: (s.scores || []).filter((sc: any) => sc.subjectId !== editingSubjectObj.id && sc.subject?.id !== editingSubjectObj.id)
+          };
+        }));
+        setIsDeleteScoreConfirmOpen(false);
+        setIsScoreModalOpen(false);
+      } else {
+        const resData = await res.json().catch(() => ({}));
+        notify(resData.error || "Có lỗi khi xóa điểm!", "err");
+      }
+    } catch (err: any) {
+      notify("Lỗi kết nối: " + (err.message || err), "err");
+    }
+    setIsSavingScore(false);
+  };
   const [emailResult, setEmailResult] = useState<any>(null);
   const [attachLetters, setAttachLetters] = useState(true);
   const [checkedEmails, setCheckedEmails] = useState({
@@ -7740,17 +7978,32 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                           <>
                             {/* RESULTS SUMMARY TABLE (ALL SCORES & COMMENTS AT A GLANCE) */}
                             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left">
-                              <div className="flex justify-between items-center text-xs font-semibold">
-                                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Bảng tổng quan kết quả & Nhận xét</span>
-                                <span className="text-[9px] text-slate-400 font-semibold italic">Nhấp vào từng dòng để xem biểu đồ chi tiết</span>
+                              <div className="flex justify-between items-center text-xs font-semibold p-3 pb-2.5 border-b border-slate-100">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Bảng tổng quan kết quả & Nhận xét</span>
+                                  <span className="text-[9px] text-slate-400 font-semibold italic hidden sm:inline">Nhấp vào từng dòng để xem biểu đồ chi tiết</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenAddScore();
+                                  }}
+                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-[11px] flex items-center gap-1.5 shadow-sm transition-all cursor-pointer hover:shadow"
+                                  title="Nhập điểm cho môn học mới của học sinh này"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  Nhập điểm môn mới
+                                </button>
                               </div>
                               <div className="overflow-x-auto">
                                 <table className="w-full text-left table-fixed border-collapse">
                                   <thead>
-                                    <tr className="text-xs font-semibold">
-                                      <th className="p-2 p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4 border border-slate-200">Môn khảo sát</th>
-                                      <th className="p-2 p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4 text-center border border-slate-200">Kết quả</th>
-                                      <th className="p-2 p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/2 border border-slate-200">Ý kiến nhận xét chính từ giáo viên</th>
+                                    <tr className="text-xs font-semibold bg-slate-50/70">
+                                      <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/4 border border-slate-200">Môn khảo sát</th>
+                                      <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-1/5 text-center border border-slate-200">Kết quả</th>
+                                      <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider border border-slate-200">Ý kiến nhận xét chính từ giáo viên</th>
+                                      <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-24 text-center border border-slate-200">Thao tác</th>
                                     </tr>
                                   </thead>
                                   <tbody className="divide-y divide-slate-100">
@@ -7867,6 +8120,34 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                             }`} title={commentPreview !== "—" ? commentPreview : undefined}>
                                               {commentPreview !== "—" ? `"${commentPreview}"` : "Chưa có nhận xét"}
                                             </p>
+                                          </td>
+                                          <td className="p-2 text-center border border-slate-200" onClick={(e) => e.stopPropagation()}>
+                                            {sc.id === "tong_diem_tieng_anh" ? (
+                                              <span className="text-[9px] text-slate-400 font-bold italic">Tự động</span>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={() => handleOpenEditScore(sc)}
+                                                className={`px-2.5 py-1 rounded-lg font-bold text-[10px] flex items-center justify-center gap-1 shadow-sm transition-all mx-auto cursor-pointer ${
+                                                  val === "—" || (typeof val === "string" && val.startsWith("—/"))
+                                                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                                                    : "bg-amber-500 hover:bg-amber-600 text-white"
+                                                }`}
+                                                title={val === "—" || (typeof val === "string" && val.startsWith("—/")) ? "Nhập điểm môn học" : "Chỉnh sửa điểm & nhận xét"}
+                                              >
+                                                {val === "—" || (typeof val === "string" && val.startsWith("—/")) ? (
+                                                  <>
+                                                    <Plus className="w-3 h-3" />
+                                                    Nhập điểm
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <Pencil className="w-3 h-3" />
+                                                    Sửa điểm
+                                                  </>
+                                                )}
+                                              </button>
+                                            )}
                                           </td>
                                         </tr>
                                       );
@@ -7991,6 +8272,17 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
                                             <span className="flex items-center gap-0.5"><Clock className="w-3 h-3"/> Cập nhật: {new Date(sc.updatedAt).toLocaleDateString("vi-VN")}</span>
                                           </div>
                                         </div>
+
+                                        {sc.id !== "tong_diem_tieng_anh" && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleOpenEditScore(sc)}
+                                            className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-[11px] rounded-xl shadow-sm flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                                          >
+                                            <Pencil className="w-3.5 h-3.5" />
+                                            Chỉnh sửa điểm & nhận xét
+                                          </button>
+                                        )}
                                       </div>
 
                                       {/* Card Content depending on Subject Type */}
@@ -8320,6 +8612,277 @@ const [customCommitmentSubjects, setCustomCommitmentSubjects] = useState<string[
             </div>
           </Modal>
         )}
+
+        {/* MODAL NHẬP ĐIỂM & CHỈNH SỬA ĐIỂM DÀNH CHO ADMIN */}
+        {isScoreModalOpen && editingSubjectObj && selectedReportStudent && (
+          <Modal
+            open={isScoreModalOpen}
+            onClose={() => setIsScoreModalOpen(false)}
+            title={isNewSubjectMode ? "Nhập điểm môn khảo sát mới" : `Chỉnh sửa điểm: ${editingSubjectObj.name}`}
+            size="lg"
+            footer={
+              <div className="w-full flex items-center justify-between gap-3 px-6 py-4 bg-slate-50 border-t border-slate-150">
+                <div>
+                  {!isNewSubjectMode && editingScoreRecord && (
+                    <button
+                      type="button"
+                      onClick={() => setIsDeleteScoreConfirmOpen(true)}
+                      className="px-3.5 py-2 border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Xóa điểm môn này
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsScoreModalOpen(false)}
+                    className="px-5 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveScoreSubmit}
+                    disabled={isSavingScore}
+                    className="px-6 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isSavingScore ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    Lưu kết quả
+                  </button>
+                </div>
+              </div>
+            }
+          >
+            <div className="space-y-5 text-left text-xs">
+              {/* STUDENT & SUBJECT HEADER BANNER */}
+              <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-indigo-500 block mb-0.5">Học sinh khảo sát</span>
+                  <h4 className="text-sm font-black text-slate-800">{selectedReportStudent.fullName} ({selectedReportStudent.studentCode})</h4>
+                  <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+                    Khối: <strong className="text-slate-700 font-bold">K{selectedReportStudent.grade || "—"}</strong> • Hệ: <strong className="text-amber-700 font-bold">{selectedReportStudent.surveyFormType || "—"}</strong>
+                  </p>
+                </div>
+                <div className="text-right sm:border-l sm:border-indigo-100 sm:pl-4">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-0.5">Môn khảo sát</span>
+                  <div className="font-black text-indigo-700 text-sm">{editingSubjectObj.name}</div>
+                  {editingSubjectObj.code && <span className="font-mono text-[10px] font-bold text-slate-400">{editingSubjectObj.code}</span>}
+                </div>
+              </div>
+
+              {/* IF ADDING NEW SUBJECT: SUBJECT PICKER */}
+              {isNewSubjectMode && (
+                <Field label="Chọn môn khảo sát cần nhập điểm" required>
+                  <select
+                    value={editingSubjectObj.id}
+                    onChange={(e) => handleSelectNewSubject(e.target.value)}
+                    className={inp}
+                  >
+                    {(subjectsList || [])
+                      .filter((s: any) => s.status !== "INACTIVE")
+                      .map((s: any) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.code || "Môn học"})
+                        </option>
+                      ))}
+                  </select>
+                </Field>
+              )}
+
+              {/* DYNAMIC FORM FIELDS DEPENDING ON SUBJECT TYPE */}
+              {(() => {
+                const sCode = (editingSubjectObj.code || "").toLowerCase();
+                const sName = (editingSubjectObj.name || "").toLowerCase().normalize("NFC");
+                const isPsych = sCode.includes("tly") || sName.includes("tâm lý");
+                const isEnglish = sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl");
+                const isWritten = isEnglish && (sName.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt"));
+                const isOral = isEnglish && (sName.includes("vấn đáp") || sName.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd"));
+                
+                const studentNumGrade = parseInt(selectedReportStudent?.grade || "0") || null;
+                const isGrade2 = studentNumGrade === 2;
+                const oralMaxScore = isGrade2 ? 10 : (studentNumGrade && studentNumGrade >= 7 ? 20 : 30);
+                const writtenMaxScore = (studentNumGrade && studentNumGrade >= 7 ? 80 : 70);
+
+                let parsedCols = { scores: [], comments: [] };
+                try {
+                  if (editingSubjectObj.columnNames) {
+                    const p = JSON.parse(editingSubjectObj.columnNames);
+                    parsedCols = { scores: Array.isArray(p.scores) ? p.scores : [], comments: Array.isArray(p.comments) ? p.comments : [] };
+                  }
+                } catch {}
+
+                if (isPsych) {
+                  const scoreVal = parseFloat(scoreInputs[0] || "0");
+                  let diagLevel = "Bình thường";
+                  let diagColor = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                  if (scoreVal > 15 && scoreVal <= 31) {
+                    diagLevel = "Dấu hiệu nhẹ";
+                    diagColor = "bg-blue-50 text-blue-700 border-blue-200";
+                  } else if (scoreVal > 31 && scoreVal <= 47) {
+                    diagLevel = "Dấu hiệu vừa";
+                    diagColor = "bg-amber-50 text-amber-700 border-amber-200";
+                  } else if (scoreVal > 47 && scoreVal <= 63) {
+                    diagLevel = "Nguy cơ cao";
+                    diagColor = "bg-orange-50 text-orange-700 border-orange-200";
+                  } else if (scoreVal > 63) {
+                    diagLevel = "Nguy cơ rất cao";
+                    diagColor = "bg-rose-50 text-rose-700 border-rose-200";
+                  }
+
+                  return (
+                    <div className="space-y-4">
+                      <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                        <Field label="Tổng điểm đánh giá Tâm lý (Thang điểm 0 - 80)" required>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="number"
+                              min="0"
+                              max="80"
+                              step="1"
+                              value={scoreInputs[0] || ""}
+                              onChange={e => setScoreInputs([e.target.value])}
+                              placeholder="Nhập tổng điểm (0 - 80)"
+                              className={inp + " max-w-[200px] text-lg font-black text-indigo-700"}
+                            />
+                            <div className={`px-3 py-2 rounded-xl border text-xs font-black shadow-sm flex items-center gap-1.5 ${diagColor}`}>
+                              <span className="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+                              Chẩn đoán: {diagLevel}
+                            </div>
+                          </div>
+                        </Field>
+                      </div>
+
+                      <Field label="Kết luận sơ bộ từ chuyên viên">
+                        <textarea
+                          rows={3}
+                          value={commentInputs[0] || ""}
+                          onChange={e => {
+                            const arr = [...commentInputs];
+                            arr[0] = e.target.value;
+                            setCommentInputs(arr);
+                          }}
+                          placeholder="Nhập nhận định tâm lý, hành vi, khả năng tương tác của học sinh..."
+                          className="w-full p-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-medium rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2]"
+                        />
+                      </Field>
+
+                      <Field label="Khuyến nghị phụ huynh">
+                        <textarea
+                          rows={3}
+                          value={commentInputs[1] || ""}
+                          onChange={e => {
+                            const arr = [...commentInputs];
+                            arr[1] = e.target.value;
+                            setCommentInputs(arr);
+                          }}
+                          placeholder="Nhập lời khuyên, kế hoạch hỗ trợ tâm lý dành cho phụ huynh..."
+                          className="w-full p-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-medium rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2]"
+                        />
+                      </Field>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {/* SCORE INPUTS */}
+                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                        Kết quả khảo sát / Điểm số
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {scoreInputs.map((val, idx) => {
+                          let labelText = parsedCols.scores[idx] || (scoreInputs.length > 1 ? `Điểm ${idx + 1}` : "Điểm khảo sát");
+                          let maxHint = "";
+
+                          if (isWritten) {
+                            labelText = `Điểm thi Viết (Thang điểm: ${writtenMaxScore})`;
+                            maxHint = `Tối đa: ${writtenMaxScore} điểm`;
+                          } else if (isOral) {
+                            labelText = `Điểm thi Vấn đáp (Thang điểm: ${oralMaxScore})`;
+                            maxHint = `Tối đa: ${oralMaxScore} điểm`;
+                          }
+
+                          return (
+                            <Field key={idx} label={labelText} required>
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  value={val || ""}
+                                  onChange={e => {
+                                    const next = [...scoreInputs];
+                                    next[idx] = e.target.value;
+                                    setScoreInputs(next);
+                                  }}
+                                  placeholder={maxHint || "Nhập điểm số (vd: 8.5)"}
+                                  className={inp + " text-base font-black text-indigo-700"}
+                                />
+                                {maxHint && (
+                                  <span className="absolute right-3 top-3 text-[10px] font-bold text-slate-400">
+                                    {maxHint}
+                                  </span>
+                                )}
+                              </div>
+                            </Field>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* COMMENT INPUTS */}
+                    <div className="space-y-3">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                        Ý kiến nhận xét & Đánh giá chuyên môn
+                      </span>
+                      {commentInputs.map((val, idx) => {
+                        const labelText = parsedCols.comments[idx] || (commentInputs.length > 1 ? `Ý kiến nhận xét ${idx + 1}` : "Ý kiến nhận xét chính từ giáo viên");
+                        return (
+                          <Field key={idx} label={labelText}>
+                            <textarea
+                              rows={3}
+                              value={val || ""}
+                              onChange={e => {
+                                const next = [...commentInputs];
+                                next[idx] = e.target.value;
+                                setCommentInputs(next);
+                              }}
+                              placeholder="Nhập nhận định năng lực, ưu điểm, hạn chế của học sinh..."
+                              className="w-full p-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-medium rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2]"
+                            />
+                          </Field>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* TEACHER NAME INPUT */}
+              <Field label="Giáo viên chấm / Người cập nhật">
+                <input
+                  type="text"
+                  value={teacherNameInput}
+                  onChange={e => setTeacherNameInput(e.target.value)}
+                  placeholder="Nhập họ và tên giáo viên chấm khảo sát"
+                  className={inp}
+                />
+                <p className="text-[10px] text-slate-400 mt-0.5 ml-1">
+                  Tên giáo viên được hiển thị trên bảng kết quả và phiếu nhận xét của học sinh.
+                </p>
+              </Field>
+            </div>
+          </Modal>
+        )}
+
+        {/* DELETE SCORE CONFIRM DIALOG */}
+        <ConfirmDialog
+          open={isDeleteScoreConfirmOpen}
+          onClose={() => setIsDeleteScoreConfirmOpen(false)}
+          onConfirm={handleDeleteScoreSubmit}
+          message={`Bạn có chắc chắn muốn xóa toàn bộ điểm và nhận xét của môn "${editingSubjectObj?.name}" cho học sinh ${selectedReportStudent?.fullName}? Hành động này không thể hoàn tác.`}
+        />
         </>
       )}
 

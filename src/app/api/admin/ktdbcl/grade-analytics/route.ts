@@ -445,8 +445,7 @@ export async function GET(request: Request) {
           return
         }
 
-        // Chỉ lấy học sinh đã hoàn tất nhập học (COMPLETED) hoặc đang theo học thực tế trong lớp học
-        const hasCompletedStatus = r.enrollmentStatus === "COMPLETED"
+        // Chỉ lấy học sinh đang theo học thực tế trong danh sách Lớp học - Năm học đang chọn
         const matchingSys = systemStudents.find((ss: any) =>
           (r.studentCode && ss.studentCode && ss.studentCode.trim().toUpperCase() === r.studentCode.trim().toUpperCase()) ||
           (r.enrollmentCode && ss.studentCode && ss.studentCode.trim().toUpperCase() === r.enrollmentCode.trim().toUpperCase()) ||
@@ -454,7 +453,8 @@ export async function GET(request: Request) {
         )
         const isAttendingInClass = Boolean(matchingSys && matchingSys.classId)
 
-        if (!hasCompletedStatus && !isAttendingInClass) {
+        // Loại bỏ hoàn toàn nếu không có tên trong danh sách Lớp học thuộc Năm học đang chọn
+        if (!isAttendingInClass) {
           return
         }
 
@@ -1237,21 +1237,14 @@ export async function GET(request: Request) {
         )
       }
 
-      let resolvedClass = matchingSt?.class || null
-
-      if (!resolvedClass && cand.enrollmentClass) {
-        resolvedClass = (allClasses.find((c: any) => c.id === cand.enrollmentClass.id)) || cand.enrollmentClass
+      // Bắt buộc học sinh phải có tên trong danh sách Lớp học thuộc Năm học đang xét
+      if (!matchingSt || !matchingSt.classId) {
+        return
       }
 
-      if (!resolvedClass && cand.enrollmentClassId) {
-        resolvedClass = allClasses.find((c: any) => c.id === cand.enrollmentClassId || c.classCode === cand.enrollmentClassId) || null
-      }
-
-      if (!resolvedClass && cand.className && cand.className !== "Chưa xếp lớp" && !cand.className.toLowerCase().includes("chưa xếp")) {
-        resolvedClass = allClasses.find((c: any) => 
-          c.className.toLowerCase() === cand.className.toLowerCase() ||
-          c.classCode?.toLowerCase() === cand.className.toLowerCase()
-        ) || (classes.find((c: any) => c.className.toLowerCase() === cand.className.toLowerCase())) || null
+      const resolvedClass = matchingSt.class || filteredClasses.find(c => c.id === matchingSt.classId) || allClasses.find(c => c.id === matchingSt.classId)
+      if (!resolvedClass) {
+        return
       }
 
       processCandidateForMatrix(cand, matchingSt, resolvedClass)

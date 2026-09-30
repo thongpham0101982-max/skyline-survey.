@@ -45,8 +45,13 @@ export async function GET(req: any) {
 
     if (action === "getAssignments") {
         const academicYearId = searchParams.get("academicYearId");
+        const userRole = ((session?.user as any)?.role || "").toUpperCase();
+        const isAdmin = ["ADMIN", "KT_DBCL", "KTDBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN"].includes(userRole);
         
-        let whereClause = { userId: session.user.id };
+        let whereClause: any = {};
+        if (!isAdmin) {
+            whereClause.userId = session.user.id;
+        }
         if (academicYearId) {
             whereClause.period = { academicYearId: academicYearId };
         }
@@ -60,9 +65,9 @@ export async function GET(req: any) {
             }
         });
 
-        // Fetch preschool assignments (filter by userId only; academicYear filtered below in memory)
+        // Fetch preschool assignments (filter by userId only for teachers; admins see all)
         const preschoolAssignmentsRaw = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-            where: {
+            where: isAdmin ? {} : {
                 OR: [
                     { userId: session.user.id },
                     { delegatedUserId: session.user.id }
@@ -1236,7 +1241,20 @@ export async function POST(req: any) {
   
   try {
     const body = await req.json();
-    const { studentId, subjectId, scores, comments } = body;
+    const { action, studentId, subjectId, scores, comments, teacherName, teacherId } = body;
+
+    const userRole = ((session?.user as any)?.role || "").toUpperCase();
+    const isAdmin = ["ADMIN", "KT_DBCL", "KTDBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "BGH", "BGH_CS", "BGH_MN"].includes(userRole);
+
+    if (action === "deleteScore") {
+      if (!studentId || !subjectId) {
+        return NextResponse.json({ error: "Missing studentId or subjectId" }, { status: 400 });
+      }
+      await prisma.studentAssessmentScore.deleteMany({
+        where: { studentId, subjectId }
+      });
+      return NextResponse.json({ success: true });
+    }
 
     // -- SECURITY HARDENING: Check if Period or Batch is Locked --
     const student = await prisma.inputAssessmentStudent.findUnique({
@@ -1248,7 +1266,8 @@ export async function POST(req: any) {
     const isPrtLocked = student.period?.status !== "ACTIVE";
     const isBtcLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
     
-    if (isPrtLocked || isBtcLocked) {
+    // Admins and management roles can always enter and edit scores even if period/batch is locked
+    if ((isPrtLocked || isBtcLocked) && !isAdmin) {
         // Check override for this specific teacher/subject
         const activeUnlock = await prisma.inputAssessmentTeacherAssignment.findFirst({
             where: {
@@ -1264,6 +1283,20 @@ export async function POST(req: any) {
     }
     // ------------------------------------------------------------
 
+    const existingScore = await prisma.studentAssessmentScore.findUnique({
+        where: {
+            studentId_subjectId: { studentId, subjectId }
+        }
+    });
+
+    const finalTeacherName = (teacherName !== undefined && teacherName !== "")
+      ? teacherName
+      : (existingScore?.teacherName || session.user?.fullName || session.user?.name || "Admin");
+
+    const finalTeacherId = teacherId !== undefined
+      ? teacherId
+      : (existingScore?.teacherId || session.user?.id || null);
+
     const record = await prisma.studentAssessmentScore.upsert({
         where: {
             studentId_subjectId: { studentId, subjectId }
@@ -1271,16 +1304,16 @@ export async function POST(req: any) {
         create: {
             studentId,
             subjectId,
-            scores: JSON.stringify(scores),
-            comments: JSON.stringify(comments),
-            teacherId: session.user?.id || null,
-            teacherName: session.user?.fullName || session.user?.name || "Tài khoản chia sẻ"
+            scores: JSON.stringify(scores || []),
+            comments: JSON.stringify(comments || []),
+            teacherId: finalTeacherId,
+            teacherName: finalTeacherName
         },
         update: {
-            scores: JSON.stringify(scores),
-            comments: JSON.stringify(comments),
-            teacherId: session.user?.id || null,
-            teacherName: session.user?.fullName || session.user?.name || "Tài khoản chia sẻ"
+            scores: JSON.stringify(scores || []),
+            comments: JSON.stringify(comments || []),
+            teacherId: finalTeacherId,
+            teacherName: finalTeacherName
         }
     });
 
