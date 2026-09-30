@@ -1624,18 +1624,20 @@ export function ObservationClient(props: ObservationClientProps) {
     return teacherPositions.some(p => GDCS_KEYS.some(k => p.toUpperCase() === k.toUpperCase() || p.toLowerCase().includes("giám đốc cơ sở") || p.toLowerCase().includes("giam doc co so") || p.toLowerCase().includes("phó giám đốc cơ sở")));
   }, [teacherPositions, currentTeacher?.user?.role]);
 
-  // 4. Ban ĐHCM Cấp Toàn Hệ Thống
+  // 4. Ban ĐHCM / BGH
   const isBanDHCM = useMemo(() => {
     const DHCM_KEYS = [
       "BAN_DHCM", "TB_DHCM", "TRUONG_BAN_DHCM", "PHO_BAN_DHCM", 
       "Ban ĐHCM", "Ban DHCM", "BAN ĐHCM", "BAN DHCM",
+      "QLCM", "QUAN_LY_CM", "Quản lý CM", "QUẢN LÝ CM", 
+      "BGH", "BGH_MN", "BGHMN", "BGMMN", "BGH Mầm non", "Ban Giám hiệu", "BAN GIAM HIEU",
       "Trưởng ban ĐHCM", "Phó ban ĐHCM", "Trưởng ban Điều hành chuyên môn", "Phó ban Điều hành chuyên môn",
       "Trưởng ban KT&ĐBCL", "Phó ban KT&ĐBCL", "Trưởng ban KT-ĐBCL", "Phó ban KT-ĐBCL"
     ];
     const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
-    if (["BAN_DHCM", "TB_DHCM", "TRUONG_BAN_DHCM", "PHO_BAN_DHCM", "ADMIN", "SUPER_ADMIN", "ADMINISTRATOR"].includes(role)) return true;
+    if (["BAN_DHCM", "TB_DHCM", "TRUONG_BAN_DHCM", "PHO_BAN_DHCM", "QLCM", "QUAN_LY_CM", "BGH", "BGH_MN", "BGHMN", "ADMIN", "SUPER_ADMIN", "ADMINISTRATOR"].includes(role)) return true;
     
-    return teacherPositions.some(p => DHCM_KEYS.some(k => p.toUpperCase() === k.toUpperCase() || p.toLowerCase().includes("ban đhcm") || p.toLowerCase().includes("ban dhcm") || p.toLowerCase().includes("trưởng ban") || p.toLowerCase().includes("phó ban")));
+    return teacherPositions.some(p => DHCM_KEYS.some(k => p.toUpperCase() === k.toUpperCase() || p.toLowerCase().includes("ban đhcm") || p.toLowerCase().includes("ban dhcm") || p.toLowerCase().includes("quản lý cm") || p.toLowerCase().includes("quan ly cm") || p.toLowerCase().includes("ban giám hiệu") || p.toLowerCase().includes("trưởng ban") || p.toLowerCase().includes("phó ban")));
   }, [teacherPositions, currentTeacher?.user?.role]);
 
   // Nhận diện Quản lý cấp cao toàn trường (BAN ĐHCM / Super Admin)
@@ -1649,16 +1651,9 @@ export function ObservationClient(props: ObservationClientProps) {
     return isSuperOrBanDHCM || isAdminRoute;
   }, [isSuperOrBanDHCM, isAdminRoute]);
 
-  // 5. BGH Phổ thông Cơ sở / QLCM Cơ sở
-  const isBGH_K12 = useMemo(() => {
-    const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
-    if (["BGH", "BGH_CS", "BGH_K12", "QLCM", "QUAN_LY_CM"].includes(role)) return true;
-    return teacherPositions.some(p => ["BGH", "BGH_CS", "BGH_K12", "Ban Giám hiệu", "BAN GIAM HIEU", "QLCM", "QUAN_LY_CM", "Quản lý CM", "QUẢN LÝ CM"].some(k => p.toUpperCase().includes(k.toUpperCase())));
-  }, [teacherPositions, currentTeacher?.user?.role]);
-
   const isQLCM = useMemo(() => {
-    return isBGH_K12 || isBanDHCM;
-  }, [isBGH_K12, isBanDHCM]);
+    return isBanDHCM;
+  }, [isBanDHCM]);
 
   const isBGHMN = useMemo(() => {
     const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
@@ -1666,18 +1661,18 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [currentTeacher?.user?.role, teacherPositions]);
 
   // PHÂN CẤP THỨ BẬC QUẢN LÝ (RBAC SCOPE):
-  // 1. "BAN_DHCM": Xem & điều hành toàn trường (5 cơ sở)
-  // 2. "GDCS": Quản lý cấp Cơ sở (GĐCS, BGH Phổ thông CS, BGH Mầm non CS, QLCM CS)
+  // 1. "BAN_DHCM": Xem & điều hành toàn trường
+  // 2. "GDCS": Chỉ xem/quản lý các Tiết dạy thuộc Cơ sở đó
   // 3. "TBP": Quản lý các TCM trực thuộc Bộ phận
   // 4. "TTCM": Tổ nào thì quản lý được Tổ đó
   // 5. "NONE": Giáo viên bộ môn thường (không có Chế độ Quản lý)
   const managementScope = useMemo<"BAN_DHCM" | "GDCS" | "TBP" | "TTCM" | "NONE">(() => {
     if (isSuperOrBanDHCM) return "BAN_DHCM";
-    if (isGDCS || isBGH_K12 || (isBGHMN && isMamNonTeacher)) return "GDCS";
+    if (isGDCS) return "GDCS";
     if (isTBP) return "TBP";
     if (isTTCM) return "TTCM";
     return "NONE";
-  }, [isSuperOrBanDHCM, isGDCS, isBGH_K12, isBGHMN, isMamNonTeacher, isTBP, isTTCM]);
+  }, [isSuperOrBanDHCM, isGDCS, isTBP, isTTCM]);
 
   // Chỉ có tài khoản GV có chức vụ TTCM, TBP, GĐCS, Ban ĐHCM (hoặc Quản trị viên) thì mới có tag Chế độ quản lý
   const isManagerRole = useMemo(() => {
@@ -1979,45 +1974,16 @@ export function ObservationClient(props: ObservationClientProps) {
   // Set default surprise department for TTCM or TBP
   useEffect(() => {
     if (ttcmAllowedDepartments.length > 0 && !surpriseDeptId) {
-      if (managementScope === "GDCS" || isBGH_K12 || isGDCS || isQLCM) {
-        setSurpriseDeptId("all");
-        return;
-      }
       const myDept = currentTeacher?.departmentId && ttcmAllowedDepartments.find(d => d.id === currentTeacher.departmentId);
       setSurpriseDeptId(myDept ? myDept.id : ttcmAllowedDepartments[0].id);
     }
-  }, [ttcmAllowedDepartments, surpriseDeptId, currentTeacher?.departmentId, managementScope, isBGH_K12, isGDCS, isQLCM]);
+  }, [ttcmAllowedDepartments, surpriseDeptId, currentTeacher?.departmentId]);
 
   const filteredTeachersForSurprise = useMemo(() => {
     let list = teachers;
 
-    // 1. Phân định cơ sở nếu là Lãnh đạo cấp cơ sở (BGH Cơ sở, GĐCS, QLCM Cơ sở)
-    const isCampusLeader = managementScope === "GDCS" || isBGH_K12 || isGDCS || (isQLCM && myCampusId);
-    if (isCampusLeader && myCampusId) {
-      list = list.filter((t: any) => {
-        if (t.campusId === myCampusId) return true;
-        if (t.campus?.id === myCampusId || t.campus?.campusCode === myCampus?.campusCode) return true;
-        return false;
-      });
-    }
-
-    // 2. Phân định rõ ràng giữa Phổ thông và Mầm non theo khối học
-    if (isMamNonTeacher) {
-      list = list.filter((t: any) => {
-        const blk = ((t.departmentRel?.blockCM || "") + " " + (t.deptName || "")).toLowerCase();
-        const div = normalizeDivisionCode(t.departmentRel?.divisionCode);
-        return div === "BP_MAM_NON" || blk.includes("mam non") || blk.includes("mẫu giáo") || blk.includes("nhà trẻ");
-      });
-    } else {
-      list = list.filter((t: any) => {
-        const blk = ((t.departmentRel?.blockCM || "") + " " + (t.deptName || "")).toLowerCase();
-        const div = normalizeDivisionCode(t.departmentRel?.divisionCode);
-        return div !== "BP_MAM_NON" && !blk.includes("mam non") && !blk.includes("mẫu giáo") && !blk.includes("nhà trẻ");
-      });
-    }
-
-    // 3. Giới hạn phạm vi giáo viên theo danh sách tổ được phép quản lý (TBP/TTCM)
-    if (!isAdminUser && !isBanDHCM && !isQLCM && !isCampusLeader) {
+    // Giới hạn phạm vi giáo viên theo danh sách tổ được phép quản lý (TBP/TTCM)
+    if (!isAdminUser && !isBanDHCM && !isQLCM) {
       const allowedDeptIds = new Set(ttcmAllowedDepartments.map(d => d.id));
       list = list.filter((t: any) => {
         if (t.departmentId && allowedDeptIds.has(t.departmentId)) return true;
@@ -2028,7 +1994,7 @@ export function ObservationClient(props: ObservationClientProps) {
       });
     }
 
-    // 4. Lọc theo tổ được chọn cụ thể nếu có
+    // Lọc theo tổ được chọn cụ thể nếu có
     if (surpriseDeptId && surpriseDeptId !== "all") {
       list = list.filter((t: any) => {
         if (t.departmentId === surpriseDeptId) return true;
@@ -2039,8 +2005,9 @@ export function ObservationClient(props: ObservationClientProps) {
       });
     }
 
+    // Không lọc theo cơ sở (surpriseCampusId) - GV dạy được dự theo Tổ chuyên môn, cơ sở dùng để chọn lớp
     return list;
-  }, [teachers, surpriseDeptId, isAdminUser, isBanDHCM, isQLCM, ttcmAllowedDepartments, managementScope, isBGH_K12, isGDCS, myCampusId, myCampus, isMamNonTeacher]);
+  }, [teachers, surpriseDeptId, isAdminUser, isBanDHCM, isQLCM, ttcmAllowedDepartments]);
 
   const filteredClassesForSurprise = useMemo(() => {
     if (!classes || classes.length === 0) return [];

@@ -106,18 +106,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     if (isSuperAdmin) return true
     if (requiresAdmin) return false
     if (!module) return false
-
-    // Ban Giám Hiệu KHÔNG phân quyền Khảo sát đầu vào (ASSESSMENT)
-    const isBghRole = ["BGH", "BGH_MN", "BGH MN", "BGH_CS", "BGH_K12"].includes(normalizedRole)
-    if (isBghRole) {
-      const assessmentCategory = APP_CATEGORIES.find((cat: any) => cat.id === "ASSESSMENT")
-      if (assessmentCategory) {
-        const isAssessmentModule = assessmentCategory.modules.some((m: any) => 
-          m.code === module || (m.subModules && m.subModules.some((sub: any) => sub.code === module))
-        )
-        if (isAssessmentModule) return false
-      }
-    }
     
     let hasParent = permissionModules?.includes(module) || false
     if (module === "KTDBCL_EXAMS") {

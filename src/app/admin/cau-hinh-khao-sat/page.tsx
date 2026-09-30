@@ -1,7 +1,6 @@
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
 import { SurveyConfigClient } from "./client"
 
 export const metadata = { title: "Cấu hình Khảo sát | Admin" }
@@ -16,12 +15,6 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
   }
   
   const user = session?.user as any;
-  const userRole = (user?.role || "").toUpperCase().trim();
-  const isBghRole = ["BGH", "BGH_MN", "BGH MN", "BGH_CS", "BGH_K12"].includes(userRole);
-  if (isBghRole) {
-    redirect("/teacher/du-gio");
-  }
-
   const isGDCS = user?.role === 'GDCS';
   const allowedCampusIds = user?.campusIds || [];
   let liveCampusIds = [...allowedCampusIds];

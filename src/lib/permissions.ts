@@ -64,7 +64,7 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
     permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
   )
 
-  // Tự động cấp module cha nếu có bất kỳ module con nào được cấp quyền đọc
+  // Automatically grant parent module if any submodule is readable
   APP_CATEGORIES.forEach((cat: any) => {
     cat.modules.forEach((m: any) => {
       if (m.subModules && m.subModules.length > 0) {
@@ -75,20 +75,6 @@ export async function getRoleReadableModules(roleCode: string): Promise<string[]
       }
     })
   })
-
-  // Ban Giám Hiệu (BGH, BGH_MN) KHÔNG phân quyền Khảo sát đầu vào (ASSESSMENT)
-  const isBghRole = ["BGH", "BGH_MN", "BGH MN", "BGH_CS", "BGH_K12"].includes(upper)
-  if (isBghRole) {
-    const assessmentCategory = APP_CATEGORIES.find((cat: any) => cat.id === "ASSESSMENT")
-    if (assessmentCategory) {
-      assessmentCategory.modules.forEach((m: any) => {
-        readableModules.delete(m.code)
-        if (m.subModules) {
-          m.subModules.forEach((sub: any) => readableModules.delete(sub.code))
-        }
-      })
-    }
-  }
 
   return Array.from(readableModules)
 }

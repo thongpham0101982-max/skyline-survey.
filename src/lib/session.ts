@@ -18,12 +18,10 @@ export interface AdminSession {
   isFullAccess: boolean
   isSuperAdmin: boolean
   isHeadOfAcademic: boolean  // Trưởng Ban ĐHCM (Xem toàn bộ 6 Bộ phận & mọi Tổ)
-  isBGH: boolean             // BGH Phổ thông Cơ sở (Xem & dự giờ toàn bộ GV Phổ thông thuộc cơ sở)
-  isBGHMN: boolean           // BGH Mầm non Cơ sở (Xem & dự giờ toàn bộ GV Mầm non thuộc cơ sở)
   isTBP: boolean             // Trưởng Bộ Phận
   isTTCM: boolean            // Tổ trưởng Chuyên môn
   isGDCS: boolean            // Giám đốc Cơ sở
-  allowedCampusIds: string[] // Cơ sở của GĐCS / BGH
+  allowedCampusIds: string[] // Cơ sở của GĐCS
   managedDivisions: string[] // Danh sách các Bộ phận làm TBP: ["BP_TRUNG_HOC", "BP_TIEU_HOC", ...]
   managedDepartmentIds: string[] // Danh sách ID các Tổ làm TTCM hoặc trực thuộc
   primaryDepartmentId?: string
@@ -39,8 +37,6 @@ export async function getAdminSession(): Promise<AdminSession> {
       isFullAccess: false,
       isSuperAdmin: false,
       isHeadOfAcademic: false,
-      isBGH: false,
-      isBGHMN: false,
       isTBP: false,
       isTTCM: false,
       isGDCS: false,
@@ -83,22 +79,17 @@ export async function getAdminSession(): Promise<AdminSession> {
     } catch {}
   }
   if (["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].some(r => upperRole.includes(r))) positionsSet.add("GĐCS")
-  if (["BAN_DHCM", "DHCM", "TB_DHCM"].some(r => upperRole.includes(r))) positionsSet.add("TB_DHCM")
-  if (["BGH", "BGH_CS", "BGH_K12"].some(r => upperRole.includes(r))) positionsSet.add("BGH")
-  if (["BGH_MN", "BGHMN", "BGMMN"].some(r => upperRole.includes(r))) positionsSet.add("BGH_MN")
-  if (["QLCM", "QUAN_LY_CM"].some(r => upperRole.includes(r))) positionsSet.add("QLCM")
+  if (["BAN_DHCM", "DHCM", "TB_DHCM", "QLCM"].some(r => upperRole.includes(r))) positionsSet.add("TB_DHCM")
 
   const positions = Array.from(positionsSet)
   const upperPositions = positions.map(p => p.toUpperCase())
 
-  const isBGH = upperPositions.some(p => ["BGH", "BGH_CS", "BGH_K12", "BAN GIAM HIEU", "BAN_GIAM_HIEU", "QLCM"].includes(p)) || ["BGH", "BGH_CS"].includes(upperRole)
-  const isBGHMN = upperPositions.some(p => ["BGH_MN", "BGHMN", "BGMMN", "BGH MẦM NON"].includes(p)) || ["BGH_MN", "BGHMN", "BGMMN"].includes(upperRole)
-  const isHeadOfAcademic = isSuperAdmin || isFullAccess || upperPositions.some(p => ["TB_DHCM", "TRUONG_BAN_DHCM", "BAN_DHCM", "BAN ĐHCM"].includes(p))
+  const isHeadOfAcademic = isSuperAdmin || isFullAccess || upperPositions.some(p => ["TB_DHCM", "TRUONG_BAN_DHCM", "BAN_DHCM", "BAN ĐHCM", "QLCM"].includes(p))
+  const isTBP = isHeadOfAcademic || upperPositions.includes("TBP") || (teacher?.divisionAssignments && teacher.divisionAssignments.length > 0)
+  const isTTCM = isHeadOfAcademic || isTBP || upperPositions.includes("TTCM") || (teacher?.departmentAssignments && teacher.departmentAssignments.some((da: any) => da.position === "TTCM"))
   const isGDCS = upperPositions.includes("GĐCS") || upperPositions.includes("GDCS") || ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].some(r => upperRole.includes(r))
-  const isTBP = isHeadOfAcademic || isBGH || isGDCS || upperPositions.includes("TBP") || (teacher?.divisionAssignments && teacher.divisionAssignments.length > 0)
-  const isTTCM = isHeadOfAcademic || isBGH || isBGHMN || isGDCS || isTBP || upperPositions.includes("TTCM") || (teacher?.departmentAssignments && teacher.departmentAssignments.some((da: any) => da.position === "TTCM"))
 
-  // Determine Campus Scoping (GĐCS / BGH has campus)
+  // Determine Campus Scoping (GĐCS has 1 campus)
   const tokenCampusIds: string[] = (session.user as any)?.campusIds || []
   let allowedCampusIds = tokenCampusIds
   if (!allowedCampusIds.length && userId) {
@@ -121,12 +112,12 @@ export async function getAdminSession(): Promise<AdminSession> {
   const managedDepartmentIdsSet = new Set<string>()
   if (teacher?.departmentAssignments) {
     teacher.departmentAssignments.forEach((da: any) => {
-      if (da.position === "TTCM" || isTBP || isHeadOfAcademic || isBGH) {
+      if (da.position === "TTCM" || isTBP || isHeadOfAcademic) {
         if (da.departmentId) managedDepartmentIdsSet.add(da.departmentId)
       }
     })
   }
-  if (teacher?.departmentId && (isTTCM || isTBP || isHeadOfAcademic || isBGH)) {
+  if (teacher?.departmentId && (isTTCM || isTBP || isHeadOfAcademic)) {
     managedDepartmentIdsSet.add(teacher.departmentId)
   }
 
@@ -138,8 +129,6 @@ export async function getAdminSession(): Promise<AdminSession> {
     isFullAccess: isFullAccess || isHeadOfAcademic,
     isSuperAdmin,
     isHeadOfAcademic,
-    isBGH: Boolean(isBGH),
-    isBGHMN: Boolean(isBGHMN),
     isTBP: Boolean(isTBP),
     isTTCM: Boolean(isTTCM),
     isGDCS: Boolean(isGDCS),
