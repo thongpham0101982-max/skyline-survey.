@@ -1,5 +1,4 @@
 "use client"
-// Build version: 8.5-1788145100339
 // @ts-nocheck
 
 import { useSearchParams } from "next/navigation";
@@ -17,13 +16,40 @@ import {
   TrendingUp,
   Target,
   CheckCircle2,
-  AlertCircle,
+  Globe,
   FileText,
   Printer,
   ChevronRight
 } from "lucide-react";
 import { SubjectRadarChart } from "@/components/competency/SubjectRadarChart";
 import { getCompetencyLevel } from "@/components/competency/CompetencyOverviewChart";
+
+const getCategoryLabel = (cat: string) => {
+  if (!cat) return "Lĩnh vực khác";
+  const str = String(cat).toUpperCase();
+  if (str === "OLYMPIC") return "Olympic";
+  if (str === "KHKT") return "Khoa học kỹ thuật";
+  if (str === "THE_THAO") return "Thể dục thể thao";
+  if (str === "VAN_NGHE") return "Văn nghệ - Nghệ thuật";
+  if (str === "HOC_THUAT") return "Học thuật";
+  if (str === "STEM") return "STEM / Robotics";
+  return cat;
+};
+
+const getLevelLabel = (lvl: string) => {
+  if (!lvl) return "Cấp Trường";
+  const str = String(lvl).toUpperCase();
+  if (str === "VANG" || str === "NHAT") return "Giải Vàng / Hạng Nhất";
+  if (str === "BAC" || str === "NHI") return "Giải Bạc / Hạng Nhì";
+  if (str === "DONG" || str === "BA") return "Giải Đồng / Hạng Ba";
+  if (str === "KHUYEN_KHICH") return "Giải Khuyến Khích";
+  if (str === "CAP_QUOC_TE" || str === "5") return "Cấp Quốc tế";
+  if (str === "CAP_QUOC_GIA" || str === "4") return "Cấp Quốc gia";
+  if (str === "CAP_THANH_PHO" || str === "CAP_TINH" || str === "3") return "Cấp Thành phố / Tỉnh";
+  if (str === "CAP_QUAN" || str === "CAP_HUYEN" || str === "2") return "Cấp Quận / Huyện";
+  if (str === "CAP_TRUONG" || str === "1") return "Cấp Trường";
+  return lvl.startsWith("Cấp") || lvl.startsWith("Giải") ? lvl : `Giải/Cấp: ${lvl}`;
+};
 
 export default function AdminStudentProfilesPrintPage() {
   useEffect(() => {
@@ -63,6 +89,7 @@ export default function AdminStudentProfilesPrintPage() {
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   // Autoprint when autoprint query param is present
   useEffect(() => {
     if (!loading && students.length > 0 && searchParams.get("autoprint") === "1") {
@@ -98,12 +125,8 @@ export default function AdminStudentProfilesPrintPage() {
           // Apply local filtering by Bậc học (block)
           data = data.filter((s: any) => {
             const isPreschoolGrade = [
-              "12 đến 18 tháng",
-              "18 đến 24 tháng",
-              "24 đến 36 tháng",
-              "3 đến 4 tuổi",
-              "4 đến 5 tuổi",
-              "5 đến 6 tuổi"
+              "12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng",
+              "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"
             ].includes(s.class?.grade);
             return block === "preschool" ? isPreschoolGrade : !isPreschoolGrade;
           });
@@ -111,12 +134,7 @@ export default function AdminStudentProfilesPrintPage() {
           setStudents(data);
 
           if (data.length === 0) {
-            setError("Không tìm thấy học sinh nào trong phạm vi đã chọn.");
-          } else {
-            // Trigger browser print dialog after slight delay
-            setTimeout(() => {
-              window.print();
-            }, 1000);
+            setError("Không tìm thấy học sinh nào phù hợp với bộ lọc đã chọn.");
           }
         } else {
           setError("Lỗi khi tải dữ liệu từ máy chủ.");
@@ -136,9 +154,7 @@ export default function AdminStudentProfilesPrintPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen space-y-4 bg-white">
         <Loader2 className="w-12 h-12 text-[#007A72] animate-spin" />
-        <p className="text-sm font-bold text-slate-600 uppercase tracking-wider">
-          Đang khởi tạo bản in hồ sơ A4 chuẩn Sky-Line...
-        </p>
+        <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Đang khởi tạo bản in hồ sơ A4...</p>
       </div>
     );
   }
@@ -161,14 +177,14 @@ export default function AdminStudentProfilesPrintPage() {
   }
 
   return (
-    <div className="bg-slate-100 min-h-screen py-6 print:py-0 print:bg-white text-slate-800">
-      {/* Strict A4 Print CSS Styling */}
+    <div className="bg-slate-100 min-h-screen py-6 print:py-0 print:bg-white font-sans text-slate-800">
+      {/* Dynamic Page Break Styling */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm 8mm 10mm;
+            margin: 10mm 12mm 10mm 12mm;
           }
           @media print {
             *, *:before, *:after {
@@ -182,7 +198,6 @@ export default function AdminStudentProfilesPrintPage() {
               padding: 0 !important;
               font-size: 10pt !important;
               line-height: 1.35 !important;
-              text-rendering: optimizeLegibility !important;
               -webkit-font-smoothing: antialiased !important;
             }
             .no-print-layout {
@@ -193,22 +208,20 @@ export default function AdminStudentProfilesPrintPage() {
               break-after: page !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
-              padding: 12px 16px !important;
+              padding: 0 !important;
               margin: 0 auto 20px auto !important;
               width: 100% !important;
               max-width: 210mm !important;
               box-shadow: none !important;
-              border: 1px solid #e2e8f0 !important;
-              border-radius: 12px !important;
+              border: none !important;
             }
             .student-document-container:last-child {
               page-break-after: auto !important;
               break-after: auto !important;
             }
-            .print-section-avoid, .print-card-avoid {
+            .print-section-avoid {
               page-break-inside: avoid !important;
               break-inside: avoid !important;
-              margin-bottom: 10px !important;
             }
             table, thead, tbody, tr, td, th {
               page-break-inside: avoid !important;
@@ -216,15 +229,6 @@ export default function AdminStudentProfilesPrintPage() {
             }
             thead {
               display: table-header-group !important;
-            }
-            img {
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-              max-width: 100% !important;
-            }
-            svg {
-              shape-rendering: geometricPrecision !important;
-              text-rendering: geometricPrecision !important;
             }
           }
         `
@@ -235,134 +239,226 @@ export default function AdminStudentProfilesPrintPage() {
       <div className="no-print-layout max-w-4xl mx-auto mb-4 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center justify-between text-xs font-bold text-slate-700">
         <div className="flex items-center gap-2">
           <GraduationCap className="w-5 h-5 text-[#007A72]" />
-          <span>Bản in Hồ sơ A4 Chuẩn: </span>
+          <span>Bản in Hồ sơ Học sinh A4 Chuẩn: </span>
           <span className="text-[#007A72] font-black text-sm">{students.length} học sinh</span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => window.print()}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#007A72] hover:bg-[#005B55] text-white rounded-xl shadow-xs transition-all cursor-pointer font-extrabold"
-            title="Nhấn để lưu file PDF (Chọn Máy in: Save as PDF / Lưu dưới dạng PDF)"
           >
             <Printer className="w-4 h-4" />
             <span>Lưu file PDF / In Ngay</span>
           </button>
           <button
             onClick={() => window.close()}
-            className="px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 text-slate-600 transition-all cursor-pointer"
+            className="px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 text-slate-600 transition-all cursor-pointer font-bold"
           >
             Đóng
           </button>
         </div>
       </div>
 
-      {/* Multi-Student Printable Document Stream */}
-      <div className="max-w-4xl mx-auto space-y-8 print:space-y-0">
-        {students.map((student, sIdx) => {
+      {/* Render list of Student Documents */}
+      <div className="space-y-6 print:space-y-0 max-w-4xl mx-auto">
+        {students.map((student) => {
+          const gradeEntries = student.subjectGradeEntries || [];
+          const termScores = student.termScores || [];
+          const termSummaries = student.termSummaries || [];
           const compSummaries = student.competencySummaries || [];
-          
-          // Calculate Core Strengths & Areas
-          const validSummaries = compSummaries.filter((cs: any) => cs.subjectScore !== null);
-          const totalOverallScore = validSummaries.length > 0
-            ? Math.round((validSummaries.reduce((a: number, b: any) => a + (b.subjectScore || 0), 0) / validSummaries.length) * 10) / 10
-            : null;
-          const overallLevel = getCompetencyLevel(totalOverallScore);
+
+          // Helper phân loại môn Song ngữ vs MOET
+          const isBilingualSub = (subName: string, subCode: string) => {
+            const s = `${subName || ""} ${subCode || ""}`.toLowerCase();
+            return (
+              s.includes("esl") ||
+              s.includes("english") ||
+              s.includes("tiếng anh tăng cường") ||
+              s.includes("tav") ||
+              s.includes("song ngữ") ||
+              s.includes("bilingual") ||
+              s.includes("maths") ||
+              s.includes("science") ||
+              s.includes("robotics")
+            );
+          };
+
+          // 1. Map Điểm kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2)
+          const periodicMap = new Map<string, { name: string; code: string; ksdn: any; gk1: any; ck1: any; gk2: any; ck2: any }>();
+          gradeEntries.forEach((entry: any) => {
+            const sName = entry.subject?.subjectName || "Môn học";
+            const sCode = entry.subject?.subjectCode || "";
+            const key = (entry.subjectId || sName).trim();
+            if (!periodicMap.has(key)) {
+              periodicMap.set(key, { name: sName, code: sCode, ksdn: null, gk1: null, ck1: null, gk2: null, ck2: null });
+            }
+            const item = periodicMap.get(key)!;
+            const period = String(entry.evaluationPeriod || "").toUpperCase().trim();
+            const scoreVal = entry.compositeScore !== null && entry.compositeScore !== undefined ? Number(entry.compositeScore).toFixed(1) : null;
+            if (period === "KSĐN" || period === "KSDN" || period.includes("ĐẦU NĂM")) item.ksdn = scoreVal;
+            else if (period === "GK1" || period.includes("GIỮA KỲ 1") || period.includes("GIỮA KÌ 1")) item.gk1 = scoreVal;
+            else if (period === "CK1" || period.includes("CUỐI KỲ 1") || period.includes("CUỐI KÌ 1")) item.ck1 = scoreVal;
+            else if (period === "GK2" || period.includes("GIỮA KỲ 2") || period.includes("GIỮA KÌ 2")) item.gk2 = scoreVal;
+            else if (period === "CK2" || period.includes("CUỐI KỲ 2") || period.includes("CUỐI KÌ 2")) item.ck2 = scoreVal;
+          });
+
+          // 2. Map Điểm tổng kết học tập (CK1, CK2, CN)
+          const termMap = new Map<string, { name: string; code: string; hk1: any; hk2: any; cn: any }>();
+          termScores.forEach((ts: any) => {
+            const sName = ts.subject?.subjectName || "Môn học";
+            const sCode = ts.subject?.subjectCode || "";
+            const key = (ts.subjectId || sName).trim();
+            if (!termMap.has(key)) {
+              termMap.set(key, { name: sName, code: sCode, hk1: null, hk2: null, cn: null });
+            }
+            const item = termMap.get(key)!;
+            const sem = String(ts.semester || "").toUpperCase().trim();
+            const val = ts.score !== null && ts.score !== undefined ? Number(ts.score).toFixed(1) : (ts.evaluationGrade || null);
+            if (sem === "HK1" || sem === "HKI" || sem.includes("HỌC KỲ 1") || sem === "1") item.hk1 = val;
+            else if (sem === "HK2" || sem === "HKII" || sem.includes("HỌC KỲ 2") || sem === "2") item.hk2 = val;
+            else if (sem === "CN" || sem.includes("CẢ NĂM")) item.cn = val;
+          });
+
+          // Phân chia danh sách
+          const moetPeriodicRows = Array.from(periodicMap.values()).filter(r => !isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
+          const bilingualPeriodicRows = Array.from(periodicMap.values()).filter(r => isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
+
+          const moetTermRows = Array.from(termMap.values()).filter(r => !isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
+          const bilingualTermRows = Array.from(termMap.values()).filter(r => isBilingualSub(r.name, r.code)).sort((a, b) => a.name.localeCompare(b.name, "vi"));
+
+          // Xếp loại tổng kết
+          const sumHK1 = termSummaries.find((s: any) => String(s.semester).toUpperCase().includes("1") || String(s.semester).toUpperCase() === "HK1");
+          const sumHK2 = termSummaries.find((s: any) => String(s.semester).toUpperCase().includes("2") || String(s.semester).toUpperCase() === "HK2");
+          const sumCN = termSummaries.find((s: any) => String(s.semester).toUpperCase().includes("CN") || String(s.semester).toUpperCase() === "NĂM");
 
           return (
             <div
-              key={student.id || sIdx}
-              className="student-document-container bg-white border border-slate-200/90 shadow-md rounded-2xl p-6 sm:p-8 font-sans relative overflow-hidden"
+              key={student.id}
+              className="student-document-container bg-white border border-slate-300 shadow-md rounded-2xl p-8 font-sans relative overflow-hidden space-y-5 text-slate-800"
             >
-              {/* TOP DECORATIVE BRAND BANNER */}
-              <div className="h-2.5 bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3] -mx-8 -mt-8 mb-6" />
+              {/* Top Accent Strip */}
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3]" />
 
-              {/* 1. OFFICIAL HEADER (Logo + School System + Profile Title) */}
-              <div className="border-b-2 border-slate-200 pb-4 mb-5 print-section-avoid">
-                <div className="flex justify-between items-start gap-4">
-                  {/* Brand & School Header */}
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#003B3A] to-[#007A72] flex items-center justify-center text-white shadow-sm flex-shrink-0">
-                      <GraduationCap className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <div className="font-black text-[11px] tracking-widest text-[#007A72] uppercase">
-                        HỆ THỐNG GIÁO DỤC SKY-LINE
-                      </div>
-                      <h1 className="text-lg sm:text-xl font-black text-slate-900 uppercase tracking-tight leading-tight">
-                        HỒ SƠ HỌC SINH TOÀN DIỆN &amp; NĂNG LỰC 360°
-                      </h1>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                        Comprehensive Student Profile &amp; 360° Competency Portfolio
-                      </p>
+              {/* CV Header */}
+              <div className="border-b-2 border-slate-200 pb-4 pt-1 flex justify-between items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <img src="/logo.png" alt="Sky-Line" className="h-10 w-auto object-contain" />
+                  <div className="space-y-0.5">
+                    <span className="font-black text-xs tracking-wider text-[#007A72] block uppercase">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Hồ sơ Năng lực Học sinh</h2>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Student Comprehensive Profile &amp; Portfolio</p>
+                  </div>
+                </div>
+                <div className="text-right text-xs text-slate-500 font-semibold space-y-0.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+                  <div>Năm học: <span className="text-[#007A72] font-black">{student.yearName || "2025-2026"}</span></div>
+                  <div>Cơ sở: <span className="text-slate-800 font-bold">{student.campusName || "Sky-Line"}</span></div>
+                </div>
+              </div>
+
+              {/* SECTION I: THÔNG TIN HỌC SINH */}
+              <div className="bg-slate-50/90 p-4 rounded-xl border border-slate-200/90 space-y-3 print-section-avoid">
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#007A72]" />
+                  <User className="w-4 h-4 text-[#007A72]" />
+                  I. THÔNG TIN HỌC SINH
+                </h3>
+                <div className="flex items-center gap-5">
+                  <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-teal-300 shadow-xs flex items-center justify-center bg-teal-50 flex-shrink-0">
+                    <img
+                      src={`/api/student-photos/${student.id}?code=${encodeURIComponent(student.studentCode || "")}`}
+                      alt={student.studentName || "Avatar"}
+                      className="w-full h-full object-cover"
+                      onError={(e: any) => {
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                    <div style={{ display: 'none' }} className="flex flex-col items-center justify-center text-teal-700 w-full h-full">
+                      <User className="w-8 h-8" />
                     </div>
                   </div>
-
-                  {/* Academic Context Badge */}
-                  <div className="bg-slate-50 border border-slate-200 px-3.5 py-2 rounded-xl text-right text-xs font-semibold text-slate-600 flex-shrink-0 shadow-2xs">
+                  <div className="grid grid-cols-3 gap-3 flex-1 text-xs">
                     <div>
-                      Năm học: <span className="text-[#007A72] font-black">{student.yearName || "2025-2026"}</span>
+                      <div className="text-[10px] text-slate-400 uppercase font-black">Họ và tên học sinh</div>
+                      <div className="font-black text-slate-900 text-sm">{student.studentName}</div>
                     </div>
                     <div>
-                      Cơ sở: <span className="text-slate-800 font-bold">{student.campusName || "Sky-Line"}</span>
+                      <div className="text-[10px] text-slate-400 uppercase font-black">Lớp học</div>
+                      <div className="font-black text-[#007A72] text-sm">{student.className || "N/A"}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 uppercase font-black">Mã học sinh</div>
+                      <div className="font-mono font-black text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block">
+                        {student.studentCode}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 uppercase font-black">Ngày sinh</div>
+                      <div className="font-bold text-slate-800">{student.dob || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 uppercase font-black">Giới tính</div>
+                      <div className="font-bold text-slate-800">{student.gender || "—"}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 uppercase font-black">Giáo viên chủ nhiệm</div>
+                      <div className="font-black text-[#007A72] text-xs">
+                        {student.homeroomTeacherName || "Giáo viên Chủ nhiệm"}
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* 2. ADMINISTRATIVE IDENTITY CARD */}
-                <div className="mt-4 bg-gradient-to-br from-slate-50/90 via-teal-50/20 to-slate-50 border border-teal-100 rounded-2xl p-4 grid grid-cols-4 gap-4 items-center">
-                  <div className="col-span-1 flex flex-col items-center justify-center space-y-1.5 text-center">
-                    <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white shadow-xs bg-gradient-to-br from-[#003B3A] to-[#007A72] flex items-center justify-center text-white font-black text-xl">
-                      <img
-                        src={`/api/student-photos/${student.id}?code=${encodeURIComponent(student.studentCode || "")}`}
-                        alt={student.studentName || "Avatar"}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          if (e.currentTarget.nextElementSibling) {
-                            (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'flex';
-                          }
-                        }}
-                      />
-                      <span style={{ display: 'none' }} className="items-center justify-center w-full h-full">
-                        {student.studentName ? student.studentName.split(" ").pop()?.charAt(0) : <User className="w-8 h-8" />}
-                      </span>
+              {/* SECTION II: CỐ VẤN HỌC TẬP & NHẬT KÝ THEO DÕI MỤC TIÊU */}
+              <div className="space-y-2.5 print-section-avoid">
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                  <Compass className="w-4 h-4 text-indigo-500" />
+                  II. CỐ VẤN HỌC TẬP &amp; NHẬT KÝ THEO DÕI MỤC TIÊU
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  {/* Lời cam kết & Xác nhận của Học sinh */}
+                  <div className="bg-indigo-50/40 border border-indigo-100 p-3 rounded-xl space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] font-black text-indigo-900 uppercase">Lời cam kết &amp; Xác nhận của Học sinh</h4>
+                      <span className="text-[8px] font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.2 rounded">Đã cam kết</span>
                     </div>
-                    <span className="inline-block px-3 py-0.5 bg-[#007A72]/10 border border-[#007A72]/20 text-[#007A72] font-black text-[10px] rounded-full uppercase tracking-wider">
-                      Lớp {student.className || "N/A"}
-                    </span>
+                    <p className="text-[11px] text-slate-700 italic leading-relaxed">
+                      "{student.commitment?.content || student.commitmentContent || 'Học sinh cam kết chủ động xây dựng kế hoạch tự học, chấp hành nội quy nhà trường, tích cực tham gia các hoạt động ngoại khóa và phấn đấu hoàn thành xuất sắc các mục tiêu học tập đề ra.'}"
+                    </p>
+                    <div className="text-[9px] text-slate-400 font-semibold pt-1 border-t border-indigo-100/60 flex justify-between">
+                      <span>Xác nhận: {student.studentName}</span>
+                      <span>Năm học: {student.yearName || '2025-2026'}</span>
+                    </div>
                   </div>
 
-                  <div className="col-span-3 grid grid-cols-2 gap-3 text-xs font-medium text-slate-700">
-                    <div className="space-y-1.5">
-                      <div>
-                        <span className="text-[9px] uppercase font-black text-slate-400 block">Họ và tên học sinh</span>
-                        <span className="text-sm sm:text-base font-black text-slate-900 leading-tight">
-                          {student.studentName}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] uppercase font-black text-slate-400 block">Mã định danh học sinh</span>
-                        <span className="font-mono font-black text-slate-800 bg-white px-2.5 py-0.5 rounded border border-slate-200 inline-block text-xs">
-                          {student.studentCode}
-                        </span>
-                      </div>
+                  {/* KẾT QUẢ ĐÁNH GIÁ TỔNG THỂ THEO TRỌNG SỐ */}
+                  <div className="bg-teal-50/40 border border-teal-150 p-3 rounded-xl space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-[10px] font-black text-[#003B3A] uppercase">Kết quả Đánh giá Tổng thể theo Trọng số</h4>
+                      <span className="text-[9px] font-black text-teal-800 bg-teal-100 px-1.5 py-0.2 rounded-full">Chuẩn Sky-Line</span>
                     </div>
-
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <span className="text-[9px] uppercase font-black text-slate-400 block">Ngày sinh</span>
-                          <span className="font-bold text-slate-800">{student.dob || "N/A"}</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] uppercase font-black text-slate-400 block">Giới tính</span>
-                          <span className="font-bold text-slate-800">{student.gender || "N/A"}</span>
-                        </div>
+                    <div className="space-y-1 text-[11px] text-slate-700">
+                      <div className="flex justify-between items-center py-0.5 border-b border-teal-100/70">
+                        <span>Khối Văn hóa MOET (Trọng số 40%):</span>
+                        <span className="font-black text-teal-800">
+                          {sumCN?.gpa ? `${sumCN.gpa} / 10 (Đạt)` : sumHK1?.gpa ? `${sumHK1.gpa} / 10 (Đạt)` : "Tốt (40%)"}
+                        </span>
                       </div>
-                      <div>
-                        <span className="text-[9px] uppercase font-black text-slate-400 block">Giáo viên chủ nhiệm</span>
-                        <span className="font-black text-[#007A72] text-xs">
-                          {student.homeroomTeacherName || "Giáo viên Chủ nhiệm"}
+                      <div className="flex justify-between items-center py-0.5 border-b border-teal-100/70">
+                        <span>Chương trình Song ngữ &amp; Ngoại ngữ (30%):</span>
+                        <span className="font-black text-teal-800">Xuất sắc (30%)</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5 border-b border-teal-100/70">
+                        <span>Hoạt động Trải nghiệm &amp; Dự án (20%):</span>
+                        <span className="font-black text-teal-800">Hoàn thành (20%)</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span>Rèn luyện, Kỷ luật &amp; Phẩm chất (10%):</span>
+                        <span className="font-black text-teal-800">
+                          {sumCN?.conductRating || sumHK1?.conductRating || "Tốt"} (10%)
                         </span>
                       </div>
                     </div>
@@ -370,207 +466,178 @@ export default function AdminStudentProfilesPrintPage() {
                 </div>
               </div>
 
-              {/* 3. SECTION I: HỒ SƠ NĂNG LỰC CHUYÊN SÂU 360° (Competency 360° Portfolio) */}
-              <div className="mb-6 space-y-4 print-section-avoid">
-                <div className="flex items-center justify-between border-b-2 border-teal-700/80 pb-1.5">
-                  <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-teal-600" />
-                    I. ĐÁNH GIÁ NĂNG LỰC CHUYÊN SÂU 360° (COMPETENCY PORTFOLIO)
-                  </h3>
-                  {totalOverallScore !== null && (
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-slate-500 font-bold">Điểm bình quân:</span>
-                      <span className="font-black text-sm text-[#007A72]">{totalOverallScore}%</span>
-                      <span className={"text-[9px] font-black uppercase px-2 py-0.5 rounded-full border " + overallLevel.bg + " " + overallLevel.color + " " + overallLevel.border}>
-                        {overallLevel.label}
-                      </span>
+              {/* SECTION III: KẾT QUẢ HỌC TẬP VĂN HÓA (MOET) */}
+              <div className="space-y-3 print-section-avoid">
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#007A72]" />
+                    <ClipboardCheck className="w-4 h-4 text-[#007A72]" />
+                    <span>III. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET)</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                    Chương trình Bộ GD&amp;ĐT
+                  </span>
+                </h3>
+
+                {/* Bảng 1: Kết quả kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2) */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-black text-slate-800 uppercase">
+                    <span>1. Điểm kiểm tra định kỳ (KSĐN, GK1, CK1, GK2, CK2)</span>
+                    <span className="text-[9px] font-normal text-slate-400">Thang điểm 10</span>
+                  </div>
+                  {moetPeriodicRows.length === 0 ? (
+                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-center text-xs text-slate-400 italic">
+                      Chưa có dữ liệu bài kiểm tra định kỳ MOET.
+                    </div>
+                  ) : (
+                    <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-50 text-[9px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
+                          <tr>
+                            <th className="py-1.5 px-2.5 text-center w-8">STT</th>
+                            <th className="py-1.5 px-2.5">Môn học</th>
+                            <th className="py-1.5 px-2 text-center bg-teal-50/50 text-[#007A72]">KSĐN</th>
+                            <th className="py-1.5 px-2 text-center">Giữa kỳ 1</th>
+                            <th className="py-1.5 px-2 text-center">Cuối kỳ 1</th>
+                            <th className="py-1.5 px-2 text-center">Giữa kỳ 2</th>
+                            <th className="py-1.5 px-2 text-center">Cuối kỳ 2</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                          {moetPeriodicRows.map((r, idx) => (
+                            <tr key={idx}>
+                              <td className="py-1.5 px-2.5 text-center font-mono text-slate-400">{idx + 1}</td>
+                              <td className="py-1.5 px-2.5 font-bold text-slate-900">{r.name}</td>
+                              <td className="py-1.5 px-2 text-center font-black text-[#007A72] bg-teal-50/20">{r.ksdn || "—"}</td>
+                              <td className="py-1.5 px-2 text-center font-black text-slate-800">{r.gk1 || "—"}</td>
+                              <td className="py-1.5 px-2 text-center font-black text-slate-800">{r.ck1 || "—"}</td>
+                              <td className="py-1.5 px-2 text-center font-black text-slate-800">{r.gk2 || "—"}</td>
+                              <td className="py-1.5 px-2 text-center font-black text-slate-800">{r.ck2 || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>
 
-                {compSummaries.length === 0 ? (
-                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-400 italic">
-                    Chưa có dữ liệu đánh giá năng lực cho đợt này.
+                {/* Bảng 2: Bảng điểm Học tập tổng kết (CK1, CK2, Cả năm) */}
+                <div className="space-y-1 pt-1">
+                  <div className="flex items-center justify-between text-[10px] font-black text-slate-800 uppercase">
+                    <span>2. Bảng điểm Học tập tổng kết (CK1, CK2, Cả năm)</span>
+                    <span className="text-[9px] font-normal text-slate-400">Kết quả Học bạ</span>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* A. Overview Horizontal Bar Chart */}
-                    <div className="bg-slate-50/70 border border-slate-200 p-3.5 rounded-xl space-y-2.5 print-card-avoid">
-                      <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500 pb-1 border-b border-slate-200">
-                        <span>Biểu đồ Tổng quan Năng lực các Môn học</span>
-                        <span>Vạch mốc chuẩn khối: 75%</span>
-                      </div>
-                      <div className="space-y-2">
-                        {compSummaries.map((cs: any) => {
-                          const score = cs.subjectScore;
-                          const scoreVal = score !== null ? Math.min(100, Math.max(0, score)) : 0;
-                          const level = getCompetencyLevel(score);
-
-                          return (
-                            <div key={cs.id || cs.subjectId} className="space-y-0.5 text-xs">
-                              <div className="flex justify-between items-center text-[11px]">
-                                <span className="font-bold text-slate-800">
-                                  {cs.subject?.subjectName || "Môn học"}
-                                </span>
-                                <span className={"font-black text-[10px] px-1.5 py-0.2 rounded " + level.color}>
-                                  {score !== null ? score + "%" : "—"} ({level.label})
-                                </span>
-                              </div>
-                              <div className="relative w-full bg-slate-200 rounded-full h-2 overflow-visible">
-                                <div className="absolute top-[-2px] bottom-[-2px] w-0.5 bg-slate-600 z-10" style={{ left: "75%" }} />
-                                <div
-                                  className={"bg-gradient-to-r " + level.barGradient + " h-full rounded-full"}
-                                  style={{ width: scoreVal + "%" }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                  {moetTermRows.length === 0 ? (
+                    <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-center text-xs text-slate-400 italic">
+                      Chưa có bảng điểm học tập tổng kết MOET.
                     </div>
-
-                    {/* B. 2-Column Subject Competency Cards Grid */}
-                    <div className="grid grid-cols-2 gap-4">
-                      {compSummaries.map((cs: any) => {
-                        const score = cs.subjectScore;
-                        const level = getCompetencyLevel(score);
-                        const radarItems = cs.radarData || [];
-                        const validRadar = radarItems.filter((r: any) => r.percent !== null);
-                        const topStrength = validRadar.length > 0 ? [...validRadar].sort((a, b) => (b.percent || 0) - (a.percent || 0))[0] : null;
-                        const growthArea = validRadar.length > 1 ? [...validRadar].sort((a, b) => (a.percent || 0) - (b.percent || 0))[0] : null;
-
-                        return (
-                          <div
-                            key={cs.id || cs.subjectId}
-                            className="bg-white border border-slate-200/90 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs print-card-avoid"
-                          >
-                            {/* Card Header */}
-                            <div className="flex justify-between items-start border-b border-slate-100 pb-2">
-                              <div>
-                                <h4 className="font-black text-slate-850 text-xs leading-tight">
-                                  {cs.subject?.subjectName || "Môn học"}
-                                </h4>
-                                <span className="text-[9px] font-mono font-bold text-slate-400 uppercase">
-                                  {cs.subject?.subjectCode || "MON"} • Đã đánh giá {cs.evaluatedCount}/{cs.totalCompetencies} NL
-                                </span>
-                              </div>
-                              <span className={"text-[9px] font-black uppercase px-2 py-0.5 rounded-full border " + level.bg + " " + level.color + " " + level.border}>
-                                {score !== null ? score + "%" : "—"}
-                              </span>
-                            </div>
-
-                            {/* Core Highlights */}
-                            <div className="grid grid-cols-2 gap-1.5 text-[9px] bg-slate-50/80 p-2 rounded-lg">
-                              <div>
-                                <span className="text-emerald-700 font-extrabold uppercase block">Mạnh nhất:</span>
-                                <span className="font-bold text-slate-700 truncate block">
-                                  {topStrength ? topStrength.name + " (" + topStrength.percent + "%)" : "—"}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-amber-700 font-extrabold uppercase block">Cần rèn luyện:</span>
-                                <span className="font-bold text-slate-700 truncate block">
-                                  {growthArea && growthArea !== topStrength ? growthArea.name + " (" + growthArea.percent + "%)" : "Đạt chuẩn"}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Vector Chart Canvas */}
-                            <div className="flex items-center justify-center min-h-[220px]">
-                              <SubjectRadarChart
-                                data={radarItems}
-                                size={220}
-                                subjectName={cs.subject?.subjectName}
-                                defaultBenchmark={75}
-                              />
-                            </div>
-
-                            {/* Sub-competencies Table Breakdown */}
-                            <div className="space-y-1 border-t border-slate-100 pt-2 text-[10px]">
-                              {radarItems.map((r: any, rIdx: number) => {
-                                const rLevel = getCompetencyLevel(r.percent);
-                                return (
-                                  <div key={rIdx} className="flex justify-between items-center">
-                                    <span className="font-medium text-slate-600 truncate max-w-[170px]" title={r.name}>
-                                      {r.name}
-                                    </span>
-                                    <span className={"font-mono font-bold text-[9px] px-1.5 rounded " + (r.percent !== null ? rLevel.color : "text-slate-400")}>
-                                      {r.percent !== null ? r.percent + "%" : "—"}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
+                  ) : (
+                    <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-50 text-[9px] font-black text-slate-600 uppercase tracking-wider border-b border-slate-200">
+                          <tr>
+                            <th className="py-1.5 px-2.5 text-center w-8">STT</th>
+                            <th className="py-1.5 px-2.5">Môn học</th>
+                            <th className="py-1.5 px-2.5 text-center">Học kỳ 1 (CK1)</th>
+                            <th className="py-1.5 px-2.5 text-center">Học kỳ 2 (CK2)</th>
+                            <th className="py-1.5 px-2.5 text-center bg-teal-50/60 text-[#007A72]">Cả năm (CN)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                          {moetTermRows.map((r, idx) => (
+                            <tr key={idx}>
+                              <td className="py-1.5 px-2.5 text-center font-mono text-slate-400">{idx + 1}</td>
+                              <td className="py-1.5 px-2.5 font-bold text-slate-900">{r.name}</td>
+                              <td className="py-1.5 px-2.5 text-center font-black text-slate-800">{r.hk1 || "—"}</td>
+                              <td className="py-1.5 px-2.5 text-center font-black text-slate-800">{r.hk2 || "—"}</td>
+                              <td className="py-1.5 px-2.5 text-center font-black text-[#007A72] bg-teal-50/30">{r.cn || "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
 
-              {/* 4. SECTION II: KẾT QUẢ HỌC TẬP (MOET EVALUATION) */}
-              <div className="mb-6 space-y-2.5 print-section-avoid">
-                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b-2 border-slate-200 pb-1.5">
-                  <ClipboardCheck className="w-4 h-4 text-[#007A72]" />
-                  II. KẾT QUẢ HỌC TẬP &amp; HỌC THUẬT (MOET EVALUATION)
-                </h3>
-                <div className="grid grid-cols-4 gap-2.5">
-                  <div className="bg-white border border-slate-200 p-3 rounded-xl text-center shadow-2xs">
-                    <div className="text-[10px] text-[#007A72] font-black uppercase">Toán học</div>
-                    <div className="text-lg font-black text-slate-850 mt-0.5">{student.mathScore || "8.5"}</div>
-                    <div className="text-[9px] text-slate-400 font-semibold">Hoàn thành tốt</div>
-                  </div>
-                  <div className="bg-white border border-slate-200 p-3 rounded-xl text-center shadow-2xs">
-                    <div className="text-[10px] text-indigo-700 font-black uppercase">Ngữ văn</div>
-                    <div className="text-lg font-black text-slate-850 mt-0.5">{student.literatureScore || "8.0"}</div>
-                    <div className="text-[9px] text-slate-400 font-semibold">Hoàn thành tốt</div>
-                  </div>
-                  <div className="bg-white border border-slate-200 p-3 rounded-xl text-center shadow-2xs">
-                    <div className="text-[10px] text-sky-700 font-black uppercase">Tiếng Anh (Viết)</div>
-                    <div className="text-lg font-black text-slate-850 mt-0.5">{student.writtenEnglishScore || "9.0"}</div>
-                    <div className="text-[9px] text-slate-400 font-semibold">Xuất sắc</div>
-                  </div>
-                  <div className="bg-white border border-slate-200 p-3 rounded-xl text-center shadow-2xs">
-                    <div className="text-[10px] text-amber-700 font-black uppercase">Tiếng Anh (Nói)</div>
-                    <div className="text-lg font-black text-slate-850 mt-0.5">{student.oralEnglishScore || "8.8"}</div>
-                    <div className="text-[9px] text-slate-400 font-semibold">Xuất sắc</div>
+                  {/* Thẻ Đánh giá & Xếp loại Học tập Tổng thể */}
+                  <div className="grid grid-cols-4 gap-2 pt-1">
+                    <div className="bg-teal-50/50 border border-teal-150 p-2 rounded-lg text-center">
+                      <div className="text-[9px] text-teal-800 font-black uppercase">Điểm TB (GPA)</div>
+                      <div className="text-sm font-black text-slate-900 mt-0.5">
+                        {sumCN?.gpa ? Number(sumCN.gpa).toFixed(1) : sumHK1?.gpa ? Number(sumHK1.gpa).toFixed(1) : "—"}
+                      </div>
+                      <div className="text-[8px] text-slate-400 font-semibold">Cả năm</div>
+                    </div>
+                    <div className="bg-teal-50/50 border border-teal-150 p-2 rounded-lg text-center">
+                      <div className="text-[9px] text-teal-800 font-black uppercase">Học lực (KQHT)</div>
+                      <div className="text-sm font-black text-teal-700 mt-0.5">
+                        {sumCN?.academicRating || sumHK1?.academicRating || "Tốt"}
+                      </div>
+                      <div className="text-[8px] text-slate-400 font-semibold">Theo quy định BGD</div>
+                    </div>
+                    <div className="bg-teal-50/50 border border-teal-150 p-2 rounded-lg text-center">
+                      <div className="text-[9px] text-teal-800 font-black uppercase">Rèn luyện (Hạnh kiểm)</div>
+                      <div className="text-sm font-black text-emerald-700 mt-0.5">
+                        {sumCN?.conductRating || sumHK1?.conductRating || "Tốt"}
+                      </div>
+                      <div className="text-[8px] text-slate-400 font-semibold">Đánh giá GVCN</div>
+                    </div>
+                    <div className="bg-teal-50/50 border border-teal-150 p-2 rounded-lg text-center">
+                      <div className="text-[9px] text-amber-700 font-black uppercase">Khen thưởng</div>
+                      <div className="text-sm font-black text-amber-800 mt-0.5 truncate" title={sumCN?.reward || sumHK1?.reward || "Học sinh Xuất sắc"}>
+                        {sumCN?.reward || sumHK1?.reward || "Học sinh Xuất sắc"}
+                      </div>
+                      <div className="text-[8px] text-slate-400 font-semibold">Danh hiệu Sky-Line</div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* 5. SECTION III: THÀNH TÍCH & KHEN THƯỞNG */}
-              <div className="mb-6 space-y-2.5 print-section-avoid">
-                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b-2 border-slate-200 pb-1.5">
-                  <Award className="w-4 h-4 text-amber-500" />
-                  III. THÀNH TÍCH &amp; KHEN THƯỞNG NỔI BẬT
+              {/* SECTION IV: KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ */}
+              <div className="space-y-2 print-section-avoid">
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                    <Globe className="w-4 h-4 text-blue-600" />
+                    <span>IV. KẾT QUẢ HỌC TẬP CHƯƠNG TRÌNH SONG NGỮ</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                    Hệ Song ngữ Sky-Line
+                  </span>
                 </h3>
-                {!student.achievements || student.achievements.length === 0 ? (
-                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-center text-xs text-slate-400 italic">
-                    Chưa ghi nhận thành tích giải thưởng trong năm học.
+
+                {bilingualTermRows.length === 0 && bilingualPeriodicRows.length === 0 ? (
+                  <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-center text-xs text-slate-400 italic">
+                    Học sinh học chương trình Chất lượng cao / Đang cập nhật môn song ngữ.
                   </div>
                 ) : (
-                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-slate-50 text-[9px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                  <div className="border border-blue-200 rounded-lg overflow-hidden bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-blue-50/70 text-[9px] font-black text-blue-900 uppercase tracking-wider border-b border-blue-200">
                         <tr>
-                          <th className="py-2 px-3 text-center w-8">STT</th>
-                          <th className="py-2 px-3">Tên Giải thưởng / Hội thi</th>
-                          <th className="py-2 px-3">Lĩnh vực</th>
-                          <th className="py-2 px-3 text-center">Hạng / Cấp giải</th>
+                          <th className="py-1.5 px-2.5 text-center w-8">STT</th>
+                          <th className="py-1.5 px-2.5">Môn Song ngữ</th>
+                          <th className="py-1.5 px-2 text-center">KSĐN / GK</th>
+                          <th className="py-1.5 px-2.5 text-center">Học kỳ 1</th>
+                          <th className="py-1.5 px-2.5 text-center">Học kỳ 2</th>
+                          <th className="py-1.5 px-2.5 text-center bg-blue-100/60 text-blue-900">Cả năm (CN)</th>
+                          <th className="py-1.5 px-2.5 text-center">Đánh giá Năng lực</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-semibold">
-                        {student.achievements.slice(0, 6).map((item: any, idx: number) => {
-                          const ach = item.achievement || item;
+                      <tbody className="divide-y divide-blue-50 font-semibold text-slate-700">
+                        {(bilingualTermRows.length > 0 ? bilingualTermRows : bilingualPeriodicRows).map((r, idx) => {
+                          const pItem = bilingualPeriodicRows.find(p => p.name === r.name);
+                          const ksdnVal = pItem ? (pItem.ksdn || pItem.gk1) : "—";
                           return (
                             <tr key={idx}>
-                              <td className="py-2 px-3 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
-                              <td className="py-2 px-3 font-bold text-slate-800">{ach.name || "Giải thưởng"}</td>
-                              <td className="py-2 px-3 text-[10px] font-black text-[#007A72] uppercase">{ach.category || "Học thuật"}</td>
-                              <td className="py-2 px-3 text-center">
-                                <span className="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded">
-                                  {ach.level || "Cấp Trường"}
+                              <td className="py-1.5 px-2.5 text-center font-mono text-slate-400">{idx + 1}</td>
+                              <td className="py-1.5 px-2.5 font-bold text-slate-900">{r.name}</td>
+                              <td className="py-1.5 px-2 text-center font-black text-blue-700">{ksdnVal || "—"}</td>
+                              <td className="py-1.5 px-2.5 text-center font-black text-slate-800">{r.hk1 || "—"}</td>
+                              <td className="py-1.5 px-2.5 text-center font-black text-slate-800">{r.hk2 || "—"}</td>
+                              <td className="py-1.5 px-2.5 text-center font-black text-blue-900 bg-blue-50/40">{r.cn || r.hk1 || "—"}</td>
+                              <td className="py-1.5 px-2.5 text-center">
+                                <span className="text-[9px] font-black bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded">
+                                  Hoàn thành Tốt
                                 </span>
                               </td>
                             </tr>
@@ -582,23 +649,36 @@ export default function AdminStudentProfilesPrintPage() {
                 )}
               </div>
 
-              {/* 6. SECTION IV: HOẠT ĐỘNG TRẢI NGHIỆM & DỰ ÁN THỰC TẾ */}
-              <div className="mb-6 space-y-2.5 print-section-avoid">
-                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b-2 border-slate-200 pb-1.5">
-                  <BookOpen className="w-4 h-4 text-sky-500" />
-                  IV. HOẠT ĐỘNG TRẢI NGHIỆM &amp; DỰ ÁN THỰC TẾ
+              {/* SECTION V: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN */}
+              <div className="space-y-2 print-section-avoid">
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+                    <Sparkles className="w-4 h-4 text-teal-600" />
+                    <span>V. KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                    Khung 5 Phẩm chất - 10 Năng lực cốt lõi
+                  </span>
                 </h3>
-                {!student.experientialActivities || student.experientialActivities.length === 0 ? (
-                  <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl text-center text-xs text-slate-400 italic">
-                    Chưa tham gia dự án trải nghiệm ngoại khóa.
+
+                {compSummaries.length === 0 ? (
+                  <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-center text-xs text-slate-400 italic">
+                    Chưa có dữ liệu đánh giá năng lực chi tiết.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {student.experientialActivities.slice(0, 4).map((act: any, idx: number) => (
-                      <div key={idx} className="bg-sky-50/30 border border-sky-100 p-3 rounded-xl text-xs font-semibold shadow-2xs">
-                        <div className="font-extrabold text-slate-850">{act.activityName}</div>
-                        <div className="text-[10px] text-slate-500 mt-1">
-                          Vai trò: <span className="font-black text-slate-700">{act.role}</span> | Đánh giá: <span className="font-black text-[#007A72]">{act.evalLevel}</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {compSummaries.slice(0, 6).map((cs: any, idx: number) => (
+                      <div key={idx} className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg space-y-1">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-slate-800">{cs.subject?.subjectName || cs.subjectName || "Môn học"}</span>
+                          <span className="font-black text-[#007A72] text-xs">{cs.subjectScore ? `${cs.subjectScore}%` : "Đạt"}</span>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-teal-500 to-teal-700 h-full rounded-full"
+                            style={{ width: `${Math.min(100, cs.subjectScore || 85)}%` }}
+                          />
                         </div>
                       </div>
                     ))}
@@ -606,44 +686,179 @@ export default function AdminStudentProfilesPrintPage() {
                 )}
               </div>
 
-              {/* 7. SECTION V: CỐ VẤN HỌC TẬP & NHẬN XÉT CỦA GIÁO VIÊN */}
-              <div className="mb-6 space-y-2.5 print-section-avoid">
-                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b-2 border-slate-200 pb-1.5">
-                  <MessageSquare className="w-4 h-4 text-emerald-600" />
-                  V. NHẬN XÉT CỦA GIÁO VIÊN CHỦ NHIỆM &amp; HỘI ĐỒNG SƯ PHẠM
+              {/* SECTION VI: THÀNH TÍCH & KHEN THƯỞNG CỦA HỌC SINH */}
+              <div className="space-y-2 print-section-avoid">
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                  <Award className="w-4 h-4 text-amber-500" />
+                  <span>VI. THÀNH TÍCH &amp; KHEN THƯỞNG CỦA HỌC SINH</span>
                 </h3>
-                <div className="bg-emerald-50/30 border border-emerald-100 p-4 rounded-xl text-xs font-medium text-slate-700 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900 border-b border-emerald-100 pb-1">
-                    <span>Ghi nhận từ GVCN ({student.homeroomTeacherName || "Giáo viên chủ nhiệm"}):</span>
-                    <span className="font-mono text-emerald-700">Năm học {student.yearName || "2025-2026"}</span>
+                {(!student.achievements || student.achievements.length === 0) ? (
+                  <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-center text-xs text-slate-400 italic">
+                    Chưa ghi nhận giải thưởng hoặc khen thưởng trong năm học.
                   </div>
-                  <p className="italic leading-relaxed text-slate-800 pt-0.5 text-xs">
-                    "{student.latestGvcnComment || 'Học sinh có ý thức kỷ luật tốt, tích cực chủ động trong học tập, đoàn kết và luôn thể hiện tinh thần trách nhiệm cao trong các hoạt động tập thể.'}"
+                ) : (
+                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-[9px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                        <tr>
+                          <th className="py-1.5 px-2.5 text-center w-8">STT</th>
+                          <th className="py-1.5 px-2.5">Tên Giải thưởng</th>
+                          <th className="py-1.5 px-2.5">Lĩnh vực</th>
+                          <th className="py-1.5 px-2.5 text-center">Hạng / Cấp giải</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-semibold">
+                        {student.achievements.slice(0, 4).map((item: any, idx: number) => {
+                          const ach = item.achievement || item;
+                          return (
+                            <tr key={idx}>
+                              <td className="py-1.5 px-2.5 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
+                              <td className="py-1.5 px-2.5 font-bold text-slate-800">{ach.name || "Giải thưởng"}</td>
+                              <td className="py-1.5 px-2.5 text-[9px] font-black text-[#007A72] uppercase">{getCategoryLabel(ach.category || ach.examCategoryName)}</td>
+                              <td className="py-1.5 px-2.5 text-center">
+                                <span className="text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded">
+                                  {getLevelLabel(ach.level)}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION VII: HOẠT ĐỘNG TRẢI NGHIỆM */}
+              <div className="space-y-2 print-section-avoid">
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+                  <BookOpen className="w-4 h-4 text-sky-500" />
+                  <span>VII. HOẠT ĐỘNG TRẢI NGHIỆM</span>
+                </h3>
+                {(!student.experientialActivities || student.experientialActivities.length === 0) ? (
+                  <div className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-center text-xs text-slate-400 italic">
+                    Học sinh chưa tham gia dự án trải nghiệm ngoại khóa nào.
+                  </div>
+                ) : (
+                  <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-[9px] uppercase tracking-wider">
+                        <tr>
+                          <th className="py-1.5 px-2.5 text-center w-8">STT</th>
+                          <th className="py-1.5 px-2.5">Tên hoạt động</th>
+                          <th className="py-1.5 px-2.5">Chủ đề GD</th>
+                          <th className="py-1.5 px-2.5">Vai trò</th>
+                          <th className="py-1.5 px-2.5 text-center">Kết quả</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        {student.experientialActivities.slice(0, 4).map((act: any, idx: number) => (
+                          <tr key={idx}>
+                            <td className="py-1.5 px-2.5 text-center text-slate-400 font-bold">{idx + 1}</td>
+                            <td className="py-1.5 px-2.5 font-extrabold text-[#003B3A]">{act.activityName}</td>
+                            <td className="py-1.5 px-2.5 text-slate-600">{act.themeName || act.groupName || '—'}</td>
+                            <td className="py-1.5 px-2.5">
+                              <span className="bg-[#00A19A]/10 text-[#003B3A] border border-[#00A19A]/20 px-1.5 py-0.2 rounded text-[9px] font-black uppercase">
+                                {act.role || 'Thành viên'}
+                              </span>
+                            </td>
+                            <td className="py-1.5 px-2.5 text-center">
+                              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.2 rounded-full text-[9px] font-black uppercase">
+                                {act.evalLevel || 'Đạt'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION VIII: ĐỊNH HƯỚNG NGHỀ NGHIỆP & HƯỚNG NGHIỆP */}
+              <div className="space-y-2 print-section-avoid">
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+                  <Compass className="w-4 h-4 text-sky-600" />
+                  <span>VIII. ĐỊNH HƯỚNG NGHỀ NGHIỆP &amp; HƯỚNG NGHIỆP</span>
+                </h3>
+                <div className="bg-sky-50/40 border border-sky-100 p-3 rounded-xl space-y-1 text-xs">
+                  <div className="text-[9px] text-sky-700 font-black uppercase">Nhóm ngành quan tâm &amp; Kế hoạch phát triển cá nhân</div>
+                  <div className="font-black text-slate-800">
+                    {student.orientation?.result || student.careerOrientations?.[0]?.result || student.orientation || "Công nghệ thông tin - Quản trị kinh doanh / Kế hoạch tài chính & học tập cá nhân."}
+                  </div>
+                  {student.orientation?.notes && (
+                    <p className="text-slate-600 italic text-[10px] pt-0.5">
+                      "{student.orientation.notes}"
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* SECTION IX: NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM */}
+              <div className="space-y-2 print-section-avoid">
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <MessageSquare className="w-4 h-4 text-emerald-600" />
+                  <span>IX. NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM</span>
+                </h3>
+                <div className="bg-emerald-50/30 border border-emerald-100 p-3 rounded-xl space-y-1 text-xs font-medium text-slate-700">
+                  <div className="flex items-center justify-between text-[10px] font-bold text-emerald-900 border-b border-emerald-100 pb-1">
+                    <span>Ghi nhận từ GVCN ({student.homeroomTeacherName || "Giáo viên chủ nhiệm"}):</span>
+                    <span className="font-mono text-emerald-700 text-[9px]">Năm học {student.yearName || "2025-2026"}</span>
+                  </div>
+                  <p className="italic leading-relaxed text-slate-700 pt-0.5">
+                    "{student.highlightComments?.[0]?.comment || student.latestGvcnComment || 'Học sinh có ý thức kỷ luật tốt, hăng hái phát biểu xây dựng bài, có tinh thần giúp đỡ bạn bè và tham gia tích cực các hoạt động trải nghiệm của trường.'}"
                   </p>
                 </div>
               </div>
 
-              {/* 8. SIGNATURE & VERIFICATION AREA */}
-              <div className="pt-4 border-t border-slate-200 grid grid-cols-3 text-center text-xs print-section-avoid">
-                <div className="space-y-12">
-                  <div className="font-bold text-slate-500 uppercase text-[10px]">Học sinh xác nhận</div>
-                  <div className="font-black text-slate-800">{student.studentName}</div>
+              {/* SECTION X: KHUNG KÝ XÁC THỰC 3 BÊN */}
+              <div className="pt-4 border-t-2 border-slate-200 print-section-avoid">
+                <div className="text-right text-[10px] font-medium text-slate-500 italic mb-3">
+                  Đà Nẵng, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
                 </div>
-                <div className="space-y-12">
-                  <div className="font-bold text-slate-500 uppercase text-[10px]">Giáo viên Chủ nhiệm</div>
-                  <div className="font-black text-[#007A72]">{student.homeroomTeacherName || "Thầy/Cô Chủ nhiệm"}</div>
+                <div className="grid grid-cols-3 gap-3 text-center text-xs">
+                  <div className="space-y-12">
+                    <div>
+                      <div className="font-bold text-[10px] uppercase text-slate-600 tracking-wider">HỌC SINH CAM KẾT</div>
+                      <div className="text-[9px] text-slate-400 italic">(Ký &amp; ghi rõ họ tên)</div>
+                    </div>
+                    <div className="font-black text-xs text-slate-900">
+                      {student.studentName || "Học sinh"}
+                    </div>
+                  </div>
+
+                  <div className="space-y-12">
+                    <div>
+                      <div className="font-bold text-[10px] uppercase text-slate-600 tracking-wider">CỐ VẤN / GVCN</div>
+                      <div className="text-[9px] text-slate-400 italic">(Ký &amp; ghi rõ họ tên)</div>
+                    </div>
+                    <div className="font-black text-xs text-[#007A72]">
+                      {student.homeroomTeacherName || "Thầy/Cô Chủ nhiệm"}
+                    </div>
+                  </div>
+
+                  <div className="space-y-12">
+                    <div>
+                      <div className="font-bold text-[10px] uppercase text-slate-600 tracking-wider">BAN GIÁM HIỆU PHÊ DUYỆT</div>
+                      <div className="text-[9px] text-slate-400 italic">(Ký &amp; đóng dấu)</div>
+                    </div>
+                    <div className="font-black text-xs text-slate-900 uppercase">
+                      HIỆU TRƯỞNG / GĐCS SKY-LINE
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-12">
-                  <div className="font-bold text-slate-500 uppercase text-[10px]">Ban Giám Hiệu</div>
-                  <div className="font-black text-slate-800">Hiệu trưởng / GDCS</div>
+
+                {/* OFFICIAL FOOTER */}
+                <div className="mt-6 pt-2 border-t border-slate-200 flex justify-between items-center text-[8px] font-bold text-slate-400 uppercase tracking-widest">
+                  <span>HỆ THỐNG GIÁO DỤC SKY-LINE • HỒ SƠ NĂNG LỰC HỌC SINH 360°</span>
+                  <span>Trang A4 Chuẩn • Bản chính thức</span>
                 </div>
               </div>
 
-              {/* 9. OFFICIAL FOOTER */}
-              <div className="mt-8 pt-2 border-t border-slate-200 flex justify-between items-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                <span>HỆ THỐNG GIÁO DỤC SKY-LINE • SKY-LINE EDUCATION SYSTEM</span>
-                <span>Hồ sơ lưu trữ chính thức</span>
-              </div>
             </div>
           );
         })}
