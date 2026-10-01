@@ -16,7 +16,7 @@ import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, Legend, Cell
 } from "recharts"
-import { isGradeMatching } from "./grade-utils"
+import { isGradeMatching, isClassInLevel } from "./grade-utils"
 
 interface Props {
   academicYears: any[]
@@ -52,6 +52,20 @@ export function GradeAnalyticsTab({
   onNavigateToGradebook
 }: Props) {
   const router = useRouter()
+
+  // Danh sách Khối lọc tương ứng theo Cấp học đã chọn
+  const availableGradesForLevel = useMemo(() => {
+    if (selectedLevelFilter === "TieuHoc") {
+      return ["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"]
+    }
+    if (selectedLevelFilter === "THCS") {
+      return ["Khối 6", "Khối 7", "Khối 8", "Khối 9"]
+    }
+    if (selectedLevelFilter === "THPT") {
+      return ["Khối 10", "Khối 11", "Khối 12"]
+    }
+    return GRADES
+  }, [selectedLevelFilter])
 
   // Sub-view navigation state: "teachers" | "below_benchmark" | "below_average" | "ksdv_matrix" | "charts"
   const [activeSubView, setActiveSubView] = useState<"teachers" | "below_benchmark" | "below_average" | "ksdv_matrix" | "charts">("teachers")
@@ -137,19 +151,7 @@ export function GradeAnalyticsTab({
         const cGrade = (c.grade || "").toLowerCase()
         const cName = (c.className || "").toLowerCase()
 
-        if (selectedLevelFilter === "TieuHoc") {
-          const isMatch = cLevel.includes("tiểu học") || cLevel.includes("tieu hoc") ||
-            ["1", "2", "3", "4", "5"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
-          if (!isMatch) return false
-        } else if (selectedLevelFilter === "THCS") {
-          const isMatch = cLevel.includes("thcs") ||
-            ["6", "7", "8", "9"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
-          if (!isMatch) return false
-        } else if (selectedLevelFilter === "THPT") {
-          const isMatch = cLevel.includes("thpt") ||
-            ["10", "11", "12"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
-          if (!isMatch) return false
-        }
+        if (!isClassInLevel(c, selectedLevelFilter)) return false
       }
 
       if (selectedGradeFilter !== "ALL") {
@@ -891,13 +893,33 @@ export function GradeAnalyticsTab({
             </label>
             <select
               value={selectedLevelFilter}
-              onChange={e => setSelectedLevelFilter(e.target.value)}
+              onChange={e => {
+                setSelectedLevelFilter(e.target.value)
+                setSelectedGradeFilter("ALL")
+              }}
               className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
             >
               <option value="ALL">-- Tất cả Cấp học --</option>
-              <option value="TieuHoc">Tiểu học (Chuẩn 7.0đ)</option>
-              <option value="THCS">Trung học cơ sở (Chuẩn 6.0đ)</option>
-              <option value="THPT">Trung học phổ thông (Chuẩn 6.0đ)</option>
+              <option value="TieuHoc">Tiểu học (Khối 1 - 5, Chuẩn 7.0đ)</option>
+              <option value="THCS">Trung học cơ sở (Khối 6 - 9, Chuẩn 6.0đ)</option>
+              <option value="THPT">Trung học phổ thông (Khối 10 - 12, Chuẩn 6.0đ)</option>
+            </select>
+          </div>
+
+          {/* 3. Khối (Tùy biến theo Cấp học) */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1">
+              Khối:
+            </label>
+            <select
+              value={selectedGradeFilter}
+              onChange={e => setSelectedGradeFilter(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
+            >
+              <option value="ALL">-- Tất cả Khối --</option>
+              {availableGradesForLevel.map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
             </select>
           </div>
 

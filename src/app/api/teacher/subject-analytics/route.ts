@@ -157,7 +157,9 @@ export async function GET(request: Request) {
         const cGrade = (c.grade || "").trim()
         const cName = (c.className || "").trim()
         const targetClean = gradeFilter.replace(/\D/g, "")
-        return cGrade === gradeFilter || (targetClean && (cGrade.includes(targetClean) || cName.startsWith(targetClean)))
+        const cGradeNum = cGrade.replace(/\D/g, "")
+        const cNameNum = (cName.match(/^(\d+)/) || [])[1] || ""
+        return cGrade === gradeFilter || (targetClean && (cGradeNum === targetClean || cNameNum === targetClean))
       })
     }
 

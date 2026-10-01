@@ -81,17 +81,17 @@ export async function GET(request: Request) {
         const cGrade = (c.grade || "").toLowerCase()
         const cName = (c.className || "").toLowerCase()
 
+        const numMatch = cName.match(/^(\d+)/)
+        const gradeNum = numMatch ? parseInt(numMatch[1], 10) : (parseInt(cGrade.replace(/\D/g, ""), 10) || null)
+
         if (levelFilter === "TieuHoc") {
-          const isMatch = cLevel.includes("tiểu học") || cLevel.includes("tieu hoc") ||
-            ["1", "2", "3", "4", "5"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          const isMatch = gradeNum !== null ? (gradeNum >= 1 && gradeNum <= 5) : (cLevel.includes("tiểu học") || cLevel.includes("tieu hoc"))
           if (!isMatch) return false
         } else if (levelFilter === "THCS") {
-          const isMatch = cLevel.includes("thcs") ||
-            ["6", "7", "8", "9"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          const isMatch = gradeNum !== null ? (gradeNum >= 6 && gradeNum <= 9) : (cLevel.includes("thcs") || cLevel.includes("trung học cơ sở"))
           if (!isMatch) return false
         } else if (levelFilter === "THPT") {
-          const isMatch = cLevel.includes("thpt") ||
-            ["10", "11", "12"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          const isMatch = gradeNum !== null ? (gradeNum >= 10 && gradeNum <= 12) : (cLevel.includes("thpt") || cLevel.includes("trung học phổ thông") || cLevel.includes("cấp 3"))
           if (!isMatch) return false
         }
       }
