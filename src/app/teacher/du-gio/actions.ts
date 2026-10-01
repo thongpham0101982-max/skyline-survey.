@@ -1566,6 +1566,390 @@ export async function getCreatedCountInMonth(dateString: string) {
   }
 }
 
+/**
+ * 1. QUOTA CHECKER: Kiểm tra hạn ngạch dự giờ đột xuất của người dự trong tháng
+ * Hạn ngạch tối đa không vượt quá 50% chỉ tiêu quy định (requiredObserved).
+ */
+export async function getObserverSurpriseQuota(dateOrMonthString?: string) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        departmentRel: true,
+        departmentAssignments: true,
+        divisionAssignments: true,
+        user: true
+      }
+    })
+
+    if (!currentTeacher) {
+      return { success: false, error: "Không tìm thấy hồ sơ người dự giờ" }
+    }
+
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const userRole = (currentTeacher.user?.role || roleCode).toUpperCase()
+    const teacherPositions = [currentTeacher.position, ...(currentTeacher.departmentAssignments?.map((da: any) => da.position) || [])].filter(Boolean)
+
+    const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "PGDCS", "PGĐCS"].includes(userRole) ||
+      teacherPositions.some(p => ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "Giám đốc cơ sở", "Giam doc co so"].some(k => p.toUpperCase().includes(k.toUpperCase())));
+
+    const isBanDHCM = ["BAN_DHCM", "TB_DHCM", "TRUONG_BAN_DHCM", "PHO_BAN_DHCM", "ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(userRole) ||
+      teacherPositions.some(p => ["BAN_DHCM", "TB_DHCM", "Ban ĐHCM", "Ban DHCM", "BAN ĐHCM"].some(k => p.toUpperCase().includes(k.toUpperCase())));
+
+    const isQLCM = isBanDHCM || ["QLCM", "QUAN_LY_CM", "Quản lý CM"].some(k => userRole.includes(k) || teacherPositions.some(p => p.toUpperCase().includes(k)));
+
+    const isTBP = ["TBP", "TRUONG_BO_PHAN", "TRUONG_BOPHAN", "Trưởng bộ phận", "TB_DHCM"].includes(userRole) ||
+      teacherPositions.some(p => ["TBP", "TRUONG_BO_PHAN", "Trưởng bộ phận", "TB_DHCM", "TRƯỞNG BỘ PHẬN", "Phó bộ phận", "PHO_BO_PHAN"].some(k => p.toUpperCase().includes(k.toUpperCase()))) ||
+      (currentTeacher.divisionAssignments?.length || 0) > 0;
+
+    const isTTCM = ["TTCM", "TO_TRUONG", "TO_PHO", "TPCM"].includes(userRole) ||
+      teacherPositions.some(p => ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"].some(k => p.toUpperCase().includes(k.toUpperCase())));
+
+    const roleName = isGDCS ? "Giám đốc Cơ sở (GĐCS)" 
+      : isBanDHCM ? "Ban Điều Hành Chuyên Môn (Ban ĐHCM)" 
+      : isQLCM ? "Quản lý Chuyên môn (QLCM)" 
+      : isTBP ? "Trưởng Bộ Phận (TBP)"
+      : isTTCM ? "Tổ trưởng Chuyên môn (TTCM)" 
+      : "Cán bộ Quản lý";
+
+
+    // Date range for the query
+    let targetDate = new Date()
+    if (dateOrMonthString) {
+      const parsed = new Date(dateOrMonthString)
+      if (!isNaN(parsed.getTime())) targetDate = parsed
+    }
+    const startOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1)
+    const endOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 1)
+
+    // Find Academic Year Target
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" },
+      orderBy: { startDate: "desc" }
+    })
+
+    let target: any = null
+    if (activeYear) {
+      target = await prisma.teacherAcademicYearTarget.findFirst({
+        where: {
+          teacherId: currentTeacher.id,
+          academicYearId: activeYear.id
+        }
+      })
+    }
+
+    // Determine monthly required observation quota
+    let monthlyTarget = 0
+    if (target && target.requiredObserved && target.requiredObserved > 0) {
+      if (target.observedUnit === "năm" || target.observedUnit === "năm học") {
+        monthlyTarget = Math.max(1, Math.ceil(target.requiredObserved / 9))
+      } else {
+        monthlyTarget = target.requiredObserved
+      }
+    } else {
+      // GĐCS: 4 tiết/tháng
+      // Ban ĐHCM / QLCM: 4 tiết/tháng
+      // TBP: 4 tiết/tháng
+      // TTCM: 4 tiết/tháng
+      // GV: 2 tiết/tháng
+      if (isGDCS || isBanDHCM || isQLCM || isTBP || isTTCM) {
+        monthlyTarget = 4
+      } else {
+        monthlyTarget = 2
+      }
+
+    }
+
+    // Max surprise quota is 50% of monthly quota (rounded down to strictly respect "không vượt quá 50%")
+    const maxSurpriseAllowed = Math.max(1, Math.floor(monthlyTarget * 0.5))
+
+    // Count surprise observations made by this observer in the month
+    const surpriseSlots = await prisma.observationSlot.findMany({
+      where: {
+        date: {
+          gte: startOfMonth,
+          lt: endOfMonth
+        },
+        status: { not: "CANCELLED" },
+        OR: [
+          { requestOrigin: "SURPRISE" },
+          { description: { contains: "đột xuất" } },
+          { topic: { contains: "đột xuất" } },
+          { description: { contains: "[SURPRISE]" } }
+        ],
+        AND: [
+          {
+            OR: [
+              {
+                evaluations: {
+                  some: { evaluatorId: currentTeacher.id }
+                }
+              },
+              {
+                registrations: {
+                  some: { teacherId: currentTeacher.id }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      select: { id: true, date: true, topic: true, className: true }
+    })
+
+    const currentSurpriseCount = surpriseSlots.length
+    const remainingSurpriseCount = Math.max(0, maxSurpriseAllowed - currentSurpriseCount)
+    const isExceeded = currentSurpriseCount >= maxSurpriseAllowed
+
+    return {
+      success: true,
+      roleName,
+      monthlyTarget,
+      maxSurpriseAllowed,
+      currentSurpriseCount,
+      remainingSurpriseCount,
+      isExceeded,
+      monthLabel: `Tháng ${targetDate.getMonth() + 1}/${targetDate.getFullYear()}`,
+      slots: surpriseSlots
+    }
+  } catch (e: any) {
+    console.error("[getObserverSurpriseQuota Error]:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+/**
+ * 2. SPACING CHECKER: Kiểm tra xem Giáo viên dạy đã có lượt dự giờ đột xuất nào trong 30 ngày gần nhất chưa
+ */
+export async function checkTeacherSurpriseHistory(teacherId: string, targetDateStr?: string) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    if (!teacherId) {
+      return { success: false, error: "Missing teacherId" }
+    }
+
+    let targetDate = new Date()
+    if (targetDateStr) {
+      const parsed = new Date(targetDateStr)
+      if (!isNaN(parsed.getTime())) targetDate = parsed
+    }
+
+    // 30 days prior to targetDate
+    const thirtyDaysAgo = new Date(targetDate.getTime() - 30 * 24 * 60 * 60 * 1000)
+    // End of targetDate day
+    const endOfTargetDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59)
+
+    const recentSlots = await prisma.observationSlot.findMany({
+      where: {
+        teacherId: teacherId,
+        date: {
+          gte: thirtyDaysAgo,
+          lte: endOfTargetDate
+        },
+        status: { not: "CANCELLED" },
+        OR: [
+          { requestOrigin: "SURPRISE" },
+          { description: { contains: "đột xuất" } },
+          { topic: { contains: "đột xuất" } },
+          { description: { contains: "[SURPRISE]" } }
+        ]
+      },
+      include: {
+        evaluations: {
+          include: {
+            evaluator: {
+              select: { teacherName: true, position: true }
+            }
+          }
+        },
+        registrations: {
+          include: {
+            teacher: {
+              select: { teacherName: true, position: true }
+            }
+          }
+        },
+        subject: { select: { name: true } },
+        teacher: { select: { teacherName: true } }
+      },
+      orderBy: { date: "desc" }
+    })
+
+    if (!recentSlots || recentSlots.length === 0) {
+      return {
+        success: true,
+        hasRecentSurprise: false,
+        count: 0
+      }
+    }
+
+    const mostRecent = recentSlots[0]
+    const slotDate = new Date(mostRecent.date)
+    const diffMs = Math.abs(targetDate.getTime() - slotDate.getTime())
+    const daysAgo = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    const evaluator = mostRecent.evaluations?.[0]?.evaluator || mostRecent.registrations?.[0]?.teacher
+    const evaluatorName = evaluator?.teacherName || "Cán bộ Quản lý"
+    const evaluatorPosition = evaluator?.position || "Chuyên môn"
+
+    const dateFormatted = `${String(slotDate.getDate()).padStart(2, "0")}/${String(slotDate.getMonth() + 1).padStart(2, "0")}/${slotDate.getFullYear()}`
+
+    return {
+      success: true,
+      hasRecentSurprise: true,
+      count: recentSlots.length,
+      daysAgo,
+      recentSlot: {
+        id: mostRecent.id,
+        date: dateFormatted,
+        rawDate: mostRecent.date,
+        topic: mostRecent.topic,
+        subjectName: mostRecent.subjectName || mostRecent.subject?.name || "Môn học",
+        className: mostRecent.className || "Lớp học",
+        teacherName: mostRecent.teacher?.teacherName || "",
+        evaluatorName,
+        evaluatorPosition
+      },
+      allRecentSlots: recentSlots.map(s => ({
+        id: s.id,
+        date: `${String(new Date(s.date).getDate()).padStart(2, "0")}/${String(new Date(s.date).getMonth() + 1).padStart(2, "0")}/${new Date(s.date).getFullYear()}`,
+        topic: s.topic,
+        subjectName: s.subjectName || s.subject?.name,
+        evaluatorName: s.evaluations?.[0]?.evaluator?.teacherName || s.registrations?.[0]?.teacher?.teacherName || "Cán bộ Quản lý"
+      }))
+    }
+  } catch (e: any) {
+    console.error("[checkTeacherSurpriseHistory Error]:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+/**
+ * 3. RECIPIENT RESOLUTION: Tự động phân giải email GĐCS phụ trách Cơ sở & CC TBP liên quan theo Tổ CM
+ */
+export async function resolveObservationLeaderRecipients(campusId?: string | null, departmentId?: string | null) {
+  try {
+    const gdcsEmails: string[] = []
+    const tbpEmails: string[] = []
+
+    // 1. Resolve GĐCS (Giám đốc Cơ sở) of Campus
+    if (campusId) {
+      const campus = await prisma.campus.findUnique({
+        where: { id: campusId },
+        include: {
+          manager: true,
+          userAssignments: {
+            include: { user: true }
+          }
+        }
+      })
+
+      if (campus?.manager?.email && campus.manager.email.includes("@")) {
+        const mEmail = campus.manager.email.trim().toLowerCase()
+        if (!gdcsEmails.includes(mEmail)) gdcsEmails.push(mEmail)
+      }
+
+      campus?.userAssignments?.forEach((ua: any) => {
+        const role = String(ua.role || "").toUpperCase()
+        if (["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "BGH"].some(k => role.includes(k)) && ua.user?.email) {
+          const uEmail = ua.user.email.trim().toLowerCase()
+          if (uEmail.includes("@") && !gdcsEmails.includes(uEmail)) gdcsEmails.push(uEmail)
+        }
+      })
+
+      const gdcsTeachers = await prisma.teacher.findMany({
+        where: {
+          campusId: campusId,
+          status: "ACTIVE",
+          OR: [
+            { position: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "Giám đốc cơ sở", "Giam doc co so", "PGDCS", "PGĐCS"] } },
+            { user: { role: { in: ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"] } } }
+          ]
+        },
+        include: { user: true }
+      })
+
+      gdcsTeachers.forEach(t => {
+        const email = getTeacherResolvedEmail(t)
+        if (email && email.includes("@") && !gdcsEmails.includes(email.toLowerCase())) {
+          gdcsEmails.push(email.toLowerCase())
+        }
+      })
+    }
+
+    // 2. Resolve TBP (Trưởng Bộ Phận) of Department
+    if (departmentId) {
+      const dept = await prisma.department.findUnique({
+        where: { id: departmentId },
+        select: { id: true, code: true, name: true, divisionCode: true }
+      })
+
+      if (dept?.divisionCode) {
+        const divCode = dept.divisionCode.trim().toUpperCase()
+        const assignments = await prisma.teacherDivisionAssignment.findMany({
+          where: {
+            divisionCode: divCode
+          },
+          include: {
+            teacher: {
+              include: { user: true }
+            }
+          }
+        })
+
+        assignments.forEach(a => {
+          if (a.teacher) {
+            const email = getTeacherResolvedEmail(a.teacher)
+            if (email && email.includes("@") && !tbpEmails.includes(email.toLowerCase())) {
+              tbpEmails.push(email.toLowerCase())
+            }
+          }
+        })
+
+        // Also find teachers with position matching TBP and division
+        const tbpTeachers = await prisma.teacher.findMany({
+          where: {
+            status: "ACTIVE",
+            OR: [
+              { position: { in: ["TBP", "TRUONG_BO_PHAN", "Trưởng bộ phận", "TB_DHCM"] } },
+              { user: { role: { in: ["TBP", "TRUONG_BO_PHAN"] } } }
+            ]
+          },
+          include: { user: true, divisionAssignments: true }
+        })
+
+        tbpTeachers.forEach(t => {
+          const hasDiv = t.divisionAssignments?.some((da: any) => da.divisionCode?.toUpperCase() === divCode)
+          if (hasDiv) {
+            const email = getTeacherResolvedEmail(t)
+            if (email && email.includes("@") && !tbpEmails.includes(email.toLowerCase())) {
+              tbpEmails.push(email.toLowerCase())
+            }
+          }
+        })
+      }
+    }
+
+    return {
+      gdcsEmails,
+      tbpEmails
+    }
+  } catch (e: any) {
+    console.error("[resolveObservationLeaderRecipients Error]:", e)
+    return { gdcsEmails: [], tbpEmails: [] }
+  }
+}
+
+
 export async function approveRegistration(registrationId: string) {
   try {
     invalidateObservationSlotsCache();
@@ -3844,6 +4228,17 @@ export async function createSurpriseObservation(data: {
       return { success: false, error: "Không thể tạo tiết dự giờ đột xuất thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" }
     }
 
+    // QUOTA CHECK: Căn cứ số tiết quy định TTCM, QLCM, GĐCS, BAN ĐHCM, TBP thì Đăng ký Dự giờ đột xuất không vượt quá 50% chỉ tiêu
+    const quotaCheck = await getObserverSurpriseQuota(data.date || new Date().toISOString())
+    if (quotaCheck.success && quotaCheck.isExceeded) {
+      return {
+        success: false,
+        error: `Số lượt dự giờ đột xuất trong tháng của Thầy/Cô đã đạt giới hạn tối đa 50% chỉ tiêu quy định (${quotaCheck.currentSurpriseCount}/${quotaCheck.maxSurpriseAllowed} tiết). Vui lòng thực hiện các tiết còn lại theo hình thức Dự giờ theo kế hoạch!`
+      }
+    }
+
+
+
     // 1. Create ObservationSlot
     let newSlot: any;
     try {
@@ -4084,10 +4479,57 @@ export async function createSurpriseObservation(data: {
             }).catch(e => console.error("Observer notif error:", e));
           }
         }
+
+        // 3. Email báo về Giám đốc Cơ sở (GĐCS) phụ trách, đồng thời CC đến TBP liên quan theo Tổ chuyên môn
+        try {
+          const leaderRecipients = await resolveObservationLeaderRecipients(
+            hostTeacher.campusId || newSlot.campusId,
+            data.targetDeptId || hostTeacher.departmentId
+          );
+
+          const gdcsList = leaderRecipients.gdcsEmails.filter(e => e !== hostEmail && e !== observerEmail);
+          const tbpList = leaderRecipients.tbpEmails.filter(e => e !== hostEmail && e !== observerEmail && !gdcsList.includes(e));
+
+          if (gdcsList.length > 0) {
+            const campusLabel = hostTeacher.campus?.campusName || "Sky-Line";
+            const leaderSubject = `[Sky-line SMS - Dự Giờ Đột Xuất] Báo cáo tiết dạy đột xuất: "${data.topic}" - GV: ${hostTeacher.teacherName} (${campusLabel})`;
+
+            const leaderHtml = renderObservationEvaluationCompletedForObserver({
+              observerName: currentTeacher.teacherName,
+              hostName: hostTeacher.teacherName,
+              hostCode: hostTeacher.teacherCode,
+              topic: data.topic,
+              subjectName: data.subjectName || "Môn học",
+              grade: data.grade || "",
+              className: data.className || "",
+              dateStr: formattedDateVi,
+              period: data.period || "Tiết dạy",
+              campusName: campusLabel,
+              room: data.room || "học",
+              totalScore: totalDisplay,
+              rating: ratingDisplay,
+              strengths: data.strengths || undefined,
+              improvements: data.improvements || undefined,
+              generalComment: data.generalComment || undefined,
+              directLink: SKYLINE_SSM_LOGIN_URL
+            });
+
+            await sendEmail({
+              from: "HỆ THỐNG DỰ GIỜ SKY-LINE",
+              to: gdcsList,
+              cc: tbpList.length > 0 ? tbpList : undefined,
+              subject: leaderSubject,
+              html: leaderHtml
+            }).catch(e => console.error("GDCS & TBP surprise eval email error:", e));
+          }
+        } catch (leadMailErr) {
+          console.error("Error sending leader email for surprise observation:", leadMailErr);
+        }
       } catch (mailErr) {
         console.error("Error sending surprise evaluation email:", mailErr);
       }
     }
+
 
     revalidatePath("/teacher/du-gio")
     revalidatePath("/teacher/du-gio-mam-non")

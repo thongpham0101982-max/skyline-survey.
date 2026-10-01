@@ -4,9 +4,11 @@
 import React from "react"
 import {
   X, Plus, Sparkles, Zap, ShieldCheck, Info, BookOpen, Calendar, Clock, ChevronRight, RotateCcw, Send, Target, BarChart3,
-  MapPin, User, Users, CheckCircle2, AlertCircle, FileText, Award, Check, Save, Mail, Loader2, Star
+  MapPin, User, Users, CheckCircle2, AlertCircle, AlertTriangle, FileText, Award, Check, Save, Mail, Loader2, Star
 } from "lucide-react"
 import { QuickCommentPresets } from "./QuickCommentPresets"
+import { getObserverSurpriseQuota, checkTeacherSurpriseHistory } from "../actions"
+
 
 const K12_SECTIONS = [
   {
@@ -468,8 +470,54 @@ export function ObservationRegistrationSection(props: any) {
     }
   }, [surpriseScoresMN]);
 
+  // Quản lý hạn ngạch Dự giờ đột xuất (Tối đa 50% chỉ tiêu)
+  const [surpriseQuota, setSurpriseQuota] = React.useState<any>(null);
+  const [loadingSurpriseQuota, setLoadingSurpriseQuota] = React.useState(false);
+
+  // Quản lý cảnh báo giãn cách 30 ngày cho Giáo viên được dự
+  const [teacherSurpriseHistory, setTeacherSurpriseHistory] = React.useState<any>(null);
+  const [loadingTeacherHistory, setLoadingTeacherHistory] = React.useState(false);
+  const [confirmedSpacingWarning, setConfirmedSpacingWarning] = React.useState(false);
+  const [showSpacingConfirmModal, setShowSpacingConfirmModal] = React.useState(false);
+  const [pendingDraftSubmit, setPendingDraftSubmit] = React.useState<boolean>(false);
+
+  // Load hạn ngạch dự giờ đột xuất khi ở chế độ SURPRISE hoặc đổi ngày
+  React.useEffect(() => {
+    if (creationMode === "SURPRISE") {
+      setLoadingSurpriseQuota(true);
+      getObserverSurpriseQuota(surpriseDate)
+        .then((res: any) => {
+          if (res?.success) setSurpriseQuota(res);
+        })
+        .catch(err => console.error("Error loading surprise quota:", err))
+        .finally(() => setLoadingSurpriseQuota(false));
+    }
+  }, [creationMode, surpriseDate]);
+
+  // Kiểm tra lịch sử dự giờ đột xuất 30 ngày của giáo viên dạy được chọn
+  React.useEffect(() => {
+    if (creationMode === "SURPRISE" && surpriseTeacherId) {
+      setLoadingTeacherHistory(true);
+      setConfirmedSpacingWarning(false);
+      checkTeacherSurpriseHistory(surpriseTeacherId, surpriseDate)
+        .then((res: any) => {
+          if (res?.success) {
+            setTeacherSurpriseHistory(res);
+          } else {
+            setTeacherSurpriseHistory(null);
+          }
+        })
+        .catch(err => console.error("Error checking teacher surprise history:", err))
+        .finally(() => setLoadingTeacherHistory(false));
+    } else {
+      setTeacherSurpriseHistory(null);
+      setConfirmedSpacingWarning(false);
+    }
+  }, [creationMode, surpriseTeacherId, surpriseDate]);
+
   const effectiveScoresK12 = internalScoresK12;
   const effectiveScoresMN = internalScoresMN;
+
 
   const handleUpdateK12Score = (index: number, val: number) => {
     const nextScores = [...effectiveScoresK12];
@@ -662,15 +710,17 @@ export function ObservationRegistrationSection(props: any) {
         )}
       </div>
 
-      {/* 4. MAIN GRID: Form (8 cols) + Right Guidance Column (4 cols) */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Main Form Column (8 cols) */}
-        <div className="lg:col-span-8">
-          <div className={`w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 ${isMamNonTeacher ? "border-t-amber-500" : "border-t-[#008B82]"}`}>
+      {/* 4. MAIN GRID: Form (8 cols or 12 cols if Surprise) + Right Guidance Column (4 cols) */}
+      <div className={`w-full ${creationMode === "SURPRISE" ? "block" : "grid grid-cols-1 lg:grid-cols-12 gap-6"}`}>
+        {/* Main Form Column */}
+        <div className={creationMode === "SURPRISE" ? "w-full" : "lg:col-span-8"}>
+          <div className={`w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-7 flex flex-col gap-6 border-t-4 ${
+            creationMode === "SURPRISE" ? "border-t-[#008B82]" : isMamNonTeacher ? "border-t-amber-500" : "border-t-[#008B82]"
+          }`}>
             {/* Header Banner */}
             <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
               <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#008B82] flex items-center justify-center border border-teal-100 shrink-0">
-                <Calendar className="w-5 h-5" />
+                {creationMode === "SURPRISE" ? <Zap className="w-5 h-5 text-amber-500" /> : <Calendar className="w-5 h-5" />}
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-800 tracking-tight">
@@ -681,22 +731,24 @@ export function ObservationRegistrationSection(props: any) {
                     : "THÔNG TIN DỰ GIỜ ĐỘT XUẤT"}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
-                  Vui lòng khai báo đầy đủ thông tin để gửi đăng ký tiết dạy. Hệ thống sẽ kiểm tra trùng lịch và tự động gửi email thông báo tới Giáo viên cùng Tổ chuyên môn.
+                  {creationMode === "SURPRISE"
+                    ? "Hệ thống ghi nhận và đánh giá trực tiếp tiết dạy đột xuất một cách khách quan, thân thiện và đồng hành phát triển chuyên môn."
+                    : "Vui lòng khai báo đầy đủ thông tin để gửi đăng ký tiết dạy. Hệ thống sẽ kiểm tra trùng lịch và tự động gửi email thông báo tới Giáo viên cùng Tổ chuyên môn."}
                 </p>
               </div>
             </div>
 
-                      {creationMode === "SURPRISE" ? (
+            {creationMode === "SURPRISE" ? (
             /* ===== FORM 3: DỰ GIỜ ĐỘT XUẤT (TTCM & BAN ĐHCM / GĐCS) ===== */
-            <div className="flex flex-col gap-6 text-xs font-semibold bg-gradient-to-b from-rose-50/30 via-white to-amber-50/20 p-5 sm:p-7 rounded-3xl border border-rose-200/80 shadow-sm animate-in fade-in duration-300">
+            <div className="flex flex-col gap-6 text-xs font-semibold bg-gradient-to-b from-slate-50/40 via-white to-teal-50/20 p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm animate-in fade-in duration-300">
               {/* Header Banner */}
-              <div className={`p-5 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white ${
+              <div className={`p-5 sm:p-6 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-white ${
                 surpriseLevel === "Mầm non"
                   ? "bg-gradient-to-r from-amber-700 via-amber-800 to-[#003B3A] border-amber-500/40"
-                  : "bg-gradient-to-r from-rose-900 via-[#003B3A] to-rose-950 border-rose-700/40"
+                  : "bg-gradient-to-r from-[#003B3A] via-[#005B54] to-[#007068] border-teal-600/40"
               }`}>
                 <div className="flex items-start sm:items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 text-amber-300 shadow-inner">
+                  <div className="w-11 h-11 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center shrink-0 text-amber-300 shadow-inner">
                     <Zap className="w-5 h-5" />
                   </div>
                   <div>
@@ -705,34 +757,121 @@ export function ObservationRegistrationSection(props: any) {
                         {surpriseLevel === "Mầm non" ? "DỰ GIỜ ĐỘT XUẤT MẦM NON" : "DỰ GIỜ ĐỘT XUẤT"}
                       </h4>
                       <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-amber-400 text-amber-950 uppercase">
-                        {isAdminUser ? "Ban ĐHCM / GĐCS / Quản lý" : (surpriseLevel === "Mầm non" ? "TTCM / BGH Mầm non" : "Tổ trưởng chuyên môn (TTCM)")}
+                        {isAdminUser ? "Ban ĐHCM / GĐCS / TBP / Quản lý" : (surpriseLevel === "Mầm non" ? "TTCM / BGH Mầm non" : "TTCM / Trưởng Bộ Phận")}
+                      </span>
+
+                      <span className="px-2.5 py-0.5 text-[10px] font-bold rounded-full bg-teal-800/80 text-teal-100 border border-teal-500/40">
+                        Đồng hành chuyên môn
                       </span>
                     </div>
-                    <p className="text-[11px] text-rose-100/90 font-medium mt-0.5">
+                    <p className="text-[11px] text-teal-50/90 font-medium mt-1 leading-relaxed">
                       {surpriseLevel === "Mầm non"
                         ? "Đánh giá hoạt động học / chuyên đề Mầm non (18 tiêu chí - Tổng 10 điểm). Tự động ghi nhận không cần duyệt trước."
-                        : "Đánh giá trực tiếp tiết dạy đột xuất (11 tiêu chí - Tổng 20 điểm). Hệ thống tự động ghi nhận dữ liệu đánh giá mà không cần phê duyệt trước."}
+                        : "Đánh giá trực tiếp tiết dạy đột xuất (11 tiêu chí - Chuẩn 20 điểm) nhằm đồng hành, hỗ trợ và phát triển chuyên môn giáo viên. Kết quả được lưu tự động mà không cần phê duyệt trước."}
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl border border-white/20 text-[11px] font-bold text-rose-100 shrink-0">
+                <div className="flex items-center gap-2 bg-white/10 px-3.5 py-2 rounded-xl border border-white/20 text-[11px] font-bold text-teal-100 shrink-0">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>Hình thức: Mặc định đột xuất</span>
                 </div>
               </div>
 
-              {/* SECTION 1: THÔNG TIN TIẾT DẠY & GIÁO VIÊN */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
-                <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2 pb-2 border-b border-slate-100">
-                  <span className="w-5 h-5 bg-rose-100 text-rose-800 rounded-md flex items-center justify-center text-xs font-black">1</span>
-                  Thông tin Giáo viên & Tiết học
-                </h5>
+              {/* QUOTA TRACKER BANNER (Quy định không vượt quá 50% chỉ tiêu) */}
+              {surpriseQuota && (
+                <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+                  surpriseQuota.isExceeded
+                    ? "bg-rose-50/90 border-rose-200 text-rose-950 shadow-xs"
+                    : "bg-gradient-to-r from-teal-50/90 via-emerald-50/60 to-cyan-50/80 border-teal-200/90 text-slate-800 shadow-xs"
+                }`}>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs ${
+                        surpriseQuota.isExceeded ? "bg-rose-200 text-rose-800" : "bg-teal-200/70 text-[#008B82]"
+                      }`}>
+                        <Target className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-black uppercase tracking-wide text-slate-800">
+                            Hạn ngạch Dự Giờ Đột Xuất ({surpriseQuota.monthLabel})
+                          </span>
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-white/80 border border-slate-200 text-slate-700">
+                            {surpriseQuota.roleName}
+                          </span>
+                          <span className={`px-2 py-0.5 text-[10px] font-black rounded-full ${
+                            surpriseQuota.isExceeded ? "bg-rose-600 text-white" : "bg-[#008B82] text-white"
+                          }`}>
+                            Tối đa 50% chỉ tiêu
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-medium text-slate-600 mt-1">
+                          Chỉ tiêu quy định: <strong className="text-slate-800 font-bold">{surpriseQuota.monthlyTarget} tiết/tháng</strong> • Dự giờ đột xuất tối đa: <strong className="text-[#008B82] font-black">{surpriseQuota.maxSurpriseAllowed} tiết</strong> (50%)
+                        </p>
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* 1. Tổ chuyên môn */}
-                  <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-col sm:items-end gap-1.5 shrink-0 pl-12 md:pl-0">
+                      <div className="flex items-center gap-2 text-xs font-black">
+                        <span className={surpriseQuota.isExceeded ? "text-rose-700" : "text-[#008B82]"}>
+                          Đã dùng: {surpriseQuota.currentSurpriseCount} / {surpriseQuota.maxSurpriseAllowed} tiết
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-bold">
+                          ({Math.min(100, Math.round((surpriseQuota.currentSurpriseCount / (surpriseQuota.maxSurpriseAllowed || 1)) * 100))}%)
+                        </span>
+                      </div>
+                      <div className="w-full sm:w-48 h-2 rounded-full bg-slate-200/80 overflow-hidden">
+                        <div
+                          className={`h-full transition-all duration-500 rounded-full ${
+                            surpriseQuota.isExceeded ? "bg-rose-600" : "bg-gradient-to-r from-teal-500 to-emerald-500"
+                          }`}
+                          style={{
+                            width: `${Math.min(100, Math.round((surpriseQuota.currentSurpriseCount / (surpriseQuota.maxSurpriseAllowed || 1)) * 100))}%`
+                          }}
+                        />
+                      </div>
+                      <div className="text-[11px] font-bold">
+                        {surpriseQuota.isExceeded ? (
+                          <span className="text-rose-600 font-black">⚠️ Đã đạt giới hạn tối đa 50% chỉ tiêu</span>
+                        ) : (
+                          <span className="text-emerald-700">🟢 Còn lại {surpriseQuota.remainingSurpriseCount} lượt đăng ký</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {surpriseQuota.isExceeded && (
+                    <div className="mt-3 pt-3 border-t border-rose-200/80 text-xs text-rose-800 font-semibold flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <span>
+                        Thầy/Cô đã hoàn thành tối đa số lượt dự giờ đột xuất cho phép trong tháng (50% của {surpriseQuota.monthlyTarget} tiết chỉ tiêu). Để đảm bảo tính sư phạm và kế hoạch chuyên môn, các tiết dự giờ còn lại vui lòng chuyển sang tab <strong>"Xin dự giờ"</strong> theo kế hoạch.
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* SECTION 1: THÔNG TIN TIẾT DẠY & GIÁO VIÊN */}
+
+              <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <span className="w-5 h-5 bg-teal-100 text-[#008B82] rounded-md flex items-center justify-center text-xs font-black">1</span>
+                    Thông tin Giáo viên & Tiết học
+                  </h5>
+                  <span className="text-[11px] font-semibold text-slate-400 hidden sm:inline">
+                    Các mục có dấu <span className="text-rose-500 font-bold">*</span> là bắt buộc
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-12 gap-4 sm:gap-5">
+                  {/* 1. Chọn Tổ CM */}
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-4 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
-                      <span>Tổ chuyên môn *</span>
+                      <span className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-[#008B82]" />
+                        <span>Chọn Tổ CM *</span>
+                      </span>
                       {!isAdminUser && isTTCM && !isMamNonTeacher && (
                         <span className="text-[10px] text-amber-600 font-bold">🔒 Khóa theo TCM</span>
                       )}
@@ -758,67 +897,26 @@ export function ObservationRegistrationSection(props: any) {
                           }
                         }
                       }}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
-                      {(isAdminUser || isMamNonTeacher) && <option value="">-- Tất cả Tổ Mầm non & TA --</option>}
+                      {(isAdminUser || isMamNonTeacher) && <option value="">-- Chọn Tổ CM --</option>}
                       {ttcmAllowedDepartments.map((d: any) => (
                         <option key={d.id} value={d.id}>{d.name}</option>
                       ))}
                     </select>
                   </div>
 
-                  {/* 2. Môn học */}
-                  <div className="flex flex-col gap-1.5">
+                  {/* 2. Giáo viên dạy được dự */}
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-5 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
-                      <span>Môn học *</span>
-                      {isMamNonTeacher && (
-                        <span className="text-[10px] text-emerald-600 font-bold">✨ Chủ đề/Chuyên đề</span>
-                      )}
-                    </label>
-                    <select
-                      value={surpriseSubjectId}
-                      onChange={e => {
-                        const sId = e.target.value;
-                        setSurpriseSubjectId(sId);
-                        const sObj = subjects.find((s: any) => s.id === sId);
-                        if (sObj) {
-                          setSurpriseSubjectName(sObj.subjectName);
-                        } else if (sId) {
-                          setSurpriseSubjectName(sId);
-                        }
-                      }}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
-                    >
-                      <option value="">-- Chọn môn học --</option>
-                      {/* Đưa môn Chủ đề/Chuyên đề lên đầu danh sách */}
-                      {(() => {
-                        const chuDeSub = subjects.find((s: any) => {
-                          const n = (s.subjectName || "").toLowerCase();
-                          return n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề";
-                        });
-                        const chuDeId = chuDeSub ? chuDeSub.id : "Chủ đề/Chuyên đề";
-                        return (
-                          <option key="opt_chude" value={chuDeId}>
-                            🌟 Chủ đề/Chuyên đề {isMamNonTeacher ? "(Mầm non)" : ""}
-                          </option>
-                        );
-                      })()}
-                      {subjects.map((s: any) => {
-                        const n = (s.subjectName || "").toLowerCase();
-                        if (n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề") return null;
-                        return (
-                          <option key={s.id} value={s.id}>{s.subjectName}</option>
-                        );
-                      })}
-                    </select>
-                  </div>
-
-                  {/* 3. Giáo viên dạy được dự */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
-                      <span>Giáo viên dạy được dự *</span>
+                      <span className="flex items-center gap-1.5">
+                        <User className="w-3.5 h-3.5 text-[#008B82]" />
+                        <span>Giáo viên dạy được dự *</span>
+                      </span>
                       {filteredTeachersForSurprise.length > 0 && (
-                        <span className="text-[10px] text-slate-500 font-normal">({filteredTeachersForSurprise.length} GV)</span>
+                        <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
+                          {filteredTeachersForSurprise.length} GV
+                        </span>
                       )}
                     </label>
                     <select
@@ -849,7 +947,7 @@ export function ObservationRegistrationSection(props: any) {
                         }
                       }}
                       required
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
                       <option value="">-- Chọn Giáo viên dạy --</option>
                       {filteredTeachersForSurprise.map((t: any) => {
@@ -865,28 +963,140 @@ export function ObservationRegistrationSection(props: any) {
                     </select>
                   </div>
 
+                  {/* 3. Môn học */}
+                  <div className="col-span-12 sm:col-span-12 lg:col-span-3 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <BookOpen className="w-3.5 h-3.5 text-[#008B82]" />
+                        <span>Môn học *</span>
+                      </span>
+                      {isMamNonTeacher && (
+                        <span className="text-[10px] text-emerald-600 font-bold">✨ Chủ đề/Chuyên đề</span>
+                      )}
+                    </label>
+                    <select
+                      value={surpriseSubjectId}
+                      onChange={e => {
+                        const sId = e.target.value;
+                        setSurpriseSubjectId(sId);
+                        const sObj = subjects.find((s: any) => s.id === sId);
+                        if (sObj) {
+                          setSurpriseSubjectName(sObj.subjectName);
+                        } else if (sId) {
+                          setSurpriseSubjectName(sId);
+                        }
+                      }}
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
+                    >
+                      <option value="">-- Chọn môn học --</option>
+                      {/* Đưa môn Chủ đề/Chuyên đề lên đầu danh sách */}
+                      {(() => {
+                        const chuDeSub = subjects.find((s: any) => {
+                          const n = (s.subjectName || "").toLowerCase();
+                          return n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề";
+                        });
+                        const chuDeId = chuDeSub ? chuDeSub.id : "Chủ đề/Chuyên đề";
+                        return (
+                          <option key="opt_chude" value={chuDeId}>
+                            🌟 Chủ đề/Chuyên đề {isMamNonTeacher ? "(Mầm non)" : ""}
+                          </option>
+                        );
+                      })()}
+                      {subjects.map((s: any) => {
+                        const n = (s.subjectName || "").toLowerCase();
+                        if (n.includes("chủ đề") || n.includes("chu de") || n === "chủ đề/chuyên đề") return null;
+                        return (
+                          <option key={s.id} value={s.id}>{s.subjectName}</option>
+                        );
+                      })}
+                    </select>
+                  </div>
+
+                  {/* 30-DAY SPACING WARNING BANNER CHO GIÁO VIÊN ĐƯỢC CHỌN */}
+                  {loadingTeacherHistory && (
+                    <div className="col-span-12 p-3.5 rounded-2xl bg-teal-50/50 border border-teal-100 text-teal-700 text-xs flex items-center gap-2 animate-pulse">
+                      <Loader2 className="w-4 h-4 animate-spin text-[#008B82]" />
+                      <span className="font-semibold">Đang kiểm tra lịch sử dự giờ đột xuất của giáo viên trong 30 ngày qua...</span>
+                    </div>
+                  )}
+
+                  {!loadingTeacherHistory && teacherSurpriseHistory?.hasRecentSurprise && (
+                    <div className="col-span-12 p-4 sm:p-5 rounded-2xl bg-amber-50/95 border-2 border-amber-300 text-amber-950 flex flex-col gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 duration-300">
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-200/90 text-amber-800 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                          <AlertTriangle className="w-5 h-5 text-amber-700" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <h6 className="text-xs font-black text-amber-950 tracking-tight uppercase flex items-center gap-1.5">
+                              <span>⚠️ Cảnh báo giãn cách dự giờ đột xuất</span>
+                            </h6>
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-200 text-amber-900 border border-amber-300">
+                              {teacherSurpriseHistory.count} lượt trong 30 ngày qua
+                            </span>
+                          </div>
+                          <p className="text-xs font-semibold text-amber-900 mt-1.5 leading-relaxed">
+                            Giáo viên này đã có <strong>{teacherSurpriseHistory.count} lượt dự giờ đột xuất trong 30 ngày gần nhất</strong>. Lượt gần nhất vào ngày <strong>{teacherSurpriseHistory.recentSlot?.date}</strong> (cách đây <strong>{teacherSurpriseHistory.daysAgo} ngày</strong>) do <strong>{teacherSurpriseHistory.recentSlot?.evaluatorName} ({teacherSurpriseHistory.recentSlot?.evaluatorPosition})</strong> thực hiện với bài dạy <em>"{teacherSurpriseHistory.recentSlot?.topic}"</em> ({teacherSurpriseHistory.recentSlot?.subjectName} - {teacherSurpriseHistory.recentSlot?.className}).
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <span className="text-[11px] text-amber-800/90 font-medium italic">
+                          💡 Để đảm bảo phân bổ dự giờ đồng đều và không tạo áp lực dồn dập cho giáo viên, Thầy/Cô vui lòng cân nhắc kỹ trước khi tiếp tục:
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSurpriseTeacherId("");
+                              setTeacherSurpriseHistory(null);
+                            }}
+                            className="px-3.5 py-1.5 rounded-xl bg-white border border-amber-300 text-amber-900 font-bold hover:bg-amber-100 transition-colors text-xs cursor-pointer shadow-2xs"
+                          >
+                            Đổi giáo viên khác
+                          </button>
+                          <label className="flex items-center gap-2 cursor-pointer bg-amber-100/90 hover:bg-amber-200/80 px-3.5 py-1.5 rounded-xl border border-amber-300 font-bold text-amber-950 transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={confirmedSpacingWarning}
+                              onChange={e => setConfirmedSpacingWarning(e.target.checked)}
+                              className="w-4 h-4 rounded text-[#008B82] focus:ring-[#008B82] cursor-pointer"
+                            />
+                            <span>Tôi đã cân nhắc & tiếp tục</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 4. Ngày dự giờ */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Ngày dự giờ *</label>
+
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-[#008B82]" />
+                      <span>Ngày dự giờ *</span>
+                    </label>
                     <input
                       type="date"
                       value={surpriseDate}
                       min={minAllowedDate}
                       onChange={e => setSurpriseDate(e.target.value)}
                       required
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     />
                   </div>
 
                   {/* 5. Tiết dự */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
-                      {surpriseLevel === "Mầm non" ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#008B82]" />
+                      <span>{surpriseLevel === "Mầm non" ? "Khung giờ / Hoạt động dự *" : "Tiết dự *"}</span>
                     </label>
                     <select
                       value={surprisePeriod}
                       onChange={e => setSurprisePeriod(e.target.value)}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
                       {surpriseLevel === "Mầm non" && (
                         <>
@@ -908,15 +1118,18 @@ export function ObservationRegistrationSection(props: any) {
                   </div>
 
                   {/* 6. Cơ sở trường */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cơ sở trường</label>
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#008B82]" />
+                      <span>Cơ sở trường</span>
+                    </label>
                     <select
                       value={surpriseCampusId}
                       onChange={e => {
                         setSurpriseCampusId(e.target.value);
                         setSurpriseClassId("");
                       }}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
                       <option value="">-- Chọn cơ sở để chọn lớp --</option>
                       {campuses.map((c: any) => (
@@ -926,8 +1139,11 @@ export function ObservationRegistrationSection(props: any) {
                   </div>
 
                   {/* 7. Cấp học */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Cấp học</label>
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-[#008B82]" />
+                      <span>Cấp học</span>
+                    </label>
                     <select
                       value={surpriseLevel}
                       onChange={e => {
@@ -940,7 +1156,7 @@ export function ObservationRegistrationSection(props: any) {
                           setSurpriseSubjectName("Chủ đề/Chuyên đề");
                         }
                       }}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
                     >
                       <option value="Phổ thông K-12">Phổ thông K-12</option>
                       <option value="Tiểu học">Tiểu học</option>
@@ -951,108 +1167,116 @@ export function ObservationRegistrationSection(props: any) {
                   </div>
 
                   {/* 8. Lớp học */}
-                  <div className="flex flex-col gap-1.5">
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
                     <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
-                      <span>Lớp học *</span>
+                      <span className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-[#008B82]" />
+                        <span>Lớp học *</span>
+                      </span>
                       {filteredClassesForSurprise.length > 0 && (
-                        <span className="text-[10px] text-slate-500 font-normal">({filteredClassesForSurprise.length} lớp)</span>
+                        <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
+                          {filteredClassesForSurprise.length} lớp
+                        </span>
                       )}
                     </label>
-                    <div className="flex gap-2">
-                      <select
-                        value={surpriseClassId}
-                        onChange={e => {
-                          const clsId = e.target.value;
-                          setSurpriseClassId(clsId);
-                          const clsObj = classes.find((c: any) => c.id === clsId);
-                          if (clsObj) {
-                            setSurpriseClassName(clsObj.className);
-                            if (clsObj.grade) setSurpriseGrade(clsObj.grade);
-                            if (clsObj.level) setSurpriseLevel(clsObj.level);
-                            if (clsObj.campusId && !surpriseCampusId) setSurpriseCampusId(clsObj.campusId);
+                    <select
+                      value={surpriseClassId}
+                      onChange={e => {
+                        const clsId = e.target.value;
+                        setSurpriseClassId(clsId);
+                        const clsObj = classes.find((c: any) => c.id === clsId);
+                        if (clsObj) {
+                          setSurpriseClassName(clsObj.className);
+                          if (clsObj.grade) setSurpriseGrade(clsObj.grade);
+                          if (clsObj.level) setSurpriseLevel(clsObj.level);
+                          if (clsObj.campusId && !surpriseCampusId) setSurpriseCampusId(clsObj.campusId);
 
-                            // Tự động nhận diện Tổ chuyên môn theo Khối của lớp Mầm non
-                            if (clsObj.level === "Mầm non") {
-                              const gClean = (clsObj.grade || clsObj.className || "").toLowerCase();
-                              let matchedDept = null;
-                              if (gClean.includes("nha tre") || gClean.includes("nhà trẻ")) {
-                                matchedDept = departments.find((d: any) => d.code === "NHA_TRE" || d.name.includes("Nhà Trẻ"));
-                              } else if (gClean.includes("be") || gClean.includes("bé")) {
-                                matchedDept = departments.find((d: any) => d.code === "MGB" || d.name.includes("Mẫu giáo Bé"));
-                              } else if (gClean.includes("nho") || gClean.includes("nhỡ")) {
-                                matchedDept = departments.find((d: any) => d.code === "MGN" || d.name.includes("Mẫu giáo Nhỡ"));
-                              } else if (gClean.includes("lon") || gClean.includes("lớn")) {
-                                matchedDept = departments.find((d: any) => d.code === "MGL" || d.name.includes("Mẫu giáo Lớn"));
-                              }
-                              if (matchedDept && (!surpriseDeptId || surpriseDeptId === "all")) {
-                                setSurpriseDeptId(matchedDept.id);
-                              }
+                          // Tự động nhận diện Tổ chuyên môn theo Khối của lớp Mầm non
+                          if (clsObj.level === "Mầm non") {
+                            const gClean = (clsObj.grade || clsObj.className || "").toLowerCase();
+                            let matchedDept = null;
+                            if (gClean.includes("nha tre") || gClean.includes("nhà trẻ")) {
+                              matchedDept = departments.find((d: any) => d.code === "NHA_TRE" || d.name.includes("Nhà Trẻ"));
+                            } else if (gClean.includes("be") || gClean.includes("bé")) {
+                              matchedDept = departments.find((d: any) => d.code === "MGB" || d.name.includes("Mẫu giáo Bé"));
+                            } else if (gClean.includes("nho") || gClean.includes("nhỡ")) {
+                              matchedDept = departments.find((d: any) => d.code === "MGN" || d.name.includes("Mẫu giáo Nhỡ"));
+                            } else if (gClean.includes("lon") || gClean.includes("lớn")) {
+                              matchedDept = departments.find((d: any) => d.code === "MGL" || d.name.includes("Mẫu giáo Lớn"));
+                            }
+                            if (matchedDept && (!surpriseDeptId || surpriseDeptId === "all")) {
+                              setSurpriseDeptId(matchedDept.id);
+                            }
 
-                              // Gợi ý giáo viên chủ nhiệm của lớp nếu chưa chọn GV
-                              if (clsObj.homeroomTeacherId && !surpriseTeacherId) {
-                                setSurpriseTeacherId(clsObj.homeroomTeacherId);
-                              }
+                            // Gợi ý giáo viên chủ nhiệm của lớp nếu chưa chọn GV
+                            if (clsObj.homeroomTeacherId && !surpriseTeacherId) {
+                              setSurpriseTeacherId(clsObj.homeroomTeacherId);
                             }
                           }
-                        }}
-                        className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
-                      >
-                        <option value="">-- Chọn danh sách lớp --</option>
-                        {filteredClassesForSurprise.map((c: any) => (
-                          <option key={c.id} value={c.id}>{c.className}</option>
-                        ))}
-                      </select>
-                    </div>
+                        }
+                      }}
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs cursor-pointer"
+                    >
+                      <option value="">-- Chọn danh sách lớp --</option>
+                      {filteredClassesForSurprise.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.className}</option>
+                      ))}
+                    </select>
                   </div>
 
                   {/* 9. Phòng học */}
-                  <div className="flex flex-col gap-1.5 col-span-1 sm:col-span-2 lg:col-span-2">
-                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Phòng học</label>
+                  <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#008B82]" />
+                      <span>Phòng học</span>
+                    </label>
                     <input
                       type="text"
                       placeholder="VD: Phòng 204, Phòng Lab..."
                       value={surpriseRoom}
                       onChange={e => setSurpriseRoom(e.target.value)}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800"
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  {/* 10. Chủ đề / Nội dung bài dạy */}
+                  <div className="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-[#008B82]" />
+                      <span>Chủ đề / Nội dung bài dạy *</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={surpriseLevel === "Mầm non" 
+                        ? "VD: Chủ đề: Bản thân và gia đình, Hoạt động góc, STEAM, Khám phá khoa học..." 
+                        : "VD: Bài 12: Phân tích số liệu và biểu đồ thống kê..."}
+                      value={surpriseTopic}
+                      onChange={e => setSurpriseTopic(e.target.value)}
+                      required
+                      className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none bg-slate-50/60 hover:bg-white text-slate-800 transition-all shadow-2xs placeholder:text-slate-400"
                     />
                   </div>
                 </div>
 
-                {/* Chủ đề / Nội dung bài dạy */}
-                <div className="flex flex-col gap-1.5 pt-1">
-                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
-                    Chủ đề / Nội dung bài dạy *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder={surpriseLevel === "Mầm non" 
-                      ? "VD: Chủ đề: Bản thân và gia đình, Hoạt động góc, STEAM, Khám phá khoa học..." 
-                      : "VD: Bài 12: Phân tích số liệu và biểu đồ thống kê..."}
-                    value={surpriseTopic}
-                    onChange={e => setSurpriseTopic(e.target.value)}
-                    required
-                    className="w-full text-xs font-bold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none bg-slate-50/60 text-slate-800 placeholder:text-slate-400"
-                  />
-                </div>
-
                 {/* Thẻ Người dự giờ tự động */}
-                <div className="bg-rose-50/60 rounded-xl p-3.5 border border-rose-100 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center font-black text-xs">
+                <div className="bg-gradient-to-r from-teal-50/80 via-emerald-50/40 to-slate-50 rounded-2xl p-4 border border-teal-100/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-2xl bg-[#008B82] text-white flex items-center justify-center font-black text-sm shadow-xs shrink-0">
                       {currentTeacher?.teacherName ? currentTeacher.teacherName.charAt(0) : "U"}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-rose-800 uppercase tracking-wider">Người dự giờ (Tự động):</span>
-                        <span className="font-extrabold text-slate-900 text-xs">{currentTeacher?.teacherName || "Tài khoản đăng nhập"}</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider">Người dự giờ (Tự động):</span>
+                        <span className="font-extrabold text-slate-900 text-xs sm:text-sm">{currentTeacher?.teacherName || "Tài khoản đăng nhập"}</span>
                       </div>
                       <p className="text-[11px] text-slate-500 font-medium">
-                        {currentTeacher?.email || "Email"} • Chức vụ: {isTTCM ? "Tổ trưởng chuyên môn" : (currentTeacher?.position || "Ban ĐHCM / Quản lý")}
+                        {currentTeacher?.email || "Email"} • Chức vụ: <span className="font-bold text-slate-700">{isTTCM ? "Tổ trưởng chuyên môn" : (currentTeacher?.position || "Ban ĐHCM / Quản lý")}</span>
                       </p>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 text-[10px] font-black rounded-lg bg-white border border-rose-200 text-rose-700 shrink-0">
-                    Tự động ghi nhận
+                  <span className="self-start sm:self-center px-3 py-1.5 text-[11px] font-bold rounded-xl bg-white border border-teal-200 text-teal-800 shadow-2xs shrink-0 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Tự động ghi nhận</span>
                   </span>
                 </div>
               </div>
@@ -1061,14 +1285,14 @@ export function ObservationRegistrationSection(props: any) {
               <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                   <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-5 h-5 bg-rose-100 text-rose-800 rounded-md flex items-center justify-center text-xs font-black">2</span>
+                    <span className="w-5 h-5 bg-teal-100 text-[#008B82] rounded-md flex items-center justify-center text-xs font-black">2</span>
                     {surpriseLevel !== "Mầm non" ? "Phiếu Đánh Giá 11 Tiêu Chí (Tổng 20 điểm)" : "Phiếu Đánh Giá Mầm Non (Tổng 10 điểm)"}
                   </h5>
 
                   {/* Summary Score Box & Quick Actions */}
                   <div className="flex items-center flex-wrap gap-2.5">
                     <span className="text-xs font-black text-slate-600 uppercase">Tổng điểm:</span>
-                    <span className="text-sm font-black text-rose-950 bg-rose-50 px-3.5 py-1.5 rounded-xl border border-rose-200 shadow-2xs">
+                    <span className="text-sm font-black text-teal-950 bg-teal-50 px-3.5 py-1.5 rounded-xl border border-teal-200 shadow-2xs">
                       {surpriseLevel !== "Mầm non" 
                         ? `${effectiveScoresK12.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00đ`
                         : `${effectiveScoresMN.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00đ`
@@ -1412,7 +1636,7 @@ export function ObservationRegistrationSection(props: any) {
                       rows={2}
                       value={surpriseStrengths}
                       onChange={e => setSurpriseStrengths(e.target.value)}
-                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none resize-none bg-slate-50/50"
+                      className="w-full text-xs font-medium p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none resize-none bg-slate-50/50 hover:bg-white transition-all shadow-2xs"
                     />
                   </div>
 
@@ -1423,7 +1647,7 @@ export function ObservationRegistrationSection(props: any) {
                       rows={2}
                       value={surpriseImprovements}
                       onChange={e => setSurpriseImprovements(e.target.value)}
-                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none resize-none bg-slate-50/50"
+                      className="w-full text-xs font-medium p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none resize-none bg-slate-50/50 hover:bg-white transition-all shadow-2xs"
                     />
                   </div>
 
@@ -1434,7 +1658,7 @@ export function ObservationRegistrationSection(props: any) {
                       rows={2}
                       value={surpriseGeneral}
                       onChange={e => setSurpriseGeneral(e.target.value)}
-                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none resize-none bg-slate-50/50"
+                      className="w-full text-xs font-medium p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#008B82] focus:border-[#008B82] outline-none resize-none bg-slate-50/50 hover:bg-white transition-all shadow-2xs"
                     />
                   </div>
                 </div>
@@ -1524,11 +1748,26 @@ export function ObservationRegistrationSection(props: any) {
 
               {/* Action Buttons: Lưu nháp / Hoàn thành */}
               <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-2">
+                {surpriseQuota?.isExceeded && (
+                  <span className="text-xs text-rose-600 font-black mr-auto flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    Đã hết hạn ngạch dự giờ đột xuất tháng ({surpriseQuota.currentSurpriseCount}/{surpriseQuota.maxSurpriseAllowed} tiết).
+                  </span>
+                )}
+
                 <button
                   type="button"
-                  disabled={surpriseSubmitting}
-                  onClick={() => handleSurpriseSubmit(true)}
-                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  disabled={surpriseSubmitting || surpriseQuota?.isExceeded}
+                  onClick={() => {
+                    if (surpriseQuota?.isExceeded) return;
+                    if (teacherSurpriseHistory?.hasRecentSurprise && !confirmedSpacingWarning) {
+                      setPendingDraftSubmit(true);
+                      setShowSpacingConfirmModal(true);
+                      return;
+                    }
+                    handleSurpriseSubmit(true);
+                  }}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4 text-slate-500" />
                   {surpriseSubmitting ? "Đang lưu..." : "Lưu nháp"}
@@ -1536,16 +1775,80 @@ export function ObservationRegistrationSection(props: any) {
 
                 <button
                   type="button"
-                  disabled={surpriseSubmitting}
-                  onClick={() => handleSurpriseSubmit(false)}
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-rose-600 via-pink-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-black text-xs transition-all shadow-md shadow-rose-700/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                  disabled={surpriseSubmitting || surpriseQuota?.isExceeded}
+                  onClick={() => {
+                    if (surpriseQuota?.isExceeded) return;
+                    if (teacherSurpriseHistory?.hasRecentSurprise && !confirmedSpacingWarning) {
+                      setPendingDraftSubmit(false);
+                      setShowSpacingConfirmModal(true);
+                      return;
+                    }
+                    handleSurpriseSubmit(false);
+                  }}
+                  className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+                    surpriseQuota?.isExceeded
+                      ? "bg-slate-300 text-slate-500 shadow-none"
+                      : "bg-gradient-to-r from-[#008B82] via-[#007A72] to-emerald-600 hover:from-[#007A72] hover:to-emerald-700 text-white shadow-teal-900/20"
+                  }`}
                 >
-                  <CheckCircle2 className="w-4 h-4 text-amber-200" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-200" />
                   {surpriseSubmitting ? "Đang xử lý..." : "Hoàn thành đánh giá"}
                 </button>
               </div>
+
+              {/* MODAL XÁC NHẬN CẢNH BÁO GIÃN CÁCH 30 NGÀY */}
+              {showSpacingConfirmModal && (
+                <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+                  <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-100 flex flex-col gap-4 animate-in zoom-in-95 duration-200">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mx-auto shadow-xs">
+                      <AlertTriangle className="w-6 h-6" />
+                    </div>
+                    <div className="text-center space-y-2">
+                      <h4 className="text-base font-black text-slate-800">
+                        Xác nhận đăng ký Dự giờ đột xuất
+                      </h4>
+                      <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                        Giáo viên <strong>{teacherSurpriseHistory?.recentSlot?.teacherName || "này"}</strong> đã có <strong>{teacherSurpriseHistory?.count} lượt dự giờ đột xuất trong 30 ngày gần nhất</strong> (ngày {teacherSurpriseHistory?.recentSlot?.date} do {teacherSurpriseHistory?.recentSlot?.evaluatorName} thực hiện).
+                      </p>
+                      <div className="p-3.5 bg-amber-50 rounded-2xl border border-amber-200 text-left text-xs text-amber-900 font-semibold space-y-1">
+                        <div className="font-bold flex items-center gap-1.5">
+                          <span>💡 Khuyến nghị chuyên môn:</span>
+                        </div>
+                        <p className="text-[11px] font-normal leading-relaxed text-amber-800">
+                          Để đảm bảo tâm lý thoải mái và phân bổ hoạt động hỗ trợ đồng đều cho đội ngũ, Thầy/Cô có thể cân nhắc đổi sang giáo viên khác chưa được dự giờ gần đây.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowSpacingConfirmModal(false);
+                          setSurpriseTeacherId("");
+                          setTeacherSurpriseHistory(null);
+                        }}
+                        className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+                      >
+                        Đổi giáo viên khác
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfirmedSpacingWarning(true);
+                          setShowSpacingConfirmModal(false);
+                          handleSurpriseSubmit(pendingDraftSubmit);
+                        }}
+                        className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-[#008B82] hover:bg-teal-700 text-white font-bold text-xs transition-colors shadow-md shadow-teal-900/20 cursor-pointer"
+                      >
+                        Xác nhận tiếp tục
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : creationMode === "OBSERVER_REQUEST" ? (
+
             /* ===== FORM 2: GVBM XIN ĐĂNG KÝ DỰ GIỜ ===== */
             <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/80">
               <div className="bg-indigo-500/10 border border-indigo-200/70 rounded-xl p-3.5 flex items-start gap-3">
@@ -2219,158 +2522,160 @@ export function ObservationRegistrationSection(props: any) {
           </div>
         </div>
 
-        {/* Right Guidance & Policy Column (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-5">
-          {/* Card 1: Circular Progress Gauge for TIẾN ĐỘ THÁNG */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider">
-                Tiến độ tháng {currentMonthNum}
-              </h4>
-            </div>
+        {/* Right Guidance & Policy Column (4 cols) - Ẩn khi ở chế độ Dự giờ đột xuất để giao diện form rộng thoáng, thân thiện */}
+        {creationMode !== "SURPRISE" && (
+          <div className="lg:col-span-4 flex flex-col gap-5">
+            {/* Card 1: Circular Progress Gauge for TIẾN ĐỘ THÁNG */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider">
+                  Tiến độ tháng {currentMonthNum}
+                </h4>
+              </div>
 
-            <div className="flex flex-col items-center justify-center py-2">
-              <div className="relative w-28 h-28 flex items-center justify-center">
-                <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    className="stroke-slate-100"
-                    strokeWidth="7"
-                    fill="transparent"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    stroke="#008B82"
-                    strokeWidth="7"
-                    strokeDasharray={213.6}
-                    strokeDashoffset={213.6 * (1 - Math.min(1, (monthlyLimitCount || 0) / 2))}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    className="transition-all duration-700 ease-out"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span className="text-xl font-black text-slate-800">
-                    {progressPct}%
-                  </span>
+              <div className="flex flex-col items-center justify-center py-2">
+                <div className="relative w-28 h-28 flex items-center justify-center">
+                  <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      className="stroke-slate-100"
+                      strokeWidth="7"
+                      fill="transparent"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="34"
+                      stroke="#008B82"
+                      strokeWidth="7"
+                      strokeDasharray={213.6}
+                      strokeDashoffset={213.6 * (1 - Math.min(1, (monthlyLimitCount || 0) / 2))}
+                      strokeLinecap="round"
+                      fill="transparent"
+                      className="transition-all duration-700 ease-out"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                    <span className="text-xl font-black text-slate-800">
+                      {progressPct}%
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-2 text-center">
+                  <span className="text-xs font-black text-slate-700">{monthlyLimitCount || 0} / 2</span>
+                  <span className="text-xs font-bold text-slate-500 ml-1">tiết quy định</span>
                 </div>
               </div>
-              <div className="mt-2 text-center">
-                <span className="text-xs font-black text-slate-700">{monthlyLimitCount || 0} / 2</span>
-                <span className="text-xs font-bold text-slate-500 ml-1">tiết quy định</span>
+
+              <div className="bg-teal-50/70 border border-teal-100 rounded-2xl p-3.5 flex items-start gap-2.5">
+                <div className="w-6 h-6 rounded-lg bg-teal-100 text-[#008B82] flex items-center justify-center shrink-0 mt-0.5">
+                  <Target className="w-3.5 h-3.5" />
+                </div>
+                <p className="text-xs text-teal-900 font-medium leading-relaxed">
+                  Mỗi giáo viên: tối đa 2 tiết/tháng.<br />
+                  Bạn còn <strong className="font-black text-[#008B82]">{Math.max(0, 2 - (monthlyLimitCount || 0))} lượt đăng ký</strong>.
+                </p>
               </div>
             </div>
 
-            <div className="bg-teal-50/70 border border-teal-100 rounded-2xl p-3.5 flex items-start gap-2.5">
-              <div className="w-6 h-6 rounded-lg bg-teal-100 text-[#008B82] flex items-center justify-center shrink-0 mt-0.5">
-                <Target className="w-3.5 h-3.5" />
+            {/* Card 2: LỊCH SẮP TỚI */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#008B82]" />
+                  <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider">Lịch sắp tới</h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={onViewAllSchedule}
+                  className="text-[11px] font-bold text-[#008B82] hover:text-teal-800 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <span>Xem tất cả</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <p className="text-xs text-teal-900 font-medium leading-relaxed">
-                Mỗi giáo viên: tối đa 2 tiết/tháng.<br />
-                Bạn còn <strong className="font-black text-[#008B82]">{Math.max(0, 2 - (monthlyLimitCount || 0))} lượt đăng ký</strong>.
-              </p>
-            </div>
-          </div>
 
-          {/* Card 2: LỊCH SẮP TỚI */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[#008B82]" />
-                <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider">Lịch sắp tới</h4>
-              </div>
-              <button
-                type="button"
-                onClick={onViewAllSchedule}
-                className="text-[11px] font-bold text-[#008B82] hover:text-teal-800 transition-colors cursor-pointer flex items-center gap-1"
-              >
-                <span>Xem tất cả</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {upcomingSlots && upcomingSlots.length > 0 ? (
-              <div className="space-y-2.5">
-                {upcomingSlots.map((slot: any) => (
-                  <div key={slot.id} className="p-3 rounded-2xl bg-slate-50/80 border border-slate-200/70 flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-black text-slate-800 truncate max-w-[170px]">{slot.subject?.name || slot.topic}</span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-100 text-teal-800">{slot.period || slot.startTime}</span>
+              {upcomingSlots && upcomingSlots.length > 0 ? (
+                <div className="space-y-2.5">
+                  {upcomingSlots.map((slot: any) => (
+                    <div key={slot.id} className="p-3 rounded-2xl bg-slate-50/80 border border-slate-200/70 flex flex-col gap-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-black text-slate-800 truncate max-w-[170px]">{slot.subject?.name || slot.topic}</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-100 text-teal-800">{slot.period || slot.startTime}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>{slot.class?.name || "Lớp"}</span>
+                        <span className="font-semibold text-slate-600">{slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : ""}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-500">
-                      <span>{slot.class?.name || "Lớp"}</span>
-                      <span className="font-semibold text-slate-600">{slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : ""}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-6 text-slate-400 text-center">
-                <Calendar className="w-8 h-8 text-slate-300 mb-2 stroke-1" />
-                <p className="text-xs font-bold text-slate-600">Chưa có lịch dự giờ</p>
-                <p className="text-[11px] text-slate-400">Các lịch đăng ký sẽ hiển thị tại đây.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Card 3: HƯỚNG DẪN NHANH */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
-            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-              <div className="w-7 h-7 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center font-bold">
-                <FileText className="w-4 h-4" />
-              </div>
-              <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider">Hướng dẫn nhanh</h4>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 text-slate-400 text-center">
+                  <Calendar className="w-8 h-8 text-slate-300 mb-2 stroke-1" />
+                  <p className="text-xs font-bold text-slate-600">Chưa có lịch dự giờ</p>
+                  <p className="text-[11px] text-slate-400">Các lịch đăng ký sẽ hiển thị tại đây.</p>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-3 text-xs text-slate-600">
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5 border border-teal-200/60">1</span>
-                <p className="leading-snug font-medium text-slate-700">Chọn thông tin và gửi đăng ký</p>
+            {/* Card 3: HƯỚNG DẪN NHANH */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="w-7 h-7 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center font-bold">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider">Hướng dẫn nhanh</h4>
               </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5 border border-teal-200/60">2</span>
-                <p className="leading-snug font-medium text-slate-700">Chờ TTCM phê duyệt</p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5 border border-teal-200/60">3</span>
-                <p className="leading-snug font-medium text-slate-700">Thực hiện dự giờ và đánh giá</p>
+
+              <div className="space-y-3 text-xs text-slate-600">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5 border border-teal-200/60">1</span>
+                  <p className="leading-snug font-medium text-slate-700">Chọn thông tin và gửi đăng ký</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5 border border-teal-200/60">2</span>
+                  <p className="leading-snug font-medium text-slate-700">Chờ TTCM phê duyệt</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5 border border-teal-200/60">3</span>
+                  <p className="leading-snug font-medium text-slate-700">Thực hiện dự giờ và đánh giá</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Card 4: QUY ĐỊNH & LƯU Ý DỰ GIỜ */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
-            <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
-              <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center font-bold">
-                <Info className="w-4 h-4" />
+            {/* Card 4: QUY ĐỊNH & LƯU Ý DỰ GIỜ */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center font-bold">
+                  <Info className="w-4 h-4" />
+                </div>
+                <h4 className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Quy định & Lưu ý dự giờ</h4>
               </div>
-              <h4 className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Quy định & Lưu ý dự giờ</h4>
-            </div>
 
-            <div className="space-y-3 text-xs text-slate-600">
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">1</span>
-                <p className="leading-snug"><strong className="text-slate-800">Tối đa 4 người dự:</strong> Mỗi tiết dạy mở tối đa 4 chỗ đăng ký để đảm bảo chất lượng giờ học.</p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">2</span>
-                <p className="leading-snug"><strong className="text-slate-800">Phê duyệt tham dự:</strong> Giáo viên đứng lớp có quyền xem và duyệt danh sách người đăng ký trước giờ dạy.</p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">3</span>
-                <p className="leading-snug"><strong className="text-slate-800">Đính kèm giáo án:</strong> Khuyến khích tải lên file Kế hoạch bài dạy (.PDF) để người dự chuẩn bị tốt nhất.</p>
-              </div>
-              <div className="flex items-start gap-2.5">
-                <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">4</span>
-                <p className="leading-snug"><strong className="text-slate-800">Nộp phiếu đánh giá:</strong> Người dự thực hiện chấm điểm trực tiếp trên hệ thống ngay sau tiết học.</p>
+              <div className="space-y-3 text-xs text-slate-600">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">1</span>
+                  <p className="leading-snug"><strong className="text-slate-800">Tối đa 4 người dự:</strong> Mỗi tiết dạy mở tối đa 4 chỗ đăng ký để đảm bảo chất lượng giờ học.</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">2</span>
+                  <p className="leading-snug"><strong className="text-slate-800">Phê duyệt tham dự:</strong> Giáo viên đứng lớp có quyền xem và duyệt danh sách người đăng ký trước giờ dạy.</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">3</span>
+                  <p className="leading-snug"><strong className="text-slate-800">Đính kèm giáo án:</strong> Khuyến khích tải lên file Kế hoạch bài dạy (.PDF) để người dự chuẩn bị tốt nhất.</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">4</span>
+                  <p className="leading-snug"><strong className="text-slate-800">Nộp phiếu đánh giá:</strong> Người dự thực hiện chấm điểm trực tiếp trên hệ thống ngay sau tiết học.</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
