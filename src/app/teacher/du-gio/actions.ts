@@ -1832,19 +1832,21 @@ export async function findExistingSurpriseSlot(params: {
   academicYearId?: string
 }) {
   try {
-    const session = await auth()
-    if (!session || !session.user) {
-      return { success: false, error: "Unauthorized" }
+    let session: any = null
+    try {
+      session = await auth()
+    } catch {
+      // Handled gracefully if invoked outside request scope
     }
 
     if (!params.teacherId || !params.date) {
       return { success: true, found: false }
     }
 
-    const currentTeacher = await prisma.teacher.findUnique({
+    const currentTeacher = session?.user?.id ? await prisma.teacher.findUnique({
       where: { userId: session.user.id },
       select: { id: true, teacherName: true }
-    })
+    }) : null
 
     const targetDate = new Date(params.date)
     if (isNaN(targetDate.getTime())) {
