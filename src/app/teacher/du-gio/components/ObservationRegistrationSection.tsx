@@ -7,7 +7,7 @@ import {
   MapPin, User, Users, CheckCircle2, AlertCircle, AlertTriangle, FileText, Award, Check, Save, Mail, Loader2, Star
 } from "lucide-react"
 import { QuickCommentPresets } from "./QuickCommentPresets"
-import { getObserverSurpriseQuota, checkTeacherSurpriseHistory } from "../actions"
+import { getObserverSurpriseQuota, checkTeacherSurpriseHistory, findExistingSurpriseSlot } from "../actions"
 
 
 const K12_SECTIONS = [
@@ -224,7 +224,7 @@ interface CreateObservationModalProps {
   surpriseOverall: string
   setSurpriseOverall: (v: string) => void
   surpriseSubmitting: boolean
-  handleSurpriseSubmit: (isDraft?: boolean) => void
+  handleSurpriseSubmit: (isDraft?: boolean, options?: { existingSlotId?: string; forceNewSlot?: boolean }) => void
   ttcmAllowedDepartments: any[]
   filteredTeachersForSurprise: any[]
   filteredClassesForSurprise: any[]
@@ -481,6 +481,12 @@ export function ObservationRegistrationSection(props: any) {
   const [showSpacingConfirmModal, setShowSpacingConfirmModal] = React.useState(false);
   const [pendingDraftSubmit, setPendingDraftSubmit] = React.useState<boolean>(false);
 
+  // Quản lý kiểm tra và tham gia phiên dự giờ đột xuất đã có (Co-observation)
+  const [existingSurpriseSlot, setExistingSurpriseSlot] = React.useState<any>(null);
+  const [loadingExistingSlot, setLoadingExistingSlot] = React.useState(false);
+  const [joinExistingSlot, setJoinExistingSlot] = React.useState<boolean>(false);
+  const [dismissDuplicateNotice, setDismissDuplicateNotice] = React.useState<boolean>(false);
+
   // Load hạn ngạch dự giờ đột xuất khi ở chế độ SURPRISE hoặc đổi ngày
   React.useEffect(() => {
     if (creationMode === "SURPRISE") {
@@ -514,6 +520,36 @@ export function ObservationRegistrationSection(props: any) {
       setConfirmedSpacingWarning(false);
     }
   }, [creationMode, surpriseTeacherId, surpriseDate]);
+
+  // Tự động kiểm tra phiên dự giờ đột xuất đã tồn tại cùng GV, ngày, tiết, lớp
+  React.useEffect(() => {
+    if (creationMode === "SURPRISE" && surpriseTeacherId && surpriseDate && surprisePeriod && (surpriseClassId || surpriseClassName)) {
+      setLoadingExistingSlot(true);
+      findExistingSurpriseSlot({
+        teacherId: surpriseTeacherId,
+        date: surpriseDate,
+        period: surprisePeriod,
+        className: surpriseClassName,
+        classId: surpriseClassId,
+        campusId: surpriseCampusId
+      })
+        .then((res: any) => {
+          if (res?.success && res.found) {
+            setExistingSurpriseSlot(res.slot);
+          } else {
+            setExistingSurpriseSlot(null);
+            setJoinExistingSlot(false);
+            setDismissDuplicateNotice(false);
+          }
+        })
+        .catch(err => console.error("Error finding existing surprise slot:", err))
+        .finally(() => setLoadingExistingSlot(false));
+    } else {
+      setExistingSurpriseSlot(null);
+      setJoinExistingSlot(false);
+      setDismissDuplicateNotice(false);
+    }
+  }, [creationMode, surpriseTeacherId, surpriseDate, surprisePeriod, surpriseClassId, surpriseClassName, surpriseCampusId]);
 
   const effectiveScoresK12 = internalScoresK12;
   const effectiveScoresMN = internalScoresMN;
@@ -848,6 +884,150 @@ export function ObservationRegistrationSection(props: any) {
                       </span>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* CO-OBSERVATION: BỘ LỌC VÀ CẢNH BÁO PHIÊN DỰ GIỜ ĐỘT XUẤT CÙNG TIẾT */}
+              {loadingExistingSlot && (
+                <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200 text-indigo-800 text-xs flex items-center gap-2 animate-pulse">
+                  <Loader2 className="w-4 h-4 animate-spin text-indigo-600 shrink-0" />
+                  <span className="font-semibold">Đang tự động kiểm tra phiên dự giờ của giáo viên trong cùng tiết học...</span>
+                </div>
+              )}
+
+              {existingSurpriseSlot && !dismissDuplicateNotice && !joinExistingSlot && (
+                <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-br from-indigo-50/95 via-sky-50/80 to-teal-50/90 border-2 border-indigo-300 shadow-sm flex flex-col gap-4 text-slate-800 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                      <Users className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-indigo-600 text-white uppercase tracking-wider">
+                          Phát hiện phiên dự giờ cùng tiết học
+                        </span>
+                        <span className="text-[11px] font-bold text-indigo-700 bg-indigo-100/80 px-2 py-0.5 rounded-full border border-indigo-200">
+                          ⚡ Gộp phiên (Co-observation)
+                        </span>
+                      </div>
+                      <h5 className="text-sm sm:text-base font-black text-indigo-950 mt-1.5 leading-snug">
+                        “Đã tồn tại phiên dự giờ của giáo viên này trong cùng tiết học. Bạn có muốn tham gia phiên dự giờ hiện có?”
+                      </h5>
+                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                        Hệ thống xác định phiên dự giờ dựa trên: Giáo viên được dự (<strong>{existingSurpriseSlot.teacherName}</strong>), Ngày (<strong>{existingSurpriseSlot.date}</strong>), Tiết (<strong>{existingSurpriseSlot.period}</strong>), Lớp (<strong>{existingSurpriseSlot.className}</strong>) tại cơ sở <strong>{existingSurpriseSlot.campusName}</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Chi tiết phiên hiện có */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-white/95 border border-indigo-100 shadow-2xs space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                      <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 font-bold uppercase text-[10px] block">Môn & Bài dạy</span>
+                        <strong className="text-slate-900 text-xs font-bold block truncate">
+                          {existingSurpriseSlot.subjectName} — "{existingSurpriseSlot.topic}"
+                        </strong>
+                      </div>
+                      <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
+                        <span className="text-slate-400 font-bold uppercase text-[10px] block">Lớp & Tiết học</span>
+                        <strong className="text-slate-900 text-xs font-bold block">
+                          {existingSurpriseSlot.className} • {existingSurpriseSlot.period}
+                        </strong>
+                      </div>
+                      <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 sm:col-span-2 lg:col-span-1">
+                        <span className="text-slate-400 font-bold uppercase text-[10px] block">Cơ sở & Phòng</span>
+                        <span className="font-bold text-slate-700 block truncate">
+                          {existingSurpriseSlot.campusName} {existingSurpriseSlot.room ? `• ${existingSurpriseSlot.room}` : ""}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <User className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                        <span className="text-slate-500 font-semibold">Người tham gia dự giờ:</span>
+                        <span className="font-bold text-indigo-950">
+                          {existingSurpriseSlot.participants?.map((p: any) => `${p.teacherName} (${p.position || "Cán bộ"})`).join(", ") || "Đang dự"}
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                        {existingSurpriseSlot.participantCount} người tham gia
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 2 Lựa chọn hành động theo yêu cầu */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+                    <span className="text-[11px] text-slate-600 font-medium italic">
+                      💡 Vui lòng lựa chọn cách ghi nhận phiên dự giờ:
+                    </span>
+                    <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setJoinExistingSlot(false);
+                          setDismissDuplicateNotice(true);
+                        }}
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs transition-colors cursor-pointer shadow-2xs"
+                      >
+                        ➕ Tạo phiên mới
+                        <span className="text-[10px] font-normal text-slate-500 block sm:inline sm:ml-1">(Tiết dạy khác)</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setJoinExistingSlot(true);
+                          if (existingSurpriseSlot.topic) setSurpriseTopic(existingSurpriseSlot.topic);
+                          if (existingSurpriseSlot.subjectName) setSurpriseSubjectName(existingSurpriseSlot.subjectName);
+                          if (existingSurpriseSlot.subjectId) setSurpriseSubjectId(existingSurpriseSlot.subjectId);
+                          if (existingSurpriseSlot.room) setSurpriseRoom(existingSurpriseSlot.room);
+                        }}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#003B3A] via-[#005B54] to-[#007068] hover:from-[#002B2A] hover:to-[#005B54] text-white font-black text-xs transition-all shadow-md shadow-teal-950/20 flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Users className="w-4 h-4 text-emerald-300" />
+                        <span>Tham gia phiên dự giờ</span>
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-400 text-emerald-950 text-[10px] font-black">Khuyến nghị</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TRẠNG THÁI ĐÃ CHỌN THAM GIA PHIÊN DỰ GIỜ CHUNG */}
+              {existingSurpriseSlot && joinExistingSlot && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-teal-50/95 via-emerald-50/90 to-cyan-50/90 border-2 border-[#008B82] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-slate-800 animate-in fade-in duration-200">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#008B82] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-black text-[#003B3A] uppercase tracking-wide">
+                          Đã chọn: Tham gia phiên dự giờ chung
+                        </span>
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-teal-100 text-teal-800 border border-teal-200">
+                          {existingSurpriseSlot.participantCount} người cùng dự
+                        </span>
+                        <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          Phiếu đánh giá riêng độc lập
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-slate-700 mt-0.5">
+                        Phiên: <strong>"{existingSurpriseSlot.topic}"</strong> ({existingSurpriseSlot.subjectName} - {existingSurpriseSlot.className} - {existingSurpriseSlot.period}). Hệ thống chỉ ghi nhận 01 phiên cho GV dạy; Thầy/Cô thực hiện phiếu đánh giá riêng của mình (11 tiêu chí, nhận xét và điểm số độc lập).
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setJoinExistingSlot(false);
+                      setDismissDuplicateNotice(false);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs shrink-0 cursor-pointer shadow-2xs"
+                  >
+                    Thay đổi lựa chọn
+                  </button>
                 </div>
               )}
 
@@ -1755,45 +1935,51 @@ export function ObservationRegistrationSection(props: any) {
                   </span>
                 )}
 
-                <button
-                  type="button"
-                  disabled={surpriseSubmitting || surpriseQuota?.isExceeded}
-                  onClick={() => {
+                {(() => {
+                  const doSubmitSurprise = (isDraft: boolean) => {
                     if (surpriseQuota?.isExceeded) return;
                     if (teacherSurpriseHistory?.hasRecentSurprise && !confirmedSpacingWarning) {
-                      setPendingDraftSubmit(true);
+                      setPendingDraftSubmit(isDraft);
                       setShowSpacingConfirmModal(true);
                       return;
                     }
-                    handleSurpriseSubmit(true);
-                  }}
-                  className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <Save className="w-4 h-4 text-slate-500" />
-                  {surpriseSubmitting ? "Đang lưu..." : "Lưu nháp"}
-                </button>
+                    if (joinExistingSlot && existingSurpriseSlot?.id) {
+                      handleSurpriseSubmit(isDraft, { existingSlotId: existingSurpriseSlot.id });
+                    } else if (dismissDuplicateNotice) {
+                      handleSurpriseSubmit(isDraft, { forceNewSlot: true });
+                    } else {
+                      handleSurpriseSubmit(isDraft);
+                    }
+                  };
 
-                <button
-                  type="button"
-                  disabled={surpriseSubmitting || surpriseQuota?.isExceeded}
-                  onClick={() => {
-                    if (surpriseQuota?.isExceeded) return;
-                    if (teacherSurpriseHistory?.hasRecentSurprise && !confirmedSpacingWarning) {
-                      setPendingDraftSubmit(false);
-                      setShowSpacingConfirmModal(true);
-                      return;
-                    }
-                    handleSurpriseSubmit(false);
-                  }}
-                  className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
-                    surpriseQuota?.isExceeded
-                      ? "bg-slate-300 text-slate-500 shadow-none"
-                      : "bg-gradient-to-r from-[#008B82] via-[#007A72] to-emerald-600 hover:from-[#007A72] hover:to-emerald-700 text-white shadow-teal-900/20"
-                  }`}
-                >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-200" />
-                  {surpriseSubmitting ? "Đang xử lý..." : "Hoàn thành đánh giá"}
-                </button>
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        disabled={surpriseSubmitting || surpriseQuota?.isExceeded}
+                        onClick={() => doSubmitSurprise(true)}
+                        className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-black text-xs transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <Save className="w-4 h-4 text-slate-500" />
+                        {surpriseSubmitting ? "Đang lưu..." : "Lưu nháp"}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={surpriseSubmitting || surpriseQuota?.isExceeded}
+                        onClick={() => doSubmitSurprise(false)}
+                        className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-black text-xs transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+                          surpriseQuota?.isExceeded
+                            ? "bg-slate-300 text-slate-500 shadow-none"
+                            : "bg-gradient-to-r from-[#008B82] via-[#007A72] to-emerald-600 hover:from-[#007A72] hover:to-emerald-700 text-white shadow-teal-900/20"
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                        {surpriseSubmitting ? "Đang xử lý..." : (joinExistingSlot ? "Hoàn thành đánh giá (Gộp phiên)" : "Hoàn thành đánh giá")}
+                      </button>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* MODAL XÁC NHẬN CẢNH BÁO GIÃN CÁCH 30 NGÀY */}
@@ -1836,7 +2022,13 @@ export function ObservationRegistrationSection(props: any) {
                         onClick={() => {
                           setConfirmedSpacingWarning(true);
                           setShowSpacingConfirmModal(false);
-                          handleSurpriseSubmit(pendingDraftSubmit);
+                          if (joinExistingSlot && existingSurpriseSlot?.id) {
+                            handleSurpriseSubmit(pendingDraftSubmit, { existingSlotId: existingSurpriseSlot.id });
+                          } else if (dismissDuplicateNotice) {
+                            handleSurpriseSubmit(pendingDraftSubmit, { forceNewSlot: true });
+                          } else {
+                            handleSurpriseSubmit(pendingDraftSubmit);
+                          }
                         }}
                         className="w-full sm:w-1/2 py-2.5 px-4 rounded-xl bg-[#008B82] hover:bg-teal-700 text-white font-bold text-xs transition-colors shadow-md shadow-teal-900/20 cursor-pointer"
                       >

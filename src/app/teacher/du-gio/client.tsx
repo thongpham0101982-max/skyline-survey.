@@ -2352,7 +2352,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   
-  const handleSurpriseSubmit = async (isDraft: boolean) => {
+  const handleSurpriseSubmit = async (isDraft: boolean, options?: { existingSlotId?: string; forceNewSlot?: boolean }) => {
     if (!surpriseTeacherId) {
       showToast("Vui lòng chọn Giáo viên được dự giờ!", "error");
       return;
@@ -2402,7 +2402,9 @@ export function ObservationClient(props: ObservationClientProps) {
       strengths: surpriseStrengths.trim(),
       improvements: surpriseImprovements.trim(),
       generalComment: surpriseGeneral.trim(),
-      isDraft: isDraft
+      isDraft: isDraft,
+      existingSlotId: options?.existingSlotId,
+      forceNewSlot: options?.forceNewSlot
     };
 
     if (isK12) {

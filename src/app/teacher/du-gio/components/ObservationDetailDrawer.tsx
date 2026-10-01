@@ -368,13 +368,79 @@ export function ObservationDetailDrawer({
         </div>
 
         {/* 6. EVALUATION DETAILS (IF ANY EVALUATION EXISTS) */}
-        {evaluations.length > 0 && (
-          <div className="space-y-3 pt-2 border-t border-slate-200">
-            <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Award className="size-3.5 text-[#003B3A]" /> Kết quả Đánh giá Tiết dạy
-            </h4>
+        {evaluations.length > 0 && (() => {
+          const isMnItemGlobal = slotCatKey === "MAM_NON";
+          const isEslItemGlobal = slotCatKey === "GVNN_ESL";
+          const avgScore = evaluations.reduce((sum: number, it: any) => sum + (Number(it.evaluation?.totalScore) || 0), 0) / evaluations.length;
+          const maxScoreLabelGlobal = isMnItemGlobal ? "10.00đ" : isEslItemGlobal ? "4.00đ" : "20.00đ";
+          const consensusRating = isMnItemGlobal
+            ? (avgScore >= 9 ? "Tốt" : avgScore >= 8 ? "Khá" : avgScore >= 7 ? "Đạt" : "Không đạt")
+            : isEslItemGlobal
+            ? "Effective Practice"
+            : (avgScore >= 17 ? "Giỏi" : avgScore >= 14 ? "Khá" : avgScore >= 12 ? "Trung bình" : "Không xếp loại");
 
-            {evaluations.map((item: any, eIdx: number) => {
+          return (
+            <div className="space-y-4 pt-2 border-t border-slate-200">
+              <div className="flex items-center justify-between">
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Award className="size-3.5 text-[#003B3A]" /> Kết quả Đánh giá Tiết dạy
+                </h4>
+                {evaluations.length > 1 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-teal-100 text-teal-800 border border-teal-200">
+                    Phiên dự chung ({evaluations.length} người dự)
+                  </span>
+                )}
+              </div>
+
+              {/* KHỐI KẾT QUẢ TỔNG HỢP CHUNG CỦA PHIÊN DỰ GIỜ */}
+              {evaluations.length >= 2 && (
+                <div className="p-4 bg-gradient-to-br from-teal-50/90 via-emerald-50/70 to-cyan-50/80 rounded-2xl border-2 border-teal-200 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#008B82] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                        📊
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-teal-900 font-black uppercase tracking-wider block">
+                          Kết quả Tổng hợp Chung của Phiên
+                        </span>
+                        <span className="text-xs font-semibold text-slate-600">
+                          Điểm trung bình cộng {evaluations.length} giám khảo
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-black font-mono text-[#003B3A]">
+                        {Number(avgScore).toFixed(isEslItemGlobal ? 2 : 1)} / {maxScoreLabelGlobal}
+                      </span>
+                      <Badge variant="success" className="ml-2 font-black">{consensusRating}</Badge>
+                    </div>
+                  </div>
+
+                  {/* Danh sách tóm tắt từng người tham gia */}
+                  <div className="pt-2 border-t border-teal-200/70 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    {evaluations.map((it: any, idx: number) => (
+                      <div key={it.registration?.id || idx} className="p-2.5 bg-white/90 rounded-xl border border-teal-100/90 flex items-center justify-between shadow-2xs">
+                        <span className="font-bold text-slate-800 truncate mr-2">
+                          {it.observerName}
+                        </span>
+                        <span className="font-mono font-bold text-teal-800 text-xs shrink-0">
+                          {Number(it.evaluation?.totalScore || 0).toFixed(1)}đ ({it.evaluation?.overallRating || "Đạt"})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tiêu đề danh sách phiếu riêng */}
+              {evaluations.length >= 2 && (
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block pt-1">
+                  Phiếu đánh giá riêng của từng người dự:
+                </span>
+              )}
+
+              {evaluations.map((item: any, eIdx: number) => {
               const ev = item.evaluation;
               let parsedGeneral: any = null;
               try {
@@ -499,7 +565,8 @@ export function ObservationDetailDrawer({
               );
             })}
           </div>
-        )}
+        );
+      })()}
       </div>
     </DetailDrawer>
   );

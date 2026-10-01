@@ -1682,22 +1682,9 @@ export async function getObserverSurpriseQuota(dateOrMonthString?: string) {
           { topic: { contains: "đột xuất" } },
           { description: { contains: "[SURPRISE]" } }
         ],
-        AND: [
-          {
-            OR: [
-              {
-                evaluations: {
-                  some: { evaluatorId: currentTeacher.id }
-                }
-              },
-              {
-                registrations: {
-                  some: { teacherId: currentTeacher.id }
-                }
-              }
-            ]
-          }
-        ]
+        registrations: {
+          some: { teacherId: currentTeacher.id }
+        }
       },
       select: { id: true, date: true, topic: true, className: true }
     })
@@ -1764,21 +1751,14 @@ export async function checkTeacherSurpriseHistory(teacherId: string, targetDateS
         ]
       },
       include: {
-        evaluations: {
-          include: {
-            evaluator: {
-              select: { teacherName: true, position: true }
-            }
-          }
-        },
         registrations: {
           include: {
             teacher: {
               select: { teacherName: true, position: true }
-            }
+            },
+            evaluation: true
           }
         },
-        subject: { select: { name: true } },
         teacher: { select: { teacherName: true } }
       },
       orderBy: { date: "desc" }
@@ -1797,7 +1777,8 @@ export async function checkTeacherSurpriseHistory(teacherId: string, targetDateS
     const diffMs = Math.abs(targetDate.getTime() - slotDate.getTime())
     const daysAgo = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
-    const evaluator = mostRecent.evaluations?.[0]?.evaluator || mostRecent.registrations?.[0]?.teacher
+    const regWithEval = mostRecent.registrations?.find((r: any) => r.evaluation) || mostRecent.registrations?.[0]
+    const evaluator = regWithEval?.teacher
     const evaluatorName = evaluator?.teacherName || "Cán bộ Quản lý"
     const evaluatorPosition = evaluator?.position || "Chuyên môn"
 
@@ -1813,22 +1794,191 @@ export async function checkTeacherSurpriseHistory(teacherId: string, targetDateS
         date: dateFormatted,
         rawDate: mostRecent.date,
         topic: mostRecent.topic,
-        subjectName: mostRecent.subjectName || mostRecent.subject?.name || "Môn học",
+        subjectName: mostRecent.subjectName || "Môn học",
         className: mostRecent.className || "Lớp học",
         teacherName: mostRecent.teacher?.teacherName || "",
         evaluatorName,
         evaluatorPosition
       },
-      allRecentSlots: recentSlots.map(s => ({
-        id: s.id,
-        date: `${String(new Date(s.date).getDate()).padStart(2, "0")}/${String(new Date(s.date).getMonth() + 1).padStart(2, "0")}/${new Date(s.date).getFullYear()}`,
-        topic: s.topic,
-        subjectName: s.subjectName || s.subject?.name,
-        evaluatorName: s.evaluations?.[0]?.evaluator?.teacherName || s.registrations?.[0]?.teacher?.teacherName || "Cán bộ Quản lý"
-      }))
+      allRecentSlots: recentSlots.map(s => {
+        const rEval = s.registrations?.find((r: any) => r.evaluation) || s.registrations?.[0]
+        return {
+          id: s.id,
+          date: `${String(new Date(s.date).getDate()).padStart(2, "0")}/${String(new Date(s.date).getMonth() + 1).padStart(2, "0")}/${new Date(s.date).getFullYear()}`,
+          topic: s.topic,
+          subjectName: s.subjectName || "Môn học",
+          evaluatorName: rEval?.teacher?.teacherName || "Cán bộ Quản lý"
+        }
+      })
     }
   } catch (e: any) {
     console.error("[checkTeacherSurpriseHistory Error]:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+/**
+ * 2.1 CO-OBSERVATION CHECKER: Kiểm tra phiên dự giờ đột xuất đã tồn tại cùng Tiết, Lớp, Ngày, Cơ sở, Giáo viên
+ * Trong trường hợp có từ 02 người trở lên cùng dự một tiết dạy đột xuất:
+ * Hệ thống chỉ ghi nhận 01 phiên dự giờ (ObservationSlot), cho phép nhiều người tham gia và chấm điểm độc lập.
+ */
+export async function findExistingSurpriseSlot(params: {
+  teacherId: string
+  date: string
+  period?: string
+  className?: string
+  classId?: string
+  campusId?: string
+  academicYearId?: string
+}) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    if (!params.teacherId || !params.date) {
+      return { success: true, found: false }
+    }
+
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true, teacherName: true }
+    })
+
+    const targetDate = new Date(params.date)
+    if (isNaN(targetDate.getTime())) {
+      return { success: true, found: false }
+    }
+
+    const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0)
+    const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999)
+
+    // Tìm các slot của GV này trong ngày dự giờ
+    const candidateSlots = await prisma.observationSlot.findMany({
+      where: {
+        teacherId: params.teacherId,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay
+        },
+        status: { not: "CANCELLED" }
+      },
+      include: {
+        teacher: {
+          select: { id: true, teacherName: true, teacherCode: true, campusId: true, campus: true }
+        },
+        registrations: {
+          include: {
+            teacher: {
+              select: { id: true, teacherName: true, teacherCode: true, position: true }
+            },
+            evaluation: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" }
+    })
+
+    if (!candidateSlots || candidateSlots.length === 0) {
+      return { success: true, found: false }
+    }
+
+    const normPeriod = (params.period || "").trim().toLowerCase()
+    const normClass = (params.className || "").trim().toLowerCase()
+    const classId = params.classId || ""
+    const campusId = params.campusId || ""
+
+    // Lọc tìm slot trùng khớp
+    const matched = candidateSlots.find(slot => {
+      // 1. Tiết học
+      const slotPeriod = (slot.startTime || "").trim().toLowerCase()
+      if (normPeriod && slotPeriod) {
+        const isPeriodSame = slotPeriod === normPeriod ||
+          (normPeriod.includes("tiết 1") && (slotPeriod.includes("07:30") || slotPeriod.includes("tiết 1"))) ||
+          (normPeriod.includes("tiết 2") && (slotPeriod.includes("08:20") || slotPeriod.includes("tiết 2"))) ||
+          (normPeriod.includes("tiết 3") && (slotPeriod.includes("09:20") || slotPeriod.includes("tiết 3"))) ||
+          (normPeriod.includes("tiết 4") && (slotPeriod.includes("10:10") || slotPeriod.includes("tiết 4"))) ||
+          (normPeriod.includes("tiết 5") && (slotPeriod.includes("13:30") || slotPeriod.includes("tiết 5"))) ||
+          (normPeriod.includes("tiết 6") && (slotPeriod.includes("14:20") || slotPeriod.includes("tiết 6"))) ||
+          (normPeriod.includes("tiết 7") && (slotPeriod.includes("15:10") || slotPeriod.includes("tiết 7"))) ||
+          (normPeriod.includes("tiết 8") && (slotPeriod.includes("15:55") || slotPeriod.includes("tiết 8"))) ||
+          (normPeriod.includes("sáng") && slotPeriod.includes("sáng")) ||
+          (normPeriod.includes("chiều") && slotPeriod.includes("chiều")) ||
+          (normPeriod.includes("tiếng anh") && slotPeriod.includes("tiếng anh")) ||
+          slotPeriod.includes(normPeriod) || normPeriod.includes(slotPeriod)
+
+        if (!isPeriodSame) return false
+      }
+
+      // 2. Lớp học
+      if (classId && slot.classId) {
+        if (slot.classId !== classId) return false
+      } else if (normClass && slot.className) {
+        const sc = slot.className.trim().toLowerCase()
+        if (sc !== normClass && !sc.includes(normClass) && !normClass.includes(sc)) {
+          return false
+        }
+      }
+
+      // 3. Cơ sở (nếu cả 2 bên đều có)
+      if (campusId && slot.campusId && slot.campusId !== campusId) {
+        return false
+      }
+
+      return true
+    })
+
+    if (!matched) {
+      return { success: true, found: false }
+    }
+
+    const currentTeacherId = currentTeacher?.id
+    const currentUserReg = currentTeacherId ? matched.registrations.find(r => r.teacherId === currentTeacherId) : null
+    const currentUserJoined = !!currentUserReg
+    const currentUserEvaluated = !!currentUserReg?.evaluation
+
+    const participants = matched.registrations.map(r => ({
+      registrationId: r.id,
+      teacherId: r.teacherId,
+      teacherName: r.teacher?.teacherName || "Giáo viên",
+      position: r.teacher?.position || "Chuyên môn",
+      hasEvaluation: !!r.evaluation,
+      totalScore: r.evaluation?.totalScore,
+      overallRating: r.evaluation?.overallRating
+    }))
+
+    const slotDate = new Date(matched.date)
+    const dateFormatted = `${String(slotDate.getDate()).padStart(2, "0")}/${String(slotDate.getMonth() + 1).padStart(2, "0")}/${slotDate.getFullYear()}`
+
+    return {
+      success: true,
+      found: true,
+      slot: {
+        id: matched.id,
+        teacherId: matched.teacherId,
+        teacherName: matched.teacher?.teacherName || "Giáo viên",
+        campusId: matched.campusId,
+        campusName: matched.campusName || matched.teacher?.campus?.campusName || "Sky-Line",
+        date: dateFormatted,
+        rawDate: matched.date,
+        period: matched.startTime,
+        className: matched.className,
+        classId: matched.classId,
+        subjectId: matched.subjectId,
+        subjectName: matched.subjectName,
+        topic: matched.topic,
+        level: matched.level,
+        grade: matched.grade,
+        room: matched.room,
+        participants,
+        participantCount: participants.length,
+        currentUserJoined,
+        currentUserEvaluated
+      }
+    }
+  } catch (e: any) {
+    console.error("[findExistingSurpriseSlot Error]:", e)
     return { success: false, error: e.message }
   }
 }
@@ -4073,6 +4223,8 @@ export async function createSurpriseObservation(data: {
   improvements: string
   generalComment: string
   isDraft?: boolean
+  existingSlotId?: string
+  forceNewSlot?: boolean
 }) {
   try {
     await ensureDbColumns();
@@ -4239,37 +4391,72 @@ export async function createSurpriseObservation(data: {
 
 
 
-    // 1. Create ObservationSlot
-    let newSlot: any;
-    try {
-      newSlot = await prisma.observationSlot.create({
-        data: {
-          teacherId: hostTeacher.id,
-          targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
-          classId: data.classId || null,
-          className: data.className || "Lớp học",
-          level: data.level || "Phổ thông K-12",
-          grade: data.grade || "Khối",
-          subjectId: data.subjectId || null,
-          subjectName: data.subjectName || "Môn học",
-          topic: data.topic || "Dự giờ đột xuất",
-          date: slotDate,
-          startTime: data.period || timeRange.start,
-          endTime: timeRange.end,
-          room: data.room || "Phòng học",
-          description: "Dự giờ đột xuất (" + (isTTCM ? "Tổ trưởng chuyên môn" : "Ban ĐHCM / BGH / GĐCS") + ")",
-          visibilityType: "PUBLIC",
-          maxSeats: 1,
-          status: "ACTIVE",
-          requestOrigin: "SURPRISE",
-          academicYearId: activeYear?.id || null,
-          campusId: hostTeacher.campusId || null,
-          campusName: hostTeacher.campus?.campusName || null
+    // Bắt buộc nhập "Nội dung cần cải thiện / Góp ý phát triển" khi không phải lưu nháp
+    if (!data.isDraft && (!data.improvements || !data.improvements.trim())) {
+      return { success: false, error: "Nội dung cần cải thiện / Góp ý phát triển là bắt buộc. Vui lòng nhập nhận xét trước khi hoàn tất biên bản!" }
+    }
+
+    let slotRecord: any = null;
+    let registration: any = null;
+
+    if (data.existingSlotId) {
+      // ===== THAM GIA PHIÊN DỰ GIỜ ĐÃ CÓ (CO-OBSERVATION) =====
+      slotRecord = await prisma.observationSlot.findUnique({
+        where: { id: data.existingSlotId },
+        include: {
+          registrations: {
+            include: { evaluation: true }
+          },
+          teacher: {
+            include: { campus: true }
+          }
         }
-      })
-    } catch (createErr: any) {
-      if (createErr?.message?.includes("requestOrigin") || createErr?.message?.includes("no column named")) {
-        newSlot = await prisma.observationSlot.create({
+      });
+
+      if (!slotRecord) {
+        return { success: false, error: "Không tìm thấy phiên dự giờ hiện có để tham gia." };
+      }
+
+      registration = await prisma.observationRegistration.findUnique({
+        where: {
+          slotId_teacherId: {
+            slotId: slotRecord.id,
+            teacherId: currentTeacher.id
+          }
+        },
+        include: { evaluation: true }
+      });
+
+      if (registration?.evaluation && !data.isDraft && registration.evaluation.reEvaluationStatus !== "DRAFT") {
+        return {
+          success: false,
+          error: "Thầy/Cô đã tham gia và nộp phiếu đánh giá cho phiên dự giờ này rồi!"
+        };
+      }
+
+      if (!registration) {
+        registration = await prisma.observationRegistration.create({
+          data: {
+            slotId: slotRecord.id,
+            teacherId: currentTeacher.id,
+            isApproved: true,
+            approvedAt: new Date()
+          }
+        });
+
+        // Đảm bảo maxSeats đủ chỗ cho nhiều người cùng dự
+        const totalRegCount = (slotRecord.registrations?.length || 0) + 1;
+        if (totalRegCount >= (slotRecord.maxSeats || 1)) {
+          await prisma.observationSlot.update({
+            where: { id: slotRecord.id },
+            data: { maxSeats: totalRegCount + 2 }
+          });
+        }
+      }
+    } else {
+      // ===== TẠO PHIÊN DỰ GIỜ MỚI ĐỘC LẬP =====
+      try {
+        slotRecord = await prisma.observationSlot.create({
           data: {
             teacherId: hostTeacher.id,
             targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
@@ -4284,39 +4471,62 @@ export async function createSurpriseObservation(data: {
             startTime: data.period || timeRange.start,
             endTime: timeRange.end,
             room: data.room || "Phòng học",
-            description: "Dự giờ đột xuất [SURPRISE]",
+            description: "Dự giờ đột xuất (" + (isTTCM ? "Tổ trưởng chuyên môn" : "Ban ĐHCM / BGH / GĐCS") + ")",
             visibilityType: "PUBLIC",
-            maxSeats: 1,
+            maxSeats: 4,
             status: "ACTIVE",
+            requestOrigin: "SURPRISE",
             academicYearId: activeYear?.id || null,
             campusId: hostTeacher.campusId || null,
             campusName: hostTeacher.campus?.campusName || null
           }
-        })
-      } else {
-        throw createErr
+        });
+      } catch (createErr: any) {
+        if (createErr?.message?.includes("requestOrigin") || createErr?.message?.includes("no column named")) {
+          slotRecord = await prisma.observationSlot.create({
+            data: {
+              teacherId: hostTeacher.id,
+              targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+              classId: data.classId || null,
+              className: data.className || "Lớp học",
+              level: data.level || "Phổ thông K-12",
+              grade: data.grade || "Khối",
+              subjectId: data.subjectId || null,
+              subjectName: data.subjectName || "Môn học",
+              topic: data.topic || "Dự giờ đột xuất",
+              date: slotDate,
+              startTime: data.period || timeRange.start,
+              endTime: timeRange.end,
+              room: data.room || "Phòng học",
+              description: "Dự giờ đột xuất [SURPRISE]",
+              visibilityType: "PUBLIC",
+              maxSeats: 4,
+              status: "ACTIVE",
+              academicYearId: activeYear?.id || null,
+              campusId: hostTeacher.campusId || null,
+              campusName: hostTeacher.campus?.campusName || null
+            }
+          });
+        } else {
+          throw createErr;
+        }
       }
+
+      // Tự động duyệt người khởi tạo
+      registration = await prisma.observationRegistration.create({
+        data: {
+          slotId: slotRecord.id,
+          teacherId: currentTeacher.id,
+          isApproved: true,
+          approvedAt: new Date()
+        }
+      });
     }
 
-    // Bắt buộc nhập "Nội dung cần cải thiện / Góp ý phát triển" khi không phải lưu nháp
-    if (!data.isDraft && (!data.improvements || !data.improvements.trim())) {
-      return { success: false, error: "Nội dung cần cải thiện / Góp ý phát triển là bắt buộc. Vui lòng nhập nhận xét trước khi hoàn tất biên bản!" }
-    }
-
-    // 2. Create ObservationRegistration (Auto-approved)
-    const registration = await prisma.observationRegistration.create({
-      data: {
-        slotId: newSlot.id,
-        teacherId: currentTeacher.id,
-        isApproved: true,
-        approvedAt: new Date()
-      }
-    })
-
-    // 3. Create ObservationEvaluation
+    // 3. Create or Update ObservationEvaluation
     const evalData: any = {
       registrationId: registration.id,
-      slotId: newSlot.id,
+      slotId: slotRecord.id,
       evaluatorId: currentTeacher.id,
       criterion1: data.criterion1 ?? null,
       criterion2: data.criterion2 ?? null,
@@ -4341,11 +4551,18 @@ export async function createSurpriseObservation(data: {
       overallRating: data.overallRating || "Đạt",
       submittedAt: new Date(),
       reEvaluationStatus: data.isDraft ? "DRAFT" : null
-    }
+    };
 
-    await prisma.observationEvaluation.create({
-      data: evalData
-    })
+    if (registration.evaluation) {
+      await prisma.observationEvaluation.update({
+        where: { id: registration.evaluation.id },
+        data: evalData
+      });
+    } else {
+      await prisma.observationEvaluation.create({
+        data: evalData
+      });
+    }
 
     // Gửi Email thông báo kết quả đánh giá cho Giáo viên được dự & Người dự giờ (Observer) khi hoàn tất (không phải lưu nháp)
     if (!data.isDraft) {
@@ -4483,7 +4700,7 @@ export async function createSurpriseObservation(data: {
         // 3. Email báo về Giám đốc Cơ sở (GĐCS) phụ trách, đồng thời CC đến TBP liên quan theo Tổ chuyên môn
         try {
           const leaderRecipients = await resolveObservationLeaderRecipients(
-            hostTeacher.campusId || newSlot.campusId,
+            hostTeacher.campusId || slotRecord?.campusId,
             data.targetDeptId || hostTeacher.departmentId
           );
 
@@ -4538,9 +4755,12 @@ export async function createSurpriseObservation(data: {
 
     return { 
       success: true, 
-      slot: newSlot, 
+      slot: slotRecord, 
       registrationId: registration.id,
-      message: data.isDraft ? "Đã lưu nháp phiếu đánh giá dự giờ đột xuất!" : "Đã hoàn thành đánh giá dự giờ đột xuất thành công!" 
+      isJoinedExisting: !!data.existingSlotId,
+      message: data.isDraft 
+        ? (data.existingSlotId ? "Đã lưu nháp phiếu đánh giá vào phiên dự giờ chung!" : "Đã lưu nháp phiếu đánh giá dự giờ đột xuất!") 
+        : (data.existingSlotId ? "Đã tham gia phiên dự giờ chung và hoàn thành đánh giá thành công!" : "Đã hoàn thành đánh giá dự giờ đột xuất thành công!") 
     }
   } catch (e: any) {
     console.error("[createSurpriseObservation Error]:", e)
