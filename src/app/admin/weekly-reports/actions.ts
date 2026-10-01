@@ -498,7 +498,7 @@ export async function sendWeeklyReportEmailReminders(targetWeek?: number, target
     let emailSentCount = 0
 
     for (const u of pendingStaff) {
-      // Create in-app notification
+      // Create in-app notification only (KHÔNG GỬI EMAIL RA NGOÀI THEO YÊU CẦU)
       await prisma.notification.create({
         data: {
           userId: u.id,
@@ -509,63 +509,6 @@ export async function sendWeeklyReportEmailReminders(targetWeek?: number, target
         }
       })
       sentCount++
-
-      const resolvedEmail = resolveUserEmail(u)
-      if (resolvedEmail) {
-        try {
-          const emailHtml = `
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 36px 16px; color: #1e293b;">
-              <div style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
-                
-                <div style="background: linear-gradient(135deg, #0284c7, #0369a1); padding: 32px 28px; text-align: center; color: #ffffff;">
-                  <span style="background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;">
-                    ⏰ ĐỊNH KỲ THỨ 5 (14H00)
-                  </span>
-                  <h1 style="margin: 0; font-size: 22px; font-weight: 800; color: #ffffff;">NHẮC NỘP BÁO CÁO TUẦN ${weekNumber}</h1>
-                  <p style="margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Quản lý Giáo dục Skyline</p>
-                </div>
-                
-                <div style="padding: 32px 28px;">
-                  <p style="margin-top: 0; font-size: 15px; font-weight: 600; color: #334155;">Xin chào <strong>${u.fullName}</strong>,</p>
-                  <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-                    Hệ thống ghi nhận bạn <strong>chưa nộp Báo cáo Tuần ${weekNumber} (Tháng ${month}/${year})</strong>. 
-                    Theo quy định, thời hạn nộp báo cáo tuần là trước <strong>14h00 Thứ 5 hàng tuần</strong>.
-                  </p>
-                  
-                  <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; border-radius: 12px; padding: 18px; margin: 24px 0; border: 1px solid #bbf7d0;">
-                    <p style="margin: 0; font-size: 14px; font-weight: 700; color: #166534;">📌 Nội dung lưu ý:</p>
-                    <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; color: #14532d; line-height: 1.6;">
-                      <li>Nộp báo cáo đầy đủ các Task chính, Nội dung công việc & Tiến độ thực tế.</li>
-                      <li>Đề xuất giải pháp với các công việc gặp trở ngại để Trưởng Bộ Phận / Tổ trưởng kịp thời hỗ trợ.</li>
-                      <li>TBP và Ban Điều Hành sẽ trực tiếp duyệt và nhận xét trên báo cáo.</li>
-                    </ul>
-                  </div>
-
-                  <div style="text-align: center; margin: 32px 0 16px 0;">
-                    <a href="${appUrl}/admin/weekly-reports" 
-                       style="background-color: #48BFE3; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(0,169,157,0.3);">
-                       📝 Nộp Báo Cáo Tuần Ngay
-                    </a>
-                  </div>
-                </div>
-                
-                <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
-                  <p style="margin: 0;">Email nhắc nhở tự động từ Hệ thống Quản trị Skyline.</p>
-                  <p style="margin: 4px 0 0 0;">&copy; ${now.getFullYear()} Skyline Educational System. All rights reserved.</p>
-                </div>
-              </div>
-            </div>
-          `;
-          await sendEmail({
-            to: resolvedEmail,
-            subject: `[NHẮC NỘP BÁO CÁO TUẦN] Tuần ${weekNumber} Tháng ${month} - ${u.fullName}`,
-            html: emailHtml
-          });
-          emailSentCount++
-        } catch (emailErr) {
-          console.error(`Failed to send weekly report reminder to ${resolvedEmail}:`, emailErr);
-        }
-      }
     }
 
     return {

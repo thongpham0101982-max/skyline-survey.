@@ -87,6 +87,11 @@ export async function GET(req: NextRequest) {
         },
         campus: true,
         academicYear: true,
+        parents: {
+          include: {
+            parent: true
+          }
+        },
         learningCommitments: true,
         careerOrientations: true,
         highlightComments: true,
@@ -125,6 +130,15 @@ export async function GET(req: NextRequest) {
               orderBy: { createdAt: "desc" }
             }
           }
+        },
+        goals: {
+          orderBy: { createdAt: "desc" }
+        },
+        subjectGradeEntries: {
+          include: {
+            subject: true
+          },
+          orderBy: { createdAt: "desc" }
         }
       },
       orderBy: [
@@ -212,6 +226,53 @@ export async function GET(req: NextRequest) {
     const studentIds = students.map((s: any) => s.id)
     const studentCodesArr = students.map((s: any) => s.studentCode).filter(Boolean)
     const studentNamesArr = students.map((s: any) => s.studentName).filter(Boolean)
+
+    // Pre-aggregate cross-record scores, summaries & grade entries by studentCode
+    const crossScoreMap = new Map<string, { termScores: any[]; termSummaries: any[]; subjectGradeEntries: any[] }>();
+    if (studentCodesArr.length > 0) {
+      try {
+        const crossRecs = await prisma.student.findMany({
+          where: { studentCode: { in: studentCodesArr } },
+          select: {
+            studentCode: true,
+            termScores: { include: { subject: true } },
+            termSummaries: true,
+            subjectGradeEntries: { include: { subject: true }, orderBy: { createdAt: "desc" } }
+          }
+        });
+        for (const cr of crossRecs) {
+          if (!crossScoreMap.has(cr.studentCode)) {
+            crossScoreMap.set(cr.studentCode, { termScores: [], termSummaries: [], subjectGradeEntries: [] });
+          }
+          const b = crossScoreMap.get(cr.studentCode)!;
+          (cr.termScores || []).forEach((ts: any) => {
+            if (ts.score !== null || ts.evaluationGrade !== null) {
+              const k = `${ts.subjectId || ts.subject?.subjectName}_${ts.semester}`;
+              if (!b.termScores.some((existing: any) => `${existing.subjectId || existing.subject?.subjectName}_${existing.semester}` === k)) {
+                b.termScores.push(ts);
+              }
+            }
+          });
+          (cr.termSummaries || []).forEach((sm: any) => {
+            if (sm.gpa !== null || sm.academicRating || sm.conductRating) {
+              if (!b.termSummaries.some((existing: any) => existing.semester === sm.semester)) {
+                b.termSummaries.push(sm);
+              }
+            }
+          });
+          (cr.subjectGradeEntries || []).forEach((ge: any) => {
+            if (ge.compositeScore !== null) {
+              const k = `${ge.subjectId || ge.subject?.subjectName}_${ge.evaluationPeriod}`;
+              if (!b.subjectGradeEntries.some((existing: any) => `${existing.subjectId || existing.subject?.subjectName}_${existing.evaluationPeriod}` === k)) {
+                b.subjectGradeEntries.push(ge);
+              }
+            }
+          });
+        }
+      } catch (crErr) {
+        console.error("Error pre-aggregating cross scores in admin student-profiles:", crErr);
+      }
+    }
 
     // Fetch K12 and Preschool entrance surveys scoped to current students
     let k12Surveys: any[] = []
@@ -462,13 +523,28 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      const gvcnAssignment = s.class?.teachers?.find((t: any) => 
-        t.roleInClass?.toUpperCase() === "HOMEROOM" || 
-        t.roleInClass?.toUpperCase() === "GVCN" || 
-        t.teacherId === s.class?.homeroomTeacherId
-      ) || s.class?.teachers?.[0];
+      let homeroomTeacherName = "";
+      if (s.classId && classGvcnMap.has(s.classId)) {
+        homeroomTeacherName = classGvcnMap.get(s.classId)!;
+      } else if (s.class?.classCode && classGvcnMap.has(s.class.classCode.toLowerCase().trim())) {
+        homeroomTeacherName = classGvcnMap.get(s.class.classCode.toLowerCase().trim())!;
+      } else if (s.class?.className) {
+        const normC = normalizeClassKey(s.class.className);
+        if (classGvcnMap.has(normC)) {
+          homeroomTeacherName = classGvcnMap.get(normC)!;
+        } else if (classGvcnMap.has(s.class.className.toLowerCase().trim())) {
+          homeroomTeacherName = classGvcnMap.get(s.class.className.toLowerCase().trim())!;
+        }
+      }
 
-      const homeroomTeacherName = gvcnAssignment?.teacher?.teacherName || gvcnAssignment?.teacher?.fullName || "Chưa phân công";
+      if (!homeroomTeacherName) {
+        const gvcnAssignment = s.class?.teachers?.find((t: any) => 
+          t.roleInClass?.toUpperCase() === "HOMEROOM" || 
+          t.roleInClass?.toUpperCase() === "GVCN" || 
+          t.teacherId === s.class?.homeroomTeacherId
+        ) || s.class?.teachers?.[0];
+        homeroomTeacherName = gvcnAssignment?.teacher?.teacherName || gvcnAssignment?.teacher?.fullName || "Chưa phân công";
+      }
 
       return {
         id: s.id,
@@ -486,8 +562,12 @@ export async function GET(req: NextRequest) {
         
         // Exact structure expected by teacher tabs (profileData)
         student: s,
-        termScores: s.termScores || [],
-        termSummaries: s.termSummaries || [],
+        termScores: (s.termScores && s.termScores.length > 0) ? s.termScores : (crossScoreMap.get(studentCode)?.termScores || []),
+        termSummaries: (s.termSummaries && s.termSummaries.length > 0) ? s.termSummaries : (crossScoreMap.get(studentCode)?.termSummaries || []),
+        goals: (s.goals && s.goals.length > 0) ? s.goals : (crossScoreMap.get(studentCode)?.goals || []),
+        goalTrackings: (s.goalTrackings && s.goalTrackings.length > 0) ? s.goalTrackings : (crossScoreMap.get(studentCode)?.goalTrackings || []),
+        termEvaluations: (s.termEvaluations && s.termEvaluations.length > 0) ? s.termEvaluations : (crossScoreMap.get(studentCode)?.termEvaluations || []),
+        subjectGradeEntries: (s.subjectGradeEntries && s.subjectGradeEntries.length > 0) ? s.subjectGradeEntries : (crossScoreMap.get(studentCode)?.subjectGradeEntries || []),
         commitment: s.learningCommitments?.[0] || null,
         orientation: s.careerOrientations?.[0] || null,
         achievements: s.achievements || [],

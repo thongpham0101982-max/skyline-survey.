@@ -131,7 +131,8 @@ export async function GET(req: Request) {
         ...s,
         className: c.className,
         classCode: c.classCode,
-        educationSystem: c.educationSystem
+        educationSystem: c.educationSystem,
+        homeroomTeacherName: teacher.teacherName
       })))
 
       // Batch query to find if students were admitted via entrance survey
@@ -1093,12 +1094,38 @@ export async function GET(req: Request) {
             class: true,
             campus: true,
             academicYear: true,
+            parents: {
+              include: {
+                parent: true
+              }
+            },
             termScores: {
               include: {
                 subject: true
               }
             },
-            termSummaries: true
+            termSummaries: true,
+            subjectGradeEntries: {
+              include: {
+                subject: true
+              },
+              orderBy: { createdAt: "desc" }
+            },
+            goals: {
+              include: { actions: true },
+              orderBy: { createdAt: "desc" }
+            },
+            goalTrackings: {
+              orderBy: { createdAt: "desc" }
+            },
+            termEvaluations: {
+              orderBy: { createdAt: "desc" }
+            },
+            competencySummaries: {
+              include: {
+                subject: true
+              }
+            }
           }
         })
       } catch (err) {
@@ -1106,6 +1133,122 @@ export async function GET(req: Request) {
       }
 
       if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 })
+
+      // Aggregate real term scores, summaries and grade entries by studentCode across school years if current record is incomplete
+      if (student.studentCode) {
+        try {
+          const crossRecords = await prisma.student.findMany({
+            where: { studentCode: student.studentCode },
+            select: {
+              id: true,
+              termScores: { include: { subject: true } },
+              termSummaries: true,
+              subjectGradeEntries: { include: { subject: true }, orderBy: { createdAt: "desc" } },
+              goals: { include: { actions: true }, orderBy: { createdAt: "desc" } },
+              goalTrackings: { orderBy: { createdAt: "desc" } },
+              termEvaluations: { orderBy: { createdAt: "desc" } }
+            }
+          });
+          const allTs: any[] = [];
+          const allSm: any[] = [];
+          const allGe: any[] = [];
+          const allGoals: any[] = [];
+          const allGt: any[] = [];
+          const allTe: any[] = [];
+          const seenTsKey = new Set<string>();
+          const seenGeKey = new Set<string>();
+          const seenSmKey = new Set<string>();
+
+          for (const cr of crossRecords) {
+            (cr.termScores || []).forEach((ts: any) => {
+              const k = `${ts.subjectId || ts.subject?.subjectName}_${ts.semester}`;
+              if (!seenTsKey.has(k) && (ts.score !== null || ts.evaluationGrade !== null)) {
+                seenTsKey.add(k);
+                allTs.push(ts);
+              }
+            });
+            (cr.subjectGradeEntries || []).forEach((ge: any) => {
+              const k = `${ge.subjectId || ge.subject?.subjectName}_${ge.evaluationPeriod}`;
+              if (!seenGeKey.has(k) && ge.compositeScore !== null) {
+                seenGeKey.add(k);
+                allGe.push(ge);
+              }
+            });
+            (cr.termSummaries || []).forEach((sm: any) => {
+              const k = `${sm.semester}`;
+              if (!seenSmKey.has(k) && (sm.gpa !== null || sm.academicRating || sm.conductRating)) {
+                seenSmKey.add(k);
+                allSm.push(sm);
+              }
+            });
+            (cr.goals || []).forEach((g: any) => {
+              if (!allGoals.some((ex: any) => ex.id === g.id || (ex.category === g.category && ex.targetText === g.targetText))) allGoals.push(g);
+            });
+            (cr.goalTrackings || []).forEach((gt: any) => {
+              if (!allGt.some((ex: any) => ex.id === gt.id)) allGt.push(gt);
+            });
+            (cr.termEvaluations || []).forEach((te: any) => {
+              if (!allTe.some((ex: any) => ex.id === te.id || ex.term === te.term)) allTe.push(te);
+            });
+          }
+
+          if (allTs.length > 0) student.termScores = allTs;
+          if (allGe.length > 0) student.subjectGradeEntries = allGe;
+          if (allSm.length > 0) student.termSummaries = allSm;
+          if (allGoals.length > 0 && (!student.goals || student.goals.length === 0)) student.goals = allGoals;
+          if (allGt.length > 0 && (!student.goalTrackings || student.goalTrackings.length === 0)) student.goalTrackings = allGt;
+          if (allTe.length > 0 && (!student.termEvaluations || student.termEvaluations.length === 0)) student.termEvaluations = allTe;
+        } catch (crErr) {
+          console.error("Error aggregating cross-record scores for studentCode:", crErr);
+        }
+      }
+
+      // Cascade resolve accurate Homeroom Teacher (GVCN)
+      let resolvedHomeroomTeacherName = "Chưa phân công"
+      try {
+        if (student.class?.homeroomTeacherId) {
+          const hrTeacher = await prisma.teacher.findFirst({
+            where: {
+              OR: [
+                { id: student.class.homeroomTeacherId },
+                { userId: student.class.homeroomTeacherId }
+              ]
+            },
+            select: { teacherName: true }
+          })
+          if (hrTeacher?.teacherName) {
+            resolvedHomeroomTeacherName = hrTeacher.teacherName
+          }
+        }
+        if (resolvedHomeroomTeacherName === "Chưa phân công" && student.classId) {
+          const tca = await prisma.teacherClassAssignment.findFirst({
+            where: {
+              classId: student.classId,
+              OR: [
+                { roleInClass: "HOMEROOM" },
+                { roleInClass: "GVCN" },
+                { roleInClass: { contains: "chủ nhiệm" } }
+              ]
+            },
+            include: { teacher: { select: { teacherName: true } } }
+          })
+          if (tca?.teacher?.teacherName) {
+            resolvedHomeroomTeacherName = tca.teacher.teacherName
+          }
+        }
+        if (resolvedHomeroomTeacherName === "Chưa phân công" && student.class?.className) {
+          const hrCls = await prisma.teacher.findFirst({
+            where: { homeroomClass: { contains: student.class.className } },
+            select: { teacherName: true }
+          })
+          if (hrCls?.teacherName) {
+            resolvedHomeroomTeacherName = hrCls.teacherName
+          }
+        }
+      } catch (e) {
+        console.error("Error resolving homeroom teacher name:", e)
+      }
+      student.homeroomTeacherName = resolvedHomeroomTeacherName
 
       // Default safe fallback structure
       const fallbackProfile = {
@@ -1543,8 +1686,12 @@ export async function GET(req: Request) {
 
         return NextResponse.json({
           student,
+          homeroomTeacherName: resolvedHomeroomTeacherName,
           termScores: student?.termScores || [],
           termSummaries: student?.termSummaries || [],
+          subjectGradeEntries: student?.subjectGradeEntries || [],
+          goals: student?.goals || [],
+          competencySummaries: student?.competencySummaries || [],
           achievements: achievements || [],
           orientation: orientation || null,
           projects: projects || [],
@@ -1632,6 +1779,29 @@ export async function GET(req: Request) {
           }
         },
           projectExperiences: true,
+          termScores: {
+            include: {
+              subject: true
+            }
+          },
+          termSummaries: true,
+          competencySummaries: { include: { subject: true } },
+          goals: {
+            include: { actions: true },
+            orderBy: { createdAt: "desc" }
+          },
+          goalTrackings: {
+            orderBy: { createdAt: "desc" }
+          },
+          termEvaluations: {
+            orderBy: { createdAt: "desc" }
+          },
+          subjectGradeEntries: {
+            include: {
+              subject: true
+            },
+            orderBy: { createdAt: "desc" }
+          },
           learningSupportTargets: {
             include: {
               assignments: {
@@ -1702,6 +1872,65 @@ export async function GET(req: Request) {
       // Fetch all activity participants for these students
       const studentIds = students.map(s => s.id)
       const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+
+      // Pre-aggregate cross-record scores, summaries & grade entries by studentCode
+      const crossScoreMap = new Map<string, { termScores: any[]; termSummaries: any[]; subjectGradeEntries: any[]; goals: any[]; goalTrackings: any[]; termEvaluations: any[] }>();
+      if (studentCodes.length > 0) {
+        try {
+          const crossRecs = await prisma.student.findMany({
+            where: { studentCode: { in: studentCodes } },
+            select: {
+              studentCode: true,
+              termScores: { include: { subject: true } },
+              termSummaries: true,
+              subjectGradeEntries: { include: { subject: true }, orderBy: { createdAt: "desc" } },
+              goals: { include: { actions: true }, orderBy: { createdAt: "desc" } },
+              goalTrackings: { orderBy: { createdAt: "desc" } },
+              termEvaluations: { orderBy: { createdAt: "desc" } }
+            }
+          });
+          for (const cr of crossRecs) {
+            if (!crossScoreMap.has(cr.studentCode)) {
+              crossScoreMap.set(cr.studentCode, { termScores: [], termSummaries: [], subjectGradeEntries: [], goals: [], goalTrackings: [], termEvaluations: [] });
+            }
+            const b = crossScoreMap.get(cr.studentCode)!;
+            (cr.termScores || []).forEach((ts: any) => {
+              if (ts.score !== null || ts.evaluationGrade !== null) {
+                const k = `${ts.subjectId || ts.subject?.subjectName}_${ts.semester}`;
+                if (!b.termScores.some(existing => `${existing.subjectId || existing.subject?.subjectName}_${existing.semester}` === k)) {
+                  b.termScores.push(ts);
+                }
+              }
+            });
+            (cr.termSummaries || []).forEach((sm: any) => {
+              if (sm.gpa !== null || sm.academicRating || sm.conductRating) {
+                if (!b.termSummaries.some(existing => existing.semester === sm.semester)) {
+                  b.termSummaries.push(sm);
+                }
+              }
+            });
+            (cr.subjectGradeEntries || []).forEach((ge: any) => {
+              if (ge.compositeScore !== null) {
+                const k = `${ge.subjectId || ge.subject?.subjectName}_${ge.evaluationPeriod}`;
+                if (!b.subjectGradeEntries.some(existing => `${existing.subjectId || existing.subject?.subjectName}_${existing.evaluationPeriod}` === k)) {
+                  b.subjectGradeEntries.push(ge);
+                }
+              }
+            });
+            (cr.goals || []).forEach((g: any) => {
+              if (!b.goals.some((ex: any) => ex.id === g.id || (ex.category === g.category && ex.targetText === g.targetText))) b.goals.push(g);
+            });
+            (cr.goalTrackings || []).forEach((gt: any) => {
+              if (!b.goalTrackings.some((ex: any) => ex.id === gt.id)) b.goalTrackings.push(gt);
+            });
+            (cr.termEvaluations || []).forEach((te: any) => {
+              if (!b.termEvaluations.some((ex: any) => ex.id === te.id || ex.term === te.term)) b.termEvaluations.push(te);
+            });
+          }
+        } catch (crErr) {
+          console.error("Error pre-aggregating cross scores in getProfiles:", crErr);
+        }
+      }
 
       const allParticipants = await prisma.activityParticipant.findMany({
         where: {
@@ -1996,7 +2225,14 @@ export async function GET(req: Request) {
           writtenEnglishScore,
           oralEnglishScore,
           devAssessment,
-          probationaryComment
+          probationaryComment,
+          termScores: (s.termScores && s.termScores.length > 0) ? s.termScores : (crossScoreMap.get(studentCode)?.termScores || []),
+          termSummaries: (s.termSummaries && s.termSummaries.length > 0) ? s.termSummaries : (crossScoreMap.get(studentCode)?.termSummaries || []),
+          subjectGradeEntries: (s.subjectGradeEntries && s.subjectGradeEntries.length > 0) ? s.subjectGradeEntries : (crossScoreMap.get(studentCode)?.subjectGradeEntries || []),
+          competencySummaries: s.competencySummaries || [],
+          goals: (s.goals && s.goals.length > 0) ? s.goals : (crossScoreMap.get(studentCode)?.goals || []),
+          goalTrackings: (s.goalTrackings && s.goalTrackings.length > 0) ? s.goalTrackings : (crossScoreMap.get(studentCode)?.goalTrackings || []),
+          termEvaluations: (s.termEvaluations && s.termEvaluations.length > 0) ? s.termEvaluations : (crossScoreMap.get(studentCode)?.termEvaluations || [])
         }
       })
 

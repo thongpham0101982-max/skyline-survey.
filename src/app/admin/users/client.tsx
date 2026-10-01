@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { Plus, Edit2, Trash2, CheckCircle2, X, Filter, Search, RefreshCw } from "lucide-react"
+import { Plus, Edit2, Trash2, CheckCircle2, X, Filter, Search, RefreshCw, Lock, Unlock, ShieldAlert } from "lucide-react"
 
 const cleanStr = (s) => 
   (s || "")
@@ -9,7 +9,7 @@ const cleanStr = (s) =>
    .replace(/[\u0300-\u036f]/g, "")
    .replace(/đ/g, "d")
    .replace(/Đ/g, "d");
-import { createUser, updateUser, deleteUser, deleteUsers, changeUserRoles } from "./actions"
+import { createUser, updateUser, deleteUser, deleteUsers, changeUserRoles, toggleUserStatus, bulkUpdateUserStatus } from "./actions"
 
 export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked = false, defaultCampusId = null }: any) {
   const [users, setUsers] = useState(initialUsers || []);
@@ -18,11 +18,13 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   const [loading, setLoading] = useState(false);
   const [filterRole, setFilterRole] = useState("ALL");
   const [filterCampus, setFilterCampus] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState("ALL");
   const [search, setSearch] = useState("");
   
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
   const [moving, setMoving] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -30,12 +32,40 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   const handleReset = () => {
     setFilterRole("ALL");
     setFilterCampus("ALL");
+    setFilterStatus("ALL");
     setSearch("");
   };
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterRole, filterCampus, search]);
+  }, [filterRole, filterCampus, filterStatus, search]);
+
+  const handleToggleStatus = async (id: string, targetStatus: "ACTIVE" | "LOCKED", name: string) => {
+    const actionLabel = targetStatus === "LOCKED" ? "KHÓA" : "MỞ KHÓA";
+    if (!confirm(`Bạn có chắc chắn muốn ${actionLabel} tài khoản của ${name}?`)) return;
+    setStatusUpdating(true);
+    const res = await toggleUserStatus(id, targetStatus);
+    if (res.success) {
+      setUsers(users.map((u: any) => u.id === id ? { ...u, status: targetStatus } : u));
+    } else {
+      alert("Lỗi: " + (res.error || "Không thể cập nhật trạng thái"));
+    }
+    setStatusUpdating(false);
+  }
+
+  const handleBulkStatus = async (targetStatus: "ACTIVE" | "LOCKED") => {
+    const actionLabel = targetStatus === "LOCKED" ? "KHÓA" : "MỞ KHÓA";
+    if (!confirm(`Bạn có chắc chắn muốn ${actionLabel} ${selectedIds.length} tài khoản đang chọn?`)) return;
+    setStatusUpdating(true);
+    const res = await bulkUpdateUserStatus(selectedIds, targetStatus);
+    if (res.success) {
+      setUsers(users.map((u: any) => selectedIds.includes(u.id) ? { ...u, status: targetStatus } : u));
+      alert(`Đã ${actionLabel.toLowerCase()} thành công ${selectedIds.length} tài khoản!`);
+    } else {
+      alert("Lỗi: " + (res.error || "Không thể cập nhật trạng thái hàng loạt"));
+    }
+    setStatusUpdating(false);
+  }
 
   const handleMoveGroup = async (newRoleCode: string) => {
     const roleName = roles.find((r: any) => r.code === newRoleCode)?.name || newRoleCode;
@@ -111,6 +141,11 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   const displayedUsers = users.filter((u: any) => {
     const roleMatch = filterRole === "ALL" || u.role === filterRole;
     if (!roleMatch) return false;
+
+    if (filterStatus !== "ALL") {
+      const uStatus = u.status || "ACTIVE";
+      if (uStatus !== filterStatus) return false;
+    }
     
     if (filterCampus !== "ALL") {
        if (!u.campusIds || u.campusIds.length === 0) return false;
@@ -140,7 +175,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <Filter className="w-4 h-4 text-[#48BFE3]" />
             Bộ lọc & Tìm kiếm nhanh
           </div>
-          {(filterRole !== "ALL" || filterCampus !== "ALL" || search) && (
+          {(filterRole !== "ALL" || filterCampus !== "ALL" || filterStatus !== "ALL" || search) && (
             <button 
               onClick={handleReset} 
               className="text-xs font-bold text-slate-500 hover:text-[#48BFE3] transition-colors flex items-center gap-1 cursor-pointer"
@@ -150,7 +185,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search Input */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -185,6 +220,19 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             </select>
           </div>
 
+          {/* Status Dropdown */}
+          <div className="relative">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white transition-all font-bold cursor-pointer text-slate-700"
+            >
+              <option value="ALL">-- Tất cả Trạng thái --</option>
+              <option value="ACTIVE">🟢 Đang hoạt động (ACTIVE)</option>
+              <option value="LOCKED">🔴 Đã khóa (LOCKED)</option>
+            </select>
+          </div>
+
           {/* Campus Dropdown */}
           {!isCampusLocked && (
             <div className="relative">
@@ -203,13 +251,19 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
         </div>
 
         {/* Selected Filter Badges */}
-        {(filterRole !== "ALL" || filterCampus !== "ALL" || search) && (
+        {(filterRole !== "ALL" || filterCampus !== "ALL" || filterStatus !== "ALL" || search) && (
           <div className="flex items-center gap-2 flex-wrap pt-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Đang lọc:</span>
             {filterRole !== "ALL" && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20">
                 Nhóm: {roles.find((r: any) => r.code === filterRole)?.name}
                 <button onClick={() => setFilterRole("ALL")} className="hover:text-red-500 ml-0.5"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+            {filterStatus !== "ALL" && (
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${filterStatus === 'LOCKED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                Trạng thái: {filterStatus === 'LOCKED' ? 'Đã khóa' : 'Đang hoạt động'}
+                <button onClick={() => setFilterStatus("ALL")} className="hover:text-red-500 ml-0.5"><X className="w-3.5 h-3.5" /></button>
               </span>
             )}
             {filterCampus !== "ALL" && (
@@ -228,24 +282,41 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
         )}
       </div>
       
-            <div className="bg-white rounded-2xl shadow-sm border-2 border-amber-100">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
         <div className="p-4 flex justify-between items-center text-xs font-semibold">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
              <h3 className="font-bold text-slate-700">Danh sách Tài khoản ({displayedUsers.length})</h3>
              {selectedIds.length > 0 && (
-               <div className="flex items-center gap-2.5 flex-wrap">
-                 <button onClick={handleDeleteMultiple} disabled={deleting || moving}
-                   className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-100 font-semibold text-sm cursor-pointer transition-all text-xs font-semibold">
-                   <Trash2 className="w-4 h-4 mr-2" /> {deleting ? "Đang xóa..." : `Xóa ${selectedIds.length} tài khoản`}
+               <div className="flex items-center gap-2 flex-wrap">
+                 <button onClick={handleDeleteMultiple} disabled={deleting || moving || statusUpdating}
+                   className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-xs py-1.5 px-2.5 rounded-lg border border-red-200 cursor-pointer transition-all">
+                   <Trash2 className="w-3.5 h-3.5 mr-1" /> {deleting ? "Đang xóa..." : `Xóa (${selectedIds.length})`}
                  </button>
+
+                 <button 
+                   onClick={() => handleBulkStatus("LOCKED")} 
+                   disabled={deleting || moving || statusUpdating}
+                   className="flex items-center bg-rose-600 hover:bg-rose-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm"
+                 >
+                   <Lock className="w-3.5 h-3.5 mr-1.5" /> {statusUpdating ? "Đang xử lý..." : `Khóa (${selectedIds.length})`}
+                 </button>
+
+                 <button 
+                   onClick={() => handleBulkStatus("ACTIVE")} 
+                   disabled={deleting || moving || statusUpdating}
+                   className="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm"
+                 >
+                   <Unlock className="w-3.5 h-3.5 mr-1.5" /> {statusUpdating ? "Đang xử lý..." : `Mở khóa (${selectedIds.length})`}
+                 </button>
+
                  <select
                    onChange={(e) => {
                      const val = e.target.value;
                      if (val) handleMoveGroup(val);
                      e.target.value = "";
                    }}
-                   disabled={deleting || moving}
-                   className="p-1.5 rounded-md border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#48BFE3]"
+                   disabled={deleting || moving || statusUpdating}
+                   className="p-1.5 rounded-lg border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#48BFE3]"
                  >
                    <option value="">-- Chuyển sang Nhóm --</option>
                    {roles.map((r) => (
@@ -255,10 +326,10 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                  {filterRole !== "ALL" && (
                    <button
                      onClick={() => handleMoveGroup(filterRole)}
-                     disabled={moving}
-                     className="flex items-center bg-[#48BFE3] text-white hover:bg-[#009085] font-semibold py-1.5 px-3 rounded-md text-sm cursor-pointer transition-all shadow-sm"
+                     disabled={moving || statusUpdating}
+                     className="flex items-center bg-[#48BFE3] text-white hover:bg-[#009085] font-semibold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm"
                    >
-                     <CheckCircle2 className="w-4 h-4 mr-1.5" /> Chuyển {selectedIds.length} tài khoản sang nhóm {roles.find((r) => r.code === filterRole)?.name}
+                     <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Chuyển sang {roles.find((r) => r.code === filterRole)?.name}
                    </button>
                  )}
                </div>
@@ -283,6 +354,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                 <th className="p-2 p-2 border border-slate-200">Mã NV / Tên ĐN</th>
                 <th className="p-2 p-2 border border-slate-200">Họ và Tên</th>
                 <th className="p-2 p-2 border border-slate-200">Nhóm Quyền</th>
+                <th className="p-2 p-2 border border-slate-200 text-center w-36">Trạng thái</th>
                 <th className="px-6 py-3 border-l border-slate-200">Mật khẩu</th>
                 <th className="p-2 p-2 text-right border border-slate-200">Thao tác</th>
               </tr>
@@ -311,6 +383,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                       </div>
                     )}
                   </td>
+                  <td className="p-2 p-2 border border-slate-200"></td>
 
                   <td className="px-6 py-3 border-l border-slate-200"><input type="password" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} placeholder="(Bỏ trống nếu giữ nguyên)" className="w-48 p-1.5 rounded border text-sm border-slate-300" /></td>
                   <td className="p-2 p-2 text-right border border-slate-200">
@@ -348,10 +421,43 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                     </div>
                   </td>
 
+                  <td className="p-2 p-2 border border-slate-200 text-center">
+                    {u.status === "LOCKED" ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                        Đã khóa
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Hoạt động
+                      </span>
+                    )}
+                  </td>
+
                   <td className="px-6 py-3 border-l border-slate-200 text-xs text-slate-400 italic">*** (Đã mã hóa)</td>
                   <td className="p-2 p-2 text-right border border-slate-200">
-                    <button onClick={() => startEdit(u)} className="p-2 text-slate-400 hover:text-[#48BFE3] rounded-lg"><Edit2 className="w-4 h-4"/></button>
-                    <button onClick={() => handleDelete(u.id, u.fullName)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg"><Trash2 className="w-4 h-4"/></button>
+                    {u.status === "LOCKED" ? (
+                      <button 
+                        title="Mở khóa tài khoản này" 
+                        onClick={() => handleToggleStatus(u.id, "ACTIVE", u.fullName)} 
+                        disabled={statusUpdating}
+                        className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors inline-flex items-center mr-1 cursor-pointer"
+                      >
+                        <Unlock className="w-4 h-4"/>
+                      </button>
+                    ) : (
+                      <button 
+                        title="Khóa tài khoản này" 
+                        onClick={() => handleToggleStatus(u.id, "LOCKED", u.fullName)} 
+                        disabled={statusUpdating}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center mr-1 cursor-pointer"
+                      >
+                        <Lock className="w-4 h-4"/>
+                      </button>
+                    )}
+                    <button title="Chỉnh sửa thông tin" onClick={() => startEdit(u)} className="p-1.5 text-slate-400 hover:text-[#48BFE3] rounded-lg transition-colors inline-flex items-center mr-1 cursor-pointer"><Edit2 className="w-4 h-4"/></button>
+                    <button title="Xóa tài khoản" onClick={() => handleDelete(u.id, u.fullName)} className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg transition-colors inline-flex items-center cursor-pointer"><Trash2 className="w-4 h-4"/></button>
                   </td>
                 </tr>
               ))}

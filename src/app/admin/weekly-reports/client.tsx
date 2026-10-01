@@ -661,7 +661,7 @@ export function WeeklyReportClient({
     const res = await sendWeeklyReportEmailReminders(selectedWeek, month, year, staffUserId)
     setRemindingUserId(null)
     if (res.success) {
-      setToastMsg({ msg: `🔔 Đã gửi nhắc nộp báo cáo tuần cho ${staffName}!`, type: "success" })
+      setToastMsg({ msg: `🔔 Đã gửi thông báo hệ thống nhắc nộp báo cáo cho ${staffName}!`, type: "success" })
       setTimeout(() => setToastMsg(null), 3500)
     } else {
       alert("Lỗi: " + res.error)
@@ -674,7 +674,7 @@ export function WeeklyReportClient({
     setReminding(false)
     if (res.success) {
       setToastMsg({ 
-        msg: `🔔 Đã gửi nhắc nộp báo cáo cho ${res.remindedCount} nhân sự chưa nộp!`, 
+        msg: `🔔 Đã gửi thông báo hệ thống nhắc nộp báo cáo cho ${res.remindedCount} nhân sự chưa nộp!`, 
         type: "success" 
       })
       setTimeout(() => setToastMsg(null), 4000)
@@ -1207,7 +1207,7 @@ export function WeeklyReportClient({
                     onClick={() => handleRemindSingleStaff(selectedStaffForModal.userId, selectedStaffForModal.fullName)}
                     className="mt-4 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-sm"
                   >
-                    <Bell className="w-4 h-4" /> Gửi nhắc nhở ngay
+                    <Bell className="w-4 h-4" /> Gửi thông báo nhắc nhở
                   </button>
                 </div>
               )}
@@ -1303,7 +1303,7 @@ export function WeeklyReportClient({
               className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white px-4 py-2.5 rounded-xl transition-all shadow-sm font-bold text-xs"
             >
               <Bell className="w-4 h-4" /> 
-              {reminding ? "Đang gửi nhắc nhở..." : `Nhắc nộp báo cáo (${cardsSummary.pendingCount} chưa nộp)`}
+              {reminding ? "Đang gửi thông báo..." : `Nhắc nộp báo cáo (${cardsSummary.pendingCount} chưa nộp)`}
             </button>
           )}
 
@@ -1906,7 +1906,7 @@ export function WeeklyReportClient({
                               onClick={() => handleRemindSingleStaff(card.userId, card.fullName)}
                               disabled={remindingUserId === card.userId}
                               className="py-1.5 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 rounded-xl font-bold text-xs flex items-center gap-1 transition-all"
-                              title="Gửi nhắc nộp báo cáo riêng cho nhân sự này"
+                              title="Gửi thông báo nhắc nộp báo cáo trong hệ thống cho nhân sự này"
                             >
                               <Bell className="w-3.5 h-3.5" /> 
                               {remindingUserId === card.userId ? "..." : "Nhắc"}

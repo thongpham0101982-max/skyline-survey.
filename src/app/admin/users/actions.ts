@@ -242,3 +242,63 @@ export async function changeUserRoles(userIds: string[], targetRoleCode: string)
     return { success: false, error: "Đã xảy ra lỗi hệ thống khi thay đổi vai trò tài khoản." };
   }
 }
+
+export async function toggleUserStatus(id: string, newStatus: "ACTIVE" | "LOCKED") {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    return { success: false, error: "Forbidden: Bạn không có quyền thực hiện hành động này." };
+  }
+  try {
+    await prisma.user.update({
+      where: { id },
+      data: { status: newStatus }
+    });
+    await prisma.parent.updateMany({
+      where: { userId: id },
+      data: { status: newStatus }
+    });
+    await prisma.teacher.updateMany({
+      where: { userId: id },
+      data: { status: newStatus }
+    });
+
+    revalidatePath("/admin/users");
+    revalidatePath("/admin/parents");
+    revalidatePath("/admin/teachers");
+    return { success: true };
+  } catch (e: any) {
+    console.error("Error in toggleUserStatus:", e);
+    return { success: false, error: e.message || "Lỗi khi cập nhật trạng thái tài khoản." };
+  }
+}
+
+export async function bulkUpdateUserStatus(ids: string[], newStatus: "ACTIVE" | "LOCKED") {
+  const session = await getAdminSession();
+  if (!session.userId || !session.isFullAccess) {
+    return { success: false, error: "Forbidden: Bạn không có quyền thực hiện hành động này." };
+  }
+  if (!ids || ids.length === 0) return { success: true };
+  try {
+    await prisma.user.updateMany({
+      where: { id: { in: ids } },
+      data: { status: newStatus }
+    });
+    await prisma.parent.updateMany({
+      where: { userId: { in: ids } },
+      data: { status: newStatus }
+    });
+    await prisma.teacher.updateMany({
+      where: { userId: { in: ids } },
+      data: { status: newStatus }
+    });
+
+    revalidatePath("/admin/users");
+    revalidatePath("/admin/parents");
+    revalidatePath("/admin/teachers");
+    return { success: true, count: ids.length };
+  } catch (e: any) {
+    console.error("Error in bulkUpdateUserStatus:", e);
+    return { success: false, error: e.message || "Lỗi khi cập nhật trạng thái hàng loạt." };
+  }
+}
+

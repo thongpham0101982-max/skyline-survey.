@@ -1344,59 +1344,226 @@ export function StudentProfilesAdminClient({
                                 return (
                                   <div className="space-y-7">
                                     {/* SECTION II: CỐ VẤN HỌC TẬP & NHẬT KÝ THEO DÕI MỤC TIÊU */}
-                                    <div className="space-y-3">
-                                      <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                                        <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-                                        <Compass className="w-4 h-4 text-indigo-500" />
-                                        II. CỐ VẤN HỌC TẬP &amp; NHẬT KÝ THEO DÕI MỤC TIÊU
-                                      </h3>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {/* Lời cam kết & Xác nhận của Học sinh */}
-                                        <div className="bg-indigo-50/40 border border-indigo-100 p-4 rounded-2xl space-y-2">
-                                          <div className="flex items-center justify-between">
-                                            <h4 className="text-[11px] font-black text-indigo-900 uppercase tracking-wider">Lời cam kết &amp; Xác nhận của Học sinh</h4>
-                                            <span className="text-[9px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">Đã cam kết</span>
-                                          </div>
-                                          <p className="text-xs text-slate-700 font-medium italic leading-relaxed">
-                                            "{selectedStudent?.commitment?.content || selectedStudent?.learningCommitments?.[0]?.content || 'Học sinh cam kết chủ động xây dựng kế hoạch tự học, chấp hành nội quy nhà trường, tích cực tham gia các hoạt động ngoại khóa và phấn đấu hoàn thành xuất sắc các mục tiêu học tập đề ra.'}"
-                                          </p>
-                                          <div className="text-[10px] text-slate-400 font-semibold pt-1 border-t border-indigo-100/60 flex justify-between">
-                                            <span>Xác nhận: {selectedStudent?.studentName}</span>
-                                            <span>Năm học: {selectedStudent?.yearName || '2025-2026'}</span>
-                                          </div>
-                                        </div>
+            {(() => {
+              const goals = (selectedStudent?.goals || []);
+              const trackings = (selectedStudent?.goalTrackings || []);
+              const evaluations = (selectedStudent?.termEvaluations || []);
+              const evalItem = evaluations[0] || null;
 
-                                        {/* KẾT QUẢ ĐÁNH GIÁ TỔNG THỂ THEO TRỌNG SỐ */}
-                                        <div className="bg-teal-50/40 border border-teal-150 p-4 rounded-2xl space-y-2.5">
-                                          <div className="flex items-center justify-between">
-                                            <h4 className="text-[11px] font-black text-[#003B3A] uppercase tracking-wider">Kết quả Đánh giá Tổng thể theo Trọng số</h4>
-                                            <span className="text-[10px] font-black text-teal-800 bg-teal-100 px-2 py-0.5 rounded-full">Chuẩn Sky-Line</span>
-                                          </div>
-                                          <div className="space-y-1.5 text-xs text-slate-700">
-                                            <div className="flex justify-between items-center py-1 border-b border-teal-100/70">
-                                              <span>Khối Văn hóa MOET (Trọng số 40%):</span>
-                                              <span className="font-black text-teal-800">
-                                                {sumCN?.gpa ? `${sumCN.gpa} / 10 (Đạt)` : sumHK1?.gpa ? `${sumHK1.gpa} / 10 (Đạt)` : "Tốt (40%)"}
-                                              </span>
-                                            </div>
-                                            <div className="flex justify-between items-center py-1 border-b border-teal-100/70">
-                                              <span>Chương trình Song ngữ &amp; Ngoại ngữ (Trọng số 30%):</span>
-                                              <span className="font-black text-teal-800">Xuất sắc (30%)</span>
-                                            </div>
-                                            <div className="flex justify-between items-center py-1 border-b border-teal-100/70">
-                                              <span>Hoạt động Trải nghiệm &amp; Dự án (Trọng số 20%):</span>
-                                              <span className="font-black text-teal-800">Hoàn thành (20%)</span>
-                                            </div>
-                                            <div className="flex justify-between items-center py-1">
-                                              <span>Rèn luyện, Kỷ luật &amp; Phẩm chất (Trọng số 10%):</span>
-                                              <span className="font-black text-teal-800">
-                                                {sumCN?.conductRating || sumHK1?.conductRating || "Tốt"} (10%)
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
+              const gradeLevel = String(selectedStudent?.className || selectedStudent?.grade || "").toUpperCase();
+              const isSecondaryOrHigh = !gradeLevel.match(/^(?:LỚP\s*)?[1-5][A-Z\.]/i) && !gradeLevel.includes("KHỐI 1") && !gradeLevel.includes("KHỐI 2") && !gradeLevel.includes("KHỐI 3") && !gradeLevel.includes("KHỐI 4") && !gradeLevel.includes("KHỐI 5");
+
+              const categories = isSecondaryOrHigh ? [
+                { key: "HOC_TAP", label: "1. Mục tiêu học tập", weight: 50 },
+                { key: "THOI_QUEN", label: "2. Mục tiêu thói quen", weight: 15 },
+                { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng & Cảm xúc", weight: 15 },
+                { key: "DINH_HUONG", label: "4. Mục tiêu định hướng & Hướng nghiệp", weight: 20 }
+              ] : [
+                { key: "HOC_TAP", label: "1. Mục tiêu học tập", weight: 50 },
+                { key: "SUC_KHOE", label: "2. Mục tiêu sức khỏe & Thói quen", weight: 20 },
+                { key: "SO_THICH", label: "3. Mục tiêu sở thích & Năng khiếu", weight: 15 },
+                { key: "PHAM_CHAT", label: "4. Mục tiêu phẩm chất & Đạo đức", weight: 15 }
+              ];
+
+              const advisoryRows = [];
+              categories.forEach(cat => {
+                const matchedGoals = goals.filter((g) => {
+                  const gc = String(g.category || "").toUpperCase();
+                  if (cat.key === "HOC_TAP" && (gc.includes("HOC_TAP") || gc.includes("HỌC TẬP"))) return true;
+                  if (cat.key === "THOI_QUEN" && (gc.includes("THOI_QUEN") || gc.includes("THÓI QUEN") || gc.includes("SUC_KHOE"))) return true;
+                  if (cat.key === "KY_NANG_CAM_XUC" && (gc.includes("KY_NANG") || gc.includes("KỸ NĂNG") || gc.includes("CAM_XUC") || gc.includes("CẢM XÚC") || gc.includes("SO_THICH"))) return true;
+                  if (cat.key === "DINH_HUONG" && (gc.includes("DINH_HUONG") || gc.includes("ĐỊNH HƯỚNG") || gc.includes("HUONG_NGHIEP") || gc.includes("PHAM_CHAT"))) return true;
+                  return false;
+                });
+
+                if (matchedGoals.length === 0) {
+                  advisoryRows.push({
+                    catKey: cat.key,
+                    catLabel: cat.label,
+                    weight: cat.weight,
+                    isFirstInCat: true,
+                    totalInCat: 1,
+                    subIndex: 1,
+                    targetText: "Em chưa điền nội dung mục tiêu nhóm này",
+                    actionText: "",
+                    progressStatus: "CHUA_DANH_GIA",
+                    goalCompletionLevel: evalItem?.goalCompletionLevel || null,
+                    initiativeLevel: evalItem?.initiativeLevel || null,
+                    participationAttitude: evalItem?.participationAttitude || null,
+                    recommendations: evalItem?.recommendations || ""
+                  });
+                } else {
+                  matchedGoals.forEach((g, idx) => {
+                    const tracking = trackings.find((t) =>
+                      (t.goalId && t.goalId === g.id) ||
+                      (t.targetText && g.targetText && t.targetText.trim() === g.targetText.trim()) ||
+                      (t.category && String(t.category).includes(cat.label))
+                    );
+                    const actionText = g.actions?.[0]?.actionText || "";
+                    advisoryRows.push({
+                      catKey: cat.key,
+                      catLabel: cat.label,
+                      weight: cat.weight,
+                      isFirstInCat: idx === 0,
+                      totalInCat: matchedGoals.length,
+                      subIndex: idx + 1,
+                      targetText: g.targetText,
+                      actionText,
+                      progressStatus: tracking?.progressStatus || "TIEN_TRIEN",
+                      teacherNotes: tracking?.teacherNotes || "",
+                      goalCompletionLevel: evalItem?.goalCompletionLevel || null,
+                      initiativeLevel: evalItem?.initiativeLevel || null,
+                      participationAttitude: evalItem?.participationAttitude || null,
+                      recommendations: tracking?.teacherNotes || evalItem?.recommendations || ""
+                    });
+                  });
+                }
+              });
+
+              const renderProgressBadge = (status) => {
+                const s = String(status || "").toUpperCase();
+                if (s === "DAT" || s === "HOAN_THANH") {
+                  return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-900 border border-emerald-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      <span>Đạt (100%)</span>
+                    </span>
+                  );
+                }
+                if (s === "TIEN_TRIEN") {
+                  return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-100 text-amber-900 border border-amber-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      <span>Tiến triển (50%)</span>
+                    </span>
+                  );
+                }
+                if (s === "CAN_CO_GANG") {
+                  return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-orange-100 text-orange-900 border border-orange-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                      <span>Cần cố gắng (25%)</span>
+                    </span>
+                  );
+                }
+                if (s === "CHUA_DAT") {
+                  return (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-100 text-rose-900 border border-rose-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      <span>Chưa đạt</span>
+                    </span>
+                  );
+                }
+                return (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                    <span>Chưa đánh giá</span>
+                  </span>
+                );
+              };
+
+              return (
+                <div className="space-y-3 print-section-avoid">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                    <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                      <Compass className="w-4 h-4 text-indigo-500" />
+                      <span>II. CỐ VẤN HỌC TẬP &amp; NHẬT KÝ THEO DÕI MỤC TIÊU</span>
+                    </h3>
+                    <span className="text-[9px] font-bold text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">
+                      Phiếu Đánh Giá Kỳ Cố Vấn Học Tập
+                    </span>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead className="bg-slate-100 text-[9px] font-black text-slate-700 uppercase tracking-wider border-b border-slate-200">
+                        <tr>
+                          <th className="py-2 px-2.5 border-r border-slate-200 w-[180px]">Nhóm mục tiêu (Trọng số)</th>
+                          <th className="py-2 px-2.5 border-r border-slate-200 min-w-[220px]">Mục tiêu cụ thể</th>
+                          <th className="py-2 px-2 text-center border-r border-slate-200 w-[115px]">Kết quả theo dõi</th>
+                          <th className="py-2 px-1.5 text-center border-r border-slate-200 w-[90px]">Mức hoàn thành MT (1-5)</th>
+                          <th className="py-2 px-1.5 text-center border-r border-slate-200 w-[90px]">Mức độ chủ động (1-5)</th>
+                          <th className="py-2 px-2 text-center w-[110px]">Thái độ tham gia (1-5)</th>
+                          
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700 text-xs">
+                        {advisoryRows.map((r, rIdx) => (
+                          <tr key={rIdx} className="hover:bg-slate-50/50">
+                            {r.isFirstInCat && (
+                              <td
+                                rowSpan={r.totalInCat}
+                                className="py-2.5 px-2.5 border-r border-slate-200 align-top bg-slate-50/60"
+                              >
+                                <div className="space-y-1.5">
+                                  <span className="inline-block px-2 py-0.5 rounded text-[11px] font-black bg-teal-100 text-teal-900 border border-teal-200 leading-tight">
+                                    {r.catLabel}
+                                  </span>
+                                  <div>
+                                    <span className="inline-block px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[9px] font-black border border-amber-300">
+                                      Trọng số: {r.weight}%
+                                    </span>
+                                    <p className="text-[9px] text-slate-400 font-medium mt-0.5">
+                                      ({r.totalInCat} mục tiêu nhỏ)
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                            )}
+                            <td className="py-2 px-2.5 border-r border-slate-200 align-top">
+                              <div className="space-y-1">
+                                <span className="inline-block px-2 py-0.5 rounded bg-[#003B3A] text-white text-[9px] font-black">
+                                  #{r.subIndex} MỤC TIÊU CỤ THỂ #{r.subIndex}
+                                </span>
+                                <p className="text-[11px] font-bold text-slate-900 leading-snug p-2 bg-slate-50 rounded-lg border border-slate-200 whitespace-pre-wrap">
+                                  {r.targetText || "Em chưa điền nội dung mục tiêu nhóm này"}
+                                </p>
+                                {r.actionText ? (
+                                  <p className="text-[10px] font-semibold text-amber-900 bg-amber-50/70 p-1.5 rounded border border-amber-200 whitespace-pre-wrap">
+                                    ⚡ Việc làm: {r.actionText}
+                                  </p>
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="py-2 px-2 border-r border-slate-200 align-top text-center">
+                              {renderProgressBadge(r.progressStatus)}
+                            </td>
+                            <td className="py-2 px-1.5 border-r border-slate-200 align-top text-center font-bold text-xs">
+                              {r.goalCompletionLevel ? (
+                                <span className="inline-block px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800 text-[10px] font-black">
+                                  Mức {r.goalCompletionLevel}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">—</span>
+                              )}
+                            </td>
+                            <td className="py-2 px-1.5 border-r border-slate-200 align-top text-center font-bold text-xs">
+                              {r.initiativeLevel ? (
+                                <span className="inline-block px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800 text-[10px] font-black">
+                                  Mức {r.initiativeLevel}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">—</span>
+                              )}
+                            </td>
+                            <td className="py-2 px-2 align-top text-center font-bold text-xs">
+                              {r.participationAttitude ? (
+                                <span className="inline-block px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-800 text-[10px] font-black">
+                                  Mức {r.participationAttitude}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 font-normal">—</span>
+                              )}
+                            </td>
+
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
 
                                     {/* SECTION III: KẾT QUẢ HỌC TẬP VĂN HÓA (MOET) */}
                                     <div className="space-y-4">
@@ -1502,21 +1669,21 @@ export function StudentProfilesAdminClient({
                                           <div className="bg-teal-50/50 border border-teal-150 p-2.5 rounded-xl text-center shadow-2xs">
                                             <div className="text-[10px] text-teal-800 font-black uppercase">Học lực (KQHT)</div>
                                             <div className="text-base font-black text-teal-700 mt-0.5">
-                                              {sumCN?.academicRating || sumHK1?.academicRating || "Tốt"}
+                                              {sumCN?.academicRating || sumHK1?.academicRating || "—"}
                                             </div>
                                             <div className="text-[9px] text-slate-400 font-semibold">Theo quy định BGD</div>
                                           </div>
                                           <div className="bg-teal-50/50 border border-teal-150 p-2.5 rounded-xl text-center shadow-2xs">
                                             <div className="text-[10px] text-teal-800 font-black uppercase">Rèn luyện (Hạnh kiểm)</div>
                                             <div className="text-base font-black text-emerald-700 mt-0.5">
-                                              {sumCN?.conductRating || sumHK1?.conductRating || "Tốt"}
+                                              {sumCN?.conductRating || sumHK1?.conductRating || "—"}
                                             </div>
                                             <div className="text-[9px] text-slate-400 font-semibold">Đánh giá GVCN</div>
                                           </div>
                                           <div className="bg-teal-50/50 border border-teal-150 p-2.5 rounded-xl text-center shadow-2xs">
                                             <div className="text-[10px] text-amber-700 font-black uppercase">Khen thưởng</div>
-                                            <div className="text-base font-black text-amber-800 mt-0.5 truncate" title={sumCN?.reward || sumHK1?.reward || "Học sinh Xuất sắc"}>
-                                              {sumCN?.reward || sumHK1?.reward || "Học sinh Xuất sắc"}
+                                            <div className="text-base font-black text-amber-800 mt-0.5 truncate" title={sumCN?.reward || sumHK1?.reward || "—"}>
+                                              {sumCN?.reward || sumHK1?.reward || "—"}
                                             </div>
                                             <div className="text-[9px] text-slate-400 font-semibold">Danh hiệu Sky-Line</div>
                                           </div>
@@ -1566,7 +1733,7 @@ export function StudentProfilesAdminClient({
                                                     <td className="py-2.5 px-2 text-center font-black text-blue-700">{ksdnVal || "—"}</td>
                                                     <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.hk1 || "—"}</td>
                                                     <td className="py-2.5 px-3 text-center font-black text-slate-800">{r.hk2 || "—"}</td>
-                                                    <td className="py-2.5 px-3 text-center font-black text-blue-900 bg-blue-50/40">{r.cn || r.hk1 || "—"}</td>
+                                                    <td className="py-2.5 px-3 text-center font-black text-blue-900 bg-blue-50/40">{r.cn || "—"}</td>
                                                     <td className="py-2.5 px-3 text-center">
                                                       <span className="text-[10px] font-black bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded">
                                                         Hoàn thành Tốt
@@ -1581,35 +1748,7 @@ export function StudentProfilesAdminClient({
                                       )}
                                     </div>
 
-                                    {/* SECTION V: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN */}
-                                    <div className="space-y-3">
-                                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
-                                        <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
-                                          <div className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-                                          <Sparkles className="w-4 h-4 text-teal-600" />
-                                          <span>V. KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°)</span>
-                                        </h3>
-                                        <button
-                                          type="button"
-                                          onClick={() => setActiveTab("competencies")}
-                                          className="self-start sm:self-auto text-[11px] font-bold text-[#007A72] hover:text-[#005B55] flex items-center gap-1 hover:underline cursor-pointer bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs transition-all"
-                                        >
-                                          <span>Mở rộng Radar chi tiết</span>
-                                          <ChevronRight className="w-3.5 h-3.5" />
-                                        </button>
-                                      </div>
-
-                                      <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-3 sm:p-5 shadow-2xs">
-                                        <StudentCompetencyPortfolio
-                                          studentId={selectedStudent?.id || selectedStudentId}
-                                          studentCode={selectedStudent?.studentCode}
-                                          studentName={selectedStudent?.studentName}
-                                          initialAcademicYearId={selectedYearId}
-                                        />
-                                      </div>
-                                    </div>
-
-                                    {/* SECTION VI: THÀNH TÍCH & KHEN THƯỞNG CỦA HỌC SINH */}
+                                    {/* SECTION V: THÀNH TÍCH & KHEN THƯỞNG CỦA HỌC SINH */}
                                     <div className="space-y-3">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-amber-500" />
@@ -1656,12 +1795,12 @@ export function StudentProfilesAdminClient({
                                       )}
                                     </div>
 
-                                    {/* SECTION VII: HOẠT ĐỘNG TRẢI NGHIỆM */}
+                                    {/* SECTION VI: HOẠT ĐỘNG TRẢI NGHIỆM */}
                                     <div className="space-y-3">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
                                         <BookOpen className="w-4 h-4 text-sky-500" />
-                                        VII. HOẠT ĐỘNG TRẢI NGHIỆM
+                                        VI. HOẠT ĐỘNG TRẢI NGHIỆM
                                       </h3>
                                       {(!selectedStudent?.experientialActivities || selectedStudent.experientialActivities.length === 0) ? (
                                         <div className="bg-slate-50 border border-slate-150 p-3.5 rounded-xl text-center text-xs text-slate-400 italic">
@@ -1707,12 +1846,12 @@ export function StudentProfilesAdminClient({
                                       )}
                                     </div>
 
-                                    {/* SECTION VIII: ĐỊNH HƯỚNG NGHỀ NGHIỆP & HƯỚNG NGHIỆP */}
+                                    {/* SECTION VII: ĐỊNH HƯỚNG NGHỀ NGHIỆP & HƯỚNG NGHIỆP */}
                                     <div className="space-y-3">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-sky-500" />
                                         <Compass className="w-4 h-4 text-sky-600" />
-                                        VIII. ĐỊNH HƯỚNG NGHỀ NGHIỆP &amp; HƯỚNG NGHIỆP
+                                        VII. ĐỊNH HƯỚNG NGHỀ NGHIỆP &amp; HƯỚNG NGHIỆP
                                       </h3>
                                       <div className="bg-sky-50/40 border border-sky-100 p-4 rounded-2xl space-y-1.5 text-xs shadow-2xs">
                                         <div className="text-[10px] text-sky-700 font-black uppercase">Nhóm ngành quan tâm &amp; Kế hoạch phát triển cá nhân</div>
@@ -1727,12 +1866,12 @@ export function StudentProfilesAdminClient({
                                       </div>
                                     </div>
 
-                                    {/* SECTION IX: NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM */}
+                                    {/* SECTION VIII: NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM */}
                                     <div className="space-y-3">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                                         <MessageSquare className="w-4 h-4 text-emerald-600" />
-                                        IX. NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM
+                                        VIII. NHẬN XÉT NỔI BẬT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM
                                       </h3>
                                       <div className="bg-emerald-50/30 border border-emerald-100 p-4 rounded-2xl space-y-2 text-xs font-medium text-slate-700 shadow-2xs">
                                         <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900 border-b border-emerald-100 pb-1.5">
@@ -1745,7 +1884,7 @@ export function StudentProfilesAdminClient({
                                       </div>
                                     </div>
 
-                                    {/* SECTION X: KHUNG KÝ XÁC THỰC 3 BÊN */}
+                                    {/* SECTION IX: KHUNG KÝ XÁC THỰC 3 BÊN */}
                                     <div className="pt-6 border-t-2 border-slate-100 mt-8">
                                       <div className="text-right text-[11px] font-medium text-slate-500 italic mb-4">
                                         Đà Nẵng, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}
@@ -1789,6 +1928,43 @@ export function StudentProfilesAdminClient({
                                       <div className="mt-8 pt-4 border-t border-slate-200/80 flex flex-col sm:flex-row justify-between items-center text-[10px] font-semibold text-slate-400 gap-1">
                                         <span>HỆ THỐNG GIÁO DỤC SKY-LINE • HỒ SƠ NĂNG LỰC HỌC SINH 360°</span>
                                         <span>Trang A4 Chuẩn • Học bạ Điện tử Chính thức</span>
+                                      </div>
+                                      {/* PHỤ LỤC: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°) */}
+                                      <div className="mt-8 pt-6 border-t-2 border-dashed border-teal-300 space-y-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 p-4 rounded-2xl">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full bg-[#007A72]" />
+                                            <div>
+                                              <span className="text-[10px] font-black uppercase text-[#007A72] tracking-wider block">PHỤ LỤC HỒ SƠ</span>
+                                              <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
+                                                <Sparkles className="w-4 h-4 text-teal-600" />
+                                                <span>PHỤ LỤC: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°)</span>
+                                              </h3>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-extrabold text-teal-800 bg-white px-2.5 py-1 rounded-full border border-teal-200 shadow-2xs">
+                                              Khung 5 Phẩm chất - 10 Năng lực GDPT 2018
+                                            </span>
+                                            <button
+                                              type="button"
+                                              onClick={() => setActiveTab("competencies")}
+                                              className="text-[11px] font-bold text-[#007A72] hover:text-[#005B55] flex items-center gap-1 hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs transition-all"
+                                            >
+                                              <span>Mở rộng</span>
+                                              <ChevronRight className="w-3.5 h-3.5" />
+                                            </button>
+                                          </div>
+                                        </div>
+
+                                        <div className="bg-slate-50/70 border border-slate-200/90 rounded-2xl p-3 sm:p-5 shadow-2xs">
+                                          <StudentCompetencyPortfolio
+                                            studentId={selectedStudent?.id || selectedStudentId}
+                                            studentCode={selectedStudent?.studentCode}
+                                            studentName={selectedStudent?.studentName}
+                                            initialAcademicYearId={selectedYearId}
+                                          />
+                                        </div>
                                       </div>
                                     </div>
                                   </div>

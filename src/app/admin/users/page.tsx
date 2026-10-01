@@ -52,6 +52,7 @@ export default async function UsersPage() {
       email: u.email,
       fullName: u.fullName,
       role: u.role,
+      status: u.status || "ACTIVE",
       campusIds
     }
   }).filter((u: any) => {

@@ -306,3 +306,74 @@ export async function deleteParentAccountsAction(studentIds: string[]) {
     return { success: false, error: e.message }
   }
 }
+
+export async function toggleParentStatusAction(parentId: string, targetStatus: "ACTIVE" | "LOCKED") {
+  const authCheck = await checkParentAdminAuth()
+  if (authCheck.error) return { success: false, error: authCheck.error }
+
+  try {
+    const parent = await prisma.parent.findUnique({
+      where: { id: parentId },
+      select: { id: true, userId: true }
+    })
+    if (!parent) return { success: false, error: "Không tìm thấy hồ sơ Phụ huynh" }
+
+    await prisma.parent.update({
+      where: { id: parentId },
+      data: { status: targetStatus }
+    })
+
+    if (parent.userId) {
+      await prisma.user.update({
+        where: { id: parent.userId },
+        data: { status: targetStatus }
+      })
+    }
+
+    revalidatePath('/admin/parents')
+    revalidatePath('/admin/users')
+    return { success: true }
+  } catch (e: any) {
+    console.error('toggleParentStatusAction error:', e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function bulkUpdateParentStatusAction(studentIds: string[], targetStatus: "ACTIVE" | "LOCKED") {
+  const authCheck = await checkParentAdminAuth()
+  if (authCheck.error) return { success: false, error: authCheck.error }
+
+  try {
+    if (!studentIds || studentIds.length === 0) return { success: true }
+
+    const links = await prisma.parentStudentLink.findMany({
+      where: { studentId: { in: studentIds } },
+      select: { parentId: true, parent: { select: { userId: true } } }
+    })
+
+    const parentIds = Array.from(new Set(links.map(l => l.parentId).filter(Boolean)))
+    const userIds = Array.from(new Set(links.map(l => l.parent?.userId).filter(Boolean))) as string[]
+
+    if (parentIds.length > 0) {
+      await prisma.parent.updateMany({
+        where: { id: { in: parentIds } },
+        data: { status: targetStatus }
+      })
+    }
+
+    if (userIds.length > 0) {
+      await prisma.user.updateMany({
+        where: { id: { in: userIds } },
+        data: { status: targetStatus }
+      })
+    }
+
+    revalidatePath('/admin/parents')
+    revalidatePath('/admin/users')
+    return { success: true, count: parentIds.length }
+  } catch (e: any) {
+    console.error('bulkUpdateParentStatusAction error:', e)
+    return { success: false, error: e.message }
+  }
+}
+

@@ -7,12 +7,14 @@ import {
   searchStudentsForLinkingAction,
   linkParentStudentAction,
   unlinkParentStudentAction,
-  resetParentPasswordAction 
+  resetParentPasswordAction,
+  toggleParentStatusAction,
+  bulkUpdateParentStatusAction
 } from "./actions"
 import { 
   Users, KeyRound, UserCheck, RefreshCw, CalendarDays, Trash2, X, 
   School, Search, ShieldCheck, ArrowRight, Link, Unlink, UserPlus, 
-  FileSpreadsheet, Eye, ChevronRight, CheckCircle2, Sparkles, Filter, Info, Lock 
+  FileSpreadsheet, Eye, ChevronRight, CheckCircle2, Sparkles, Filter, Info, Lock, Unlock 
 } from "lucide-react"
 
 export function ParentAccountsClient({ classes, years, campuses, defaultYearId }: any) {
@@ -179,6 +181,42 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
       }
     } catch (e) {
       showToast("Lỗi hệ thống", "error")
+    }
+  }
+
+  const [statusUpdating, setStatusUpdating] = useState(false)
+
+  const handleToggleParentStatus = async (parentId: string, targetStatus: "ACTIVE" | "LOCKED", studentName: string) => {
+    const actionLabel = targetStatus === "LOCKED" ? "KHÓA" : "MỞ KHÓA"
+    if (!confirm(`Bạn có chắc chắn muốn ${actionLabel} tài khoản Phụ huynh của học sinh ${studentName}?`)) return
+    setStatusUpdating(true)
+    try {
+      const res = await toggleParentStatusAction(parentId, targetStatus)
+      if (res.success) {
+        showToast(`Đã ${actionLabel.toLowerCase()} tài khoản Phụ huynh thành công!`)
+        fetchStudents(selectedClassId)
+      } else {
+        showToast(res.error || "Thao tác thất bại", "error")
+      }
+    } finally {
+      setStatusUpdating(false)
+    }
+  }
+
+  const handleBulkParentStatus = async (targetStatus: "ACTIVE" | "LOCKED") => {
+    const actionLabel = targetStatus === "LOCKED" ? "KHÓA" : "MỞ KHÓA"
+    if (!confirm(`Bạn có chắc chắn muốn ${actionLabel} tài khoản Phụ huynh của ${selectedStudentIds.length} học sinh được chọn?`)) return
+    setStatusUpdating(true)
+    try {
+      const res = await bulkUpdateParentStatusAction(selectedStudentIds, targetStatus)
+      if (res.success) {
+        showToast(`Đã ${actionLabel.toLowerCase()} thành công ${res.count || selectedStudentIds.length} tài khoản PHHS!`)
+        fetchStudents(selectedClassId)
+      } else {
+        showToast(res.error || "Thao tác thất bại", "error")
+      }
+    } finally {
+      setStatusUpdating(false)
     }
   }
 
@@ -512,14 +550,34 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
             </div>
 
             {selectedStudentIds.length > 0 && (
-              <button
-                onClick={handleDeleteMany}
-                disabled={deleting}
-                className="px-4 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs flex items-center gap-2 border border-rose-200 transition-all active:scale-95"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Xóa {selectedStudentIds.length} tài khoản</span>
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => handleBulkParentStatus("LOCKED")}
+                  disabled={statusUpdating || deleting}
+                  className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Khóa ({selectedStudentIds.length})</span>
+                </button>
+
+                <button
+                  onClick={() => handleBulkParentStatus("ACTIVE")}
+                  disabled={statusUpdating || deleting}
+                  className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                >
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>Mở khóa ({selectedStudentIds.length})</span>
+                </button>
+
+                <button
+                  onClick={handleDeleteMany}
+                  disabled={deleting || statusUpdating}
+                  className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs flex items-center gap-1.5 border border-rose-200 transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Xóa ({selectedStudentIds.length})</span>
+                </button>
+              </div>
             )}
 
           </div>
@@ -661,10 +719,17 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                     {/* Status */}
                     <td className="py-4 px-4 text-center">
                       {hasAccount ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-200/60">
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          Hoàn tất
-                        </span>
+                        user?.status === "LOCKED" ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 font-extrabold text-[10px] uppercase tracking-wider border border-rose-200/60 shadow-2xs">
+                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                            Đã khóa
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-extrabold text-[10px] uppercase tracking-wider border border-emerald-200/60 shadow-2xs">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            Hoạt động
+                          </span>
+                        )
                       ) : (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-400 font-extrabold text-[10px] uppercase tracking-wider">
                           <span className="w-2 h-2 rounded-full bg-slate-300" />
@@ -678,6 +743,27 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                       <div className="flex items-center justify-end gap-1.5">
                         {hasAccount && (
                           <>
+                            {/* Toggle Lock/Unlock Status */}
+                            {user?.status === "LOCKED" ? (
+                              <button
+                                onClick={() => handleToggleParentStatus(parentObj.id, "ACTIVE", s.studentName)}
+                                title="Mở khóa tài khoản Phụ huynh này"
+                                disabled={statusUpdating}
+                                className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition-all cursor-pointer"
+                              >
+                                <Unlock className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleToggleParentStatus(parentObj.id, "LOCKED", s.studentName)}
+                                title="Khóa tài khoản Phụ huynh này"
+                                disabled={statusUpdating}
+                                className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
+                              >
+                                <Lock className="w-4 h-4" />
+                              </button>
+                            )}
+
                             {/* Link Sibling Button */}
                             <button
                               onClick={() => setLinkModalStudent(s)}
@@ -693,7 +779,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                               title="Khôi phục mật khẩu mặc định (Mã Học Sinh)"
                               className="p-2 rounded-xl bg-slate-50 hover:bg-amber-50 text-slate-600 hover:text-amber-600 border border-slate-200 hover:border-amber-200 transition-all"
                             >
-                              <Lock className="w-4 h-4" />
+                              <KeyRound className="w-4 h-4" />
                             </button>
                           </>
                         )}
