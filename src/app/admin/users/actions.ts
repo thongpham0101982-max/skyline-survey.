@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs"
 import { getAdminSession } from "@/lib/session"
 import { z } from "zod"
 
-export const CreateUserSchema = z.object({
+const CreateUserSchema = z.object({
   employeeCode: z.string().trim().min(2, "Mã NV / Tên đăng nhập phải có ít nhất 2 ký tự"),
   fullName: z.string().trim().min(2, "Họ và tên không được để trống"),
   password: z.string().min(6, "Mật khẩu khởi tạo phải có ít nhất 6 ký tự"),
@@ -13,7 +13,7 @@ export const CreateUserSchema = z.object({
   campusIds: z.array(z.string()).optional()
 });
 
-export const UpdateUserSchema = z.object({
+const UpdateUserSchema = z.object({
   employeeCode: z.string().trim().min(2, "Mã NV / Tên đăng nhập phải có ít nhất 2 ký tự"),
   fullName: z.string().trim().min(2, "Họ và tên không được để trống"),
   password: z.string().optional().refine(val => !val || val.trim() === "" || val.trim().length >= 6, {
@@ -279,18 +279,22 @@ export async function bulkUpdateUserStatus(ids: string[], newStatus: "ACTIVE" | 
   }
   if (!ids || ids.length === 0) return { success: true };
   try {
-    await prisma.user.updateMany({
-      where: { id: { in: ids } },
-      data: { status: newStatus }
-    });
-    await prisma.parent.updateMany({
-      where: { userId: { in: ids } },
-      data: { status: newStatus }
-    });
-    await prisma.teacher.updateMany({
-      where: { userId: { in: ids } },
-      data: { status: newStatus }
-    });
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+      const chunk = ids.slice(i, i + BATCH_SIZE);
+      await prisma.user.updateMany({
+        where: { id: { in: chunk } },
+        data: { status: newStatus }
+      });
+      await prisma.parent.updateMany({
+        where: { userId: { in: chunk } },
+        data: { status: newStatus }
+      });
+      await prisma.teacher.updateMany({
+        where: { userId: { in: chunk } },
+        data: { status: newStatus }
+      });
+    }
 
     revalidatePath("/admin/users");
     revalidatePath("/admin/parents");

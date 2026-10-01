@@ -24,7 +24,8 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
   const [moving, setMoving] = useState(false);
-  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [bulkStatusAction, setBulkStatusAction] = useState<"ACTIVE" | "LOCKED" | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -43,28 +44,40 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
   const handleToggleStatus = async (id: string, targetStatus: "ACTIVE" | "LOCKED", name: string) => {
     const actionLabel = targetStatus === "LOCKED" ? "KHÓA" : "MỞ KHÓA";
     if (!confirm(`Bạn có chắc chắn muốn ${actionLabel} tài khoản của ${name}?`)) return;
-    setStatusUpdating(true);
-    const res = await toggleUserStatus(id, targetStatus);
-    if (res.success) {
-      setUsers(users.map((u: any) => u.id === id ? { ...u, status: targetStatus } : u));
-    } else {
-      alert("Lỗi: " + (res.error || "Không thể cập nhật trạng thái"));
+    setTogglingId(id);
+    try {
+      const res = await toggleUserStatus(id, targetStatus);
+      if (res.success) {
+        setUsers(users.map((u: any) => u.id === id ? { ...u, status: targetStatus } : u));
+      } else {
+        alert("Lỗi: " + (res.error || "Không thể cập nhật trạng thái"));
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("Lỗi kết nối hoặc xử lý: " + (err?.message || "Vui lòng thử lại"));
+    } finally {
+      setTogglingId(null);
     }
-    setStatusUpdating(false);
   }
 
   const handleBulkStatus = async (targetStatus: "ACTIVE" | "LOCKED") => {
     const actionLabel = targetStatus === "LOCKED" ? "KHÓA" : "MỞ KHÓA";
     if (!confirm(`Bạn có chắc chắn muốn ${actionLabel} ${selectedIds.length} tài khoản đang chọn?`)) return;
-    setStatusUpdating(true);
-    const res = await bulkUpdateUserStatus(selectedIds, targetStatus);
-    if (res.success) {
-      setUsers(users.map((u: any) => selectedIds.includes(u.id) ? { ...u, status: targetStatus } : u));
-      alert(`Đã ${actionLabel.toLowerCase()} thành công ${selectedIds.length} tài khoản!`);
-    } else {
-      alert("Lỗi: " + (res.error || "Không thể cập nhật trạng thái hàng loạt"));
+    setBulkStatusAction(targetStatus);
+    try {
+      const res = await bulkUpdateUserStatus(selectedIds, targetStatus);
+      if (res.success) {
+        setUsers(users.map((u: any) => selectedIds.includes(u.id) ? { ...u, status: targetStatus } : u));
+        alert(`Đã ${actionLabel.toLowerCase()} thành công ${selectedIds.length} tài khoản!`);
+      } else {
+        alert("Lỗi: " + (res.error || "Không thể cập nhật trạng thái hàng loạt"));
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert("Lỗi kết nối hoặc xử lý: " + (err?.message || "Vui lòng thử lại"));
+    } finally {
+      setBulkStatusAction(null);
     }
-    setStatusUpdating(false);
   }
 
   const handleMoveGroup = async (newRoleCode: string) => {
@@ -288,25 +301,25 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
              <h3 className="font-bold text-slate-700">Danh sách Tài khoản ({displayedUsers.length})</h3>
              {selectedIds.length > 0 && (
                <div className="flex items-center gap-2 flex-wrap">
-                 <button onClick={handleDeleteMultiple} disabled={deleting || moving || statusUpdating}
+                 <button onClick={handleDeleteMultiple} disabled={deleting || moving || bulkStatusAction !== null}
                    className="flex items-center text-red-600 hover:text-red-700 hover:bg-red-50 font-bold text-xs py-1.5 px-2.5 rounded-lg border border-red-200 cursor-pointer transition-all">
                    <Trash2 className="w-3.5 h-3.5 mr-1" /> {deleting ? "Đang xóa..." : `Xóa (${selectedIds.length})`}
                  </button>
 
                  <button 
                    onClick={() => handleBulkStatus("LOCKED")} 
-                   disabled={deleting || moving || statusUpdating}
-                   className="flex items-center bg-rose-600 hover:bg-rose-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm"
+                   disabled={deleting || moving || bulkStatusAction !== null}
+                   className="flex items-center bg-rose-600 hover:bg-rose-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm disabled:opacity-60"
                  >
-                   <Lock className="w-3.5 h-3.5 mr-1.5" /> {statusUpdating ? "Đang xử lý..." : `Khóa (${selectedIds.length})`}
+                   <Lock className="w-3.5 h-3.5 mr-1.5" /> {bulkStatusAction === "LOCKED" ? "Đang khóa..." : `Khóa (${selectedIds.length})`}
                  </button>
 
                  <button 
                    onClick={() => handleBulkStatus("ACTIVE")} 
-                   disabled={deleting || moving || statusUpdating}
-                   className="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm"
+                   disabled={deleting || moving || bulkStatusAction !== null}
+                   className="flex items-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm disabled:opacity-60"
                  >
-                   <Unlock className="w-3.5 h-3.5 mr-1.5" /> {statusUpdating ? "Đang xử lý..." : `Mở khóa (${selectedIds.length})`}
+                   <Unlock className="w-3.5 h-3.5 mr-1.5" /> {bulkStatusAction === "ACTIVE" ? "Đang mở khóa..." : `Mở khóa (${selectedIds.length})`}
                  </button>
 
                  <select
@@ -315,7 +328,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                      if (val) handleMoveGroup(val);
                      e.target.value = "";
                    }}
-                   disabled={deleting || moving || statusUpdating}
+                   disabled={deleting || moving || bulkStatusAction !== null}
                    className="p-1.5 rounded-lg border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#48BFE3]"
                  >
                    <option value="">-- Chuyển sang Nhóm --</option>
@@ -326,8 +339,8 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                  {filterRole !== "ALL" && (
                    <button
                      onClick={() => handleMoveGroup(filterRole)}
-                     disabled={moving || statusUpdating}
-                     className="flex items-center bg-[#48BFE3] text-white hover:bg-[#009085] font-semibold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm"
+                     disabled={moving || bulkStatusAction !== null}
+                     className="flex items-center bg-[#48BFE3] text-white hover:bg-[#009085] font-semibold py-1.5 px-3 rounded-lg text-xs cursor-pointer transition-all shadow-sm disabled:opacity-60"
                    >
                      <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Chuyển sang {roles.find((r) => r.code === filterRole)?.name}
                    </button>
@@ -441,8 +454,8 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                       <button 
                         title="Mở khóa tài khoản này" 
                         onClick={() => handleToggleStatus(u.id, "ACTIVE", u.fullName)} 
-                        disabled={statusUpdating}
-                        className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors inline-flex items-center mr-1 cursor-pointer"
+                        disabled={togglingId === u.id || bulkStatusAction !== null}
+                        className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors inline-flex items-center mr-1 cursor-pointer disabled:opacity-50"
                       >
                         <Unlock className="w-4 h-4"/>
                       </button>
@@ -450,8 +463,8 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                       <button 
                         title="Khóa tài khoản này" 
                         onClick={() => handleToggleStatus(u.id, "LOCKED", u.fullName)} 
-                        disabled={statusUpdating}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center mr-1 cursor-pointer"
+                        disabled={togglingId === u.id || bulkStatusAction !== null}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center mr-1 cursor-pointer disabled:opacity-50"
                       >
                         <Lock className="w-4 h-4"/>
                       </button>
