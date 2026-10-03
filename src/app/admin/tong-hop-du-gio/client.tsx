@@ -1327,6 +1327,30 @@ export function AdminTongHopClient({
     }
   };
 
+    // Export TTCM Matrix to PDF (Bản đẹp A4 Landscape)
+  const handleExportTTCMPdf = () => {
+    try {
+      const activeMonth = ttcmMatrixMonth !== "all" ? ttcmMatrixMonth : selectedMonth;
+      const params = new URLSearchParams({
+        month: activeMonth,
+        block: ttcmMatrixBlock,
+        campus: ttcmMatrixCampus,
+        observedCampus: ttcmMatrixObservedCampus,
+        search: ttcmSearchQuery,
+        viewMode: ttcmViewMode,
+        autoPrint: "true"
+      });
+      if (selectedYearId) params.append("academicYearId", selectedYearId);
+
+      const url = `/api/admin/du-gio/export-ma-tran-pdf?${params.toString()}`;
+      window.open(url, "_blank");
+      toast.success("Đang mở bản in PDF Báo cáo Dự giờ TTCM...");
+    } catch (e: any) {
+      console.error("Export TTCM PDF error:", e);
+      toast.error("Có lỗi xảy ra khi tạo bản in PDF");
+    }
+  };
+
   const handleExportExcel = () => {
     try {
       const activeYearObj = academicYears?.find((y: any) => y.id === filterAcademicYearId) || academicYears?.[0];
@@ -3834,6 +3858,18 @@ export function AdminTongHopClient({
               <FileSpreadsheet className="w-3.5 h-3.5 text-teal-300" />
               <span>Xuất Excel</span>
             </button>
+
+            {/* Nút Xuất PDF */}
+            <button
+              type="button"
+              onClick={handleExportTTCMPdf}
+              className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs shadow-2xs flex items-center gap-2 transition-all cursor-pointer"
+              title="Xuất file PDF bản đẹp báo cáo dự giờ theo tháng"
+            >
+              <Printer className="w-3.5 h-3.5 text-white" />
+              <span>Xuất PDF</span>
+            </button>
+
           </div>
         </div>
 
