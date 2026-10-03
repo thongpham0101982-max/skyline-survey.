@@ -1680,10 +1680,63 @@ export function ObservationClient(props: ObservationClientProps) {
     return "NONE";
   }, [isSuperOrBanDHCM, isGDCS, isTBP, isTTCM]);
 
-  // Giáo viên bình thường (GVBM, GVCN, giáo viên giảng dạy - không thuộc ban quản lý có định mức cố định)
+  // Kiểm tra tài khoản có chức vụ hay không
+  // Yêu cầu: "Chỉ áp dụng cho tài khoản GV không có chức vụ"
+  const hasChucVu = useMemo(() => {
+    // 1. Thuộc phạm vi quản lý hoặc các chức danh lãnh đạo
+    if (managementScope !== "NONE" || isBGHMN || isAdminUser || isSuperOrBanDHCM || isBanDHCM || isGDCS || isTBP || isTTCM) {
+      return true;
+    }
+
+    // 2. Vai trò tài khoản người dùng
+    const role = (currentTeacher?.user?.role || "").toUpperCase().trim();
+    const LEADERSHIP_ROLES = [
+      "ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "TTCM", "TPCM", "TO_TRUONG", "TO_PHO", 
+      "TBP", "TRUONG_BO_PHAN", "PHO_BO_PHAN", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", 
+      "BAN_DHCM", "TB_DHCM", "QLCM", "BGH", "BGH_MN", "KT_DBCL", "NHOM_TRUONG", "NHOM_TRUONG_CM"
+    ];
+    if (LEADERSHIP_ROLES.includes(role)) {
+      return true;
+    }
+
+    // 3. Danh sách các định danh giáo viên thuần túy (không có chức vụ)
+    const NON_CHUC_VU_LIST = new Set([
+      "", "gv", "gvbm", "gvcn", "giáo viên", "giao vien", 
+      "giáo viên bộ môn", "giao vien bo mon", 
+      "giáo viên chủ nhiệm", "giao vien chu nhiem", 
+      "teacher", "homeroom teacher"
+    ]);
+
+    // Kiểm tra trực tiếp position của currentTeacher
+    const directPos = (currentTeacher?.position || "").toLowerCase().trim();
+    if (directPos && !NON_CHUC_VU_LIST.has(directPos)) {
+      return true;
+    }
+
+    // Kiểm tra toàn bộ danh sách chức danh trong teacherPositions
+    const hasAnyChucVuInPositions = teacherPositions.some(pos => {
+      const p = (pos || "").toLowerCase().trim();
+      return p && !NON_CHUC_VU_LIST.has(p);
+    });
+    if (hasAnyChucVuInPositions) {
+      return true;
+    }
+
+    // 4. Nếu có phân công bộ phận (divisionAssignments)
+    if (currentTeacher?.divisionAssignments && currentTeacher.divisionAssignments.length > 0) {
+      return true;
+    }
+
+    return false;
+  }, [
+    managementScope, isBGHMN, isAdminUser, isSuperOrBanDHCM, isBanDHCM, isGDCS, isTBP, isTTCM,
+    currentTeacher?.user?.role, currentTeacher?.position, currentTeacher?.divisionAssignments, teacherPositions
+  ]);
+
+  // Chỉ áp dụng cho tài khoản GV KHÔNG CÓ CHỨC VỤ
   const isRegularTeacher = useMemo(() => {
-    return managementScope === "NONE" && !isBGHMN;
-  }, [managementScope, isBGHMN]);
+    return !hasChucVu;
+  }, [hasChucVu]);
 
   // Popup yêu cầu tài khoản GVBM, GVCN xác nhận GV mới, GV cũ 2 năm để xác định chỉ tiêu
   // ĐẶC BIỆT: "GV nào đã xác nhận thì không hiển thị"
