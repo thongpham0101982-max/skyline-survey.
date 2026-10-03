@@ -252,6 +252,7 @@ export const APP_CATEGORIES = [
     icon: ClipboardCheck,
     modules: [
       { code: "DU_GIO_K12", name: "Khối Phổ thông", icon: ClipboardCheck, href: "/admin/du-gio" },
+      { code: "AI_GROWTH", name: "AI Growth – Đổi mới Tiết dạy", icon: Sparkles, href: "/teacher/ai-growth" },
       { code: "DU_GIO_MAM_NON", name: "Khối Mầm non", icon: Baby, href: "/admin/du-gio-mam-non" },
       { code: "DU_GIO_GVNN", name: "Giáo viên nước ngoài", icon: Globe, href: "/admin/du-gio-gvnn" },
       {

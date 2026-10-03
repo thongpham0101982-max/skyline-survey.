@@ -9,6 +9,7 @@ import { signOut } from "next-auth/react"
 import {
   BarChart3,
   Award,
+  Sparkles,
   LogOut, 
   LayoutDashboard, 
   Layers, 
@@ -661,6 +662,32 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     {!isCollapsed && <span>1. Khối Phổ thông</span>}
                   </Link>
                 )}
+                {/* 2. AI Growth – Hành trình Đổi mới Tiết dạy */}
+                <Link 
+                  href="/teacher/ai-growth" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-medium mb-1.5 ${
+                    pathname.startsWith('/teacher/ai-growth')
+                      ? "bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/40 text-white shadow-md shadow-black/10"
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.startsWith('/teacher/ai-growth')
+                      ? "bg-amber-500/20 border border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-amber-500/30"
+                  }`}>
+                    <Sparkles className={`w-4 h-4 transition-all ${
+                      pathname.startsWith('/teacher/ai-growth') ? "text-amber-400" : "text-amber-400/80 group-hover:text-amber-300 group-hover:scale-110"
+                    }`} />
+                  </div>
+                  {!isCollapsed && (
+                    <div className="flex items-center justify-between flex-1">
+                      <span>2. AI Growth – Đổi mới</span>
+                      <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full font-bold">Mới</span>
+                    </div>
+                  )}
+                </Link>
 
                 {/* 2. Khối Mầm non */}
                 {showPreschoolObservation && (

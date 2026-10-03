@@ -13,6 +13,7 @@ import { TeacherTargetTracker } from './components/TeacherTargetTracker';
 import { TeacherExperienceConfirmModal } from './components/TeacherExperienceConfirmModal';
 import { AdminObservationKpiCards } from './components/AdminObservationKpiCards';
 import { TeacherObservationReportTab } from './components/TeacherObservationReportTab';
+import { AiObservationPopupTrigger } from '@/components/ai-growth/AiObservationPopupTrigger';
 import { useCampusTheme, CAMPUS_THEMES, CampusThemeType } from "@/hooks/useCampusTheme";
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -3724,6 +3725,8 @@ export function ObservationClient(props: ObservationClientProps) {
 
   return (
     <div className="flex flex-col gap-5 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
+      {/* Thử Thách Dự Giờ Cùng AI (AI Growth Gamified Popup & Top Banner) */}
+      <AiObservationPopupTrigger triggerMode="AUTO_POPUP" />
       {/* Toast Notification */}
       {toast && (
         <div className={`fixed top-5 right-5 z-[99999] pointer-events-auto flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${toast.type === "success" ? "bg-emerald-600 shadow-emerald-600/30" : toast.type === "error" ? "bg-rose-600 shadow-rose-600/30" : "bg-[#008B82] shadow-teal-700/30"}`}>

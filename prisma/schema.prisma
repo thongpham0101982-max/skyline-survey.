@@ -86,6 +86,14 @@ model Teacher {
   learningSupportAssignments LearningSupportAssignment[]
   academicConsultationLogs   AcademicConsultationLog[]
   studentHelpRequests        StudentHelpRequest[]
+  teacherChallenges          TeacherChallenge[]
+  challengeObservations      ChallengeObservation[]
+  wowMoments                 AiGrowthWowMoment[]
+  inspirationPointsLogs      InspirationPointsLog[]
+  growthStreak               TeacherGrowthStreak?
+  inspirationShares          InspirationShare[]
+  challengeAdoptions         ChallengeAdoption[]
+  badges                     TeacherBadge[]
 
   @@index([campusId])
   @@index([departmentId])
@@ -1145,6 +1153,7 @@ model ObservationSlot {
   registrations  ObservationRegistration[]
   academicYearId String?
   academicYear   AcademicYear?             @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  teacherChallenges TeacherChallenge[]
 
   @@index([academicYearId])
   @@index([campusId])
@@ -2436,3 +2445,178 @@ model AIPendingAction {
   @@index([expiresAt])
 }
 
+
+
+// ==========================================
+// AI GROWTH – HÀNH TRÌNH ĐỔI MỚI TIẾT DẠY
+// ==========================================
+
+model AiGrowthChallenge {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  title           String
+  icon            String   @default("Sparkles")
+  category        String   // INTERACTION | AI_TEACHING | METHOD_INNOVATION | PERSONALIZATION | CREATIVITY
+  rarityTier      String   @default("COMMON") // COMMON | RARE | EPIC_AI
+  level           String?  // ALL | PRIMARY | SECONDARY | HIGH
+  subjectCodes    String?  // JSON array
+  description     String
+  pedagogicalGoal String
+  aiPromptHint    String?
+  basePoints      Int      @default(100)
+  isAiChallenge   Boolean  @default(false)
+  campaignThemeId String?
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  campaign          AiGrowthCampaign?   @relation(fields: [campaignThemeId], references: [id])
+  teacherChallenges TeacherChallenge[]
+  inspirationShares InspirationShare[]
+
+  @@index([category, rarityTier])
+  @@index([status])
+}
+
+model TeacherChallenge {
+  id                String    @id @default(cuid())
+  teacherId         String
+  challengeId       String
+  status            String    @default("ACCEPTED") // SUGGESTED | ACCEPTED | IN_PROGRESS | COMPLETED | RECOGNIZED | ABANDONED
+  academicYearId    String?
+
+  observationSlotId String?
+  campusId          String?
+  classId           String?
+  className         String?
+  subjectName       String?
+  plannedLessonDate DateTime?
+
+  afterClassInsight String?
+  earnedPoints      Int       @default(0)
+  recognizedAt      DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  challenge         AiGrowthChallenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  teacher           Teacher                 @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  observationSlot   ObservationSlot?        @relation(fields: [observationSlotId], references: [id], onDelete: SetNull)
+  observations      ChallengeObservation[]
+  wowMoments        AiGrowthWowMoment[]
+  shares            InspirationShare[]
+
+  @@index([teacherId, status])
+  @@index([observationSlotId])
+}
+
+model ChallengeObservation {
+  id                 String   @id @default(cuid())
+  teacherChallengeId String
+  observerTeacherId  String
+
+  isImplemented      Boolean  @default(false)
+  isEffective        Boolean  @default(false)
+  shouldSpread       Boolean  @default(false)
+  observerNote       String?
+  createdAt          DateTime @default(now())
+
+  teacherChallenge   TeacherChallenge @relation(fields: [teacherChallengeId], references: [id], onDelete: Cascade)
+  observer           Teacher          @relation(fields: [observerTeacherId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherChallengeId, observerTeacherId])
+}
+
+model AiGrowthWowMoment {
+  id                 String   @id @default(cuid())
+  teacherChallengeId String
+  observerTeacherId  String
+  category           String   // STUDENT_ENGAGEMENT | CREATIVE_IDEA | EFFECTIVE_AI | SITUATION_HANDLING | TIMELY_FEEDBACK | ACTIVITY_DESIGN
+  aiCelebrationQuote String?
+  createdAt          DateTime @default(now())
+
+  teacherChallenge   TeacherChallenge @relation(fields: [teacherChallengeId], references: [id], onDelete: Cascade)
+  observer           Teacher          @relation(fields: [observerTeacherId], references: [id], onDelete: Cascade)
+}
+
+model InspirationPointsLog {
+  id          String   @id @default(cuid())
+  teacherId   String
+  points      Int
+  reason      String
+  sourceRefId String?
+  createdAt   DateTime @default(now())
+
+  teacher     Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([teacherId])
+}
+
+model TeacherBadge {
+  id         String   @id @default(cuid())
+  teacherId  String
+  badgeCode  String
+  unlockedAt DateTime @default(now())
+
+  teacher    Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, badgeCode])
+}
+
+model TeacherGrowthStreak {
+  id              String   @id @default(cuid())
+  teacherId       String   @unique
+  currentStreak   Int      @default(0)
+  highestStreak   Int      @default(0)
+  lastActiveMonth Int
+  lastActiveYear  Int
+  updatedAt       DateTime @updatedAt
+
+  teacher         Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+}
+
+model InspirationShare {
+  id                 String   @id @default(cuid())
+  teacherChallengeId String
+  teacherId          String
+  challengeId        String
+  title              String
+  description        String
+  tags               String?
+  adoptionCount      Int      @default(0)
+  isPublic           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  teacherChallenge   TeacherChallenge  @relation(fields: [teacherChallengeId], references: [id], onDelete: Cascade)
+  teacher            Teacher           @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  challenge          AiGrowthChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  adoptions          ChallengeAdoption[]
+}
+
+model ChallengeAdoption {
+  id                String   @id @default(cuid())
+  shareId           String
+  adopterTeacherId  String
+  clonedChallengeId String?
+  createdAt         DateTime @default(now())
+
+  share             InspirationShare @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  adopter           Teacher          @relation(fields: [adopterTeacherId], references: [id], onDelete: Cascade)
+
+  @@unique([shareId, adopterTeacherId])
+}
+
+model AiGrowthCampaign {
+  id          String   @id @default(cuid())
+  themeName   String
+  month       Int
+  year        Int
+  bannerUrl   String?
+  description String
+  startDate   DateTime
+  endDate     DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  challenges  AiGrowthChallenge[]
+}
