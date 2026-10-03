@@ -476,7 +476,7 @@ function buildReportHtml(data: {
             ${logoSrc ? `<img src="${logoSrc}" alt="Sky-Line Logo" class="brand-logo" />` : ""}
             <div>
               <div class="brand-name">HỆ THỐNG GIÁO DỤC SKY-LINE</div>
-              <div class="brand-dept">BAN ĐÀO TẠO & PHÁT TRIỂN CHUYÊN MÔN • BỘ PHẬN ĐBCL</div>
+              <div class="brand-dept">BAN KHẢO THÍ VÀ ĐẢM BẢO CHẤT LƯỢNG</div>
               <div class="brand-sub">Hệ thống Quản lý Chất lượng Giáo dục & Đánh giá Năng lực (SQMS / SSM)</div>
             </div>
           </div>

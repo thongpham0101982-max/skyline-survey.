@@ -414,7 +414,7 @@ export async function GET(req: Request) {
       <tr>
         <td style="width: 60%;">
           <div class="system-title">HỆ THỐNG GIÁO DỤC SKY-LINE</div>
-          <div class="sub-system-title">BAN ĐÀO TẠO & PHÁT TRIỂN CHUYÊN MÔN • QUẢN TRỊ CHẤT LƯỢNG</div>
+          <div class="sub-system-title">BAN KHẢO THÍ VÀ ĐẢM BẢO CHẤT LƯỢNG</div>
         </td>
         <td class="doc-badge">
           <div>Mã biểu mẫu: <strong>BM-SSM-TTCM-01</strong></div>
