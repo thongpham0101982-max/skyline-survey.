@@ -1028,6 +1028,7 @@ export function AdminTongHopClient({
       if (isGDCS) {
         ttcmMap.set(t.id, {
           ...(ttcmMap.get(t.id) || t),
+          position: "GĐCS",
           deptId: t.departmentId,
           deptName: "GĐCS",
           block: "Điều hành"
