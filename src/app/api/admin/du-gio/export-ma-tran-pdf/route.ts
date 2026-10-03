@@ -561,7 +561,12 @@ function buildReportHtml(data: {
                 <div style="font-size: 6.8pt; color: #94a3b8; font-weight: 500;">${item.teacherCode}</div>
               </td>
               <td class="text-center">
-                <span style="font-size: 7.2pt; font-weight: 600; color: #475569; background: #f1f5f9; padding: 1px 4px; border-radius: 3px;">
+                <span style="font-size: 7.2pt; font-weight: 700; ${
+                  item.position === 'TBP' ? 'color: #3730a3; background: #e0e7ff; border: 1px solid #c7d2fe;' :
+                  item.position === 'GĐCS' ? 'color: #065f46; background: #d1fae5; border: 1px solid #a7f3d0;' :
+                  item.position === 'Ban ĐHCM' ? 'color: #6b21a8; background: #f3e8ff; border: 1px solid #e9d5ff;' :
+                  'color: #475569; background: #f1f5f9; border: 1px solid #e2e8f0;'
+                } padding: 1.5px 5px; border-radius: 4px; display: inline-block;">
                   ${item.position}
                 </span>
               </td>
@@ -711,7 +716,7 @@ function buildReportHtml(data: {
       <div class="notes-title">📌 Ghi chú nghiệp vụ & Quy định Chuyên môn Sky-Line:</div>
       <div>1. <strong>Tiết dự hợp lệ:</strong> Tiết dạy đã hoàn thành phiếu dự giờ và đánh giá chuyên môn chính thức theo chuẩn sư phạm Sky-Line (không tính phiếu nháp).</div>
       <div>2. <strong>Phân loại dự giờ:</strong> <em>Nội bộ cơ sở</em> (dự GV cùng cơ sở công tác) và <em>Chéo liên cơ sở</em> (dự GV tại các cơ sở bạn để khảo sát chất lượng giảng dạy chéo toàn hệ thống).</div>
-      <div>3. <strong>Định mức chỉ tiêu dự giờ:</strong> Áp dụng theo Quyết định Ban Điều Hành Chuyên Môn (GĐCS: 4 tiết/tháng; TTCM: 6 - 8 tiết/tháng; Ban ĐHCM: 10 tiết/tháng).</div>
+      <div>3. <strong>Định mức chỉ tiêu dự giờ:</strong> Áp dụng theo Quyết định Ban Điều Hành Chuyên Môn (GĐCS: 4 tiết/tháng; TBP: 4 tiết/tháng; TTCM: 6 - 8 tiết/tháng; Ban ĐHCM: 10 tiết/tháng).</div>
     </div>
 
     <!-- Signatures Table -->
@@ -757,6 +762,7 @@ export async function GET(req: Request) {
     const campus = searchParams.get("campus") || "all"
     const observedCampus = searchParams.get("observedCampus") || "all"
     const searchQuery = searchParams.get("search") || ""
+    const positionFilter = searchParams.get("position") || searchParams.get("role") || "all"
     const viewMode = searchParams.get("viewMode") || "pivot-matrix"
     const academicYearId = searchParams.get("academicYearId") || undefined
     const autoPrint = searchParams.get("autoPrint") === "true"
@@ -863,20 +869,34 @@ export async function GET(req: Request) {
       }
     })
 
+    const DIVISION_NAMES: Record<string, string> = {
+      BP_TRUNG_HOC: "BP Trung học",
+      BP_TIEU_HOC: "BP Tiểu học",
+      BP_MAM_NON: "BP Mầm non",
+      BP_STEM_ICT: "BP Stem-ICT",
+      BP_TA_CTQT: "BP TA&CTQT",
+      BP_HDNG_CTHS: "BP HĐNG-CTHS"
+    }
+
     teachers.forEach(t => {
       const pos = (t.position || "").toUpperCase().trim()
       const obsUpper = (t.observerType || "").toUpperCase().trim()
       const deptName = (t.departmentRel?.name || "").toUpperCase().trim()
       const roleUpper = (t.user?.role || t.role || "").toUpperCase().trim()
+      const hasDiv = t.divisionAssignments && t.divisionAssignments.length > 0
 
-      const isTT = pos === "TTCM" || pos.includes("TTCM") || pos.includes("TỔ TRƯỞNG") || pos.includes("TO TRUONG") ||
-        t.observerType === "TTCM" ||
-        t.departmentAssignments?.some((da: any) => {
-          const p = (da.position || "").toUpperCase().trim()
-          return p === "TTCM" || p.includes("TTCM") || p.includes("TỔ TRƯỞNG") || p.includes("TO TRUONG")
-        })
+      let divName = ""
+      if (hasDiv) {
+        divName = t.divisionAssignments.map((d: any) => DIVISION_NAMES[d.divisionCode] || d.divisionCode).join(", ")
+      }
 
-      const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(pos) ||
+      const isTBP = pos === "TBP" || pos.includes("TBP") ||
+        pos.includes("TRƯỞNG BỘ PHẬN") || pos.includes("TRUONG BO PHAN") ||
+        pos.includes("TRƯỞNG BAN") || pos.includes("TRUONG BAN") ||
+        roleUpper === "TBP" || obsUpper === "TBP" ||
+        t.teacherCode === "0201000095"
+
+      const isGDCS = (["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(pos) ||
         pos.includes("GIÁM ĐỐC") || pos.includes("GIAM DOC") ||
         roleUpper === "GDCS" ||
         obsUpper === "GĐCS" || obsUpper === "GDCS" || obsUpper.includes("GIÁM ĐỐC") ||
@@ -886,22 +906,76 @@ export async function GET(req: Request) {
           const dp = (da.position || "").toUpperCase().trim()
           const dn = (da.department?.name || "").toUpperCase().trim()
           return dp.includes("GĐCS") || dp.includes("GDCS") || dn === "GĐCS"
+        })) && !isTBP
+
+      const isBanDH = pos === "BAN ĐHCM" || pos.includes("ĐHCM") || roleUpper === "BAN_DHCM" || obsUpper === "BAN ĐHCM"
+
+      const isTT = pos === "TTCM" || pos.includes("TTCM") || pos.includes("TỔ TRƯỞNG") || pos.includes("TO TRUONG") ||
+        t.observerType === "TTCM" ||
+        t.departmentAssignments?.some((da: any) => {
+          const p = (da.position || "").toUpperCase().trim()
+          return p === "TTCM" || p.includes("TTCM") || p.includes("TỔ TRƯỞNG") || p.includes("TO TRUONG")
         })
 
-      if (isGDCS) {
+      if (isTBP) {
+        ttcmMap.set(t.id, {
+          ...(ttcmMap.get(t.id) || t),
+          position: "TBP",
+          deptId: t.departmentId,
+          deptName: divName || t.departmentRel?.name || "Bộ phận chuyên môn",
+          block: t.departmentRel?.blockCM || "Phổ thông K-12",
+          observerType: t.observerType || "TBP",
+          requiredObserved: t.requiredObserved || 4,
+          isTBP: true,
+          divisionName: divName
+        })
+      } else if (isGDCS) {
         ttcmMap.set(t.id, {
           ...(ttcmMap.get(t.id) || t),
           position: "GĐCS",
           deptId: t.departmentId,
           deptName: "GĐCS",
-          block: "Điều hành"
+          block: "Điều hành",
+          observerType: t.observerType || "GĐCS",
+          requiredObserved: t.requiredObserved || 4,
+          isTBP: false,
+          divisionName: divName
+        })
+      } else if (isBanDH) {
+        ttcmMap.set(t.id, {
+          ...(ttcmMap.get(t.id) || t),
+          position: "Ban ĐHCM",
+          deptId: t.departmentId,
+          deptName: divName || t.departmentRel?.name || "Ban ĐHCM",
+          block: "Điều hành",
+          observerType: t.observerType || "Ban ĐHCM",
+          requiredObserved: t.requiredObserved || 10,
+          isTBP: false,
+          divisionName: divName
         })
       } else if (isTT && !ttcmMap.has(t.id)) {
         ttcmMap.set(t.id, {
           ...t,
+          position: "TTCM",
           deptId: t.departmentId,
           deptName: t.departmentRel?.name || "Tổ chuyên môn",
-          block: t.departmentRel?.blockCM || "Phổ thông K-12"
+          block: t.departmentRel?.blockCM || "Phổ thông K-12",
+          observerType: t.observerType || "TTCM",
+          requiredObserved: t.requiredObserved || 6,
+          isTBP: false,
+          divisionName: divName
+        })
+      } else if (hasDiv && !ttcmMap.has(t.id)) {
+        ttcmMap.set(t.id, {
+          ...t,
+          position: "TBP",
+          deptId: t.departmentId,
+          deptName: divName || t.departmentRel?.name || "Bộ phận chuyên môn",
+          block: t.departmentRel?.blockCM || "Phổ thông K-12",
+          observerType: t.observerType || "TBP",
+          requiredObserved: t.requiredObserved || 4,
+          isTBP: true,
+          divisionName: divName
         })
       }
     })
@@ -923,9 +997,10 @@ export async function GET(req: Request) {
       const homeCampus = ttcm.campus?.campusName || "Chưa rõ cơ sở"
 
       const posUpper = (ttcm.position || "").toUpperCase()
+      const isTBP = posUpper === "TBP" || !!ttcm.isTBP
       const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(posUpper) || posUpper.includes("GIÁM ĐỐC")
       const isBanDH = posUpper === "BAN ĐHCM" || posUpper.includes("ĐHCM")
-      const observerType = ttcm.observerType || (isBanDH ? "Ban ĐHCM" : isGDCS ? "GĐCS" : (ttcm.position?.includes("Nhóm trưởng") ? "Nhóm trưởng CM CS" : "TTCM"))
+      const observerType = ttcm.observerType || (isTBP ? "TBP" : isBanDH ? "Ban ĐHCM" : isGDCS ? "GĐCS" : (ttcm.position?.includes("Nhóm trưởng") ? "Nhóm trưởng CM CS" : "TTCM"))
 
       const configuredObserved = ttcm.requiredObserved
       const observedUnit = ttcm.observedUnit || "tháng"
@@ -987,7 +1062,9 @@ export async function GET(req: Request) {
         id: ttcm.id,
         teacherName: ttcm.teacherName,
         teacherCode: ttcm.teacherCode,
-        position: ttcm.position || "TTCM",
+        position: ttcm.position || (isTBP ? "TBP" : "TTCM"),
+        isTBP,
+        divisionName: ttcm.divisionName,
         observerType,
         observedUnit,
         deptName: baseTTCM.deptName || "Tổ chuyên môn",
@@ -1013,6 +1090,18 @@ export async function GET(req: Request) {
     const filteredRows = matrixData.filter(item => {
       if (block !== "all" && item.block !== block) return false
       if (campus !== "all" && item.homeCampus !== campus) return false
+      if (positionFilter !== "all") {
+        const pf = positionFilter.toUpperCase()
+        if (pf === "TBP") {
+          if (item.position !== "TBP" && !item.isTBP) return false
+        } else if (pf === "GDCS" || pf === "GĐCS") {
+          if (item.position !== "GĐCS" && !["GDCS", "GĐCS"].includes(item.position)) return false
+        } else if (pf === "TTCM") {
+          if (item.position !== "TTCM") return false
+        } else if (pf.includes("ĐHCM") || pf.includes("DHCM")) {
+          if (!item.position?.includes("ĐHCM")) return false
+        }
+      }
       if (observedCampus !== "all") {
         const hasObs = item.breakdown.some(b => b.campusName === observedCampus && b.periods > 0)
         if (!hasObs) return false
@@ -1050,9 +1139,15 @@ export async function GET(req: Request) {
     const campusText = campus === "all" ? "Tất cả cơ sở" : campus
     const exportTime = new Date().toLocaleString("vi-VN")
 
+    const pdfSubtitle = positionFilter === "TBP"
+      ? "MA TRẬN DỰ GIỜ TRƯỞNG BỘ PHẬN (TBP) & ĐỐI CHIẾU NỘI BỘ - LIÊN CƠ SỞ"
+      : positionFilter.toUpperCase().includes("GDCS")
+      ? "MA TRẬN DỰ GIỜ GIÁM ĐỐC CƠ SỞ (GĐCS) & ĐỐI CHIẾU NỘI BỘ - LIÊN CƠ SỞ"
+      : "MA TRẬN DỰ GIỜ TỔ TRƯỞNG CHUYÊN MÔN, TRƯỞNG BỘ PHẬN & GĐCS"
+
     const html = buildReportHtml({
       title: "BÁO CÁO QUẢN TRỊ DỰ GIỜ THEO THÁNG",
-      subtitle: "MA TRẬN DỰ GIỜ TỔ TRƯỞNG CHUYÊN MÔN & ĐỐI CHIẾU NỘI BỘ - LIÊN CƠ SỞ",
+      subtitle: pdfSubtitle,
       activeMonthText,
       blockText,
       campusText,

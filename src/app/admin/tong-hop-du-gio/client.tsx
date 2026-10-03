@@ -214,6 +214,7 @@ export function AdminTongHopClient({
   // Filter & view states for TTCM Matrix Tab
   const [ttcmMatrixMonth, setTtcmMatrixMonth] = useState<string>("all")
   const [ttcmMatrixBlock, setTtcmMatrixBlock] = useState<string>("all")
+  const [ttcmMatrixRoleFilter, setTtcmMatrixRoleFilter] = useState<string>("all")
   const [ttcmMatrixCampus, setTtcmMatrixCampus] = useState<string>("all")
   const [ttcmMatrixObservedCampus, setTtcmMatrixObservedCampus] = useState<string>("all")
   const [ttcmSearchQuery, setTtcmSearchQuery] = useState<string>("")
@@ -973,9 +974,18 @@ export function AdminTongHopClient({
     return "Cơ sở chưa rõ";
   };
 
-  // Distinct list of all TTCMs across departments and teachersList
+  // Distinct list of all leadership members (TTCM, TBP, GĐCS, Ban ĐHCM) across departments and teachersList
   const allTTCMList = useMemo(() => {
     const ttcmMap = new Map<string, any>();
+
+    const DIVISION_NAMES: Record<string, string> = {
+      BP_TRUNG_HOC: "BP Trung học",
+      BP_TIEU_HOC: "BP Tiểu học",
+      BP_MAM_NON: "BP Mầm non",
+      BP_STEM_ICT: "BP Stem-ICT",
+      BP_TA_CTQT: "BP TA&CTQT",
+      BP_HDNG_CTHS: "BP HĐNG-CTHS"
+    };
 
     // 1. From departments: every department's designated TTCM
     departments.forEach(dept => {
@@ -992,6 +1002,7 @@ export function AdminTongHopClient({
       if (ttcm) {
         ttcmMap.set(ttcm.id, {
           ...ttcm,
+          position: "TTCM",
           deptId: dept.id,
           deptName: dept.name,
           block: getTeacherBlock(ttcm)
@@ -999,21 +1010,26 @@ export function AdminTongHopClient({
       }
     });
 
-    // 2. From teachersList: any teacher whose position or assignment is TTCM / Tổ trưởng / GĐCS
+    // 2. From teachersList: recognize TBP, GĐCS, Ban ĐHCM, TTCM
     (teachersList || []).forEach((t: any) => {
       const pos = (t.position || "").toUpperCase().trim();
       const roleUpper = (t.user?.role || t.role || "").toUpperCase().trim();
       const obsUpper = (t.observerType || "").toUpperCase().trim();
       const deptName = (t.departmentRel?.name || t.department?.name || "").toUpperCase().trim();
+      const hasDiv = t.divisionAssignments && t.divisionAssignments.length > 0;
 
-      const isTT = pos === "TTCM" || pos.includes("TTCM") || pos.includes("TỔ TRƯỞNG") || pos.includes("TO TRUONG") ||
-        t.observerType === "TTCM" ||
-        t.departmentAssignments?.some((da: any) => {
-          const p = (da.position || "").toUpperCase().trim();
-          return p === "TTCM" || p.includes("TTCM") || p.includes("TỔ TRƯỞNG") || p.includes("TO TRUONG");
-        });
+      let divName = "";
+      if (hasDiv) {
+        divName = t.divisionAssignments.map((d: any) => DIVISION_NAMES[d.divisionCode] || d.divisionCode).join(", ");
+      }
 
-      const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(pos) ||
+      const isTBP = pos === "TBP" || pos.includes("TBP") ||
+        pos.includes("TRƯỞNG BỘ PHẬN") || pos.includes("TRUONG BO PHAN") ||
+        pos.includes("TRƯỞNG BAN") || pos.includes("TRUONG BAN") ||
+        roleUpper === "TBP" || obsUpper === "TBP" ||
+        t.teacherCode === "0201000095";
+
+      const isGDCS = (["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(pos) ||
         pos.includes("GIÁM ĐỐC") || pos.includes("GIAM DOC") ||
         roleUpper === "GDCS" ||
         obsUpper === "GĐCS" || obsUpper === "GDCS" || obsUpper.includes("GIÁM ĐỐC") ||
@@ -1023,22 +1039,76 @@ export function AdminTongHopClient({
           const dp = (da.position || "").toUpperCase().trim();
           const dn = (da.department?.name || "").toUpperCase().trim();
           return dp.includes("GĐCS") || dp.includes("GDCS") || dn === "GĐCS";
+        })) && !isTBP;
+
+      const isBanDH = pos === "BAN ĐHCM" || pos.includes("ĐHCM") || roleUpper === "BAN_DHCM" || obsUpper === "BAN ĐHCM";
+
+      const isTT = pos === "TTCM" || pos.includes("TTCM") || pos.includes("TỔ TRƯỞNG") || pos.includes("TO TRUONG") ||
+        t.observerType === "TTCM" ||
+        t.departmentAssignments?.some((da: any) => {
+          const p = (da.position || "").toUpperCase().trim();
+          return p === "TTCM" || p.includes("TTCM") || p.includes("TỔ TRƯỞNG") || p.includes("TO TRUONG");
         });
 
-      if (isGDCS) {
+      if (isTBP) {
+        ttcmMap.set(t.id, {
+          ...(ttcmMap.get(t.id) || t),
+          position: "TBP",
+          deptId: t.departmentId,
+          deptName: divName || t.departmentRel?.name || "Bộ phận chuyên môn",
+          block: t.departmentRel?.blockCM || "Phổ thông K-12",
+          observerType: t.observerType || "TBP",
+          requiredObserved: t.requiredObserved || 4,
+          isTBP: true,
+          divisionName: divName
+        });
+      } else if (isGDCS) {
         ttcmMap.set(t.id, {
           ...(ttcmMap.get(t.id) || t),
           position: "GĐCS",
           deptId: t.departmentId,
           deptName: "GĐCS",
-          block: "Điều hành"
+          block: "Điều hành",
+          observerType: t.observerType || "GĐCS",
+          requiredObserved: t.requiredObserved || 4,
+          isTBP: false,
+          divisionName: divName
+        });
+      } else if (isBanDH) {
+        ttcmMap.set(t.id, {
+          ...(ttcmMap.get(t.id) || t),
+          position: "Ban ĐHCM",
+          deptId: t.departmentId,
+          deptName: divName || t.departmentRel?.name || "Ban ĐHCM",
+          block: "Điều hành",
+          observerType: t.observerType || "Ban ĐHCM",
+          requiredObserved: t.requiredObserved || 10,
+          isTBP: false,
+          divisionName: divName
         });
       } else if (isTT && !ttcmMap.has(t.id)) {
         ttcmMap.set(t.id, {
           ...t,
+          position: "TTCM",
           deptId: t.departmentId,
-          deptName: isGDCS ? "GĐCS" : getTeacherDeptName(t),
-          block: isGDCS ? "Điều hành" : getTeacherBlock(t)
+          deptName: t.departmentRel?.name || "Tổ chuyên môn",
+          block: t.departmentRel?.blockCM || getTeacherBlock(t),
+          observerType: t.observerType || "TTCM",
+          requiredObserved: t.requiredObserved || 6,
+          isTBP: false,
+          divisionName: divName
+        });
+      } else if (hasDiv && !ttcmMap.has(t.id)) {
+        ttcmMap.set(t.id, {
+          ...t,
+          position: "TBP",
+          deptId: t.departmentId,
+          deptName: divName || t.departmentRel?.name || "Bộ phận chuyên môn",
+          block: t.departmentRel?.blockCM || "Phổ thông K-12",
+          observerType: t.observerType || "TBP",
+          requiredObserved: t.requiredObserved || 4,
+          isTBP: true,
+          divisionName: divName
         });
       }
     });
@@ -1069,12 +1139,14 @@ export function AdminTongHopClient({
       const homeCampus = getTeacherCampusName(ttcm);
 
       // Resolve observerType & target strictly according to "Thiết lập Chỉ tiêu Dự giờ"
-      const posUpper = (ttcm.position || "").toUpperCase();
-      const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(posUpper) ||
-        posUpper.includes("GIÁM ĐỐC") || posUpper.includes("GIAM DOC");
-      const isBanDH = posUpper === "BAN ĐHCM" || posUpper.includes("ĐHCM") || posUpper.includes("DHCM");
+      const posUpper = (ttcm.position || baseTTCM.position || "").toUpperCase();
+      const isTBP = posUpper === "TBP" || posUpper.includes("TBP") || !!baseTTCM.isTBP || ttcm.teacherCode === "0201000095";
+      const isGDCS = !isTBP && (["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(posUpper) ||
+        posUpper.includes("GIÁM ĐỐC") || posUpper.includes("GIAM DOC"));
+      const isBanDH = !isTBP && (posUpper === "BAN ĐHCM" || posUpper.includes("ĐHCM") || posUpper.includes("DHCM"));
 
       const observerType = ttcm.observerType || (
+        isTBP ? "TBP" :
         isBanDH ? "Ban ĐHCM" :
           isGDCS ? "GĐCS" :
             (ttcm.position?.includes("Nhóm trưởng") ? "Nhóm trưởng CM CS" : "TTCM")
@@ -1083,6 +1155,7 @@ export function AdminTongHopClient({
       const getPresetTarget = (type: string) => {
         if (type === "Ban ĐHCM") return 10;
         if (type === "GĐCS" || type === "GDCS" || type === "Giám đốc Điều hành cơ sở") return 4;
+        if (type === "TBP") return 4;
         if (type === "TTCM" || type === "Nhóm trưởng CM CS") return 6;
         if (type === "Giáo viên cũ") return 2;
         if (type === "Giáo viên mới") return 6;
@@ -1148,15 +1221,17 @@ export function AdminTongHopClient({
       const isTargetMet = reqObserved === 0 || totalObserved >= reqObserved;
       const progressPct = reqObserved > 0 ? Math.round((totalObserved / reqObserved) * 100) : 100;
 
+      const resolvedPos = isTBP ? "TBP" : (baseTTCM.position || ttcm.position || "TTCM");
       return {
         id: ttcm.id,
         ttcm,
         teacherName: ttcm.teacherName,
         teacherCode: ttcm.teacherCode,
-        position: ttcm.position || "TTCM",
+        position: resolvedPos,
+        isTBP,
         observerType,
         observedUnit,
-        deptName: baseTTCM.deptName || ttcm.deptName || "Tổ chuyên môn",
+        deptName: baseTTCM.deptName || ttcm.deptName || (isTBP ? (baseTTCM.divisionName || "Bộ phận chuyên môn") : "Tổ chuyên môn"),
         block: baseTTCM.block || ttcm.block || "Phổ thông K-12",
         homeCampus,
         reqObserved,
@@ -1181,6 +1256,18 @@ export function AdminTongHopClient({
     return ttcmMatrixData.filter(item => {
       if (ttcmMatrixBlock !== "all" && item.block !== ttcmMatrixBlock) return false;
       if (ttcmMatrixCampus !== "all" && item.homeCampus !== ttcmMatrixCampus) return false;
+      if (ttcmMatrixRoleFilter !== "all") {
+        const rf = ttcmMatrixRoleFilter.toUpperCase();
+        if (rf === "TBP") {
+          if (item.position !== "TBP" && !item.isTBP) return false;
+        } else if (rf === "GDCS" || rf === "GĐCS") {
+          if (item.position !== "GĐCS" && !["GDCS", "GĐCS"].includes(item.position)) return false;
+        } else if (rf === "TTCM") {
+          if (item.position !== "TTCM") return false;
+        } else if (rf.includes("ĐHCM") || rf.includes("DHCM")) {
+          if (!item.position?.includes("ĐHCM")) return false;
+        }
+      }
       if (ttcmMatrixObservedCampus !== "all") {
         const hasObserved = item.breakdown.some(b => b.campusName === ttcmMatrixObservedCampus && b.periods > 0);
         if (!hasObserved) return false;
@@ -1356,6 +1443,7 @@ export function AdminTongHopClient({
         observedCampus: ttcmMatrixObservedCampus,
         search: ttcmSearchQuery,
         viewMode: ttcmViewMode,
+        position: ttcmMatrixRoleFilter,
         autoPrint: "true"
       });
       if (selectedYearId) params.append("academicYearId", selectedYearId);
@@ -4022,12 +4110,66 @@ export function AdminTongHopClient({
                 Báo cáo quản trị
               </span>
               <span className="text-xs text-slate-500 font-medium">
-                {filteredTTCMMatrix.length} Tổ trưởng chuyên môn
+                {filteredTTCMMatrix.length} {ttcmMatrixRoleFilter === "TBP" ? "Trưởng bộ phận" : ttcmMatrixRoleFilter === "GDCS" ? "Giám đốc cơ sở" : ttcmMatrixRoleFilter === "TTCM" ? "Tổ trưởng chuyên môn" : "Nhân sự quản lý"}
               </span>
             </div>
             <h3 className="text-lg font-bold text-slate-900 tracking-tight mt-1">
-              MA TRẬN DỰ GIỜ TỔ TRƯỞNG CHUYÊN MÔN
+              {ttcmMatrixRoleFilter === "TBP"
+                ? "MA TRẬN DỰ GIỜ TRƯỞNG BỘ PHẬN (TBP)"
+                : ttcmMatrixRoleFilter === "GDCS"
+                ? "MA TRẬN DỰ GIỜ GIÁM ĐỐC CƠ SỞ (GĐCS)"
+                : ttcmMatrixRoleFilter === "TTCM"
+                ? "MA TRẬN DỰ GIỜ TỔ TRƯỞNG CHUYÊN MÔN (TTCM)"
+                : "MA TRẬN DỰ GIỜ QUẢN LÝ (TTCM, TBP & GĐCS)"}
             </h3>
+            {/* Quick Filter Pills */}
+            <div className="flex items-center gap-1.5 flex-wrap mt-2">
+              <button
+                type="button"
+                onClick={() => setTtcmMatrixRoleFilter("all")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ttcmMatrixRoleFilter === "all"
+                    ? "bg-[#003B3A] text-white shadow-2xs"
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+                }`}
+              >
+                Tất cả ({ttcmMatrixData.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTtcmMatrixRoleFilter("TBP")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  ttcmMatrixRoleFilter === "TBP"
+                    ? "bg-indigo-700 text-white shadow-2xs"
+                    : "bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200"
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Trưởng Bộ Phận (TBP) ({ttcmMatrixData.filter(d => d.position === "TBP" || d.isTBP).length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setTtcmMatrixRoleFilter("TTCM")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ttcmMatrixRoleFilter === "TTCM"
+                    ? "bg-amber-600 text-white shadow-2xs"
+                    : "bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200"
+                }`}
+              >
+                Tổ trưởng CM (TTCM) ({ttcmMatrixData.filter(d => d.position === "TTCM").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setTtcmMatrixRoleFilter("GDCS")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  ttcmMatrixRoleFilter === "GDCS"
+                    ? "bg-teal-700 text-white shadow-2xs"
+                    : "bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200"
+                }`}
+              >
+                Giám đốc Cơ sở (GĐCS) ({ttcmMatrixData.filter(d => d.position === "GĐCS").length})
+              </button>
+            </div>
             <p className="text-xs text-slate-500 mt-0.5">
               Kỳ báo cáo: <span className="font-semibold text-slate-700">{activeMonthText}</span> &bull; Thống kê đối chiếu số tiết dự giờ nội bộ và liên cơ sở
             </p>
@@ -4086,7 +4228,7 @@ export function AdminTongHopClient({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
             <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
-              Tổng số TTCM
+              {ttcmMatrixRoleFilter === "TBP" ? "Tổng số TBP" : ttcmMatrixRoleFilter === "GDCS" ? "Tổng số GĐCS" : ttcmMatrixRoleFilter === "TTCM" ? "Tổng số TTCM" : "Tổng số Quản lý"}
             </div>
             <div className="text-2xl font-bold text-slate-900 mt-1">
               {ttcmMatrixKPIs.totalTTCM}
@@ -4179,6 +4321,22 @@ export function AdminTongHopClient({
             </select>
           </div>
 
+          {/* Lọc Chức vụ: TTCM / TBP / GDCS */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
+            <span className="text-[11px] font-semibold text-slate-500">Chức vụ:</span>
+            <select
+              value={ttcmMatrixRoleFilter}
+              onChange={(e) => setTtcmMatrixRoleFilter(e.target.value)}
+              className="bg-transparent font-semibold text-slate-800 outline-none cursor-pointer text-xs"
+            >
+              <option value="all">Tất cả chức vụ</option>
+              <option value="TBP">Chỉ TBP (Trưởng bộ phận)</option>
+              <option value="TTCM">Chỉ TTCM (Tổ trưởng)</option>
+              <option value="GDCS">Chỉ GĐCS (Giám đốc CS)</option>
+              <option value="Ban ĐHCM">Chỉ Ban ĐHCM</option>
+            </select>
+          </div>
+
           {/* Lọc Cơ sở công tác */}
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs">
             <span className="text-[11px] font-semibold text-slate-500">Cơ sở TTCM:</span>
@@ -4235,7 +4393,7 @@ export function AdminTongHopClient({
           </div>
 
           {/* Nút Xóa Lọc */}
-          {(ttcmMatrixMonth !== "all" || ttcmMatrixBlock !== "all" || ttcmMatrixCampus !== "all" || ttcmMatrixObservedCampus !== "all" || ttcmSearchQuery) && (
+          {(ttcmMatrixMonth !== "all" || ttcmMatrixBlock !== "all" || ttcmMatrixRoleFilter !== "all" || ttcmMatrixCampus !== "all" || ttcmMatrixObservedCampus !== "all" || ttcmSearchQuery) && (
             <button
               type="button"
               onClick={() => {
@@ -4297,7 +4455,15 @@ export function AdminTongHopClient({
                           <div className="text-[11px] text-slate-400 font-mono mt-0.5">{item.teacherCode}</div>
                         </td>
                         <td className="py-2.5 px-2 text-center border-r border-slate-100">
-                          <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                          <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
+                            item.position === "TBP"
+                              ? "bg-indigo-50 text-indigo-800 border-indigo-200"
+                              : item.position === "GĐCS"
+                              ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                              : item.position === "Ban ĐHCM"
+                              ? "bg-purple-50 text-purple-800 border-purple-200"
+                              : "bg-slate-100 text-slate-700 border-slate-200"
+                          }`}>
                             {item.position}
                           </span>
                         </td>
@@ -4474,7 +4640,15 @@ export function AdminTongHopClient({
                               rowSpan={rowCount}
                               className="py-2.5 px-2 text-center border-r border-slate-100 bg-white align-top"
                             >
-                              <span className="inline-block px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold border ${
+                                item.position === "TBP"
+                                  ? "bg-indigo-50 text-indigo-800 border-indigo-200"
+                                  : item.position === "GĐCS"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  : item.position === "Ban ĐHCM"
+                                  ? "bg-purple-50 text-purple-800 border-purple-200"
+                                  : "bg-slate-100 text-slate-700 border-slate-200"
+                              }`}>
                                 {item.position}
                               </span>
                             </td>
