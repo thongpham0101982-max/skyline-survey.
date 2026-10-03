@@ -344,7 +344,9 @@ export async function getObservationData(academicYearId?: string) {
         requiredObserved: activeYearTarget?.requiredObserved || 0,
         observedUnit: activeYearTarget?.observedUnit || "tháng",
         requiredTaught: activeYearTarget?.requiredTaught || 0,
-        taughtUnit: activeYearTarget?.taughtUnit || "tháng"
+        taughtUnit: activeYearTarget?.taughtUnit || "tháng",
+        targetConfirmed: !!activeYearTarget?.confirmed,
+        targetConfirmedAt: activeYearTarget?.confirmedAt ? activeYearTarget.confirmedAt.toISOString() : null
       } as any
     }
 
@@ -1468,6 +1470,96 @@ export async function deleteObservationSlot(slotId: string) {
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
+  }
+}
+
+export async function confirmTeacherExperienceCategory(data: {
+  category: "NEW" | "EXPERIENCED"
+  academicYearId?: string
+}) {
+  try {
+    invalidateObservationSlotsCache();
+    invalidateObservationRefCache();
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true, teacherName: true }
+    })
+    if (!currentTeacher) {
+      return { success: false, error: "Không tìm thấy hồ sơ giáo viên" }
+    }
+
+    const activeYear = data.academicYearId
+      ? await prisma.academicYear.findUnique({ where: { id: data.academicYearId } })
+      : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
+    if (!activeYear) {
+      return { success: false, error: "Không tìm thấy năm học hoạt động" }
+    }
+
+    const isNew = data.category === "NEW"
+    const observerType = isNew ? "Giáo viên mới" : "Giáo viên cũ"
+    const observeeType = isNew ? "Giáo viên mới" : "Giáo viên cũ"
+    const requiredObserved = isNew ? 6 : 2
+    const observedUnit = "tháng"
+    const requiredTaught = 1
+    const taughtUnit = isNew ? "tháng" : "học kỳ"
+
+    const target = await prisma.teacherAcademicYearTarget.upsert({
+      where: {
+        teacherId_academicYearId: {
+          teacherId: currentTeacher.id,
+          academicYearId: activeYear.id
+        }
+      },
+      update: {
+        observerType,
+        observeeType,
+        requiredObserved,
+        observedUnit,
+        requiredTaught,
+        taughtUnit,
+        confirmed: true,
+        confirmedAt: new Date()
+      },
+      create: {
+        teacherId: currentTeacher.id,
+        academicYearId: activeYear.id,
+        observerType,
+        observeeType,
+        requiredObserved,
+        observedUnit,
+        requiredTaught,
+        taughtUnit,
+        confirmed: true,
+        confirmedAt: new Date()
+      }
+    })
+
+    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/du-gio-mam-non")
+    revalidatePath("/admin/du-gio")
+    revalidatePath("/admin/tong-hop-du-gio")
+
+    return {
+      success: true,
+      target: {
+        observerType,
+        observeeType,
+        requiredObserved,
+        observedUnit,
+        requiredTaught,
+        taughtUnit,
+        confirmed: true,
+        confirmedAt: target.confirmedAt ? target.confirmedAt.toISOString() : new Date().toISOString()
+      }
+    }
+  } catch (e) {
+    console.error("Error in confirmTeacherExperienceCategory:", e)
+    return { success: false, error: (e && e.message) ? e.message : "Lỗi khi xác nhận đối tượng giáo viên" }
   }
 }
 
@@ -2693,7 +2785,7 @@ export async function updateTeacherObservationTargets(
 
     const isSelf = currentTeacher && currentTeacher.id === teacherId
 
-    if (!isSuperAdmin && !isTBP && !isTTCM && !isGDCS) {
+    if (!isSuperAdmin && !isTBP && !isTTCM && !isGDCS && !isSelf) {
       return { success: false, error: "Bạn không có quyền cấu hình chỉ tiêu. Chỉ TTCM, Ban ĐHCM hoặc Quản trị viên mới được phân bổ chỉ tiêu." }
     }
 

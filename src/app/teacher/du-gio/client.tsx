@@ -10,6 +10,7 @@ import { TTCMDepartmentSummaryTab } from './components/TTCMDepartmentSummaryTab'
 import { PrintObservationEvaluationModal } from './components/PrintObservationEvaluationModal';
 import { QuickCommentPresets } from './components/QuickCommentPresets';
 import { TeacherTargetTracker } from './components/TeacherTargetTracker';
+import { TeacherExperienceConfirmModal } from './components/TeacherExperienceConfirmModal';
 import { AdminObservationKpiCards } from './components/AdminObservationKpiCards';
 import { TeacherObservationReportTab } from './components/TeacherObservationReportTab';
 import { useCampusTheme, CAMPUS_THEMES, CampusThemeType } from "@/hooks/useCampusTheme";
@@ -221,6 +222,7 @@ import {
   requestObservationSlot, respondToObservationRequest,
   deleteObservationSlot, deleteMultipleObservationSlots, getCreatedCountInMonth, getObservationSlots, triggerSlotReminder,
   approveRegistration, submitEvaluation, updateTeacherObservationTargets, sendPendingEvaluationReminder,
+  confirmTeacherExperienceCategory,
   requestReEvaluation, approveReEvaluation, rejectReEvaluation, getReEvaluationRequests,
   createSurpriseObservation, submitSupplementalEvaluation
 } from "./actions"
@@ -250,6 +252,8 @@ interface TeacherInfo {
   taughtUnit?: string | null;
   position?: string | null;
   departmentAssignments?: any[];
+  targetConfirmed?: boolean;
+  targetConfirmedAt?: string | null;
 }
 interface SubjectInfo { id: string; subjectCode: string; subjectName: string }
 interface DeptInfo { id: string; code: string; name: string }
@@ -1033,6 +1037,8 @@ export function ObservationClient(props: ObservationClientProps) {
   const [selfObservedUnit, setSelfObservedUnit] = useState(currentTeacher?.observedUnit || "tháng")
   const [selfRequiredTaught, setSelfRequiredTaught] = useState(currentTeacher?.requiredTaught || 0)
   const [selfTaughtUnit, setSelfTaughtUnit] = useState(currentTeacher?.taughtUnit || "tháng")
+  const [showExperienceModal, setShowExperienceModal] = useState(false)
+  const [isSubmittingExperience, setIsSubmittingExperience] = useState(false)
 
   // Evaluation modal state
   const [evalModal, setEvalModal] = useState<{ registration: any; slot: any } | null>(null)
@@ -1673,6 +1679,80 @@ export function ObservationClient(props: ObservationClientProps) {
     if (isTTCM) return "TTCM";
     return "NONE";
   }, [isSuperOrBanDHCM, isGDCS, isTBP, isTTCM]);
+
+  // Giáo viên bình thường (GVBM, GVCN, giáo viên giảng dạy - không thuộc ban quản lý có định mức cố định)
+  const isRegularTeacher = useMemo(() => {
+    return managementScope === "NONE" && !isBGHMN;
+  }, [managementScope, isBGHMN]);
+
+  // Popup yêu cầu tài khoản GVBM, GVCN xác nhận GV mới, GV cũ 2 năm để xác định chỉ tiêu
+  // ĐẶC BIỆT: "GV nào đã xác nhận thì không hiển thị"
+  useEffect(() => {
+    // 1. Nếu giáo viên đã xác nhận thì tuyệt đối KHÔNG hiển thị
+    if (currentTeacher?.targetConfirmed) return;
+
+    // 2. Chỉ áp dụng cho tài khoản giáo viên (GVBM, GVCN...), không áp dụng cho Lãnh đạo
+    if (!isRegularTeacher) return;
+
+    // 3. Nếu trong phiên làm việc này người dùng đã chọn "Để tôi xác nhận sau", tạm thời không hiện lại
+    const dismissKey = `dismiss_exp_modal_${activeAcademicYear?.id || selectedYearId || 'default'}`;
+    if (typeof window !== "undefined" && sessionStorage.getItem(dismissKey) === "true") {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowExperienceModal(true);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [currentTeacher?.targetConfirmed, isRegularTeacher, activeAcademicYear?.id, selectedYearId]);
+
+  const handleConfirmExperienceCategory = async (category: "NEW" | "EXPERIENCED") => {
+    setIsSubmittingExperience(true);
+    try {
+      const res = await confirmTeacherExperienceCategory({
+        category,
+        academicYearId: selectedYearId || activeAcademicYear?.id
+      });
+      if (res.success && res.target) {
+        showToast(
+          category === "NEW"
+            ? "Đã xác nhận Giáo viên mới (< 2 năm): 06 tiết dự/tháng, 01 tiết dạy/tháng."
+            : "Đã xác nhận Giáo viên cũ (≥ 2 năm): 02 tiết dự/tháng, 01 tiết dạy/học kỳ.",
+          "success"
+        );
+        if (currentTeacher) {
+          currentTeacher.observerType = res.target.observerType;
+          currentTeacher.observeeType = res.target.observeeType;
+          currentTeacher.requiredObserved = res.target.requiredObserved;
+          currentTeacher.observedUnit = res.target.observedUnit;
+          currentTeacher.requiredTaught = res.target.requiredTaught;
+          currentTeacher.taughtUnit = res.target.taughtUnit;
+          currentTeacher.targetConfirmed = true;
+          currentTeacher.targetConfirmedAt = res.target.confirmedAt;
+        }
+        setSelfRequiredObserved(res.target.requiredObserved);
+        setSelfObservedUnit(res.target.observedUnit);
+        setSelfRequiredTaught(res.target.requiredTaught);
+        setSelfTaughtUnit(res.target.taughtUnit);
+        setShowExperienceModal(false);
+        router.refresh();
+      } else {
+        showToast(res.error || "Không thể lưu xác nhận chỉ tiêu", "error");
+      }
+    } catch (err: any) {
+      showToast(err?.message || "Lỗi khi lưu xác nhận chỉ tiêu", "error");
+    } finally {
+      setIsSubmittingExperience(false);
+    }
+  };
+
+  const handleCloseExperienceModal = () => {
+    setShowExperienceModal(false);
+    const dismissKey = `dismiss_exp_modal_${activeAcademicYear?.id || selectedYearId || 'default'}`;
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(dismissKey, "true");
+    }
+  };
 
   // Chỉ có tài khoản GV có chức vụ TTCM, TBP, GĐCS, Ban ĐHCM (hoặc Quản trị viên) thì mới có tag Chế độ quản lý
   const isManagerRole = useMemo(() => {
@@ -5442,6 +5522,10 @@ export function ObservationClient(props: ObservationClientProps) {
             monthlyStatsList={teacherMonthlyStatsList}
             onViewReport={() => setActiveMainTab("teacher_report")}
             onGoToPendingEvals={() => setMyScheduleSubTab("observed")}
+            observerType={currentTeacher?.observerType}
+            targetConfirmed={currentTeacher?.targetConfirmed}
+            isRegularTeacher={isRegularTeacher}
+            onOpenConfirmModal={() => setShowExperienceModal(true)}
           />
           
           {/* Sub-navigation inside My Workspace */}
@@ -8282,6 +8366,17 @@ export function ObservationClient(props: ObservationClientProps) {
         maxScoresK12={maxScoresK12}
         getK12RankingDetails={getK12RankingDetails}
         getMamNonRankingDetails={getMamNonRankingDetails}
+      />
+
+      {/* POPUP XÁC NHẬN ĐỐI TƯỢNG GIÁO VIÊN (GV MỚI < 2 NĂM / GV CŨ TRÊN 2 NĂM) */}
+      <TeacherExperienceConfirmModal
+        isOpen={showExperienceModal}
+        onClose={handleCloseExperienceModal}
+        onConfirm={handleConfirmExperienceCategory}
+        academicYearName={activeAcademicYear?.name || "2026-2027"}
+        teacherName={currentTeacher?.teacherName || ""}
+        currentObserverType={currentTeacher?.observerType}
+        isSubmitting={isSubmittingExperience}
       />
 
     </div>

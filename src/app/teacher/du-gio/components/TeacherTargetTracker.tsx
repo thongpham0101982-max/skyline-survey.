@@ -44,6 +44,10 @@ interface TeacherTargetTrackerProps {
   onGoToPendingEvals?: () => void
   campusCodeOrName?: string | null
   campusTheme?: CampusTheme
+  observerType?: string | null
+  targetConfirmed?: boolean
+  isRegularTeacher?: boolean
+  onOpenConfirmModal?: () => void
 }
 
 export function TeacherTargetTracker({
@@ -69,7 +73,11 @@ export function TeacherTargetTracker({
   onViewReport,
   onGoToPendingEvals,
   campusCodeOrName,
-  campusTheme: propCampusTheme
+  campusTheme: propCampusTheme,
+  observerType,
+  targetConfirmed = false,
+  isRegularTeacher = false,
+  onOpenConfirmModal
 }: TeacherTargetTrackerProps) {
   // Resolve campus theme (Hill, Global, Standard)
   const defaultTheme = useCampusTheme(campusCodeOrName)
@@ -203,6 +211,19 @@ export function TeacherTargetTracker({
               <span>Chỉ tiêu CM {academicYearName ? `• ${academicYearName}` : ""}</span>
             </span>
 
+            {/* Teacher Experience Category Pill */}
+            {observerType && (
+              <button
+                type="button"
+                onClick={onOpenConfirmModal}
+                className="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 text-white border border-white/20 text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-md transition-all cursor-pointer shadow-xs"
+                title="Bấm để xem lại hoặc điều chỉnh đối tượng GV"
+              >
+                <span>{observerType === "Giáo viên mới" ? "🌱 GV mới (< 2 năm)" : "⭐ GV cũ (≥ 2 năm)"}</span>
+                {onOpenConfirmModal && <span className="text-[10px] text-teal-200 underline font-normal ml-0.5">Thay đổi</span>}
+              </button>
+            )}
+
             {/* Selected Month Tag */}
             {isSpecificMonth && (
               <span className="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 text-[11px] font-bold flex items-center gap-1 backdrop-blur-md">
@@ -285,6 +306,35 @@ export function TeacherTargetTracker({
           )}
         </div>
       </div>
+
+      {/* TEACHER EXPERIENCE UNCONFIRMED WARNING CALLOUT */}
+      {!targetConfirmed && isRegularTeacher && (
+        <div className="relative z-10 p-3.5 bg-gradient-to-r from-amber-500/25 via-amber-500/20 to-teal-500/20 border border-amber-300/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-100 text-xs backdrop-blur-md shadow-lg animate-in fade-in">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-400/30 flex items-center justify-center shrink-0 border border-amber-300/50">
+              <AlertTriangle className="w-4 h-4 text-amber-200" />
+            </div>
+            <div>
+              <p className="font-extrabold text-white text-xs sm:text-sm flex items-center gap-1.5">
+                <span>Thầy/Cô chưa xác nhận đối tượng Giáo viên (Mới / Cũ 2 năm)!</span>
+              </p>
+              <p className="text-[11px] text-amber-200/90 font-medium mt-0.5">
+                Vui lòng xác nhận thâm niên để hệ thống áp dụng đúng định mức chỉ tiêu dự giờ ({academicYearName || "năm học này"}).
+              </p>
+            </div>
+          </div>
+          {onOpenConfirmModal && (
+            <button
+              type="button"
+              onClick={onOpenConfirmModal}
+              className="shrink-0 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <span>Xác nhận ngay</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-950" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* PENDING EVALUATION WARNING CALLOUT */}
       {pendingEvaluationCount > 0 && (
