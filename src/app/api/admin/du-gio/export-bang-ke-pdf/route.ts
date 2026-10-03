@@ -96,7 +96,7 @@ export async function GET(req: Request) {
 
     // 3. Query all Slots where teacher is host OR observer
     const whereConditions: any = {
-      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] },
+      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "COMPLETED", "REJECTED", "OPEN", "EXPIRED"] },
       OR: [
         { teacherId: teacher.id },
         { registrations: { some: { teacherId: teacher.id } } }

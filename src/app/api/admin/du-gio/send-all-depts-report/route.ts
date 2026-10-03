@@ -84,7 +84,7 @@ export async function POST(req: Request) {
 
       // 4. Fetch observation slots
       const whereSlotClause: any = {
-        status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED"] }
+        status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "COMPLETED", "REJECTED", "OPEN", "EXPIRED"] }
       };
 
       if (activeYear) {

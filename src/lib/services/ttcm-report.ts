@@ -141,7 +141,7 @@ export async function sendReportForDepartment(
         ]
       },
       {
-        status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "OPEN", "EXPIRED"] }
+        status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "COMPLETED", "REJECTED", "OPEN", "EXPIRED"] }
       }
     ];
 

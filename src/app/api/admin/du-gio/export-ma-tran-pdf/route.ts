@@ -797,7 +797,7 @@ export async function GET(req: Request) {
       }),
       prisma.observationSlot.findMany({
         where: {
-          status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] }
+          status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "COMPLETED", "REJECTED", "OPEN", "EXPIRED"] }
         },
         include: {
           teacher: {
@@ -846,9 +846,13 @@ export async function GET(req: Request) {
       const deptTeachers = teachers.filter(t =>
         t.departmentId === dept.id || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id)
       )
-      const ttcm = deptTeachers.find(t =>
-        t.position === "TTCM" || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id && da.position === "TTCM")
-      )
+      const ttcm = deptTeachers.find(t => {
+        if (dept.name === "GĐCS") {
+          return t.position === "TTCM" || (t.position || "").includes("GĐCS") || (t.position || "").includes("GDCS")
+        }
+        return (t.departmentId === dept.id && (t.position === "TTCM" || (t.position || "").includes("TTCM"))) ||
+          t.departmentAssignments?.some((da: any) => da.departmentId === dept.id && (da.position === "TTCM" || (da.position || "").includes("TTCM")))
+      })
       if (ttcm) {
         ttcmMap.set(ttcm.id, {
           ...ttcm,
@@ -863,6 +867,7 @@ export async function GET(req: Request) {
       const pos = (t.position || "").toUpperCase().trim()
       const obsUpper = (t.observerType || "").toUpperCase().trim()
       const deptName = (t.departmentRel?.name || "").toUpperCase().trim()
+      const roleUpper = (t.user?.role || t.role || "").toUpperCase().trim()
 
       const isTT = pos === "TTCM" || pos.includes("TTCM") || pos.includes("TỔ TRƯỞNG") || pos.includes("TO TRUONG") ||
         t.observerType === "TTCM" ||
@@ -873,15 +878,29 @@ export async function GET(req: Request) {
 
       const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS"].includes(pos) ||
         pos.includes("GIÁM ĐỐC") || pos.includes("GIAM DOC") ||
+        roleUpper === "GDCS" ||
         obsUpper === "GĐCS" || obsUpper === "GDCS" || obsUpper.includes("GIÁM ĐỐC") ||
-        deptName === "GĐCS"
+        deptName === "GĐCS" ||
+        t.teacherCode === "0201000135" ||
+        t.departmentAssignments?.some((da: any) => {
+          const dp = (da.position || "").toUpperCase().trim()
+          const dn = (da.department?.name || "").toUpperCase().trim()
+          return dp.includes("GĐCS") || dp.includes("GDCS") || dn === "GĐCS"
+        })
 
-      if ((isTT || isGDCS) && !ttcmMap.has(t.id)) {
+      if (isGDCS) {
+        ttcmMap.set(t.id, {
+          ...(ttcmMap.get(t.id) || t),
+          deptId: t.departmentId,
+          deptName: "GĐCS",
+          block: "Điều hành"
+        })
+      } else if (isTT && !ttcmMap.has(t.id)) {
         ttcmMap.set(t.id, {
           ...t,
           deptId: t.departmentId,
-          deptName: isGDCS ? "GĐCS" : (t.departmentRel?.name || "Tổ chuyên môn"),
-          block: isGDCS ? "Điều hành" : (t.departmentRel?.blockCM || "Phổ thông K-12")
+          deptName: t.departmentRel?.name || "Tổ chuyên môn",
+          block: t.departmentRel?.blockCM || "Phổ thông K-12"
         })
       }
     })

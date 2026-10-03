@@ -982,9 +982,13 @@ export function AdminTongHopClient({
       const deptTeachersList = (teachersList || []).filter((t: any) =>
         t.departmentId === dept.id || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id)
       );
-      const ttcm = deptTeachersList.find((t: any) =>
-        t.position === "TTCM" || t.departmentAssignments?.some((da: any) => da.departmentId === dept.id && da.position === "TTCM")
-      );
+      const ttcm = deptTeachersList.find((t: any) => {
+        if (dept.name === "GĐCS") {
+          return t.position === "TTCM" || (t.position || "").includes("GĐCS") || (t.position || "").includes("GDCS");
+        }
+        return (t.departmentId === dept.id && (t.position === "TTCM" || (t.position || "").includes("TTCM"))) ||
+          t.departmentAssignments?.some((da: any) => da.departmentId === dept.id && (da.position === "TTCM" || (da.position || "").includes("TTCM")));
+      });
       if (ttcm) {
         ttcmMap.set(ttcm.id, {
           ...ttcm,
@@ -998,7 +1002,7 @@ export function AdminTongHopClient({
     // 2. From teachersList: any teacher whose position or assignment is TTCM / Tổ trưởng / GĐCS
     (teachersList || []).forEach((t: any) => {
       const pos = (t.position || "").toUpperCase().trim();
-      const roleUpper = (t.user?.role || "").toUpperCase().trim();
+      const roleUpper = (t.user?.role || t.role || "").toUpperCase().trim();
       const obsUpper = (t.observerType || "").toUpperCase().trim();
       const deptName = (t.departmentRel?.name || t.department?.name || "").toUpperCase().trim();
 
@@ -1013,9 +1017,22 @@ export function AdminTongHopClient({
         pos.includes("GIÁM ĐỐC") || pos.includes("GIAM DOC") ||
         roleUpper === "GDCS" ||
         obsUpper === "GĐCS" || obsUpper === "GDCS" || obsUpper.includes("GIÁM ĐỐC") ||
-        deptName === "GĐCS";
+        deptName === "GĐCS" ||
+        t.teacherCode === "0201000135" ||
+        t.departmentAssignments?.some((da: any) => {
+          const dp = (da.position || "").toUpperCase().trim();
+          const dn = (da.department?.name || "").toUpperCase().trim();
+          return dp.includes("GĐCS") || dp.includes("GDCS") || dn === "GĐCS";
+        });
 
-      if ((isTT || isGDCS) && !ttcmMap.has(t.id)) {
+      if (isGDCS) {
+        ttcmMap.set(t.id, {
+          ...(ttcmMap.get(t.id) || t),
+          deptId: t.departmentId,
+          deptName: "GĐCS",
+          block: "Điều hành"
+        });
+      } else if (isTT && !ttcmMap.has(t.id)) {
         ttcmMap.set(t.id, {
           ...t,
           deptId: t.departmentId,
@@ -1993,6 +2010,7 @@ export function AdminTongHopClient({
   const [gdcsCampusFilter, setGdcsCampusFilter] = useState<string>("all");
   const [gdcsSearchQuery, setGdcsSearchQuery] = useState<string>("");
   const [expandedGdcsId, setExpandedGdcsId] = useState<string | null>(null);
+  const [expandedDetailSubTab, setExpandedDetailSubTab] = useState<Record<string, "observed" | "taught">>({});
 
   // Sync gdcsMonth with selectedMonth
   useEffect(() => {
@@ -2053,8 +2071,13 @@ export function AdminTongHopClient({
       const homeCampus = getTeacherCampusName(gdcs);
       const reqObserved = gdcs.requiredObserved || 4;
       const targetUnit = gdcs.observedUnit || "tháng";
+      const reqTaught = gdcs.requiredTaught !== undefined && gdcs.requiredTaught !== null ? gdcs.requiredTaught : 0;
+      const taughtUnit = gdcs.taughtUnit || "tháng";
 
       let totalAttended = 0;
+      let totalTaught = 0;
+      let taughtEvaluatedCount = 0;
+      let taughtScoreSum = 0;
       let internalCount = 0;
       let crossCount = 0;
       let surpriseCount = 0;
@@ -2063,6 +2086,7 @@ export function AdminTongHopClient({
       let totalScoreSum = 0;
 
       const slotDetails: any[] = [];
+      const taughtDetails: any[] = [];
 
       (initialSlots || []).forEach((slot: any) => {
         if (activeM !== "all") {
@@ -2076,6 +2100,51 @@ export function AdminTongHopClient({
         const isSurprise = isSurpriseSlot(slot);
         const increment = slot.isDoublePeriod ? 2 : 1;
 
+        // Ghi nhận tiết dạy của GĐCS
+        if (slot.teacherId === gdcs.id) {
+          totalTaught += increment;
+          const slotCampus = getSlotCampusName(slot);
+
+          const passedEvals = slot.registrations?.filter((r: any) =>
+            r.evaluation && r.evaluation?.reEvaluationStatus !== "DRAFT"
+          ) || [];
+
+          let avgTaughtScore: number | null = null;
+          if (passedEvals.length > 0) {
+            taughtEvaluatedCount += increment;
+            const validScores = passedEvals
+              .map((r: any) => r.evaluation?.totalScore)
+              .filter((sc: any) => sc !== null && sc !== undefined);
+            if (validScores.length > 0) {
+              const scAvg = validScores.reduce((a: number, b: number) => a + b, 0) / validScores.length;
+              avgTaughtScore = Number(scAvg.toFixed(1));
+              taughtScoreSum += (avgTaughtScore * increment);
+            }
+          }
+
+          const formattedDate = slot.date
+            ? (typeof slot.date === "string" ? slot.date.split("T")[0] : new Date(slot.date).toLocaleDateString("vi-VN"))
+            : "—";
+
+          taughtDetails.push({
+            id: slot.id,
+            date: formattedDate,
+            rawDate: slot.date,
+            period: slot.startTime ? `${slot.startTime} - ${slot.endTime || ""}` : (slot.period || "Tiết dạy"),
+            subjectName: slot.subjectName || "Chưa rõ môn",
+            className: slot.className || "Chưa rõ lớp",
+            campusName: slotCampus,
+            isSurprise,
+            isDoublePeriod: slot.isDoublePeriod,
+            increment,
+            registrationsCount: slot.registrations?.length || 0,
+            evaluated: passedEvals.length > 0,
+            avgScore: avgTaughtScore,
+            status: slot.status
+          });
+        }
+
+        // Ghi nhận tiết dự của GĐCS
         slot.registrations?.forEach((reg: any) => {
           if (reg.teacherId === gdcs.id && reg.isApproved) {
             const hasEval = reg.evaluation && reg.evaluation?.reEvaluationStatus !== "DRAFT";
@@ -2132,6 +2201,9 @@ export function AdminTongHopClient({
         });
       });
 
+      // Sort taught details by date desc
+      taughtDetails.sort((a, b) => new Date(b.rawDate || 0).getTime() - new Date(a.rawDate || 0).getTime());
+
       // Sort details by date desc
       slotDetails.sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
 
@@ -2177,6 +2249,12 @@ export function AdminTongHopClient({
         statusKey,
         statusLabel,
         statusBadgeClass,
+        reqTaught,
+        taughtUnit,
+        totalTaught,
+        taughtEvaluatedCount,
+        avgTaughtScore: taughtEvaluatedCount > 0 ? Number((taughtScoreSum / taughtEvaluatedCount).toFixed(1)) : null,
+        taughtDetails,
         details: slotDetails
       };
     });
@@ -2198,6 +2276,7 @@ export function AdminTongHopClient({
   const gdcsOverallStats = useMemo(() => {
     const totalGdcs = gdcsMonthlyData.length;
     const totalTarget = gdcsMonthlyData.reduce((s, g) => s + g.reqObserved, 0);
+    const totalTaught = gdcsMonthlyData.reduce((s, g) => s + g.totalTaught, 0);
     const totalAttended = gdcsMonthlyData.reduce((s, g) => s + g.totalAttended, 0);
     const totalInternal = gdcsMonthlyData.reduce((s, g) => s + g.internalCount, 0);
     const totalCross = gdcsMonthlyData.reduce((s, g) => s + g.crossCount, 0);
@@ -2219,6 +2298,7 @@ export function AdminTongHopClient({
       totalGdcs,
       totalTarget,
       totalAttended,
+      totalTaught,
       totalInternal,
       totalCross,
       totalEvaluated,
@@ -2401,8 +2481,8 @@ export function AdminTongHopClient({
             </div>
           </div>
 
-          {/* 2. 5 Thẻ KPI Thống Kê Tổng Quan Khối GĐCS */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 pt-2 border-t border-slate-100">
+          {/* 2. 6 Thẻ KPI Thống Kê Tổng Quan Khối GĐCS (Dự giờ & Giảng dạy) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2 border-t border-slate-100">
             <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tổng GĐCS phụ trách</div>
               <div className="text-xl font-black text-slate-900 mt-1 flex items-baseline gap-1">
@@ -2426,6 +2506,17 @@ export function AdminTongHopClient({
                   {gdcsOverallStats.overallProgress}%
                 </strong>
                 <span>chỉ tiêu</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tổng tiết dạy GĐCS</div>
+              <div className="text-xl font-black text-indigo-900 mt-1 flex items-baseline gap-1">
+                <span>{gdcsOverallStats.totalTaught}</span>
+                <span className="text-[11px] font-normal text-slate-500">tiết</span>
+              </div>
+              <div className="text-[10px] text-indigo-700 font-medium mt-0.5">
+                Đã giảng dạy trong kỳ
               </div>
             </div>
 
@@ -2509,19 +2600,20 @@ export function AdminTongHopClient({
                   <th className="py-3 px-3 text-center w-12">STT</th>
                   <th className="py-3 px-4 min-w-[200px]">Giám đốc Cơ sở</th>
                   <th className="py-3 px-3 text-center min-w-[120px]">Cơ sở phụ trách</th>
-                  <th className="py-3 px-3 text-center min-w-[100px]">Chỉ tiêu</th>
-                  <th className="py-3 px-3 text-center min-w-[130px]">Đã tham gia dự</th>
-                  <th className="py-3 px-3 text-center min-w-[120px]">Đã đánh giá</th>
-                  <th className="py-3 px-3 text-center min-w-[120px]">Phiếu chưa nộp</th>
-                  <th className="py-3 px-3 text-center min-w-[140px]">Tiến độ</th>
-                  <th className="py-3 px-3 text-center min-w-[150px]">Đánh giá trạng thái</th>
+                  <th className="py-3 px-3 text-center min-w-[90px]">Chỉ tiêu dự</th>
+                  <th className="py-3 px-3 text-center min-w-[120px]">Đã tham gia dự</th>
+                  <th className="py-3 px-3 text-center min-w-[100px]">Số tiết dạy</th>
+                  <th className="py-3 px-3 text-center min-w-[110px]">Đã đánh giá</th>
+                  <th className="py-3 px-3 text-center min-w-[110px]">Phiếu chưa nộp</th>
+                  <th className="py-3 px-3 text-center min-w-[130px]">Tiến độ dự</th>
+                  <th className="py-3 px-3 text-center min-w-[140px]">Đánh giá trạng thái</th>
                   <th className="py-3 px-3 text-center min-w-[120px]">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
                 {filteredGdcsMonthlyData.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="py-8 text-center text-slate-400">
+                    <td colSpan={11} className="py-8 text-center text-slate-400">
                       Không tìm thấy dữ liệu Giám đốc Cơ sở phù hợp
                     </td>
                   </tr>
@@ -2575,6 +2667,18 @@ export function AdminTongHopClient({
                                   {gdcs.crossCount > 0 && (
                                     <span className="text-indigo-700 font-medium">Chéo: {gdcs.crossCount}</span>
                                   )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <div>
+                              <span className={`font-bold text-sm ${gdcs.totalTaught > 0 ? "text-indigo-800" : "text-slate-500"}`}>
+                                {gdcs.totalTaught} tiết
+                              </span>
+                              {gdcs.reqTaught > 0 && (
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  CT: {gdcs.reqTaught} {gdcs.taughtUnit}
                                 </div>
                               )}
                             </div>
@@ -2659,23 +2763,51 @@ export function AdminTongHopClient({
                         {/* Expandable Details Row */}
                         {isExpanded && (
                           <tr className="bg-slate-50/70">
-                            <td colSpan={10} className="p-4 sm:p-5 border-t border-b border-teal-100">
+                            <td colSpan={11} className="p-4 sm:p-5 border-t border-b border-teal-100">
                               <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2.5 flex-wrap">
                                     <Eye className="w-4 h-4 text-teal-700" />
                                     <h5 className="text-xs font-bold uppercase text-slate-800 tracking-wider">
-                                      Chi tiết các tiết dự giờ của GĐCS {gdcs.name} ({badge.label}) - {periodLabel}
+                                      Chi tiết tiết dự & giảng dạy của GĐCS {gdcs.name} ({badge.label}) - {periodLabel}
                                     </h5>
-                                    <span className="px-2 py-0.2 rounded-full bg-teal-50 text-teal-800 text-[10px] font-bold border border-teal-200">
-                                      {gdcs.details.length} tiết dự
-                                    </span>
+                                    {/* Tabs chuyển đổi Tiết Dự / Tiết Dạy */}
+                                    <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs ml-2">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedDetailSubTab(prev => ({ ...prev, [gdcs.id]: "observed" }));
+                                        }}
+                                        className={`px-2.5 py-1 rounded-md font-semibold text-xs transition-all ${
+                                          (expandedDetailSubTab[gdcs.id] || "observed") === "observed"
+                                            ? "bg-white text-teal-900 shadow-2xs"
+                                            : "text-slate-600 hover:text-slate-900"
+                                        }`}
+                                      >
+                                        Tiết dự ({gdcs.details.length})
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setExpandedDetailSubTab(prev => ({ ...prev, [gdcs.id]: "taught" }));
+                                        }}
+                                        className={`px-2.5 py-1 rounded-md font-semibold text-xs transition-all ${
+                                          expandedDetailSubTab[gdcs.id] === "taught"
+                                            ? "bg-white text-indigo-900 shadow-2xs"
+                                            : "text-slate-600 hover:text-slate-900"
+                                        }`}
+                                      >
+                                        Tiết dạy ({gdcs.taughtDetails?.length || 0})
+                                      </button>
+                                    </div>
                                   </div>
                                   <button
                                     type="button"
                                     onClick={() => {
                                       setSelectedTeacherId(gdcs.id);
-                                      setActiveDetailTab("lich-su-du");
+                                      setActiveDetailTab((expandedDetailSubTab[gdcs.id] || "observed") === "taught" ? "lich-su" : "lich-su-du");
                                     }}
                                     className="text-xs text-teal-700 hover:text-teal-900 font-semibold underline self-start sm:self-auto cursor-pointer"
                                   >
@@ -2683,7 +2815,83 @@ export function AdminTongHopClient({
                                   </button>
                                 </div>
 
-                                {gdcs.details.length === 0 ? (
+                                {(expandedDetailSubTab[gdcs.id] || "observed") === "taught" ? (
+                                  gdcs.taughtDetails?.length === 0 ? (
+                                    <div className="py-6 text-center text-slate-400 text-xs">
+                                      Chưa ghi nhận tiết dạy nào của GĐCS trong kỳ báo cáo này.
+                                    </div>
+                                  ) : (
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-left text-xs border-collapse">
+                                        <thead>
+                                          <tr className="bg-slate-50 text-[10px] font-bold uppercase text-slate-600 border-b border-slate-200">
+                                            <th className="py-2 px-2.5 text-center w-10">STT</th>
+                                            <th className="py-2 px-3 min-w-[100px]">Ngày & Tiết</th>
+                                            <th className="py-2 px-3 min-w-[140px]">Môn học & Lớp</th>
+                                            <th className="py-2 px-3 text-center min-w-[100px]">Cơ sở</th>
+                                            <th className="py-2 px-3 text-center min-w-[100px]">Hình thức</th>
+                                            <th className="py-2 px-3 text-center min-w-[120px]">Số người tham gia dự</th>
+                                            <th className="py-2 px-3 text-center min-w-[100px]">Điểm TB</th>
+                                            <th className="py-2 px-3 text-center min-w-[100px]">Trạng thái</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                          {gdcs.taughtDetails.map((slot: any, sIdx: number) => {
+                                            const slotBadge = getCampusBadge(slot.campusName);
+                                            return (
+                                              <tr key={slot.id || sIdx} className="hover:bg-slate-50/80">
+                                                <td className="py-2 px-2.5 text-center text-slate-400 font-mono">
+                                                  {sIdx + 1}
+                                                </td>
+                                                <td className="py-2 px-3">
+                                                  <div className="font-semibold text-slate-800">{slot.date}</div>
+                                                  <div className="text-[10px] text-slate-400">{slot.period}</div>
+                                                </td>
+                                                <td className="py-2 px-3">
+                                                  <div className="font-semibold text-teal-900">{slot.subjectName}</div>
+                                                  <div className="text-[10px] text-slate-500 font-mono">{slot.className}</div>
+                                                </td>
+                                                <td className="py-2 px-3 text-center">
+                                                  <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${slotBadge.bg}`}>
+                                                    {slotBadge.label}
+                                                  </span>
+                                                </td>
+                                                <td className="py-2 px-3 text-center">
+                                                  {slot.isSurprise ? (
+                                                    <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                                      Đột xuất
+                                                    </span>
+                                                  ) : (
+                                                    <span className="inline-block px-1.5 py-0.2 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
+                                                      Định kỳ
+                                                    </span>
+                                                  )}
+                                                </td>
+                                                <td className="py-2 px-3 text-center">
+                                                  <span className="font-semibold text-slate-700">
+                                                    {slot.registrationsCount} người
+                                                  </span>
+                                                </td>
+                                                <td className="py-2 px-3 text-center">
+                                                  {slot.avgScore !== null ? (
+                                                    <span className="font-bold text-emerald-700">{slot.avgScore}đ</span>
+                                                  ) : (
+                                                    <span className="text-slate-400">-</span>
+                                                  )}
+                                                </td>
+                                                <td className="py-2 px-3 text-center">
+                                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
+                                                    {slot.status === "COMPLETED" ? "Đã hoàn thành" : slot.status}
+                                                  </span>
+                                                </td>
+                                              </tr>
+                                            );
+                                          })}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )
+                                ) : gdcs.details.length === 0 ? (
                                   <div className="py-6 text-center text-slate-400 text-xs">
                                     Chưa ghi nhận lượt dự giờ nào của GĐCS trong kỳ báo cáo này.
                                   </div>
