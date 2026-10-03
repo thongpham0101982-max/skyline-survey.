@@ -760,3 +760,216 @@ export async function checkTeacherActiveChallenge() {
     return { hasActive: false };
   }
 }
+
+
+// ==========================================
+// 11. GET TEACHER'S UPCOMING OBSERVATION SLOTS
+// ==========================================
+export async function getTeacherUpcomingSlots() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: "Chưa đăng nhập" };
+
+    const teacher = await prisma.teacher.findFirst({
+      where: { OR: [{ userId: session.user.id }, { email: session.user.email || "" }] }
+    });
+    if (!teacher) return { success: false, error: "Không tìm thấy hồ sơ giáo viên" };
+
+    const slots = await prisma.observationSlot.findMany({
+      where: {
+        teacherId: teacher.id,
+        status: { notIn: ["CANCELLED"] }
+      },
+      include: {
+        campus: true,
+        registrations: {
+          select: { id: true, observerTeacherId: true }
+        }
+      },
+      orderBy: { date: "desc" },
+      take: 25
+    });
+
+    return {
+      success: true,
+      slots: slots.map(s => ({
+        id: s.id,
+        topic: s.topic,
+        subjectName: s.subjectName,
+        className: s.className,
+        date: s.date ? s.date.toISOString() : null,
+        period: s.period,
+        campusName: s.campus?.campusName || "",
+        status: s.status,
+        observerCount: s.registrations.length
+      }))
+    };
+  } catch (error) {
+    console.error("Error in getTeacherUpcomingSlots:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ==========================================
+// 12. LINK CHALLENGE TO OBSERVATION SLOT
+// ==========================================
+export async function linkChallengeToSlot(teacherChallengeId: string, slotId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: "Chưa đăng nhập" };
+
+    const teacher = await prisma.teacher.findFirst({
+      where: { OR: [{ userId: session.user.id }, { email: session.user.email || "" }] }
+    });
+    if (!teacher) return { success: false, error: "Không tìm thấy giáo viên" };
+
+    const slot = await prisma.observationSlot.findUnique({
+      where: { id: slotId }
+    });
+    if (!slot) return { success: false, error: "Không tìm thấy tiết dạy dự giờ" };
+
+    const updated = await prisma.teacherChallenge.update({
+      where: { id: teacherChallengeId },
+      data: {
+        observationSlotId: slot.id,
+        campusId: slot.campusId || teacher.campusId,
+        classId: slot.classId || null,
+        className: slot.className || null,
+        subjectName: slot.subjectName || null,
+        plannedLessonDate: slot.date || null
+      },
+      include: {
+        challenge: true,
+        observationSlot: true
+      }
+    });
+
+    revalidatePath("/teacher/ai-growth");
+    revalidatePath("/teacher/du-gio");
+
+    return {
+      success: true,
+      quest: updated,
+      message: `Đã gắn mục tiêu vào tiết dạy "${slot.topic}" thành công!`
+    };
+  } catch (error) {
+    console.error("Error in linkChallengeToSlot:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ==========================================
+// 13. UNLINK CHALLENGE FROM SLOT
+// ==========================================
+export async function unlinkChallengeFromSlot(teacherChallengeId: string) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: "Chưa đăng nhập" };
+
+    const updated = await prisma.teacherChallenge.update({
+      where: { id: teacherChallengeId },
+      data: {
+        observationSlotId: null
+      },
+      include: {
+        challenge: true
+      }
+    });
+
+    revalidatePath("/teacher/ai-growth");
+    revalidatePath("/teacher/du-gio");
+
+    return {
+      success: true,
+      quest: updated,
+      message: "Đã gỡ gắn tiết dạy thành công!"
+    };
+  } catch (error) {
+    console.error("Error in unlinkChallengeFromSlot:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ==========================================
+// 14. GET SLOT CHALLENGE INFO FOR EVALUATION MODAL
+// ==========================================
+export async function getSlotChallengeInfo(slotId: string, teacherId?: string) {
+  try {
+    const session = await auth();
+    const observerTeacher = session?.user?.id
+      ? await prisma.teacher.findFirst({
+          where: { OR: [{ userId: session.user.id }, { email: session.user.email || "" }] }
+        })
+      : null;
+
+    let quest = await prisma.teacherChallenge.findFirst({
+      where: {
+        observationSlotId: slotId,
+        status: { in: ["ACCEPTED", "IN_PROGRESS", "COMPLETED"] }
+      },
+      include: {
+        challenge: true,
+        observations: {
+          include: {
+            observerTeacher: {
+              select: { id: true, teacherName: true }
+            }
+          }
+        },
+        wowMoments: {
+          include: {
+            observerTeacher: {
+              select: { id: true, teacherName: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!quest && teacherId) {
+      quest = await prisma.teacherChallenge.findFirst({
+        where: {
+          teacherId: teacherId,
+          status: { in: ["ACCEPTED", "IN_PROGRESS"] }
+        },
+        include: {
+          challenge: true,
+          observations: {
+            include: {
+              observerTeacher: {
+                select: { id: true, teacherName: true }
+              }
+            }
+          },
+          wowMoments: {
+            include: {
+              observerTeacher: {
+                select: { id: true, teacherName: true }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    if (!quest) {
+      return { success: true, hasChallenge: false };
+    }
+
+    const myCheer = observerTeacher
+      ? quest.observations.find(o => o.observerTeacherId === observerTeacher.id)
+      : null;
+
+    return {
+      success: true,
+      hasChallenge: true,
+      quest,
+      myCheer: myCheer || null,
+      cheerCount: quest.observations.length,
+      wowMoments: quest.wowMoments
+    };
+  } catch (error) {
+    console.error("Error in getSlotChallengeInfo:", error);
+    return { success: false, error: error.message };
+  }
+}

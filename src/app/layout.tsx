@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import { Open_Sans, Be_Vietnam_Pro } from "next/font/google";
+import { PwaManager } from "@/components/pwa/PwaManager";
 
 const openSans = Open_Sans({
   subsets: ["vietnamese", "latin"],
@@ -18,12 +19,36 @@ const beVietnamPro = Be_Vietnam_Pro({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#003B3A",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
 export const metadata: Metadata = {
   title: {
-    default: "SQMS",
-    template: "%s | SQMS",
+    default: "SSM - Sky-Line",
+    template: "%s | SSM Sky-Line",
   },
-  description: "Hệ thống Quản trị Chất lượng Trường học (SQMS)",
+  description: "Hệ thống Quản lý và Điều hành Công việc Giáo dục Sky-Line (SSM)",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "SSM",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/ssm-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/ssm-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.ico" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
@@ -37,6 +62,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <Toaster position="top-right" />
+          <PwaManager />
         </AuthProvider>
       </body>
     </html>

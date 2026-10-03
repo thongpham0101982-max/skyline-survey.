@@ -1,10 +1,17 @@
-import { auth } from '@/lib/auth'
+﻿import { auth } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
   
-  if (pathname.toLowerCase().includes('hocsinh')) {
+    if (
+    pathname.toLowerCase().includes('hocsinh') ||
+    pathname === '/offline' ||
+    pathname === '/sw.js' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/manifest.json' ||
+    pathname.startsWith('/icons/')
+  ) {
     return NextResponse.next()
   }
 
@@ -50,5 +57,6 @@ export default auth((req) => {
 })
 
 export const config = {
-  matcher: ['/((?!api|hocsinh|_next/static|_next/image|favicon.ico|logo.png|logo-skyline.png|vercel.svg|next.svg).*)'],
+  matcher: ['/((?!api|hocsinh|offline|sw\.js|manifest\.webmanifest|manifest\.json|icons|_next/static|_next/image|favicon.ico|logo.png|logo-skyline.png|vercel.svg|next.svg).*)'],
 }
+

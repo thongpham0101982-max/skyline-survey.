@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniSync AI - Siêu Ứng Dụng Đời Sống & Dịch Vụ Chuẩn Nhật Bản</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Serif+JP:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #F8F9FA;
+    }
+    .font-jp {
+      font-family: 'Noto Serif JP', serif;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .radar-sweep {
+      background: conic-gradient(from 0deg, rgba(16, 185, 129, 0.25) 0deg, rgba(16, 185, 129, 0) 60deg);
+      animation: rotateRadar 4s linear infinite;
+    }
+    @keyframes rotateRadar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .pulse-glow {
+      animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .75; transform: scale(1.05); }
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-indigo-500 selection:text-white pb-20">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Brand -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-700 via-indigo-600 to-emerald-500 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+          <i class="fa-solid fa-atom text-xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-indigo-900 bg-clip-text text-transparent">OmniSync AI</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-jp font-semibold">オムニシンク</span>
+          </div>
+          <p class="text-[11px] text-slate-500 tracking-wider">MÔ HÌNH GRAB 2.0 • PHONG CÁCH NHẬT BẢN</p>
+        </div>
+      </div>
+
+      <!-- Mode Switcher (Khách Hàng vs Đối Tác) -->
+      <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <button id="btnConsumerMode" onclick="switchMode('consumer')" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-2 bg-white text-indigo-700 shadow-xs">
+          <i class="fa-solid fa-user"></i>
+          <span>Khách Hàng (Người Dùng)</span>
+        </button>
+        <button id="btnPartnerMode" onclick="switchMode('partner')" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-2 text-slate-600 hover:text-slate-900">
+          <i class="fa-solid fa-briefcase"></i>
+          <span>Đối Tác Thuê Gói (Pro Partner)</span>
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+        </button>
+      </div>
+
+      <!-- User Info & Wallet -->
+      <div class="flex items-center space-x-3">
+        <div class="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium">
+          <i class="fa-solid fa-wallet text-emerald-600"></i>
+          <span>Ví Ký Quỹ: <strong class="font-bold text-emerald-700" id="walletAmount">2.450.000đ</strong></span>
+        </div>
+        <div class="flex items-center space-x-2 pl-2 border-l border-slate-200">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Avatar" class="w-9 h-9 rounded-full object-cover ring-2 ring-indigo-500/20">
+          <div class="hidden sm:block text-left">
+            <p class="text-xs font-bold text-slate-800">Kenji Nguyễn</p>
+            <p class="text-[10px] text-emerald-600 flex items-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mr-1"></span> Đã xác minh KYC
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WRAPPER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+
+    <!-- ========================================================= -->
+    <!-- VIEW 1: CONSUMER MODE (GIAO DIỆN KHÁCH HÀNG)              -->
+    <!-- ========================================================= -->
+    <div id="consumerSection" class="space-y-6">
+
+      <!-- Hero Banner & Value Prop -->
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl">
+        <div class="absolute -right-10 -bottom-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute right-20 top-0 text-slate-800/30 text-9xl font-jp select-none pointer-events-none font-bold">絆</div>
+        
+        <div class="relative z-10 max-w-2xl">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-medium mb-3">
+            <i class="fa-solid fa-sparkles"></i>
+            <span>Triết lý Omotenashi (おもてなし) • Tận tâm phục vụ</span>
+          </div>
+          <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight text-white">
+            Cần bất cứ thứ gì, AI tư vấn & kết nối trong <span class="bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">15 phút</span>
+          </h1>
+          <p class="text-slate-300 text-sm sm:text-base mt-2 font-normal leading-relaxed">
+            Rao vặt thanh lý không lãng phí (Mottainai), gọi thợ chuẩn mực 5 sao, chia sẻ vật dụng gia đình hoặc tìm người lắng nghe tâm sự 1-1.
+          </p>
+        </div>
+
+        <!-- 4 Quick Pillars (Konbini Grid) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
+          <div class="cursor-pointer group p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition duration-200">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-lg mb-2 group-hover:scale-110 transition">
+              <i class="fa-solid fa-box-open"></i>
+            </div>
+            <h3 class="text-xs font-bold text-white flex items-center justify-between">
+              Mottainai Market <i class="fa-solid fa-arrow-right text-[10px] opacity-50 group-hover:translate-x-1 transition"></i>
+            </h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">Thanh lý đồ cũ 15 phút</p>
+          </div>
+
+          <div class="cursor-pointer group p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition duration-200">
+            <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-lg mb-2 group-hover:scale-110 transition">
+              <i class="fa-solid fa-screwdriver-wrench"></i>
+            </div>
+            <h3 class="text-xs font-bold text-white flex items-center justify-between">
+              Thợ Omotenashi <i class="fa-solid fa-arrow-right text-[10px] opacity-50 group-hover:translate-x-1 transition"></i>
+            </h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">Sửa điện, khóa, dọn nhà 5★</p>
+          </div>
+
+          <div class="cursor-pointer group p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition duration-200">
+            <div class="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-lg mb-2 group-hover:scale-110 transition">
+              <i class="fa-solid fa-heart"></i>
+            </div>
+            <h3 class="text-xs font-bold text-white flex items-center justify-between">
+              Kizuna Tâm Sự <i class="fa-solid fa-arrow-right text-[10px] opacity-50 group-hover:translate-x-1 transition"></i>
+            </h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">Thuê người lắng nghe 1-1</p>
+          </div>
+
+          <div class="cursor-pointer group p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition duration-200">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg mb-2 group-hover:scale-110 transition">
+              <i class="fa-solid fa-handshake-angle"></i>
+            </div>
+            <h3 class="text-xs font-bold text-white flex items-center justify-between">
+              Mượn Đồ Konbini <i class="fa-solid fa-arrow-right text-[10px] opacity-50 group-hover:translate-x-1 transition"></i>
+            </h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">Thuê máy móc, bê đồ 500m</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN INTERACTIVE SECTION: AI SOMMELIER & LIVE RADAR -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT COLUMN: AI CONCIERGE CHAT CONSULTANT (7 COLS) -->
+        <div class="lg:col-span-7 space-y-4">
+          <div class="glass-card rounded-3xl p-5 shadow-sm border border-slate-200">
+            <!-- Chat Header -->
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div class="flex items-center space-x-3">
+                <div class="relative">
+                  <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-100">
+                    <i class="fa-solid fa-robot text-lg"></i>
+                  </div>
+                  <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"></span>
+                </div>
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <h2 class="text-sm font-bold text-slate-900">Quản Gia AI Kizuna (Sommelier)</h2>
+                    <span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100">Tư vấn trung thực 24/7</span>
+                  </div>
+                  <p class="text-xs text-slate-500">Phân tích sâu, so sánh thông số và kết nối đối tác uy tín</p>
+                </div>
+              </div>
+              <button onclick="clearChat()" class="text-xs text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition" title="Làm mới đoạn hội thoại">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+
+            <!-- Quick Suggestion Pills -->
+            <div class="flex items-center space-x-2 overflow-x-auto py-3 no-scrollbar text-xs">
+              <span class="text-slate-400 whitespace-nowrap text-[11px] font-medium"><i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i>Hỏi thử:</span>
+              <button onclick="askPrompt('Tôi là sinh viên cần tìm laptop cũ làm đồ họa nhẹ dưới 5 triệu gần Cầu Giấy')" class="px-3 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 whitespace-nowrap transition border border-slate-200/60">
+                💻 Laptop cũ &lt; 5tr làm đồ họa
+              </button>
+              <button onclick="askPrompt('Tủ lạnh nhà tôi kêu cọc cọc rất to, tư vấn thợ sửa hay đổi máy mới?')" class="px-3 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 whitespace-nowrap transition border border-slate-200/60">
+                🧊 Tủ lạnh kêu to: Sửa hay đổi?
+              </button>
+              <button onclick="askPrompt('Tôi stress công việc, muốn thuê một người bạn cùng uống cà phê tâm sự lắng nghe chiều nay')" class="px-3 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 whitespace-nowrap transition border border-slate-200/60">
+                🍵 Tìm người lắng nghe tâm sự
+              </button>
+              <button onclick="askPrompt('Cần người phụ vác máy giặt lên lầu 3 trong 15 phút, trả 80.000đ')" class="px-3 py-1 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 text-slate-700 whitespace-nowrap transition border border-slate-200/60">
+                💪 Phụ bê đồ lên lầu 3 (80k)
+              </button>
+            </div>
+
+            <!-- Chat Message History Window -->
+            <div id="chatHistory" class="space-y-4 max-h-[380px] min-h-[260px] overflow-y-auto pr-1 text-sm">
+              <!-- AI Welcome Message -->
+              <div class="flex items-start space-x-3">
+                <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 text-xs font-bold">
+                  AI
+                </div>
+                <div class="bg-slate-50 border border-slate-200/80 rounded-2xl rounded-tl-none p-3.5 max-w-[88%] text-slate-800 shadow-2xs">
+                  <p class="font-medium text-slate-900 mb-1">Kính chào quý khách! (いらっしゃいませ)</p>
+                  <p class="text-xs text-slate-600 leading-relaxed">
+                    Tôi là Quản gia AI của <strong>OmniSync</strong>. Bạn chỉ cần nói nhu cầu: muốn bán đồ cũ, tìm mua thiết bị phù hợp lối sống, gọi thợ sửa chữa, mượn đồ hay tìm người lắng nghe tâm sự. Tôi sẽ phân tích trung thực nhất và giúp bạn kết nối đối tác uy tín trong bán kính 3km!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Input Box -->
+            <div class="mt-4 pt-3 border-t border-slate-100">
+              <form id="aiPromptForm" onsubmit="handleUserSubmit(event)" class="relative flex items-center">
+                <input 
+                  type="text" 
+                  id="userQueryInput" 
+                  placeholder="Hỏi bất cứ điều gì: tìm đồ, chẩn đoán hỏng hóc, gọi người phụ việc..." 
+                  class="w-full pl-11 pr-24 py-3 rounded-2xl bg-slate-50 hover:bg-white focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 text-sm outline-hidden transition shadow-2xs"
+                >
+                <div class="absolute left-3.5 text-slate-400">
+                  <i class="fa-solid fa-magnifying-glass text-sm"></i>
+                </div>
+                <div class="absolute right-2 flex items-center space-x-1">
+                  <button type="button" onclick="triggerVoiceInput()" class="p-2 text-slate-400 hover:text-indigo-600 rounded-xl hover:bg-indigo-50 transition" title="Nói với AI">
+                    <i class="fa-solid fa-microphone text-sm"></i>
+                  </button>
+                  <button type="submit" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center space-x-1">
+                    <span>Gửi</span>
+                    <i class="fa-solid fa-paper-plane text-[10px]"></i>
+                  </button>
+                </div>
+              </form>
+              <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
+                <span><i class="fa-solid fa-shield-halved text-emerald-500 mr-1"></i>Ký quỹ Escrow bảo vệ 100% đơn hàng</span>
+                <span>Phản hồi tức thì &lt; 2 giây</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN: LIVE RADAR & FLASH-AUCTION 180S (5 COLS) -->
+        <div class="lg:col-span-5 space-y-4">
+          
+          <!-- Live Hyperlocal Radar Card -->
+          <div class="glass-card rounded-3xl p-5 shadow-sm border border-slate-200">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  <span>Bản Đồ Radar Đối Tác Gần Bạn</span>
+                </h3>
+                <p class="text-[11px] text-slate-500">Quận Cầu Giấy • Bán kính 3km</p>
+              </div>
+              <span class="text-xs px-2.5 py-1 bg-emerald-50 text-emerald-700 font-bold rounded-lg border border-emerald-200">
+                18 Đối Tác Online
+              </span>
+            </div>
+
+            <!-- Simulated Radar Visual -->
+            <div class="relative w-full h-52 bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center shadow-inner">
+              <div class="absolute w-44 h-44 rounded-full border border-emerald-500/20"></div>
+              <div class="absolute w-32 h-32 rounded-full border border-emerald-500/30"></div>
+              <div class="absolute w-16 h-16 rounded-full border border-emerald-500/40"></div>
+              <div class="absolute w-44 h-44 rounded-full radar-sweep pointer-events-none"></div>
+
+              <!-- Center User Marker -->
+              <div class="relative z-10 w-4 h-4 rounded-full bg-indigo-500 ring-4 ring-indigo-400/30 flex items-center justify-center text-[8px] text-white">
+                <i class="fa-solid fa-user"></i>
+              </div>
+
+              <!-- Dynamic Partner Markers -->
+              <div class="absolute top-10 left-16 z-10 group cursor-pointer" onclick="showPartnerDetail('Nguyễn Văn Tuấn (Thợ Điện Lạnh 5★)', 'Cách 450m', '150k/lần')">
+                <div class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] shadow-lg pulse-glow">
+                  <i class="fa-solid fa-wrench"></i>
+                </div>
+                <span class="hidden group-hover:block absolute left-7 top-0 bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded-md whitespace-nowrap shadow-md z-20">Thợ Điện Lạnh (450m)</span>
+              </div>
+
+              <div class="absolute bottom-12 right-20 z-10 group cursor-pointer" onclick="showPartnerDetail('Chị Thu Hà (Kizuna Companion)', 'Cách 800m', '120k/h')">
+                <div class="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] shadow-lg pulse-glow">
+                  <i class="fa-solid fa-heart"></i>
+                </div>
+                <span class="hidden group-hover:block absolute right-7 top-0 bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded-md whitespace-nowrap shadow-md z-20">Đối Tác Lắng Nghe (800m)</span>
+              </div>
+
+              <div class="absolute top-20 right-12 z-10 group cursor-pointer" onclick="showPartnerDetail('Kho Đồ Cũ Minh Phát (Shop Vàng)', 'Cách 1.1km', 'Thanh lý 15p')">
+                <div class="w-6 h-6 rounded-full bg-amber-500 text-white flex items-center justify-center text-[10px] shadow-lg pulse-glow">
+                  <i class="fa-solid fa-store"></i>
+                </div>
+                <span class="hidden group-hover:block absolute right-7 top-0 bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded-md whitespace-nowrap shadow-md z-20">Shop Thu Mua Đồ Cũ</span>
+              </div>
+            </div>
+
+            <!-- Radar Footer -->
+            <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                <p class="text-[10px] text-slate-500">Tốc độ có mặt</p>
+                <p class="text-xs font-bold text-slate-800">12 - 15 phút</p>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                <p class="text-[10px] text-slate-500">Đánh giá trung bình</p>
+                <p class="text-xs font-bold text-amber-600"><i class="fa-solid fa-star text-[10px] mr-0.5"></i>4.92 / 5.0</p>
+              </div>
+              <div class="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                <p class="text-[10px] text-slate-500">Bảo hiểm sự cố</p>
+                <p class="text-xs font-bold text-emerald-600">Đến 20 triệu</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- FLASH-AUCTION 180S (ĐẤU GIÁ THANH LÝ 15 PHÚT) -->
+          <div class="glass-card rounded-3xl p-5 shadow-sm border border-amber-200/80 bg-gradient-to-br from-amber-50/40 via-white to-white">
+            <div class="flex items-center justify-between pb-3 border-b border-amber-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <h3 class="text-xs font-extrabold text-slate-900 uppercase">Flash-Auction: Bán Lấy Tiền Ngay</h3>
+              </div>
+              <div class="flex items-center space-x-1 px-2.5 py-0.5 rounded-full bg-rose-500 text-white text-xs font-mono font-bold">
+                <i class="fa-solid fa-stopwatch text-[10px]"></i>
+                <span id="auctionTimer">02:45</span>
+              </div>
+            </div>
+
+            <div class="mt-3 flex items-center space-x-3">
+              <img src="https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?auto=format&fit=crop&w=200&q=80" alt="Item" class="w-16 h-16 rounded-xl object-cover border border-slate-200">
+              <div class="flex-1 min-w-0">
+                <h4 class="text-xs font-bold text-slate-900 truncate">Máy Pha Cà Phê DeLonghi Dedica EC685</h4>
+                <p class="text-[11px] text-slate-500">Tình trạng: Mới 90%, đã kiểm định AI</p>
+                <div class="flex items-baseline space-x-2 mt-1">
+                  <span class="text-xs text-slate-400">Giá cao nhất hiện tại:</span>
+                  <span class="text-sm font-extrabold text-emerald-600" id="currentBidPrice">2.150.000đ</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bid Activity Stream -->
+            <div class="mt-3 p-2.5 rounded-xl bg-white border border-amber-200/60 text-xs space-y-1.5">
+              <div class="flex items-center justify-between text-[11px] text-slate-600">
+                <span class="flex items-center"><i class="fa-solid fa-bolt text-amber-500 mr-1.5"></i>Shop Điện Máy Tuấn Cường trả:</span>
+                <span class="font-bold text-slate-900">2.150.000đ (Vừa xong)</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-slate-400">
+                <span>Kho Đồ Cũ Bách Khoa trả:</span>
+                <span>2.050.000đ (20s trước)</span>
+              </div>
+            </div>
+
+            <div class="mt-3 flex items-center space-x-2">
+              <button onclick="acceptAuctionBid()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center justify-center space-x-1">
+                <i class="fa-solid fa-check"></i>
+                <span>Đồng Ý Chốt (Thợ tới lấy sau 15p)</span>
+              </button>
+              <button onclick="openSellModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition">
+                + Đăng Bán Món Mới
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- VIEW 2: PARTNER PRO MODE (GIAO DIỆN ĐỐI TÁC THUÊ GÓI)      -->
+    <!-- ========================================================= -->
+    <div id="partnerSection" class="hidden space-y-6">
+
+      <!-- Partner Header Bar & Subscription Status -->
+      <div class="glass-card rounded-3xl p-6 shadow-sm border border-slate-200 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div class="flex items-center space-x-4">
+            <div class="relative">
+              <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=150&q=80" alt="Partner Avatar" class="w-16 h-16 rounded-2xl object-cover ring-2 ring-amber-400">
+              <span class="absolute -bottom-1 -right-1 px-1.5 py-0.5 rounded-md bg-amber-500 text-slate-900 text-[10px] font-extrabold">GOLD</span>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <h2 class="text-lg font-bold text-white">Anh Hoàng Long (Đội Thợ Cơ Điện Omotenashi)</h2>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-400/30">Chứng chỉ Chuẩn 5★</span>
+              </div>
+              <p class="text-xs text-slate-300 mt-1 flex items-center space-x-3">
+                <span><i class="fa-solid fa-star text-amber-400 mr-1"></i>4.98 (342 đánh giá)</span>
+                <span>•</span>
+                <span><i class="fa-solid fa-calendar-check text-indigo-400 mr-1"></i>Gói Vàng: Còn 21 ngày</span>
+                <span>•</span>
+                <span>Hoa hồng ưu đãi: <strong>6%</strong></span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Big Online / Offline Toggle Button (Y hệt Grab Driver) -->
+          <div class="flex items-center space-x-3">
+            <div class="text-right hidden sm:block">
+              <p class="text-xs font-bold" id="onlineStatusLabel">ĐANG BẬT NHẬN VIỆC</p>
+              <p class="text-[10px] text-slate-400">Tự động nổ chuông khi có cuốc &lt; 5km</p>
+            </div>
+            <button id="btnOnlineToggle" onclick="toggleOnlineStatus()" class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-sm shadow-lg shadow-emerald-500/30 flex items-center space-x-2 transition duration-200">
+              <i class="fa-solid fa-power-off text-base"></i>
+              <span id="btnOnlineText">SẴN SÀNG (ONLINE)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Partner Stats Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800">
+          <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+            <p class="text-[11px] text-slate-400">Thu nhập hôm nay</p>
+            <p class="text-lg font-extrabold text-emerald-400 mt-0.5">1.280.000đ</p>
+          </div>
+          <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+            <p class="text-[11px] text-slate-400">Số cuốc hoàn thành</p>
+            <p class="text-lg font-extrabold text-white mt-0.5">5 cuốc</p>
+          </div>
+          <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+            <p class="text-[11px] text-slate-400">Số dư ký quỹ đảm bảo</p>
+            <p class="text-lg font-extrabold text-amber-400 mt-0.5">5.000.000đ</p>
+          </div>
+          <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+            <p class="text-[11px] text-slate-400">Tỷ lệ nhận cuốc</p>
+            <p class="text-lg font-extrabold text-indigo-400 mt-0.5">98.5%</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- INCOMING JOB DISPATCH SIMULATION (POP-UP NỔ CUỐC 15 GIÂY) -->
+      <div id="incomingJobCard" class="relative glass-card rounded-3xl p-6 shadow-xl border-2 border-emerald-500 bg-white">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center space-x-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+            <span class="text-xs font-extrabold text-emerald-700 uppercase tracking-wider">CÓ ĐƠN ĐẶT VIỆC MỚI CÁCH BẠN 650M!</span>
+          </div>
+          <div class="px-3 py-1 bg-rose-600 text-white font-mono font-bold text-xs rounded-full flex items-center space-x-1">
+            <i class="fa-solid fa-clock"></i>
+            <span id="jobCountdown">14s</span>
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <div class="md:col-span-2 space-y-2">
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[11px] font-bold">Thợ Điện Lạnh</span>
+              <span class="text-xs font-semibold text-slate-700">Khách: Chị Minh Anh (Chung cư Discovery Complex, 302 Cầu Giấy)</span>
+            </div>
+            <h3 class="text-base font-bold text-slate-900">
+              "Máy giặt Electrolux kêu rung lắc dữ dội khi vắt, cần thợ kiểm tra gấp"
+            </h3>
+            <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-center space-x-2">
+              <i class="fa-solid fa-robot text-indigo-600"></i>
+              <span><strong>AI Chẩn đoán sơ bộ:</strong> Lỏng thụt giảm chấn hoặc gãy chảng ba. Giá công định mức: 180k - 250k.</span>
+            </div>
+          </div>
+
+          <div class="text-right space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+            <p class="text-xs text-slate-500">Ước tính thu nhập</p>
+            <p class="text-2xl font-black text-emerald-600">220.000đ</p>
+            <div class="flex items-center justify-end space-x-2">
+              <button onclick="acceptIncomingJob()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-1">
+                <i class="fa-solid fa-check"></i>
+                <span>NHẬN CUỐC NGAY</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscription Packages Overview for Partners -->
+      <div class="glass-card rounded-3xl p-6 shadow-sm border border-slate-200">
+        <div class="text-center max-w-xl mx-auto mb-6">
+          <h3 class="text-base font-extrabold text-slate-900">Bảng Phí Thuê Gói Dành Cho Đối Tác</h3>
+          <p class="text-xs text-slate-500 mt-1">Đăng ký gói để được AI ưu tiên nổ cuốc, hưởng chiết khấu thấp và cấp chứng chỉ Omotenashi</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Gói Bạc -->
+          <div class="p-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md transition">
+            <div class="flex justify-between items-center">
+              <h4 class="text-xs font-bold text-slate-700 uppercase">Gói Bạc (Silver)</h4>
+              <span class="text-xs font-bold text-slate-500">Cá nhân</span>
+            </div>
+            <p class="text-xl font-extrabold text-slate-900 mt-2">199.000đ<span class="text-xs font-normal text-slate-500">/tháng</span></p>
+            <ul class="mt-4 space-y-2 text-xs text-slate-600">
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>Nhận cuốc bán kính 5km</li>
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>Hoa hồng hệ thống: 10%</li>
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>Đăng 30 tin thanh lý đồ cũ</li>
+            </ul>
+            <button class="w-full mt-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition">Gia Hạn Gói Này</button>
+          </div>
+
+          <!-- Gói Vàng (Đang dùng) -->
+          <div class="p-4 rounded-2xl border-2 border-amber-400 bg-amber-50/20 relative shadow-sm">
+            <span class="absolute -top-2.5 right-4 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold">ĐANG SỬ DỤNG</span>
+            <div class="flex justify-between items-center">
+              <h4 class="text-xs font-bold text-amber-700 uppercase">Gói Vàng (Gold Pro)</h4>
+              <span class="text-xs font-bold text-amber-600">Phổ biến nhất</span>
+            </div>
+            <p class="text-xl font-extrabold text-slate-900 mt-2">599.000đ<span class="text-xs font-normal text-slate-500">/tháng</span></p>
+            <ul class="mt-4 space-y-2 text-xs text-slate-700">
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i><strong>AI ưu tiên nổ cuốc Top 1</strong></li>
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>Hoa hồng giảm còn <strong>6%</strong></li>
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>Đấu thầu thu mua đồ cũ 180s</li>
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>AI tự động chốt lịch hẹn khi bận</li>
+            </ul>
+            <button class="w-full mt-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition shadow-xs">Gia Hạn Thêm 1 Năm (-25%)</button>
+          </div>
+
+          <!-- Gói Kim Cương -->
+          <div class="p-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md transition">
+            <div class="flex justify-between items-center">
+              <h4 class="text-xs font-bold text-indigo-700 uppercase">Gói Kim Cương (Elite)</h4>
+              <span class="text-xs font-bold text-indigo-600">Doanh nghiệp</span>
+            </div>
+            <p class="text-xl font-extrabold text-slate-900 mt-2">1.490.000đ<span class="text-xs font-normal text-slate-500">/tháng</span></p>
+            <ul class="mt-4 space-y-2 text-xs text-slate-600">
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>Quản lý đội nhóm 3-10 thợ</li>
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>Hoa hồng thấp nhất: <strong>3%</strong></li>
+              <li><i class="fa-solid fa-check text-emerald-500 mr-1.5"></i>Ghim cửa hàng trên đỉnh bản đồ</li>
+            </ul>
+            <button class="w-full mt-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition">Nâng Cấp Gói Này</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Interactive JavaScript -->
+  <script>
+    // Mode Switcher Function
+    function switchMode(mode) {
+      const consumerSec = document.getElementById('consumerSection');
+      const partnerSec = document.getElementById('partnerSection');
+      const btnConsumer = document.getElementById('btnConsumerMode');
+      const btnPartner = document.getElementById('btnPartnerMode');
+
+      if (mode === 'consumer') {
+        consumerSec.classList.remove('hidden');
+        partnerSec.classList.add('hidden');
+        btnConsumer.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-2 bg-white text-indigo-700 shadow-xs';
+        btnPartner.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-2 text-slate-600 hover:text-slate-900';
+      } else {
+        consumerSec.classList.add('hidden');
+        partnerSec.classList.remove('hidden');
+        btnPartner.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-2 bg-white text-indigo-700 shadow-xs';
+        btnConsumer.className = 'px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center space-x-2 text-slate-600 hover:text-slate-900';
+      }
+    }
+
+    // AI Concierge Chat System Simulation
+    function handleUserSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('userQueryInput');
+      const query = input.value.trim();
+      if (!query) return;
+
+      appendUserMessage(query);
+      input.value = '';
+
+      setTimeout(() => {
+        generateAiResponse(query);
+      }, 700);
+    }
+
+    function askPrompt(promptText) {
+      appendUserMessage(promptText);
+      setTimeout(() => {
+        generateAiResponse(promptText);
+      }, 700);
+    }
+
+    function appendUserMessage(text) {
+      const history = document.getElementById('chatHistory');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'flex items-start justify-end space-x-2';
+      msgDiv.innerHTML = `
+        <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-3 max-w-[85%] text-xs shadow-xs">
+          ${text}
+        </div>
+        <div class="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center shrink-0 text-slate-600 text-xs">
+          <i class="fa-solid fa-user"></i>
+        </div>
+      `;
+      history.appendChild(msgDiv);
+      history.scrollTop = history.scrollHeight;
+    }
+
+    function generateAiResponse(query) {
+      const history = document.getElementById('chatHistory');
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'flex items-start space-x-3';
+
+      let replyHtml = '';
+
+      if (query.includes('laptop') || query.includes('đồ họa') || query.includes('sinh viên')) {
+        replyHtml = `
+          <p class="font-bold text-slate-900 mb-1">Dạ, Quản gia AI đã tìm thấy 2 sự lựa chọn phù hợp nhất gần bạn:</p>
+          <div class="space-y-2 mt-2">
+            <div class="p-2.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 transition">
+              <div class="flex justify-between items-start">
+                <h4 class="font-bold text-xs text-slate-900">1. ThinkPad T480 (Core i5 8350U, RAM 16GB, SSD 256GB)</h4>
+                <span class="text-xs font-bold text-emerald-600">4.500.000đ</span>
+              </div>
+              <p class="text-[11px] text-slate-600 mt-1"><strong>Phân tích trung thực:</strong> Bàn phím gõ êm nhất thế giới, làm Photoshop, Illustrator rất mượt. <em>Nhược điểm:</em> Màn hình HD chỉ 250 nits (hơi tối khi ngồi ngoài trời). Chủ bán cách bạn 600m.</p>
+              <button onclick="alert('Đã kết nối người bán qua Ký Quỹ Escrow an toàn!')" class="mt-2 text-[11px] font-bold text-indigo-600 hover:text-indigo-800">→ Nhờ AI thương lượng & Xem máy</button>
+            </div>
+          </div>
+        `;
+      } else if (query.includes('tủ lạnh') || query.includes('sửa')) {
+        replyHtml = `
+          <p class="font-bold text-slate-900 mb-1">Chẩn đoán âm thanh & Hiện tượng tủ lạnh:</p>
+          <p class="text-xs text-slate-600">Tiếng kêu cọc cọc thường do <strong>quạt gió ngăn đông bị cạ đá</strong> hoặc lỏng bu-lông chân block máy.</p>
+          <div class="mt-2 p-2.5 rounded-xl bg-white border border-slate-200">
+            <p class="text-xs font-bold text-slate-900">Khuyến nghị Omotenashi:</p>
+            <p class="text-[11px] text-slate-600">Không cần vội đổi tủ mới! Đội thợ cơ điện <strong>Anh Hoàng Long (cách 650m, đánh giá 4.98★)</strong> có thể qua kiểm tra định mức chuẩn 150.000đ. Đã mang sẵn linh kiện chính hãng.</p>
+            <button onclick="alert('Đã tạo đơn gọi thợ đến sau 15 phút!')" class="mt-2 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold">Đặt Thợ Đến Ngay (15 Phút)</button>
+          </div>
+        `;
+      } else if (query.includes('tâm sự') || query.includes('stress') || query.includes('lắng nghe')) {
+        replyHtml = `
+          <p class="font-bold text-slate-900 mb-1">Kizuna xin chia sẻ với áp lực công việc của bạn hôm nay (お疲れ様です):</p>
+          <p class="text-xs text-slate-600">Dịch vụ lắng nghe văn minh 100% tại quán cà phê công cộng đang có 2 đối tác sẵn sàng:</p>
+          <div class="mt-2 p-2.5 rounded-xl bg-white border border-rose-200">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="font-bold text-xs text-slate-900">Chị Thu Hà (31 tuổi, Chuyên viên Tâm lý & Nhân sự)</h4>
+                <p class="text-[11px] text-slate-500">Kỹ năng: Lắng nghe không phán xét, tư vấn định hướng công sở</p>
+              </div>
+              <span class="text-xs font-bold text-rose-600">120.000đ/giờ</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1"><i class="fa-solid fa-location-dot mr-1"></i>Đang ở The Coffee House cách bạn 400m</p>
+            <button onclick="alert('Đã gửi yêu cầu kết nối lịch sự tới chị Thu Hà!')" class="mt-2 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-bold">Hẹn Gặp Cà Phê Tâm Sự</button>
+          </div>
+        `;
+      } else {
+        replyHtml = `
+          <p class="font-bold text-slate-900 mb-1">Dạ, Quản gia AI đã ghi nhận yêu cầu: "${query}"</p>
+          <p class="text-xs text-slate-600">Hệ thống đang quét mạng lưới 18 đối tác đạt chuẩn Omotenashi trong bán kính 3km...</p>
+          <div class="mt-2 p-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
+            <i class="fa-solid fa-check-circle mr-1"></i>Đã tìm thấy đối tác nhận việc nhanh với mức giá chuẩn định mức. Bấm xác nhận để điều phối ngay.
+          </div>
+        `;
+      }
+
+      msgDiv.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 text-xs font-bold">
+          AI
+        </div>
+        <div class="bg-slate-50 border border-slate-200/80 rounded-2xl rounded-tl-none p-3.5 max-w-[88%] text-slate-800 shadow-2xs">
+          ${replyHtml}
+        </div>
+      `;
+      history.appendChild(msgDiv);
+      history.scrollTop = history.scrollHeight;
+    }
+
+    function clearChat() {
+      const history = document.getElementById('chatHistory');
+      history.innerHTML = `
+        <div class="flex items-start space-x-3">
+          <div class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 text-xs font-bold">AI</div>
+          <div class="bg-slate-50 border border-slate-200/80 rounded-2xl rounded-tl-none p-3.5 max-w-[88%] text-slate-800 shadow-2xs">
+            <p class="font-medium text-slate-900 mb-1">Kính chào quý khách! (いらっしゃいませ)</p>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Tôi là Quản gia AI của <strong>OmniSync</strong>. Bạn chỉ cần nói nhu cầu: muốn bán đồ cũ, tìm mua thiết bị phù hợp lối sống, gọi thợ sửa chữa, mượn đồ hay tìm người lắng nghe tâm sự.
+            </p>
+          </div>
+        </div>
+      `;
+    }
+
+    function triggerVoiceInput() {
+      const input = document.getElementById('userQueryInput');
+      input.value = "Tôi cần tìm người mượn máy khoan tường 30 phút gần đây";
+      handleUserSubmit(new Event('submit'));
+    }
+
+    function showPartnerDetail(name, distance, price) {
+      alert(`[CHI TIẾT ĐỐI TÁC RADAR]\n\n• Tên: ${name}\n• Khoảng cách: ${distance}\n• Biểu phí: ${price}\n• Trạng thái: Sẵn sàng phục vụ trong 15 phút!`);
+    }
+
+    function acceptAuctionBid() {
+      alert('Chúc mừng! Bạn đã đồng ý chốt giá 2.150.000đ cho Shop Điện Máy Tuấn Cường.\nĐối tác đang xuất phát đến nhà bạn nghiệm thu và chuyển khoản trong 15 phút!');
+    }
+
+    function openSellModal() {
+      const item = prompt('Nhập tên món đồ bạn muốn thanh lý nhanh:', 'Tủ lạnh mini Aqua 90L');
+      if (item) {
+        alert(`AI đã thẩm định món "${item}":\nGiá đề xuất: 950.000đ.\nĐã mở phiên đấu giá 180 giây cho 18 shop thu mua xung quanh!`);
+      }
+    }
+
+    let isOnline = true;
+    function toggleOnlineStatus() {
+      isOnline = !isOnline;
+      const btn = document.getElementById('btnOnlineToggle');
+      const btnText = document.getElementById('btnOnlineText');
+      const label = document.getElementById('onlineStatusLabel');
+
+      if (isOnline) {
+        btn.className = 'px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-sm shadow-lg shadow-emerald-500/30 flex items-center space-x-2 transition duration-200';
+        btnText.innerText = 'SẴN SÀNG (ONLINE)';
+        label.innerText = 'ĐANG BẬT NHẬN VIỆC';
+        label.className = 'text-xs font-bold text-emerald-400';
+      } else {
+        btn.className = 'px-5 py-3 rounded-2xl bg-slate-700 hover:bg-slate-600 text-slate-300 font-extrabold text-sm shadow-inner flex items-center space-x-2 transition duration-200';
+        btnText.innerText = 'TẠM NGHỈ (OFFLINE)';
+        label.innerText = 'ĐÃ TẮT NHẬN VIỆC';
+        label.className = 'text-xs font-bold text-slate-500';
+      }
+    }
+
+    function acceptIncomingJob() {
+      alert('Nhận cuốc thành công!\nBản đồ điều hướng đang mở đường đến nhà Chị Minh Anh (Discovery Complex). Thời gian ước tính: 6 phút!');
+      document.getElementById('incomingJobCard').classList.add('opacity-40', 'pointer-events-none');
+    }
+
+    let timeLeft = 165;
+    setInterval(() => {
+      if (timeLeft > 0) {
+        timeLeft--;
+        const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+        const secs = (timeLeft % 60).toString().padStart(2, '0');
+        const el = document.getElementById('auctionTimer');
+        if (el) el.innerText = `${mins}:${secs}`;
+      }
+    }, 1000);
+
+    let jobTime = 14;
+    setInterval(() => {
+      if (jobTime > 0) {
+        jobTime--;
+        const el = document.getElementById('jobCountdown');
+        if (el) el.innerText = `${jobTime}s`;
+      }
+    }, 1000);
+  </script>
+</body>
+</html>
