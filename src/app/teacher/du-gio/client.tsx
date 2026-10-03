@@ -787,6 +787,13 @@ export function ObservationClient(props: ObservationClientProps) {
   const [filterClassId, setFilterClassId] = useState(initialFilters.classId || "all")
   const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
 
+  // Early activeAcademicYear to prevent Temporal Dead Zone ReferenceError
+  const activeAcademicYear = useMemo(() => {
+    const safeYears = Array.isArray(academicYears) ? academicYears : [];
+    if (safeYears.length === 0) return null;
+    return safeYears.find(y => y.id === filterAcademicYearId) || safeYears.find(y => y.status === "ACTIVE") || safeYears[0];
+  }, [academicYears, filterAcademicYearId]);
+
   const handleAcademicYearChange = (yearId: string) => {
     setFilterAcademicYearId(yearId)
     const params = new URLSearchParams(window.location.search)
@@ -1714,7 +1721,7 @@ export function ObservationClient(props: ObservationClientProps) {
     }
 
     // Kiểm tra toàn bộ danh sách chức danh trong teacherPositions
-    const hasAnyChucVuInPositions = teacherPositions.some(pos => {
+    const hasAnyChucVuInPositions = (teacherPositions || []).some(pos => {
       const p = (pos || "").toLowerCase().trim();
       return p && !NON_CHUC_VU_LIST.has(p);
     });
@@ -3714,11 +3721,6 @@ export function ObservationClient(props: ObservationClientProps) {
     return slots.filter(s => s.teacherId === currentTeacher?.id && s.requestOrigin === "OBSERVER_REQUEST" && s.status === "REQUEST_PENDING").length;
   }, [slots, currentTeacher?.id]);
 
-  const activeAcademicYear = useMemo(() => {
-    const safeYears = Array.isArray(academicYears) ? academicYears : [];
-    if (safeYears.length === 0) return null;
-    return safeYears.find(y => y.id === filterAcademicYearId) || safeYears.find(y => y.status === "ACTIVE") || safeYears[0];
-  }, [academicYears, filterAcademicYearId]);
 
   return (
     <div className="flex flex-col gap-5 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">

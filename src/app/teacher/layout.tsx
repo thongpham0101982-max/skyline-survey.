@@ -126,8 +126,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
             if (!target || !target.confirmed) {
               unconfirmedTeacherData = {
                 teacherId: teacher.id,
-                teacherName: teacher.teacherName,
-                academicYearName: activeYear.name,
+                teacherName: teacher.teacherName || "",
+                academicYearName: activeYear.name || "",
                 academicYearId: activeYear.id,
                 currentObserverType: target?.observerType || null
               };

@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { cookies } from "next/headers"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
@@ -59,7 +60,8 @@ export default async function ObservationPage(props: {
     : [];
 
   return (
-    <ObservationClient
+    <Suspense fallback={<div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu Dự giờ...</div>}>
+      <ObservationClient
       isPreschoolPage={false}
       initialSlots={loadedSlots}
       currentTeacher={refDataResult.currentTeacher}
@@ -75,5 +77,6 @@ export default async function ObservationPage(props: {
       initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}
       initialPersonalSlots={myPersonalSlots}
     />
+    </Suspense>
   )
 }

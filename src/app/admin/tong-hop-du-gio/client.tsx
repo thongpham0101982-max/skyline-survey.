@@ -1065,10 +1065,10 @@ export function AdminTongHopClient({
       const getPresetTarget = (type: string) => {
         if (type === "Ban ĐHCM") return 10;
         if (type === "GĐCS" || type === "GDCS" || type === "Giám đốc Điều hành cơ sở") return 4;
-        if (type === "TTCM" || type === "Nhóm trưởng CM CS") return 8;
-        if (type === "Giáo viên cũ") return 4;
-        if (type === "Giáo viên mới") return 10;
-        return 4;
+        if (type === "TTCM" || type === "Nhóm trưởng CM CS") return 6;
+        if (type === "Giáo viên cũ") return 2;
+        if (type === "Giáo viên mới") return 6;
+        return 6;
       };
 
       const configuredObserved = ttcm.requiredObserved;

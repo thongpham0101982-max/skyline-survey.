@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getObservationData, getObservationSlots } from "@/app/teacher/du-gio/actions"
 import { ObservationClient } from "@/app/teacher/du-gio/client"
+import { Suspense } from "react"
 
 export default async function PreschoolObservationPage(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>
@@ -26,6 +27,7 @@ export default async function PreschoolObservationPage(props: {
   const campusId = searchParams.campusId || "all"
   const deptId = searchParams.deptId || "all"
   const classId = searchParams.classId || "all"
+  const divisionCode = searchParams.divisionCode || "all"
 
   const [refDataResult, slotsResult] = await Promise.all([
     getObservationData(academicYearId),
@@ -38,6 +40,7 @@ export default async function PreschoolObservationPage(props: {
       date,
       month,
       campusId,
+      divisionCode,
       deptId
     })
   ]);
@@ -57,20 +60,23 @@ export default async function PreschoolObservationPage(props: {
     : [];
 
   return (
-    <ObservationClient
-      isPreschoolPage={true}
-      initialSlots={loadedSlots}
-      currentTeacher={refDataResult.currentTeacher}
-      subjects={refDataResult.subjects || []}
-      departments={refDataResult.departments || []}
-      teachers={refDataResult.teachers || []}
-      campuses={refDataResult.campuses || []}
-      classes={refDataResult.classes || []}
-      initialFilters={{ level, grade, classId, period, date, month, campusId, deptId, academicYearId }}
-      academicYears={refDataResult.academicYears || []}
-      selectedYearId={refDataResult.selectedYearId || undefined}
-      initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}
-      initialPersonalSlots={myPersonalSlots}
-    />
+    <Suspense fallback={<div className="p-8 text-center text-slate-500 font-medium">Đang tải dữ liệu Dự giờ Mầm non...</div>}>
+      <ObservationClient
+        isPreschoolPage={true}
+        initialSlots={loadedSlots}
+        currentTeacher={refDataResult.currentTeacher}
+        subjects={refDataResult.subjects || []}
+        departments={refDataResult.departments || []}
+        divisions={refDataResult.divisions || []}
+        teachers={refDataResult.teachers || []}
+        campuses={refDataResult.campuses || []}
+        classes={refDataResult.classes || []}
+        initialFilters={{ level, grade, classId, period, date, month, campusId, divisionCode, deptId, academicYearId }}
+        academicYears={refDataResult.academicYears || []}
+        selectedYearId={refDataResult.selectedYearId || undefined}
+        initialReceivedEvaluations={refDataResult.myReceivedEvaluations || []}
+        initialPersonalSlots={myPersonalSlots}
+      />
+    </Suspense>
   )
 }

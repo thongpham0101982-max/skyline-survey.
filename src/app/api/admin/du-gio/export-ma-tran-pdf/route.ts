@@ -33,10 +33,10 @@ function isSurpriseSlot(slot: any): boolean {
 function getPresetTarget(type: string): number {
   if (type === "Ban ĐHCM") return 10
   if (type === "GĐCS" || type === "GDCS" || type === "Giám đốc Điều hành cơ sở") return 4
-  if (type === "TTCM" || type === "Nhóm trưởng CM CS") return 8
-  if (type === "Giáo viên cũ") return 4
-  if (type === "Giáo viên mới") return 10
-  return 4
+  if (type === "TTCM" || type === "Nhóm trưởng CM CS") return 6
+  if (type === "Giáo viên cũ") return 2
+  if (type === "Giáo viên mới") return 6
+  return 6
 }
 
 function buildReportHtml(data: {
@@ -381,23 +381,23 @@ function buildReportHtml(data: {
     }
 
     .badge-met {
-      background: #dcfce7;
-      color: #166534;
-      border: 1px solid #86efac;
-      padding: 2px 6px;
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      padding: 2.5px 7px;
       border-radius: 9999px;
-      font-size: 7pt;
+      font-size: 7.2pt;
       font-weight: 700;
       display: inline-block;
       white-space: nowrap;
     }
     .badge-unmet {
-      background: #fef3c7;
+      background: #fffbeb;
       color: #92400e;
       border: 1px solid #fde68a;
-      padding: 2px 6px;
+      padding: 2.5px 7px;
       border-radius: 9999px;
-      font-size: 7pt;
+      font-size: 7.2pt;
       font-weight: 700;
       display: inline-block;
       white-space: nowrap;
@@ -584,9 +584,9 @@ function buildReportHtml(data: {
               <td class="text-center font-black" style="color: #003B3A; background: #f0fdfa;">
                 ${item.totalObserved} tiết
               </td>
-              <td class="text-center font-semibold" style="color: #475569;">
-                ${item.reqObserved} tiết/${item.observedUnit}
-                ${item.observerType ? `<div style="font-size: 6.8pt; color: #94a3b8; font-weight: 500;">${item.observerType}</div>` : ''}
+              <td class="text-center" style="color: #334155;">
+                <div style="font-weight: 700; font-size: 8pt; color: #1e293b;">${item.reqObserved} tiết/${item.observedUnit}</div>
+                ${item.observerType ? `<div style="font-size: 6.8pt; color: #64748b; margin-top: 1px; font-weight: 500;">${item.observerType}</div>` : ''}
               </td>
               <td class="text-center">
                 ${item.isTargetMet
@@ -674,9 +674,9 @@ function buildReportHtml(data: {
                 ${b.surprisePeriods > 0 ? `<div class="cell-surprise">(${b.surprisePeriods} đột xuất)</div>` : ''}
               </td>
               ${bIdx === 0 ? `
-                <td rowspan="${rowCount}" class="text-center font-semibold" style="color: #475569; vertical-align: top;">
-                  ${item.reqObserved} tiết/${item.observedUnit}
-                  ${item.observerType ? `<div style="font-size: 6.8pt; color: #94a3b8;">${item.observerType}</div>` : ''}
+                <td rowspan="${rowCount}" class="text-center" style="color: #334155; vertical-align: top;">
+                  <div style="font-weight: 700; font-size: 8pt; color: #1e293b;">${item.reqObserved} tiết/${item.observedUnit}</div>
+                  ${item.observerType ? `<div style="font-size: 6.8pt; color: #64748b; margin-top: 1px; font-weight: 500;">${item.observerType}</div>` : ''}
                 </td>
                 <td rowspan="${rowCount}" class="text-center" style="vertical-align: top;">
                   ${item.isTargetMet
@@ -767,8 +767,17 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // 1. Fetch Teachers, Campuses, Departments, Targets
-    const [teachers, departments, campuses, slots] = await Promise.all([
+    // Resolve academic year id
+    let targetYearId = academicYearId
+    if (!targetYearId) {
+      const activeYear = await prisma.academicYear.findFirst({
+        where: { status: "ACTIVE" }
+      })
+      targetYearId = activeYear?.id
+    }
+
+    // 1. Fetch Teachers, Campuses, Departments, Slots, and Targets
+    const [rawTeachers, departments, campuses, slots, targets] = await Promise.all([
       prisma.teacher.findMany({
         where: { status: "ACTIVE" },
         include: {
@@ -778,7 +787,7 @@ export async function GET(req: Request) {
           divisionAssignments: true
         }
       }),
-            prisma.department.findMany({
+      prisma.department.findMany({
         where: { status: "ACTIVE" },
         orderBy: { name: "asc" }
       }),
@@ -810,8 +819,25 @@ export async function GET(req: Request) {
           }
         },
         orderBy: { date: "asc" }
-      })
+      }),
+      targetYearId ? prisma.teacherAcademicYearTarget.findMany({
+        where: { academicYearId: targetYearId }
+      }) : Promise.resolve([])
     ])
+
+    const targetsMap = new Map(targets.map((t: any) => [t.teacherId, t]))
+    const teachers = rawTeachers.map((t: any) => {
+      const target = targetsMap.get(t.id)
+      return {
+        ...t,
+        observerType: target?.observerType || null,
+        observeeType: target?.observeeType || null,
+        requiredObserved: target?.requiredObserved !== undefined && target?.requiredObserved !== null ? target.requiredObserved : 0,
+        observedUnit: target?.observedUnit || "tháng",
+        requiredTaught: target?.requiredTaught !== undefined && target?.requiredTaught !== null ? target.requiredTaught : 0,
+        taughtUnit: target?.taughtUnit || "tháng"
+      }
+    })
 
     // Build TTCM Map
     const ttcmMap = new Map<string, any>()
