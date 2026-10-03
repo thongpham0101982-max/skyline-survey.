@@ -1738,26 +1738,7 @@ export function ObservationClient(props: ObservationClientProps) {
     return !hasChucVu;
   }, [hasChucVu]);
 
-  // Popup yêu cầu tài khoản GVBM, GVCN xác nhận GV mới, GV cũ 2 năm để xác định chỉ tiêu
-  // ĐẶC BIỆT: "GV nào đã xác nhận thì không hiển thị"
-  useEffect(() => {
-    // 1. Nếu giáo viên đã xác nhận thì tuyệt đối KHÔNG hiển thị
-    if (currentTeacher?.targetConfirmed) return;
 
-    // 2. Chỉ áp dụng cho tài khoản giáo viên (GVBM, GVCN...), không áp dụng cho Lãnh đạo
-    if (!isRegularTeacher) return;
-
-    // 3. Nếu trong phiên làm việc này người dùng đã chọn "Để tôi xác nhận sau", tạm thời không hiện lại
-    const dismissKey = `dismiss_exp_modal_${activeAcademicYear?.id || selectedYearId || 'default'}`;
-    if (typeof window !== "undefined" && sessionStorage.getItem(dismissKey) === "true") {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setShowExperienceModal(true);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [currentTeacher?.targetConfirmed, isRegularTeacher, activeAcademicYear?.id, selectedYearId]);
 
   const handleConfirmExperienceCategory = async (category: "NEW" | "EXPERIENCED") => {
     setIsSubmittingExperience(true);

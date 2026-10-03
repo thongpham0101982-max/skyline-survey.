@@ -1,6 +1,7 @@
 import { TeacherMobileBottomNav } from "@/components/TeacherMobileBottomNav"
 export const dynamic = "force-dynamic"
 import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
+import { TeacherExperienceGlobalModal } from "@/components/modals/TeacherExperienceGlobalModal"
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
 import { Sidebar } from "@/components/Sidebar"
 import { auth } from "@/lib/auth"
@@ -63,11 +64,23 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     console.error("Teacher layout permission DB error:", err)
   }
 
+  let unconfirmedTeacherData: {
+    teacherId: string;
+    teacherName: string;
+    academicYearName: string;
+    academicYearId: string;
+    currentObserverType: string | null;
+  } | null = null;
+
   if (session?.user?.id) {
     try {
       const teacher = await prisma.teacher.findUnique({ 
         where: { userId: session.user.id },
-        include: { departmentRel: true }
+        include: { 
+          departmentRel: true,
+          departmentAssignments: true,
+          divisionAssignments: true
+        }
       }).catch(() => null)
       if (teacher) {
         const homeroomClassesCount = await prisma.class.count({
@@ -86,6 +99,41 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           ['GV_MN', 'BGH_MN', 'MN', 'MAM_NON', 'BGH MAM NON', 'BGH_MAM_NON'].includes((roleCode || '').toUpperCase()) ||
           blockCMClean.includes("mam non") ||
           deptNameClean.includes("mam non");
+
+        // Kiểm tra chức vụ: "Chỉ áp dụng cho tài khoản GV không có chức vụ"
+        const NON_CHUC_VU = ["", "gv", "gvbm", "gvcn", "giáo viên", "giao vien", "giáo viên bộ môn", "giáo viên chủ nhiệm", "teacher", "homeroom teacher"];
+        const LEADERSHIP_ROLES = ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "TTCM", "TPCM", "TO_TRUONG", "TO_PHO", "TBP", "TRUONG_BO_PHAN", "PHO_BO_PHAN", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "BAN_DHCM", "TB_DHCM", "QLCM", "BGH", "BGH_MN", "KT_DBCL", "NHOM_TRUONG", "NHOM_TRUONG_CM"];
+
+        const hasChucVu = 
+          LEADERSHIP_ROLES.includes((roleCode || "").toUpperCase().trim()) ||
+          (teacher.position && !NON_CHUC_VU.includes(teacher.position.toLowerCase().trim())) ||
+          teacher.departmentAssignments?.some((da: any) => da.position && !NON_CHUC_VU.includes(da.position.toLowerCase().trim())) ||
+          (teacher.divisionAssignments && teacher.divisionAssignments.length > 0);
+
+        if (!hasChucVu) {
+          const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }).catch(() => null);
+          if (activeYear) {
+            const target = await prisma.teacherAcademicYearTarget.findUnique({
+              where: {
+                teacherId_academicYearId: {
+                  teacherId: teacher.id,
+                  academicYearId: activeYear.id
+                }
+              }
+            }).catch(() => null);
+
+            // "GV nào đã xác nhận thì không hiển thị"
+            if (!target || !target.confirmed) {
+              unconfirmedTeacherData = {
+                teacherId: teacher.id,
+                teacherName: teacher.teacherName,
+                academicYearName: activeYear.name,
+                academicYearId: activeYear.id,
+                currentObserverType: target?.observerType || null
+              };
+            }
+          }
+        }
       }
     } catch (err) {
       console.error("Error querying teacher in layout:", err)
@@ -126,6 +174,15 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         
         <TeacherMobileBottomNav />
         <SSMAssistantWidget role="TEACHER" />
+        {unconfirmedTeacherData && (
+          <TeacherExperienceGlobalModal
+            teacherId={unconfirmedTeacherData.teacherId}
+            teacherName={unconfirmedTeacherData.teacherName}
+            academicYearName={unconfirmedTeacherData.academicYearName}
+            academicYearId={unconfirmedTeacherData.academicYearId}
+            currentObserverType={unconfirmedTeacherData.currentObserverType}
+          />
+        )}
       </main>
     </div>
   )
