@@ -778,11 +778,13 @@ export async function GET(req: Request) {
           divisionAssignments: true
         }
       }),
-      prisma.department.findMany({
-        orderBy: { orderIndex: "asc" }
+            prisma.department.findMany({
+        where: { status: "ACTIVE" },
+        orderBy: { name: "asc" }
       }),
       prisma.campus.findMany({
-        orderBy: { orderIndex: "asc" }
+        where: { NOT: { status: "INACTIVE" } },
+        orderBy: { campusName: "asc" }
       }),
       prisma.observationSlot.findMany({
         where: {
