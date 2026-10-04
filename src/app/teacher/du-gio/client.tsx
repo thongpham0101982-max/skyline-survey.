@@ -606,18 +606,6 @@ const getSlotMonthStatus = (dateValue: string | Date | undefined | null): "CURRE
 };
 
 export function ObservationClient(props: ObservationClientProps) {
-  const [isMobileView, setIsMobileView] = useState(false);
-  useEffect(() => {
-    const handleResize = () => setIsMobileView(window.innerWidth < 768);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  if (isMobileView) {
-    return <ObservationMobileView initialSlots={props.initialSlots} currentTeacher={props.currentTeacher} />;
-  }
-
   const {
     initialSlots = [],
     initialPersonalSlots = [],
@@ -3737,7 +3725,15 @@ export function ObservationClient(props: ObservationClientProps) {
 
 
   return (
-    <div className="flex flex-col gap-5 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
+    <>
+      {/* MOBILE PWA VIEW (< 768px): GIAO DIỆN CHUYÊN BIỆT CHO SMARTPHONE */}
+      <div className="md:hidden w-full">
+        <ObservationMobileView initialSlots={props.initialSlots} currentTeacher={props.currentTeacher} />
+      </div>
+
+      {/* DESKTOP VIEW (>= 768px): GIỮ NGUYÊN 100% GIAO DIỆN DESKTOP */}
+      <div className="hidden md:block">
+        <div className="flex flex-col gap-5 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
       {/* Thử Thách Dự Giờ Cùng AI (AI Growth Gamified Popup & Top Banner) */}
       <AiObservationPopupTrigger triggerMode="AUTO_POPUP" />
       {/* Toast Notification */}
@@ -8431,6 +8427,8 @@ export function ObservationClient(props: ObservationClientProps) {
         isSubmitting={isSubmittingExperience}
       />
 
-    </div>
+        </div>
+      </div>
+    </>
   );
 }

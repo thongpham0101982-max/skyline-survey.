@@ -70,18 +70,6 @@ const getYearLabel = (ach: any) => {
 };
 
 export default function TeacherStudentProfilePage() {
-  const [isMobileView, setIsMobileView] = useState(false);
-  useEffect(() => {
-    const handleResize = () => setIsMobileView(window.innerWidth < 768);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  if (isMobileView) {
-    return <StudentMobileView />;
-  }
-
   const [yearId, setYearId] = useState(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("selectedAcademicYear");
@@ -370,18 +358,23 @@ export default function TeacherStudentProfilePage() {
     );
   }, [students, searchQuery]);
 
-  if (isNotGVCN) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl max-w-xl mx-auto mt-20 text-center">
-        <h3 className="font-extrabold text-base mb-2">Quyền truy cập hạn chế</h3>
-        <p className="text-xs font-semibold mb-2">Trang này chỉ dành riêng cho Giáo viên Chủ nhiệm (GVCN). Bạn không có lớp chủ nhiệm nào được chỉ định trong năm học này.</p>
-        {apiError && <p className="text-[10px] text-red-500 font-mono mt-1">{apiError}</p>}
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
+    <>
+      {/* MOBILE PWA VIEW (< 768px): GIAO DIỆN HỒ SƠ HS DÀNH CHO SMARTPHONE */}
+      <div className="md:hidden w-full">
+        <StudentMobileView />
+      </div>
+
+      {/* DESKTOP VIEW (>= 768px): GIỮ NGUYÊN 100% GIAO DIỆN DESKTOP */}
+      <div className="hidden md:block">
+        {isNotGVCN ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl max-w-xl mx-auto mt-20 text-center">
+            <h3 className="font-extrabold text-base mb-2">Quyền truy cập hạn chế</h3>
+            <p className="text-xs font-semibold mb-2">Trang này chỉ dành riêng cho Giáo viên Chủ nhiệm (GVCN). Bạn không có lớp chủ nhiệm nào được chỉ định trong năm học này.</p>
+            {apiError && <p className="text-[10px] text-red-500 font-mono mt-1">{apiError}</p>}
+          </div>
+        ) : (
+          <div className="space-y-6">
       {/* Hidden File Input for Avatar Upload */}
       <input
         type="file"
@@ -3074,6 +3067,9 @@ return (
         </div>
 
       </div>
-    </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
