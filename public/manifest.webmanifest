@@ -1,7 +1,7 @@
 {
-  "name": "SSM - Sky-Line",
-  "short_name": "SSM",
-  "description": "Hệ thống Quản trị Chất lượng & Điều hành Công việc Giáo dục Sky-Line",
+  "name": "SSQM - Sky-Line",
+  "short_name": "SSQM",
+  "description": "Hệ thống Quản trị Chất lượng & Điều hành Công việc Giáo dục Sky-Line (SSQM)",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",
   "scope": "/",
