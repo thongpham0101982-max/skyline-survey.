@@ -25,7 +25,7 @@ export async function GET(req: Request) {
 
     const teacherId = teacher.id
 
-    // Fetch personal slots (teaching or observing)
+    // 1. Fetch personal slots (user is teaching or registered as observer)
     const rawMySlots = await prisma.observationSlot.findMany({
       where: {
         OR: [
@@ -34,35 +34,31 @@ export async function GET(req: Request) {
         ]
       },
       include: {
-        teacher: { select: { id: true, teacherName: true, user: { select: { name: true } } } },
-        subject: { select: { id: true, name: true } },
-        class: { select: { id: true, name: true } },
+        teacher: { select: { id: true, teacherName: true } },
         registrations: {
           include: {
-            teacher: { select: { id: true, teacherName: true } }
+            teacher: { select: { id: true, teacherName: true } },
+            evaluation: true
           }
-        },
-        evaluations: {
-          where: { evaluatorTeacherId: teacherId },
-          select: { id: true, totalScore: true, rating: true, feedback: true, updatedAt: true }
         }
       },
       orderBy: { date: "desc" },
       take: 30
     })
 
-    // Fetch available open slots for registration
-    const todayStr = new Date().toISOString().split("T")[0]
+    // 2. Fetch available open slots for registration
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
     const rawAvailableSlots = await prisma.observationSlot.findMany({
       where: {
-        date: { gte: todayStr },
+        date: { gte: today },
         teacherId: { not: teacherId },
-        registrations: { none: { teacherId } }
+        registrations: { none: { teacherId } },
+        status: { in: ["ACTIVE", "OPEN", "PENDING_TEACHER_APPROVAL"] }
       },
       include: {
         teacher: { select: { id: true, teacherName: true } },
-        subject: { select: { id: true, name: true } },
-        class: { select: { id: true, name: true } },
         registrations: true
       },
       orderBy: { date: "asc" },
@@ -72,28 +68,42 @@ export async function GET(req: Request) {
     const formatSlot = (s: any) => {
       const isMyTeaching = s.teacherId === teacherId
       const myReg = s.registrations?.find((r: any) => r.teacherId === teacherId)
-      const myEval = s.evaluations?.[0] || null
+      const myEval = myReg?.evaluation || null
 
       let roleType = isMyTeaching ? "TEACHING" : "OBSERVING"
-      let statusLabel = s.status || "OPEN"
+      let statusLabel = s.status || "ACTIVE"
       if (myReg) {
-        statusLabel = myReg.status || "REGISTERED"
+        statusLabel = myReg.isApproved ? "Đã duyệt dự" : "Đã đăng ký"
       }
+
+      let dateStr = ""
+      if (s.date instanceof Date) {
+        dateStr = s.date.toISOString().split("T")[0]
+      } else if (typeof s.date === "string") {
+        dateStr = s.date.split("T")[0]
+      }
+
+      const timeRange = (s.startTime && s.endTime) ? `${s.startTime} - ${s.endTime}` : (s.startTime || "Trong ngày")
 
       return {
         id: s.id,
-        date: s.date,
-        slotIndex: s.slotIndex || s.period || 1,
-        time: s.time || "Tiết " + (s.slotIndex || s.period || 1),
-        teacherName: s.teacher?.teacherName || s.teacher?.user?.name || "Giáo viên",
+        date: dateStr,
+        slotIndex: s.startTime || "Tiết học",
+        time: timeRange,
+        teacherName: s.teacher?.teacherName || "Giáo viên",
         teacherId: s.teacherId,
-        subjectName: s.subject?.name || s.subjectName || "Môn học",
-        className: s.class?.name || s.className || "Lớp học",
+        subjectName: s.subjectName || "Môn học",
+        className: s.className || "Lớp học",
         room: s.room || "Phòng học",
         roleType,
         status: statusLabel,
-        hasEvaluated: !!myEval,
-        myEvaluation: myEval,
+        hasEvaluated: Boolean(myEval),
+        myEvaluation: myEval ? {
+          id: myEval.id,
+          totalScore: myEval.totalScore || 0,
+          rating: myEval.overallRating || "Đạt",
+          feedback: myEval.generalComment || myEval.strengths || ""
+        } : null,
         observersCount: s.registrations?.length || 0
       }
     }
@@ -103,8 +113,8 @@ export async function GET(req: Request) {
       mySlots: rawMySlots.map(formatSlot),
       availableSlots: rawAvailableSlots.map(formatSlot)
     })
-  } catch (error) {
-    console.error("[API PWA Observations GET Error]:", error)
+  } catch (error: any) {
+    console.error("[API PWA Observations GET Error]:", error?.message || error)
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }
@@ -124,7 +134,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 })
     }
 
-    const body = await req.json()
+    const body = await req.json().catch(() => ({}))
     const { slotId, scores, strengths, weaknesses, rating } = body
 
     if (!slotId) {
@@ -135,48 +145,59 @@ export async function POST(req: Request) {
       ? scores.reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
       : (parseFloat(body.totalScore) || 0)
 
-    const criteriaText = JSON.stringify({
-      scores: scores || [],
-      strengths: strengths || "",
-      weaknesses: weaknesses || ""
-    })
-
-    // Upsert observation evaluation
-    const existing = await prisma.observationEvaluation.findFirst({
+    // Ensure registration exists for this evaluator
+    let reg = await prisma.observationRegistration.findUnique({
       where: {
-        slotId,
-        evaluatorTeacherId: teacher.id
+        slotId_teacherId: {
+          slotId,
+          teacherId: teacher.id
+        }
       }
     })
 
-    if (existing) {
-      await prisma.observationEvaluation.update({
-        where: { id: existing.id },
-        data: {
-          totalScore,
-          rating: rating || (totalScore >= 18 ? "Tốt" : totalScore >= 14 ? "Khá" : "Đạt"),
-          feedback: criteriaText,
-          updatedAt: new Date()
-        }
-      })
-    } else {
-      await prisma.observationEvaluation.create({
+    if (!reg) {
+      reg = await prisma.observationRegistration.create({
         data: {
           slotId,
-          evaluatorTeacherId: teacher.id,
-          totalScore,
-          rating: rating || (totalScore >= 18 ? "Tốt" : totalScore >= 14 ? "Khá" : "Đạt"),
-          feedback: criteriaText
+          teacherId: teacher.id,
+          isApproved: true,
+          approvedAt: new Date()
         }
       })
     }
+
+    const overallRating = rating || (totalScore >= 14 ? "Tốt" : totalScore >= 11 ? "Khá" : "Đạt")
+    const numScores = Array.isArray(scores) ? scores.map(Number) : []
+
+    const evalData = {
+      slotId,
+      evaluatorId: teacher.id,
+      totalScore,
+      overallRating,
+      strengths: strengths || "",
+      improvements: weaknesses || "",
+      score1: numScores[0] ?? null,
+      score2: numScores[1] ?? null,
+      score3: numScores[2] ?? null,
+      score4: numScores[3] ?? null,
+      submittedAt: new Date()
+    }
+
+    await prisma.observationEvaluation.upsert({
+      where: { registrationId: reg.id },
+      update: evalData,
+      create: {
+        ...evalData,
+        registrationId: reg.id
+      }
+    })
 
     return NextResponse.json({
       success: true,
       message: "Đã lưu phiếu đánh giá dự giờ thành công"
     })
-  } catch (error) {
-    console.error("[API PWA Observations POST Error]:", error)
+  } catch (error: any) {
+    console.error("[API PWA Observations POST Error]:", error?.message || error)
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }
@@ -196,15 +217,17 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 })
     }
 
-    const body = await req.json()
+    const body = await req.json().catch(() => ({}))
     const { slotId } = body
 
     if (!slotId) {
       return NextResponse.json({ error: "Missing slotId" }, { status: 400 })
     }
 
-    const existingReg = await prisma.observationRegistration.findFirst({
-      where: { slotId, teacherId: teacher.id }
+    const existingReg = await prisma.observationRegistration.findUnique({
+      where: {
+        slotId_teacherId: { slotId, teacherId: teacher.id }
+      }
     })
 
     if (existingReg) {
@@ -215,7 +238,8 @@ export async function PUT(req: Request) {
       data: {
         slotId,
         teacherId: teacher.id,
-        status: "APPROVED"
+        isApproved: true,
+        approvedAt: new Date()
       }
     })
 
@@ -223,8 +247,8 @@ export async function PUT(req: Request) {
       success: true,
       message: "Đã đăng ký tham gia dự giờ thành công"
     })
-  } catch (error) {
-    console.error("[API PWA Observations PUT Error]:", error)
+  } catch (error: any) {
+    console.error("[API PWA Observations PUT Error]:", error?.message || error)
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
 }

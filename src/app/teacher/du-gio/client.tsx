@@ -615,7 +615,7 @@ export function ObservationClient(props: ObservationClientProps) {
   }, []);
 
   if (isMobileView) {
-    return <ObservationMobileView />;
+    return <ObservationMobileView initialSlots={props.initialSlots} currentTeacher={props.currentTeacher} />;
   }
 
   const {
