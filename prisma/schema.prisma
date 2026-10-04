@@ -38,6 +38,9 @@ model User {
   managedCampuses                  Campus[]                                    @relation("CampusManager")
   featureBadges                   UserFeatureBadge[]
   competencyImportBatches         ImportBatch[]
+  pushSubscriptions                PushSubscription[]
+  userPreference                   UserPreference?
+  deviceSessions                   DeviceSession[]
 }
 
 model Parent {
@@ -446,16 +449,23 @@ model SummarySystem {
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  userId       String
+  title        String
+  message      String
+  isRead       Boolean   @default(false)
+  link         String?
+  createdAt    DateTime  @default(now())
+  type         String?   @default("INFORMATION")
+  category     String?   @default("GENERAL")
+  priority     String?   @default("NORMAL")
+  sourceModule String?
+  sourceId     String?
+  expiredAt    DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, isRead])
 }
 
 model Subject {
@@ -2619,4 +2629,57 @@ model AiGrowthCampaign {
   createdAt   DateTime @default(now())
 
   challenges  AiGrowthChallenge[]
+}
+
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  deviceType String?  @default("MOBILE")
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UserPreference {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  morningBriefEnabled Boolean  @default(true)
+  morningBriefTime    String   @default("07:00")
+  pushNotifications   Boolean  @default(true)
+  themePreference     String   @default("LIGHT")
+  updatedAt           DateTime @updatedAt
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model DeviceSession {
+  id           String   @id @default(cuid())
+  userId       String
+  deviceId     String
+  deviceName   String
+  deviceType   String   @default("MOBILE")
+  browser      String?
+  os           String?
+  ipAddress    String?
+  userAgent    String?
+  lastActiveAt DateTime @default(now())
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([deviceId])
 }

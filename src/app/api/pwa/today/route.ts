@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
+import { aggregateUserTasks } from "@/services/taskEngine"
 
 export const dynamic = "force-dynamic"
 
@@ -58,105 +59,10 @@ export async function GET() {
     const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GIAM_DOC_CO_SO"].some(r => userRole.includes(r))
     const isTBP = ["TBP", "TRUONG_BO_PHAN", "QLCM", "BAN_DHCM"].some(r => userRole.includes(r))
 
-    // 2. Fetch Aggregated Metrics
-    const now = new Date()
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const endOfWeek = new Date(startOfToday.getTime() + 7 * 24 * 60 * 60 * 1000)
+    // 2. Fetch Aggregated Tasks from Task Engine
+    const { tasks, counts } = await aggregateUserTasks(userId, userRole)
 
-    // A. Dự giờ (Observations)
-    let upcomingObservations = 0
-    let pendingObservationEvals = 0
-    let myObservationProgress = "0/2"
-
-    if (teacherId) {
-      // Slots host or registered
-      const upcomingRegs = await prisma.observationRegistration.count({
-        where: {
-          observerTeacherId: teacherId,
-          status: { in: ["APPROVED", "CONFIRMED", "REGISTERED"] },
-          slot: {
-            date: { gte: startOfToday, lte: endOfWeek }
-          }
-        }
-      }).catch(() => 0)
-
-      const upcomingHost = await prisma.observationSlot.count({
-        where: {
-          hostTeacherId: teacherId,
-          date: { gte: startOfToday, lte: endOfWeek }
-        }
-      }).catch(() => 0)
-
-      upcomingObservations = upcomingRegs + upcomingHost
-
-      // Pending evaluations where observed but evaluation not submitted
-      pendingObservationEvals = await prisma.observationRegistration.count({
-        where: {
-          observerTeacherId: teacherId,
-          status: "ATTENDED",
-          evaluations: { none: {} }
-        }
-      }).catch(() => 0)
-
-      // Active target progress
-      const target = await prisma.teacherAcademicYearTarget.findFirst({
-        where: { teacherId },
-        orderBy: { createdAt: "desc" }
-      }).catch(() => null)
-
-      const completedCount = await prisma.observationRegistration.count({
-        where: {
-          observerTeacherId: teacherId,
-          status: "COMPLETED"
-        }
-      }).catch(() => 0)
-
-      myObservationProgress = `${completedCount}/${target?.targetQuantity || 2}`
-    }
-
-    // B. Cố vấn & Hỗ trợ (Advisory & Support)
-    let pendingGoalUnlocks = 0
-    let pendingHelpRequests = 0
-
-    if (homeroomClassIds.length > 0) {
-      pendingGoalUnlocks = await prisma.studentGoalUnlock.count({
-        where: {
-          status: "PENDING",
-          goal: {
-            student: {
-              classId: { in: homeroomClassIds }
-            }
-          }
-        }
-      }).catch(() => 0)
-
-      pendingHelpRequests = await prisma.studentHelpRequest.count({
-        where: {
-          status: "OPEN",
-          student: {
-            classId: { in: homeroomClassIds }
-          }
-        }
-      }).catch(() => 0)
-    }
-
-    // C. Nhiệm vụ nội bộ (WorkTasks)
-    const pendingWorkTasks = await prisma.workTask.count({
-      where: {
-        assignedToUserId: userId,
-        progress: { in: ["PENDING", "IN_PROGRESS"] }
-      }
-    }).catch(() => 0)
-
-    const overdueWorkTasks = await prisma.workTask.count({
-      where: {
-        assignedToUserId: userId,
-        progress: { in: ["PENDING", "IN_PROGRESS"] },
-        endDate: { lt: startOfToday }
-      }
-    }).catch(() => 0)
-
-    // D. Học sinh cần chú ý (Attention Students)
+    // 3. Học sinh cần chú ý (Attention Students)
     interface AttentionStudent {
       id: string
       studentCode: string
@@ -171,7 +77,6 @@ export async function GET() {
     const attentionStudents: AttentionStudent[] = []
 
     if (isGVCN && homeroomClassIds.length > 0) {
-      // Find students with support targets or low scores in homeroom classes
       const supportStudents = await prisma.learningSupportTarget.findMany({
         where: {
           student: { classId: { in: homeroomClassIds } },
@@ -201,7 +106,6 @@ export async function GET() {
       })
     }
 
-    // If still less than 3, check recent open help requests
     if (attentionStudents.length < 3 && homeroomClassIds.length > 0) {
       const helpList = await prisma.studentHelpRequest.findMany({
         where: {
@@ -230,30 +134,31 @@ export async function GET() {
       })
     }
 
-    // E. Total Action Count Calculation
-    const totalUrgent = pendingGoalUnlocks + overdueWorkTasks + pendingObservationEvals
-    const totalAttention = upcomingObservations + pendingHelpRequests + pendingWorkTasks
-
-    // F. Construct Pulse Data
+    // 4. Construct Pulse Data
     let pulseTitle = "MY PULSE"
     let pulseType: "GV" | "GVCN" | "TTCM" | "QLCM" | "GDCS" = "GV"
     let pulseHighlights: string[] = []
+
+    const duGioCount = counts.byModule.DU_GIO || 0
+    const coVanCount = counts.byModule.CO_VAN || 0
+    const hoTroCount = counts.byModule.HO_TRO || 0
+    const congTacCount = counts.byModule.CONG_TAC || 0
 
     if (isGDCS) {
       pulseTitle = "CAMPUS PULSE"
       pulseType = "GDCS"
       pulseHighlights = [
-        `${dbUser?.teacher?.campus?.campusName || "Cơ sở"} ổn định`,
-        `${upcomingObservations} lịch dự giờ tuần này`,
-        `${totalUrgent} việc cần xử lý ngay`
+        `${dbUser?.teacher?.campus?.campusName || "Cơ sở"} hoạt động ổn định`,
+        `${duGioCount} lịch dự giờ & thao giảng`,
+        counts.overdue > 0 ? `${counts.overdue} việc quá hạn cần đôn đốc` : "Các bộ phận đúng tiến độ"
       ]
     } else if (isTTCM || isTBP) {
       pulseTitle = "TCM PULSE"
       pulseType = "TTCM"
       pulseHighlights = [
-        `Tiến độ dự giờ tổ: ${myObservationProgress} lượt`,
-        `${upcomingObservations} tiết dự giờ sắp tới`,
-        totalUrgent > 0 ? `${totalUrgent} việc cần duyệt/xử lý` : "Tất cả công việc đúng hạn"
+        `Tổ chuyên môn: ${duGioCount} lượt dự giờ`,
+        counts.overdue > 0 ? `${counts.overdue} việc cần duyệt/xử lý gấp` : "Tiến độ chuyên môn đạt chuẩn",
+        `${attentionStudents.length} học sinh cần lưu ý`
       ]
     } else if (isGVCN) {
       pulseTitle = "GVCN PULSE"
@@ -261,49 +166,49 @@ export async function GET() {
       pulseHighlights = [
         `Lớp ${homeroomClassNames.join(", ") || "Chủ nhiệm"}`,
         `${attentionStudents.length} học sinh cần chú ý`,
-        totalUrgent > 0 ? `${totalUrgent} việc cần xử lý hôm nay` : "Tiến độ công việc ổn định"
+        counts.today > 0 ? `${counts.today} việc cần xử lý hôm nay` : "Tiến độ công việc ổn định"
       ]
     } else {
       pulseTitle = "MY PULSE"
       pulseType = "GV"
       pulseHighlights = [
-        `Tiến độ dự giờ: ${myObservationProgress} lượt`,
-        upcomingObservations > 0 ? `${upcomingObservations} lịch dự giờ tuần này` : "Không có lịch dự giờ hôm nay",
-        totalUrgent > 0 ? `${totalUrgent} việc cần xử lý` : "Hoàn thành tốt công việc"
+        duGioCount > 0 ? `${duGioCount} lịch dự giờ & chuyên môn` : "Tiến độ chuyên môn đạt chuẩn",
+        counts.overdue > 0 ? `${counts.overdue} việc quá hạn` : "Hoàn thành tốt nhiệm vụ",
+        `${counts.thisWeek} nhiệm vụ trong tuần`
       ]
     }
 
-    // G. Structured Action Items (Today Tasks)
+    // 5. Structured Action Items (Top Actions from Tasks)
     const actionItems = [
       {
         id: "task-observation",
         title: "Dự giờ & Thao giảng",
-        count: upcomingObservations,
-        badgeText: myObservationProgress,
-        color: upcomingObservations > 0 ? "orange" : "blue",
+        count: duGioCount,
+        badgeText: `${duGioCount} lượt`,
+        color: duGioCount > 0 ? "orange" : "blue",
         deepLink: "/teacher/du-gio?tab=overview_slots",
-        urgent: pendingObservationEvals > 0,
-        subtext: pendingObservationEvals > 0 ? `${pendingObservationEvals} phiếu chờ đánh giá` : `${upcomingObservations} tiết sắp tới`
+        urgent: tasks.some(t => t.sourceModule === "DU_GIO" && (t.priority === "URGENT" || t.status === "OVERDUE")),
+        subtext: tasks.find(t => t.sourceModule === "DU_GIO")?.title || `${duGioCount} lịch sắp tới`
       },
       {
         id: "task-advisory",
         title: "Cố vấn & Hỗ trợ HS",
-        count: pendingGoalUnlocks + pendingHelpRequests,
-        badgeText: `${pendingGoalUnlocks + pendingHelpRequests} việc`,
-        color: (pendingGoalUnlocks + pendingHelpRequests) > 0 ? "red" : "blue",
+        count: coVanCount + hoTroCount,
+        badgeText: `${coVanCount + hoTroCount} việc`,
+        color: (coVanCount + hoTroCount) > 0 ? "red" : "blue",
         deepLink: "/teacher/co-van-hoc-tap",
-        urgent: pendingGoalUnlocks > 0,
-        subtext: pendingGoalUnlocks > 0 ? `${pendingGoalUnlocks} yêu cầu duyệt mở khóa` : "Theo dõi mục tiêu học sinh"
+        urgent: tasks.some(t => (t.sourceModule === "CO_VAN" || t.sourceModule === "HO_TRO") && t.priority === "URGENT"),
+        subtext: tasks.find(t => t.sourceModule === "CO_VAN" || t.sourceModule === "HO_TRO")?.title || "Theo dõi mục tiêu học sinh"
       },
       {
         id: "task-work",
         title: "Nhiệm vụ & Điều hành",
-        count: pendingWorkTasks,
-        badgeText: `${pendingWorkTasks} việc`,
-        color: overdueWorkTasks > 0 ? "red" : "green",
-        deepLink: "/teacher?tab=tasks",
-        urgent: overdueWorkTasks > 0,
-        subtext: overdueWorkTasks > 0 ? `${overdueWorkTasks} việc quá hạn!` : "Tiến độ đạt yêu cầu"
+        count: congTacCount,
+        badgeText: `${congTacCount} việc`,
+        color: counts.overdue > 0 ? "red" : "green",
+        deepLink: "/teacher/tasks",
+        urgent: counts.overdue > 0,
+        subtext: counts.overdue > 0 ? `${counts.overdue} việc quá hạn!` : "Tiến độ đạt yêu cầu"
       }
     ]
 
@@ -325,15 +230,18 @@ export async function GET() {
       pulse: {
         title: pulseTitle,
         type: pulseType,
-        completionRate: Math.max(70, Math.min(100, 100 - totalUrgent * 10)),
-        urgentCount: totalUrgent,
-        attentionCount: totalAttention,
+        completionRate: Math.max(65, Math.min(100, 100 - counts.overdue * 15)),
+        urgentCount: counts.overdue,
+        attentionCount: counts.today,
         highlights: pulseHighlights
       },
       actionItems,
       attentionStudents,
+      taskCounts: counts,
       aiPromptSuggestion: isGVCN
         ? `Lớp ${homeroomClassNames[0] || ""} hôm nay có học sinh nào cần chú ý không?`
+        : counts.overdue > 0
+        ? "Tôi có những việc nào quá hạn cần xử lý gấp?"
         : "Hôm nay tôi cần ưu tiên làm gì trước?"
     }, {
       headers: {

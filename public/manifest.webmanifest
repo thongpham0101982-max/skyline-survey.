@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "SSM - Sky-Line",
   "short_name": "SSM",
   "description": "Hệ thống Quản trị Chất lượng & Điều hành Công việc Giáo dục Sky-Line",
@@ -11,8 +11,29 @@
   "theme_color": "#003B3A",
   "lang": "vi",
   "dir": "ltr",
-  "categories": ["education", "productivity"],
+  "categories": [
+    "education",
+    "productivity"
+  ],
   "icons": [
+    {
+      "src": "/icons/ssm-48.png",
+      "sizes": "48x48",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/ssm-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/ssm-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/icons/ssm-192.png",
       "sizes": "192x192",
@@ -49,21 +70,36 @@
       "short_name": "Hôm nay",
       "description": "Xem tổng quan công việc hôm nay",
       "url": "/?source=pwa_shortcut_today",
-      "icons": [{ "src": "/icons/ssm-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/ssm-96.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Việc của tôi",
       "short_name": "Việc",
       "description": "Xem việc cần xử lý",
       "url": "/teacher?tab=tasks&source=pwa_shortcut_tasks",
-      "icons": [{ "src": "/icons/ssm-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/ssm-96.png",
+          "sizes": "96x96"
+        }
+      ]
     },
     {
       "name": "Trợ lý SSM AI",
       "short_name": "SSM AI",
       "description": "Hỏi đáp nhanh với Trợ lý SSM",
       "url": "/teacher/ai?source=pwa_shortcut_ai",
-      "icons": [{ "src": "/icons/ssm-96.png", "sizes": "96x96" }]
+      "icons": [
+        {
+          "src": "/icons/ssm-96.png",
+          "sizes": "96x96"
+        }
+      ]
     }
   ]
 }

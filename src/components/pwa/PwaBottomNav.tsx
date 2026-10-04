@@ -11,10 +11,12 @@ import {
   User,
   KeyRound,
   LogOut,
-  X
+  X,
+  ShieldCheck
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 import { ChangePasswordModal } from "@/components/ChangePasswordModal"
+import { DeviceSessionManager } from "@/components/pwa/DeviceSessionManager"
 
 interface PwaBottomNavProps {
   role?: string
@@ -23,17 +25,18 @@ interface PwaBottomNavProps {
 export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
   const pathname = usePathname() || ""
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false)
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false)
 
   const isHome = pathname === "/teacher" || pathname === "/admin"
   const isTasks = pathname.includes("/tasks") || pathname.includes("tab=tasks")
   const isAi = pathname.includes("/teacher/ai") || pathname.includes("/admin/ai")
-  const isNews = pathname.includes("ban-tin-thong-bao") || pathname.includes("feedback") || pathname.includes("thong-bao")
+  const isNews = pathname.includes("notifications") || pathname.includes("ban-tin-thong-bao") || pathname.includes("feedback") || pathname.includes("thong-bao")
 
   const homeHref = role === "ADMIN" ? "/admin" : "/teacher"
   const tasksHref = role === "ADMIN" ? "/admin/tasks" : "/teacher/tasks"
   const aiHref = role === "ADMIN" ? "/admin/ai" : "/teacher/ai"
-  const newsHref = role === "ADMIN" ? "/admin/logs" : "/teacher/ban-tin-thong-bao"
+  const newsHref = role === "ADMIN" ? "/admin/logs" : "/teacher/notifications"
 
   return (
     <>
@@ -104,7 +107,7 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
           <div className={`p-1 rounded-lg ${isNews ? "bg-[#00A19A]/10" : ""}`}>
             <Bell className="w-5 h-5" />
           </div>
-          <span className="text-[10px] mt-0.5 leading-none">Tin</span>
+          <span className="text-[10px] mt-0.5 leading-none">Thông báo</span>
         </Link>
 
         {/* Tab 5: Tôi */}
@@ -142,6 +145,18 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
               <button
                 onClick={() => {
                   setIsProfileSheetOpen(false)
+                  setIsDeviceModalOpen(true)
+                }}
+                className="w-full h-12 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs flex items-center gap-3 px-4 transition-colors cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-lg bg-teal-50 text-[#00A19A] flex items-center justify-center">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <span>Thiết bị đăng nhập</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsProfileSheetOpen(false)
                   setIsPasswordModalOpen(true)
                 }}
                 className="w-full h-12 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-xs flex items-center gap-3 px-4 transition-colors cursor-pointer"
@@ -170,6 +185,10 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
       <ChangePasswordModal
         isOpen={isPasswordModalOpen}
         onClose={() => setIsPasswordModalOpen(false)}
+      />
+      <DeviceSessionManager
+        isOpen={isDeviceModalOpen}
+        onClose={() => setIsDeviceModalOpen(false)}
       />
     </>
   )

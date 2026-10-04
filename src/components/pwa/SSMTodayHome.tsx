@@ -1,4 +1,5 @@
-﻿"use client"
+"use client"
+import { QuickActionFab } from "@/components/pwa/QuickActionFab";
 
 import React, { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
@@ -19,7 +20,10 @@ import {
   ArrowRight,
   ShieldCheck,
   UserCheck,
-  Award
+  Award,
+  Sun,
+  X,
+  Send
 } from "lucide-react"
 
 interface TodayData {
@@ -70,6 +74,51 @@ export function SSMTodayHome() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [currentDateStr, setCurrentDateStr] = useState("")
+  const [isMorningBriefOpen, setIsMorningBriefOpen] = useState(false)
+  const [morningBriefData, setMorningBriefData] = useState<{
+    date: string
+    title: string
+    urgentCount: number
+    actionToday: number
+    duGioToday: number
+    summaryText: string
+    deepLink: string
+  } | null>(null)
+  const [briefLoading, setBriefLoading] = useState(false)
+  const [briefPushing, setBriefPushing] = useState(false)
+  const [briefPushSuccess, setBriefPushSuccess] = useState(false)
+
+  const handleOpenMorningBrief = async () => {
+    setIsMorningBriefOpen(true)
+    setBriefLoading(true)
+    setBriefPushSuccess(false)
+    try {
+      const res = await fetch("/api/pwa/morning-brief")
+      if (res.ok) {
+        const json = await res.json()
+        setMorningBriefData(json.brief)
+      }
+    } catch (err) {
+      console.error("[SSM Morning Brief] Error fetching:", err)
+    } finally {
+      setBriefLoading(false)
+    }
+  }
+
+  const handleSendPushMorningBrief = async () => {
+    setBriefPushing(true)
+    try {
+      const res = await fetch("/api/pwa/morning-brief", { method: "POST" })
+      if (res.ok) {
+        setBriefPushSuccess(true)
+        setTimeout(() => setBriefPushSuccess(false), 4000)
+      }
+    } catch (err) {
+      console.error("[SSM Morning Brief] Error sending push:", err)
+    } finally {
+      setBriefPushing(false)
+    }
+  }
 
   const loadTodayData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
@@ -156,7 +205,7 @@ export function SSMTodayHome() {
               <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-[#5EEAD4]" : ""}`} />
             </button>
             <Link
-              href="/teacher/ban-tin-thong-bao"
+              href="/teacher/notifications"
               className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/15 active:bg-white/20 flex items-center justify-center text-white transition-colors relative cursor-pointer"
             >
               <Bell className="w-4 h-4" />
@@ -228,6 +277,35 @@ export function SSMTodayHome() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* 2.5 MORNING BRIEF BANNER */}
+      <div className="px-4 mt-3">
+        <button
+          onClick={handleOpenMorningBrief}
+          className="w-full bg-gradient-to-r from-amber-500/10 via-teal-500/10 to-emerald-500/10 hover:from-amber-500/15 hover:via-teal-500/15 hover:to-emerald-500/15 border border-teal-200/60 rounded-2xl p-3.5 flex items-center justify-between gap-3 text-left transition-all active:scale-[0.99] shadow-2xs cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 text-white flex items-center justify-center font-bold shadow-xs shrink-0 text-base">
+              ☀️
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-[#003B3A]">SSM Morning Brief</span>
+                <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded-full bg-amber-100 text-amber-800">
+                  Hôm nay
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">
+                Tóm tắt nhiệm vụ, dự giờ & việc ưu tiên ngày mới
+              </p>
+            </div>
+          </div>
+
+          <div className="w-8 h-8 rounded-lg bg-white/80 border border-slate-200/80 flex items-center justify-center text-slate-500 shrink-0">
+            <ChevronRight className="w-4 h-4" />
+          </div>
+        </button>
       </div>
 
       {/* 3. VIỆC CỦA TÔI (MY TASKS SECTION) */}

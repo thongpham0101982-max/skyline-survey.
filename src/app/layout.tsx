@@ -4,6 +4,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { Toaster } from "react-hot-toast";
 import { Open_Sans, Be_Vietnam_Pro } from "next/font/google";
 import { PwaManager } from "@/components/pwa/PwaManager";
+import { WebPushPrompt } from "@/components/pwa/WebPushPrompt";
 
 const openSans = Open_Sans({
   subsets: ["vietnamese", "latin"],
@@ -63,6 +64,7 @@ export default function RootLayout({
           {children}
           <Toaster position="top-right" />
           <PwaManager />
+          <WebPushPrompt />
         </AuthProvider>
       </body>
     </html>

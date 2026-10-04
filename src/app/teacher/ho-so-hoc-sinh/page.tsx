@@ -1,5 +1,5 @@
-// @ts-nocheck
 "use client"
+import { StudentMobileView } from "@/components/pwa/StudentMobileView";
 
 // Build portfolio version: 30.0-1788358433056
 // Build version: 30.0-1788358433056
@@ -70,6 +70,18 @@ const getYearLabel = (ach: any) => {
 };
 
 export default function TeacherStudentProfilePage() {
+  const [isMobileView, setIsMobileView] = useState(false);
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  if (isMobileView) {
+    return <StudentMobileView />;
+  }
+
   const [yearId, setYearId] = useState(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("selectedAcademicYear");

@@ -1,4 +1,5 @@
 "use client"
+import { ObservationMobileView } from "@/components/pwa/ObservationMobileView";
 // @ts-nocheck
 // Forced Vercel Deployment: 2026-08-28T15:53:02.733Z
 
@@ -605,6 +606,18 @@ const getSlotMonthStatus = (dateValue: string | Date | undefined | null): "CURRE
 };
 
 export function ObservationClient(props: ObservationClientProps) {
+  const [isMobileView, setIsMobileView] = useState(false);
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  if (isMobileView) {
+    return <ObservationMobileView />;
+  }
+
   const {
     initialSlots = [],
     initialPersonalSlots = [],
