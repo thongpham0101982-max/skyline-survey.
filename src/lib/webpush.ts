@@ -47,13 +47,19 @@ export async function sendPushNotificationToUser(userId: string, payload: PushPa
   let sentCount = 0
   let failedCount = 0
 
+  const rawTitle = payload.title || "Thông báo mới";
+  const formattedTitle = rawTitle.startsWith("SSSQ Thông báo:") || rawTitle.startsWith("SSQM Thông báo:") || rawTitle.startsWith("SSM Thông báo:")
+    ? rawTitle
+    : `SSSQ Thông báo: ${rawTitle}`;
+
   const notificationData = JSON.stringify({
-    title: payload.title,
+    title: formattedTitle,
     body: payload.body,
     icon: payload.icon || "/icons/ssm-192.png",
     badge: payload.badge || "/icons/ssm-96.png",
     deepLink: payload.deepLink || "/",
     tag: payload.tag || "ssm-notification",
+    badgeCount: (payload as any).badgeCount || 1,
     actions: payload.actions || []
   })
 

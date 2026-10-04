@@ -1,7 +1,8 @@
-﻿"use client"
+"use client"
 
 import React, { useEffect, useState } from "react"
 import { Sparkles, RefreshCw, X, Download, ShieldCheck } from "lucide-react"
+import { MobileInAppNotificationBanner } from "@/components/pwa/MobileInAppNotificationBanner"
 
 export function PwaManager() {
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null)
@@ -113,6 +114,8 @@ export function PwaManager() {
 
   return (
     <>
+      <MobileInAppNotificationBanner />
+
       {/* UPDATE NOTIFICATION BANNER */}
       {showUpdatePrompt && (
         <div className="fixed top-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -142,7 +145,7 @@ export function PwaManager() {
                 </button>
                 <button
                   onClick={() => setShowUpdatePrompt(false)}
-                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-slate-200 text-xs font-medium transition-colors cursor-pointer"
                 >
                   Để sau
                 </button>
@@ -152,23 +155,24 @@ export function PwaManager() {
         </div>
       )}
 
-      {/* SUBTLE INSTALL APP BANNER ON MOBILE */}
+      {/* PWA INSTALL PROMPT BANNER (BOTTOM FLOATING) */}
       {showInstallBanner && !isStandalone && (
-        <div className="md:hidden fixed bottom-20 left-3 right-3 z-40 animate-in fade-in slide-in-from-bottom-3 duration-300">
-          <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl shadow-[0_8px_30px_rgba(0,59,58,0.12)] border border-[#E6ECEA] flex items-center justify-between gap-3">
+        <div className="fixed bottom-16 sm:bottom-6 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-white/95 backdrop-blur-md text-slate-800 p-3.5 sm:p-4 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[#00A19A]/30 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
-              <img
-                src="/icons/ssm-96.png"
-                alt="SSM"
-                className="w-10 h-10 rounded-xl shadow-xs shrink-0"
-              />
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#003B3A] to-[#00A19A] p-0.5 flex items-center justify-center shrink-0 shadow-xs">
+                <img
+                  src="/icons/ssm-96.png"
+                  alt="SSM App Icon"
+                  className="w-full h-full object-contain rounded-lg"
+                />
+              </div>
               <div className="min-w-0">
-                <div className="text-xs font-bold text-[#003B3A] flex items-center gap-1">
-                  <span>Cài đặt SSM App</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#00A19A]"></span>
-                </div>
-                <p className="text-[11px] text-slate-500 truncate">
-                  Truy cập nhanh & nhận cảnh báo công việc
+                <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                  Cài đặt SSM Sky-Line
+                </h4>
+                <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                  Truy cập nhanh & nhận thông báo
                 </p>
               </div>
             </div>

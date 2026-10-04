@@ -79,7 +79,16 @@ export default function NotificationsPage() {
       if (res.ok) {
         const data = await res.json()
         setNotifications(data.notifications || [])
-        setUnreadCount(data.unreadCount || 0)
+        const count = data.unreadCount || 0
+        setUnreadCount(count)
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("ssm-unread-count-changed", { detail: { count } }))
+          if (count > 0 && "setAppBadge" in navigator) {
+            (navigator as any).setAppBadge(count).catch(() => {})
+          } else if (count === 0 && "clearAppBadge" in navigator) {
+            (navigator as any).clearAppBadge().catch(() => {})
+          }
+        }
         if (data.summary) {
           setSummary(data.summary)
         }
@@ -102,7 +111,18 @@ export default function NotificationsPage() {
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
     )
-    setUnreadCount(prev => Math.max(0, prev - 1))
+    setUnreadCount(prev => {
+      const next = Math.max(0, prev - 1)
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("ssm-unread-count-changed", { detail: { count: next } }))
+        if (next > 0 && "setAppBadge" in navigator) {
+          (navigator as any).setAppBadge(next).catch(() => {})
+        } else if (next === 0 && "clearAppBadge" in navigator) {
+          (navigator as any).clearAppBadge().catch(() => {})
+        }
+      }
+      return next
+    })
 
     try {
       await fetch("/api/pwa/notifications", {
@@ -130,6 +150,12 @@ export default function NotificationsPage() {
       if (res.ok) {
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
         setUnreadCount(0)
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("ssm-unread-count-changed", { detail: { count: 0 } }))
+          if ("clearAppBadge" in navigator) {
+            (navigator as any).clearAppBadge().catch(() => {})
+          }
+        }
       }
     } catch (err) {
       console.error("[Notifications] Error marking all read:", err)

@@ -52,10 +52,19 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Message Event: Controlled Skip Waiting on User Confirmation
+// Message Event: Controlled Skip Waiting & App Badging
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (!event.data) return;
+  if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data.type === 'SET_APP_BADGE') {
+    if ('setAppBadge' in self.navigator) {
+      self.navigator.setAppBadge(event.data.count || 1).catch(() => {});
+    }
+  } else if (event.data.type === 'CLEAR_APP_BADGE') {
+    if ('clearAppBadge' in self.navigator) {
+      self.navigator.clearAppBadge().catch(() => {});
+    }
   }
 });
 
@@ -152,15 +161,22 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Push Event: Web Push Notifications
+// Push Event: Web Push Notifications & App Icon Badging
 self.addEventListener('push', (event) => {
   if (!event.data) return;
 
   try {
     const data = event.data.json();
-    const title = data.title || 'SSM Sky-Line';
+    let rawTitle = data.title || 'Thông báo mới';
+    
+    // Ensure Title is formatted as "SSSQ Thông báo: [tiêu đề]" as required
+    let title = rawTitle;
+    if (!title.startsWith('SSSQ Thông báo:') && !title.startsWith('SSQM Thông báo:') && !title.startsWith('SSM Thông báo:')) {
+      title = `SSSQ Thông báo: ${rawTitle}`;
+    }
+
     const options = {
-      body: data.body || 'Bạn có thông báo mới từ hệ thống SSM.',
+      body: data.body || 'Bạn có thông báo mới từ hệ thống SSM Sky-Line.',
       icon: data.icon || '/icons/ssm-192.png',
       badge: data.badge || '/icons/ssm-96.png',
       data: {
@@ -173,15 +189,30 @@ self.addEventListener('push', (event) => {
       actions: data.actions || [],
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    const promises = [
+      self.registration.showNotification(title, options)
+    ];
+
+    // Display notification counter on App Icon on home screen (W3C Badging API)
+    if ('setAppBadge' in self.navigator) {
+      const badgeCount = (typeof data.badgeCount === 'number') ? data.badgeCount : 1;
+      promises.push(self.navigator.setAppBadge(badgeCount).catch(() => {}));
+    }
+
+    event.waitUntil(Promise.all(promises));
   } catch (err) {
     console.error('[PWA SW] Push event error:', err);
   }
 });
 
-// Notification Click Event: Deep Link Navigation
+// Notification Click Event: Deep Link Navigation & App Badge Clear
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
+  // Clear badge upon user interaction
+  if ('clearAppBadge' in self.navigator) {
+    self.navigator.clearAppBadge().catch(() => {});
+  }
 
   const targetUrl = (event.notification.data && event.notification.data.url) || '/';
 

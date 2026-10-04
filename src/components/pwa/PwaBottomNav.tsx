@@ -27,6 +27,28 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false)
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false)
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0)
+
+  React.useEffect(() => {
+    // Initial fetch of unread count
+    fetch("/api/pwa/notifications?unreadOnly=true")
+      .then(res => res.json())
+      .then(data => {
+        if (typeof data.unreadCount === "number") {
+          setUnreadNotifCount(data.unreadCount)
+        }
+      })
+      .catch(() => {})
+
+    // Listen to custom count change event
+    const handleCountChange = (e: any) => {
+      if (typeof e.detail?.count === "number") {
+        setUnreadNotifCount(e.detail.count)
+      }
+    }
+    window.addEventListener("ssm-unread-count-changed", handleCountChange)
+    return () => window.removeEventListener("ssm-unread-count-changed", handleCountChange)
+  }, [])
 
   const isHome = pathname === "/teacher" || pathname === "/admin"
   const isTasks = pathname.includes("/tasks") || pathname.includes("tab=tasks")
@@ -104,8 +126,13 @@ export function PwaBottomNav({ role = "TEACHER" }: PwaBottomNavProps) {
               : "text-slate-500 hover:text-[#00A19A] font-medium"
           }`}
         >
-          <div className={`p-1 rounded-lg ${isNews ? "bg-[#00A19A]/10" : ""}`}>
+          <div className={`p-1 rounded-lg relative ${isNews ? "bg-[#00A19A]/10" : ""}`}>
             <Bell className="w-5 h-5" />
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-1 -right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-xs animate-in zoom-in duration-200">
+                {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
+              </span>
+            )}
           </div>
           <span className="text-[10px] mt-0.5 leading-none">Thông báo</span>
         </Link>
