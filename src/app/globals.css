@@ -1382,3 +1382,8 @@ input:focus-visible {
     font-size: 13.5px !important;
   }
 }
+@media (max-width: 767px) {
+  body:has(.pwa-today-view) .teacher-layout-header {
+    display: none !important;
+  }
+}

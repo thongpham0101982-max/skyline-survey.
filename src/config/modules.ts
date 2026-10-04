@@ -30,7 +30,9 @@ import {
   Sparkles,
   Grid3X3,
   Database,
-  BarChart3
+  BarChart3,
+  Search,
+  Trophy
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -160,6 +162,18 @@ export const APP_CATEGORIES = [
       { code: "STUDENT_TRANSFERS", name: "Quản lý HS lưu chuyển", icon: ArrowRightLeft, href: "/admin/student-transfers" },
       { code: "DESTINATION_SCHOOLS", name: "Danh mục Trường học", icon: Building2, href: "/admin/truong-lien-ket" },
       { code: "TEACHER_TRANSFERS", name: "Kết chuyển Nhân sự", icon: RefreshCcw, href: "/admin/teacher-transfers" },
+    ]
+  },
+  {
+    id: "STUDENT_LOOKUP",
+    name: "Tra cứu Học sinh",
+    color: "teal",
+    icon: Search,
+    modules: [
+      { code: "TRA_CUU_HO_SO", name: "1. Tra cứu Hồ sơ", icon: Users, href: "/admin/tra-cuu-hoc-sinh/ho-so" },
+      { code: "TRA_CUU_KQHT", name: "2. Tra cứu Kết quả học tập", icon: FileText, href: "/admin/tra-cuu-hoc-sinh/ket-qua" },
+      { code: "TRA_CUU_XEP_LOAI", name: "3. Tra cứu Xếp loại học tập", icon: CheckCircle2, href: "/admin/tra-cuu-hoc-sinh/xep-loai" },
+      { code: "TRA_CUU_THANH_TICH", name: "4. Tra cứu Thành tích", icon: Trophy, href: "/admin/tra-cuu-hoc-sinh/thanh-tich" },
     ]
   },
   {

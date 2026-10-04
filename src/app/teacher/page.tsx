@@ -1,5 +1,7 @@
 "use client"
 
+import { SSMTodayHome } from "@/components/pwa/SSMTodayHome"
+
 import React, { useEffect, useState, useMemo, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
@@ -308,7 +310,14 @@ export default function TeacherDashboard() {
   }, [campusTheme.type])
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-20 sm:pb-8">
+    <>
+      {/* MOBILE PWA VIEW (< 768px): SSM TODAY */}
+      <div className="md:hidden w-full -m-4 sm:-m-6">
+        <SSMTodayHome />
+      </div>
+
+      {/* DESKTOP VIEW (>= 768px): FULL TEACHER DASHBOARD 100% INTACT */}
+      <div className="hidden md:block space-y-6 max-w-7xl mx-auto pb-20 sm:pb-8">
       
       {/* CAMPUS THEME SELECTOR & PREVIEW BADGE */}
       <div className="flex items-center justify-between gap-3 px-1 flex-wrap">
@@ -851,6 +860,7 @@ export default function TeacherDashboard() {
         </Link>
       </div>
 
-    </div>
+      </div>
+    </>
   )
 }

@@ -1,4 +1,4 @@
-import { TeacherMobileBottomNav } from "@/components/TeacherMobileBottomNav"
+import { PwaBottomNav } from "@/components/pwa/PwaBottomNav"
 export const dynamic = "force-dynamic"
 import { SSMAssistantWidget } from "@/components/SSMAssistantWidget"
 import { TeacherExperienceGlobalModal } from "@/components/modals/TeacherExperienceGlobalModal"
@@ -144,7 +144,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     <div className="flex min-h-dvh text-xs font-semibold bg-[#F8FAFC]">
       <Sidebar role="TEACHER" permissionModules={readableModules} actualRole={roleCode} isGVCN={isGVCN} isPreschoolTeacher={isPreschoolTeacher} />
       <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden bg-[#F8FAFC]">
-        <header className="h-16 border-b border-slate-200/70 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs">
+        <header className="teacher-layout-header h-16 border-b border-slate-200/70 bg-white/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 shrink-0 shadow-2xs">
           <div className="flex items-center gap-3">
             <MobileMenuTrigger />
             <div className="flex items-center gap-2">
@@ -172,7 +172,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           {children}
         </div>
         
-        <TeacherMobileBottomNav />
+        <PwaBottomNav role="TEACHER" />
         <SSMAssistantWidget role="TEACHER" />
         {unconfirmedTeacherData && (
           <TeacherExperienceGlobalModal
