@@ -209,4 +209,3 @@ function buildEmailHtml(subject, periodName, batchName, totalStudents, totalPass
 </body>
 </html>`;
 }
-}

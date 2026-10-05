@@ -453,149 +453,190 @@ export async function sendExperientialActivityNotification(payload: ActivityNoti
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; color: #1e293b; margin: 0; padding: 0; -webkit-text-size-adjust: none; }
-    .container { max-width: 680px; margin: 24px auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
-    .header { background: linear-gradient(135deg, #003B3A 0%, #00736E 50%, #00A19A 100%); padding: 32px 28px; text-align: center; color: #ffffff; }
-    .header h1 { margin: 0; font-size: 20px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.3; }
-    .header p { margin: 8px 0 0 0; font-size: 13.5px; opacity: 0.95; font-weight: 700; color: #e0f2fe; }
-    .badge { display: inline-block; background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.35); padding: 5px 14px; border-radius: 20px; font-size: 11.5px; font-weight: 800; margin-top: 12px; color: #ffffff; }
-    .body { padding: 32px 28px; }
-    .greeting { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 14px; }
-    
-    /* MANDATORY NOTICE CALLOUT */
-    .mandatory-notice { background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%); border-left: 5px solid #00A19A; border-radius: 12px; padding: 18px 20px; margin: 20px 0 24px 0; box-shadow: 0 2px 8px rgba(0,161,154,0.1); }
-    .mandatory-notice .notice-title { font-size: 14px; font-weight: 900; color: #003B3A; display: flex; items-center: center; margin-bottom: 6px; }
-    .mandatory-notice .notice-content { font-size: 13.5px; line-height: 1.6; color: #134e4a; font-weight: 600; margin: 0; }
-    
-    .section-title { font-size: 13px; font-weight: 800; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin: 24px 0 10px 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 6px; }
-    
-    .table-info { width: 100%; border-collapse: collapse; margin: 12px 0 24px 0; font-size: 13.5px; }
-    .table-info tr:nth-child(even) { background-color: #f8fafc; }
-    .table-info td { padding: 11px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
-    .table-info td.label { font-weight: 700; color: #475569; width: 34%; }
-    .table-info td.value { font-weight: 600; color: #0f172a; }
-    
-    .cta-container { text-align: center; margin: 32px 0 20px 0; }
-    .btn { display: inline-block; background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%); color: #ffffff !important; text-decoration: none; font-weight: 800; font-size: 14px; padding: 15px 36px; border-radius: 14px; box-shadow: 0 6px 18px rgba(0, 161, 154, 0.35); text-transform: uppercase; letter-spacing: 0.3px; }
-    
-    .instruction-box { background: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 14px 18px; margin: 20px 0; font-size: 12.5px; color: #92400e; line-height: 1.55; }
-    .instruction-box strong { color: #78350f; }
-
-    .footer { background: #f8fafc; padding: 24px 28px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; line-height: 1.6; }
-    .footer strong { color: #334155; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thông Báo Hoạt Động Trải Nghiệm Sky-Line</title>
 </head>
-<body>
-  <div class="container">
-    <!-- HEADER -->
-    <div class="header">
-      <h1>QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM SKY-LINE</h1>
-      <p>${displaySenderName.toUpperCase()}</p>
-      <div class="badge">Mã kế hoạch: ${activityCode || "HDTN"}</div>
-    </div>
-    
-    <!-- BODY -->
-    <div class="body">
-      <div class="greeting">Kính gửi Thầy/Cô ${recipient.teacherName},</div>
-      
-      <p style="font-size: 13.5px; line-height: 1.65; color: #334155; margin: 0 0 16px 0;">
-        ${roleSpecificMessage}
-      </p>
+<body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1E293B;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F1F5F9" style="table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 24px 12px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 660px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0;">
+          
+          <!-- HEADER BANNER -->
+          <tr>
+            <td bgcolor="#003B3A" style="background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #005B58 60%, #00A19A 100%); padding: 30px 24px; text-align: center;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;">
+                <tr>
+                  <td align="center" style="padding-bottom: 8px;">
+                    <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; line-height: 1.3; text-transform: uppercase;">
+                      QUẢN LÝ HOẠT ĐỘNG TRẢI NGHIỆM
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top: 6px;">
+                    <div style="font-size: 13px; font-weight: 600; color: #CCFBF1; letter-spacing: 0.3px;">
+                      ${displaySenderName.toUpperCase()}
+                    </div>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top: 10px;">
+                    <span style="display: inline-block; background-color: rgba(0, 161, 154, 0.25); border: 1px solid rgba(204, 251, 241, 0.4); padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 700; color: #FFFFFF;">
+                      Mã kế hoạch: <strong style="color: #FDE047;">${activityCode || "HDTN"}</strong>
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-      <!-- MANDATORY ROLE EVALUATION CALLOUT -->
-      <div class="mandatory-notice">
-        <div class="notice-title">📌 YÊU CẦU TRỌNG TÂM DÀNH CHO GVCN & GVBM:</div>
-        <p class="notice-content">
-          <strong>"Thầy cô vui lòng thực hiện đánh giá vai trò của Học sinh lớp."</strong><br/>
-          Kính nhờ Quý Thầy/Cô truy cập Sổ đánh giá Hoạt động Trải nghiệm trên hệ thống để ghi nhận vai trò tham gia của học sinh (như <em>Trưởng nhóm, Phó nhóm, Thành viên tích cực, Ban tổ chức, v.v.</em>), đánh giá mức độ hoàn thành nhiệm vụ và các tiêu chí năng lực - phẩm chất theo kế hoạch.
-        </p>
-      </div>
+          <!-- MAIN CONTENT BODY -->
+          <tr>
+            <td style="padding: 28px 24px; color: #1E293B;">
+              <p style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #003B3A;">
+                Kính gửi Thầy/Cô ${recipient.teacherName},
+              </p>
+              
+              <p style="font-size: 14px; line-height: 1.65; color: #334155; margin: 0 0 18px 0;">
+                ${roleSpecificMessage}
+              </p>
 
-      ${customMessage ? `
-      <div style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 12px 16px; margin: 16px 0; font-size: 13px; color: #1e40af; line-height: 1.5;">
-        <strong>💬 Lời nhắn bổ sung từ người gửi:</strong><br/>
-        ${customMessage}
-      </div>
-      ` : ""}
+              <!-- MANDATORY ROLE EVALUATION CALLOUT -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0FDFA" style="background-color: #F0FDFA; border-left: 4px solid #00A19A; border-radius: 10px; margin: 0 0 22px 0; border: 1px solid #CCFBF1; border-left: 4px solid #00A19A;">
+                <tr>
+                  <td style="padding: 16px 18px;">
+                    <div style="font-size: 13px; font-weight: 800; color: #003B3A; margin-bottom: 6px;">
+                      📌 YÊU CẦU TRỌNG TÂM DÀNH CHO GVCN & GVBM:
+                    </div>
+                    <div style="font-size: 13px; line-height: 1.6; color: #134E4A;">
+                      <strong>"Thầy cô vui lòng thực hiện đánh giá vai trò của Học sinh lớp."</strong><br/>
+                      Kính nhờ Quý Thầy/Cô truy cập Sổ đánh giá Hoạt động Trải nghiệm trên hệ thống để ghi nhận vai trò tham gia của học sinh (như <em>Trưởng nhóm, Phó nhóm, Thành viên tích cực, Ban tổ chức, v.v.</em>), đánh giá mức độ hoàn thành nhiệm vụ và các tiêu chí năng lực - phẩm chất theo kế hoạch.
+                    </div>
+                  </td>
+                </tr>
+              </table>
 
-      <!-- ACTIVITY DETAILS TABLE -->
-      <div class="section-title">THÔNG TIN & PHÂN LOẠI HOẠT ĐỘNG</div>
-      <table class="table-info">
-        <tr>
-          <td class="label">🎯 Tên hoạt động:</td>
-          <td class="value"><strong style="color: #003B3A; font-size: 14.5px;">${activityName}</strong></td>
-        </tr>
-        <tr>
-          <td class="label">🏷️ Mạch hoạt động:</td>
-          <td class="value"><span style="color: #0f766e; font-weight: 700;">${strandLabel}</span></td>
-        </tr>
-        <tr>
-          <td class="label">📂 Phân loại hình thức:</td>
-          <td class="value">${resolvedTypeLabel} (Quy mô: <strong>${scaleLabel}</strong>)</td>
-        </tr>
-        ${subjectName ? `
-        <tr>
-          <td class="label">📚 Môn học / TCM:</td>
-          <td class="value"><strong style="color: #b45309;">${subjectName}</strong> ${departmentName ? `(${departmentName})` : ""}</td>
-        </tr>
-        ` : `
-        <tr>
-          <td class="label">📚 Môn học / TCM:</td>
-          <td class="value">Hoạt động giáo dục trải nghiệm chung / Liên môn</td>
-        </tr>
-        `}
-        <tr>
-          <td class="label">🗓️ Thời gian tổ chức:</td>
-          <td class="value"><strong>${formattedDate}</strong> ${timeRange ? `(${timeRange})` : ""}</td>
-        </tr>
-        <tr>
-          <td class="label">📍 Địa điểm:</td>
-          <td class="value">${location || "Tại các cơ sở Sky-Line / Ngoại khóa"}</td>
-        </tr>
-        <tr>
-          <td class="label">👥 Lớp phụ trách:</td>
-          <td class="value"><strong style="color: #003B3A;">${recipient.classes.join(", ") || allClassNames}</strong></td>
-        </tr>
-        <tr>
-          <td class="label">📊 Hình thức đánh giá:</td>
-          <td class="value">${evalMode === "PARTICIPATION_ONLY" ? "Ghi nhận tham gia & Vai trò" : `Đánh giá theo ${criteria?.length || 3} tiêu chí năng lực`}</td>
-        </tr>
-        <tr>
-          <td class="label">⏰ Hạn nộp đánh giá:</td>
-          <td class="value"><span style="color: #047857; font-weight: 800; font-size: 14px;">${deadline || "Theo kế hoạch nhà trường"}</span></td>
-        </tr>
-      </table>
+              ${customMessage ? `
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #EFF6FF; border-left: 4px solid #3B82F6; border-radius: 8px; margin: 0 0 20px 0;">
+                <tr>
+                  <td style="padding: 12px 16px; font-size: 13px; color: #1E40AF; line-height: 1.5;">
+                    <strong>💬 Lời nhắn bổ sung từ người gửi:</strong><br/>
+                    ${customMessage}
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
 
-      <!-- CTA BUTTON -->
-      <div class="cta-container">
-        <a href="${activityUrl}" class="btn" target="_blank">
-          TRUY CẬP VÀ ĐÁNH GIÁ VAI TRÒ HỌC SINH &rarr;
-        </a>
-      </div>
+              <!-- ACTIVITY DETAILS TABLE -->
+              <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #003B3A; letter-spacing: 0.5px; margin: 24px 0 10px 0; border-bottom: 2px solid #E2E8F0; padding-bottom: 6px;">
+                THÔNG TIN & PHÂN LOẠI HOẠT ĐỘNG
+              </div>
 
-      <!-- INSTRUCTION NOTE -->
-      <div class="instruction-box">
-        <strong>💡 Hướng dẫn thao tác cho Thầy/Cô:</strong><br/>
-        1. Nhấp vào nút bấm phía trên hoặc đăng nhập cổng Quản trị Giáo viên Sky-Line.<br/>
-        2. Chọn mục <strong>"Hoạt động trải nghiệm"</strong> &rarr; Mở hoạt động <strong>"${activityName}"</strong>.<br/>
-        3. Chọn lớp phụ trách, chấm vai trò học sinh (Trưởng nhóm, Thành viên,...), điểm tiêu chí và nhấn <strong>"Lưu đánh giá"</strong>.
-      </div>
-    </div>
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 24px; font-size: 13.5px; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;">
+                <tr style="background-color: #F8FAFC;">
+                  <td width="35%" style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">🎯 Tên hoạt động:</td>
+                  <td width="65%" style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #003B3A;">${activityName}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">🏷️ Mạch hoạt động:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #0F766E;">${strandLabel}</td>
+                </tr>
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">📂 Phân loại hình thức:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;">${resolvedTypeLabel} (Quy mô: <strong>${scaleLabel}</strong>)</td>
+                </tr>
+                ${subjectName ? `
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">📚 Môn học / TCM:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #B45309;">${subjectName} ${departmentName ? `(${departmentName})` : ""}</td>
+                </tr>
+                ` : `
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">📚 Môn học / TCM:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #475569;">Hoạt động giáo dục trải nghiệm chung / Liên môn</td>
+                </tr>
+                `}
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">🗓️ Thời gian tổ chức:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;"><strong>${formattedDate}</strong> ${timeRange ? `(${timeRange})` : ""}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">📍 Địa điểm:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;">${location || "Tại các cơ sở Sky-Line / Ngoại khóa"}</td>
+                </tr>
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">👥 Lớp phụ trách:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #003B3A;">${recipient.classes.join(", ") || allClassNames}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">📊 Hình thức đánh giá:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;">${evalMode === "PARTICIPATION_ONLY" ? "Ghi nhận tham gia & Vai trò" : `Đánh giá theo ${criteria?.length || 3} tiêu chí năng lực`}</td>
+                </tr>
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; font-weight: 700; color: #475569;">⏰ Hạn nộp đánh giá:</td>
+                  <td style="padding: 10px 14px; color: #047857; font-weight: 800; font-size: 14px;">${deadline || "Theo kế hoạch nhà trường"}</td>
+                </tr>
+              </table>
 
-    <!-- FOOTER -->
-    <div class="footer">
-      <p style="margin: 0 0 6px 0; font-weight: 800; color: #003B3A; font-size: 12.5px;">
-        HỆ THỐNG KHẢO THÍ & ĐÁNH GIÁ NĂNG LỰC HỌC SINH SKY-LINE SCHOOLS
-      </p>
-      <p style="margin: 0 0 4px 0;">
-        Đơn vị gửi: <strong>${displaySenderName}</strong> ${senderEmail ? `(${senderEmail})` : ""}
-      </p>
-      <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-        Email này được gửi tự động đến GVCN và CC Giám đốc Cơ sở liên quan. Quý Thầy/Cô có thể liên hệ quản trị viên nếu cần hỗ trợ kỹ thuật.
-      </p>
-    </div>
-  </div>
+              <!-- BULLETPROOF CTA BUTTON -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 28px auto; border-collapse: separate;">
+                <tr>
+                  <td align="center" bgcolor="#00A19A" style="border-radius: 10px; background-color: #00A19A;">
+                    <a href="${activityUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
+                      TRUY CẬP VÀ ĐÁNH GIÁ VAI TRÒ HỌC SINH &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- INSTRUCTION NOTE -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFFBEB; border: 1px solid #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 8px; margin-top: 20px;">
+                <tr>
+                  <td style="padding: 14px 16px; font-size: 12.5px; color: #92400E; line-height: 1.55;">
+                    <strong style="color: #78350F;">💡 Hướng dẫn thao tác cho Thầy/Cô:</strong><br/>
+                    1. Nhấp vào nút bấm phía trên hoặc đăng nhập cổng Quản trị Giáo viên Sky-Line.<br/>
+                    2. Chọn mục <strong>"Hoạt động trải nghiệm"</strong> &rarr; Mở hoạt động <strong>"${activityName}"</strong>.<br/>
+                    3. Chọn lớp phụ trách, chấm vai trò học sinh (Trưởng nhóm, Thành viên,...), điểm tiêu chí và nhấn <strong>"Lưu đánh giá"</strong>.
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- OFFICIAL BRAND FOOTER -->
+          <tr>
+            <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 24px 24px; text-align: center; border-top: 3px solid #00A19A;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+              </p>
+              <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #CCFBF1;">
+                BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+              </p>
+              <p style="margin: 0 0 10px 0; font-size: 11px; color: rgba(255, 255, 255, 0.75);">
+                Đơn vị gửi: <strong style="color: #FFFFFF;">${displaySenderName}</strong> ${senderEmail ? `(${senderEmail})` : ""}
+              </p>
+              <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
+                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+              </p>
+              <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
+                Email này được gửi tự động đến GVCN và CC Giám đốc Cơ sở liên quan. Vui lòng không trả lời trực tiếp email này.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
       `;
@@ -827,245 +868,163 @@ export async function sendTLHNAllocationNotification(payload: TLHNAllocationEmai
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${emailSubject}</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      line-height: 1.6;
-      color: #1e293b;
-      margin: 0;
-      padding: 0;
-      background-color: #f8fafc;
-    }
-    .wrapper {
-      max-width: 640px;
-      margin: 20px auto;
-      background: #ffffff;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-      border: 1px solid #e2e8f0;
-    }
-    .header {
-      background: linear-gradient(135deg, #003B3A 0%, #005F5B 50%, #00A19A 100%);
-      padding: 32px 30px;
-      color: #ffffff;
-      text-align: center;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      text-transform: uppercase;
-    }
-    .header p {
-      margin: 6px 0 0 0;
-      font-size: 13px;
-      color: #e6fffa;
-      font-weight: 500;
-    }
-    .content {
-      padding: 28px 30px;
-    }
-    .greeting {
-      font-size: 14.5px;
-      font-weight: 600;
-      color: #0f172a;
-      margin-bottom: 16px;
-    }
-    .message-banner {
-      background: linear-gradient(135deg, #f0fdfa 0%, #e6fffa 100%);
-      border-left: 4px solid #00A19A;
-      padding: 16px 20px;
-      border-radius: 12px;
-      margin: 18px 0 24px 0;
-      border-top: 1px solid #ccfbf1;
-      border-right: 1px solid #ccfbf1;
-      border-bottom: 1px solid #ccfbf1;
-    }
-    .message-banner p {
-      margin: 0;
-      font-size: 14.5px;
-      font-weight: 700;
-      color: #003B3A;
-      line-height: 1.6;
-    }
-    .activity-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 24px;
-    }
-    .activity-title {
-      font-size: 16px;
-      font-weight: 800;
-      color: #003B3A;
-      margin-bottom: 14px;
-      border-bottom: 2px solid #00A19A;
-      padding-bottom: 8px;
-    }
-    .info-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    .info-table td {
-      padding: 8px 6px;
-      vertical-align: top;
-      border-bottom: 1px dashed #e2e8f0;
-    }
-    .info-table tr:last-child td {
-      border-bottom: none;
-    }
-    .info-label {
-      width: 38%;
-      color: #64748b;
-      font-weight: 600;
-    }
-    .info-val {
-      width: 62%;
-      color: #0f172a;
-      font-weight: 600;
-    }
-    .cta-container {
-      text-align: center;
-      margin: 30px 0 20px 0;
-    }
-    .btn {
-      display: inline-block;
-      background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%);
-      color: #ffffff !important;
-      text-decoration: none;
-      font-weight: 800;
-      font-size: 14px;
-      padding: 14px 32px;
-      border-radius: 12px;
-      box-shadow: 0 4px 14px rgba(0, 161, 154, 0.35);
-      letter-spacing: 0.02em;
-    }
-    .instruction-box {
-      background: #fffbeb;
-      border: 1px solid #fef3c7;
-      border-left: 4px solid #f59e0b;
-      padding: 14px 18px;
-      border-radius: 12px;
-      font-size: 12.5px;
-      color: #92400e;
-      line-height: 1.55;
-      margin-top: 20px;
-    }
-    .footer {
-      background: #f1f5f9;
-      padding: 22px 30px;
-      font-size: 11.5px;
-      color: #64748b;
-      text-align: center;
-      border-top: 1px solid #e2e8f0;
-    }
-  </style>
 </head>
-<body>
-  <div class="wrapper">
-    <div class="header">
-      <h1>HỆ THỐNG SKY-LINE SMS</h1>
-      <p>Kế hoạch Hoạt động Trải nghiệm & Ngoại khóa</p>
-    </div>
+<body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1E293B;">
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F1F5F9" style="table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 24px 12px;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 660px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0;">
+          
+          <!-- HEADER BANNER -->
+          <tr>
+            <td bgcolor="#003B3A" style="background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #005B58 60%, #00A19A 100%); padding: 30px 24px; text-align: center;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;">
+                <tr>
+                  <td align="center" style="padding-bottom: 8px;">
+                    <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; line-height: 1.3; text-transform: uppercase;">
+                      KẾ HOẠCH HOẠT ĐỘNG NGOẠI KHÓA & TRẢI NGHIỆM
+                    </h1>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top: 6px;">
+                    <div style="font-size: 13px; font-weight: 600; color: #CCFBF1; letter-spacing: 0.3px;">
+                      THÔNG BÁO TIẾP NHẬN TỔNG THỂ TỪ BP HĐNGLL - TỔ CTHS
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-    <div class="content">
-      <div class="greeting">
-        Kính gửi Thầy/Cô <strong>${recipient.teacherName}</strong> ${recipient.campusName ? `(${recipient.campusName})` : ''},
-      </div>
+          <!-- MAIN CONTENT BODY -->
+          <tr>
+            <td style="padding: 28px 24px; color: #1E293B;">
+              <p style="margin: 0 0 14px 0; font-size: 15px; font-weight: 700; color: #003B3A;">
+                Kính gửi Thầy/Cô <strong>${recipient.teacherName}</strong> ${recipient.campusName ? `(${recipient.campusName})` : ''},
+              </p>
 
-      <!-- NỘI DUNG YÊU CẦU CHÍNH TỪ NGƯỜI DÙNG -->
-      <div class="message-banner">
-        <p>
-          Các thầy cô vừa nhận được Kế hoạch hoạt động ngoại khóa/trải nghiệm từ BP HĐNGLL - Tổ CTHS. Kính nhờ các thầy cô vui lòng triển khai kế hoạch đến GVCN, GVBM liên quan tại cơ sở. Xin cảm ơn.
-        </p>
-      </div>
+              <!-- NOTICE BANNER -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0FDFA" style="background-color: #F0FDFA; border-left: 4px solid #00A19A; border-radius: 10px; margin: 0 0 22px 0; border: 1px solid #CCFBF1; border-left: 4px solid #00A19A;">
+                <tr>
+                  <td style="padding: 16px 18px;">
+                    <div style="font-size: 13.5px; font-weight: 700; color: #003B3A; line-height: 1.6;">
+                      Các Thầy/Cô vừa nhận được Kế hoạch hoạt động ngoại khóa/trải nghiệm từ BP HĐNGLL - Tổ CTHS. Kính nhờ các Thầy/Cô vui lòng triển khai kế hoạch đến GVCN, GVBM liên quan tại cơ sở để phối hợp thực hiện đúng tiến độ.
+                    </div>
+                  </td>
+                </tr>
+              </table>
 
-      <!-- BẢNG TÓM TẮT THÔNG TIN HOẠT ĐỘNG -->
-      <div class="activity-card">
-        <div class="activity-title">
-          📌 ${activityName}
-        </div>
-        <table class="info-table">
-          <tr>
-            <td class="info-label">Mã hoạt động:</td>
-            <td class="info-val" style="font-family: monospace; color: #00A19A;">${catalogCode}</td>
+              <!-- ACTIVITY SUMMARY BOX -->
+              <div style="font-size: 13px; font-weight: 800; text-transform: uppercase; color: #003B3A; letter-spacing: 0.5px; margin: 24px 0 10px 0; border-bottom: 2px solid #E2E8F0; padding-bottom: 6px;">
+                📌 THÔNG TIN CHI TIẾT KẾ HOẠCH: ${activityName}
+              </div>
+
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-bottom: 24px; font-size: 13.5px; border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;">
+                <tr style="background-color: #F8FAFC;">
+                  <td width="38%" style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Mã hoạt động:</td>
+                  <td width="62%" style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-family: monospace; font-weight: 700; color: #00A19A;">${catalogCode}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Khối lớp áp dụng:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #1E293B;">${gradesList} (${educationLevel})</td>
+                </tr>
+                ${themeName ? `
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Chủ đề giáo dục:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #1E293B;">${themeName}</td>
+                </tr>
+                ` : ''}
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Môn chủ trì:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #4338CA;">${primarySubjectName || 'Chưa xác định'}</td>
+                </tr>
+                ${(coopSubjectNames || integratedSubjects) ? `
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Môn phối hợp / Tích hợp:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 600; color: #1E293B;">${coopSubjectNames || integratedSubjects}</td>
+                </tr>
+                ` : ''}
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Thời gian & Học kỳ:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;">${timeFrame || 'Trong năm học'} — <strong>Học kỳ ${semester}</strong></td>
+                </tr>
+                ${expectedLocation ? `
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Địa điểm (dự kiến):</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #1E293B;">${expectedLocation}</td>
+                </tr>
+                ` : ''}
+                ${cthsTeacherName ? `
+                <tr>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; font-weight: 700; color: #475569;">Phụ trách BP HĐNGLL/CTHS:</td>
+                  <td style="padding: 10px 14px; border-bottom: 1px solid #E2E8F0; color: #003B3A; font-weight: 700;">${cthsTeacherName}</td>
+                </tr>
+                ` : ''}
+                <tr style="background-color: #F8FAFC;">
+                  <td style="padding: 10px 14px; font-weight: 700; color: #475569;">Cơ sở tiếp nhận:</td>
+                  <td style="padding: 10px 14px; color: #047857; font-weight: 800;">${campusNamesList}</td>
+                </tr>
+              </table>
+
+              <!-- BULLETPROOF CTA BUTTON -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 28px auto; border-collapse: separate;">
+                <tr>
+                  <td align="center" bgcolor="#00A19A" style="border-radius: 10px; background-color: #00A19A;">
+                    <a href="${dispatchUrl}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
+                      TIẾP NHẬN & TRIỂN KHAI KẾ HOẠCH TẠI CƠ SỞ &rarr;
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- HƯỚNG DẪN THAO TÁC -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FFFBEB; border: 1px solid #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 8px; margin-top: 20px;">
+                <tr>
+                  <td style="padding: 14px 16px; font-size: 12.5px; color: #92400E; line-height: 1.55;">
+                    <strong style="color: #78350F;">💡 Nhiệm vụ của GV Tổ TLHN tại Cơ sở:</strong><br/>
+                    1. Nhấp vào nút bấm trên hoặc đăng nhập vào Cổng Giáo viên: <em>Quản lý Hoạt động trải nghiệm &rarr; Hoạt động tiếp nhận từ cơ sở</em>.<br/>
+                    2. Bấm <strong>"Tiếp nhận"</strong> để xác nhận kế hoạch từ Tổ CTHS.<br/>
+                    3. Chọn các lớp tại cơ sở tham gia và thông báo kế hoạch tới <strong>GVCN, GVBM liên quan</strong> để phối hợp thực hiện.
+                  </td>
+                </tr>
+              </table>
+
+            </td>
           </tr>
+
+          <!-- OFFICIAL BRAND FOOTER -->
           <tr>
-            <td class="info-label">Khối lớp áp dụng:</td>
-            <td class="info-val">${gradesList} (${educationLevel})</td>
+            <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 24px 24px; text-align: center; border-top: 3px solid #00A19A;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+              </p>
+              <p style="margin: 0 0 6px 0; font-size: 11px; font-weight: 600; color: #CCFBF1;">
+                BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+              </p>
+              <p style="margin: 0 0 10px 0; font-size: 11px; color: rgba(255, 255, 255, 0.75);">
+                Đơn vị gửi thông báo: <strong style="color: #FFFFFF;">${senderName}</strong>
+              </p>
+              <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
+                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+              </p>
+              <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
+                Email thông báo tự động từ Hệ thống Sky-line SMS. Vui lòng không trả lời trực tiếp email này.
+              </p>
+            </td>
           </tr>
-          ${themeName ? `
-          <tr>
-            <td class="info-label">Chủ đề giáo dục:</td>
-            <td class="info-val">${themeName}</td>
-          </tr>
-          ` : ''}
-          <tr>
-            <td class="info-label">Môn chủ trì:</td>
-            <td class="info-val" style="color: #4338ca;">${primarySubjectName || 'Chưa xác định'}</td>
-          </tr>
-          ${(coopSubjectNames || integratedSubjects) ? `
-          <tr>
-            <td class="info-label">Môn phối hợp / Tích hợp:</td>
-            <td class="info-val">${coopSubjectNames || integratedSubjects}</td>
-          </tr>
-          ` : ''}
-          <tr>
-            <td class="info-label">Thời gian & Học kỳ:</td>
-            <td class="info-val">${timeFrame || 'Trong năm học'} — <strong>Học kỳ ${semester}</strong></td>
-          </tr>
-          ${expectedLocation ? `
-          <tr>
-            <td class="info-label">Địa điểm (dự kiến):</td>
-            <td class="info-val">${expectedLocation}</td>
-          </tr>
-          ` : ''}
-          ${cthsTeacherName ? `
-          <tr>
-            <td class="info-label">Phụ trách BP HĐNGLL/CTHS:</td>
-            <td class="info-val" style="color: #003B3A; font-weight: 700;">${cthsTeacherName}</td>
-          </tr>
-          ` : ''}
-          <tr>
-            <td class="info-label">Cơ sở tiếp nhận:</td>
-            <td class="info-val" style="color: #047857;">${campusNamesList}</td>
-          </tr>
+
         </table>
-      </div>
-
-      <!-- CTA BUTTON -->
-      <div class="cta-container">
-        <a href="${dispatchUrl}" class="btn" target="_blank">
-          TIẾP NHẬN & TRIỂN KHAI KẾ HOẠCH TẠI CƠ SỞ &rarr;
-        </a>
-      </div>
-
-      <!-- HƯỚNG DẪN THAO TÁC -->
-      <div class="instruction-box">
-        <strong>💡 Nhiệm vụ của GV Tổ TLHN tại Cơ sở:</strong><br/>
-        1. Nhấp vào nút bấm trên hoặc đăng nhập vào Cổng Giáo viên: <em>Quản lý Hoạt động trải nghiệm &rarr; Hoạt động tiếp nhận từ cơ sở</em>.<br/>
-        2. Bấm <strong>"Tiếp nhận"</strong> để xác nhận kế hoạch từ Tổ CTHS.<br/>
-        3. Chọn các lớp tại cơ sở tham gia và thông báo kế hoạch tới <strong>GVCN, GVBM liên quan</strong> để phối hợp thực hiện.
-      </div>
-    </div>
-
-    <!-- FOOTER -->
-    <div class="footer">
-      <p style="margin: 0 0 6px 0; font-weight: 800; color: #003B3A; font-size: 12px;">
-        HỆ THỐNG GIÁO DỤC SKY-LINE • BAN ĐÀO TẠO & HỌC SINH
-      </p>
-      <p style="margin: 0 0 4px 0;">
-        Đơn vị gửi thông báo: <strong>${senderName}</strong>
-      </p>
-      <p style="margin: 0; font-size: 11px; color: #94a3b8;">
-        Email thông báo tự động từ Hệ thống Sky-line SMS. Vui lòng không trả lời trực tiếp email này.
-      </p>
-    </div>
-  </div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
       `;
