@@ -13,6 +13,8 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
+    const campusId = searchParams.get("campusId") || "ALL"
+    const classId = searchParams.get("classId") || "ALL"
 
     let academicYearId = searchParams.get("academicYearId") || ""
 

@@ -168,7 +168,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#48BFE3] to-[#007A72] text-white p-5 flex items-start justify-between shadow-md">
+        <div className="bg-gradient-to-r from-[#48BFE3] to-[#00A19A] text-white p-5 flex items-start justify-between shadow-md">
           <div className="flex-1 min-w-0 mr-4 space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
@@ -394,7 +394,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
               <button
                 onClick={handleSendComment}
                 disabled={!newComment.trim() || sending}
-                className="bg-[#48BFE3] text-white p-2.5 rounded-xl hover:bg-[#007A72] disabled:opacity-40 transition-colors shadow-sm"
+                className="bg-[#48BFE3] text-white p-2.5 rounded-xl hover:bg-[#00A19A] disabled:opacity-40 transition-colors shadow-sm"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -405,7 +405,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-2 bg-[#48BFE3] text-white px-5 py-2.5 rounded-xl hover:bg-[#007A72] disabled:opacity-50 font-bold text-xs transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-[#48BFE3] text-white px-5 py-2.5 rounded-xl hover:bg-[#00A19A] disabled:opacity-50 font-bold text-xs transition-colors shadow-sm"
               >
                 <Paperclip className="w-4 h-4" /> {uploading ? "Đang tải lên..." : "Tải file tài liệu lên"}
               </button>

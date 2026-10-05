@@ -656,7 +656,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             </button>
             <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".xlsx, .xls, .csv" className="hidden" />
             <button onClick={() => fileInputRef.current?.click()} disabled={uploading || !selectedYearId}
-              className="flex items-center bg-[#007A72] hover:bg-[#005B55] text-white font-bold py-2 px-3.5 rounded-xl shadow-xs text-xs transition-all disabled:opacity-50 active:scale-[0.98]">
+              className="flex items-center bg-[#00A19A] hover:bg-[#008B85] text-white font-bold py-2 px-3.5 rounded-xl shadow-xs text-xs transition-all disabled:opacity-50 active:scale-[0.98]">
               <Upload className="w-4 h-4 mr-2" /> {uploading ? "Đang xử lý..." : "Import File Excel"}
             </button>
           </div>

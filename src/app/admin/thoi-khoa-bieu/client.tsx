@@ -719,7 +719,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           <button
             onClick={handleSaveAll}
             disabled={isSaving}
-            className="px-5 py-2.5 bg-[#48BFE3] hover:bg-[#008b82] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-5 py-2.5 bg-[#48BFE3] hover:bg-[#00A19A] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             {isSaving ? "Đang lưu toàn bộ..." : "LƯU THỜI KHÓA BIỂU"}
@@ -1928,7 +1928,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                 <button
                   type="button"
                   onClick={handleSaveEditModal}
-                  className="px-5 py-2.5 bg-[#48BFE3] hover:bg-[#008b82] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2.5 bg-[#48BFE3] hover:bg-[#00A19A] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   Lưu thay đổi

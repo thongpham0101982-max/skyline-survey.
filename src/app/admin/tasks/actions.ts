@@ -169,7 +169,7 @@ export async function createTask(data: any) {
               <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; padding: 32px 16px; color: #1e293b;">
                 <div style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
                   
-                  <div style="background: linear-gradient(135deg, ${task.isImportant ? '#dc2626' : '#48BFE3'}, ${task.isImportant ? '#991b1b' : '#007A72'}); padding: 32px 28px; text-align: center; color: #ffffff;">
+                  <div style="background: linear-gradient(135deg, ${task.isImportant ? '#dc2626' : '#48BFE3'}, ${task.isImportant ? '#991b1b' : '#00A19A'}); padding: 32px 28px; text-align: center; color: #ffffff;">
                     <span style="background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;">
                       ${task.isImportant ? '⚠️ QUAN TRỌNG / KHẨN CẤP' : 'CÔNG VIỆC MỚI ĐƯỢC GIAO'}
                     </span>

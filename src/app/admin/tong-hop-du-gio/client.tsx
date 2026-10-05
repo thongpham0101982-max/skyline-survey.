@@ -4820,7 +4820,7 @@ export function AdminTongHopClient({
       {/* Executive Header Banner: Điều hành Dự giờ Toàn trường */}
       <div className="bg-gradient-to-r from-[#003B3A] via-[#004D40] to-[#003B3A] rounded-2xl p-4 sm:p-5 text-white shadow-xl shadow-teal-950/20 border border-teal-500/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#48BFE3] to-[#008B82] p-0.5 shadow-md shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#48BFE3] to-[#00A19A] p-0.5 shadow-md shrink-0">
             <div className="w-full h-full bg-[#003B3A] rounded-[10px] flex items-center justify-center">
               <PieChart className="w-5 h-5 text-[#48BFE3]" />
             </div>

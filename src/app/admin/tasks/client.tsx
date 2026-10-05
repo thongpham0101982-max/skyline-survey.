@@ -457,7 +457,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
               </button>
               <button
                 onClick={() => { resetForm(); setShowForm(!showForm) }}
-                className="flex items-center gap-2 bg-gradient-to-r from-[#48BFE3] to-[#007A72] text-white px-5 py-2 rounded-xl hover:opacity-95 transition-all shadow-md font-bold text-xs"
+                className="flex items-center gap-2 bg-gradient-to-r from-[#48BFE3] to-[#00A19A] text-white px-5 py-2 rounded-xl hover:opacity-95 transition-all shadow-md font-bold text-xs"
               >
                 <Plus className="w-4 h-4" /> Giao việc mới
               </button>
@@ -818,7 +818,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
             <button
               onClick={handleSubmit}
               disabled={submittingTask}
-              className="bg-gradient-to-r from-[#48BFE3] to-[#007A72] text-white px-6 py-2.5 rounded-xl font-bold text-xs hover:opacity-95 transition-all shadow-md disabled:opacity-50 flex items-center gap-2"
+              className="bg-gradient-to-r from-[#48BFE3] to-[#00A19A] text-white px-6 py-2.5 rounded-xl font-bold text-xs hover:opacity-95 transition-all shadow-md disabled:opacity-50 flex items-center gap-2"
             >
               {submittingTask ? (
                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> Đang gửi email thông báo...</>
@@ -1368,7 +1368,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, initialT
                     )}
                     <button
                       onClick={handleSaveCategory}
-                      className="bg-[#48BFE3] text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-[#007A72] transition-all shadow-sm"
+                      className="bg-[#48BFE3] text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-[#00A19A] transition-all shadow-sm"
                     >
                       {catEditId ? "Cập nhật" : "Thêm mới"}
                     </button>

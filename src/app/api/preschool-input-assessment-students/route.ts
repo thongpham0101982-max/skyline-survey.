@@ -1328,74 +1328,108 @@ export async function POST(req) {
 
       const congratsTemplate = `
       <!DOCTYPE html>
-      <html>
+      <html lang="vi">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Thư Chúc Mừng Nhập Học - Sky-Line</title>
       </head>
-      <body style="margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; background-color: #f8fafc; color: #1e293b;">
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 0;" className="border border-slate-200 border-collapse">
+      <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
           <tr>
-            <td align="center" className="p-2 border border-slate-200">
-              <table width="680" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 40px 30px;" className="border border-slate-200 border-collapse">
+            <td align="center">
+              <table role="presentation" width="680" border="0" cellspacing="0" cellpadding="0" style="max-width: 680px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                <!-- Header -->
                 <tr>
-                  <td align="left" style="border-bottom: 2px solid #48BFE3; padding-bottom: 15px; margin-bottom: 20px;">
-                    <div style="font-family: Arial, sans-serif; font-size: 22px; font-weight: 900; color: #48BFE3; letter-spacing: -0.5px;">SKY-LINE SYSTEM</div>
-                    <div style="font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase; margin-top: 3px;">Hệ thống Giáo dục Sky-Line</div>
-                  </td>
-                </tr>
-                <tr>
-                  <td align="center" style="padding: 25px 0;" className="p-2 border border-slate-200">
-                    <h2 style="font-size: 24px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; margin: 0; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">
+                  <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
+                    <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
+                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                    </div>
+                    <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.3;">
                       THƯ CHÚC MỪNG NHẬP HỌC
-                    </h2>
+                    </h1>
+                    <p style="margin: 8px 0 0 0; color: #99F6E4; font-size: 13px; font-weight: 500;">
+                      Bậc Mầm non • Niên khóa 2025 - 2026
+                    </p>
                   </td>
                 </tr>
+
                 ${additionalNote ? `
                 <tr>
-                  <td style="padding: 12px 15px; background-color: #f0fdfa; border-left: 4px solid #48BFE3; border-radius: 6px; font-family: Arial, sans-serif; font-size: 13px; color: #0f766e; margin-bottom: 20px; line-height: 1.5;">
-                    <strong>Lời nhắn từ Tuyển sinh:</strong> ${additionalNote}
+                  <td style="padding: 24px 35px 0 35px;">
+                    <div style="padding: 14px 18px; background-color: #F0FDFA; border-left: 4px solid #00A19A; border-radius: 0 8px 8px 0; font-size: 13px; color: #0F766E; line-height: 1.5;">
+                      <strong>Lời nhắn từ Tuyển sinh:</strong> ${additionalNote}
+                    </div>
                   </td>
                 </tr>
-                <tr style="height: 20px;"><td className="p-2 border border-slate-200"></td></tr>
                 ` : ''}
+
+                <!-- Body Text -->
                 <tr>
-                  <td style="font-size: 16px; line-height: 1.6; color: #334155; text-align: justify;" className="p-2 border border-slate-200">
-                    <p style="margin: 0 0 15px 0; font-style: italic;">Kính gửi Quý Phụ huynh và em <strong>${student.fullName}</strong>,</p>
-                    <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
+                  <td style="padding: 28px 35px 20px 35px; font-size: 15px; line-height: 1.7; color: #334155; text-align: justify;">
+                    <p style="margin: 0 0 16px 0; font-weight: 700; color: #003B3A;">
+                      Kính gửi Quý Phụ huynh và em <strong>${student.fullName}</strong>,
+                    </p>
+                    <p style="margin: 0 0 16px 0; text-indent: 1.2cm;">
                       Ban Giám Hiệu Hệ thống Giáo dục Mầm non Sky-Line trân trọng gửi lời chúc mừng nồng nhiệt nhất đến Gia đình và Bé. Dựa trên kết quả Khảo sát phát triển toàn diện của trẻ và kết quả phê duyệt chính thức từ Hội đồng Tuyển sinh, Nhà trường trân trọng gửi đến Quý phụ huynh <strong>Thư chúc mừng nhập học</strong> chính thức dành cho bé tại Cơ sở <strong>${student.admissionCampus || ""}</strong>.
                     </p>
-                    <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
-                      Nhà trường hy vọng rằng, với sự chăm sóc tận tình và tình yêu thương vô bờ bến từ tập thể giáo viên và nhân viên Sky-Line, con sẽ nhanh chóng hòa nhập, có những trải nghiệm tuổi thơ tuyệt vời, được vui chơi thỏa thích và phát huy tối đa các năng lực bẩm sinh của mình.
+                    <p style="margin: 0 0 16px 0; text-indent: 1.2cm;">
+                      Nhà trường hy vọng rằng, với sự chăm sóc tận tình và tình yêu thương vô bờ bến từ tập thể giáo viên và nhân viên Sky-Line, con sẽ nhanh chóng hòa nhập, có những trải nghiệm tuổi thơ tuyệt vời, được vui chơi thỏa thích và phát huy tối đa các tiềm năng bẩm sinh của mình.
                     </p>
-                    <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
+                    <p style="margin: 0 0 16px 0; text-indent: 1.2cm;">
                       Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy năng lượng khám phá thế giới xung quanh con nhé!
                     </p>
                   </td>
                 </tr>
+
+                <!-- Signature Section -->
                 <tr>
-                  <td align="right" style="padding-top: 30px; padding-right: 20px;" className="p-2 border border-slate-200">
-                    <table border="0" cellspacing="0" cellpadding="0" style="text-align: center; min-width: 240px; font-family: Arial, sans-serif;" className="border border-slate-200 border-collapse">
+                  <td align="right" style="padding: 10px 35px 25px 35px;">
+                    <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="text-align: center; min-width: 250px;">
                       <tr>
-                        <td style="font-size: 11px; font-style: italic; color: #64748b; padding-bottom: 5px;" className="p-2 border border-slate-200">Đà Nẵng, ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${new Date().getFullYear()}</td>
+                        <td style="font-size: 12px; font-style: italic; color: #64748B; padding-bottom: 6px;">Đà Nẵng, ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${new Date().getFullYear()}</td>
                       </tr>
                       <tr>
-                        <td style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase;" className="p-2 border border-slate-200">TM. HỘI ĐỒNG TUYỂN SINH</td>
+                        <td style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase;">TM. HỘI ĐỒNG TUYỂN SINH</td>
                       </tr>
                       <tr>
-                        <td style="font-size: 10px; font-weight: bold; color: #4338ca; text-transform: uppercase; padding-bottom: 40px;" className="p-2 border border-slate-200">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusSuffix}</td>
+                        <td style="font-size: 11px; font-weight: 700; color: #00A19A; text-transform: uppercase; padding-bottom: 30px;">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusSuffix}</td>
                       </tr>
                       <tr>
-                        <td style="font-size: 14px; font-weight: bold; color: #334155; padding-top: 10px;" className="p-2 border border-slate-200">${directorName}</td>
+                        <td style="font-size: 14px; font-weight: 800; color: #1E293B; padding-top: 10px;">${directorName}</td>
                       </tr>
                     </table>
                   </td>
                 </tr>
+
+                <!-- Call to action button -->
                 <tr>
-                  <td align="center" style="padding-top: 35px; border-top: 1px solid #e2e8f0; margin-top: 30px;">
-                    <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Bạn có thể xem chi tiết hồ sơ học sinh trên hệ thống Portal Tuyển sinh.</p>
-                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: bold; color: #ffffff; background-color: #48BFE3; text-decoration: none; border: 1px solid #008f91;">
-                      Xem chi tiết trên Portal
-                    </a>
+                  <td align="center" style="padding: 15px 35px 30px 35px; border-top: 1px solid #E2E8F0;">
+                    <p style="font-size: 12px; color: #64748B; margin: 0 0 15px 0;">Quý Phụ huynh và Thầy/Cô có thể xem chi tiết hồ sơ học sinh trên hệ thống Portal Tuyển sinh.</p>
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                      <tr>
+                        <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
+                          <a href="${baseUrl}/admin/preschool-input-assessments" target="_blank" style="display: inline-block; padding: 12px 28px; font-size: 13px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                            Xem chi tiết trên Portal &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Footer -->
+                <tr>
+                  <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                    <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                      HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                    </p>
+                    <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                      BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                      Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                    </p>
                   </td>
                 </tr>
               </table>
@@ -1634,74 +1668,108 @@ export async function POST(req) {
 
         const congratsTemplate = `
         <!DOCTYPE html>
-        <html>
+        <html lang="vi">
         <head>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Thư Chúc Mừng Nhập Học - Sky-Line</title>
         </head>
-        <body style="margin: 0; padding: 0; font-family: 'Times New Roman', Times, serif; background-color: #f8fafc; color: #1e293b;">
-          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 0;" className="border border-slate-200 border-collapse">
+        <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
             <tr>
-              <td align="center" className="p-2 border border-slate-200">
-                <table width="680" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 40px 30px;" className="border border-slate-200 border-collapse">
+              <td align="center">
+                <table role="presentation" width="680" border="0" cellspacing="0" cellpadding="0" style="max-width: 680px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                  <!-- Header -->
                   <tr>
-                    <td align="left" style="border-bottom: 2px solid #48BFE3; padding-bottom: 15px; margin-bottom: 20px;">
-                      <div style="font-family: Arial, sans-serif; font-size: 22px; font-weight: 900; color: #48BFE3; letter-spacing: -0.5px;">SKY-LINE SYSTEM</div>
-                      <div style="font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase; margin-top: 3px;">Hệ thống Giáo dục Sky-Line</div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td align="center" style="padding: 25px 0;" className="p-2 border border-slate-200">
-                      <h2 style="font-size: 24px; font-weight: bold; color: #1e1b4b; text-transform: uppercase; margin: 0; letter-spacing: 1px; font-family: 'Times New Roman', Times, serif;">
+                    <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
+                      <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
+                        🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                      </div>
+                      <h1 style="margin: 0; color: #FFFFFF; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.3;">
                         THƯ CHÚC MỪNG NHẬP HỌC
-                      </h2>
+                      </h1>
+                      <p style="margin: 8px 0 0 0; color: #99F6E4; font-size: 13px; font-weight: 500;">
+                        Bậc Mầm non • Niên khóa 2025 - 2026
+                      </p>
                     </td>
                   </tr>
-                  \${additionalNote ? \`
+
+                  ${additionalNote ? `
                   <tr>
-                    <td style="padding: 12px 15px; background-color: #f0fdfa; border-left: 4px solid #48BFE3; border-radius: 6px; font-family: Arial, sans-serif; font-size: 13px; color: #0f766e; margin-bottom: 20px; line-height: 1.5;">
-                      <strong>Lời nhắn từ Tuyển sinh:</strong> \${additionalNote}
+                    <td style="padding: 24px 35px 0 35px;">
+                      <div style="padding: 14px 18px; background-color: #F0FDFA; border-left: 4px solid #00A19A; border-radius: 0 8px 8px 0; font-size: 13px; color: #0F766E; line-height: 1.5;">
+                        <strong>Lời nhắn từ Tuyển sinh:</strong> ${additionalNote}
+                      </div>
                     </td>
                   </tr>
-                  <tr style="height: 20px;"><td className="p-2 border border-slate-200"></td></tr>
-                  \` : ''}
+                  ` : ''}
+
+                  <!-- Body Text -->
                   <tr>
-                    <td style="font-size: 16px; line-height: 1.6; color: #334155; text-align: justify;" className="p-2 border border-slate-200">
-                      <p style="margin: 0 0 15px 0; font-style: italic;">Kính gửi Quý Phụ huynh và em <strong>\${student.fullName}</strong>,</p>
-                      <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
-                        Ban Giám Hiệu Hệ thống Giáo dục Mầm non Sky-Line trân trọng gửi lời chúc mừng nồng nhiệt nhất đến Gia đình và Bé. Dựa trên kết quả Khảo sát phát triển toàn diện của trẻ và kết quả phê duyệt chính thức từ Hội đồng Tuyển sinh, Nhà trường trân trọng gửi đến Quý phụ huynh <strong>Thư chúc mừng nhập học</strong> chính thức dành cho bé tại Cơ sở <strong>\${student.admissionCampus || ""}</strong>.
+                    <td style="padding: 28px 35px 20px 35px; font-size: 15px; line-height: 1.7; color: #334155; text-align: justify;">
+                      <p style="margin: 0 0 16px 0; font-weight: 700; color: #003B3A;">
+                        Kính gửi Quý Phụ huynh và em <strong>${student.fullName}</strong>,
                       </p>
-                      <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
-                        Nhà trường hy vọng rằng, với sự chăm sóc tận tình và tình yêu thương vô bờ bến từ tập thể giáo viên và nhân viên Sky-Line, con sẽ nhanh chóng hòa nhập, có những trải nghiệm tuổi thơ tuyệt vời, được vui chơi thỏa thích và phát huy tối đa các năng lực bẩm sinh của mình.
+                      <p style="margin: 0 0 16px 0; text-indent: 1.2cm;">
+                        Ban Giám Hiệu Hệ thống Giáo dục Mầm non Sky-Line trân trọng gửi lời chúc mừng nồng nhiệt nhất đến Gia đình và Bé. Dựa trên kết quả Khảo sát phát triển toàn diện của trẻ và kết quả phê duyệt chính thức từ Hội đồng Tuyển sinh, Nhà trường trân trọng gửi đến Quý phụ huynh <strong>Thư chúc mừng nhập học</strong> chính thức dành cho bé tại Cơ sở <strong>${student.admissionCampus || ""}</strong>.
                       </p>
-                      <p style="margin: 0 0 15px 0; text-indent: 1.2cm;">
+                      <p style="margin: 0 0 16px 0; text-indent: 1.2cm;">
+                        Nhà trường hy vọng rằng, với sự chăm sóc tận tình và tình yêu thương vô bờ bến từ tập thể giáo viên và nhân viên Sky-Line, con sẽ nhanh chóng hòa nhập, có những trải nghiệm tuổi thơ tuyệt vời, được vui chơi thỏa thích và phát huy tối đa các tiềm năng bẩm sinh của mình.
+                      </p>
+                      <p style="margin: 0 0 16px 0; text-indent: 1.2cm;">
                         Chúc con luôn giữ vững niềm vui thích học hỏi, luôn tràn đầy năng lượng khám phá thế giới xung quanh con nhé!
                       </p>
                     </td>
                   </tr>
+
+                  <!-- Signature Section -->
                   <tr>
-                    <td align="right" style="padding-top: 30px; padding-right: 20px;" className="p-2 border border-slate-200">
-                      <table border="0" cellspacing="0" cellpadding="0" style="text-align: center; min-width: 240px; font-family: Arial, sans-serif;" className="border border-slate-200 border-collapse">
+                    <td align="right" style="padding: 10px 35px 25px 35px;">
+                      <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="text-align: center; min-width: 250px;">
                         <tr>
-                          <td style="font-size: 11px; font-style: italic; color: #64748b; padding-bottom: 5px;" className="p-2 border border-slate-200">Đà Nẵng, ngày \${new Date().getDate()} tháng \${new Date().getMonth() + 1} năm \${new Date().getFullYear()}</td>
+                          <td style="font-size: 12px; font-style: italic; color: #64748B; padding-bottom: 6px;">Đà Nẵng, ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${new Date().getFullYear()}</td>
                         </tr>
                         <tr>
-                          <td style="font-size: 12px; font-weight: bold; color: #1e1b4b; text-transform: uppercase;" className="p-2 border border-slate-200">TM. HỘI ĐỒNG TUYỂN SINH</td>
+                          <td style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase;">TM. HỘI ĐỒNG TUYỂN SINH</td>
                         </tr>
                         <tr>
-                          <td style="font-size: 10px; font-weight: bold; color: #4338ca; text-transform: uppercase; padding-bottom: 40px;" className="p-2 border border-slate-200">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE \${campusSuffix}</td>
+                          <td style="font-size: 11px; font-weight: 700; color: #00A19A; text-transform: uppercase; padding-bottom: 30px;">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusSuffix}</td>
                         </tr>
                         <tr>
-                          <td style="font-size: 14px; font-weight: bold; color: #334155; padding-top: 10px;" className="p-2 border border-slate-200">\${directorName}</td>
+                          <td style="font-size: 14px; font-weight: 800; color: #1E293B; padding-top: 10px;">${directorName}</td>
                         </tr>
                       </table>
                     </td>
                   </tr>
+
+                  <!-- Call to action button -->
                   <tr>
-                    <td align="center" style="padding-top: 35px; border-top: 1px solid #e2e8f0; margin-top: 30px;">
-                      <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Bạn có thể xem chi tiết hồ sơ học sinh trên hệ thống Portal Tuyển sinh.</p>
-                      <a href="\${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: bold; color: #ffffff; background-color: #48BFE3; text-decoration: none; border: 1px solid #008f91;">
-                        Xem chi tiết trên Portal
-                      </a>
+                    <td align="center" style="padding: 15px 35px 30px 35px; border-top: 1px solid #E2E8F0;">
+                      <p style="font-size: 12px; color: #64748B; margin: 0 0 15px 0;">Quý Phụ huynh và Thầy/Cô có thể xem chi tiết hồ sơ học sinh trên hệ thống Portal Tuyển sinh.</p>
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                        <tr>
+                          <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
+                            <a href="${baseUrl}/admin/preschool-input-assessments" target="_blank" style="display: inline-block; padding: 12px 28px; font-size: 13px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                              Xem chi tiết trên Portal &rarr;
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                      <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                        HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                      </p>
+                      <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                        BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                      </p>
+                      <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                        Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                      </p>
                     </td>
                   </tr>
                 </table>
