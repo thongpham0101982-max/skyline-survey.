@@ -618,21 +618,14 @@ export function ObservationRegistrationSection(props: any) {
     );
   }, [isPreschoolDepartment]);
 
-  // Danh sách Tổ chuyên môn phụ trách của người dùng
+  // Danh sách Tổ chuyên môn hiển thị đầy đủ của hệ thống theo yêu cầu quản lý
   const myAssignedAllowedDepts = React.useMemo(() => {
-    if (Array.isArray(ttcmAllowedDepartments) && ttcmAllowedDepartments.length > 0) {
-      return ttcmAllowedDepartments;
-    }
-    if (currentTeacher?.departmentId && !isAdminUser) {
-      const myD = (departments || []).filter((d: any) => d.id === currentTeacher.departmentId);
-      if (myD.length > 0) return myD;
-    }
     return departments || [];
-  }, [ttcmAllowedDepartments, departments, currentTeacher?.departmentId, isAdminUser]);
+  }, [departments]);
 
-  // Lọc TCM phụ trách theo Khối học: Khi chọn Phổ thông chỉ hiện TCM Phổ thông; khi chọn Mầm non chỉ hiện TCM & BGH Mầm non
+  // Lọc TCM theo Khối học: Khi chọn Phổ thông hiện đầy đủ tất cả TCM Phổ thông; khi chọn Mầm non hiện đầy đủ tất cả TCM/BGH Mầm non
   const levelFilteredAssignedDepts = React.useMemo(() => {
-    return (myAssignedAllowedDepts || []).filter((d: any) => {
+    const list = (myAssignedAllowedDepts || []).filter((d: any) => {
       const isMN = isPreschoolDept(d);
       if (assignedLevel === "Mầm non") {
         return isMN;
@@ -640,6 +633,7 @@ export function ObservationRegistrationSection(props: any) {
         return !isMN;
       }
     });
+    return [...list].sort((a: any, b: any) => (a.name || a.departmentName || "").localeCompare(b.name || b.departmentName || "", "vi"));
   }, [myAssignedAllowedDepts, isPreschoolDept, assignedLevel]);
 
   const levelFilteredDeptIds = React.useMemo(() => {
@@ -3053,11 +3047,11 @@ export function ObservationRegistrationSection(props: any) {
 
                 {/* Khung điều khiển 2 cột: 1. Chọn TCM phụ trách | 2. Ô tìm kiếm Tên/Mã GV */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  {/* Cột 1: Chọn TCM phụ trách */}
+                  {/* Cột 1: Chọn TCM */}
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] font-black text-purple-900 uppercase tracking-wide flex items-center gap-1">
                       <Filter className="size-3 text-purple-600" />
-                      <span>1. Chọn Tổ chuyên môn phụ trách</span>
+                      <span>1. Chọn Tổ chuyên môn</span>
                     </label>
                     <select
                       value={observerFilterDeptId}
@@ -3066,8 +3060,8 @@ export function ObservationRegistrationSection(props: any) {
                     >
                       <option value="">
                         {assignedLevel === "Mầm non"
-                          ? `-- Tất cả TCM & BGH Mầm non phụ trách (${levelFilteredAssignedDepts.length} tổ) --`
-                          : `-- Tất cả TCM Phổ thông phụ trách (${levelFilteredAssignedDepts.length} tổ) --`}
+                          ? `-- Tất cả TCM & BGH Mầm non (${levelFilteredAssignedDepts.length} tổ) --`
+                          : `-- Tất cả TCM Phổ thông (${levelFilteredAssignedDepts.length} tổ) --`}
                       </option>
                       {levelFilteredAssignedDepts.map((d: any) => (
                         <option key={d.id} value={d.id}>
