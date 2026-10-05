@@ -839,7 +839,13 @@ export function StudentInfoClient({
       </div>
     );
   };
-  const [subTab, setSubTab] = useState<"periods" | "students" | "info" | "result">("students");
+  const [subTab, setSubTab] = useState<"periods" | "students" | "info" | "result">(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab && initialSubTab !== subTab) {
+      setSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
 
   useEffect(() => {
     setSelectedIds([]);
@@ -903,12 +909,20 @@ export function StudentInfoClient({
   // Reset filters when changing tab
   const handleTabChange = (tab: "general" | "preschool") => {
     setActiveTab(tab);
+    updateUrlParams(tab, subTab);
     setSearchQuery("");
     setSelectedPeriod("");
     setSelectedBatch("");
     setSelectedResult("");
     setSelectedGrade("");
     setSelectedEnrollmentFilter("all");
+    setSelectedIds([]);
+    setCurrentPage(1);
+  };
+
+  const handleSubTabChange = (newSub: "periods" | "students" | "info" | "result") => {
+    setSubTab(newSub);
+    updateUrlParams(activeTab, newSub);
     setSelectedIds([]);
     setCurrentPage(1);
   };
