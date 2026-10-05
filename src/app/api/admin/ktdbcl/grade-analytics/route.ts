@@ -15,6 +15,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const campusId = searchParams.get("campusId") || "ALL"
     const classId = searchParams.get("classId") || "ALL"
+    const levelFilter = searchParams.get("level") || searchParams.get("levelFilter") || "ALL"
+    const gradeFilter = searchParams.get("grade") || searchParams.get("gradeFilter") || "ALL"
+    const systemFilter = searchParams.get("system") || searchParams.get("systemFilter") || "ALL"
 
     let academicYearId = searchParams.get("academicYearId") || ""
 
