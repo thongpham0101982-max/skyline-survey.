@@ -143,7 +143,7 @@ export const SubjectRadarChart: React.FC<SubjectRadarChartProps> = ({
       {/* Legend Top Bar */}
       <div className="flex items-center gap-4 text-[10px] font-bold text-slate-500 mb-2">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#007A72]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#00A19A]" />
           <span>Học sinh đạt được</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -213,8 +213,8 @@ export const SubjectRadarChart: React.FC<SubjectRadarChartProps> = ({
         {studentPolygonPath && (
           <path
             d={studentPolygonPath}
-            fill="rgba(13, 148, 136, 0.25)"
-            stroke="#0D9488"
+            fill="rgba(0, 161, 154, 0.22)"
+            stroke="#00A19A"
             strokeWidth="2.5"
             strokeLinejoin="round"
           />

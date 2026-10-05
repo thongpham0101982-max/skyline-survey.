@@ -70,7 +70,7 @@ export function ReviewSupplementalModal({
       <div className="bg-white w-full max-w-2xl max-h-[92vh] rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="px-6 py-5 bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#008B82] text-white flex items-center justify-between shrink-0">
+        <div className="px-6 py-5 bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A19A] text-white flex items-center justify-between shrink-0">
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2 py-0.5 rounded-lg bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider">

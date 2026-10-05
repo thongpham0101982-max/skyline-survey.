@@ -408,7 +408,7 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
   // Header background theme according to role
   const headerTheme = {
     STUDENT: "bg-gradient-to-r from-[#003B3A] via-[#005F5B] to-[#48BFE3]",
-    TEACHER: "bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#00A896]",
+    TEACHER: "bg-gradient-to-r from-[#003B3A] via-[#008B85] to-[#00A19A]",
     PARENT: "bg-gradient-to-r from-[#1E1B4B] via-[#4338CA] to-[#6366F1]",
     ADMIN: "bg-gradient-to-r from-[#001D1C] via-[#003B3A] to-[#0F766E]"
   }[role] || "bg-[#003B3A]"
@@ -509,7 +509,7 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
                   className={`p-3.5 rounded-2xl shadow-xs leading-relaxed ${
                     isBot
                       ? "bg-white text-slate-800 rounded-tl-none border border-slate-200/90 shadow-2xs"
-                      : "bg-[#007A72] text-white rounded-tr-none font-medium shadow-sm"
+                      : "bg-[#00A19A] text-white rounded-tr-none font-medium shadow-sm"
                   }`}
                 >
                   {renderMessageContent(msg.parts[0].text)}
@@ -658,7 +658,7 @@ export function SSMAssistantWidget({ role = "TEACHER" }: SSMAssistantWidgetProps
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="p-2.5 bg-[#007A72] hover:bg-[#005F5B] text-white rounded-xl shadow-md disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition shrink-0 active:scale-95 flex items-center justify-center"
+            className="p-2.5 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl shadow-md disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition shrink-0 active:scale-95 flex items-center justify-center"
           >
             <Send className="w-4 h-4" />
           </button>

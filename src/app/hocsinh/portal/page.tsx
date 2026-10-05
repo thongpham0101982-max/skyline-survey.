@@ -77,7 +77,7 @@ export default function StudentPortalHomePage() {
     <div className="max-w-7xl mx-auto p-4 sm:p-6 md:p-8 space-y-8 font-sans text-slate-800 pb-20">
       
       {/* 🌟 HERO BANNER: Sky-Line Signature Brand Colors */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#007A72] p-6 sm:p-8 md:p-10 text-white shadow-xl border border-teal-700/50">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A19A] p-6 sm:p-8 md:p-10 text-white shadow-xl border border-teal-700/50">
         {/* Background Ambient Glows */}
         <div className="absolute -right-16 -top-16 w-80 h-80 bg-teal-400/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute right-36 -bottom-16 w-72 h-72 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
@@ -188,7 +188,7 @@ export default function StudentPortalHomePage() {
         >
           <div className="space-y-3 relative z-10 max-w-3xl">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#003B3A] to-[#007A72] text-white flex items-center justify-center shadow-md shadow-teal-900/20 group-hover:scale-105 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#003B3A] to-[#00A19A] text-white flex items-center justify-center shadow-md shadow-teal-900/20 group-hover:scale-105 transition-transform">
                 <Activity className="w-6 h-6 text-amber-300" />
               </div>
               <div>
@@ -425,7 +425,7 @@ export default function StudentPortalHomePage() {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-teal-100 text-[#007A72] flex items-center justify-center font-black">
+                <div className="w-9 h-9 rounded-xl bg-teal-100 text-[#00A19A] flex items-center justify-center font-black">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
                 <div>
@@ -453,7 +453,7 @@ export default function StudentPortalHomePage() {
             <div className="text-center pt-2">
               <button
                 onClick={() => setActivePillarDetail(null)}
-                className="w-full py-2 text-xs font-bold text-white bg-[#007A72] hover:bg-[#003B3A] rounded-xl transition-colors"
+                className="w-full py-2 text-xs font-bold text-white bg-[#00A19A] hover:bg-[#003B3A] rounded-xl transition-colors"
               >
                 Đã hiểu
               </button>

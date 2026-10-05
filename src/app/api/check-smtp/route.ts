@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
     to: toEmail,
     subject: "[Sky-line SMS - Test] Thử nghiệm gửi thư từ Ban Khảo thí lúc " + new Date().toISOString(),
     html: `
-      <div style="font-family: Arial, sans-serif; padding: 24px; border: 2px solid #008B82; border-radius: 12px; background: #ffffff;">
-        <h2 style="color: #008B82; margin-top: 0;">🎉 THỬ NGHIỆM GỬI EMAIL THÀNH CÔNG!</h2>
+      <div style="font-family: Arial, sans-serif; padding: 24px; border: 2px solid #00A19A; border-radius: 12px; background: #ffffff;">
+        <h2 style="color: #00A19A; margin-top: 0;">🎉 THỬ NGHIỆM GỬI EMAIL THÀNH CÔNG!</h2>
         <p>Email này được gửi tự động từ <strong>Ban Khảo thí & ĐBCL Sky-Line</strong>.</p>
         <p>Người nhận: <strong>${toEmail}</strong></p>
         <p>Thời gian gửi: <strong>${new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" })}</strong></p>

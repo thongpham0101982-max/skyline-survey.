@@ -266,8 +266,8 @@ export function NotificationBell() {
                     className={"block p-3.5 hover:bg-teal-50/60 transition-colors cursor-pointer group " + (!n.isRead ? "bg-teal-50/30" : "")}
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 leading-snug group-hover:text-[#008B82] transition-colors">
-                        <CheckCircle2 className="size-3.5 text-[#48BFE3] shrink-0 group-hover:text-[#008B82]" />
+                      <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 leading-snug group-hover:text-[#00A19A] transition-colors">
+                        <CheckCircle2 className="size-3.5 text-[#48BFE3] shrink-0 group-hover:text-[#00A19A]" />
                         {n.title}
                       </h4>
                       <span className="text-[10px] text-slate-400 font-normal whitespace-nowrap shrink-0 tabular-nums">
@@ -275,7 +275,7 @@ export function NotificationBell() {
                       </span>
                     </div>
                     <p className="text-slate-600 text-xs leading-relaxed pl-5 font-normal text-pretty">{cleanMessage}</p>
-                    <div className="mt-1.5 pl-5 flex items-center text-[10px] text-[#48BFE3] group-hover:text-[#008B82] font-semibold gap-1">
+                    <div className="mt-1.5 pl-5 flex items-center text-[10px] text-[#48BFE3] group-hover:text-[#00A19A] font-semibold gap-1">
                       Xem chi tiết <ExternalLink className="size-2.5 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </Link>

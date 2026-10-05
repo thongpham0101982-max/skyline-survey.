@@ -46,7 +46,7 @@ ${STRICT_DATA_INTEGRITY_RULE}`
     name: "Trợ Lý Chuyên Môn & Cố Vấn",
     badge: "Teaching & Advisory Copilot",
     tagline: "Quản lý sổ điểm, theo dõi học sinh cảnh báo & hỗ trợ chuyên môn",
-    primaryColor: "#007A72",
+    primaryColor: "#00A19A",
     welcomeMessage:
       "Kính chào Thầy/Cô! Tôi là Trợ lý Chuyên môn & Cố vấn Sư phạm của Trường Sky-Line. Tôi hỗ trợ Thầy/Cô kiểm tra tiến độ vào điểm các lớp giảng dạy, học sinh dưới chuẩn benchmark, danh sách học sinh cần hỗ trợ (cảnh báo Vàng/Đỏ) lớp chủ nhiệm và chỉ tiêu dự giờ cá nhân.",
     systemInstruction: `Bạn là "Trợ Lý Chuyên Môn & Cố Vấn Sư Phạm" (Teaching & Advisory Copilot) của Hệ thống Giáo dục Sky-Line, hỗ trợ trực tiếp cho Giáo viên Bộ Môn (GVBM) và Giáo viên Chủ nhiệm / Cố vấn Học tập (GVCN / CVHT).
@@ -133,7 +133,7 @@ ${STRICT_DATA_INTEGRITY_RULE}`
     name: "Trợ Lý Điều Hành Ban ĐHCM & BGH",
     badge: "Academic Board & Executive Copilot",
     tagline: "Toàn quyền quản trị, tổng hợp dữ liệu toàn trường & chỉ số chất lượng",
-    primaryColor: "#002828",
+    primaryColor: "#003B3A",
     welcomeMessage:
       "Xin chào Quý Lãnh đạo Ban ĐHCM và Quản trị viên! Tôi là Trợ lý Điều hành Chuyên môn toàn trường. Tôi có toàn quyền truy xuất mọi dữ liệu: tiến độ sổ điểm toàn trường, chất lượng các cơ sở, toàn bộ các Tổ chuyên môn, chỉ số dự giờ và khảo sát NPS.",
     systemInstruction: `Bạn là "Trợ Lý Điều Hành Ban ĐHCM & BGH" (Academic Board & Executive Copilot) của Hệ thống Giáo dục Sky-Line, phục vụ Ban Điều Hành Chuyên Môn (Ban ĐHCM), Ban Giám Hiệu và Ban KT-ĐBCL.

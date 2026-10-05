@@ -109,7 +109,7 @@ export const CompetencyOverviewChart: React.FC<CompetencyOverviewChartProps> = (
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#003B3A] to-[#007A72] flex items-center justify-center text-white shadow-xs">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#003B3A] to-[#00A19A] flex items-center justify-center text-white shadow-xs">
             <BarChart3 className="w-5 h-5" />
           </div>
           <div>

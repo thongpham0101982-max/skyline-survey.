@@ -417,7 +417,7 @@ export function ObservationDetailDrawer({
                 <div className="p-4 bg-gradient-to-br from-teal-50/90 via-emerald-50/70 to-cyan-50/80 rounded-2xl border-2 border-teal-200 shadow-2xs space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-[#008B82] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                      <div className="w-8 h-8 rounded-xl bg-[#00A19A] text-white flex items-center justify-center font-bold text-xs shadow-xs">
                         📊
                       </div>
                       <div>

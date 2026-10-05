@@ -866,7 +866,7 @@ export function TTCMDepartmentSummaryTab({
       <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-5 sm:p-6 flex flex-col gap-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#008B82] to-[#003B3A] text-white flex items-center justify-center shadow-md shadow-teal-900/20 shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00A19A] to-[#003B3A] text-white flex items-center justify-center shadow-md shadow-teal-900/20 shrink-0">
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
@@ -874,7 +874,7 @@ export function TTCMDepartmentSummaryTab({
                 <h2 className="text-lg sm:text-xl font-black text-[#003B3A]">
                   Theo Dõi Tổng Hợp Tổ Chuyên Môn {ttcmAllowedDepartments.length > 1 ? "& Bộ Phận" : ""}
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-100 text-[#008B82] border border-teal-200">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-100 text-[#00A19A] border border-teal-200">
                   {department?.name || "Tổ chuyên môn"}
                 </span>
                 {isPreschool && (
@@ -1006,7 +1006,7 @@ export function TTCMDepartmentSummaryTab({
             onClick={() => setActiveSubTab("overview")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
               activeSubTab === "overview"
-                ? "bg-[#008B82] text-white shadow-md shadow-teal-900/20"
+                ? "bg-[#00A19A] text-white shadow-md shadow-teal-900/20"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }`}
           >
@@ -1022,7 +1022,7 @@ export function TTCMDepartmentSummaryTab({
             onClick={() => setActiveSubTab("competency")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
               activeSubTab === "competency"
-                ? "bg-[#008B82] text-white shadow-md shadow-teal-900/20"
+                ? "bg-[#00A19A] text-white shadow-md shadow-teal-900/20"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }`}
           >
@@ -1056,7 +1056,7 @@ export function TTCMDepartmentSummaryTab({
             onClick={() => setActiveSubTab("ratings")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
               activeSubTab === "ratings"
-                ? "bg-[#008B82] text-white shadow-md shadow-teal-900/20"
+                ? "bg-[#00A19A] text-white shadow-md shadow-teal-900/20"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }`}
           >
@@ -1072,7 +1072,7 @@ export function TTCMDepartmentSummaryTab({
             onClick={() => setActiveSubTab("feedback")}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all shrink-0 cursor-pointer ${
               activeSubTab === "feedback"
-                ? "bg-[#008B82] text-white shadow-md shadow-teal-900/20"
+                ? "bg-[#00A19A] text-white shadow-md shadow-teal-900/20"
                 : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             }`}
           >
@@ -1107,7 +1107,7 @@ export function TTCMDepartmentSummaryTab({
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2 mt-2 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-teal-500 to-[#008B82] h-full rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-teal-500 to-[#00A19A] h-full rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, departmentKPIs.taughtRate)}%` }}
               />
             </div>
@@ -1234,7 +1234,7 @@ export function TTCMDepartmentSummaryTab({
                   setBatchTargetObserved(isPreschool ? 8 : 4);
                   setIsBatchTargetModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#008B82] bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-all cursor-pointer shrink-0 shadow-2xs"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#00A19A] bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-all cursor-pointer shrink-0 shadow-2xs"
                 title="Giao chỉ tiêu tiết dạy và tiết dự cho giáo viên trong tổ"
               >
                 <Target className="w-3.5 h-3.5" />
@@ -1441,7 +1441,7 @@ export function TTCMDepartmentSummaryTab({
                             <button
                               type="button"
                               onClick={() => setSelectedTeacherForDetail(t)}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#008B82] hover:bg-teal-50 border border-teal-200/80 transition-all cursor-pointer"
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold text-[#00A19A] hover:bg-teal-50 border border-teal-200/80 transition-all cursor-pointer"
                             >
                               Xem chi tiết
                             </button>
@@ -1472,7 +1472,7 @@ export function TTCMDepartmentSummaryTab({
                     Biểu đồ mạng nhện trung bình {isPreschool ? "5 tiêu chí Mầm non" : "11 tiêu chí K12"}
                   </p>
                 </div>
-                <div className="px-3 py-1 rounded-full text-xs font-black bg-teal-100 text-[#008B82] border border-teal-200">
+                <div className="px-3 py-1 rounded-full text-xs font-black bg-teal-100 text-[#00A19A] border border-teal-200">
                   {departmentCompetency.overallPct}% Đạt chuẩn
                 </div>
               </div>
@@ -1544,7 +1544,7 @@ export function TTCMDepartmentSummaryTab({
                       <path
                         d={polygonPath}
                         fill="rgba(0, 139, 130, 0.25)"
-                        stroke="#008B82"
+                        stroke="#00A19A"
                         strokeWidth="2.5"
                       />
 
@@ -1561,7 +1561,7 @@ export function TTCMDepartmentSummaryTab({
                               cx={p.x}
                               cy={p.y}
                               r="4"
-                              fill="#008B82"
+                              fill="#00A19A"
                               stroke="#FFFFFF"
                               strokeWidth="2"
                             />
@@ -2322,7 +2322,7 @@ export function TTCMDepartmentSummaryTab({
       {targetModalTeacher && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 bg-gradient-to-r from-[#008B82] to-[#003B3A] text-white flex items-center justify-between shrink-0">
+            <div className="px-6 py-4 bg-gradient-to-r from-[#00A19A] to-[#003B3A] text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
                   <Target className="w-4 h-4 text-white" />
@@ -2437,7 +2437,7 @@ export function TTCMDepartmentSummaryTab({
                 type="button"
                 onClick={handleSaveSingleTarget}
                 disabled={savingTarget}
-                className="px-5 py-2 bg-[#008B82] hover:bg-[#007069] text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 {savingTarget ? (
                   <>
@@ -2457,7 +2457,7 @@ export function TTCMDepartmentSummaryTab({
       {isBatchTargetModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 bg-gradient-to-r from-[#008B82] to-[#003B3A] text-white flex items-center justify-between shrink-0">
+            <div className="px-6 py-4 bg-gradient-to-r from-[#00A19A] to-[#003B3A] text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
                   <Target className="w-4 h-4 text-white" />
@@ -2491,7 +2491,7 @@ export function TTCMDepartmentSummaryTab({
                       name="batchApplyMode"
                       checked={batchTargetApplyMode === "UNSET_ONLY"}
                       onChange={() => setBatchTargetApplyMode("UNSET_ONLY")}
-                      className="text-[#008B82] focus:ring-teal-500"
+                      className="text-[#00A19A] focus:ring-teal-500"
                     />
                     <div>
                       <span className="font-bold text-slate-800 block text-xs">Chỉ áp dụng cho GV chưa có chỉ tiêu</span>
@@ -2506,7 +2506,7 @@ export function TTCMDepartmentSummaryTab({
                       name="batchApplyMode"
                       checked={batchTargetApplyMode === "ALL"}
                       onChange={() => setBatchTargetApplyMode("ALL")}
-                      className="text-[#008B82] focus:ring-teal-500"
+                      className="text-[#00A19A] focus:ring-teal-500"
                     />
                     <div>
                       <span className="font-bold text-slate-800 block text-xs">Ghi đè cho tất cả giáo viên trong tổ</span>
@@ -2594,7 +2594,7 @@ export function TTCMDepartmentSummaryTab({
                 type="button"
                 onClick={handleSaveBatchTargets}
                 disabled={savingBatchTargets}
-                className="px-5 py-2 bg-[#008B82] hover:bg-[#007069] text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-black shadow-md shadow-teal-900/20 transition-all cursor-pointer flex items-center gap-1.5"
               >
                 {savingBatchTargets ? (
                   <>

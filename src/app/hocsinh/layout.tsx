@@ -52,7 +52,7 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
   ]
 
   return (
-    <div className="min-h-screen bg-[#F6F9F9] flex flex-col font-sans text-slate-800 antialiased selection:bg-[#007A72] selection:text-white">
+    <div className="min-h-screen bg-[#F6F9F9] flex flex-col font-sans text-slate-800 antialiased selection:bg-[#00A19A] selection:text-white">
       
       {/* Top Header - Official Sky-Line Teal Theme */}
       <header className="bg-[#003B3A] text-white sticky top-0 z-50 shadow-md border-b border-teal-800/40">
@@ -211,7 +211,7 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
         <Link
           href="/hocsinh/portal"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            pathname === "/hocsinh/portal" ? "text-[#007A72] font-black" : "text-slate-500 hover:text-[#007A72] font-medium"
+            pathname === "/hocsinh/portal" ? "text-[#00A19A] font-black" : "text-slate-500 hover:text-[#00A19A] font-medium"
           }`}
         >
           <Home className="w-4 h-4" />
@@ -220,7 +220,7 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
         <Link
           href="/hocsinh/portal/danh-gia-nang-luc"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            pathname.includes("/danh-gia-nang-luc") ? "text-[#007A72] font-black" : "text-slate-500 hover:text-[#007A72] font-medium"
+            pathname.includes("/danh-gia-nang-luc") ? "text-[#00A19A] font-black" : "text-slate-500 hover:text-[#00A19A] font-medium"
           }`}
         >
           <Activity className="w-4 h-4" />
@@ -229,7 +229,7 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
         <Link
           href="/hocsinh/portal/muc-tieu"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            pathname.includes("/muc-tieu") ? "text-[#007A72] font-black" : "text-slate-500 hover:text-[#007A72] font-medium"
+            pathname.includes("/muc-tieu") ? "text-[#00A19A] font-black" : "text-slate-500 hover:text-[#00A19A] font-medium"
           }`}
         >
           <Compass className="w-4 h-4" />
@@ -238,7 +238,7 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
         <Link
           href="/hocsinh/hs-khaosat/danh-sach"
           className={`flex flex-col items-center gap-1 text-[10px] transition-colors ${
-            pathname.includes("/hs-khaosat") ? "text-[#007A72] font-black" : "text-slate-500 hover:text-[#007A72] font-medium"
+            pathname.includes("/hs-khaosat") ? "text-[#00A19A] font-black" : "text-slate-500 hover:text-[#00A19A] font-medium"
           }`}
         >
           <ClipboardCheck className="w-4 h-4" />

@@ -671,7 +671,7 @@ export function ReceivedEvaluationsTab({
             onClick={() => setSelectedEvalRole("OBSERVER")}
             className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
               selectedEvalRole === "OBSERVER"
-                ? "bg-gradient-to-r from-[#008B82] to-teal-700 text-white shadow-xs"
+                ? "bg-gradient-to-r from-[#00A19A] to-teal-700 text-white shadow-xs"
                 : "bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-200"
             }`}
           >
@@ -730,7 +730,7 @@ export function ReceivedEvaluationsTab({
               )}
             </p>
           </div>
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#008B82] flex items-center justify-center border border-teal-100 shadow-2xs">
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#00A19A] flex items-center justify-center border border-teal-100 shadow-2xs">
             <Star className="w-6 h-6" />
           </div>
         </div>
@@ -824,7 +824,7 @@ export function ReceivedEvaluationsTab({
               <h4 className="font-black text-sm text-slate-900">Hồ sơ năng lực hiện tại</h4>
               <div className="flex items-center gap-3 text-xs font-bold">
                 <span className="flex items-center gap-1.5 text-slate-700">
-                  <span className="w-3 h-0.5 bg-[#008B82] rounded-full inline-block" />
+                  <span className="w-3 h-0.5 bg-[#00A19A] rounded-full inline-block" />
                   Hiện tại
                 </span>
                 {prevStatsExists && (
@@ -1129,7 +1129,7 @@ export function ReceivedEvaluationsTab({
                   ? "text-emerald-600"
                   : activeTrendData.length >= 2 && activeTrendData[activeTrendData.length - 1].score < activeTrendData[0].score
                   ? "text-rose-600"
-                  : "text-[#008B82]"
+                  : "text-[#00A19A]"
               }`}>
                 {activeTrendData.length >= 2 ? (
                   activeTrendData[activeTrendData.length - 1].score > activeTrendData[0].score
@@ -1212,10 +1212,10 @@ export function ReceivedEvaluationsTab({
       </div>
 
       {/* DETAILED LIST OF EVALUATION FORMS & HISTORY */}
-      <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#008B82]">
+      <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#00A19A]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#00A19A] flex items-center justify-center">
               <ClipboardList className="w-5 h-5" />
             </div>
             <div>
@@ -1394,7 +1394,7 @@ export function ReceivedEvaluationsTab({
                           <button 
                             type="button"
                             onClick={() => openEvalModal({ ...(evalItem.registration || {}), evaluation: evalItem.evaluation }, evalItem.slot)}
-                            className="px-3 py-1.5 text-xs font-black rounded-xl transition-all shadow-xs bg-[#008B82] hover:bg-[#007068] text-white cursor-pointer hover:scale-105 active:scale-95"
+                            className="px-3 py-1.5 text-xs font-black rounded-xl transition-all shadow-xs bg-[#00A19A] hover:bg-[#008B85] text-white cursor-pointer hover:scale-105 active:scale-95"
                           >
                             Xem phiếu
                           </button>

@@ -61,7 +61,7 @@ export const SubjectCompetencyCard: React.FC<SubjectCompetencyCardProps> = ({
       {/* Header */}
       <div className="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 to-white flex justify-between items-start">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#003B3A] to-[#007A72] flex items-center justify-center text-white shadow-xs flex-shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#003B3A] to-[#00A19A] flex items-center justify-center text-white shadow-xs flex-shrink-0">
             <BookOpen className="w-5 h-5" />
           </div>
           <div>
@@ -167,13 +167,13 @@ export const SubjectCompetencyCard: React.FC<SubjectCompetencyCardProps> = ({
             Tiến độ hoàn tất:
           </span>
           <span className="font-extrabold text-slate-800">
-            <span className="text-[#007A72] font-black">{evaluatedCount}</span> / {totalCompetencies} năng lực
+            <span className="text-[#00A19A] font-black">{evaluatedCount}</span> / {totalCompetencies} năng lực
           </span>
         </div>
 
         <div className="flex justify-between items-center text-xs border-t border-slate-200/60 pt-2">
           <span className="font-bold text-slate-700">Điểm Năng Lực Môn:</span>
-          <span className="text-lg font-black text-[#007A72]">
+          <span className="text-lg font-black text-[#00A19A]">
             {subjectScore !== null ? subjectScore + "%" : "—"}
           </span>
         </div>

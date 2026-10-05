@@ -1,7 +1,7 @@
 /**
  * Sky-Line Education System - Standard Email Templates
  * Fully responsive, modern, Outlook & mobile compatible design.
- * Brand Colors: Primary Sky-Line Teal (#008B82), Deep Navy (#003B3A / #004D47), Soft Teal (#E6F4F3 / #F0FDFA), Slate (#1E293B, #475569, #64748B)
+ * Brand Colors: Primary Sky-Line Teal (#00A19A), Deep Navy (#003B3A / #004D47), Soft Teal (#E6F4F3 / #F0FDFA), Slate (#1E293B, #475569, #64748B)
  */
 
 export interface EmailDetailRow {
@@ -42,10 +42,10 @@ export interface SkylineEmailOptions {
 
 const THEMES = {
   teal: {
-    bg: "#008B82",
+    bg: "#00A19A",
     gradientStart: "#003B3A",
-    gradientEnd: "#008B82",
-    accent: "#008B82",
+    gradientEnd: "#00A19A",
+    accent: "#00A19A",
     badgeBg: "rgba(255, 255, 255, 0.18)",
     badgeBorder: "rgba(255, 255, 255, 0.35)",
     badgeText: "#FFFFFF"
@@ -136,14 +136,14 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
   // Render Details Table Rows
   const detailsHtml = details.length > 0 ? `
     <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px 20px; margin: 20px 0;">
-      ${detailsTitle ? `<div style="font-size: 13px; font-weight: 800; color: #008B82; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">${detailsTitle}</div>` : ""}
+      ${detailsTitle ? `<div style="font-size: 13px; font-weight: 800; color: #00A19A; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;">${detailsTitle}</div>` : ""}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px; line-height: 1.5; border-collapse: collapse;">
         ${details.map((row, idx) => `
           <tr style="${idx < details.length - 1 ? "border-bottom: 1px solid #EEF2F6;" : ""}">
             <td style="padding: 10px 0; color: #64748B; width: 42%; font-weight: 600; vertical-align: top;">
               ${row.icon ? `<span style="margin-right: 6px;">${row.icon}</span>` : ""}${row.label}:
             </td>
-            <td style="padding: 10px 0 10px 10px; color: ${row.color || (row.highlight ? "#008B82" : "#0F172A")}; font-weight: ${row.highlight ? "800" : "600"}; vertical-align: top;">
+            <td style="padding: 10px 0 10px 10px; color: ${row.color || (row.highlight ? "#00A19A" : "#0F172A")}; font-weight: ${row.highlight ? "800" : "600"}; vertical-align: top;">
               ${row.value}
             </td>
           </tr>
@@ -156,7 +156,7 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
   let noticeHtml = "";
   if (noticeBox) {
     let boxBg = "#F0FDFA";
-    let boxBorder = "#008B82";
+    let boxBorder = "#00A19A";
     let textColor = "#004D47";
     let icon = "💡";
 
@@ -222,7 +222,7 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
         <!-- Top Sky-Line Brand Mini Bar -->
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin-bottom: 12px;">
           <tr>
-            <td align="left" style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #008B82;">
+            <td align="left" style="font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; color: #00A19A;">
               🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
             </td>
             <td align="right" style="font-size: 11px; font-weight: 600; color: #94A3B8;">
@@ -266,7 +266,7 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
               
               <!-- Recipient Greeting -->
               <p style="font-size: 15px; color: #0F172A; margin: 0 0 12px 0; line-height: 1.5; font-weight: 500;">
-                ${greetingPrefix} <strong style="color: #008B82; font-weight: 800;">${recipientName}</strong>,
+                ${greetingPrefix} <strong style="color: #00A19A; font-weight: 800;">${recipientName}</strong>,
               </p>
 
               <!-- Intro Message -->
@@ -303,7 +303,7 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
               </div>
               <div style="color: #475569; font-weight: 600;">Hệ thống Quản trị Giáo dục Sky-line SMS</div>
               <div style="margin-top: 6px; color: #94A3B8;">
-                Email thông báo tự động từ Hệ thống Sky-line SMS (<a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #008B82; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a>)
+                Email thông báo tự động từ Hệ thống Sky-line SMS (<a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #00A19A; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a>)
               </div>
               <div style="margin-top: 6px; font-size: 10px; color: #CBD5E1;">
                 © ${currentYear} Sky-Line Education System. All rights reserved.
@@ -340,7 +340,7 @@ export interface GradeReminderEmailParams {
 
 /**
  * Standard Sky-Line Grade Entry Reminder Email (Nhắc nhở vào Sổ điểm & Nhận xét)
- * Matches authentic Sky-Line brand palette (Teal #008B82, Deep Navy #003B3A),
+ * Matches authentic Sky-Line brand palette (Teal #00A19A, Deep Navy #003B3A),
  * with Outlook-compatible button, responsive layout, and markdown parsing.
  */
 export function renderGradeReminderEmail(params: GradeReminderEmailParams): string {
@@ -372,7 +372,7 @@ export function renderGradeReminderEmail(params: GradeReminderEmailParams): stri
     details: [
       { icon: "📚", label: "Môn học", value: subjectName, highlight: true },
       { icon: "🏫", label: "Lớp giảng dạy", value: className, highlight: true },
-      { icon: "⏱️", label: "Kỳ khảo sát / đánh giá", value: evaluationPeriod, color: "#008B82", highlight: true },
+      { icon: "⏱️", label: "Kỳ khảo sát / đánh giá", value: evaluationPeriod, color: "#00A19A", highlight: true },
       { icon: "⏰", label: "Thời gian gửi thông báo", value: currentTime, color: "#475569" }
     ],
     noticeBox: formattedCustomMessage ? {
@@ -387,7 +387,7 @@ export function renderGradeReminderEmail(params: GradeReminderEmailParams): stri
     button: {
       text: "👉 TRUY CẬP CỔNG NHẬP ĐIỂM GIÁO VIÊN",
       url: targetLink,
-      color: "#008B82"
+      color: "#00A19A"
     },
     secondaryNote: "Lưu ý quan trọng: Sau thời hạn quy định, Hệ thống Sky-line SMS sẽ tự động thực hiện Khóa sổ điểm để phục vụ công tác tổng hợp số liệu, thống kê & phân tích chất lượng của Ban Khảo thí & ĐBCL."
   });
@@ -898,7 +898,7 @@ export function renderObservationPendingEvaluationReminder(params: {
     button: {
       text: "✍️ Nhập Phiếu Đánh Giá Ngay Trên Hệ Thống",
       url: targetLink,
-      color: "#008B82"
+      color: "#00A19A"
     }
   });
 }
@@ -1416,7 +1416,7 @@ export function renderForeignObservationEvaluationForObserver(params: {
     button: {
       text: "👉 Review On Skyline Portal",
       url: targetLink,
-      color: "#008B82"
+      color: "#00A19A"
     }
   });
 }

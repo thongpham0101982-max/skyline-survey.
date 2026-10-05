@@ -640,7 +640,7 @@ export function TeacherObservationReportTab({
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#008B82] to-[#003B3A] text-white flex items-center justify-center font-black shadow-sm">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#00A19A] to-[#003B3A] text-white flex items-center justify-center font-black shadow-sm">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
@@ -730,7 +730,7 @@ export function TeacherObservationReportTab({
                           setExpandedMonthKey(isExpanded ? null : st.monthKey);
                           setDrillDownCategory("ALL");
                         }}
-                        className={`hover:bg-teal-50/40 transition cursor-pointer ${isExpanded ? "bg-teal-50/60 font-bold border-l-4 border-l-[#008B82]" : ""}`}
+                        className={`hover:bg-teal-50/40 transition cursor-pointer ${isExpanded ? "bg-teal-50/60 font-bold border-l-4 border-l-[#00A19A]" : ""}`}
                       >
                         <td className="p-3 text-center font-bold text-slate-400">{idx + 1}</td>
                         <td className="p-3">
