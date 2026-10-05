@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { aggregateUserTasks } from "@/services/taskEngine"
@@ -95,8 +95,8 @@ export async function GET() {
           attentionStudents.push({
             id: item.student.id,
             studentCode: item.student.studentCode,
-            fullName: item.student.fullName,
-            className: item.student.class?.name || homeroomClassNames[0] || "Lớp",
+            fullName: item.student.studentName,
+            className: item.student.class?.className || homeroomClassNames[0] || "Lớp",
             reason: item.targetOutcome || "Đang trong diện hỗ trợ học tập",
             severity: "attention",
             gapText: "Hỗ trợ học tập",
@@ -123,8 +123,8 @@ export async function GET() {
           attentionStudents.push({
             id: item.student.id,
             studentCode: item.student.studentCode,
-            fullName: item.student.fullName,
-            className: item.student.class?.name || "Lớp",
+            fullName: item.student.studentName,
+            className: item.student.class?.className || "Lớp",
             reason: item.content ? (item.content.length > 35 ? item.content.slice(0, 35) + "..." : item.content) : "Yêu cầu hỗ trợ học tập",
             severity: "urgent",
             gapText: "Cần trợ giúp",

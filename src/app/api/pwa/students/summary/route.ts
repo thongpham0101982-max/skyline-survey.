@@ -39,7 +39,7 @@ export async function GET(req: Request) {
             orderBy: { createdAt: "desc" }
           },
           learningSupportAssignments: {
-            where: { status: "ACTIVE" },
+            where: { target: { status: "ACTIVE" } },
             take: 1
           }
         }
@@ -75,8 +75,8 @@ export async function GET(req: Request) {
         student: {
           id: student.id,
           studentCode: student.studentCode,
-          fullName: student.fullName,
-          className: student.class?.name || (student as any).className || "",
+          fullName: student.studentName,
+          className: student.class?.className || (student as any).className || "",
           gender: student.gender || "Chưa rõ",
           dateOfBirth: student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "",
           parentName,
@@ -104,7 +104,7 @@ export async function GET(req: Request) {
 
     if (search) {
       whereClause.OR = [
-        { fullName: { contains: search } },
+        { studentName: { contains: search } },
         { studentCode: { contains: search } }
       ]
     }
@@ -115,11 +115,11 @@ export async function GET(req: Request) {
         class: true,
         profile: true,
         learningSupportAssignments: {
-          where: { status: "ACTIVE" }
+          where: { target: { status: "ACTIVE" } }
         }
       },
       take: 40,
-      orderBy: { fullName: "asc" }
+      orderBy: { studentName: "asc" }
     })
 
     const formattedList = students.map(s => {
@@ -131,8 +131,8 @@ export async function GET(req: Request) {
       return {
         id: s.id,
         studentCode: s.studentCode,
-        fullName: s.fullName,
-        className: s.class?.name || (s as any).className || "",
+        fullName: s.studentName,
+        className: s.class?.className || (s as any).className || "",
         primaryPhone: phone,
         parentName: parent,
         hasAlert: hasSupport,
