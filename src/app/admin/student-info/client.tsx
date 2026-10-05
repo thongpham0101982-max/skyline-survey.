@@ -708,7 +708,7 @@ export function StudentInfoClient({
     if (preschoolInputLoading) {
       return (
         <div className="flex items-center gap-1.5 py-1 text-slate-400">
-          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#48BFE3]" />
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-[#00A19A]" />
           <span className="text-xs text-slate-500 font-medium">Đang tải dữ liệu tiêu chí...</span>
         </div>
       );
@@ -732,7 +732,7 @@ export function StudentInfoClient({
       <div className="space-y-3 max-h-60 overflow-y-auto custom-scrollbar pr-1 mt-1 text-xs">
         {Object.entries(scoresByArea).map(([areaId, areaData]) => (
           <div key={areaId} className="p-2.5 space-y-1.5 text-xs font-semibold">
-            <div className="font-bold text-[#48BFE3] text-[10px] uppercase tracking-wider">{areaData.areaName}</div>
+            <div className="font-bold text-[#00A19A] text-[10px] uppercase tracking-wider">{areaData.areaName}</div>
             <div className="space-y-1">
               {areaData.scores.map((sc) => {
                 const resText = sc.result === "DAT" ? "Đạt" : 
@@ -1944,39 +1944,125 @@ export function StudentInfoClient({
         </div>
       )}
 
-      {/* Tab Selector & Actions */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4 border-b border-slate-300">
-        <div className="flex gap-4">
+      {/* Sky-Line Official Brand Header Banner */}
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#005854] to-[#00736E] rounded-3xl p-6 sm:p-7 text-white shadow-xl relative overflow-hidden">
+        {/* Subtle decorative background watermark */}
+        <div className="absolute right-0 top-0 bottom-0 w-80 opacity-10 pointer-events-none flex items-center justify-end pr-8">
+          <GraduationCap className="w-64 h-64 text-white -mr-10 -mt-10" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className="text-[10.5px] font-black uppercase tracking-widest bg-white/15 text-teal-200 px-3 py-1 rounded-full border border-white/20 backdrop-blur-md">
+                Sky-Line Education System • Khảo sát đầu vào
+              </span>
+              <span className="text-xs font-semibold text-teal-100/90">
+                Năm học: <strong className="text-white">{activeYearName || "Hiện tại"}</strong>
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Nhập TT HS & Kết Quả Khảo Sát
+            </h1>
+            <p className="text-white/80 text-xs sm:text-sm font-medium mt-1.5 max-w-2xl leading-relaxed">
+              Quản lý đợt khảo sát, danh sách dự tuyển, kiểm tra lại và xét duyệt nhập học cho học sinh Phổ thông & Mầm non chuẩn quy trình chất lượng Sky-Line.
+            </p>
+          </div>
+
+          {/* Mode Switcher Segmented Control */}
+          <div className="bg-black/25 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 flex items-center gap-1.5 self-start lg:self-auto shrink-0 shadow-inner">
+            <button
+              onClick={() => handleTabChange("general")}
+              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                activeTab === "general"
+                  ? "bg-white text-[#003B3A] shadow-lg shadow-black/20 scale-[1.02]"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <GraduationCap className={`w-4 h-4 ${activeTab === "general" ? "text-[#00A19A]" : "text-white/70"}`} />
+              <span>Phổ thông K-12</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === "general" ? "bg-[#00A19A]/15 text-[#00736E]" : "bg-white/20 text-white"
+              }`}>
+                {initialGeneralStudents.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange("preschool")}
+              className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                activeTab === "preschool"
+                  ? "bg-[#00A19A] text-white shadow-lg shadow-[#00A19A]/30 scale-[1.02]"
+                  : "text-white/80 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <Baby className="w-4 h-4 text-white" />
+              <span>Mầm non</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                activeTab === "preschool" ? "bg-white/25 text-white" : "bg-white/20 text-white"
+              }`}>
+                {initialPreschoolStudents.length}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Workflow Navigation Sub-tabs & Action Toolbar */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-2.5 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <button
-            onClick={() => handleTabChange("general")}
-            className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
-              activeTab === "general"
-                ? "border-[#48BFE3] text-[#48BFE3] bg-slate-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
+            onClick={() => handleSubTabChange("periods")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              subTab === "periods"
+                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
             }`}
           >
-            <GraduationCap className="w-5 h-5" />
-            Phổ thông K-12 ({initialGeneralStudents.length})
+            <Clock className="w-4 h-4" />
+            <span>1. Tạo đợt khảo sát</span>
           </button>
           <button
-            onClick={() => handleTabChange("preschool")}
-            className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
-              activeTab === "preschool"
-                ? "border-[#48BFE3] text-[#48BFE3] bg-slate-50/50"
-                : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
+            onClick={() => handleSubTabChange("students")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              subTab === "students"
+                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
             }`}
           >
-            <Baby className="w-5 h-5" />
-            Mầm non ({initialPreschoolStudents.length})
+            <Users className="w-4 h-4" />
+            <span>2. Danh sách khảo sát</span>
+          </button>
+          <button
+            onClick={() => handleSubTabChange("info")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              subTab === "info"
+                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+            }`}
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>3. TT Khảo sát lại</span>
+          </button>
+          <button
+            onClick={() => handleSubTabChange("result")}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              subTab === "result"
+                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
+                : "text-slate-650 hover:text-[#00A19A] hover:bg-teal-50/50"
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>4. Kết quả & Nhập học</span>
           </button>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2 pb-2 sm:pb-0">
+        {/* Action Buttons for info and result tabs */}
+        <div className="flex flex-wrap items-center gap-2">
           {subTab === "info" && selectedIds.length > 0 && (
             <button
               onClick={handleDeleteSelected}
-              className="flex items-center gap-1.5 hover:bg-rose-100 text-rose-600 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer text-xs font-semibold"
+              className="flex items-center gap-1.5 px-3 py-2 hover:bg-rose-100 text-rose-600 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
               Xóa đã chọn ({selectedIds.length})
@@ -1986,7 +2072,7 @@ export function StudentInfoClient({
             <>
               <button
                 onClick={openCreateModal}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-bold shadow-sm shadow-[#00A19A]/20 transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 {activeTab === "general" ? "Thêm mới" : "Thêm trẻ"}
@@ -2001,7 +2087,7 @@ export function StudentInfoClient({
                   setImportSuccessCount(null);
                   setIsImportOpen(true);
                 }}
-                className="flex items-center gap-1.5 hover:bg-indigo-100 text-indigo-600 text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer text-xs font-semibold"
+                className="flex items-center gap-1.5 px-3.5 py-2 hover:bg-teal-100 text-[#00736E] bg-teal-50 border border-teal-200/70 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
               >
                 <Upload className="w-4 h-4" />
                 Nhập Excel
@@ -2013,14 +2099,14 @@ export function StudentInfoClient({
             <div className="flex gap-2">
               <button
                 onClick={handleExportExcel}
-                className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-xs transition-all active:scale-95 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 Export Excel
               </button>
               <button
                 onClick={handleExportStudentProfilesCsv}
-                className="flex items-center gap-1.5 px-4 py-2 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-bold shadow-sm shadow-[#00A19A]/20 transition-all active:scale-95 cursor-pointer"
               >
                 <Download className="w-4 h-4" />
                 Xuất CSV Hồ Sơ
@@ -2028,66 +2114,6 @@ export function StudentInfoClient({
             </div>
           )}
         </div>
-      </div>
-
-      {/* Sub-tab Selector */}
-      <div className="flex flex-wrap gap-2 w-fit">
-        <button
-          onClick={() => {
-            setSubTab("periods");
-            setCurrentPage(1);
-          }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
-            subTab === "periods"
-              ? "bg-[#48BFE3] text-white shadow-sm"
-              : "bg-slate-50 hover:bg-slate-100 text-slate-600"
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          Tạo đợt khảo sát
-        </button>
-        <button
-          onClick={() => {
-            setSubTab("students");
-            setCurrentPage(1);
-          }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
-            subTab === "students"
-              ? "bg-[#48BFE3] text-white shadow-sm"
-              : "bg-slate-50 hover:bg-slate-100 text-slate-600"
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          Danh sách khảo sát
-        </button>
-        <button
-          onClick={() => {
-            setSubTab("info");
-            setCurrentPage(1);
-          }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
-            subTab === "info"
-              ? "bg-[#48BFE3] text-white shadow-sm"
-              : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
-          }`}
-        >
-          <RefreshCw className="w-4 h-4" />
-          TT Khảo sát lại
-        </button>
-        <button
-          onClick={() => {
-            setSubTab("result");
-            setCurrentPage(1);
-          }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
-            subTab === "result"
-              ? "bg-[#48BFE3] text-white shadow-sm"
-              : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
-          }`}
-        >
-          <CheckCircle2 className="w-4 h-4" />
-          Kết quả và nhập học
-        </button>
       </div>
 
       {/* Statistics Cards */}
@@ -2139,7 +2165,7 @@ export function StudentInfoClient({
 
         {/* Card 5: Đã nhập học / Yêu cầu sắp lớp */}
         <div className="bg-gradient-to-br from-teal-50/90 via-cyan-50/30 to-teal-100/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
-          <div className="p-3.5 bg-[#48BFE3] text-white rounded-2xl shadow-md shadow-teal-500/20">
+          <div className="p-3.5 bg-[#00A19A] text-white rounded-2xl shadow-md shadow-teal-500/20">
             <UserCheck className="w-5 h-5" />
           </div>
           <div>
@@ -2191,7 +2217,7 @@ export function StudentInfoClient({
           {/* Filters & Search Control Panel */}
           <div className="bg-slate-50/30 rounded-2xl p-6 border border-slate-100 shadow-none space-y-5">
         <div className="flex items-center gap-2 text-[#1E1B4B] font-bold text-sm">
-          <Filter className="w-4 h-4 text-[#48BFE3]" />
+          <Filter className="w-4 h-4 text-[#00A19A]" />
           Bộ lọc & Tìm kiếm nhanh
         </div>
         <div className={`grid grid-cols-1 sm:grid-cols-2 ${subTab === "result" ? "lg:grid-cols-6 md:grid-cols-3" : "lg:grid-cols-5 md:grid-cols-3"} gap-3`}>
@@ -2206,7 +2232,7 @@ export function StudentInfoClient({
                 setCurrentPage(1);
               }}
               placeholder="Tên hoặc mã HS..."
-              className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm border border-slate-200/80 bg-white focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none transition-all text-slate-700 shadow-xs"
+              className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm border border-slate-200/80 bg-white focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none transition-all text-slate-700 shadow-xs"
             />
             {searchQuery && (
               <button
@@ -2225,7 +2251,7 @@ export function StudentInfoClient({
               setSelectedEnrollmentFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
           >
             <option value="all">Tất cả Trạng thái Nhập học</option>
             <option value="enrolled">Đã nhập học (X)</option>
@@ -2239,7 +2265,7 @@ export function StudentInfoClient({
               setSelectedCampusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
           >
             <option value="all">Tất cả Cơ sở</option>
             {campuses.map((c) => (
@@ -2255,7 +2281,7 @@ export function StudentInfoClient({
               setSelectedBatch(""); // Reset batch when period changes
               setCurrentPage(1);
             }}
-            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
           >
             <option value="">Tất cả Kỳ khảo sát</option>
             {uniquePeriodNames.map((name) => (
@@ -2270,7 +2296,7 @@ export function StudentInfoClient({
               setSelectedBatch(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
           >
             <option value="">Tất cả Đợt</option>
             <option value="UNASSIGNED">Khác / Chưa phân đợt</option>
@@ -2286,7 +2312,7 @@ export function StudentInfoClient({
               setSelectedGrade(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
           >
             <option value="">Tất cả Khối</option>
             {filterOptions.grades.map((g) => (
@@ -2302,7 +2328,7 @@ export function StudentInfoClient({
                 setSelectedResult(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+              className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
             >
               <option value="">Tất cả Kết quả</option>
               {filterOptions.results.map((r) => (
@@ -2324,7 +2350,7 @@ export function StudentInfoClient({
                   <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded text-[#48BFE3] accent-[#48BFE3]"
+                        className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
                         checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
                         onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(s => s.id) : [])}
                       />
@@ -2391,7 +2417,7 @@ export function StudentInfoClient({
                       <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
                             <input
                             type="checkbox"
-                            className="w-4 h-4 rounded text-[#48BFE3] accent-[#48BFE3]"
+                            className="w-4 h-4 rounded text-[#00A19A] accent-[#00A19A]"
                             checked={selectedIds.includes(s.id)}
                             onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
                           />
@@ -2543,7 +2569,7 @@ export function StudentInfoClient({
                               setSelectedStudent(s);
                               setIsDetailsOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-[#48BFE3] hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                            className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -2553,7 +2579,7 @@ export function StudentInfoClient({
 
                               <button
                                 onClick={() => openEditModal(s)}
-                                className="p-1.5 text-slate-400 hover:text-[#48BFE3] hover:bg-slate-100 rounded-xl transition-all"
+                                className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 rounded-xl transition-all"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -2583,7 +2609,7 @@ export function StudentInfoClient({
                   <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded accent-[#48BFE3]"
+                        className="w-4 h-4 rounded accent-[#00A19A]"
                         checked={filteredStudents.length > 0 && selectedIds.length === filteredStudents.length}
                         onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(c => c.id) : [])}
                       />
@@ -2623,8 +2649,8 @@ export function StudentInfoClient({
                         isEnrolled
                           ? 'bg-emerald-50/60 hover:bg-emerald-100/80'
                           : selectedIds.includes(child.id)
-                          ? 'bg-[#48BFE3]/5/50 hover:bg-[#48BFE3]/10'
-                          : i % 2 === 0 ? 'bg-white hover:bg-[#48BFE3]/5/30' : 'bg-slate-50/30 hover:bg-[#48BFE3]/5/30'
+                          ? 'bg-[#00A19A]/5/50 hover:bg-[#00A19A]/10'
+                          : i % 2 === 0 ? 'bg-white hover:bg-[#00A19A]/5/30' : 'bg-slate-50/30 hover:bg-[#00A19A]/5/30'
                       }`}
                       onClick={() => {
                         setSelectedStudent(child);
@@ -2634,7 +2660,7 @@ export function StudentInfoClient({
                       <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
                             <input
                             type="checkbox"
-                            className="w-4 h-4 rounded accent-[#48BFE3]"
+                            className="w-4 h-4 rounded accent-[#00A19A]"
                             checked={selectedIds.includes(child.id)}
                             onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
                           />
@@ -2749,7 +2775,7 @@ export function StudentInfoClient({
                               setSelectedStudent(child);
                               setIsDetailsOpen(true);
                             }}
-                            className="p-1.5 text-slate-400 hover:text-[#48BFE3] hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
+                            className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all cursor-pointer shadow-xs active:scale-95"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -2758,7 +2784,7 @@ export function StudentInfoClient({
                             <>
                               <button
                                 onClick={() => openEditModal(child)}
-                                className="p-2 text-slate-300 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 rounded-xl transition-all"
+                                className="p-2 text-slate-300 hover:text-[#00A19A] hover:bg-[#00A19A]/5 rounded-xl transition-all"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
@@ -2811,7 +2837,7 @@ export function StudentInfoClient({
                     onClick={() => setCurrentPage(pageNum)}
                     className={`px-3 py-1 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
                       currentPage === pageNum
-                        ? "bg-[#48BFE3] text-white border-[#48BFE3]"
+                        ? "bg-[#00A19A] text-white border-[#00A19A]"
                         : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
                     }`}
                   >
@@ -3886,7 +3912,7 @@ export function StudentInfoClient({
                 <select
                   value={importPeriodId}
                   onChange={(e) => setImportPeriodId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-semibold"
                 >
                   {activePeriodsList.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -3900,7 +3926,7 @@ export function StudentInfoClient({
                 <select
                   value={importBatchId}
                   onChange={(e) => setImportBatchId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">Không phân đợt</option>
                   {activeImportBatches.map((b: any) => (
@@ -3965,7 +3991,7 @@ export function StudentInfoClient({
                   type="button"
                   disabled={importing || !importPeriodId}
                   onClick={() => importInputRef.current?.click()}
-                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-5 py-2.5 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-bold shadow-none transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   <Upload className="w-4 h-4" />
                   Chọn file tải lên
@@ -4017,7 +4043,7 @@ export function StudentInfoClient({
                 onClick={() => setDetailsSubTab("results")}
                 className={`py-2.5 px-3 border-b-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   detailsSubTab === "results"
-                    ? "border-[#48BFE3] text-[#48BFE3]"
+                    ? "border-[#00A19A] text-[#00A19A]"
                     : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
@@ -4028,7 +4054,7 @@ export function StudentInfoClient({
                 onClick={() => setDetailsSubTab("admin")}
                 className={`py-2.5 px-3 border-b-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   detailsSubTab === "admin"
-                    ? "border-[#48BFE3] text-[#48BFE3]"
+                    ? "border-[#00A19A] text-[#00A19A]"
                     : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
@@ -4039,7 +4065,7 @@ export function StudentInfoClient({
                 onClick={() => setDetailsSubTab("academic")}
                 className={`py-2.5 px-3 border-b-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   detailsSubTab === "academic"
-                    ? "border-[#48BFE3] text-[#48BFE3]"
+                    ? "border-[#00A19A] text-[#00A19A]"
                     : "border-transparent text-slate-400 hover:text-slate-600"
                 }`}
               >
@@ -4064,7 +4090,7 @@ export function StudentInfoClient({
                       <div className="space-y-6 animate-in fade-in duration-200">
                         <div>
                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3.5 flex items-center gap-1.5">
-                            <Award className="w-4 h-4 text-[#48BFE3]" />
+                            <Award className="w-4 h-4 text-[#00A19A]" />
                             Kết quả điểm khảo sát năng lực
                           </h4>
                           
@@ -4192,7 +4218,7 @@ export function StudentInfoClient({
                               const scNum = parseFloat(psychologyVal);
                               if (!isNaN(scNum)) {
                                 if (scNum <= 15) {
-                                  psychColorClass = "text-[#48BFE3] bg-[#48BFE3]/5 border-[#48BFE3]/20";
+                                  psychColorClass = "text-[#00A19A] bg-[#00A19A]/5 border-[#00A19A]/20";
                                   psychBadgeText = "Bình thường";
                                 } else if (scNum <= 31) {
                                   psychColorClass = "text-amber-600 bg-amber-50 border-amber-200/50";
@@ -4215,10 +4241,10 @@ export function StudentInfoClient({
                                 {/* 1. Core Subject Grid */}
                                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                                   {/* Math Card */}
-                                  <div className="bg-[#48BFE3]/5 p-4 rounded-2xl border border-[#48BFE3]/15 hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center flex flex-col justify-between h-28">
+                                  <div className="bg-[#00A19A]/5 p-4 rounded-2xl border border-[#00A19A]/15 hover:shadow-md hover:scale-[1.02] transition-all duration-300 text-center flex flex-col justify-between h-28">
                                     <div className="flex items-center justify-center gap-1.5">
-                                      <Calculator className="w-3.5 h-3.5 text-[#48BFE3]" />
-                                      <span className="block text-[10px] font-black text-[#48BFE3] uppercase tracking-widest">Điểm Toán</span>
+                                      <Calculator className="w-3.5 h-3.5 text-[#00A19A]" />
+                                      <span className="block text-[10px] font-black text-[#00A19A] uppercase tracking-widest">Điểm Toán</span>
                                     </div>
                                     <span className="text-3xl font-black text-slate-800 leading-none">
                                       {mathVal !== null && mathVal !== undefined ? mathVal : "—"}
@@ -4344,7 +4370,7 @@ export function StudentInfoClient({
                     {detailsSubTab === "admin" && (
                       <div className="space-y-4 animate-in fade-in duration-200">
                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                          <Info className="w-4 h-4 text-[#48BFE3]" />
+                          <Info className="w-4 h-4 text-[#00A19A]" />
                           Thông tin hành chính tuyển sinh
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -4388,7 +4414,7 @@ export function StudentInfoClient({
                       <div className="space-y-6 animate-in fade-in duration-200">
                         <div>
                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                            <FileText className="w-4 h-4 text-[#48BFE3]" />
+                            <FileText className="w-4 h-4 text-[#00A19A]" />
                             Học bạ & Hồ sơ học tập
                           </h4>
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -4440,7 +4466,7 @@ export function StudentInfoClient({
                         {/* Section: Final Approval Result */}
                         <div className="border-t border-slate-200 pt-6">
                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                            <Award className="w-4 h-4 text-[#48BFE3]" />
+                            <Award className="w-4 h-4 text-[#00A19A]" />
                             Quyết định tuyển sinh của Ban Giám Hiệu
                           </h4>
                           <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl space-y-4">
@@ -4475,7 +4501,7 @@ export function StudentInfoClient({
                       <div className="space-y-6 animate-in fade-in duration-200">
                         <div>
                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                            <Award className="w-4 h-4 text-[#48BFE3]" />
+                            <Award className="w-4 h-4 text-[#00A19A]" />
                             Đánh giá năng lực phát triển mầm non
                           </h4>
                           
@@ -4549,7 +4575,7 @@ export function StudentInfoClient({
                     {detailsSubTab === "admin" && (
                       <div className="space-y-4 animate-in fade-in duration-200">
                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                          <Info className="w-4 h-4 text-[#48BFE3]" />
+                          <Info className="w-4 h-4 text-[#00A19A]" />
                           Thông tin hành chính tuyển sinh
                         </h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -4595,7 +4621,7 @@ export function StudentInfoClient({
                         {(selectedStudent.probationaryPeriod || selectedStudent.probationaryClass || selectedStudent.probationaryTeacher || selectedStudent.probationaryResult) && (
                           <div>
                             <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                              <FileText className="w-4 h-4 text-[#48BFE3]" />
+                              <FileText className="w-4 h-4 text-[#00A19A]" />
                               Thông tin đánh giá học thử
                             </h4>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 border border-slate-200 p-4 rounded-2xl">
@@ -4672,7 +4698,7 @@ export function StudentInfoClient({
                         {/* Section: Final Approval Result */}
                         <div className="border-t border-slate-200 pt-6">
                           <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                            <Award className="w-4 h-4 text-[#48BFE3]" />
+                            <Award className="w-4 h-4 text-[#00A19A]" />
                             Quyết định tuyển sinh chung cuộc của Ban Giám Hiệu
                           </h4>
                           <div className="bg-slate-50 border border-slate-200 p-5 rounded-2xl space-y-4">
@@ -4752,7 +4778,7 @@ export function StudentInfoClient({
                     setRetestPeriodId(e.target.value);
                     setRetestBatchId("");
                   }}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer font-semibold"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-semibold"
                 >
                   <option value="">-- Chọn Kỳ khảo sát mới --</option>
                   {generalPeriods.map((p) => (
@@ -4768,7 +4794,7 @@ export function StudentInfoClient({
                   <select
                     value={retestBatchId}
                     onChange={(e) => setRetestBatchId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none bg-white cursor-pointer font-semibold"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] outline-none bg-white cursor-pointer font-semibold"
                   >
                     <option value="">-- Chọn Đợt khảo sát mới (Tất cả / Lẻ) --</option>
                     {(generalPeriods.find(p => p.id === retestPeriodId)?.batches || [])
@@ -4976,7 +5002,7 @@ function PreschoolMoveToBatchModal({
                   setSelectedPeriodId(e.target.value);
                   setSelectedBatchId("");
                 }}
-                className="w-full px-4 py-3 bg-slate-50 border border-[#48BFE3]/20 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] transition-all cursor-pointer"
+                className="w-full px-4 py-3 bg-slate-50 border border-[#00A19A]/20 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] transition-all cursor-pointer"
               >
                 <option value="">-- Chọn Kỳ KS --</option>
                 {periods.map(p => (
@@ -4991,7 +5017,7 @@ function PreschoolMoveToBatchModal({
                 value={selectedBatchId}
                 onChange={(e) => setSelectedBatchId(e.target.value)}
                 disabled={!selectedPeriodId || availableBatches.length === 0}
-                className="w-full px-4 py-3 bg-slate-50 border border-[#48BFE3]/20 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] transition-all cursor-pointer disabled:opacity-50"
+                className="w-full px-4 py-3 bg-slate-50 border border-[#00A19A]/20 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] transition-all cursor-pointer disabled:opacity-50"
               >
                 <option value="">-- Có thể chọn sau --</option>
                 {availableBatches.map(b => (
@@ -5013,7 +5039,7 @@ function PreschoolMoveToBatchModal({
           <button
             onClick={handleSubmit}
             disabled={!selectedPeriodId || loading}
-            className="flex items-center gap-2 px-6 py-2.5 bg-[#48BFE3] hover:bg-[#48BFE3]/90 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 bg-[#00A19A] hover:bg-[#008B85] text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             Xác nhận Chuyển

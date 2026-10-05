@@ -3,6 +3,7 @@
 import { SSMTodayHome } from "@/components/pwa/SSMTodayHome"
 
 import React, { useEffect, useState, useMemo, useCallback } from "react"
+import { createPortal } from "react-dom"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import {
@@ -34,7 +35,7 @@ import { Badge } from "@/components/ui/badge"
 import { KPICard } from "@/components/KPICard"
 import { UserWelcomeCard } from "@/components/UserWelcomeCard"
 import DeadlineCountdownBanner from "@/components/shared/DeadlineCountdownBanner"
-import { useCampusTheme, CampusThemeType } from "@/hooks/useCampusTheme"
+import { useCampusTheme, CampusThemeType, CAMPUS_THEMES, resolveCampusTheme } from "@/hooks/useCampusTheme"
 
 interface MetricData {
   totalClasses: number
@@ -44,6 +45,11 @@ interface MetricData {
   academicYearName: string
   totalObservedLessons?: number
   remedialStudentsCount?: number
+  isManagerRole?: boolean
+  managedDepartmentName?: string | null
+  managedDepartmentId?: string | null
+  managedTeachersCount?: number
+  managedDeptObservedCount?: number
   campus?: {
     id: string
     campusCode: string
@@ -81,6 +87,21 @@ export default function TeacherDashboard() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState<"ALL" | "GVCN" | "GVBM" | "UTILITIES">("ALL")
   const [campusOverride, setCampusOverride] = useState<CampusThemeType | null>(null)
+  const [viewMode, setViewMode] = useState<"TEACHER" | "ADMIN">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("teacher_view_mode")
+      if (saved === "ADMIN" || saved === "TEACHER") return saved
+    }
+    return "TEACHER"
+  })
+
+  // Header Portal: Render các controls Cơ sở và Chế độ lên trên cùng dòng SQMS
+  const [headerPortalEl, setHeaderPortalEl] = useState<HTMLElement | null>(null)
+  useEffect(() => {
+    const el = document.getElementById("teacher-top-header-slot")
+    if (el) setHeaderPortalEl(el)
+  }, [])
+
   const [currentDateInfo, setCurrentDateInfo] = useState({
     dayName: "Hôm nay",
     dateStr: "",
@@ -88,10 +109,34 @@ export default function TeacherDashboard() {
     timeGreeting: "Chào Thầy/Cô!"
   })
 
-  // Dynamic Campus Theme Resolution
+  // Dynamic Campus Theme Resolution - Căn cứ tự động theo biên chế tài khoản GV
   const rawCampusName = metrics?.campus?.campusName || ""
   const rawCampusCode = metrics?.campus?.campusCode || ""
-  const campusTheme = useCampusTheme(campusOverride || rawCampusCode || rawCampusName)
+  const detectedTheme = useCampusTheme(rawCampusCode || rawCampusName)
+  const campusTheme = campusOverride ? CAMPUS_THEMES[campusOverride] : detectedTheme
+
+  // Căn cứ phân quyền tài khoản GV để xác định Chế độ Quản lý
+  const sessionRole = ((session?.user as any)?.role || "").toUpperCase().trim()
+  const isManager = Boolean(
+    metrics?.isManagerRole ||
+    ["ADMIN", "SUPER_ADMIN", "ADMINISTRATOR", "TTCM", "TPCM", "TO_TRUONG", "TO_PHO", "TBP", "TRUONG_BO_PHAN", "PHO_BO_PHAN", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "BAN_DHCM", "TB_DHCM", "QLCM", "BGH", "BGH_MN", "KT_DBCL"].includes(sessionRole)
+  )
+
+  const handleViewModeChange = (mode: "TEACHER" | "ADMIN") => {
+    setViewMode(mode)
+    if (typeof window !== "undefined") {
+      localStorage.setItem("teacher_view_mode", mode)
+    }
+  }
+
+  // Tự động kiểm tra quyền khi metrics cập nhật
+  useEffect(() => {
+    if (metrics) {
+      if (!isManager && viewMode === "ADMIN") {
+        setViewMode("TEACHER")
+      }
+    }
+  }, [metrics, isManager, viewMode])
 
   const userName = metrics?.teacherInfo?.teacherName || session?.user?.name || "Thầy/Cô"
   const userInitial = userName.charAt(0).toUpperCase()
@@ -288,8 +333,103 @@ export default function TeacherDashboard() {
     }
   ], [finalMetrics])
 
+  const managerActionItems: ActionCard[] = useMemo(() => [
+    {
+      id: "admin-du-gio",
+      groupId: "GVBM",
+      groupName: "Điều hành Chuyên môn",
+      title: "Điều hành Dự giờ Tổ CM",
+      desc: "Theo dõi, rà soát và điều hành chỉ tiêu dự giờ của toàn bộ giáo viên trong tổ bộ môn.",
+      href: "/teacher/du-gio?tab=overview_slots",
+      icon: Eye,
+      badgeText: `${finalMetrics.managedDeptObservedCount || 0} tiết tổ`,
+      badgeVariant: "skyline",
+      metricValue: finalMetrics.managedDeptObservedCount || 0
+    },
+    {
+      id: "admin-quality-analysis",
+      groupId: "GVBM",
+      groupName: "Điều hành Chuyên môn",
+      title: "Phân tích Chất lượng Đánh giá",
+      desc: "Báo cáo thống kê chất lượng khảo sát đầu vào, giữa kỳ, phân loại học sinh toàn khối/tổ.",
+      href: "/teacher/phan-tich-chat-luong",
+      icon: BarChart3,
+      badgeText: "Báo cáo CLGD",
+      badgeVariant: "accent"
+    },
+    {
+      id: "admin-weekly-report",
+      groupId: "GVBM",
+      groupName: "Điều hành Chuyên môn",
+      title: "Báo cáo Tuần & Sinh hoạt Tổ",
+      desc: "Ghi nhận nội dung sinh hoạt chuyên môn, kế hoạch tuần và đánh giá hoạt động sư phạm.",
+      href: "/teacher/bao-cao-tuan",
+      icon: ClipboardCheck,
+      badgeText: "Báo cáo tuần",
+      badgeVariant: "default"
+    },
+    {
+      id: "admin-assignments",
+      groupId: "GVBM",
+      groupName: "Điều hành Chuyên môn",
+      title: "Phân công Giảng dạy Tổ CM",
+      desc: "Rà soát định mức tiết dạy, phân công chuyên môn giáo viên và danh sách lớp thuộc tổ.",
+      href: "/teacher/phan-cong-giang-day",
+      icon: BookMarked,
+      badgeText: `${finalMetrics.managedTeachersCount || 0} GV`,
+      badgeVariant: "secondary",
+      metricValue: finalMetrics.managedTeachersCount || 0
+    },
+    {
+      id: "admin-student-records",
+      groupId: "GVCN",
+      groupName: "Quản lý Học sinh",
+      title: "Hồ sơ Học sinh Toàn trường",
+      desc: "Tra cứu danh sách học sinh theo khối lớp, kết quả học tập và năng lực rèn luyện.",
+      href: "/teacher/ho-so-hoc-sinh",
+      icon: Users,
+      badgeText: "Hồ sơ 360°",
+      badgeVariant: "skyline"
+    },
+    {
+      id: "admin-digital-library",
+      groupId: "UTILITIES",
+      groupName: "Học liệu & Khảo sát",
+      title: "Thư viện Số & Kế hoạch Bài dạy",
+      desc: "Kho học liệu dùng chung của Tổ, giáo án điện tử và ngân hàng câu hỏi khảo sát.",
+      href: "/teacher/digital-library",
+      icon: BookOpen,
+      badgeText: "Học liệu số",
+      badgeVariant: "accent"
+    },
+    {
+      id: "admin-grading",
+      groupId: "GVBM",
+      groupName: "Điều hành Chuyên môn",
+      title: "Sổ điểm & Nhận xét",
+      desc: "Nhập điểm kiểm tra thường xuyên, giữa kỳ, cuối kỳ và viết nhận xét quá trình.",
+      href: "/teacher/so-diem-nhan-xet",
+      icon: ClipboardCheck,
+      badgeText: "Sổ điểm",
+      badgeVariant: "success"
+    },
+    {
+      id: "admin-surveys",
+      groupId: "UTILITIES",
+      groupName: "Học liệu & Khảo sát",
+      title: "Khảo sát Nhà trường",
+      desc: "Tham gia các phiếu khảo sát ý kiến định kỳ của Nhà trường dành cho cán bộ, giáo viên.",
+      href: "/teacher/surveys",
+      icon: FileText,
+      badgeText: "Khảo sát",
+      badgeVariant: "skyline"
+    }
+  ], [finalMetrics])
+
+  const currentActionsList = viewMode === "ADMIN" ? managerActionItems : actionItems
+
   const filteredActions = useMemo(() => {
-    return actionItems.filter((item) => {
+    return currentActionsList.filter((item) => {
       if (activeTab !== "ALL" && item.groupId !== activeTab) return false
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim()
@@ -300,7 +440,7 @@ export default function TeacherDashboard() {
       }
       return true
     })
-  }, [actionItems, activeTab, searchQuery])
+  }, [currentActionsList, activeTab, searchQuery])
 
   // Determine KPI color themes based on active campus theme
   const kpiSubjectTheme = useMemo(() => {
@@ -309,73 +449,151 @@ export default function TeacherDashboard() {
     return "pine"
   }, [campusTheme.type])
 
+  // Dynamic Tabs Configuration according to View Mode
+  const tabConfig = useMemo(() => {
+    if (viewMode === "ADMIN") {
+      return [
+        { id: "ALL" as const, label: `Tất cả (${managerActionItems.length})` },
+        { id: "GVBM" as const, label: "Điều hành Tổ CM" },
+        { id: "GVCN" as const, label: "Quản lý Học sinh" },
+        { id: "UTILITIES" as const, label: "Học liệu & Khảo sát" }
+      ]
+    }
+    return [
+      { id: "ALL" as const, label: `Tất cả (${actionItems.length})` },
+      { id: "GVCN" as const, label: "Công tác GVCN (4)" },
+      { id: "GVBM" as const, label: "Chuyên môn GVBM (4)" },
+      { id: "UTILITIES" as const, label: "Lịch & Tiện ích (2)" }
+    ]
+  }, [viewMode, managerActionItems.length, actionItems.length])
+
+  // Render cụm Controls: Cơ sở (Hill | Global | Hệ thống) và Chế độ (Quản lý | Cá nhân)
+  const renderTopControls = (isHeaderSlot = false) => (
+    <div className={`flex items-center gap-1.5 sm:gap-2 flex-wrap ${isHeaderSlot ? "animate-in fade-in duration-200" : ""}`}>
+      {/* 1. Cơ sở: Hill | Global | Hệ thống */}
+      <div className="flex items-center bg-slate-100/90 rounded-xl p-0.5 border border-slate-200/90 text-xs font-bold shadow-2xs">
+        <span className="px-2 text-slate-500 hidden md:inline text-[11px] font-semibold">Cơ sở:</span>
+        <button
+          type="button"
+          onClick={() => setCampusOverride("HILL")}
+          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+            campusTheme.type === "HILL"
+              ? "bg-[#AE882E] text-white shadow-xs font-black scale-105"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+          }`}
+          title="Sky-Line Hill (CS4 - Hội An/Điện Ngọc)"
+        >
+          Hill
+        </button>
+        <button
+          type="button"
+          onClick={() => setCampusOverride("GLOBAL")}
+          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+            campusTheme.type === "GLOBAL"
+              ? "bg-[#6E3D89] text-white shadow-xs font-black scale-105"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+          }`}
+          title="Sky-Line Global (CS3 - Quốc Tế)"
+        >
+          Global
+        </button>
+        <button
+          type="button"
+          onClick={() => setCampusOverride("STANDARD")}
+          className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+            campusTheme.type === "STANDARD"
+              ? "bg-[#00A19A] text-white shadow-xs font-black scale-105"
+              : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+          }`}
+          title="Sky-Line Hệ thống (CS1, CS2, CS5)"
+        >
+          Hệ thống
+        </button>
+      </div>
+
+      {/* 2. Chế độ: Quản lý | Cá nhân - Căn cứ vào vai trò tài khoản giáo viên */}
+      {isManager && (
+        <div className="bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/90 flex items-center gap-0.5 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => handleViewModeChange("ADMIN")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+              viewMode === "ADMIN"
+                ? "bg-[#003B3A] text-white shadow-xs font-black scale-105"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+            }`}
+            title="Chuyển sang Chế độ Quản lý Tổ chuyên môn / Đơn vị"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Chế độ Quản lý</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleViewModeChange("TEACHER")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+              viewMode === "TEACHER"
+                ? "bg-[#00A19A] text-white shadow-xs font-black scale-105"
+                : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+            }`}
+            title="Chuyển sang Chế độ Cá nhân (Giảng dạy & Chủ nhiệm)"
+          >
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>Chế độ Cá nhân</span>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <>
+      {/* HEADER PORTAL: ĐƯA CỤM CƠ SỞ VÀ CHẾ ĐỘ LÊN DÒNG THANH TIÊU ĐỀ CHÍNH (SQMS) */}
+      {headerPortalEl && createPortal(renderTopControls(true), headerPortalEl)}
+
       {/* MOBILE PWA VIEW (< 768px): SSM TODAY */}
       <div className="md:hidden w-full -m-4 sm:-m-6">
+        <div className="p-2.5 bg-white border-b border-slate-200/80 flex justify-center sticky top-16 z-20 shadow-2xs">
+          {renderTopControls(false)}
+        </div>
         <SSMTodayHome />
       </div>
 
       {/* DESKTOP VIEW (>= 768px): FULL TEACHER DASHBOARD 100% INTACT */}
       <div className="hidden md:block space-y-6 max-w-7xl mx-auto pb-20 sm:pb-8">
       
-      {/* CAMPUS THEME SELECTOR & PREVIEW BADGE */}
-      <div className="flex items-center justify-between gap-3 px-1 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-            Nhận diện cơ sở biên chế:
+      {/* TOP CONTROLS & CAMPUS BADGE BANNER */}
+      <div className="flex items-center justify-between gap-3 px-1 py-1 flex-wrap bg-white/90 backdrop-blur-sm p-3 rounded-2xl border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+            <School className="w-3.5 h-3.5 text-slate-400" />
+            Cơ sở biên chế:
           </span>
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs ${campusTheme.campusBadge.bg} ${campusTheme.campusBadge.text} ${campusTheme.campusBadge.border}`}>
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-2xs ${campusTheme.campusBadge.bg} ${campusTheme.campusBadge.text} ${campusTheme.campusBadge.border}`}>
             <span className={`w-2 h-2 rounded-full ${campusTheme.campusBadge.dotColor}`} />
             <span>{campusTheme.name}</span>
-            <span className="text-[10px] opacity-75">({campusTheme.locationName})</span>
+            <span className="text-[10px] font-normal opacity-75">({campusTheme.locationName})</span>
           </span>
+          {isManager && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80">
+              <Award className="w-3 h-3 text-amber-600" />
+              {metrics?.managedDepartmentName ? `Quản lý ${metrics.managedDepartmentName}` : "Cán bộ Quản lý / TTCM"}
+            </span>
+          )}
         </div>
 
-        {/* Quick Preview Switcher for Testing Campus Themes */}
-        <div className="flex items-center gap-1 bg-white border border-slate-200/80 p-1 rounded-xl shadow-2xs">
-          <span className="text-[11px] font-medium text-slate-400 px-2">Xem thử cơ sở:</span>
-          <button
-            type="button"
-            onClick={() => setCampusOverride("HILL")}
-            className={`px-2.5 py-0.5 rounded-lg text-xs font-bold transition-all ${
-              campusTheme.type === "HILL"
-                ? "bg-[#AE882E] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Sky-Line Hill
-          </button>
-          <button
-            type="button"
-            onClick={() => setCampusOverride("GLOBAL")}
-            className={`px-2.5 py-0.5 rounded-lg text-xs font-bold transition-all ${
-              campusTheme.type === "GLOBAL"
-                ? "bg-[#6E3D89] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Sky-Line Global
-          </button>
-          <button
-            type="button"
-            onClick={() => setCampusOverride("STANDARD")}
-            className={`px-2.5 py-0.5 rounded-lg text-xs font-bold transition-all ${
-              campusTheme.type === "STANDARD"
-                ? "bg-[#00A19A] text-white shadow-xs"
-                : "text-slate-600 hover:bg-slate-100"
-            }`}
-          >
-            Hệ thống chuẩn
-          </button>
-        </div>
+        {renderTopControls(false)}
       </div>
 
-      {/* 1. HERO WELCOME CARD - THIẾT KẾ ĐỘNG THEO THƯƠNG HIỆU CƠ SỞ */}
+      {/* 1. HERO WELCOME CARD - THIẾT KẾ ĐỘNG THEO THƯƠNG HIỆU CƠ SỞ & CHẾ ĐỘ */}
       <UserWelcomeCard
         userName={userName}
         userInitial={userInitial}
-        greetingSubtitle={currentDateInfo.timeGreeting}
+        greetingSubtitle={
+          viewMode === "ADMIN"
+            ? `${currentDateInfo.timeGreeting} • Đang xem không gian Điều hành & Quản lý ${metrics?.managedDepartmentName || "chuyên môn"}.`
+            : currentDateInfo.timeGreeting
+        }
         campusName={campusTheme.name}
         campusCode={campusTheme.code}
         teacherCode={metrics?.teacherInfo?.teacherCode}
@@ -409,10 +627,10 @@ export default function TeacherDashboard() {
                 borderColor: campusTheme.borderSubtle
               }}
             >
-              <BarChart3 className="w-3.5 h-3.5" />
+              {viewMode === "ADMIN" ? <Layers className="w-3.5 h-3.5" /> : <BarChart3 className="w-3.5 h-3.5" />}
             </div>
             <h2 className="text-sm font-bold text-slate-800 tracking-normal">
-              Chỉ số công tác & đánh giá
+              {viewMode === "ADMIN" ? "Chỉ số điều hành & quản lý chuyên môn" : "Chỉ số công tác & đánh giá"}
             </h2>
           </div>
 
@@ -428,78 +646,147 @@ export default function TeacherDashboard() {
         </div>
 
         {/* 5 KPI Cards Grid Đồng Nhất */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          <KPICard
-            title="Lớp Phụ Trách"
-            value={finalMetrics.totalClasses}
-            unit="lớp"
-            description="Lớp chủ nhiệm & bộ môn"
-            icon={GraduationCap}
-            badge="Đang giảng dạy"
-            colorTheme="teal"
-            href="/teacher/classes"
-            hrefLabel="Lớp phụ trách"
-            className="hover-lift"
-          />
+        {viewMode === "ADMIN" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <KPICard
+              title="Tổ Chuyên Môn"
+              value={finalMetrics.managedDepartmentName ? finalMetrics.managedDepartmentName.replace(/^Tổ\s+/i, "") : "Chuyên môn"}
+              unit="Đơn vị"
+              description="Đơn vị quản lý điều hành"
+              icon={Layers}
+              badge="Phụ trách"
+              colorTheme="teal"
+              href="/teacher/phan-cong-giang-day"
+              hrefLabel="Danh sách tổ"
+              className="hover-lift"
+            />
 
-          <KPICard
-            title="Tổng Học Sinh"
-            value={finalMetrics.totalStudents}
-            unit="học sinh"
-            description="Hồ sơ theo dõi 360°"
-            icon={Users}
-            badge="Quản lý dữ liệu"
-            colorTheme="emerald"
-            href="/teacher/ho-so-hoc-sinh"
-            hrefLabel="Hồ sơ học sinh"
-            className="hover-lift"
-          />
+            <KPICard
+              title="Đội Ngũ Giáo Viên"
+              value={finalMetrics.managedTeachersCount || 0}
+              unit="giáo viên"
+              description="Thành viên tổ bộ môn"
+              icon={Users}
+              badge="Biên chế tổ"
+              colorTheme="emerald"
+              href="/teacher/phan-cong-giang-day"
+              hrefLabel="Đội ngũ GV"
+              className="hover-lift"
+            />
 
-          <KPICard
-            title="Phân Công Môn"
-            value={finalMetrics.totalAssignments}
-            unit="môn học"
-            description="Định mức chuyên môn"
-            icon={BookOpen}
-            badge="Chuyên môn"
-            colorTheme={kpiSubjectTheme}
-            href="/teacher/phan-cong-giang-day"
-            hrefLabel="Định mức tiết dạy"
-            className="hover-lift"
-          />
+            <KPICard
+              title="Tiết Dự Giờ Tổ"
+              value={finalMetrics.managedDeptObservedCount || 0}
+              unit="tiết"
+              description="Đã thực hiện trong tổ"
+              icon={Eye}
+              badge="Tiến độ tổ"
+              colorTheme="amber"
+              href="/teacher/du-gio?tab=overview_slots"
+              hrefLabel="Điều hành dự giờ"
+              className="hover-lift"
+            />
 
-          <KPICard
-            title="Tiết Dự Giờ"
-            value={finalMetrics.totalObservedLessons || 0}
-            unit="tiết"
-            description="Phiếu dự giờ chuyên môn"
-            icon={Eye}
-            badge="Dự giờ CM"
-            colorTheme="amber"
-            href="/teacher/du-gio"
-            hrefLabel="Phiếu dự giờ"
-            className="hover-lift"
-          />
+            <KPICard
+              title="Dự Giờ Cá Nhân"
+              value={finalMetrics.totalObservedLessons || 0}
+              unit="tiết"
+              description="Chỉ tiêu cá nhân CBQL"
+              icon={Target}
+              badge="Cá nhân"
+              colorTheme={kpiSubjectTheme}
+              href="/teacher/du-gio"
+              hrefLabel="Sổ dự giờ"
+              className="hover-lift"
+            />
 
-          <KPICard
-            title="Cần Bồi Dưỡng"
-            value={finalMetrics.remedialStudentsCount || 0}
-            unit="học sinh"
-            description="Cần chú ý & hỗ trợ"
-            icon={Heart}
-            badge={finalMetrics.remedialStudentsCount ? "Cần lưu ý" : "Bình thường"}
-            colorTheme="rose"
-            href="/teacher/ho-tro-hoc-tap"
-            hrefLabel="Danh sách hỗ trợ"
-            className="col-span-2 sm:col-span-1 hover-lift"
-          />
-        </div>
+            <KPICard
+              title="Cần Bồi Dưỡng"
+              value={finalMetrics.remedialStudentsCount || 0}
+              unit="học sinh"
+              description="Học sinh cần chú ý"
+              icon={Heart}
+              badge={finalMetrics.remedialStudentsCount ? "Cần lưu ý" : "Bình thường"}
+              colorTheme="rose"
+              href="/teacher/ho-tro-hoc-tap"
+              hrefLabel="Danh sách hỗ trợ"
+              className="col-span-2 sm:col-span-1 hover-lift"
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <KPICard
+              title="Lớp Phụ Trách"
+              value={finalMetrics.totalClasses}
+              unit="lớp"
+              description="Lớp chủ nhiệm & bộ môn"
+              icon={GraduationCap}
+              badge="Đang giảng dạy"
+              colorTheme="teal"
+              href="/teacher/classes"
+              hrefLabel="Lớp phụ trách"
+              className="hover-lift"
+            />
+
+            <KPICard
+              title="Tổng Học Sinh"
+              value={finalMetrics.totalStudents}
+              unit="học sinh"
+              description="Hồ sơ theo dõi 360°"
+              icon={Users}
+              badge="Quản lý dữ liệu"
+              colorTheme="emerald"
+              href="/teacher/ho-so-hoc-sinh"
+              hrefLabel="Hồ sơ học sinh"
+              className="hover-lift"
+            />
+
+            <KPICard
+              title="Phân Công Môn"
+              value={finalMetrics.totalAssignments}
+              unit="môn học"
+              description="Định mức chuyên môn"
+              icon={BookOpen}
+              badge="Chuyên môn"
+              colorTheme={kpiSubjectTheme}
+              href="/teacher/phan-cong-giang-day"
+              hrefLabel="Định mức tiết dạy"
+              className="hover-lift"
+            />
+
+            <KPICard
+              title="Tiết Dự Giờ"
+              value={finalMetrics.totalObservedLessons || 0}
+              unit="tiết"
+              description="Phiếu dự giờ chuyên môn"
+              icon={Eye}
+              badge="Dự giờ CM"
+              colorTheme="amber"
+              href="/teacher/du-gio"
+              hrefLabel="Phiếu dự giờ"
+              className="hover-lift"
+            />
+
+            <KPICard
+              title="Cần Bồi Dưỡng"
+              value={finalMetrics.remedialStudentsCount || 0}
+              unit="học sinh"
+              description="Cần chú ý & hỗ trợ"
+              icon={Heart}
+              badge={finalMetrics.remedialStudentsCount ? "Cần lưu ý" : "Bình thường"}
+              colorTheme="rose"
+              href="/teacher/ho-tro-hoc-tap"
+              hrefLabel="Danh sách hỗ trợ"
+              className="col-span-2 sm:col-span-1 hover-lift"
+            />
+          </div>
+        )}
       </div>
 
       {/* 4. BỐ CỤC 2 CỘT THỰC HÀNH HÔM NAY (DAILY WORKFLOW BOARD) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         
-        {/* CỘT TRÁI (65%): LỊCH DẠY & CÔNG TÁC TRỌNG TÂM TRONG NGÀY */}
+        {/* CỘT TRÁI (65%): LỊCH DẠY / NHIỆM VỤ QUẢN LÝ TRỌNG TÂM */}
         <div className="lg:col-span-8 bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col justify-between">
           <div>
             {/* Khung Title Bảng Chuẩn Hóa */}
@@ -513,11 +800,11 @@ export default function TeacherDashboard() {
                     borderColor: campusTheme.borderSubtle
                   }}
                 >
-                  <CalendarDays className="w-4 h-4" />
+                  {viewMode === "ADMIN" ? <Layers className="w-4 h-4" /> : <CalendarDays className="w-4 h-4" />}
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-800 tracking-normal">
-                    Lịch dạy & Tiết học {currentDateInfo.dayName}
+                    {viewMode === "ADMIN" ? `Nhiệm vụ Quản lý & Điều hành ${currentDateInfo.dayName}` : `Lịch dạy & Tiết học ${currentDateInfo.dayName}`}
                   </h3>
                   <p className="text-[11px] font-medium text-slate-400 mt-0.5">
                     {currentDateInfo.dateStr} • Niên khóa {finalMetrics.academicYearName}
@@ -526,18 +813,18 @@ export default function TeacherDashboard() {
               </div>
 
               <Link
-                href="/teacher/thoi-khoa-bieu"
+                href={viewMode === "ADMIN" ? "/teacher/du-gio?tab=overview_slots" : "/teacher/thoi-khoa-bieu"}
                 className="text-xs font-semibold flex items-center gap-1 group transition-colors"
                 style={{ color: campusTheme.primaryColor }}
               >
-                <span>Toàn bộ TKB tuần</span>
+                <span>{viewMode === "ADMIN" ? "Điều hành dự giờ" : "Toàn bộ TKB tuần"}</span>
                 <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </Link>
             </div>
 
-            {/* Nội dung danh sách tiết học trong ngày */}
+            {/* Nội dung danh sách nhiệm vụ / tiết học trong ngày */}
             <div className="p-4 sm:p-5 space-y-3.5">
-              {/* Lời nhắn sư phạm định hướng */}
+              {/* Lời nhắn sư phạm / quản lý định hướng */}
               <div
                 className="border rounded-2xl p-4 flex items-start gap-3 transition-colors"
                 style={{
@@ -547,83 +834,159 @@ export default function TeacherDashboard() {
               >
                 <Clock className="w-4 h-4 mt-0.5 shrink-0" style={{ color: campusTheme.primaryColor }} />
                 <div className="text-xs text-slate-600 leading-relaxed font-normal">
-                  <span className="font-bold text-slate-800">Trọng tâm hôm nay: </span>
-                  Theo dõi chuyên cần đầu giờ, hoàn thiện nhận xét đánh giá thường xuyên trên Sổ điểm và chủ động hỗ trợ học sinh có nhu cầu bồi dưỡng.
+                  <span className="font-bold text-slate-800">
+                    {viewMode === "ADMIN" ? "Trọng tâm điều hành: " : "Trọng tâm hôm nay: "}
+                  </span>
+                  {viewMode === "ADMIN"
+                    ? `Theo dõi chỉ tiêu dự giờ của các giáo viên trong ${metrics?.managedDepartmentName || "tổ bộ môn"}, kiểm tra tiến độ cập nhật Sổ điểm - nhận xét và chuẩn bị nội dung sinh hoạt chuyên môn định kỳ.`
+                    : "Theo dõi chuyên cần đầu giờ, hoàn thiện nhận xét đánh giá thường xuyên trên Sổ điểm và chủ động hỗ trợ học sinh có nhu cầu bồi dưỡng."}
                 </div>
               </div>
 
-              {/* Bảng phân bổ nhanh các tiết dạy với các nút tác vụ 1 chạm (min 44px) */}
+              {/* Bảng phân bổ nhanh với các nút tác vụ 1 chạm (min 44px) */}
               <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
                 <div className="bg-slate-50/90 border-b border-slate-200/70 px-4 py-2.5 flex items-center justify-between text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  <span>Tiết học & Nhiệm vụ</span>
+                  <span>{viewMode === "ADMIN" ? "Nhiệm vụ quản lý & Tổ CM" : "Tiết học & Nhiệm vụ"}</span>
                   <span>Tác vụ trực tiếp</span>
                 </div>
                 <div className="divide-y divide-slate-100 text-xs font-normal text-slate-700">
-                  {/* Row 1: Giảng dạy */}
-                  <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 text-white shadow-2xs"
-                        style={{ background: campusTheme.primaryColor }}
-                      >
-                        1
-                      </span>
-                      <div>
-                        <div className="font-bold text-slate-800 text-sm">Lớp Phụ Trách Giảng Dạy</div>
-                        <div className="text-xs text-slate-400">Theo Thời khóa biểu chính khóa</div>
+                  {viewMode === "ADMIN" ? (
+                    <>
+                      {/* Row 1: Điều hành Dự giờ Tổ */}
+                      <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 text-white shadow-2xs"
+                            style={{ background: campusTheme.primaryColor }}
+                          >
+                            1
+                          </span>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm">Điều Hành Dự Giờ Tổ Chuyên Môn</div>
+                            <div className="text-xs text-slate-400">Theo dõi chỉ tiêu và duyệt đăng ký dự giờ của GV trong tổ</div>
+                          </div>
+                        </div>
+                        <Link
+                          href="/teacher/du-gio?tab=overview_slots"
+                          className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 min-h-[40px] sm:min-h-[36px] ${campusTheme.btnPrimaryStyle}`}
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>Mở Điều hành Dự giờ</span>
+                        </Link>
                       </div>
-                    </div>
-                    <Link
-                      href="/teacher/so-diem-nhan-xet"
-                      className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 min-h-[40px] sm:min-h-[36px] ${campusTheme.btnPrimaryStyle}`}
-                    >
-                      <ClipboardCheck className="w-4 h-4" />
-                      <span>Vào Sổ điểm & Nhận xét</span>
-                    </Link>
-                  </div>
 
-                  {/* Row 2: Chủ nhiệm */}
-                  <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 text-white shadow-2xs"
-                        style={{ background: campusTheme.accentColor }}
-                      >
-                        2
-                      </span>
-                      <div>
-                        <div className="font-bold text-slate-800 text-sm">Công Tác Chủ Nhiệm & Chuyên Cần</div>
-                        <div className="text-xs text-slate-400">Điểm danh và liên lạc phụ huynh học sinh</div>
+                      {/* Row 2: Phân tích Chất lượng GD */}
+                      <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 text-white shadow-2xs"
+                            style={{ background: campusTheme.accentColor }}
+                          >
+                            2
+                          </span>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm">Phân Tích Chất Lượng Đánh Giá GD</div>
+                            <div className="text-xs text-slate-400">Báo cáo khảo sát đầu vào, giữa kỳ và tiến độ chấm điểm</div>
+                          </div>
+                        </div>
+                        <Link
+                          href="/teacher/phan-tich-chat-luong"
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300 transition-all shadow-2xs active:scale-95 min-h-[40px] sm:min-h-[36px]"
+                        >
+                          <BarChart3 className="w-4 h-4 text-slate-500" />
+                          <span>Xem Báo cáo CLGD</span>
+                        </Link>
                       </div>
-                    </div>
-                    <Link
-                      href="/teacher/classes"
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300 transition-all shadow-2xs active:scale-95 min-h-[40px] sm:min-h-[36px]"
-                    >
-                      <Users className="w-4 h-4 text-slate-500" />
-                      <span>Xem Lớp Chủ nhiệm</span>
-                    </Link>
-                  </div>
 
-                  {/* Row 3: Dự giờ chuyên môn */}
-                  <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span className="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                        3
-                      </span>
-                      <div>
-                        <div className="font-bold text-slate-800 text-sm">Dự Giờ & Phát Triển Chuyên Môn</div>
-                        <div className="text-xs text-slate-400">Đăng ký tiết thao giảng hoặc đi dự giờ đồng nghiệp</div>
+                      {/* Row 3: Báo cáo Tuần & Sinh hoạt Tổ */}
+                      <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                            3
+                          </span>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm">Báo Cáo Tuần & Sinh Hoạt Tổ</div>
+                            <div className="text-xs text-slate-400">Cập nhật biên bản sinh hoạt tổ và kế hoạch tuần</div>
+                          </div>
+                        </div>
+                        <Link
+                          href="/teacher/bao-cao-tuan"
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-all shadow-2xs active:scale-95 min-h-[40px] sm:min-h-[36px]"
+                        >
+                          <ClipboardCheck className="w-4 h-4 text-amber-600" />
+                          <span>Mở Báo cáo Tuần</span>
+                        </Link>
                       </div>
-                    </div>
-                    <Link
-                      href="/teacher/du-gio"
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-all shadow-2xs active:scale-95 min-h-[40px] sm:min-h-[36px]"
-                    >
-                      <Eye className="w-4 h-4 text-amber-600" />
-                      <span>Sổ Dự giờ</span>
-                    </Link>
-                  </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Row 1: Giảng dạy */}
+                      <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 text-white shadow-2xs"
+                            style={{ background: campusTheme.primaryColor }}
+                          >
+                            1
+                          </span>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm">Lớp Phụ Trách Giảng Dạy</div>
+                            <div className="text-xs text-slate-400">Theo Thời khóa biểu chính khóa</div>
+                          </div>
+                        </div>
+                        <Link
+                          href="/teacher/so-diem-nhan-xet"
+                          className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 min-h-[40px] sm:min-h-[36px] ${campusTheme.btnPrimaryStyle}`}
+                        >
+                          <ClipboardCheck className="w-4 h-4" />
+                          <span>Vào Sổ điểm & Nhận xét</span>
+                        </Link>
+                      </div>
+
+                      {/* Row 2: Chủ nhiệm */}
+                      <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 text-white shadow-2xs"
+                            style={{ background: campusTheme.accentColor }}
+                          >
+                            2
+                          </span>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm">Công Tác Chủ Nhiệm & Chuyên Cần</div>
+                            <div className="text-xs text-slate-400">Điểm danh và liên lạc phụ huynh học sinh</div>
+                          </div>
+                        </div>
+                        <Link
+                          href="/teacher/classes"
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300 transition-all shadow-2xs active:scale-95 min-h-[40px] sm:min-h-[36px]"
+                        >
+                          <Users className="w-4 h-4 text-slate-500" />
+                          <span>Xem Lớp Chủ nhiệm</span>
+                        </Link>
+                      </div>
+
+                      {/* Row 3: Dự giờ chuyên môn */}
+                      <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="w-7 h-7 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                            3
+                          </span>
+                          <div>
+                            <div className="font-bold text-slate-800 text-sm">Dự Giờ & Phát Triển Chuyên Môn</div>
+                            <div className="text-xs text-slate-400">Đăng ký tiết thao giảng hoặc đi dự giờ đồng nghiệp</div>
+                          </div>
+                        </div>
+                        <Link
+                          href="/teacher/du-gio"
+                          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-all shadow-2xs active:scale-95 min-h-[40px] sm:min-h-[36px]"
+                        >
+                          <Eye className="w-4 h-4 text-amber-600" />
+                          <span>Sổ Dự giờ</span>
+                        </Link>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -633,85 +996,173 @@ export default function TeacherDashboard() {
         {/* CỘT PHẢI (35%): THẺ HÀNH ĐỘNG NHANH & KHẢO SÁT */}
         <div className="lg:col-span-4 space-y-4">
           
-          {/* Card 1: Học sinh cần bồi dưỡng */}
-          <div className="bg-white rounded-3xl border border-rose-100 p-5 shadow-sm flex flex-col justify-between hover-lift">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-2xs">
-                    <Heart className="w-4 h-4" />
+          {/* Card 1: Học sinh cần bồi dưỡng / Tiến độ tổ CM */}
+          {viewMode === "ADMIN" ? (
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between hover-lift">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs"
+                      style={{
+                        backgroundColor: campusTheme.lightBg,
+                        color: campusTheme.primaryColor,
+                        borderColor: campusTheme.borderSubtle
+                      }}
+                    >
+                      <Layers className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Tổ {metrics?.managedDepartmentName ? metrics.managedDepartmentName.replace(/^Tổ\s+/i, "") : "Chuyên Môn"}
+                    </h3>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-800">
-                    Học sinh cần bồi dưỡng
-                  </h3>
+                  <Badge variant="skyline">
+                    {finalMetrics.managedDeptObservedCount || 0} tiết hoàn thành
+                  </Badge>
                 </div>
-                <Badge variant={finalMetrics.remedialStudentsCount ? "accent" : "secondary"}>
-                  {finalMetrics.remedialStudentsCount || 0} học sinh
-                </Badge>
+                <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                  Tổ chuyên môn hiện có {finalMetrics.managedTeachersCount || 0} giáo viên biên chế. Hãy theo dõi sát sao tiến độ dự giờ để đảm bảo định mức chuyên môn toàn trường.
+                </p>
               </div>
-              <p className="text-xs text-slate-500 font-normal leading-relaxed">
-                {finalMetrics.remedialStudentsCount
-                  ? `Có ${finalMetrics.remedialStudentsCount} học sinh trong danh sách cần phụ đạo văn hóa hoặc hỗ trợ năng lực.`
-                  : "Hiện không có học sinh nào nằm trong danh sách cần hỗ trợ đặc biệt. Chúc mừng Thầy/Cô!"}
-              </p>
+
+              <Link
+                href="/teacher/du-gio?tab=overview_slots"
+                className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between group transition-colors"
+                style={{ color: campusTheme.primaryColor }}
+              >
+                <span>Xem tiến độ dự giờ tổ</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
             </div>
+          ) : (
+            <div className="bg-white rounded-3xl border border-rose-100 p-5 shadow-sm flex flex-col justify-between hover-lift">
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 shadow-2xs">
+                      <Heart className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Học sinh cần bồi dưỡng
+                    </h3>
+                  </div>
+                  <Badge variant={finalMetrics.remedialStudentsCount ? "accent" : "secondary"}>
+                    {finalMetrics.remedialStudentsCount || 0} học sinh
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                  {finalMetrics.remedialStudentsCount
+                    ? `Có ${finalMetrics.remedialStudentsCount} học sinh trong danh sách cần phụ đạo văn hóa hoặc hỗ trợ năng lực.`
+                    : "Hiện không có học sinh nào nằm trong danh sách cần hỗ trợ đặc biệt. Chúc mừng Thầy/Cô!"}
+                </p>
+              </div>
 
-            <Link
-              href="/teacher/ho-tro-hoc-tap"
-              className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center justify-between group"
+              <Link
+                href="/teacher/ho-tro-hoc-tap"
+                className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center justify-between group"
+              >
+                <span>Mở Sổ hỗ trợ học tập</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          )}
+
+          {/* Card 2: Phân công giảng dạy tổ / Khảo sát Nhà trường */}
+          {viewMode === "ADMIN" ? (
+            <div
+              className="bg-white rounded-3xl border p-5 shadow-sm flex flex-col justify-between hover-lift"
+              style={{ borderColor: campusTheme.borderSubtle }}
             >
-              <span>Mở Sổ hỗ trợ học tập</span>
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-
-          {/* Card 2: Khảo sát ý kiến định kỳ */}
-          <div
-            className="bg-white rounded-3xl border p-5 shadow-sm flex flex-col justify-between hover-lift"
-            style={{ borderColor: campusTheme.borderSubtle }}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs"
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs"
+                      style={{
+                        backgroundColor: campusTheme.lightBg,
+                        color: campusTheme.primaryColor,
+                        borderColor: campusTheme.borderSubtle
+                      }}
+                    >
+                      <BookMarked className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Phân công Giảng dạy Tổ
+                    </h3>
+                  </div>
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border"
                     style={{
-                      backgroundColor: campusTheme.lightBg,
-                      color: campusTheme.primaryColor,
+                      backgroundColor: campusTheme.lightAccentBg,
+                      color: campusTheme.accentColor,
                       borderColor: campusTheme.borderSubtle
                     }}
                   >
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-800">
-                    Khảo sát Nhà trường
-                  </h3>
+                    {finalMetrics.managedTeachersCount || 0} GV
+                  </span>
                 </div>
-                <span
-                  className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border"
-                  style={{
-                    backgroundColor: campusTheme.lightAccentBg,
-                    color: campusTheme.accentColor,
-                    borderColor: campusTheme.borderSubtle
-                  }}
-                >
-                  Định kỳ
-                </span>
+                <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                  Rà soát định mức tiết dạy, kiểm tra phân công chuyên môn giáo viên và danh sách lớp thuộc tổ phụ trách.
+                </p>
               </div>
-              <p className="text-xs text-slate-500 font-normal leading-relaxed">
-                Đóng góp ý kiến chuyên môn định kỳ để nâng cao chất lượng môi trường sư phạm trường Sky-Line.
-              </p>
-            </div>
 
-            <Link
-              href="/teacher/surveys"
-              className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between group transition-colors"
-              style={{ color: campusTheme.primaryColor }}
+              <Link
+                href="/teacher/phan-cong-giang-day"
+                className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between group transition-colors"
+                style={{ color: campusTheme.primaryColor }}
+              >
+                <span>Xem phân công giảng dạy</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          ) : (
+            <div
+              className="bg-white rounded-3xl border p-5 shadow-sm flex flex-col justify-between hover-lift"
+              style={{ borderColor: campusTheme.borderSubtle }}
             >
-              <span>Xem danh sách phiếu khảo sát</span>
-              <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center border shadow-2xs"
+                      style={{
+                        backgroundColor: campusTheme.lightBg,
+                        color: campusTheme.primaryColor,
+                        borderColor: campusTheme.borderSubtle
+                      }}
+                    >
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Khảo sát Nhà trường
+                    </h3>
+                  </div>
+                  <span
+                    className="px-2.5 py-0.5 rounded-full text-[11px] font-bold border"
+                    style={{
+                      backgroundColor: campusTheme.lightAccentBg,
+                      color: campusTheme.accentColor,
+                      borderColor: campusTheme.borderSubtle
+                    }}
+                  >
+                    Định kỳ
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 font-normal leading-relaxed">
+                  Đóng góp ý kiến chuyên môn định kỳ để nâng cao chất lượng môi trường sư phạm trường Sky-Line.
+                </p>
+              </div>
+
+              <Link
+                href="/teacher/surveys"
+                className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold flex items-center justify-between group transition-colors"
+                style={{ color: campusTheme.primaryColor }}
+              >
+                <span>Xem danh sách phiếu khảo sát</span>
+                <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          )}
 
         </div>
       </div>
@@ -719,48 +1170,21 @@ export default function TeacherDashboard() {
       {/* 5. DẢI TÁC VỤ THƯỜNG NHẬT GỌN GÀNG (COMPACT ESSENTIALS STRIP) */}
       <div className="space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-3xl border border-slate-200/80 shadow-sm">
-          {/* Tabs Lọc Chuyên Môn */}
+          {/* Tabs Lọc Chuyên Môn Động */}
           <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-2xl overflow-x-auto no-scrollbar">
-            <button
-              onClick={() => setActiveTab("ALL")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === "ALL"
-                  ? "bg-white text-slate-800 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Tất cả ({actionItems.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("GVCN")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === "GVCN"
-                  ? "bg-white text-slate-800 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Công tác GVCN (4)
-            </button>
-            <button
-              onClick={() => setActiveTab("GVBM")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === "GVBM"
-                  ? "bg-white text-slate-800 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Chuyên môn GVBM (5)
-            </button>
-            <button
-              onClick={() => setActiveTab("UTILITIES")}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === "UTILITIES"
-                  ? "bg-white text-slate-800 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-            >
-              Lịch & Tiện ích (2)
-            </button>
+            {tabConfig.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? "bg-white text-slate-800 shadow-2xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           {/* Ô tìm kiếm nhanh tác vụ */}
@@ -823,41 +1247,83 @@ export default function TeacherDashboard() {
 
       {/* 6. MOBILE FLOATING ACTION DOCK (THANH LỐI TẮT DÀNH CHO ĐIỆN THOẠI) */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] px-2 py-2 flex items-center justify-around">
-        <Link
-          href="/teacher/so-diem-nhan-xet"
-          className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
-        >
-          <ClipboardCheck className="w-5 h-5 text-[#00A19A]" />
-          <span className="text-[10px] font-bold">Sổ điểm</span>
-        </Link>
-        <Link
-          href="/teacher/classes"
-          className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
-        >
-          <Users className="w-5 h-5 text-slate-500" />
-          <span className="text-[10px] font-bold">Lớp CN</span>
-        </Link>
-        <Link
-          href="/teacher/thoi-khoa-bieu"
-          className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
-        >
-          <CalendarDays className="w-5 h-5 text-slate-500" />
-          <span className="text-[10px] font-bold">Lịch dạy</span>
-        </Link>
-        <Link
-          href="/teacher/du-gio"
-          className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
-        >
-          <Eye className="w-5 h-5 text-amber-500" />
-          <span className="text-[10px] font-bold">Dự giờ</span>
-        </Link>
-        <Link
-          href="/teacher/ho-tro-hoc-tap"
-          className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-rose-600 transition-colors"
-        >
-          <Heart className="w-5 h-5 text-rose-500" />
-          <span className="text-[10px] font-bold">Hỗ trợ HS</span>
-        </Link>
+        {viewMode === "ADMIN" ? (
+          <>
+            <Link
+              href="/teacher/du-gio?tab=overview_slots"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+            >
+              <Eye className="w-5 h-5 text-amber-500" />
+              <span className="text-[10px] font-bold">Dự giờ tổ</span>
+            </Link>
+            <Link
+              href="/teacher/phan-tich-chat-luong"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+            >
+              <BarChart3 className="w-5 h-5 text-[#00A19A]" />
+              <span className="text-[10px] font-bold">Báo cáo CL</span>
+            </Link>
+            <Link
+              href="/teacher/bao-cao-tuan"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+            >
+              <ClipboardCheck className="w-5 h-5 text-emerald-500" />
+              <span className="text-[10px] font-bold">Báo cáo tuần</span>
+            </Link>
+            <Link
+              href="/teacher/phan-cong-giang-day"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+            >
+              <BookMarked className="w-5 h-5 text-sky-500" />
+              <span className="text-[10px] font-bold">Phân công</span>
+            </Link>
+            <Link
+              href="/teacher/ho-so-hoc-sinh"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-rose-600 transition-colors"
+            >
+              <Users className="w-5 h-5 text-purple-500" />
+              <span className="text-[10px] font-bold">Hồ sơ HS</span>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/teacher/so-diem-nhan-xet"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+            >
+              <ClipboardCheck className="w-5 h-5 text-[#00A19A]" />
+              <span className="text-[10px] font-bold">Sổ điểm</span>
+            </Link>
+            <Link
+              href="/teacher/classes"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+            >
+              <Users className="w-5 h-5 text-slate-500" />
+              <span className="text-[10px] font-bold">Lớp CN</span>
+            </Link>
+            <Link
+              href="/teacher/thoi-khoa-bieu"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+            >
+              <CalendarDays className="w-5 h-5 text-slate-500" />
+              <span className="text-[10px] font-bold">Lịch dạy</span>
+            </Link>
+            <Link
+              href="/teacher/du-gio"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-[#00A19A] transition-colors"
+            >
+              <Eye className="w-5 h-5 text-amber-500" />
+              <span className="text-[10px] font-bold">Dự giờ</span>
+            </Link>
+            <Link
+              href="/teacher/ho-tro-hoc-tap"
+              className="flex flex-col items-center gap-1 p-1.5 text-slate-600 hover:text-rose-600 transition-colors"
+            >
+              <Heart className="w-5 h-5 text-rose-500" />
+              <span className="text-[10px] font-bold">Hỗ trợ HS</span>
+            </Link>
+          </>
+        )}
       </div>
 
       </div>

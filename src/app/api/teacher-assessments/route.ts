@@ -497,6 +497,35 @@ export async function GET(req: any) {
                             subjectName: true,
                             subjectCode: true
                         }
+                    },
+                    departmentId: true,
+                    departmentRel: {
+                        select: {
+                            id: true,
+                            name: true,
+                            blockCM: true
+                        }
+                    },
+                    departmentAssignments: {
+                        select: {
+                            id: true,
+                            departmentId: true,
+                            position: true,
+                            department: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    blockCM: true
+                                }
+                            }
+                        }
+                    },
+                    divisionAssignments: {
+                        select: {
+                            id: true,
+                            divisionCode: true,
+                            roleInDivision: true
+                        }
                     }
                 }
             }),
@@ -640,6 +669,60 @@ export async function GET(req: any) {
 
         const remedialStudentsCount = new Set(filteredTargets.map(t => t.studentId)).size;
 
+        const sessionRole = ((session.user as any)?.role || "").toUpperCase().trim();
+        const isTTCM = (teacher.departmentAssignments || []).some((da: any) => 
+            ["TTCM", "TPCM", "TO_TRUONG", "TO_PHO"].includes((da.position || "").toUpperCase().trim()) ||
+            (da.position || "").toLowerCase().includes("tổ trưởng") ||
+            (da.position || "").toLowerCase().includes("tổ phó")
+        ) || (teacher.position || "").toLowerCase().includes("tổ trưởng") || (teacher.positions || "").toLowerCase().includes("tổ trưởng");
+
+        const isTBP = ((teacher.divisionAssignments || []).length > 0) ||
+            (teacher.position || "").toLowerCase().includes("trưởng bộ phận") ||
+            (teacher.positions || "").toLowerCase().includes("trưởng bộ phận");
+
+        const isBGH = ["ADMIN", "SUPER_ADMIN", "BGH", "BGH_MN", "BAN_DHCM", "KT_DBCL"].includes(sessionRole) ||
+            (teacher.position || "").toLowerCase().includes("hiệu trưởng") ||
+            (teacher.position || "").toLowerCase().includes("ban giám hiệu") ||
+            (teacher.position || "").toLowerCase().includes("ban đhcm");
+
+        const isManagerRole = isTTCM || isTBP || isBGH || ["ADMIN", "SUPER_ADMIN", "TTCM", "TBP", "BGH", "BAN_DHCM"].includes(sessionRole);
+
+        let managedDepartmentName: string | null = null;
+        let managedDepartmentId: string | null = null;
+        let managedTeachersCount = 0;
+        let managedDeptObservedCount = 0;
+
+        if (isManagerRole) {
+            const primaryDeptAssignment = teacher.departmentAssignments?.[0];
+            const deptId = primaryDeptAssignment?.departmentId || teacher.departmentId;
+            if (deptId) {
+                managedDepartmentId = deptId;
+                const dept = await prisma.department.findUnique({
+                    where: { id: deptId },
+                    select: {
+                        id: true,
+                        name: true,
+                        teachers: { select: { id: true } }
+                    }
+                });
+                if (dept) {
+                    managedDepartmentName = dept.name;
+                    managedTeachersCount = dept.teachers?.length || 0;
+                    const deptTeacherIds = dept.teachers.map((t: any) => t.id);
+                    if (deptTeacherIds.length > 0) {
+                        managedDeptObservedCount = await prisma.observationRegistration.count({
+                            where: {
+                                teacherId: { in: deptTeacherIds },
+                                isApproved: true,
+                                evaluation: { isNot: null },
+                                slot: { AND: slotAndConditions }
+                            }
+                        }).catch(() => 0);
+                    }
+                }
+            }
+        }
+
         return NextResponse.json({
             totalClasses: homeroomClassesCount,
             totalStudents: homeroomStudentsCount,
@@ -648,6 +731,11 @@ export async function GET(req: any) {
             academicYearName,
             totalObservedLessons,
             remedialStudentsCount,
+            isManagerRole,
+            managedDepartmentName,
+            managedDepartmentId,
+            managedTeachersCount,
+            managedDeptObservedCount,
             campus: teacher.campus ? {
                 id: teacher.campus.id,
                 campusCode: teacher.campus.campusCode,
