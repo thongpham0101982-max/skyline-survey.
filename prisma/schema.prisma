@@ -97,6 +97,8 @@ model Teacher {
   inspirationShares          InspirationShare[]
   challengeAdoptions         ChallengeAdoption[]
   badges                     TeacherBadge[]
+  ctqtPrimaryAssignments     CtqtTeachingAssignment[] @relation("CtqtPrimaryTeacher")
+  ctqtDelegatedAssignments   CtqtTeachingAssignment[] @relation("CtqtDelegatedTeacher")
 
   @@index([campusId])
   @@index([departmentId])
@@ -171,6 +173,9 @@ model AcademicYear {
   competencyImportBatches        ImportBatch[]
   competencyAssessments          StudentCompetencyAssessment[]
   competencySummaries            StudentSubjectCompetencySummary[]
+  ctqtTeachingAssignments        CtqtTeachingAssignment[]
+  ctqtGradeEntries               CtqtGradeEntry[]
+  ctqtCompetencyEntries          CtqtCompetencyEntry[]
 }
 
 model Class {
@@ -194,6 +199,9 @@ model Class {
   generalEnrollments   InputAssessmentStudent[]          @relation("GeneralEnrollmentClass")
   preschoolEnrollments PreschoolInputAssessmentStudent[] @relation("PreschoolEnrollmentClass")
   subjectGradeEntries  SubjectGradeEntry[]
+  ctqtTeachingAssignments CtqtTeachingAssignment[]
+  ctqtGradeEntries       CtqtGradeEntry[]
+  ctqtCompetencyEntries  CtqtCompetencyEntry[]
 
   @@index([campusId])
   @@index([academicYearId])
@@ -215,6 +223,7 @@ model Student {
   id                     String                      @id @default(cuid())
   studentCode            String
   studentName            String
+  englishName            String?
   //  userId         String?             @unique
   classId                String
   campusId               String
@@ -258,6 +267,8 @@ model Student {
   competencyAssessments  StudentCompetencyAssessment[]
   competencySummaries    StudentSubjectCompetencySummary[]
   photo                  StudentPhoto?
+  ctqtGradeEntries       CtqtGradeEntry[]
+  ctqtCompetencyEntries  CtqtCompetencyEntry[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -2682,4 +2693,97 @@ model DeviceSession {
   @@unique([userId, deviceId])
   @@index([userId])
   @@index([deviceId])
+}
+
+// ============================================================================
+// CHƯƠNG TRÌNH QUỐC TẾ (CTQT) - GRADEBOOK & REPORT CARD
+// ============================================================================
+
+model CtqtTeachingAssignment {
+  id                  String   @id @default(cuid())
+  academicYearId      String
+  semester            Int      @default(1)
+  classId             String
+  subjectCode         String   // ENG, SCI, MATH, GLOBAL_STUDIES, AE, IELTS, AR, CORE_COMP
+  
+  primaryTeacherId    String   // GVBM chính (người nhập điểm)
+  delegatedTeacherId  String?  // GVTA được ủy quyền rà soát
+  
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  class               Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYear        AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  primaryTeacher      Teacher      @relation("CtqtPrimaryTeacher", fields: [primaryTeacherId], references: [id], onDelete: Cascade)
+  delegatedTeacher    Teacher?     @relation("CtqtDelegatedTeacher", fields: [delegatedTeacherId], references: [id], onDelete: SetNull)
+
+  @@unique([academicYearId, semester, classId, subjectCode])
+  @@index([classId])
+  @@index([primaryTeacherId])
+  @@index([delegatedTeacherId])
+}
+
+model CtqtGradeEntry {
+  id                  String   @id @default(cuid())
+  academicYearId      String
+  semester            Int      @default(1)
+  classId             String
+  studentId           String
+  subjectCode         String   // ENG, SCI, MATH, GLOBAL_STUDIES, AE, IELTS, AR
+  
+  progressScores      String?  // JSON array: "[95, 95, 90, 90]" hoặc "[87]"
+  midTermScore        Float?
+  endTermScore        Float?
+  gpaScore            Float?
+  
+  assessmentContentEn String?
+  assessmentContentVi String?
+  ieltsScore          Float?
+  
+  commentEn           String?  // COMMENTS (tiếng Anh)
+  commentVi           String?  // NHẬN XÉT (tiếng Việt)
+  
+  reviewStatus        String   @default("DRAFT") // DRAFT, PENDING_REVIEW, CHANGES_REQUESTED, APPROVED
+  reviewerNote        String?
+  reviewedBy          String?
+  reviewedAt          DateTime?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  student             Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class               Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYear        AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([academicYearId, semester, classId, studentId, subjectCode])
+  @@index([classId, subjectCode])
+  @@index([studentId])
+}
+
+model CtqtCompetencyEntry {
+  id                  String   @id @default(cuid())
+  academicYearId      String
+  semester            Int      @default(1)
+  classId             String
+  studentId           String
+  
+  communication       String?  // E, S, N, U
+  collaboration       String?  // E, S, N, U
+  responsibility      String?  // E, S, N, U
+  criticalThinking    String?  // E, S, N, U
+  creativity          String?  // E, S, N, U
+  problemSolving      String?  // E, S, N, U
+  
+  evaluatedBy         String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  student             Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class               Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYear        AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([academicYearId, semester, classId, studentId])
+  @@index([classId])
+  @@index([studentId])
 }

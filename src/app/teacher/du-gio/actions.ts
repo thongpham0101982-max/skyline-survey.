@@ -6226,7 +6226,7 @@ export async function createAssignedObservation(data: {
           const emailSubject = `[Sky-line SMS - Dự Giờ] Thông báo Lịch Chỉ định dự giờ: "${newSlot.topic}"`;
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-              <div style="background: linear-gradient(135deg, #003B3A 0%, #007068 100%); padding: 18px; border-radius: 8px; color: #fff; text-align: center;">
+              <div style="background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%); padding: 18px; border-radius: 8px; color: #fff; text-align: center;">
                 <h2 style="margin: 0; font-size: 18px; letter-spacing: 0.5px;">THÔNG BÁO CHỈ ĐỊNH DỰ GIỜ CHUYÊN MÔN</h2>
                 <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Phân hệ Quản lý Dự giờ & Phát triển Chuyên môn Sky-Line</p>
               </div>
@@ -6246,7 +6246,7 @@ export async function createAssignedObservation(data: {
                 </p>
               </div>
               <div style="text-align: center; padding-top: 10px;">
-                <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=my_schedule" style="display: inline-block; background-color: #008B82; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px;">Xem Lịch Chi Tiết Trên SSM</a>
+                <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=my_schedule" style="display: inline-block; background-color: #00A19A; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px;">Xem Lịch Chi Tiết Trên SSM</a>
               </div>
             </div>
           `;
@@ -6280,14 +6280,14 @@ export async function createAssignedObservation(data: {
             const obsEmailSubject = `[Sky-line SMS - Dự Giờ] Phân công dự giờ giáo viên: ${hostTeacher.teacherName}`;
             const obsEmailHtml = `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-                <div style="background: linear-gradient(135deg, #003B3A 0%, #007068 100%); padding: 18px; border-radius: 8px; color: #fff; text-align: center;">
+                <div style="background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%); padding: 18px; border-radius: 8px; color: #fff; text-align: center;">
                   <h2 style="margin: 0; font-size: 18px; letter-spacing: 0.5px;">PHÂN CÔNG THAM GIA DỰ GIỜ CHUYÊN MÔN</h2>
                   <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Phân hệ Quản lý Dự giờ & Phát triển Chuyên môn Sky-Line</p>
                 </div>
                 <div style="padding: 20px 0; color: #334155; font-size: 14px; line-height: 1.6;">
                   <p>Kính gửi Thầy/Cô <strong>${obs.teacherName}</strong>,</p>
                   <p>Thầy/Cô được phân công tham gia dự giờ giáo viên <strong>${hostTeacher.teacherName}</strong> theo kế hoạch chỉ định chuyên môn:</p>
-                  <div style="background-color: #f8fafc; border-left: 4px solid #008B82; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
+                  <div style="background-color: #f8fafc; border-left: 4px solid #00A19A; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
                     <p style="margin: 4px 0;"><strong>Giáo viên dạy:</strong> ${hostTeacher.teacherName}</p>
                     <p style="margin: 4px 0;"><strong>Chuyên đề / Nội dung:</strong> ${newSlot.topic}</p>
                     <p style="margin: 4px 0;"><strong>Ngày dự giờ:</strong> ${formattedDate}</p>
@@ -6298,7 +6298,7 @@ export async function createAssignedObservation(data: {
                   <p>Kính đề nghị Thầy/Cô sắp xếp thời gian tham dự và hoàn thành phiếu đánh giá sau tiết dự theo đúng quy định.</p>
                 </div>
                 <div style="text-align: center; padding-top: 10px;">
-                  <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=overview_slots" style="display: inline-block; background-color: #008B82; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px;">Mở Phiếu Đánh Giá Dự Giờ</a>
+                  <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=overview_slots" style="display: inline-block; background-color: #00A19A; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px;">Mở Phiếu Đánh Giá Dự Giờ</a>
                 </div>
               </div>
             `;

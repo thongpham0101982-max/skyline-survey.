@@ -273,14 +273,14 @@ export async function POST(req: Request) {
           
           <!-- Sky-Line Branded Header Banner -->
           <tr>
-            <td bgcolor="#003B3A" style="background-color:#003B3A; background:linear-gradient(135deg, #003B3A 0%, #064E3B 60%, #0369A1 100%); padding:28px 32px; color:#FFFFFF; border-bottom:4px solid #48BFE3;">
+            <td bgcolor="#003B3A" style="background-color:#003B3A; background:linear-gradient(135deg, #003B3A 0%, #064E3B 60%, #007A72 100%); padding:28px 32px; color:#FFFFFF; border-bottom:4px solid #00A19A;">
               <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
                     <!-- Skyline Logo Badge -->
                     <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
                       <tr>
-                        <td bgcolor="#0B4A47" style="background-color:#0B4A47; border:1px solid #48BFE3; border-radius:20px; padding:3px 12px; font-size:10.5px; font-weight:800; color:#48BFE3; letter-spacing:1px; text-transform:uppercase;">
+                        <td bgcolor="#0B4A47" style="background-color:#0B4A47; border:1px solid #00A19A; border-radius:20px; padding:3px 12px; font-size:10.5px; font-weight:800; color:#5EEAD4; letter-spacing:1px; text-transform:uppercase;">
                           🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
                         </td>
                       </tr>
@@ -305,30 +305,30 @@ export async function POST(req: Request) {
                 👋 Kính gửi Quý Thầy/Cô <strong>Ban Điều hành Chuyên môn (Ban ĐHCM)</strong>, Ban Giám hiệu,
               </p>
               <p style="margin:0 0 20px 0; font-size:13px; line-height:1.6; color:#334155;">
-                Ban Khảo thí & ĐBCL kính gửi Ban Điều hành Chuyên môn bảng tổng hợp tiến độ thực hiện chỉ tiêu <strong>Tiết dạy</strong> và <strong>Tiết dự giờ</strong> của <strong>Tất cả các Tổ Chuyên môn</strong> thuộc <strong>${blockName}</strong> trong kỳ <strong>${monthLabel}</strong>:
+                Ban Khảo thí &amp; ĐBCL kính gửi Ban Điều hành Chuyên môn bảng tổng hợp tiến độ thực hiện chỉ tiêu <strong>Tiết dạy</strong> và <strong>Tiết dự giờ</strong> của <strong>Tất cả các Tổ Chuyên môn</strong> thuộc <strong>${blockName}</strong> trong kỳ <strong>${monthLabel}</strong>:
               </p>
 
-              <!-- Stats Summary Cards -->
+              <!-- Stats Summary Cards (Outlook-safe table grid) -->
               <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
                 <tr>
-                  <td width="23%" bgcolor="#F8FAFC" style="padding:14px 10px; background-color:#F8FAFC; border-radius:12px; border:1px solid #E2E8F0; text-align:center;">
-                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#64748B;">Tổng Tổ & GV</div>
+                  <td width="23.5%" bgcolor="#F0FDFA" style="padding:14px 10px; background-color:#F0FDFA; border-radius:12px; border:1px solid #CCFBF1; text-align:center; vertical-align:top;">
+                    <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#0F766E;">Tổng Tổ &amp; GV</div>
                     <div style="font-size:18px; font-weight:900; color:#003B3A; margin-top:4px;">${deptSummaries.length} Tổ / ${grandTeachers} GV</div>
                   </td>
                   <td width="2%"></td>
-                  <td width="23%" bgcolor="#ECFDF5" style="padding:14px 10px; background-color:#ECFDF5; border-radius:12px; border:1px solid #A7F3D0; text-align:center;">
+                  <td width="23.5%" bgcolor="#ECFDF5" style="padding:14px 10px; background-color:#ECFDF5; border-radius:12px; border:1px solid #A7F3D0; text-align:center; vertical-align:top;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#065F46;">Tổng Tiết Dạy</div>
                     <div style="font-size:18px; font-weight:900; color:#047857; margin-top:4px;">${grandTaught} tiết</div>
                     <div style="font-size:10px; font-weight:700; color:#B45309; margin-top:2px;">⚡ ${grandTaughtSurprise} đột xuất</div>
                   </td>
                   <td width="2%"></td>
-                  <td width="23%" bgcolor="#F0F9FF" style="padding:14px 10px; background-color:#F0F9FF; border-radius:12px; border:1px solid #BAE6FD; text-align:center;">
+                  <td width="23.5%" bgcolor="#F0F9FF" style="padding:14px 10px; background-color:#F0F9FF; border-radius:12px; border:1px solid #BAE6FD; text-align:center; vertical-align:top;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#0369A1;">Tổng Tiết Dự</div>
                     <div style="font-size:18px; font-weight:900; color:#0284C7; margin-top:4px;">${grandObserved} lượt</div>
                     <div style="font-size:10px; font-weight:700; color:#B45309; margin-top:2px;">⚡ ${grandObservedSurprise} đột xuất</div>
                   </td>
                   <td width="2%"></td>
-                  <td width="25%" bgcolor="#FEF3C7" style="padding:14px 10px; background-color:#FEF3C7; border-radius:12px; border:1px solid #FCD34D; text-align:center;">
+                  <td width="23.5%" bgcolor="#FEF3C7" style="padding:14px 10px; background-color:#FEF3C7; border-radius:12px; border:1px solid #FCD34D; text-align:center; vertical-align:top;">
                     <div style="font-size:10px; font-weight:800; text-transform:uppercase; color:#92400E;">Tiết Đột Xuất (⚡)</div>
                     <div style="font-size:16px; font-weight:900; color:#B45309; margin-top:4px;">Dạy: ${grandTaughtSurprise} | Dự: ${grandObservedSurprise}</div>
                   </td>
@@ -369,11 +369,11 @@ export async function POST(req: Request) {
               </div>
 
               <!-- Important Explanation: Quy định tính Tiết dạy & Tiết dự -->
-              <div style="margin-bottom:24px; padding:16px 20px; background-color:#F0FDF4; border:1px solid #BBF7D0; border-left:5px solid #003B3A; border-radius:10px;">
+              <div style="margin-bottom:24px; padding:16px 20px; background-color:#F0FDFA; border:1px solid #CCFBF1; border-left:5px solid #00A19A; border-radius:10px;">
                 <div style="font-size:12px; font-weight:900; color:#003B3A; text-transform:uppercase; margin-bottom:8px;">
                   📌 QUY ĐỊNH TÍNH TIẾT DẠY VÀ TIẾT DỰ GIỜ TRONG BÁO CÁO:
                 </div>
-                <ul style="margin:0; padding-left:18px; font-size:12px; color:#14532D; line-height:1.6;">
+                <ul style="margin:0; padding-left:18px; font-size:12px; color:#004D47; line-height:1.6;">
                   <li style="margin-bottom:4px;">
                     <strong>Tiết dạy hoàn thành:</strong> Chỉ được tính khi tiết dạy đã diễn ra, có người tham gia dự <strong>VÀ người dự ĐÃ NỘP PHIẾU ĐÁNH GIÁ</strong> trên hệ thống. <em>(Tiết đơn tính 1 tiết, tiết đôi tính 2 tiết)</em>.
                   </li>
@@ -391,17 +391,17 @@ export async function POST(req: Request) {
 
               <!-- Note from sender if any -->
               ${notes ? `
-              <div style="margin-bottom:24px; padding:14px 18px; background-color:#EFF6FF; border-left:4px solid #0284C7; border-radius:8px;">
-                <strong style="font-size:12px; color:#0369A1; text-transform:uppercase; display:block; margin-bottom:4px;">💬 Ghi chú & Lời nhắn:</strong>
-                <p style="margin:0; font-size:12px; color:#1E3A8A; line-height:1.5; white-space:pre-wrap;">${notes}</p>
+              <div style="margin-bottom:24px; padding:14px 18px; background-color:#F0FDFA; border-left:4px solid #00A19A; border-radius:8px;">
+                <strong style="font-size:12px; color:#0F766E; text-transform:uppercase; display:block; margin-bottom:4px;">💬 Ghi chú &amp; Lời nhắn:</strong>
+                <p style="margin:0; font-size:12px; color:#003B3A; line-height:1.5; white-space:pre-wrap;">${notes}</p>
               </div>
               ` : ''}
 
-              <!-- Call to Action Button -->
-              <table width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+              <!-- Bulletproof CTA Button (Outlook-safe table button) -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto 8px auto; border-collapse:separate;">
                 <tr>
-                  <td align="center">
-                    <a href="${reportLink}" style="display:inline-block; background-color:#003B3A; color:#FFFFFF; text-decoration:none; padding:13px 28px; border-radius:30px; font-weight:800; font-size:13px; letter-spacing:0.5px; border:2px solid #48BFE3; box-shadow:0 4px 12px rgba(0,59,58,0.25);">
+                  <td align="center" bgcolor="#00A19A" style="border-radius:10px; background-color:#00A19A;">
+                    <a href="${reportLink}" target="_blank" style="display:inline-block; padding:14px 32px; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size:13px; color:#FFFFFF; font-weight:800; text-decoration:none; border-radius:10px; text-transform:uppercase; letter-spacing:0.5px; border:1px solid #00A19A;">
                       👉 TRUY CẬP HỆ THỐNG SKYLINE SURVEY XEM CHI TIẾT
                     </a>
                   </td>
@@ -410,12 +410,21 @@ export async function POST(req: Request) {
             </td>
           </tr>
 
-          <!-- Footer -->
+          <!-- Standard Sky-Line Signature Footer -->
           <tr>
-            <td bgcolor="#F8FAFC" style="background-color:#F8FAFC; border-top:1px solid #E2E8F0; padding:20px 32px; text-align:center; font-size:11px; color:#64748B; line-height:1.6;">
-              <strong style="color:#003B3A;">🏫 HỆ THỐNG SKYLINE SURVEY - BAN KHẢO THÍ & ĐBCL</strong><br>
-              Email báo cáo chuyên môn tự động từ Hệ thống Quản trị Dự giờ Skyline School.<br>
-              © ${new Date().getFullYear()} Hệ thống Giáo dục Sky-Line. All rights reserved.
+            <td bgcolor="#003B3A" style="background-color:#003B3A; border-top:3px solid #00A19A; padding:22px 28px; text-align:center; font-size:11px; color:#CCFBF1; line-height:1.6;">
+              <div style="font-weight:800; color:#FFFFFF; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+              </div>
+              <div style="color:#99F6E4; font-weight:600; margin-top:3px;">
+                BAN ĐÀO TẠO &amp; KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+              </div>
+              <div style="color:#5EEAD4; margin-top:6px; font-size:10.5px;">
+                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color:#FDE047; text-decoration:none; font-weight:700;">skylineschool.edu.vn</a>
+              </div>
+              <div style="color:#64748B; margin-top:8px; font-size:10px;">
+                &copy; ${new Date().getFullYear()} Sky-Line School System. All rights reserved. &bull; Thư thông báo chuyên môn định kỳ từ Hệ thống SSM
+              </div>
             </td>
           </tr>
         </table>

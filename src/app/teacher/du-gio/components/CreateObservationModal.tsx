@@ -12,7 +12,7 @@ export function CreateObservationModal(props: any) {
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200">
       <div className="bg-white w-full max-w-6xl xl:max-w-7xl rounded-3xl border border-slate-200 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]">
         {/* Modal Top Header */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#003B3A] via-[#004D47] to-[#007068] text-white flex items-center justify-between gap-4 border-b border-teal-700/40 shrink-0">
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-[#003B3A] via-[#004D47] to-[#00A19A] text-white flex items-center justify-between gap-4 border-b border-teal-700/40 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-teal-200 border border-white/20">
               <Plus className="w-5 h-5" />
