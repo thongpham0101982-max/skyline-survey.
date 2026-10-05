@@ -574,34 +574,52 @@ export async function getPendingEnrollmentsAction() {
     });
 
     return [
-      ...generalPending.map((x: any) => ({
-        id: x.id,
-        studentCode: x.studentCode,
-        fullName: x.fullName,
-        dateOfBirth: x.dateOfBirth,
-        gender: x.gender,
-        grade: x.grade,
-        createdAt: x.createdAt,
-        admissionCampus: x.admissionCampus || x.period?.campus?.campusName || "",
-        campusId: x.period?.campusId || "",
-        academicYearId: x.period?.academicYearId || x.academicYearId || "",
-        isPreschool: false,
-        period: x.period
-      })),
-      ...preschoolPending.map((x: any) => ({
-        id: x.id,
-        studentCode: x.studentCode,
-        fullName: x.fullName,
-        dateOfBirth: x.dateOfBirth,
-        gender: x.gender,
-        grade: x.grade,
-        createdAt: x.createdAt,
-        admissionCampus: x.admissionCampus || x.period?.campus?.campusName || "",
-        campusId: x.period?.campusId || "",
-        academicYearId: x.period?.academicYearId || x.academicYearId || "",
-        isPreschool: true,
-        period: x.period
-      }))
+      ...generalPending.map((x: any) => {
+        const isGL = (x.admissionResult || "").toLowerCase().includes("giao lưu") ||
+                     (x.admissionResult || "").toLowerCase().includes("giao luu") ||
+                     (x.directorNote || "").toLowerCase().includes("học giao lưu") ||
+                     (x.directorNote || "").toLowerCase().includes("học giao luu");
+        return {
+          id: x.id,
+          studentCode: x.studentCode,
+          fullName: x.fullName,
+          dateOfBirth: x.dateOfBirth,
+          gender: x.gender,
+          grade: x.grade,
+          createdAt: x.createdAt,
+          admissionCampus: x.admissionCampus || x.period?.campus?.campusName || "",
+          campusId: x.period?.campusId || "",
+          academicYearId: x.period?.academicYearId || x.academicYearId || "",
+          isPreschool: false,
+          period: x.period,
+          admissionResult: x.admissionResult,
+          directorNote: x.directorNote,
+          isGiaoLuu: isGL
+        };
+      }),
+      ...preschoolPending.map((x: any) => {
+        const isGL = (x.admissionResult || "").toLowerCase().includes("giao lưu") ||
+                     (x.admissionResult || "").toLowerCase().includes("giao luu") ||
+                     (x.directorNote || "").toLowerCase().includes("học giao lưu") ||
+                     (x.directorNote || "").toLowerCase().includes("học giao luu");
+        return {
+          id: x.id,
+          studentCode: x.studentCode,
+          fullName: x.fullName,
+          dateOfBirth: x.dateOfBirth,
+          gender: x.gender,
+          grade: x.grade,
+          createdAt: x.createdAt,
+          admissionCampus: x.admissionCampus || x.period?.campus?.campusName || "",
+          campusId: x.period?.campusId || "",
+          academicYearId: x.period?.academicYearId || x.academicYearId || "",
+          isPreschool: true,
+          period: x.period,
+          admissionResult: x.admissionResult,
+          directorNote: x.directorNote,
+          isGiaoLuu: isGL
+        };
+      })
     ];
   } catch (e: any) {
     console.error("getPendingEnrollmentsAction Error:", e);
