@@ -166,56 +166,104 @@ export async function createTask(data: any) {
         if (resolvedEmail) {
           try {
             const emailHtml = `
-              <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; padding: 32px 16px; color: #1e293b;">
-                <div style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
-                  
-                  <div style="background: linear-gradient(135deg, ${task.isImportant ? '#dc2626' : '#48BFE3'}, ${task.isImportant ? '#991b1b' : '#00A19A'}); padding: 32px 28px; text-align: center; color: #ffffff;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;">
-                      ${task.isImportant ? '⚠️ QUAN TRỌNG / KHẨN CẤP' : 'CÔNG VIỆC MỚI ĐƯỢC GIAO'}
-                    </span>
-                    <h1 style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.3; color: #ffffff;">${task.title}</h1>
-                    <p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
-                  </div>
-                  
-                  <div style="padding: 32px 28px;">
-                    <p style="margin-top: 0; font-size: 15px; font-weight: 600; color: #334155;">Xin chào <strong>${u.fullName}</strong>,</p>
-                    <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-                      Bạn vừa nhận được một công việc mới được phân công từ <strong>${adminName}</strong>. 
-                      Vui lòng xem thông tin bên dưới và bấm nút <strong>Xác nhận nhận việc</strong> để tiếp nhận công việc.
-                    </p>
-                    
-                    <div style="background-color: #f8fafc; border-left: 4px solid ${task.isImportant ? '#dc2626' : '#48BFE3'}; border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid #e2e8f0; border-left-width: 4px;">
-                      <table style="width: 100%; border-collapse: collapse;">
+              <!DOCTYPE html>
+              <html lang="vi">
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${task.isImportant ? '[QUAN TRỌNG] ' : ''}Giao việc & Yêu cầu xác nhận</title>
+              </head>
+              <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+                  <tr>
+                    <td align="center">
+                      <table role="presentation" width="620" border="0" cellspacing="0" cellpadding="0" style="max-width: 620px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                        <!-- Header -->
                         <tr>
-                          <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; width: 130px; text-transform: uppercase;">Danh mục:</td>
-                          <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: ${task.isImportant ? '#dc2626' : '#48BFE3'};">${task.category || "Công việc"}</td>
+                          <td bgcolor="${task.isImportant ? '#881337' : '#003B3A'}" style="background-color: ${task.isImportant ? '#881337' : '#003B3A'}; padding: 32px 28px; text-align: center;">
+                            <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.15); border-radius: 20px; color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
+                              ${task.isImportant ? '⚠️ QUAN TRỌNG / KHẨN CẤP' : '🏫 HỆ THỐNG GIÁO DỤC SKY-LINE'}
+                            </div>
+                            <h1 style="margin: 0; color: #FFFFFF; font-size: 20px; font-weight: 800; letter-spacing: 0.3px; line-height: 1.3;">
+                              ${task.title}
+                            </h1>
+                            <p style="margin: 8px 0 0 0; color: ${task.isImportant ? '#FECDD3' : '#99F6E4'}; font-size: 13px; font-weight: 500;">
+                              Hệ thống Điều hành & Quản lý Công việc Sky-Line
+                            </p>
+                          </td>
                         </tr>
-                        <tr>
-                          <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Người giao:</td>
-                          <td style="padding: 6px 0; font-size: 14px; color: #1e293b; font-weight: 600;">${adminName}</td>
-                        </tr>
-                        <tr>
-                          <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Thời gian:</td>
-                          <td style="padding: 6px 0; font-size: 14px; color: #334155;">${startDateFormatted} đến <strong style="color: #dc2626;">${endDateFormatted}</strong></td>
-                        </tr>
-                        ${task.description ? `
-                        <tr>
-                          <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; vertical-align: top;">Chi tiết công việc:</td>
-                          <td style="padding: 6px 0; font-size: 14px; color: #334155; white-space: pre-wrap;">${task.description}</td>
-                        </tr>
-                        ` : ''}
-                      </table>
-                    </div>
 
-                    <div style="text-align: center; margin: 28px 0 12px 0;">
-                      <a href="${appUrl}/admin/tasks?taskId=${task.id}&action=confirm" 
-                         style="background-color: ${task.isImportant ? '#dc2626' : '#48BFE3'}; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(0,169,157,0.3);">
-                         ✅ Xác Nhận Nhận Việc Ngay
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                        <!-- Body Greeting -->
+                        <tr>
+                          <td style="padding: 26px 30px 14px 30px;">
+                            <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Xin chào Thầy/Cô ${u.fullName},</p>
+                            <p style="margin: 8px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                              Thầy/Cô vừa nhận được một công việc mới được phân công từ <strong>${adminName}</strong>. Vui lòng xem thông tin bên dưới và bấm nút <strong>Xác nhận nhận việc</strong> để tiếp nhận nhiệm vụ:
+                            </p>
+                          </td>
+                        </tr>
+
+                        <!-- Task Info Card -->
+                        <tr>
+                          <td style="padding: 0 30px 20px 30px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #99F6E4; padding: 16px 20px; border-collapse: separate;">
+                              <tr>
+                                <td style="padding-bottom: 8px; width: 34%; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Danh mục:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #003B3A;">${task.category || "Công việc"}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Người giao việc:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 700; color: #1E293B;">${adminName}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Thời gian thực hiện:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">${startDateFormatted} đến <strong style="color: #DC2626;">${endDateFormatted}</strong></td>
+                              </tr>
+                              ${task.description ? `
+                              <tr>
+                                <td style="padding-top: 4px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase; vertical-align: top;">Chi tiết công việc:</td>
+                                <td style="padding-top: 4px; font-size: 13px; color: #334155; line-height: 1.6; white-space: pre-wrap;">${task.description}</td>
+                              </tr>
+                              ` : ""}
+                            </table>
+                          </td>
+                        </tr>
+
+                        <!-- Bulletproof Button -->
+                        <tr>
+                          <td align="center" style="padding: 0 30px 28px 30px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                              <tr>
+                                <td align="center" bgcolor="${task.isImportant ? '#DC2626' : '#00A19A'}" style="background-color: ${task.isImportant ? '#DC2626' : '#00A19A'}; border-radius: 10px;">
+                                  <a href="${appUrl}/admin/tasks?taskId=${task.id}&action=confirm" target="_blank" style="display: inline-block; padding: 14px 34px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                                    ✅ Xác Nhận Nhận Việc Ngay &rarr;
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                          <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                            <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                              HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                            </p>
+                            <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                              BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                            </p>
+                            <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                              Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+              </html>
             `;
             await sendEmail({
               to: resolvedEmail,
@@ -297,26 +345,95 @@ export async function confirmTaskAssignment(taskId: string) {
         try {
           const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
           const emailHtml = `
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; padding: 32px 16px; color: #1e293b;">
-              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
-                <div style="background-color: #10b981; padding: 24px; text-align: center; color: #ffffff;">
-                  <h2 style="margin: 0; font-size: 20px; font-weight: 700;">✅ ĐÃ XÁC NHẬN TIẾP NHẬN CÔNG VIỆC</h2>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
-                </div>
-                <div style="padding: 24px;">
-                  <p style="margin-top: 0;">Xin chào <strong>${task.assignedBy.fullName}</strong>,</p>
-                  <p>Nhân viên <strong>${userName}</strong> đã bấm <strong>Xác nhận tiếp nhận công việc</strong> được giao:</p>
-                  <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; border-radius: 8px; margin: 16px 0;">
-                    <p style="margin: 0; font-weight: 700; color: #166534; font-size: 15px;">${task.title}</p>
-                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #15803d;">Thời gian xác nhận: ${new Date().toLocaleString("vi-VN")}</p>
-                  </div>
-                  <div style="text-align: center; margin-top: 24px;">
-                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: #10b981; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; display: inline-block;">Xem chi tiết công việc</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Xác nhận tiếp nhận công việc</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                      <!-- Header -->
+                      <tr>
+                        <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 30px 24px; text-align: center;">
+                          <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">
+                            🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                          </div>
+                          <h1 style="margin: 0; color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
+                            ✅ ĐÃ TIẾP NHẬN CÔNG VIỆC
+                          </h1>
+                          <p style="margin: 6px 0 0 0; color: #99F6E4; font-size: 13px; font-weight: 500;">
+                            Hệ thống Điều hành & Quản lý Công việc Sky-Line
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Body -->
+                      <tr>
+                        <td style="padding: 26px 28px 14px 28px;">
+                          <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Xin chào Thầy/Cô ${task.assignedBy.fullName},</p>
+                          <p style="margin: 8px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                            Nhân viên <strong>${userName}</strong> đã xác nhận tiếp nhận công việc được giao theo thông tin sau:
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Card -->
+                      <tr>
+                        <td style="padding: 0 28px 20px 28px;">
+                          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #99F6E4; padding: 16px 20px; border-collapse: separate;">
+                            <tr>
+                              <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Tên công việc:</td>
+                              <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #003B3A;">${task.title}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Thời gian xác nhận:</td>
+                              <td style="font-size: 13px; font-weight: 600; color: #334155;">${new Date().toLocaleString("vi-VN")}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <!-- Bulletproof Button -->
+                      <tr>
+                        <td align="center" style="padding: 0 28px 28px 28px;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                            <tr>
+                              <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
+                                <a href="${appUrl}/admin/tasks?taskId=${task.id}" target="_blank" style="display: inline-block; padding: 13px 30px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                                  Xem Chi Tiết Công Việc &rarr;
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                          <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                            HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                          </p>
+                          <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                            BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                          </p>
+                          <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                            Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `;
           await sendEmail({
             to: assignerEmail,
             subject: `[XÁC NHẬN NHẬN VIỆC] ${userName} đã nhận công việc: ${task.title}`,
@@ -385,26 +502,95 @@ export async function rejectTaskAssignment(taskId: string, reason: string) {
         try {
           const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
           const emailHtml = `
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; padding: 32px 16px; color: #1e293b;">
-              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
-                <div style="background-color: #ef4444; padding: 24px; text-align: center; color: #ffffff;">
-                  <h2 style="margin: 0; font-size: 20px; font-weight: 700;">⚠️ TỪ CHỐI / PHẢN HỒI CÔNG VIỆC</h2>
-                  <p style="margin: 4px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
-                </div>
-                <div style="padding: 24px;">
-                  <p style="margin-top: 0;">Xin chào <strong>${task.assignedBy.fullName}</strong>,</p>
-                  <p>Nhân viên <strong>${userName}</strong> đã gửi phản hồi / yêu cầu trao đổi lại về công việc được giao:</p>
-                  <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 16px; border-radius: 8px; margin: 16px 0;">
-                    <p style="margin: 0; font-weight: 700; color: #991b1b; font-size: 15px;">${task.title}</p>
-                    <p style="margin: 8px 0 0 0; font-size: 14px; color: #7f1d1d;"><strong>Ý kiến / Lý do:</strong> ${reason.trim()}</p>
-                  </div>
-                  <div style="text-align: center; margin-top: 24px;">
-                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 14px; display: inline-block;">Xem & Trao đổi lại</a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Phản hồi về công việc được giao</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                      <!-- Header -->
+                      <tr>
+                        <td bgcolor="#881337" style="background-color: #881337; padding: 30px 24px; text-align: center;">
+                          <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.15); border-radius: 20px; color: #FECDD3; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">
+                            ⚠️ CẦN TRAO ĐỔI / PHẢN HỒI
+                          </div>
+                          <h1 style="margin: 0; color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
+                            PHẢN HỒI VỀ CÔNG VIỆC ĐƯỢC GIAO
+                          </h1>
+                          <p style="margin: 6px 0 0 0; color: #FECDD3; font-size: 13px; font-weight: 500;">
+                            Hệ thống Điều hành & Quản lý Công việc Sky-Line
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Body -->
+                      <tr>
+                        <td style="padding: 26px 28px 14px 28px;">
+                          <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Xin chào Thầy/Cô ${task.assignedBy.fullName},</p>
+                          <p style="margin: 8px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                            Nhân viên <strong>${userName}</strong> đã gửi phản hồi / yêu cầu trao đổi lại về công việc được giao:
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Task Details & Reason Card -->
+                      <tr>
+                        <td style="padding: 0 28px 20px 28px;">
+                          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #FFF1F2; border-radius: 12px; border: 1px solid #FECDD3; padding: 16px 20px; border-collapse: separate;">
+                            <tr>
+                              <td style="padding-bottom: 8px; width: 32%; font-size: 12px; font-weight: 700; color: #9F1239; text-transform: uppercase;">Tên công việc:</td>
+                              <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #881337;">${task.title}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size: 12px; font-weight: 700; color: #9F1239; text-transform: uppercase; vertical-align: top;">Ý kiến / Lý do:</td>
+                              <td style="font-size: 13px; font-weight: 600; color: #9F1239; line-height: 1.5; white-space: pre-wrap;">${reason.trim()}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <!-- Bulletproof Button -->
+                      <tr>
+                        <td align="center" style="padding: 0 28px 28px 28px;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                            <tr>
+                              <td align="center" bgcolor="#BE123C" style="background-color: #BE123C; border-radius: 10px;">
+                                <a href="${appUrl}/admin/tasks?taskId=${task.id}" target="_blank" style="display: inline-block; padding: 13px 30px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                                  Xem & Trao Đổi Lại &rarr;
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                          <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                            HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                          </p>
+                          <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                            BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                          </p>
+                          <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                            Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+          `;
           await sendEmail({
             to: assignerEmail,
             subject: `[PHẢN HỒI CÔNG VIỆC] ${userName} gửi ý kiến về công việc: ${task.title}`,
@@ -603,28 +789,94 @@ export async function remindTask(id: string) {
       if (resolvedEmail) {
         try {
           const emailHtml = `
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155; line-height: 1.6;">
-              <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
-                <div style="background-color: ${task.isImportant ? '#ef4444' : '#48BFE3'}; padding: 28px; text-align: center;">
-                  <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">NHẮC NHỞ CÔNG VIỆC</h2>
-                  <p style="color: #ffffff; margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
-                </div>
-                
-                <div style="padding: 28px;">
-                  <p style="margin-top: 0; font-size: 15px;">Xin chào <strong>${u.fullName}</strong>,</p>
-                  <p style="font-size: 14px; color: #475569;">Bạn nhận được nhắc nhở thực hiện công việc từ ban điều hành:</p>
-                  
-                  <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#48BFE3'}; border-radius: 8px; padding: 18px; margin: 20px 0;">
-                    <p style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">${task.title}</p>
-                    <p style="margin: 6px 0 0 0; font-size: 13px; color: #64748b;">Hạn chót: <strong style="color: #ef4444;">${formattedDate}</strong></p>
-                  </div>
-                  
-                  <div style="text-align: center; margin: 28px 0 12px 0;">
-                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#48BFE3'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 10px; font-size: 14px; font-weight: 700; display: inline-block;">Cập nhật tiến độ ngay</a>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>${task.isImportant ? '[QUAN TRỌNG] ' : ''}Nhắc nhở công việc</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                      <!-- Header -->
+                      <tr>
+                        <td bgcolor="${task.isImportant ? '#881337' : '#003B3A'}" style="background-color: ${task.isImportant ? '#881337' : '#003B3A'}; padding: 30px 24px; text-align: center;">
+                          <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.15); border-radius: 20px; color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">
+                            ${task.isImportant ? '⚠️ CÔNG VIỆC KHẨN' : '⏰ NHẮC NHỞ TIẾN ĐỘ'}
+                          </div>
+                          <h1 style="margin: 0; color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
+                            NHẮC NHỞ TIẾN ĐỘ CÔNG VIỆC
+                          </h1>
+                          <p style="margin: 6px 0 0 0; color: ${task.isImportant ? '#FECDD3' : '#99F6E4'}; font-size: 13px; font-weight: 500;">
+                            Hệ thống Điều hành & Quản lý Công việc Sky-Line
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Body -->
+                      <tr>
+                        <td style="padding: 26px 28px 14px 28px;">
+                          <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Xin chào Thầy/Cô ${u.fullName},</p>
+                          <p style="margin: 8px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                            Ban điều hành gửi thông báo nhắc nhở tiến độ thực hiện công việc được giao dưới đây:
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Card -->
+                      <tr>
+                        <td style="padding: 0 28px 20px 28px;">
+                          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #99F6E4; padding: 16px 20px; border-collapse: separate;">
+                            <tr>
+                              <td style="padding-bottom: 8px; width: 30%; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Tên công việc:</td>
+                              <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #003B3A;">${task.title}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Hạn chót:</td>
+                              <td style="font-size: 14px; font-weight: 700; color: #DC2626;">${formattedDate}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <!-- Bulletproof Button -->
+                      <tr>
+                        <td align="center" style="padding: 0 28px 28px 28px;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                            <tr>
+                              <td align="center" bgcolor="${task.isImportant ? '#DC2626' : '#00A19A'}" style="background-color: ${task.isImportant ? '#DC2626' : '#00A19A'}; border-radius: 10px;">
+                                <a href="${appUrl}/admin/tasks?taskId=${task.id}" target="_blank" style="display: inline-block; padding: 13px 30px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                                  Cập Nhật Tiến Độ Ngay &rarr;
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                          <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                            HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                          </p>
+                          <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                            BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                          </p>
+                          <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                            Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
           `;
           await sendEmail({
             to: resolvedEmail,
@@ -729,23 +981,94 @@ export async function checkAndNotifyUpcomingTasks() {
               try {
                 const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
                 const emailHtml = `
-                  <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 32px 16px; color: #334155;">
-                    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-                      <div style="background-color: ${task.isImportant ? '#ef4444' : '#48BFE3'}; padding: 24px; text-align: center; color: #ffffff;">
-                        <h2 style="margin: 0; font-size: 20px; font-weight: 700;">THÔNG BÁO HẠN CHÓT ${reminderType}</h2>
-                      </div>
-                      <div style="padding: 24px;">
-                        <p style="margin-top: 0;">Xin chào <strong>${u.fullName}</strong>,</p>
-                        <p>Công việc được giao cho bạn sắp đến hạn chót vào ngày <strong>${formattedDate}</strong>:</p>
-                        <div style="background-color: #f1f5f9; border-left: 4px solid #48BFE3; padding: 16px; border-radius: 8px; margin: 16px 0;">
-                          <p style="margin: 0; font-weight: 700;">${task.title}</p>
-                        </div>
-                        <div style="text-align: center; margin-top: 24px;">
-                          <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: #48BFE3; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; display: inline-block;">Xem công việc</a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <!DOCTYPE html>
+                  <html lang="vi">
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Thông báo hạn chót công việc</title>
+                  </head>
+                  <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+                      <tr>
+                        <td align="center">
+                          <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                            <!-- Header -->
+                            <tr>
+                              <td bgcolor="${task.isImportant ? '#881337' : '#003B3A'}" style="background-color: ${task.isImportant ? '#881337' : '#003B3A'}; padding: 30px 24px; text-align: center;">
+                                <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.15); border-radius: 20px; color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">
+                                  ⏰ NHẮC HẠN CHÓT
+                                </div>
+                                <h1 style="margin: 0; color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
+                                  THÔNG BÁO HẠN CHÓT ${reminderType.toUpperCase()}
+                                </h1>
+                                <p style="margin: 6px 0 0 0; color: ${task.isImportant ? '#FECDD3' : '#99F6E4'}; font-size: 13px; font-weight: 500;">
+                                  Hệ thống Điều hành & Quản lý Công việc Sky-Line
+                                </p>
+                              </td>
+                            </tr>
+
+                            <!-- Body -->
+                            <tr>
+                              <td style="padding: 26px 28px 14px 28px;">
+                                <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Xin chào Thầy/Cô ${u.fullName},</p>
+                                <p style="margin: 8px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                                  Công việc được giao cho Thầy/Cô sắp đến hạn chót vào ngày <strong>${formattedDate}</strong>:
+                                </p>
+                              </td>
+                            </tr>
+
+                            <!-- Card -->
+                            <tr>
+                              <td style="padding: 0 28px 20px 28px;">
+                                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #99F6E4; padding: 16px 20px; border-collapse: separate;">
+                                  <tr>
+                                    <td style="padding-bottom: 8px; width: 30%; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Tên công việc:</td>
+                                    <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #003B3A;">${task.title}</td>
+                                  </tr>
+                                  <tr>
+                                    <td style="font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Hạn chót:</td>
+                                    <td style="font-size: 14px; font-weight: 700; color: #DC2626;">${formattedDate}</td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+
+                            <!-- Bulletproof Button -->
+                            <tr>
+                              <td align="center" style="padding: 0 28px 28px 28px;">
+                                <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                                  <tr>
+                                    <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
+                                      <a href="${appUrl}/admin/tasks?taskId=${task.id}" target="_blank" style="display: inline-block; padding: 13px 30px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                                        Xem Chi Tiết Công Việc &rarr;
+                                      </a>
+                                    </td>
+                                  </tr>
+                                </table>
+                              </td>
+                            </tr>
+
+                            <!-- Footer -->
+                            <tr>
+                              <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                                <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                                  HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                                </p>
+                                <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                                  BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                                </p>
+                                <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                                  Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                                </p>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </body>
+                  </html>
                 `;
                 await sendEmail({
                   to: resolvedEmail,

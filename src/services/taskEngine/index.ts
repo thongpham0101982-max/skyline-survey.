@@ -104,6 +104,7 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       upcomingObserverRegs.forEach(reg => {
         const slotDate = new Date(reg.slot.date)
         const isToday = slotDate >= startOfToday && slotDate <= endOfToday
+        const regDate = reg.registeredAt ? new Date(reg.registeredAt) : new Date()
         tasks.push({
           taskId: `observer-reg-${reg.id}`,
           taskType: "OBSERVE_LESSON",
@@ -117,7 +118,7 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
           deadlineDate: slotDate.toISOString(),
           assignedUserId: userId,
           deepLink: `/teacher/du-gio?tab=observation_list&slotId=${reg.slotId}`,
-          createdAt: reg.createdAt.toISOString(),
+          createdAt: regDate.toISOString(),
           metadata: {
             moduleLabel: "Dự giờ",
             badgeColor: "orange",
@@ -141,6 +142,7 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       })
 
       pendingEvaluations.forEach(reg => {
+        const regDate = reg.registeredAt ? new Date(reg.registeredAt) : new Date()
         tasks.push({
           taskId: `eval-pending-${reg.id}`,
           taskType: "SUBMIT_EVALUATION",
@@ -153,7 +155,7 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
           deadline: "Cần xử lý ngay",
           assignedUserId: userId,
           deepLink: `/teacher/du-gio?tab=overview_slots&slotId=${reg.slotId}&action=evaluate`,
-          createdAt: reg.createdAt.toISOString(),
+          createdAt: regDate.toISOString(),
           metadata: {
             moduleLabel: "Dự giờ",
             badgeColor: "red"
@@ -165,32 +167,33 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       if (isTTCM) {
         const pendingApprovals = await prisma.observationRegistration.findMany({
           where: {
-            status: "REGISTERED",
+            isApproved: false,
             slot: {
               date: { gte: startOfToday }
             }
           },
           include: {
             slot: true,
-            observerTeacher: true
+            teacher: true
           },
           take: 5
         })
 
         pendingApprovals.forEach(reg => {
+          const regDate = reg.registeredAt ? new Date(reg.registeredAt) : new Date()
           tasks.push({
             taskId: `approval-reg-${reg.id}`,
             taskType: "APPROVE_OBSERVATION",
             sourceModule: "DU_GIO",
             sourceId: reg.id,
-            title: `Duyệt đăng ký dự giờ: ${reg.observerTeacher?.teacherName || "Giáo viên"}`,
+            title: `Duyệt đăng ký dự giờ: ${reg.teacher?.teacherName || "Giáo viên"}`,
             description: `Đăng ký tiết ${reg.slot.period} - Môn ${reg.slot.subjectName} (${reg.slot.className})`,
             priority: "URGENT",
             status: "WAITING",
             deadline: "Trước khi tiết học bắt đầu",
             assignedUserId: userId,
             deepLink: `/teacher/du-gio?tab=approval_list&regId=${reg.id}`,
-            createdAt: reg.createdAt.toISOString(),
+            createdAt: regDate.toISOString(),
             metadata: {
               moduleLabel: "Tổ chuyên môn",
               badgeColor: "purple"

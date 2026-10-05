@@ -6225,30 +6225,121 @@ export async function createAssignedObservation(data: {
         if (hostEmail && hostEmail.includes("@")) {
           const emailSubject = `[Sky-line SMS - Dự Giờ] Thông báo Lịch Chỉ định dự giờ: "${newSlot.topic}"`;
           const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-              <div style="background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%); padding: 18px; border-radius: 8px; color: #fff; text-align: center;">
-                <h2 style="margin: 0; font-size: 18px; letter-spacing: 0.5px;">THÔNG BÁO CHỈ ĐỊNH DỰ GIỜ CHUYÊN MÔN</h2>
-                <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Phân hệ Quản lý Dự giờ & Phát triển Chuyên môn Sky-Line</p>
-              </div>
-              <div style="padding: 20px 0; color: #334155; font-size: 14px; line-height: 1.6;">
-                <p>Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
-                <p>Ban Quản lý Chuyên môn thông báo Thầy/Cô có một lượt <strong>Chỉ định dự giờ</strong> chính thức theo kế hoạch với thông tin chi tiết như sau:</p>
-                <div style="background-color: #f8fafc; border-left: 4px solid #7c3aed; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
-                  <p style="margin: 4px 0;"><strong>Chuyên đề / Nội dung:</strong> ${newSlot.topic}</p>
-                  <p style="margin: 4px 0;"><strong>Ngày dự giờ:</strong> ${formattedDate}</p>
-                  <p style="margin: 4px 0;"><strong>Khung thời gian / Tiết:</strong> ${data.period}</p>
-                  <p style="margin: 4px 0;"><strong>Lớp học:</strong> ${data.className}</p>
-                  <p style="margin: 4px 0;"><strong>Hình thức:</strong> <span style="color: #7c3aed; font-weight: bold;">Chỉ định dự giờ</span></p>
-                  ${data.notes ? `<p style="margin: 4px 0;"><strong>Ghi chú điều hành:</strong> ${data.notes}</p>` : ""}
-                </div>
-                <p style="background: #faf5ff; border: 1px dashed #c084fc; padding: 10px 14px; border-radius: 6px; color: #6b21a8; font-size: 13px;">
-                  ℹ️ <strong>Lưu ý:</strong> Lượt dự giờ này đã có hiệu lực chính thức và <strong>không yêu cầu giáo viên xác nhận</strong>. Kính đề nghị Thầy/Cô chuẩn bị kế hoạch bài dạy theo quy định.
-                </p>
-              </div>
-              <div style="text-align: center; padding-top: 10px;">
-                <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=my_schedule" style="display: inline-block; background-color: #00A19A; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px;">Xem Lịch Chi Tiết Trên SSM</a>
-              </div>
-            </div>
+            <!DOCTYPE html>
+            <html lang="vi">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Thông Báo Chỉ Định Dự Giờ Chuyên Môn</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                      <!-- Header -->
+                      <tr>
+                        <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 30px 24px; text-align: center;">
+                          <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">
+                            🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                          </div>
+                          <h1 style="margin: 0; color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
+                            THÔNG BÁO CHỈ ĐỊNH DỰ GIỜ CHUYÊN MÔN
+                          </h1>
+                          <p style="margin: 6px 0 0 0; color: #99F6E4; font-size: 13px; font-weight: 500;">
+                            Phân hệ Quản lý Dự giờ & Phát triển Chuyên môn
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Intro -->
+                      <tr>
+                        <td style="padding: 24px 28px 14px 28px;">
+                          <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Kính gửi Thầy/Cô ${hostTeacher.teacherName},</p>
+                          <p style="margin: 8px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                            Ban Quản lý Chuyên môn thông báo Thầy/Cô có một lượt <strong>Chỉ định dự giờ</strong> chính thức theo kế hoạch với thông tin chi tiết như sau:
+                          </p>
+                        </td>
+                      </tr>
+
+                      <!-- Details Card -->
+                      <tr>
+                        <td style="padding: 0 28px 18px 28px;">
+                          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #99F6E4; padding: 16px 20px; border-collapse: separate;">
+                            <tr>
+                              <td style="padding-bottom: 8px; width: 36%; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Chuyên đề / Bài dạy:</td>
+                              <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #003B3A;">${newSlot.topic}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Ngày dự giờ:</td>
+                              <td style="padding-bottom: 8px; font-size: 14px; font-weight: 700; color: #1E293B;">${formattedDate}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Khung giờ / Tiết:</td>
+                              <td style="padding-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">${data.period}</td>
+                            </tr>
+                            <tr>
+                              <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Lớp học:</td>
+                              <td style="padding-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">${data.className}</td>
+                            </tr>
+                            <tr>
+                              <td style="font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Hình thức:</td>
+                              <td style="font-size: 13px; font-weight: 700; color: #7C3AED;">Chỉ định dự giờ</td>
+                            </tr>
+                            ${data.notes ? `
+                            <tr>
+                              <td style="padding-top: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Ghi chú:</td>
+                              <td style="padding-top: 8px; font-size: 13px; color: #64748B;">${data.notes}</td>
+                            </tr>
+                            ` : ""}
+                          </table>
+                        </td>
+                      </tr>
+
+                      <!-- Notice callout -->
+                      <tr>
+                        <td style="padding: 0 28px 22px 28px;">
+                          <div style="background-color: #FEF9C3; border-left: 4px solid #CA8A04; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #854D0E; line-height: 1.5;">
+                            📌 <strong>Lưu ý:</strong> Lượt dự giờ này đã có hiệu lực chính thức và <strong>không yêu cầu giáo viên xác nhận</strong>. Kính đề nghị Thầy/Cô chuẩn bị kế hoạch bài dạy theo quy định.
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Bulletproof Button -->
+                      <tr>
+                        <td align="center" style="padding: 0 28px 28px 28px;">
+                          <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                            <tr>
+                              <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
+                                <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=my_schedule" target="_blank" style="display: inline-block; padding: 13px 30px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                                  Xem Lịch Chi Tiết Trên SSM &rarr;
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                          <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                            HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                          </p>
+                          <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                            BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                          </p>
+                          <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                            Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
           `;
           await sendEmail({ to: hostEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("[createAssignedObservation] Email to host error:", e));
         }
@@ -6279,29 +6370,123 @@ export async function createAssignedObservation(data: {
           if (obsEmail && obsEmail.includes("@")) {
             const obsEmailSubject = `[Sky-line SMS - Dự Giờ] Phân công dự giờ giáo viên: ${hostTeacher.teacherName}`;
             const obsEmailHtml = `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
-                <div style="background: linear-gradient(135deg, #003B3A 0%, #00A19A 100%); padding: 18px; border-radius: 8px; color: #fff; text-align: center;">
-                  <h2 style="margin: 0; font-size: 18px; letter-spacing: 0.5px;">PHÂN CÔNG THAM GIA DỰ GIỜ CHUYÊN MÔN</h2>
-                  <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Phân hệ Quản lý Dự giờ & Phát triển Chuyên môn Sky-Line</p>
-                </div>
-                <div style="padding: 20px 0; color: #334155; font-size: 14px; line-height: 1.6;">
-                  <p>Kính gửi Thầy/Cô <strong>${obs.teacherName}</strong>,</p>
-                  <p>Thầy/Cô được phân công tham gia dự giờ giáo viên <strong>${hostTeacher.teacherName}</strong> theo kế hoạch chỉ định chuyên môn:</p>
-                  <div style="background-color: #f8fafc; border-left: 4px solid #00A19A; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
-                    <p style="margin: 4px 0;"><strong>Giáo viên dạy:</strong> ${hostTeacher.teacherName}</p>
-                    <p style="margin: 4px 0;"><strong>Chuyên đề / Nội dung:</strong> ${newSlot.topic}</p>
-                    <p style="margin: 4px 0;"><strong>Ngày dự giờ:</strong> ${formattedDate}</p>
-                    <p style="margin: 4px 0;"><strong>Khung thời gian / Tiết:</strong> ${data.period}</p>
-                    <p style="margin: 4px 0;"><strong>Lớp học:</strong> ${data.className}</p>
-                    <p style="margin: 4px 0;"><strong>Hình thức:</strong> <span style="color: #7c3aed; font-weight: bold;">Chỉ định dự giờ</span></p>
-                  </div>
-                  <p>Kính đề nghị Thầy/Cô sắp xếp thời gian tham dự và hoàn thành phiếu đánh giá sau tiết dự theo đúng quy định.</p>
-                </div>
-                <div style="text-align: center; padding-top: 10px;">
-                  <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=overview_slots" style="display: inline-block; background-color: #00A19A; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px;">Mở Phiếu Đánh Giá Dự Giờ</a>
-                </div>
-              </div>
+              <!DOCTYPE html>
+              <html lang="vi">
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Phân Công Tham Gia Dự Giờ Chuyên Môn</title>
+              </head>
+              <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+                  <tr>
+                    <td align="center">
+                      <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                        <!-- Header -->
+                        <tr>
+                          <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 30px 24px; text-align: center;">
+                            <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px;">
+                              🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                            </div>
+                            <h1 style="margin: 0; color: #FFFFFF; font-size: 19px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
+                              PHÂN CÔNG THAM GIA DỰ GIỜ CHUYÊN MÔN
+                            </h1>
+                            <p style="margin: 6px 0 0 0; color: #99F6E4; font-size: 13px; font-weight: 500;">
+                              Phân hệ Quản lý Dự giờ & Phát triển Chuyên môn
+                            </p>
+                          </td>
+                        </tr>
+
+                        <!-- Intro -->
+                        <tr>
+                          <td style="padding: 24px 28px 14px 28px;">
+                            <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Kính gửi Thầy/Cô ${obs.teacherName},</p>
+                            <p style="margin: 8px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                              Thầy/Cô được phân công tham gia dự giờ giáo viên <strong>${hostTeacher.teacherName}</strong> theo kế hoạch chỉ định chuyên môn:
+                            </p>
+                          </td>
+                        </tr>
+
+                        <!-- Details Card -->
+                        <tr>
+                          <td style="padding: 0 28px 18px 28px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #99F6E4; padding: 16px 20px; border-collapse: separate;">
+                              <tr>
+                                <td style="padding-bottom: 8px; width: 36%; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Giáo viên dạy:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #003B3A;">${hostTeacher.teacherName}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Chuyên đề / Bài dạy:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 700; color: #1E293B;">${newSlot.topic}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Ngày dự giờ:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">${formattedDate}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Khung giờ / Tiết:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">${data.period}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Lớp học:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">${data.className}</td>
+                              </tr>
+                              <tr>
+                                <td style="font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Hình thức:</td>
+                                <td style="font-size: 13px; font-weight: 700; color: #7C3AED;">Chỉ định dự giờ</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+
+                        <!-- Instruction notice -->
+                        <tr>
+                          <td style="padding: 0 28px 22px 28px;">
+                            <div style="background-color: #F8FAFC; border-left: 4px solid #00A19A; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #475569; line-height: 1.5;">
+                              Kính đề nghị Thầy/Cô sắp xếp thời gian tham dự và hoàn thành phiếu đánh giá sau tiết dự theo đúng quy định.
+                            </div>
+                          </td>
+                        </tr>
+
+                        <!-- Bulletproof Button -->
+                        <tr>
+                          <td align="center" style="padding: 0 28px 28px 28px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                              <tr>
+                                <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
+                                  <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=overview_slots" target="_blank" style="display: inline-block; padding: 13px 30px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                                    Mở Phiếu Đánh Giá Dự Giờ &rarr;
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                          <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                            <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                              HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                            </p>
+                            <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                              BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                            </p>
+                            <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                              Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </body>
+              </html>
             `;
+            await sendEmail({ to: obsEmail, subject: obsEmailSubject, html: obsEmailHtml }).catch(e => console.error("[createAssignedObservation] Email to observer error:", e));
+          }
+        }
             await sendEmail({ to: obsEmail, subject: obsEmailSubject, html: obsEmailHtml }).catch(e => console.error("[createAssignedObservation] Email to observer error:", e));
           }
         }

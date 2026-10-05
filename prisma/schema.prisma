@@ -176,6 +176,7 @@ model AcademicYear {
   ctqtTeachingAssignments        CtqtTeachingAssignment[]
   ctqtGradeEntries               CtqtGradeEntry[]
   ctqtCompetencyEntries          CtqtCompetencyEntry[]
+  textbooks                      Textbook[]
 }
 
 model Class {
@@ -510,6 +511,7 @@ model Subject {
   aliases                    SubjectAlias[]
   competencyAssessments      StudentCompetencyAssessment[]
   competencySummaries        StudentSubjectCompetencySummary[]
+  textbooks                  Textbook[]
 }
 
 model TeachingAssignment {
@@ -1169,6 +1171,10 @@ model ObservationSlot {
   className      String?
   lessonPlanName String?
   lessonPlanData String?
+  textbookId     String?
+  chapterId      String?
+  lessonId       String?
+  lessonPageNumber Int?
 
   teacher        Teacher                   @relation("HostTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
   registrations  ObservationRegistration[]
@@ -1630,6 +1636,10 @@ model LearningSupportTarget {
   terminationApprovedAt   DateTime?
   createdById             String?
   createdBy               Teacher?  @relation(name: "ProposerRelation", fields: [createdById], references: [id], onDelete: SetNull)
+  textbookId              String?
+  chapterId               String?
+  lessonId                String?
+  academicTopic           String?
 
   assignments LearningSupportAssignment[]
   evaluations LearningSupportEvaluation[]
@@ -2015,6 +2025,11 @@ model AcademicConsultationLog {
   notes          String?  // Ghi chu
   studentReflection String? // Tu danh gia sau buoi co van tu hoc sinh
   status         String   @default("COMPLETED") // "PENDING", "COMPLETED"
+  subjectId      String?
+  textbookId     String?
+  chapterId      String?
+  lessonId       String?
+  academicTopic  String?
   
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -2787,3 +2802,192 @@ model CtqtCompetencyEntry {
   @@index([classId])
   @@index([studentId])
 }
+
+// =========================================================================
+// THƯ VIỆN SÁCH GIÁO KHOA SỐ SSM (DIGITAL TEXTBOOKS)
+// =========================================================================
+
+model TextbookPublisher {
+  id          String           @id @default(cuid())
+  name        String
+  code        String           @unique
+  website     String?
+  status      String           @default("ACTIVE")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  series      TextbookSeries[]
+  textbooks   Textbook[]
+
+  @@index([status])
+}
+
+model TextbookSeries {
+  id          String            @id @default(cuid())
+  name        String
+  code        String            @unique
+  publisherId String
+  publisher   TextbookPublisher @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+  description String?
+  status      String            @default("ACTIVE")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  textbooks   Textbook[]
+
+  @@index([publisherId])
+  @@index([status])
+}
+
+model TextbookSource {
+  id               String     @id @default(cuid())
+  sourceName       String
+  sourceType       String     // INTERNAL_STORAGE, MOET_PORTAL, PUBLISHER_PORTAL
+  baseUrl          String
+  allowedDomains   String     // JSON array of whitelisted domains
+  downloadAllowed  Boolean    @default(false)
+  aiIndexAllowed   Boolean    @default(true)
+  syncEnabled      Boolean    @default(false)
+  status           String     @default("ACTIVE")
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  textbooks        Textbook[]
+
+  @@index([status])
+}
+
+model Textbook {
+  id               String            @id @default(cuid())
+  title            String
+  subjectId        String
+  subject          Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  grade            String            // "1", "2", ..., "12"
+  schoolYearId     String?
+  schoolYear       AcademicYear?     @relation(fields: [schoolYearId], references: [id], onDelete: SetNull)
+  seriesId         String
+  series           TextbookSeries    @relation(fields: [seriesId], references: [id], onDelete: Restrict)
+  publisherId      String
+  publisher        TextbookPublisher @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  sourceId         String?
+  source           TextbookSource?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  
+  volume           String?           @default("TAP_1") // TAP_1, TAP_2, TOAN_TAP
+  editionYear      Int?              @default(2024)
+  isbn             String?
+  coverUrl         String?
+  sourceType       String            @default("UPLOAD_PDF") // UPLOAD_PDF, IMPORT_URL, INTERNAL_SYNC
+  sourceUrl        String?
+  fileUrl          String
+  storageKey       String
+  fileHash         String?
+  fileSize         Int               @default(0)
+  totalPages       Int               @default(0)
+  licenseNote      String?
+  
+  processingStatus String            @default("NEW") // NEW, PROCESSING, OCR_REQUIRED, REVIEW_REQUIRED, READY, ERROR, ARCHIVED
+  aiIndexStatus    String            @default("PENDING") // PENDING, INDEXING, INDEXED, FAILED
+  errorMessage     String?
+  
+  createdById      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  chapters         TextbookChapter[]
+  pages            TextbookPage[]
+  chunks           TextbookChunk[]
+  jobs             TextbookProcessingJob[]
+
+  @@unique([subjectId, grade, seriesId, publisherId, volume, editionYear])
+  @@index([subjectId])
+  @@index([grade])
+  @@index([seriesId])
+  @@index([processingStatus])
+  @@index([fileHash])
+}
+
+model TextbookChapter {
+  id             String           @id @default(cuid())
+  textbookId     String
+  textbook       Textbook         @relation(fields: [textbookId], references: [id], onDelete: Cascade)
+  chapterNumber  String
+  title          String
+  sortOrder      Int              @default(0)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  lessons        TextbookLesson[]
+
+  @@index([textbookId])
+  @@index([sortOrder])
+}
+
+model TextbookLesson {
+  id             String          @id @default(cuid())
+  chapterId      String
+  chapter        TextbookChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  lessonNumber   String
+  title          String
+  pageStart      Int
+  pageEnd        Int
+  summary        String?
+  keywords       String?
+  sortOrder      Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  chunks         TextbookChunk[]
+
+  @@index([chapterId])
+  @@index([pageStart, pageEnd])
+}
+
+model TextbookPage {
+  id         String   @id @default(cuid())
+  textbookId String
+  textbook   Textbook @relation(fields: [textbookId], references: [id], onDelete: Cascade)
+  pageNumber Int
+  pageText   String
+  hasImages  Boolean  @default(false)
+  isOcr      Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([textbookId, pageNumber])
+  @@index([textbookId])
+}
+
+model TextbookChunk {
+  id          String          @id @default(cuid())
+  textbookId  String
+  textbook    Textbook        @relation(fields: [textbookId], references: [id], onDelete: Cascade)
+  subjectId   String
+  grade       String
+  seriesId    String
+  chapterId   String?
+  lessonId    String?
+  lesson      TextbookLesson? @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  pageStart   Int
+  pageEnd     Int
+  chunkText   String
+  tokenCount  Int             @default(0)
+  embedding   String?
+  createdAt   DateTime        @default(now())
+
+  @@index([textbookId])
+  @@index([subjectId, grade])
+  @@index([chapterId])
+  @@index([lessonId])
+}
+
+model TextbookProcessingJob {
+  id           String    @id @default(cuid())
+  textbookId   String
+  textbook     Textbook  @relation(fields: [textbookId], references: [id], onDelete: Cascade)
+  jobType      String
+  status       String    @default("QUEUED")
+  progress     Int       @default(0)
+  errorMessage String?
+  payloadJson  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([textbookId])
+  @@index([status])
+}
+
