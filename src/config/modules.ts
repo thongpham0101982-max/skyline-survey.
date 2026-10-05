@@ -32,7 +32,8 @@ import {
   Database,
   BarChart3,
   Search,
-  Trophy
+  Trophy,
+  TrendingUp
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -90,9 +91,21 @@ export const APP_CATEGORIES = [
         href: "/admin/ktdbcl/diem-nhan-xet"
       },
       {
+        code: "KTDBCL_THONG_KE_BAO_CAO",
+        name: "Thống kê báo cáo",
+        icon: BarChart3,
+        href: "/admin/ktdbcl/thong-ke-bao-cao",
+        subModules: [
+          { code: "KTDBCL_TK_DIEM_TB", name: "1. ĐTB các môn & Phổ điểm", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=analytics" },
+          { code: "KTDBCL_TK_TIEN_DO", name: "2. Giám sát: Tiến độ nhập điểm", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=progress" },
+          { code: "KTDBCL_TK_DUYET_MO_SO", name: "3. Duyệt yêu cầu mở sổ điểm", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=requests" },
+          { code: "KTDBCL_TK_PHAN_HOI", name: "4. Tổng hợp: Phản hồi PHHS & Trao đổi", href: "/admin/ktdbcl/thong-ke-bao-cao?tab=feedback" },
+        ]
+      },
+      {
         code: "KTDBCL_PHAN_TICH_THKQ",
         name: "Phân tích THKQ",
-        icon: BarChart3,
+        icon: TrendingUp,
         href: "/admin/ktdbcl/phan-tich-thkq"
       },
             {

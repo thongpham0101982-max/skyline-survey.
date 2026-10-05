@@ -562,14 +562,21 @@ export async function GET(req: NextRequest) {
         
         // Exact structure expected by teacher tabs (profileData)
         student: s,
-        termScores: (s.termScores && s.termScores.length > 0) ? s.termScores : (crossScoreMap.get(studentCode)?.termScores || []),
-        termSummaries: (s.termSummaries && s.termSummaries.length > 0) ? s.termSummaries : (crossScoreMap.get(studentCode)?.termSummaries || []),
+        termScores: s.termScores || [],
+        termSummaries: s.termSummaries || [],
         goals: (s.goals && s.goals.length > 0) ? s.goals : (crossScoreMap.get(studentCode)?.goals || []),
         goalTrackings: (s.goalTrackings && s.goalTrackings.length > 0) ? s.goalTrackings : (crossScoreMap.get(studentCode)?.goalTrackings || []),
         termEvaluations: (s.termEvaluations && s.termEvaluations.length > 0) ? s.termEvaluations : (crossScoreMap.get(studentCode)?.termEvaluations || []),
-        subjectGradeEntries: (s.subjectGradeEntries && s.subjectGradeEntries.length > 0) ? s.subjectGradeEntries : (crossScoreMap.get(studentCode)?.subjectGradeEntries || []),
+        subjectGradeEntries: s.subjectGradeEntries || [],
         commitment: s.learningCommitments?.[0] || null,
-        orientation: s.careerOrientations?.[0] || null,
+        orientation: (() => {
+          const targetYearId = s.academicYearId || s.class?.academicYearId || academicYearId;
+          return (s.careerOrientations || []).find((co: any) => co.academicYearId === targetYearId) || s.careerOrientations?.[0] || null;
+        })(),
+        careerOrientation: (() => {
+          const targetYearId = s.academicYearId || s.class?.academicYearId || academicYearId;
+          return (s.careerOrientations || []).find((co: any) => co.academicYearId === targetYearId) || s.careerOrientations?.[0] || null;
+        })(),
         achievements: s.achievements || [],
         projects: s.projectExperiences || [],
         experientialActivities: (() => {

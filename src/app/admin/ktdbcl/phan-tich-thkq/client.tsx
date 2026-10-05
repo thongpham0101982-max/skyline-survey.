@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import * as XLSX from "xlsx"
 import { toast } from "react-hot-toast"
 import {
@@ -17,12 +17,14 @@ import { ThkqComparativeCharts } from "@/components/ktdbcl/thkq/ThkqComparativeC
 import { ThkqClassStatsTable } from "@/components/ktdbcl/thkq/ThkqClassStatsTable"
 import { ThkqTargetStudentsTable } from "@/components/ktdbcl/thkq/ThkqTargetStudentsTable"
 import { ThkqDrilldownModal } from "@/components/ktdbcl/thkq/ThkqDrilldownModal"
+import { isGradeMatching } from "@/app/admin/ktdbcl/diem-nhan-xet/grade-utils"
 
 interface Props {
   academicYears: any[]
   activeYearId: string
   campuses: any[]
   subjects: any[]
+  gradeConfigs?: any[]
   classes: any[]
 }
 
@@ -31,6 +33,7 @@ export function PhanTichThkqClient({
   activeYearId = "",
   campuses = [],
   subjects = [],
+  gradeConfigs = [],
   classes = []
 }: Props) {
   // Bộ lọc States
@@ -55,6 +58,8 @@ export function PhanTichThkqClient({
     targetStudents: any[]
     totalTargetStudentsCount: number
     countsByTargetGroup: any
+    periodSubjects?: any[]
+    subjects?: any[]
   }>({
     kpi: null,
     benchmarks: null,
@@ -63,7 +68,8 @@ export function PhanTichThkqClient({
     charts: null,
     targetStudents: [],
     totalTargetStudentsCount: 0,
-    countsByTargetGroup: { belowSkyline: 0, belowMoet: 0, commitment: 0, psychological: 0, perfect10: 0 }
+    countsByTargetGroup: { belowSkyline: 0, belowMoet: 0, commitment: 0, psychological: 0, perfect10: 0 },
+    periodSubjects: []
   })
 
   // Modal Drill-down State
@@ -116,6 +122,60 @@ export function PhanTichThkqClient({
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  // Lọc chính xác danh sách Môn học theo Kỳ khảo sát / Học kỳ
+  const availableSubjectsForPeriod = useMemo(() => {
+    const subMap = new Map<string, { id: string; subjectName: string; subjectCode: string }>()
+
+    // 1. Ưu tiên từ dữ liệu trả về của API cho kỳ này
+    const apiSubjects = analyticsData.periodSubjects || analyticsData.subjects || []
+    if (apiSubjects.length > 0) {
+      apiSubjects.forEach((s: any) => {
+        subMap.set(s.id, {
+          id: s.id,
+          subjectName: s.subjectName || s.name,
+          subjectCode: s.subjectCode || s.code || ""
+        })
+      })
+    }
+
+    // 2. Bổ sung từ cấu hình gradeConfigs theo evaluationPeriod và grade
+    if (gradeConfigs && gradeConfigs.length > 0) {
+      gradeConfigs.forEach((cfg: any) => {
+        const periodMatch = selectedPeriod === "ALL" || cfg.evaluationPeriod === selectedPeriod || cfg.evaluationPeriod === "ALL"
+        const gradeMatch = selectedGrade === "ALL" || isGradeMatching(cfg.grade, selectedGrade)
+        if (periodMatch && gradeMatch && cfg.subject) {
+          subMap.set(cfg.subject.id, {
+            id: cfg.subject.id,
+            subjectName: cfg.subject.subjectName,
+            subjectCode: cfg.subject.subjectCode
+          })
+        }
+      })
+    }
+
+    // 3. Fallback: Nếu không tìm thấy cấu hình theo kỳ, dùng danh sách subjects
+    if (subMap.size === 0 && subjects && subjects.length > 0) {
+      subjects.forEach((s: any) => {
+        subMap.set(s.id, {
+          id: s.id,
+          subjectName: s.subjectName,
+          subjectCode: s.subjectCode
+        })
+      })
+    }
+
+    return Array.from(subMap.values()).sort((a, b) => a.subjectName.localeCompare(b.subjectName))
+  }, [analyticsData.periodSubjects, analyticsData.subjects, gradeConfigs, selectedPeriod, selectedGrade, subjects])
+
+  // Tự động reset selectedSubjectId nếu môn đang chọn không thuộc kỳ khảo sát mới
+  useEffect(() => {
+    if (selectedSubjectId !== "ALL" && availableSubjectsForPeriod.length > 0) {
+      if (!availableSubjectsForPeriod.some(s => s.id === selectedSubjectId)) {
+        setSelectedSubjectId("ALL")
+      }
+    }
+  }, [availableSubjectsForPeriod, selectedSubjectId])
 
   // Xử lý khi click vào ô Bản đồ nhiệt
   const handleCellClick = (cell: any) => {
@@ -284,6 +344,7 @@ export function PhanTichThkqClient({
         setSearchKeyword={setSearchKeyword}
         campuses={campuses}
         subjects={subjects}
+        availableSubjects={availableSubjectsForPeriod}
         loading={loading}
         onRefresh={fetchData}
         onExportExcel={handleExportExcel}

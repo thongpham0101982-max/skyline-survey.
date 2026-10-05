@@ -47,6 +47,13 @@ export const EVALUATION_TYPES = [
   }
 ];
 
+export const CATEGORIES_CONFIG = [
+  { id: "MOET", label: "Môn học theo Moet", shortLabel: "Theo Moet", icon: Award, theme: "blue", desc: "Chương trình chuẩn Bộ GD&ĐT", badgeClass: "bg-blue-50 text-blue-700 border-blue-200" },
+  { id: "SKL", label: "Môn học Sky-Line", shortLabel: "Sky-Line", icon: Layers, theme: "emerald", desc: "Chương trình đặc thù của Hệ thống", badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  { id: "BILINGUAL", label: "Môn học Song ngữ", shortLabel: "Song ngữ", icon: SlidersHorizontal, theme: "purple", desc: "Chương trình Song ngữ & Quốc tế", badgeClass: "bg-purple-50 text-purple-700 border-purple-200" },
+  { id: "KSDV", label: "Môn Học KSĐV", shortLabel: "KSĐV", icon: CheckSquare, theme: "amber", desc: "Khảo sát đầu vào & Đánh giá năng lực", badgeClass: "bg-amber-50 text-amber-700 border-amber-200" }
+];
+
 export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   const [subjects, setSubjects] = useState(initialSubjects || []);
   const safeYears = years || [];
@@ -83,6 +90,16 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
     const gradeCount = subjects.filter((s: any) => s.evaluationType === "GRADE").length;
     const commentCount = subjects.filter((s: any) => s.evaluationType === "COMMENT").length;
     return { total, scoreCount, gradeCount, commentCount };
+  }, [subjects]);
+
+  const categoryCounts = useMemo(() => {
+    return {
+      all: subjects.length,
+      moet: subjects.filter((s: any) => s.category === "MOET").length,
+      skl: subjects.filter((s: any) => s.category === "SKL").length,
+      bilingual: subjects.filter((s: any) => s.category === "BILINGUAL" || s.category === "INTERNATIONAL").length,
+      ksdv: subjects.filter((s: any) => s.category === "KSDV").length
+    };
   }, [subjects]);
 
   const startEdit = (s?: any) => {
@@ -262,7 +279,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         s.subjectName.toLowerCase().includes(searchQuery.toLowerCase().trim());
       const matchLevel = filterLevel === "ALL_LEVELS" || (s.level && s.level.includes(filterLevel));
       const matchProgram = filterProgram === "ALL_PROGRAMS" || (s.studyPrograms && s.studyPrograms.includes(filterProgram));
-      const matchCategory = filterCategory === "ALL_CATEGORIES" || s.category === filterCategory;
+      const matchCategory = filterCategory === "ALL_CATEGORIES" || s.category === filterCategory || (filterCategory === "BILINGUAL" && s.category === "INTERNATIONAL");
       const matchEvalType = filterEvalType === "ALL_EVALS" || (s.evaluationType || "SCORE") === filterEvalType;
 
       return matchSearch && matchLevel && matchProgram && matchCategory && matchEvalType;
@@ -304,19 +321,12 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
 
   const renderCategoryBadge = (cat?: string) => {
     const c = cat || "MOET";
-    const styles: any = {
-      MOET: "bg-slate-100 text-slate-700 border-slate-200",
-      SKL: "bg-emerald-50 text-emerald-700 border-emerald-200",
-      INTERNATIONAL: "bg-amber-50 text-amber-700 border-amber-200"
-    };
-    const labels: any = {
-      MOET: "MOET",
-      SKL: "SKL",
-      INTERNATIONAL: "Quốc tế"
-    };
+    const found = CATEGORIES_CONFIG.find(item => item.id === c) || 
+                  (c === "INTERNATIONAL" ? CATEGORIES_CONFIG.find(item => item.id === "BILINGUAL") : null) ||
+                  CATEGORIES_CONFIG[0];
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${styles[c] || styles.MOET}`}>
-        {labels[c] || c}
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${found.badgeClass}`}>
+        {found.shortLabel}
       </span>
     );
   };
@@ -348,9 +358,10 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
     const colors: any = {
       blue: { bg: 'bg-blue-50/60', border: 'border-blue-100', text: 'text-blue-700', headerBg: 'bg-gradient-to-r from-blue-50 to-white', totalBg: 'bg-blue-600' },
       emerald: { bg: 'bg-emerald-50/60', border: 'border-emerald-100', text: 'text-emerald-700', headerBg: 'bg-gradient-to-r from-emerald-50 to-white', totalBg: 'bg-emerald-600' },
+      purple: { bg: 'bg-purple-50/60', border: 'border-purple-100', text: 'text-purple-700', headerBg: 'bg-gradient-to-r from-purple-50 to-white', totalBg: 'bg-purple-600' },
       amber: { bg: 'bg-amber-50/60', border: 'border-amber-100', text: 'text-amber-700', headerBg: 'bg-gradient-to-r from-amber-50 to-white', totalBg: 'bg-amber-600' }
     };
-    const c = colors[theme];
+    const c = colors[theme] || colors.blue;
     const totalAll = rows.reduce((acc, r) => acc + (r.quota[totalField] || 0), 0);
 
     const visibleSubjectIds = Array.from(new Set(rows.map(r => r.subject.id))) as string[];
@@ -369,7 +380,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng tiết bậc học:</span>
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng tiết:</span>
             <span className={`text-sm font-black px-3 py-1 rounded-xl text-white ${c.totalBg} shadow-sm`}>
               {totalAll} tiết
             </span>
@@ -386,17 +397,17 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     checked={isAllVisibleSelected}
                     onChange={() => handleSelectAllVisible(visibleSubjectIds)}
                     className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                    title="Chọn tất cả môn trong bậc này"
+                    title="Chọn tất cả môn trong bảng này"
                   />
                 </th>
                 <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider w-[140px]">Mã môn</th>
                 <th className="px-5 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[220px]">Tên môn học</th>
-                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Hình thức đánh giá</th>
+                <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Hình thức</th>
                 <th className="px-4 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider">Hệ học</th>
                 {grades.map(g => (
                   <th key={g} className="px-3 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Khối {g}</th>
                 ))}
-                <th className="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng</th>
+                <th className="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Số tiết</th>
                 <th className="px-5 py-3.5 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">Thao tác</th>
               </tr>
             </thead>
@@ -556,9 +567,10 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 className="bg-indigo-800 text-white text-xs font-bold px-3 py-2 rounded-xl outline-none border border-indigo-700 cursor-pointer hover:bg-indigo-700 transition-colors"
               >
                 <option value="">-- Đổi Danh mục môn --</option>
-                <option value="MOET">Môn MOET (Bộ GD&ĐT)</option>
-                <option value="SKL">Môn SKL (Đặc thù)</option>
-                <option value="INTERNATIONAL">Môn Quốc tế</option>
+                <option value="MOET">🏛️ Môn học theo Moet</option>
+                <option value="SKL">⭐ Môn học Sky-Line</option>
+                <option value="BILINGUAL">🌐 Môn học Song ngữ</option>
+                <option value="KSDV">📋 Môn Học KSĐV</option>
               </select>
             </div>
 
@@ -726,9 +738,10 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             >
               {[
                 { id: "ALL_CATEGORIES", label: "Tất cả Danh mục" },
-                { id: "MOET", label: "Môn MOET (Bộ GD&ĐT)" },
-                { id: "SKL", label: "Môn SKL (Đặc thù)" },
-                { id: "INTERNATIONAL", label: "Môn Quốc tế" }
+                { id: "MOET", label: "🏛️ Môn học theo Moet" },
+                { id: "SKL", label: "⭐ Môn học Sky-Line" },
+                { id: "BILINGUAL", label: "🌐 Môn học Song ngữ" },
+                { id: "KSDV", label: "📋 Môn Học KSĐV" }
               ].map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.label}</option>
               ))}
@@ -737,11 +750,80 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         </div>
       </div>
 
-      {/* Main Tables Container */}
-      <div className="space-y-6 pt-2">
-        {filterLevel === "ALL_LEVELS" || filterLevel === "PRIMARY" ? renderTable("Bậc Tiểu học", "blue", primaryRows, [1,2,3,4,5], "quotaPrimary") : null}
-        {filterLevel === "ALL_LEVELS" || filterLevel === "MIDDLE" ? renderTable("Bậc Trung học cơ sở (THCS)", "emerald", middleRows, [6,7,8,9], "quotaMiddle") : null}
-        {filterLevel === "ALL_LEVELS" || filterLevel === "HIGH" ? renderTable("Bậc Trung học phổ thông (THPT)", "amber", highRows, [10,11,12], "quotaHigh") : null}
+      {/* Category Navigation Tabs Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+        {[
+          { id: "ALL_CATEGORIES", label: "Tất cả danh mục", count: categoryCounts.all },
+          { id: "MOET", label: "🏛️ Môn học theo Moet", count: categoryCounts.moet },
+          { id: "SKL", label: "⭐ Môn học Sky-Line", count: categoryCounts.skl },
+          { id: "BILINGUAL", label: "🌐 Môn học Song ngữ", count: categoryCounts.bilingual },
+          { id: "KSDV", label: "📋 Môn Học KSĐV", count: categoryCounts.ksdv }
+        ].map(tab => {
+          const isActive = filterCategory === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setFilterCategory(tab.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs whitespace-nowrap transition-all border ${
+                isActive 
+                  ? "bg-slate-900 text-white border-slate-900 shadow-sm shadow-slate-300" 
+                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+              }`}
+            >
+              <span>{tab.label}</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+              }`}>
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Main Tables Container grouped by Category */}
+      <div className="space-y-8 pt-2">
+        {CATEGORIES_CONFIG.filter(c => filterCategory === "ALL_CATEGORIES" || filterCategory === c.id || (filterCategory === "BILINGUAL" && c.id === "BILINGUAL")).map(catConfig => {
+          const catRows = explodedRows.filter((r: any) => r.subject.category === catConfig.id || (catConfig.id === "BILINGUAL" && r.subject.category === "INTERNATIONAL"));
+          if (catRows.length === 0) return null;
+
+          const primaryRows = sortRowsAsTree(catRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("PRIMARY"))));
+          const middleRows = sortRowsAsTree(catRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("MIDDLE"))));
+          const highRows = sortRowsAsTree(catRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("HIGH"))));
+
+          const showPrimary = filterLevel === "ALL_LEVELS" || filterLevel === "PRIMARY";
+          const showMiddle = filterLevel === "ALL_LEVELS" || filterLevel === "MIDDLE";
+          const showHigh = filterLevel === "ALL_LEVELS" || filterLevel === "HIGH";
+
+          const IconComp = catConfig.icon;
+
+          return (
+            <div key={catConfig.id} className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2.5">
+                  <div className={`p-2 rounded-xl border ${catConfig.badgeClass}`}>
+                    <IconComp className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-base sm:text-lg font-black text-slate-800 tracking-tight">{catConfig.label}</h2>
+                      <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${catConfig.badgeClass}`}>
+                        {catRows.length} dòng phân bổ
+                      </span>
+                    </div>
+                    <p className="text-xs font-medium text-slate-400">{catConfig.desc}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {showPrimary && renderTable(`Bậc Tiểu học - ${catConfig.shortLabel}`, catConfig.theme, primaryRows, [1,2,3,4,5], "quotaPrimary")}
+                {showMiddle && renderTable(`Bậc THCS - ${catConfig.shortLabel}`, catConfig.theme, middleRows, [6,7,8,9], "quotaMiddle")}
+                {showHigh && renderTable(`Bậc THPT - ${catConfig.shortLabel}`, catConfig.theme, highRows, [10,11,12], "quotaHigh")}
+              </div>
+            </div>
+          );
+        })}
 
         {explodedRows.length === 0 && (
           <div className="bg-white border-2 border-dashed border-slate-200 rounded-3xl p-12 text-center animate-in fade-in">
@@ -810,9 +892,10 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       onChange={e=>setFormData({...formData, category: e.target.value})}
                       className="w-full p-3 bg-slate-50 rounded-2xl border border-slate-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-xs cursor-pointer"
                     >
-                      <option value="MOET">Môn học Bộ GD&ĐT (MOET)</option>
-                      <option value="SKL">Môn học đặc thù Sky-Line (SKL)</option>
-                      <option value="INTERNATIONAL">Môn học Quốc tế</option>
+                      <option value="MOET">Môn học theo Moet (Bộ GD&ĐT)</option>
+                      <option value="SKL">Môn học Sky-Line (Đặc thù)</option>
+                      <option value="BILINGUAL">Môn học Song ngữ</option>
+                      <option value="KSDV">Môn Học KSĐV (Khảo sát đầu vào)</option>
                     </select>
                   </div>
 

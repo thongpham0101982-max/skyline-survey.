@@ -8,7 +8,7 @@ export const metadata = {
 }
 
 export default async function PhanTichThkqPage() {
-  const [academicYears, campuses, subjects] = await Promise.all([
+  const [academicYears, campuses, subjects, gradeConfigs] = await Promise.all([
     prisma.academicYear.findMany({
       orderBy: { startDate: "desc" },
       select: { id: true, name: true, status: true }
@@ -22,6 +22,17 @@ export default async function PhanTichThkqPage() {
       where: { status: "ACTIVE" },
       orderBy: { subjectName: "asc" },
       select: { id: true, subjectCode: true, subjectName: true }
+    }),
+    prisma.subjectGradeConfig.findMany({
+      where: { subjectId: { not: null } },
+      select: {
+        id: true,
+        academicYearId: true,
+        evaluationPeriod: true,
+        grade: true,
+        subjectId: true,
+        subject: { select: { id: true, subjectCode: true, subjectName: true } }
+      }
     })
   ])
 
@@ -45,6 +56,7 @@ export default async function PhanTichThkqPage() {
         activeYearId={activeYear?.id || ""}
         campuses={JSON.parse(JSON.stringify(campuses))}
         subjects={JSON.parse(JSON.stringify(subjects))}
+        gradeConfigs={JSON.parse(JSON.stringify(gradeConfigs))}
         classes={JSON.parse(JSON.stringify(classes))}
       />
     </div>

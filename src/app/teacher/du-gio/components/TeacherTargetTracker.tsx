@@ -1,8 +1,12 @@
 "use client"
+// @ts-nocheck
 
 import React, { useMemo } from "react"
-import { GraduationCap, Eye, Star, CheckCircle2, AlertTriangle, Target, TrendingUp, Calendar, ArrowRight, Sparkles, Clock } from "lucide-react"
-import { useCampusTheme, CampusTheme, resolveCampusTheme } from "@/hooks/useCampusTheme"
+import { 
+  GraduationCap, Eye, Star, CheckCircle2, AlertTriangle, Target, 
+  TrendingUp, Calendar, ArrowRight, Sparkles, ChevronRight, BarChart3, Clock, Check
+} from "lucide-react"
+import { useCampusTheme, CampusTheme } from "@/hooks/useCampusTheme"
 
 export interface MonthlyTeacherStatItem {
   monthKey: string
@@ -79,7 +83,6 @@ export function TeacherTargetTracker({
   isRegularTeacher = false,
   onOpenConfirmModal
 }: TeacherTargetTrackerProps) {
-  // Resolve campus theme (Hill, Global, Standard)
   const defaultTheme = useCampusTheme(campusCodeOrName)
   const theme = propCampusTheme || defaultTheme
 
@@ -133,151 +136,81 @@ export function TeacherTargetTracker({
     return `Tháng ${m}/${y}`
   }, [isSpecificMonth, selectedMonth])
 
-  // Custom visual styles per campus
-  const containerGradient = useMemo(() => {
-    if (theme.type === "HILL") {
-      return "bg-gradient-to-br from-[#003B3A] via-[#016863] to-[#6E5318]"
-    }
-    if (theme.type === "GLOBAL") {
-      return "bg-gradient-to-br from-[#003B3A] via-[#015C57] to-[#4A245C]"
-    }
-    return "bg-gradient-to-br from-[#003231] via-[#005450] to-[#007D77]"
-  }, [theme.type])
-
-  const accentBadge = useMemo(() => {
-    if (theme.type === "HILL") {
-      return {
-        bg: "bg-[#AE882E]/25",
-        text: "text-amber-200",
-        border: "border-[#AE882E]/40"
-      }
-    }
-    if (theme.type === "GLOBAL") {
-      return {
-        bg: "bg-[#6E3D89]/30",
-        text: "text-purple-200",
-        border: "border-[#6E3D89]/40"
-      }
-    }
-    return {
-      bg: "bg-[#00A19A]/25",
-      text: "text-teal-200",
-      border: "border-[#00A19A]/40"
-    }
-  }, [theme.type])
-
-  const activeMonthRing = useMemo(() => {
-    if (theme.type === "HILL") return "border-[#AE882E] text-[#6E5318]"
-    if (theme.type === "GLOBAL") return "border-[#6E3D89] text-[#4A245C]"
-    return "border-[#00A19A] text-[#003B3A]"
-  }, [theme.type])
+  // Overall completion score (average of taught % and observed %)
+  const overallProgress = Math.round((taughtPercent + observedPercent) / 2)
 
   return (
-    <div className={`${containerGradient} rounded-3xl p-5 sm:p-6 text-white shadow-xl border border-white/15 relative overflow-hidden flex flex-col gap-5 transition-all duration-300 font-sans`}>
-      {/* Dynamic Campus Ambient Glows */}
-      {theme.type === "HILL" && (
-        <>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#AE882E]/15 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-teal-400/10 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
-        </>
-      )}
-      {theme.type === "GLOBAL" && (
-        <>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#6E3D89]/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-teal-400/10 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
-        </>
-      )}
-      {theme.type === "STANDARD" && (
-        <>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#00A19A]/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
-        </>
-      )}
-
-      {/* TOP HEADER & CONTROLS */}
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        {/* Left: Branding & Status Pills */}
-        <div className="space-y-2 max-w-xl">
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Campus Identity Badge */}
-            <span className={`px-2.5 py-1 rounded-full ${accentBadge.bg} ${accentBadge.text} border ${accentBadge.border} text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-md`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-              <span>{theme.name}</span>
-            </span>
-
-            {/* Academic Year Tag */}
-            <span className="px-2.5 py-1 rounded-full bg-white/10 text-white/90 border border-white/15 text-[11px] font-semibold flex items-center gap-1 backdrop-blur-md">
-              <Target className="w-3 h-3 text-teal-300" />
-              <span>Chỉ tiêu CM {academicYearName ? `• ${academicYearName}` : ""}</span>
-            </span>
-
-            {/* Teacher Experience Category Pill */}
-            {observerType && (
-              <button
-                type="button"
-                onClick={onOpenConfirmModal}
-                className="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 text-white border border-white/20 text-[11px] font-bold flex items-center gap-1.5 backdrop-blur-md transition-all cursor-pointer shadow-xs"
-                title="Bấm để xem lại hoặc điều chỉnh đối tượng GV"
-              >
-                <span>{observerType === "Giáo viên mới" ? "🌱 GV mới (< 2 năm)" : "⭐ GV cũ (≥ 2 năm)"}</span>
-                {onOpenConfirmModal && <span className="text-[10px] text-teal-200 underline font-normal ml-0.5">Thay đổi</span>}
-              </button>
-            )}
-
-            {/* Selected Month Tag */}
-            {isSpecificMonth && (
-              <span className="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-200 border border-cyan-400/30 text-[11px] font-bold flex items-center gap-1 backdrop-blur-md">
-                <Calendar className="w-3 h-3 text-cyan-300" />
-                <span>{selectedMonthDisplay}</span>
-              </span>
-            )}
-
-            {/* Overall Status Badge */}
-            {isAllCompleted ? (
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/25 text-emerald-200 border border-emerald-400/40 text-[11px] font-bold flex items-center gap-1 backdrop-blur-md">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Đạt 100% chỉ tiêu</span>
-              </span>
-            ) : (
-              <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/30 text-[11px] font-bold flex items-center gap-1 backdrop-blur-md">
-                <TrendingUp className="w-3.5 h-3.5 text-amber-300" />
-                <span>Đang thực hiện</span>
-              </span>
-            )}
-
-            {/* Surprise Slots Pill */}
-            {(displaySurpriseTaught > 0 || displaySurpriseObserved > 0) && (
-              <span className="px-2.5 py-1 rounded-full bg-rose-500/25 text-rose-200 border border-rose-400/30 text-[11px] font-bold flex items-center gap-1 backdrop-blur-md">
-                <span>⚡</span>
-                <span>{displaySurpriseTaught + displaySurpriseObserved} tiết đột xuất</span>
-              </span>
-            )}
+    <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xs border border-slate-200/90 relative overflow-hidden flex flex-col gap-4 font-sans transition-all duration-200">
+      
+      {/* TOP HEADER: Clean Title, Tags, Period Selector & Action */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 pb-4 border-b border-slate-100">
+        
+        {/* Left: Title + Brand Badges */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-teal-50 text-teal-700 border border-teal-200/80 flex items-center justify-center shrink-0 shadow-2xs">
+            <Target className="w-5 h-5 text-teal-600" />
           </div>
 
           <div>
-            <h2 className="text-lg sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
-              <span>Tiến độ Hoàn thành Chỉ tiêu Dự giờ Cá nhân</span>
-            </h2>
-            <p className="text-xs text-white/80 font-medium mt-0.5">
+            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+              <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-800">
+                Tiến độ Hoàn thành Chỉ tiêu Cá nhân
+              </h2>
+
+              {/* Status Badge */}
+              {isAllCompleted ? (
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-black flex items-center gap-1 shadow-2xs">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Đạt 100% chỉ tiêu</span>
+                </span>
+              ) : (
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-bold flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3 text-amber-500" />
+                  <span>Tiến độ: {overallProgress}%</span>
+                </span>
+              )}
+
+              {/* Academic Year */}
+              {academicYearName && (
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-bold border border-blue-200">
+                  NH {academicYearName}
+                </span>
+              )}
+
+              {/* Teacher Experience Category Pill */}
+              {observerType && (
+                <button
+                  type="button"
+                  onClick={onOpenConfirmModal}
+                  className="px-2 py-0.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold border border-slate-200 flex items-center gap-1 cursor-pointer transition-all"
+                  title="Bấm để xem lại hoặc điều chỉnh đối tượng GV"
+                >
+                  <span>{observerType === "Giáo viên mới" ? "🌱 GV mới (< 2 năm)" : "⭐ GV cũ (≥ 2 năm)"}</span>
+                  {onOpenConfirmModal && <span className="text-[10px] text-teal-700 underline font-normal ml-0.5">Thay đổi</span>}
+                </button>
+              )}
+            </div>
+
+            <p className="text-xs text-slate-500 font-medium">
               {isSpecificMonth
-                ? `Theo dõi số tiết trực tiếp giảng dạy và đi dự giờ đã hoàn thành đánh giá trong ${selectedMonthDisplay}.`
-                : "Theo dõi số tiết trực tiếp giảng dạy (≥1 phiếu nhận xét), tiết đi dự giờ và điểm đánh giá trung bình."}
+                ? `Số liệu thống kê chi tiết trong ${selectedMonthDisplay}.`
+                : "Theo dõi số tiết trực tiếp giảng dạy, tiết đi dự giờ và điểm đánh giá trung bình cả năm."}
             </p>
           </div>
         </div>
 
-        {/* Right: Quick Action Controls */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        {/* Right: Quick Period Selector & Report Button */}
+        <div className="flex items-center gap-2 flex-wrap">
           {onSelectMonth && availableMonths.length > 0 && (
-            <div className="inline-flex items-center gap-2 px-3 py-2 bg-white/12 hover:bg-white/18 backdrop-blur-md rounded-xl border border-white/20 transition-all shadow-inner">
-              <Calendar className="w-3.5 h-3.5 text-teal-300 shrink-0" />
-              <span className="text-[11px] font-bold text-white/80">Kỳ xem:</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 transition-all">
+              <Calendar className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              <span className="text-[11px] text-slate-400 font-medium">Kỳ:</span>
               <select
                 value={selectedMonth || "all"}
                 onChange={e => onSelectMonth(e.target.value)}
-                className="bg-transparent text-white text-xs font-bold outline-none cursor-pointer pr-1"
+                className="bg-transparent text-slate-800 text-xs font-bold outline-none cursor-pointer pr-1"
               >
-                <option value="all" className="text-slate-900 bg-white font-semibold">
+                <option value="all" className="font-semibold text-slate-800">
                   🌟 Toàn năm học ({academicYearName || "Tất cả"})
                 </option>
                 {availableMonths.map(m => {
@@ -285,7 +218,7 @@ export function TeacherTargetTracker({
                   const parts = m.split("-")
                   const [y, mon] = parts.length >= 2 ? parts : ["", m]
                   return (
-                    <option key={m} value={m} className="text-slate-900 bg-white font-semibold">
+                    <option key={m} value={m} className="font-semibold text-slate-800">
                       📅 {mon && y ? `Tháng ${mon}/${y}` : m}
                     </option>
                   )
@@ -298,9 +231,9 @@ export function TeacherTargetTracker({
             <button
               type="button"
               onClick={onViewReport}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white/15 hover:bg-white/25 active:scale-95 text-white rounded-xl text-xs font-bold transition-all border border-white/20 cursor-pointer shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-teal-700 rounded-xl text-xs font-bold transition-all border border-slate-200 shadow-2xs cursor-pointer active:scale-95"
             >
-              <span>📊</span>
+              <BarChart3 className="w-3.5 h-3.5 text-teal-600" />
               <span>Báo cáo & Xuất Excel</span>
             </button>
           )}
@@ -309,16 +242,16 @@ export function TeacherTargetTracker({
 
       {/* TEACHER EXPERIENCE UNCONFIRMED WARNING CALLOUT */}
       {!targetConfirmed && isRegularTeacher && (
-        <div className="relative z-10 p-3.5 bg-gradient-to-r from-amber-500/25 via-amber-500/20 to-teal-500/20 border border-amber-300/40 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-100 text-xs backdrop-blur-md shadow-lg animate-in fade-in">
+        <div className="p-3 bg-amber-50/90 border border-amber-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 transition-all">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-400/30 flex items-center justify-center shrink-0 border border-amber-300/50">
-              <AlertTriangle className="w-4 h-4 text-amber-200" />
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-800 flex items-center justify-center shrink-0 border border-amber-300">
+              <AlertTriangle className="w-4 h-4 text-amber-700" />
             </div>
             <div>
-              <p className="font-extrabold text-white text-xs sm:text-sm flex items-center gap-1.5">
-                <span>Thầy/Cô chưa xác nhận đối tượng Giáo viên (Mới / Cũ 2 năm)!</span>
+              <p className="font-black text-xs text-amber-900">
+                Thầy/Cô chưa xác nhận đối tượng Giáo viên (Mới / Cũ 2 năm)!
               </p>
-              <p className="text-[11px] text-amber-200/90 font-medium mt-0.5">
+              <p className="text-[11px] text-amber-700 font-medium">
                 Vui lòng xác nhận thâm niên để hệ thống áp dụng đúng định mức chỉ tiêu dự giờ ({academicYearName || "năm học này"}).
               </p>
             </div>
@@ -327,28 +260,28 @@ export function TeacherTargetTracker({
             <button
               type="button"
               onClick={onOpenConfirmModal}
-              className="shrink-0 px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              className="shrink-0 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1 cursor-pointer self-start sm:self-auto"
             >
               <span>Xác nhận ngay</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-950" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
         </div>
       )}
 
-      {/* PENDING EVALUATION WARNING CALLOUT */}
+      {/* PENDING EVALUATION WARNING (Modern Gentle Banner) */}
       {pendingEvaluationCount > 0 && (
-        <div className="relative z-10 p-3 bg-rose-500/20 border border-rose-400/40 rounded-2xl flex items-center justify-between gap-3 text-rose-100 text-xs backdrop-blur-md animate-in fade-in">
+        <div className="p-3 bg-amber-50/90 border border-amber-200/90 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-900 transition-all">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-rose-500/30 flex items-center justify-center shrink-0 border border-rose-400/50">
-              <AlertTriangle className="w-4 h-4 text-rose-300" />
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-800 flex items-center justify-center shrink-0 border border-amber-300">
+              <AlertTriangle className="w-4 h-4 text-amber-700" />
             </div>
             <div>
-              <p className="font-bold text-white">
-                Thầy/Cô có {pendingEvaluationCount} tiết dự giờ chưa hoàn thành nộp phiếu nhận xét!
+              <p className="font-black text-xs text-amber-900">
+                Thầy/Cô có <span className="underline decoration-amber-600 underline-offset-2">{pendingEvaluationCount} tiết dự giờ</span> chưa hoàn thành nộp phiếu nhận xét!
               </p>
-              <p className="text-[11px] text-rose-200/90 font-medium">
-                Vui lòng nộp phiếu đánh giá kịp thời để đảm bảo quyền lợi và tiến độ chỉ tiêu chuyên môn.
+              <p className="text-[11px] text-amber-700 font-medium">
+                Vui lòng hoàn thành phiếu đánh giá kịp thời để đảm bảo tiến độ chỉ tiêu chuyên môn.
               </p>
             </div>
           </div>
@@ -356,7 +289,7 @@ export function TeacherTargetTracker({
             <button
               type="button"
               onClick={onGoToPendingEvals}
-              className="shrink-0 px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1 cursor-pointer active:scale-95"
+              className="shrink-0 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1 cursor-pointer self-start sm:self-auto"
             >
               <span>Nộp phiếu ngay</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -365,212 +298,217 @@ export function TeacherTargetTracker({
         </div>
       )}
 
-      {/* 3 HERO KPI METRIC CARDS */}
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
+      {/* 3 HERO KPI METRIC CARDS (Bento Grid) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
+        
         {/* CARD 1: TIẾT GIẢNG DẠY */}
-        <div className="bg-white/10 hover:bg-white/[0.14] backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/15 flex flex-col justify-between gap-3.5 shadow-sm transition-all">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center border border-amber-400/30 shadow-inner">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-extrabold uppercase tracking-wider text-white">
-                  {isPreschool ? "Tổ chức hoạt động" : "Tiết giảng dạy"}
-                </span>
-                <span className="block text-[11px] text-white/70 font-medium">
-                  Trực tiếp đứng lớp
-                </span>
-              </div>
-            </div>
-            <span className={`text-[11px] font-black px-2.5 py-1 rounded-lg border ${
-              taughtRemaining === 0
-                ? "bg-emerald-500/30 text-emerald-200 border-emerald-400/40"
-                : "bg-white/15 text-amber-200 border-white/20"
-            }`}>
-              {taughtPercent}%
-            </span>
-          </div>
-
+        <div className="bg-gradient-to-b from-emerald-50/40 via-white to-white rounded-2xl p-4 sm:p-5 border border-emerald-100/90 flex flex-col justify-between gap-3 shadow-2xs hover:border-emerald-200 transition-all">
           <div>
-            <div className="flex items-baseline justify-between mb-2">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-black text-white">{displayTaughtCount}</span>
-                <span className="text-xs font-semibold text-white/70">/ {safeTargetTaught} tiết chỉ tiêu</span>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                  <GraduationCap className="w-4 h-4 text-emerald-700" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    {isPreschool ? "Tổ chức hoạt động" : "Tiết Giảng Dạy"}
+                  </h3>
+                  <span className="text-[11px] text-slate-400 font-medium block">
+                    Trực tiếp đứng lớp
+                  </span>
+                </div>
               </div>
-              <span className={`text-xs font-bold ${taughtRemaining === 0 ? "text-emerald-300" : "text-amber-300"}`}>
-                {taughtRemaining === 0 ? "✅ Đã đạt chỉ tiêu" : `Còn thiếu ${taughtRemaining} tiết`}
+
+              <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg border ${
+                taughtRemaining === 0
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                  : "bg-slate-100 text-slate-700 border-slate-200"
+              }`}>
+                {taughtPercent}%
               </span>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2 bg-black/30 rounded-full overflow-hidden mb-2 border border-white/10">
+            <div className="flex items-baseline justify-between mb-2">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-black text-slate-900 tracking-tight">{displayTaughtCount}</span>
+                <span className="text-xs font-semibold text-slate-400">/ {safeTargetTaught} tiết chỉ tiêu</span>
+              </div>
+              <span className={`text-xs font-extrabold ${taughtRemaining === 0 ? "text-emerald-700" : "text-amber-600"}`}>
+                {taughtRemaining === 0 ? "✓ Đạt chỉ tiêu" : `Còn thiếu ${taughtRemaining} tiết`}
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2.5 border border-slate-200/60">
               <div
-                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-amber-400 via-amber-300 to-emerald-400 shadow-xs"
+                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-emerald-500 to-teal-500 shadow-2xs"
                 style={{ width: `${taughtPercent}%` }}
               />
             </div>
+          </div>
 
-            {/* Detailed Sub-metrics */}
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/80 font-medium">
-              <span className="flex items-center gap-1">
-                <span>📋 Kế hoạch:</span>
-                <strong className="text-white font-bold">{Math.max(0, displayTaughtCount - displaySurpriseTaught)}</strong>
+          {/* Sub-info bottom line */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <span className="flex items-center gap-1">
+              <span>Kế hoạch:</span>
+              <strong className="text-slate-800 font-bold">{Math.max(0, displayTaughtCount - displaySurpriseTaught)}</strong>
+            </span>
+            {displaySurpriseTaught > 0 && (
+              <span className="text-amber-700 font-bold flex items-center gap-0.5">
+                <span>⚡ {displaySurpriseTaught} đột xuất</span>
               </span>
-              <span className="flex items-center gap-1">
-                <span>⚡ Đột xuất:</span>
-                <strong className={`font-bold ${displaySurpriseTaught > 0 ? "text-amber-300" : "text-white"}`}>
-                  {displaySurpriseTaught} tiết
-                </strong>
-              </span>
-              <span className="text-white/60">
-                {displayTaughtCount}/{displayTotalTaught} có phiếu
-              </span>
-            </div>
+            )}
+            <span className="text-slate-400">
+              {displayTaughtCount}/{displayTotalTaught} có phiếu
+            </span>
           </div>
         </div>
 
         {/* CARD 2: TIẾT ĐI DỰ GIỜ */}
-        <div className="bg-white/10 hover:bg-white/[0.14] backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/15 flex flex-col justify-between gap-3.5 shadow-sm transition-all">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-cyan-400/20 text-cyan-300 flex items-center justify-center border border-cyan-400/30 shadow-inner">
-                <Eye className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-extrabold uppercase tracking-wider text-white">
-                  {isPreschool ? "Dự giờ hoạt động" : "Tiết đi dự giờ"}
-                </span>
-                <span className="block text-[11px] text-white/70 font-medium">
-                  Học hỏi đồng nghiệp
-                </span>
-              </div>
-            </div>
-            <span className={`text-[11px] font-black px-2.5 py-1 rounded-lg border ${
-              observedRemaining === 0
-                ? "bg-emerald-500/30 text-emerald-200 border-emerald-400/40"
-                : "bg-white/15 text-cyan-200 border-white/20"
-            }`}>
-              {observedPercent}%
-            </span>
-          </div>
-
+        <div className="bg-gradient-to-b from-sky-50/40 via-white to-white rounded-2xl p-4 sm:p-5 border border-sky-100/90 flex flex-col justify-between gap-3 shadow-2xs hover:border-sky-200 transition-all">
           <div>
-            <div className="flex items-baseline justify-between mb-2">
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-black text-white">{displayObservedCount}</span>
-                <span className="text-xs font-semibold text-white/70">/ {safeTargetObserved} tiết chỉ tiêu</span>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                  <Eye className="w-4 h-4 text-sky-700" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    {isPreschool ? "Dự giờ hoạt động" : "Tiết Đi Dự Giờ"}
+                  </h3>
+                  <span className="text-[11px] text-slate-400 font-medium block">
+                    Học hỏi đồng nghiệp
+                  </span>
+                </div>
               </div>
-              <span className={`text-xs font-bold ${observedRemaining === 0 ? "text-emerald-300" : "text-cyan-300"}`}>
-                {observedRemaining === 0 ? "✅ Đã đạt chỉ tiêu" : `Còn thiếu ${observedRemaining} tiết`}
+
+              <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg border ${
+                observedRemaining === 0
+                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                  : "bg-sky-100 text-sky-800 border-sky-200"
+              }`}>
+                {observedPercent}%
               </span>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2 bg-black/30 rounded-full overflow-hidden mb-2 border border-white/10">
+            <div className="flex items-baseline justify-between mb-2">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-black text-slate-900 tracking-tight">{displayObservedCount}</span>
+                <span className="text-xs font-semibold text-slate-400">/ {safeTargetObserved} tiết chỉ tiêu</span>
+              </div>
+              <span className={`text-xs font-extrabold ${observedRemaining === 0 ? "text-emerald-700" : "text-sky-700"}`}>
+                {observedRemaining === 0 ? "✓ Đạt chỉ tiêu" : `Còn thiếu ${observedRemaining} tiết`}
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2.5 border border-slate-200/60">
               <div
-                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-cyan-400 via-teal-300 to-emerald-400 shadow-xs"
+                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-sky-500 to-blue-500 shadow-2xs"
                 style={{ width: `${observedPercent}%` }}
               />
             </div>
+          </div>
 
-            {/* Detailed Sub-metrics */}
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/80 font-medium">
-              <span className="flex items-center gap-1">
-                <span>📋 Kế hoạch:</span>
-                <strong className="text-white font-bold">{Math.max(0, displayObservedCount - displaySurpriseObserved)}</strong>
+          {/* Sub-info bottom line */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <span className="flex items-center gap-1">
+              <span>Kế hoạch:</span>
+              <strong className="text-slate-800 font-bold">{Math.max(0, displayObservedCount - displaySurpriseObserved)}</strong>
+            </span>
+            {displaySurpriseObserved > 0 && (
+              <span className="text-sky-700 font-bold flex items-center gap-0.5">
+                <span>⚡ {displaySurpriseObserved} đột xuất</span>
               </span>
-              <span className="flex items-center gap-1">
-                <span>⚡ Đột xuất:</span>
-                <strong className={`font-bold ${displaySurpriseObserved > 0 ? "text-cyan-300" : "text-white"}`}>
-                  {displaySurpriseObserved} tiết
-                </strong>
-              </span>
-              <span className="text-emerald-300 font-semibold">
-                {displayObservedCount}/{displayTotalObserved} nộp phiếu
-              </span>
-            </div>
+            )}
+            <span className="text-teal-700 font-bold">
+              {displayObservedCount}/{displayTotalObserved} nộp phiếu
+            </span>
           </div>
         </div>
 
         {/* CARD 3: ĐIỂM TB NHẬN ĐƯỢC */}
-        <div className="bg-white/10 hover:bg-white/[0.14] backdrop-blur-md rounded-2xl p-4 sm:p-5 border border-white/15 flex flex-col justify-between gap-3.5 shadow-sm transition-all">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center border border-amber-400/30 shadow-inner">
-                <Star className="w-5 h-5 fill-amber-300 text-amber-300" />
-              </div>
-              <div>
-                <span className="text-xs font-extrabold uppercase tracking-wider text-white">
-                  Điểm TB nhận được
-                </span>
-                <span className="block text-[11px] text-white/70 font-medium">
-                  Đánh giá từ đồng nghiệp
-                </span>
-              </div>
-            </div>
-            <span className="text-[11px] font-black px-2.5 py-1 rounded-lg bg-white/15 text-amber-200 border border-white/20">
-              {receivedEvaluationCount} phiếu đánh giá
-            </span>
-          </div>
-
+        <div className="bg-gradient-to-b from-amber-50/40 via-white to-white rounded-2xl p-4 sm:p-5 border border-amber-100/90 flex flex-col justify-between gap-3 shadow-2xs hover:border-amber-200 transition-all">
           <div>
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    Điểm Đánh Giá TB
+                  </h3>
+                  <span className="text-[11px] text-slate-400 font-medium block">
+                    Đánh giá từ đồng nghiệp
+                  </span>
+                </div>
+              </div>
+
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-amber-100/80 text-amber-800 border border-amber-200">
+                {receivedEvaluationCount} phiếu đánh giá
+              </span>
+            </div>
+
             <div className="flex items-baseline justify-between mb-2">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-black text-white">
+                <span className="text-3xl font-black text-slate-900 tracking-tight">
                   {numAvgScore ? numAvgScore.toFixed(1) : "—"}
                 </span>
-                <span className="text-xs font-semibold text-white/70">/ {maxScore}.0đ thang điểm</span>
+                <span className="text-xs font-semibold text-slate-400">/ {maxScore}.0đ thang điểm</span>
               </div>
-              <span className="text-xs font-extrabold text-amber-300 flex items-center gap-1">
-                {numAvgScore && <Sparkles className="w-3.5 h-3.5 text-amber-300" />}
+              <span className={`text-xs font-extrabold flex items-center gap-1 ${
+                numAvgScore ? "text-amber-700" : "text-slate-400"
+              }`}>
+                {numAvgScore && <Sparkles className="w-3.5 h-3.5 text-amber-500" />}
                 <span>{scoreRating}</span>
               </span>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full h-2 bg-black/30 rounded-full overflow-hidden mb-2 border border-white/10">
+            {/* Progress bar */}
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2.5 border border-slate-200/60">
               <div
-                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-amber-400 via-orange-400 to-emerald-400 shadow-xs"
+                className="h-full rounded-full transition-all duration-700 bg-gradient-to-r from-amber-400 to-orange-400 shadow-2xs"
                 style={{ width: `${scorePercent}%` }}
               />
             </div>
+          </div>
 
-            {/* Detailed Sub-metrics */}
-            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-white/80 font-medium">
-              <span>
-                {isSpecificMonth ? `Trong tháng: ` : `Toàn năm: `}
-                <strong className="text-white font-bold">{displayTaughtCount} tiết có phiếu</strong>
-              </span>
-              <span className="text-teal-200">
-                Hiệu suất: <strong className="text-white font-bold">{scorePercent}%</strong>
-              </span>
-            </div>
+          {/* Sub-info bottom line */}
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <span>
+              {isSpecificMonth ? `Trong tháng: ` : `Toàn năm: `}
+              <strong className="text-slate-800 font-bold">{displayTaughtCount} tiết có phiếu</strong>
+            </span>
+            <span className="text-slate-500 font-medium">
+              Hiệu suất: <strong className="text-slate-800 font-bold">{scorePercent}%</strong>
+            </span>
           </div>
         </div>
+
       </div>
 
-      {/* MONTHLY TIMELINE BREAKDOWN STRIP */}
+      {/* MONTHLY MINI-TIMELINE CHIPS (Compact & Scannable) */}
       {monthlyStatsList && monthlyStatsList.length > 0 && (
-        <div className="relative z-10 pt-3 border-t border-white/15 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between text-xs font-bold text-white/90">
+        <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-600">
             <div className="flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-teal-300" />
+              <Calendar className="w-3.5 h-3.5 text-teal-600" />
               <span>Tiến độ từng tháng trong năm học:</span>
             </div>
             {isSpecificMonth && onSelectMonth && (
               <button
                 type="button"
                 onClick={() => onSelectMonth("all")}
-                className="text-[11px] text-teal-200 hover:text-white underline cursor-pointer font-bold transition-colors flex items-center gap-1"
+                className="text-[11px] text-teal-700 hover:text-teal-900 underline font-bold cursor-pointer"
               >
-                <span>🔄 Xem toàn bộ năm học</span>
+                🔄 Xem toàn bộ năm học
               </button>
             )}
           </div>
 
-          {/* Scrollable Month Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-white/20">
+          {/* Scrollable Month Mini Chips */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-slate-200">
             {monthlyStatsList.map(st => {
               const isSelected = selectedMonth === st.monthKey
               return (
@@ -578,42 +516,26 @@ export function TeacherTargetTracker({
                   key={st.monthKey}
                   type="button"
                   onClick={() => onSelectMonth && onSelectMonth(isSelected ? "all" : st.monthKey)}
-                  className={`shrink-0 px-3.5 py-2.5 rounded-xl text-left transition-all duration-200 cursor-pointer border ${
+                  className={`shrink-0 px-3 py-1.5 rounded-xl text-left transition-all duration-150 cursor-pointer border ${
                     isSelected
-                      ? `bg-white text-slate-900 shadow-lg font-black ${activeMonthRing} scale-102 ring-2 ring-white/60`
-                      : "bg-white/10 hover:bg-white/18 text-white border-white/15"
+                      ? "bg-slate-900 text-white border-slate-900 shadow-xs scale-102"
+                      : "bg-slate-50 hover:bg-slate-100/90 text-slate-700 border-slate-200/80"
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-3 mb-1">
-                    <span className={`text-xs font-extrabold ${isSelected ? "text-slate-900" : "text-white"}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold">
                       {st.monthStr}
                     </span>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-md ${
+                      isSelected ? "bg-white/20 text-white" : "bg-white text-slate-600 border border-slate-200"
+                    }`}>
+                      Dạy: {st.taughtCount} • Dự: {st.observedCount}
+                    </span>
                     {st.avgScore && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                        isSelected ? "bg-amber-100 text-amber-900" : "bg-white/20 text-amber-200"
-                      }`}>
-                        ⭐ {st.avgScore}đ
+                      <span className={`text-[10px] font-black ${isSelected ? "text-amber-300" : "text-amber-600"}`}>
+                        ⭐{st.avgScore}đ
                       </span>
                     )}
-                  </div>
-                  <div className={`flex items-center gap-2 text-[11px] ${isSelected ? "text-slate-600 font-semibold" : "text-white/80 font-medium"}`}>
-                    <span>
-                      Dạy: <strong className={isSelected ? "text-teal-800" : "text-white font-bold"}>{st.taughtCount}</strong>
-                      {((st.surpriseTaughtCount || 0) > 0) && (
-                        <span className="text-[10px] text-rose-500 font-bold ml-0.5">
-                          (⚡{st.surpriseTaughtCount})
-                        </span>
-                      )}
-                    </span>
-                    <span>•</span>
-                    <span>
-                      Dự: <strong className={isSelected ? "text-teal-800" : "text-white font-bold"}>{st.observedCount}</strong>
-                      {((st.surpriseObservedCount || 0) > 0) && (
-                        <span className="text-[10px] text-rose-500 font-bold ml-0.5">
-                          (⚡{st.surpriseObservedCount})
-                        </span>
-                      )}
-                    </span>
                   </div>
                 </button>
               )
@@ -621,6 +543,7 @@ export function TeacherTargetTracker({
           </div>
         </div>
       )}
+
     </div>
   )
 }

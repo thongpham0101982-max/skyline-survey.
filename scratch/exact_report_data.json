@@ -24,9 +24,9 @@
         "Khối 2": {
           "CS3": {
             "total": 48,
-            "belowAvg": 2,
-            "atBenchmark": 45,
-            "good": 42,
+            "belowAvg": 1,
+            "atBenchmark": 46,
+            "good": 43,
             "benchmark": 7
           },
           "CS5": {
@@ -38,9 +38,9 @@
           },
           "CS2": {
             "total": 32,
-            "belowAvg": 2,
-            "atBenchmark": 25,
-            "good": 22,
+            "belowAvg": 1,
+            "atBenchmark": 28,
+            "good": 23,
             "benchmark": 7
           },
           "CS4": {
@@ -581,9 +581,9 @@
         },
         "Khối 9": {
           "CS1": {
-            "total": 101,
+            "total": 102,
             "belowAvg": 17,
-            "atBenchmark": 84,
+            "atBenchmark": 85,
             "good": 28,
             "benchmark": 5
           },
@@ -771,9 +771,9 @@
           },
           "CS3": {
             "total": 39,
-            "belowAvg": 1,
-            "atBenchmark": 18,
-            "good": 15,
+            "belowAvg": 0,
+            "atBenchmark": 0,
+            "good": 0,
             "benchmark": 5
           },
           "CS4": {
@@ -796,9 +796,9 @@
           },
           "CS4": {
             "total": 19,
-            "belowAvg": 8,
-            "atBenchmark": 11,
-            "good": 1,
+            "belowAvg": 2,
+            "atBenchmark": 17,
+            "good": 8,
             "benchmark": 5
           },
           "CS5": {
@@ -1249,8 +1249,15 @@
         "Khối 12": {
           "CS1": {
             "total": 28,
-            "belowAvg": 17,
-            "atBenchmark": 11,
+            "belowAvg": 15,
+            "atBenchmark": 13,
+            "good": 0,
+            "benchmark": 5
+          },
+          "CS4": {
+            "total": 4,
+            "belowAvg": 2,
+            "atBenchmark": 2,
             "good": 0,
             "benchmark": 5
           }
@@ -3739,20 +3746,20 @@
   "totalsByLevel": {
     "Tiểu học": {
       "total": 2624,
-      "belowAvg": 49,
-      "atBenchmark": 2335,
-      "good": 2002
+      "belowAvg": 47,
+      "atBenchmark": 2339,
+      "good": 2004
     },
     "THCS": {
-      "total": 2095,
-      "belowAvg": 243,
-      "atBenchmark": 1785,
-      "good": 838
+      "total": 2096,
+      "belowAvg": 236,
+      "atBenchmark": 1774,
+      "good": 830
     },
     "THPT": {
-      "total": 508,
+      "total": 512,
       "belowAvg": 172,
-      "atBenchmark": 334,
+      "atBenchmark": 338,
       "good": 76
     }
   }

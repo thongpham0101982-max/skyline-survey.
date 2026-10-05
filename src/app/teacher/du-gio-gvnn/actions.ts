@@ -407,7 +407,9 @@ export async function createForeignObservationWithEvaluation(data: {
     let subject = await prisma.subject.findFirst({
       where: {
         OR: [
+          { subjectCode: "INT-ENG" },
           { subjectCode: "ESL" },
+          { subjectName: "English" },
           { subjectName: "Tiếng Anh (ESL)" },
           { subjectName: "Tiếng Anh" },
           { subjectCode: "ENG" }
@@ -418,8 +420,9 @@ export async function createForeignObservationWithEvaluation(data: {
     if (!subject) {
       subject = await prisma.subject.create({
         data: {
-          subjectCode: "ESL",
-          subjectName: "Tiếng Anh (ESL)",
+          subjectCode: "INT-ENG",
+          subjectName: "English",
+          category: "BILINGUAL",
           description: "English as a Second Language"
         }
       });

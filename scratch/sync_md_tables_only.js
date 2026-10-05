@@ -132,139 +132,169 @@ md += `## PHẦN V: BẢNG MAP KẾT QUẢ KHẢO SÁT ĐẦU VÀO VỚI KHẢO 
 
 | Phân loại tình trạng điểm KSĐV | Số lượng HS | Tỷ lệ % | Đặc điểm & Nguyên nhân hồ sơ |
 | :--- | :---: | :---: | :--- |
-| **Đủ điểm tất cả môn CKĐV** | **58** | **76.3%** | Đã có đầy đủ điểm KSĐV và được cập nhật chính xác (Toán, Văn, Anh scale 10 & tổng) |
-| **Thiếu điểm môn cam kết** | **11** | **14.5%** | Gồm 5 HS nước ngoài/song ngữ bồi dưỡng TV; 4 HS chưa nhập Anh; 1 HS quốc tế EPT; 1 HS miễn Toán |
-| **Hoàn toàn chưa có điểm KSĐV** | **3** | **3.9%** | Gồm 1 HS diện Tuyển thẳng (Lê Nguyên Khang); 1 HS Lớp 1 theo dõi ngôn ngữ; 1 HS chưa nhập bài thi |
-| **Cam kết Tâm lý lứa tuổi** | **4** | **5.3%** | Học sinh diện theo dõi tâm lý lứa tuổi, không khảo sát văn hóa |
+| **Đủ điểm tất cả môn CKĐV** | **68** | **89.5%** | Đã có đầy đủ điểm KSĐV đúng các môn cam kết (Toán, Văn, Anh quy đổi thang 10 & tổng) |
+| **Thiếu điểm môn cam kết** | **8** | **10.5%** | Gồm 7 HS nước ngoài/song ngữ cam kết bồi dưỡng Tiếng Việt (chưa thi TV); 1 HS chưa nhập điểm Anh |
 | **TỔNG CỘNG** | **76** | **100.0%** | **Đúng 76 học sinh CKĐV đã hoàn tất nhập học** |
 
 ---
-
-### 3. Bảng Thống Kê Chi Tiết Học Sinh CKĐV Chưa Có Điểm KSĐV Hoặc Thiếu Môn Cam Kết (18 học sinh)
-
-| STT | Cơ sở | Mã HS | Họ và tên | Lớp & Khối | Môn Cam Kết | Phân loại Tình trạng | Điểm KSĐV Hiện Có | Điểm KSĐN Thực Tế | Nguyên nhân & Căn cứ Tuyển sinh |
-| :---: | :---: | :---: | :--- | :---: | :--- | :---: | :--- | :--- | :--- |
 `;
 
-const missingStudents = ckdvData.filter(s => s.ksdvStatus !== 'Đủ điểm');
-missingStudents.forEach((st, idx) => {
-  const ksdvP = [];
-  if (st.ksdvMath != null) ksdvP.push(`Toán: ${st.ksdvMath}`);
-  if (st.ksdvViet != null) ksdvP.push(`Tiếng Việt: ${st.ksdvViet}`);
-  if (st.ksdvVan != null) ksdvP.push(`Ngữ Văn: ${st.ksdvVan}`);
-  if (st.ksdvEngScale10 != null) ksdvP.push(`Anh: ${st.ksdvEngScale10.toFixed(1)} (Tổng: ${st.ksdvEngTotal})`);
+// Helpers for synchronized committed subject and score rendering in Markdown
+function renderMdCommitted(subs) {
+  if (!subs || subs.length === 0) return '—';
+  const arr = Array.isArray(subs) ? subs : [subs];
+  return arr.map(sub => {
+    const s = sub.trim();
+    if (s.includes('Anh')) return `**Tiếng Anh**`;
+    if (s.includes('Toán')) return `**Toán**`;
+    if (s.includes('Tiếng Việt')) return `**Tiếng Việt**`;
+    if (s.includes('Văn')) return `**Ngữ Văn**`;
+    if (s.includes('Tâm lý')) return `**Tâm lý**`;
+    return `**${s}**`;
+  }).join(', ');
+}
 
-  const ksdnP = [];
-  if (st.ksdnMath != null) ksdnP.push(`Toán: ${st.ksdnMath}`);
-  if (st.ksdnViet != null) ksdnP.push(`Tiếng Việt: ${st.ksdnViet}`);
-  if (st.ksdnVan != null) ksdnP.push(`Ngữ Văn: ${st.ksdnVan}`);
-  if (st.ksdnEng != null) ksdnP.push(`Anh: ${st.ksdnEng}`);
+function renderMdKsdv(st) {
+  const comms = st.committedSubjects || [];
+  const parts = [];
 
-  const commText = Array.isArray(st.committedSubjects) ? st.committedSubjects.join(', ') : (st.committedSubjects || '');
+  const hasMath = comms.some(c => c.includes('Toán'));
+  const hasViet = comms.some(c => c.includes('Tiếng Việt'));
+  const hasVan = comms.some(c => c.includes('Văn'));
+  const hasEng = comms.some(c => c.includes('Anh'));
 
-  md += `| ${idx + 1} | ${st.campus} | ${st.studentCode || ''} | **${st.fullName}** | \`${st.className || 'Chưa rõ'}\` (K${st.grade || ''}) | ${commText} | **${st.ksdvStatus}** | ${ksdvP.length > 0 ? ksdvP.join('; ') : '—'} | ${ksdnP.length > 0 ? ksdnP.join('; ') : 'Chưa có bài KSĐN'} | ${st.missingReason || '—'} |\n`;
-});
-
-md += `\n---\n\n### 4. Danh sách Chi tiết Toàn bộ 76 Học sinh CKĐV Nhập học - Map Điểm KSĐV vs KSĐN theo Từng Cơ sở\n\n`;
-
-const campusOrder = { 'CS1': 1, 'CS2': 2, 'CS3': 3, 'CS4': 4, 'CS5': 5 };
-ckdvData.sort((a, b) => (campusOrder[a.campus] || 9) - (campusOrder[b.campus] || 9));
-
-const ckdvByCampus = {};
-ckdvData.forEach(st => {
-  const cmp = st.campus || 'CS1';
-  if (!ckdvByCampus[cmp]) ckdvByCampus[cmp] = [];
-
-  let note = '';
-  let ksdvStr = '';
-  let ksdnStr = '';
-
-  if (st.isPsychology) {
-    ksdvStr = 'HS Cam kết tâm lý';
-    ksdnStr = '—';
-    note = '**HS Cam kết tâm lý**';
-  } else {
-    const ksdvParts = [];
-    const ksdnParts = [];
-
-    if (st.ksdvMath != null) ksdvParts.push(`Toán: ${st.ksdvMath}`);
-    if (st.ksdnMath != null) ksdnParts.push(`Toán: ${st.ksdnMath}`);
-
-    if (st.ksdvViet != null) ksdvParts.push(`Tiếng Việt: ${st.ksdvViet}`);
-    if (st.ksdnViet != null) ksdnParts.push(`Tiếng Việt: ${st.ksdnViet}`);
-
-    if (st.ksdvVan != null) ksdvParts.push(`Ngữ Văn: ${st.ksdvVan}`);
-    if (st.ksdnVan != null) ksdnParts.push(`Ngữ Văn: ${st.ksdnVan}`);
-
-    if (st.ksdvEngScale10 != null && st.ksdvEngTotal != null) {
-      ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)} (Tổng: ${st.ksdvEngTotal})`);
-    } else if (st.ksdvEngScale10 != null) {
-      ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)}`);
-    }
-
-    if (st.ksdnEng != null) ksdnParts.push(`Tiếng Anh: ${st.ksdnEng}`);
-
-    if (st.ksdvStatus === 'Chưa có điểm KSĐV') {
-      ksdvStr = `Chưa có điểm KSĐV (${st.missingReason})`;
-    } else {
-      ksdvStr = ksdvParts.join('; ');
-      if (st.missingCommitted && st.missingCommitted.length > 0) {
-        ksdvStr += ` (${st.missingCommitted.join(', ')}: Chưa có điểm)`;
-      }
-    }
-
-    ksdnStr = ksdnParts.join('; ') || 'Chưa có bài KSĐN';
-
-    if (st.ksdvStatus !== 'Chưa có điểm KSĐV') {
-      if (st.ksdnEng != null && st.ksdvEngScale10 != null) {
-        const diff = +(st.ksdnEng - st.ksdvEngScale10).toFixed(1);
-        if (diff >= 3.0) note = `Bứt phá ngoạn mục (+${diff})`;
-        else if (diff >= 1.0) note = `Tiến bộ rõ rệt (+${diff})`;
-        else if (st.ksdnEng < 5.0 && st.grade >= 6) note = `Dưới TB môn Anh (${st.ksdnEng})`;
-        else if (st.ksdnEng < 7.0 && st.grade <= 5) note = `Chưa đạt chuẩn Tiểu học (${st.ksdnEng})`;
-        else note = `Đạt chuẩn môn Anh (${st.ksdnEng})`;
-      } else if (st.ksdnMath != null && st.ksdvMath != null) {
-        const diff = +(st.ksdnMath - st.ksdvMath).toFixed(1);
-        if (diff >= 2.0) note = `Tiến bộ tốt môn Toán (+${diff})`;
-        else if (st.ksdnMath < 5.0 && st.grade >= 6) note = `Dưới TB môn Toán (${st.ksdnMath})`;
-        else note = `Đạt chuẩn môn Toán (${st.ksdnMath})`;
-      } else if (st.missingReason) {
-        note = st.missingReason;
-      }
-    } else {
-      note = st.missingReason;
-    }
+  if (hasMath) {
+    if (st.ksdvMath != null) parts.push(`**Toán: ${st.ksdvMath}**`);
+    else parts.push(`*Toán: Chưa có điểm*`);
+  }
+  if (hasViet) {
+    if (st.ksdvViet != null) parts.push(`**Tiếng Việt: ${st.ksdvViet}**`);
+    else parts.push(`*Tiếng Việt: Chưa có điểm*`);
+  }
+  if (hasVan) {
+    if (st.ksdvVan != null) parts.push(`**Ngữ Văn: ${st.ksdvVan}**`);
+    else parts.push(`*Ngữ Văn: Chưa có điểm*`);
+  }
+  if (hasEng) {
+    if (st.ksdvEngScale10 != null) parts.push(`**Tiếng Anh: ${st.ksdvEngScale10 % 1 === 0 ? st.ksdvEngScale10 : st.ksdvEngScale10.toFixed(1)}**`);
+    else parts.push(`*Tiếng Anh: Chưa có điểm*`);
   }
 
-  ckdvByCampus[cmp].push({
-    ...st,
-    ksdvStr,
-    ksdnStr,
-    note
-  });
-});
+
+  if (st.isPsychology) {
+    if (parts.length > 0) return parts.join('; ') + ' (**Theo dõi tâm lý**)';
+    return '**Theo dõi tâm lý lứa tuổi**';
+  }
+
+  if (st.ksdvStatus === 'Chưa có điểm KSĐV' && parts.length === 0) {
+    return '*(Chưa có điểm KSĐV)*';
+  }
+
+  if (parts.length === 0) return '—';
+  return parts.join('; ');
+}
+
+function renderMdKsdn(st) {
+  const comms = st.committedSubjects || [];
+  const parts = [];
+
+  const hasMath = comms.some(c => c.includes('Toán'));
+  const hasViet = comms.some(c => c.includes('Tiếng Việt'));
+  const hasVan = comms.some(c => c.includes('Văn'));
+  const hasEng = comms.some(c => c.includes('Anh'));
+
+  if (hasMath) {
+    if (st.ksdnMath != null) parts.push(`**Toán: ${st.ksdnMath}**`);
+    else parts.push(`*Toán: Chưa thi*`);
+  }
+  if (hasViet) {
+    if (st.ksdnViet != null) parts.push(`**Tiếng Việt: ${st.ksdnViet}**`);
+    else parts.push(`*Tiếng Việt: Chưa thi*`);
+  }
+  if (hasVan) {
+    if (st.ksdnVan != null) parts.push(`**Ngữ Văn: ${st.ksdnVan}**`);
+    else parts.push(`*Ngữ Văn: Chưa thi*`);
+  }
+  if (hasEng) {
+    if (st.ksdnEng != null) parts.push(`**Tiếng Anh: ${st.ksdnEng}**`);
+    else parts.push(`*Tiếng Anh: Chưa thi*`);
+  }
+
+  if (st.isPsychology && parts.length === 0) {
+    const psyKsdn = [];
+    if (st.ksdnMath != null) psyKsdn.push(`Toán: ${st.ksdnMath}`);
+    if (st.ksdnViet != null) psyKsdn.push(`Tiếng Việt: ${st.ksdnViet}`);
+    if (st.ksdnVan != null) psyKsdn.push(`Ngữ Văn: ${st.ksdnVan}`);
+    if (st.ksdnEng != null) psyKsdn.push(`Tiếng Anh: ${st.ksdnEng}`);
+    if (psyKsdn.length > 0) return psyKsdn.join('; ');
+    return '*Chưa có bài KSĐN (Khối 1)*';
+  }
+
+  if (parts.length > 0) return parts.join('; ');
+  if (st.grade === '1' || st.grade === 1) return '*Chưa có bài KSĐN (Khối 1)*';
+  return '*Chưa có bài KSĐN*';
+}
+
+const { getPreparedCkdvData, computeCampusSummary } = require('./calculate_ckdv_progress_table.js');
+const ckdvByCampus = getPreparedCkdvData();
+
+const totalInTable = Object.values(ckdvByCampus).reduce((s, l) => s + l.length, 0);
+
+md += `\n---\n\n### 2. Danh sách Chi tiết ${totalInTable} Học sinh CKĐV Nhập học - Map Điểm KSĐV vs KSĐN theo Từng Cơ sở\n\n`;
+md += `> **Quy chuẩn đánh giá & Chuẩn hóa môn cam kết:**\n`;
+md += `> • **Tiến bộ:** Với Tiểu học, điểm KSĐN phải **đạt từ 5.0 trở lên mới tính là Tiến bộ, nhưng không đạt chuẩn**.\n`;
+md += `> • **Đạt chuẩn:** Tiểu học điểm ≥ 7.0; THCS & THPT điểm ≥ 5.0.\n`;
+md += `> • **Chuẩn hóa Môn Cam Kết:** Chỉ hiển thị đúng các học sinh có môn cam kết học thuật cụ thể (Toán, Tiếng Việt, Ngữ Văn, Tiếng Anh, Tâm lý) đúng theo mục xét duyệt *Môn Cam Kết (đã chọn)* trên hệ thống. 6 học sinh diện Chung / Theo dõi (theo dõi tập trung/ngôn ngữ Lớp 1, thỏa thuận học giao lưu chung) không có môn cam kết cụ thể được loại trừ khỏi bảng đối sánh.\n\n`;
 
 const campusTitles = {
-  'CS1': 'CƠ SỞ CS1 (36 học sinh)',
-  'CS2': 'CƠ SỞ CS2 (8 học sinh)',
-  'CS3': 'CƠ SỞ CS3 (8 học sinh)',
-  'CS4': 'CƠ SỞ CS4 (12 học sinh)',
-  'CS5': 'CƠ SỞ CS5 (12 học sinh)'
+  'CS1': `CƠ SỞ CS1 (${(ckdvByCampus['CS1'] || []).length} học sinh)`,
+  'CS2': `CƠ SỞ CS2 (${(ckdvByCampus['CS2'] || []).length} học sinh)`,
+  'CS3': `CƠ SỞ CS3 (${(ckdvByCampus['CS3'] || []).length} học sinh)`,
+  'CS4': `CƠ SỞ CS4 (${(ckdvByCampus['CS4'] || []).length} học sinh)`,
+  'CS5': `CƠ SỞ CS5 (${(ckdvByCampus['CS5'] || []).length} học sinh)`
 };
 
 Object.keys(ckdvByCampus).sort().forEach(cmp => {
   const students = ckdvByCampus[cmp];
+  const summary = computeCampusSummary(students);
+
+  const subList = Object.entries(summary.subCounts)
+    .filter(([k, v]) => v > 0)
+    .map(([k, v]) => `**${k}:** ${v} HS`)
+    .join(' | ');
+
   md += `#### ${campusTitles[cmp] || `CƠ SỞ ${cmp}`}\n\n`;
-  md += `| STT | Họ và tên | Lớp | Khối | Môn CKĐV | Điểm KSĐV Môn Cam Kết (Thang 10 & Cột Tổng điểm) | Điểm KSĐN Môn Tương Ứng | Ghi chú & Trạng thái |\n`;
-  md += `| :---: | :--- | :---: | :---: | :--- | :--- | :--- | :--- |\n`;
+  md += `| STT | Họ và tên | Lớp | Khối | Môn CKĐV | Điểm KSĐV | Điểm KSĐN | Tiến bộ | Đạt chuẩn |\n`;
+  md += `| :---: | :--- | :---: | :---: | :--- | :---: | :---: | :---: | :---: |\n`;
 
   students.forEach((st, idx) => {
-    const subjectsStr = Array.isArray(st.committedSubjects) ? st.committedSubjects.join(', ') : (st.committedSubjects || '');
-    md += `| ${idx + 1} | **${st.fullName}** | \`${st.className || 'Chưa rõ'}\` | Khối ${st.grade || ''} | ${subjectsStr} | ${st.ksdvStr} | ${st.ksdnStr} | ${st.note} |\n`;
+    const rows = st.subjectRows || [];
+    rows.forEach((row, rIdx) => {
+      if (rIdx === 0) {
+        md += `| ${idx + 1} | **${st.fullName}** | \`${st.className || 'Chưa rõ'}\` | Khối ${st.grade || ''} | **${row.subjectName}** | ${row.ksdvStr} | ${row.ksdnStr} | **${row.progressText}** | **${row.benchmarkText}** |\n`;
+      } else {
+        md += `| | | | | **${row.subjectName}** | ${row.ksdvStr} | ${row.ksdnStr} | **${row.progressText}** | **${row.benchmarkText}** |\n`;
+      }
+    });
   });
 
-  md += `\n`;
+  // Hàng tổng kết 3 phần
+  md += `| **HS Cam kết theo môn:** | | | | **${subList}** | | | | |\n`;
+  md += `| **Tổng số môn Tiến bộ:** | | | | **${summary.totalProgress} / ${summary.totalEvaluated} lượt môn (${summary.progressRate})** | | | | |\n`;
+  md += `| **Tổng số môn Đạt chuẩn:** | | | | **${summary.totalBenchmark} / ${summary.totalEvaluated} lượt môn (${summary.benchmarkRate})** | | *(TB: ${summary.totalAverage} \\| Dưới TB: ${summary.totalBelowAvg})* | | |\n\n`;
 });
+
+md += `\n---\n\n### 3. Danh sách Thống kê 6 Học sinh Thuộc Diện Theo Dõi Chung & Thỏa Thuận Giao Lưu (Đảm bảo đủ 76 HS nhập học)\n\n`;
+md += `> **Ghi chú mục riêng:** Nhóm 6 học sinh này không có môn cam kết học thuật cụ thể (không chọn môn trong mục xét duyệt *Môn Cam Kết* trên hệ thống), thuộc danh sách 76 học sinh nhập học có điều kiện/theo dõi/thỏa thuận được BGH & GĐCS phê duyệt.\n\n`;
+md += `| STT | Họ và tên | Lớp | Khối | Cơ sở | Diện hồ sơ & Ghi chú xét duyệt | Điểm KSĐV | Điểm KSĐN | Tình trạng thực tế & Định hướng theo dõi |\n`;
+md += `| :---: | :--- | :---: | :---: | :---: | :--- | :--- | :--- | :--- |\n`;
+md += `| 1 | **Nguyễn Đặng Bảo Trâm** | \`8.2_CS1\` | Khối 8 | CS1 | **Tư vấn tâm lý**<br>*(Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí)* | Toán: **7.0**; Văn: **6.5**; Anh: **4.8**; Tâm lý: **6** | Toán: **3.0**; Văn: **6.5**; Anh: **4.0** | Nhập học diện Đạt, BGH lưu ý theo dõi tư vấn tâm lý học đường, không cam kết môn văn hóa. |\n`;
+md += `| 2 | **Nguyễn Thanh Phúc** | \`1.2INT_CS2\` | Khối 1 | CS2 | **Tập trung chú ý**<br>*(Không cần cam kết, GVTA tương tác kỹ với PH)* | Anh: **5.0** (Vấn đáp: 5/30); Tâm lý: **2** | *Khối 1 (Chưa thi KSĐN)* | Học sinh Lớp 1 diện Đạt, kết quả xét duyệt ghi rõ "Không cần cam kết", GVCN và GVTA phối hợp PH tương tác sát sao trong năm học. |\n`;
+md += `| 3 | **ĐỖ NGUYỄN AN KHÔI** | \`1.3_CS2\` | Khối 1 | CS2 | **Tập trung chú ý**<br>*(cần theo dõi mức độ tập trung chú ý)* | Anh: **7.0** (Vấn đáp: 7/30); Tâm lý: **1** | *Khối 1 (Chưa thi KSĐN)* | Học sinh Lớp 1 diện Đạt, GVCN theo dõi rèn luyện nền nếp và sự tập trung trong các hoạt động học tập đầu năm. |\n`;
+md += `| 4 | **Phan Hải Đăng** | \`1.3_CS2\` | Khối 1 | CS2 | **Phát triển ngôn ngữ**<br>*(theo dõi thêm khả năng phát triển ngôn ngữ)* | Tâm lý: **-1** | *Khối 1 (Chưa thi KSĐN)* | Học sinh Lớp 1 diện Đạt, GVCN hỗ trợ rèn luyện phát triển ngôn ngữ Tiếng Việt trong sinh hoạt và học tập. |\n`;
+md += `| 5 | **Nguyễn Hoàng Đạt** | \`3.2INT_CS5\` | Khối 3 | CS5 | **Thỏa thuận Giao lưu**<br>*(Ký thoả thuận cam kết như các HS đã từng học giao lưu)* | Toán: **2.0**; TV: **1.0**; Anh: **6.6** | Toán: **6.0**; TV: **2.0**; Anh: **7.8** | Học sinh Homeschooling (KLIS Academy TP.HCM) học giao lưu tại CS5, ký thỏa thuận giao lưu chung. KSĐN có tiến bộ tốt (Toán 6.0, Anh 7.8). |\n`;
+md += `| 6 | **Nguyễn Hoàng Phúc** | \`5.2INT_CS5\` | Khối 5 | CS5 | **Thỏa thuận Giao lưu**<br>*(Ký thoả thuận cam kết như các HS đã từng học giao lưu)* | Toán: **1.0**; TV: **1.0**; Anh: **7.2** | Toán: **3.0**; TV: **1.0**; Anh: **9.2** | Học sinh Homeschooling học giao lưu tại CS5, ký thỏa thuận học giao lưu chung. Điểm KSĐN Tiếng Anh đạt xuất sắc 9.2. |\n\n`;
+md += `> **TỔNG CỘNG HỆ THỐNG:** **6 Học sinh diện Theo dõi chung & Thỏa thuận giao lưu** + **70 Học sinh có môn cam kết tại Mục 2** = **ĐỦ 76 HỌC SINH NHẬP HỌC (100%)**\n\n`;
 
 const mdArtifactPath = 'C:\\Users\\thongpn\\.gemini\\antigravity-ide\\brain\\bde4b516-a7ae-4e5a-ba06-cca3b42b7b51\\bao_cao_chat_luong_ksdn_va_ckdv.md';
 const mdDownloadsPath = 'C:\\Users\\thongpn\\Downloads\\Bao_Cao_Khao_Sat_Dau_Nam_va_76_HS_CKDV_2026.md';

@@ -44,8 +44,8 @@ export async function createSubject(
           studyProgram: quota.studyProgram || "DEFAULT",
           quotaPrimary: quota.quotaPrimary || 0, quotaMiddle: quota.quotaMiddle || 0, quotaHigh: quota.quotaHigh || 0,
           quotaG1: quota.quotaG1 || 0, quotaG2: quota.quotaG2 || 0, quotaG3: quota.quotaG3 || 0, quotaG4: quota.quotaG4 || 0, quotaG5: quota.quotaG5 || 0,
-          quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: q.quotaG8 || 0, quotaG9: q.quotaG9 || 0,
-          quotaG10: q.quotaG10 || 0, quotaG11: q.quotaG11 || 0, quotaG12: q.quotaG12 || 0
+          quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: quota.quotaG8 || 0, quotaG9: quota.quotaG9 || 0,
+          quotaG10: quota.quotaG10 || 0, quotaG11: quota.quotaG11 || 0, quotaG12: quota.quotaG12 || 0
         }
       })
     }

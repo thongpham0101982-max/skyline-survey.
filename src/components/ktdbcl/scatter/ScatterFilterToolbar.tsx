@@ -272,9 +272,9 @@ export function ScatterFilterToolbar({
             className="w-full border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 bg-white focus:ring-2 focus:ring-[#005B58] outline-none"
           >
             <option value="ALL">-- Tất cả Cấp --</option>
-            <option value="TieuHoc">Tiểu học (Chuẩn 7.0đ)</option>
-            <option value="THCS">THCS (Chuẩn 6.0đ)</option>
-            <option value="THPT">THPT (Chuẩn 6.0đ)</option>
+            <option value="TieuHoc">Tiểu học</option>
+            <option value="THCS">THCS</option>
+            <option value="THPT">THPT</option>
           </select>
         </div>
 

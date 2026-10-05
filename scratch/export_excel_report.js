@@ -23,12 +23,12 @@ const summaryRows = [
   [],
   ['THỐNG KÊ HỌC SINH CAM KẾT ĐẦU VÀO (CKĐV) ĐÃ HOÀN TẤT NHẬP HỌC (COMPLETED)'],
   ['STT', 'Cơ sở trường', 'Số HS Tuyển mới Nhập học', 'Số HS CKĐV ĐÃ NHẬP HỌC', 'Tỷ lệ CKĐV / Tuyển mới', 'Môn cam kết chủ đạo'],
-  [1, 'CS1', 90, 36, '40.0%', 'Tiếng Anh, Toán, Ngữ Văn, Tâm lý'],
-  [2, 'CS2', 36, 8, '22.2%', 'Tiếng Anh, Tiếng Việt, Tâm lý'],
-  [3, 'CS3', 65, 8, '12.3%', 'Tiếng Việt, Tiếng Anh (ESL), Toán'],
-  [4, 'CS4', 14, 12, '85.7%', 'Tiếng Anh, Toán, Ngữ Văn'],
-  [5, 'CS5', 62, 12, '19.4%', 'Tiếng Anh, Toán'],
-  ['-', 'TỔNG TOÀN HỆ THỐNG', 292, 76, '26.0%', 'Toán, Tiếng Việt, Tiếng Anh, Ngữ Văn, Tâm lý'],
+  [1, 'CS1', 90, 32, '35.6%', 'Tiếng Anh, Toán, Ngữ Văn, Tâm lý'],
+  [2, 'CS2', 36, 7, '19.4%', 'Tiếng Việt, Tâm lý, Theo dõi tập trung/ngôn ngữ'],
+  [3, 'CS3', 65, 13, '20.0%', 'Tiếng Việt, Tiếng Anh (ESL), Toán'],
+  [4, 'CS4', 14, 13, '92.9%', 'Tiếng Anh, Toán, Ngữ Văn'],
+  [5, 'CS5', 62, 11, '17.7%', 'Tiếng Anh, Toán, Thỏa thuận giao lưu'],
+  ['-', 'TỔNG TOÀN HỆ THỐNG', 267, 76, '28.5%', 'Toán, Tiếng Việt, Tiếng Anh, Ngữ Văn, Tâm lý'],
   [],
   ['TỔNG HỢP TÌNH TRẠNG ĐIỂM KSĐV CỦA 76 HỌC SINH CKĐV NHẬP HỌC'],
   ['Phân loại', 'Số lượng HS', 'Tỷ lệ %', 'Mô tả chi tiết'],
@@ -162,133 +162,83 @@ createLevelSheet('THPT', '≥ 5.0', 'THPT_Theo_CS');
 
 // 2. Sheet Thống kê Học Sinh Chưa Đủ Điểm KSĐV
 const missingStudents = ckdvData.filter(s => s.ksdvStatus !== 'Đủ điểm');
-const missingRows = [
-  ['BẢNG THỐNG KÊ CHI TIẾT HỌC SINH CKĐV CHƯA CÓ ĐIỂM KSĐV HOẶC THIẾU MÔN CAM KẾT'],
-  ['* Tổng số: 18 học sinh (gồm 3 HS chưa có điểm, 11 HS thiếu môn CK, 4 HS cam kết tâm lý)'],
-  [],
-  ['STT', 'Cơ sở', 'Mã HS', 'Họ và tên', 'Lớp', 'Khối', 'Môn Cam Kết', 'Phân loại Tình trạng', 'Điểm KSĐV Hiện Có', 'Điểm KSĐN Thực Tế', 'Nguyên nhân & Căn cứ Tuyển sinh']
-];
+// 3. Sheet Danh sách 76 HS CKĐV Đã Nhập học theo Từng Cơ sở
+const { getPreparedCkdvData, computeCampusSummary } = require('./calculate_ckdv_progress_table.js');
+const ckdvByCampus = getPreparedCkdvData();
 
-missingStudents.forEach((st, idx) => {
-  const ksdvP = [];
-  if (st.ksdvMath != null) ksdvP.push(`Toán: ${st.ksdvMath}`);
-  if (st.ksdvViet != null) ksdvP.push(`Tiếng Việt: ${st.ksdvViet}`);
-  if (st.ksdvVan != null) ksdvP.push(`Ngữ Văn: ${st.ksdvVan}`);
-  if (st.ksdvEngScale10 != null) ksdvP.push(`Anh: ${st.ksdvEngScale10.toFixed(1)} (Tổng: ${st.ksdvEngTotal})`);
-
-  const ksdnP = [];
-  if (st.ksdnMath != null) ksdnP.push(`Toán: ${st.ksdnMath}`);
-  if (st.ksdnViet != null) ksdnP.push(`Tiếng Việt: ${st.ksdnViet}`);
-  if (st.ksdnVan != null) ksdnP.push(`Ngữ Văn: ${st.ksdnVan}`);
-  if (st.ksdnEng != null) ksdnP.push(`Anh: ${st.ksdnEng}`);
-
-  missingRows.push([
-    idx + 1,
-    st.campus || 'CS1',
-    st.studentCode || '',
-    st.fullName,
-    st.className || 'Chưa rõ',
-    st.grade ? `Khối ${st.grade}` : '',
-    Array.isArray(st.committedSubjects) ? st.committedSubjects.join(', ') : (st.committedSubjects || ''),
-    st.ksdvStatus,
-    ksdvP.length > 0 ? ksdvP.join('; ') : '—',
-    ksdnP.length > 0 ? ksdnP.join('; ') : 'Chưa có bài KSĐN',
-    st.missingReason || ''
-  ]);
-});
-
-const wsMissing = XLSX.utils.aoa_to_sheet(missingRows);
-XLSX.utils.book_append_sheet(wb, wsMissing, 'HS_Chua_Du_Diem_KSDV');
-
-// 4. Sheet Danh sách Toàn bộ 76 HS CKĐV Đã Nhập học
-const ckdvHeaders = ['STT', 'Cơ sở', 'Mã HS', 'Họ và tên', 'Lớp', 'Khối', 'Môn CKĐV', 'Tình trạng KSĐV', 'Điểm KSĐV Môn Cam Kết (Thang 10 & Cột Tổng điểm)', 'Điểm KSĐN Môn Tương Ứng', 'Ghi chú & Trạng thái'];
+const ckdvHeaders = ['STT', 'Họ và tên', 'Lớp', 'Khối', 'Môn CKĐV', 'Điểm KSĐV', 'Điểm KSĐN', 'Tiến bộ', 'Đạt chuẩn'];
+const totalInExcel = Object.values(ckdvByCampus).reduce((s, l) => s + l.length, 0);
 const ckdvRows = [
-  ['DANH SÁCH 76 HỌC SINH CAM KẾT ĐẦU VÀO (CKĐV) ĐÃ NHẬP HỌC - MAP ĐIỂM KHẢO SÁT ĐẦU NĂM'],
-  ['* Điểm Tiếng Anh KSĐV: Lấy từ Cột Tổng điểm (Thang 100) và quy đổi chuẩn xác về Thang 10 (Scale 10 = Tổng điểm / 10)'],
-  ['* HS diện Tâm lý: Ghi chú rõ "HS Cam kết tâm lý", không hiển thị điểm thi bộ môn'],
-  [],
-  ckdvHeaders
+  [`BẢNG MAP ĐIỂM KHẢO SÁT ĐẦU VÀO (KSĐV) VS KHẢO SÁT ĐẦU NĂM (KSĐN) ${totalInExcel} HỌC SINH CKĐV NHẬP HỌC (THEO ĐÚNG MÔN CAM KẾT)`],
+  ['* Quy chuẩn Tiến bộ: Với Tiểu học, Điểm KSĐN phải Đạt từ 5.0 trở lên mới tính là Tiến bộ, nhưng không đạt chuẩn.'],
+  ['* Quy chuẩn Đạt chuẩn: Tiểu học điểm ≥ 7.0; THCS & THPT điểm ≥ 5.0.'],
+  ['* Chuẩn hóa Môn Cam Kết: Chỉ hiển thị các HS có môn cam kết cụ thể (Toán, Tiếng Việt, Ngữ Văn, Tiếng Anh, Tâm lý). 6 HS diện Chung/Theo dõi không có môn cam kết được loại trừ.'],
+  []
 ];
 
-const campusOrder = { 'CS1': 1, 'CS2': 2, 'CS3': 3, 'CS4': 4, 'CS5': 5 };
-ckdvData.sort((a, b) => (campusOrder[a.campus] || 9) - (campusOrder[b.campus] || 9));
+Object.keys(ckdvByCampus).sort().forEach(cmp => {
+  const students = ckdvByCampus[cmp];
+  const summary = computeCampusSummary(students);
 
-ckdvData.forEach((st, idx) => {
-  let note = '';
-  let ksdvStr = '';
-  let ksdnStr = '';
+  const subList = Object.entries(summary.subCounts)
+    .filter(([k, v]) => v > 0)
+    .map(([k, v]) => `${k}: ${v} HS`)
+    .join(' | ');
 
-  if (st.isPsychology) {
-    ksdvStr = 'HS Cam kết tâm lý';
-    ksdnStr = '—';
-    note = 'Theo dõi phát triển tâm lý lứa tuổi';
-  } else {
-    const ksdvParts = [];
-    const ksdnParts = [];
+  ckdvRows.push([`>>> CƠ SỞ: ${cmp} (${students.length} HỌC SINH CKĐV)`]);
+  ckdvRows.push(ckdvHeaders);
 
-    if (st.ksdvMath != null) ksdvParts.push(`Toán: ${st.ksdvMath}`);
-    if (st.ksdnMath != null) ksdnParts.push(`Toán: ${st.ksdnMath}`);
-
-    if (st.ksdvViet != null) ksdvParts.push(`Tiếng Việt: ${st.ksdvViet}`);
-    if (st.ksdnViet != null) ksdnParts.push(`Tiếng Việt: ${st.ksdnViet}`);
-
-    if (st.ksdvVan != null) ksdvParts.push(`Ngữ Văn: ${st.ksdvVan}`);
-    if (st.ksdnVan != null) ksdnParts.push(`Ngữ Văn: ${st.ksdnVan}`);
-
-    if (st.ksdvEngScale10 != null && st.ksdvEngTotal != null) {
-      ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)} (Tổng: ${st.ksdvEngTotal})`);
-    } else if (st.ksdvEngScale10 != null) {
-      ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)}`);
-    }
-
-    if (st.ksdnEng != null) ksdnParts.push(`Tiếng Anh: ${st.ksdnEng}`);
-
-    if (st.ksdvStatus === 'Chưa có điểm KSĐV') {
-      ksdvStr = `Chưa có điểm KSĐV (${st.missingReason})`;
-    } else {
-      ksdvStr = ksdvParts.join('; ');
-      if (st.missingCommitted && st.missingCommitted.length > 0) {
-        ksdvStr += ` (${st.missingCommitted.join(', ')}: Chưa có điểm)`;
+  students.forEach((st, idx) => {
+    const rows = st.subjectRows || [];
+    rows.forEach((row, rIdx) => {
+      if (rIdx === 0) {
+        ckdvRows.push([
+          idx + 1,
+          st.fullName,
+          st.className || 'Chưa rõ',
+          st.grade ? `Khối ${st.grade}` : '',
+          row.subjectName,
+          row.ksdvStr,
+          row.ksdnStr,
+          row.progressText,
+          row.benchmarkText
+        ]);
+      } else {
+        ckdvRows.push([
+          '',
+          '',
+          '',
+          '',
+          row.subjectName,
+          row.ksdvStr,
+          row.ksdnStr,
+          row.progressText,
+          row.benchmarkText
+        ]);
       }
-    }
+    });
+  });
 
-    ksdnStr = ksdnParts.join('; ') || 'Chưa có bài KSĐN';
-
-    if (st.ksdvStatus !== 'Chưa có điểm KSĐV') {
-      if (st.ksdnEng != null && st.ksdvEngScale10 != null) {
-        const diff = +(st.ksdnEng - st.ksdvEngScale10).toFixed(1);
-        if (diff >= 3.0) note = `Bứt phá ngoạn mục (+${diff})`;
-        else if (diff >= 1.0) note = `Tiến bộ rõ rệt (+${diff})`;
-        else if (st.ksdnEng < 5.0 && st.grade >= 6) note = `Dưới TB môn Anh (${st.ksdnEng}), cần phụ đạo`;
-        else if (st.ksdnEng < 7.0 && st.grade <= 5) note = `Chưa đạt chuẩn Tiểu học (${st.ksdnEng})`;
-        else note = `Đạt chuẩn môn Anh (${st.ksdnEng})`;
-      } else if (st.ksdnMath != null && st.ksdvMath != null) {
-        const diff = +(st.ksdnMath - st.ksdvMath).toFixed(1);
-        if (diff >= 2.0) note = `Tiến bộ tốt môn Toán (+${diff})`;
-        else if (st.ksdnMath < 5.0 && st.grade >= 6) note = `Dưới TB môn Toán (${st.ksdnMath}), cần kèm gấp`;
-        else note = `Đạt chuẩn môn Toán (${st.ksdnMath})`;
-      } else if (st.missingReason) {
-        note = st.missingReason;
-      }
-    } else {
-      note = st.missingReason;
-    }
-  }
-
-  ckdvRows.push([
-    idx + 1,
-    st.campus || 'CS1',
-    st.studentCode || '',
-    st.fullName,
-    st.className || 'Chưa rõ',
-    st.grade ? `Khối ${st.grade}` : '',
-    Array.isArray(st.committedSubjects) ? st.committedSubjects.join(', ') : (st.committedSubjects || ''),
-    st.ksdvStatus || 'Đủ điểm',
-    ksdvStr,
-    ksdnStr,
-    note
-  ]);
+  // 3 Hàng tổng kết cuối mỗi cơ sở
+  ckdvRows.push(['HS Cam kết theo môn:', '', '', '', subList, '', '', '', '']);
+  ckdvRows.push(['Tổng số môn Tiến bộ:', '', '', '', `${summary.totalProgress} / ${summary.totalEvaluated} lượt môn (${summary.progressRate})`, '', '', '', '']);
+  ckdvRows.push(['Tổng số môn Đạt chuẩn:', '', '', '', `${summary.totalBenchmark} / ${summary.totalEvaluated} lượt môn (${summary.benchmarkRate}) (Đạt chuẩn: ${summary.totalBenchmark}, TB: ${summary.totalAverage}, Dưới TB: ${summary.totalBelowAvg})`, '', '', '', '']);
+  ckdvRows.push([]);
 });
+
+// Section 3: Bảng riêng thống kê 6 học sinh diện Theo dõi chung & Thỏa thuận giao lưu
+ckdvRows.push(['========================================================================================']);
+ckdvRows.push(['3. DANH SÁCH 6 HỌC SINH DIỆN THEO DÕI CHUNG & THỎA THUẬN GIAO LƯU (ĐẢM BẢO ĐỦ 76 HS NHẬP HỌC)']);
+ckdvRows.push(['* Nhóm 6 học sinh này không có môn cam kết học thuật cụ thể nên không đưa vào bảng đối sánh theo môn ở trên, được theo dõi theo diện riêng']);
+ckdvRows.push(['STT', 'Họ và tên', 'Lớp', 'Khối', 'Cơ sở', 'Diện hồ sơ & Ghi chú xét duyệt', 'Điểm KSĐV', 'Điểm KSĐN', 'Tình trạng thực tế & Định hướng theo dõi']);
+ckdvRows.push([1, 'Nguyễn Đặng Bảo Trâm', '8.2_CS1', 'Khối 8', 'CS1', 'Tư vấn tâm lý (Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí)', 'Toán: 7.0; Văn: 6.5; Anh: 4.8; Tâm lý: 6', 'Toán: 3.0; Văn: 6.5; Anh: 4.0', 'Nhập học diện Đạt, BGH lưu ý theo dõi tư vấn tâm lý học đường, không cam kết môn văn hóa']);
+ckdvRows.push([2, 'Nguyễn Thanh Phúc', '1.2INT_CS2', 'Khối 1', 'CS2', 'Tập trung chú ý (Không cần cam kết, GVTA tương tác kỹ với PH)', 'Anh: 5.0 (Vấn đáp: 5/30); Tâm lý: 2', 'Khối 1 (Chưa thi KSĐN)', 'Học sinh Lớp 1 diện Đạt, kết quả xét duyệt ghi rõ "Không cần cam kết", GVCN và GVTA phối hợp PH tương tác']);
+ckdvRows.push([3, 'ĐỖ NGUYỄN AN KHÔI', '1.3_CS2', 'Khối 1', 'CS2', 'Tập trung chú ý ((cần theo dõi mức độ tập trung chú ý))', 'Anh: 7.0 (Vấn đáp: 7/30); Tâm lý: 1', 'Khối 1 (Chưa thi KSĐN)', 'Học sinh Lớp 1 diện Đạt, GVCN theo dõi rèn luyện nền nếp và sự tập trung trong các hoạt động học tập']);
+ckdvRows.push([4, 'Phan Hải Đăng', '1.3_CS2', 'Khối 1', 'CS2', 'Phát triển ngôn ngữ (theo dõi thêm khả năng phát triển ngôn ngữ)', 'Tâm lý: -1', 'Khối 1 (Chưa thi KSĐN)', 'Học sinh Lớp 1 diện Đạt, GVCN hỗ trợ rèn luyện phát triển ngôn ngữ Tiếng Việt trong sinh hoạt']);
+ckdvRows.push([5, 'Nguyễn Hoàng Đạt', '3.2INT_CS5', 'Khối 3', 'CS5', 'Thỏa thuận Giao lưu (Ký thoả thuận cam kết như các HS đã từng học giao lưu)', 'Toán: 2.0; TV: 1.0; Anh: 6.6', 'Toán: 6.0; TV: 2.0; Anh: 7.8', 'Học sinh Homeschooling học giao lưu tại CS5, ký thỏa thuận giao lưu chung. KSĐN có tiến bộ tốt (Toán 6.0, Anh 7.8)']);
+ckdvRows.push([6, 'Nguyễn Hoàng Phúc', '5.2INT_CS5', 'Khối 5', 'CS5', 'Thỏa thuận Giao lưu (Ký thoả thuận cam kết như các HS đã từng học giao lưu)', 'Toán: 1.0; TV: 1.0; Anh: 7.2', 'Toán: 3.0; TV: 1.0; Anh: 9.2', 'Học sinh Homeschooling học giao lưu tại CS5, ký thỏa thuận giao lưu chung. Điểm KSĐN Tiếng Anh xuất sắc 9.2']);
+ckdvRows.push(['TỔNG CỘNG HỆ THỐNG:', '', '', '', '', '6 HS Theo dõi chung + 70 HS có Môn cam kết = ĐỦ 76 HỌC SINH NHẬP HỌC (100%)', '', '', '']);
+ckdvRows.push([]);
 
 const wsCKDV = XLSX.utils.aoa_to_sheet(ckdvRows);
 XLSX.utils.book_append_sheet(wb, wsCKDV, '76_HS_CKDV');

@@ -161,6 +161,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
                 <span className="md:hidden text-[10px] text-[#0284C7] font-normal leading-none">SQMS</span>
               </div>
             </div>
+
+            {/* Container cho Cơ sở (Hill / Global / Hệ thống) và Chế độ Quản lý / Cá nhân trên cùng dòng SQMS */}
+            <div id="teacher-top-header-slot" className="hidden sm:flex items-center gap-2 ml-2 sm:ml-4" />
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
              <AcademicYearSelector />

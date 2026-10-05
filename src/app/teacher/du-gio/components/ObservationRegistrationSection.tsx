@@ -4,10 +4,11 @@
 import React from "react"
 import {
   X, Plus, Sparkles, Zap, ShieldCheck, Info, BookOpen, Calendar, Clock, ChevronRight, RotateCcw, Send, Target, BarChart3,
-  MapPin, User, Users, CheckCircle2, AlertCircle, AlertTriangle, FileText, Award, Check, Save, Mail, Loader2, Star
+  MapPin, User, Users, UserCheck, CheckCircle2, AlertCircle, AlertTriangle, FileText, Award, Check, Save, Mail, Loader2, Star,
+  Search, Filter
 } from "lucide-react"
 import { QuickCommentPresets } from "./QuickCommentPresets"
-import { getObserverSurpriseQuota, checkTeacherSurpriseHistory, findExistingSurpriseSlot } from "../actions"
+import { getObserverSurpriseQuota, checkTeacherSurpriseHistory, findExistingSurpriseSlot, checkObservationConflict, createAssignedObservation } from "../actions"
 
 
 const K12_SECTIONS = [
@@ -176,12 +177,14 @@ const calculateK12Ranking = (scores: number[]) => {
 interface CreateObservationModalProps {
   isOpen: boolean
   onClose: () => void
-  creationMode: "TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE"
-  setCreationMode: (mode: "TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE") => void
+  creationMode: "TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED"
+  setCreationMode: (mode: "TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED") => void
   isMamNonTeacher: boolean
   isAdminUser: boolean
   isTTCM: boolean
   canCreateSurprise: boolean
+  canAssignObservation?: boolean
+  onAssignedSuccess?: () => void
   currentTeacher: any
   monthlyLimitCount: number
   // Surprise form props
@@ -350,6 +353,8 @@ export function ObservationRegistrationSection(props: any) {
     isAdminUser,
     isTTCM,
     canCreateSurprise,
+    canAssignObservation,
+    onAssignedSuccess,
     currentTeacher,
     monthlyLimitCount,
     myTaughtCount = 0,
@@ -551,6 +556,264 @@ export function ObservationRegistrationSection(props: any) {
     }
   }, [creationMode, surpriseTeacherId, surpriseDate, surprisePeriod, surpriseClassId, surpriseClassName, surpriseCampusId]);
 
+  // ===== QUẢN LÝ CHỈ ĐỊNH DỰ GIỜ (ASSIGNED OBSERVATION) =====
+  const [assignedAcademicYearId, setAssignedAcademicYearId] = React.useState<string>("");
+  const [assignedLevel, setAssignedLevel] = React.useState<string>(() => isMamNonTeacher ? "Mầm non" : "Phổ thông K-12");
+  const [assignedGrade, setAssignedGrade] = React.useState<string>(() => isMamNonTeacher ? "Mầm non" : "Khối 10");
+  const [assignedCampusId, setAssignedCampusId] = React.useState<string>(() => currentTeacher?.campusId || (campuses?.[0]?.id || ""));
+  const [assignedDeptId, setAssignedDeptId] = React.useState<string>(() => currentTeacher?.departmentId || "");
+
+  const isTeacherInDepartment = (t: any, deptId: string): boolean => {
+    if (!t || !deptId || deptId === "all") return true;
+    if (t.departmentId === deptId) return true;
+    if (t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+      return t.departmentAssignments.some((da: any) => da.departmentId === deptId);
+    }
+    return false;
+  };
+  const [assignedTeacherId, setAssignedTeacherId] = React.useState<string>("");
+  const [assignedClassId, setAssignedClassId] = React.useState<string>("");
+  const [assignedClassName, setAssignedClassName] = React.useState<string>("");
+  const [assignedDate, setAssignedDate] = React.useState<string>(() => new Date().toISOString().split("T")[0]);
+  const [assignedPeriod, setAssignedPeriod] = React.useState<string>(() => isMamNonTeacher ? "HĐ Học sáng" : "Tiết 1");
+  const [assignedRoom, setAssignedRoom] = React.useState<string>("Phòng học");
+  const [assignedSubjectId, setAssignedSubjectId] = React.useState<string>("");
+  const [assignedSubjectName, setAssignedSubjectName] = React.useState<string>("");
+  const [assignedTopic, setAssignedTopic] = React.useState<string>("");
+  const [assignedNotes, setAssignedNotes] = React.useState<string>("");
+  const [assignedObserverIds, setAssignedObserverIds] = React.useState<string[]>([]);
+  const [assignedSubmitting, setAssignedSubmitting] = React.useState<boolean>(false);
+  const [assignedConflict, setAssignedConflict] = React.useState<any>(null);
+  const [assignedJoinExisting, setAssignedJoinExisting] = React.useState<boolean>(false);
+  const [assignedForceNew, setAssignedForceNew] = React.useState<boolean>(false);
+  const [loadingAssignedConflict, setLoadingAssignedConflict] = React.useState<boolean>(false);
+
+  // Bộ lọc và tìm kiếm cho mục Người dự (Field 10)
+  const [observerFilterDeptId, setObserverFilterDeptId] = React.useState<string>("");
+  const [observerSearchQuery, setObserverSearchQuery] = React.useState<string>("");
+
+  // Hàm kiểm tra Tổ chuyên môn / Ban Giám Hiệu có thuộc Khối Mầm non hay không
+  const isPreschoolDept = React.useCallback((dept: any): boolean => {
+    if (!dept) return false;
+    const name = dept.name || dept.departmentName || "";
+    const code = dept.code || "";
+    const block = (dept.blockCM || "").toLowerCase();
+    if (typeof isPreschoolDepartment === "function" && (isPreschoolDepartment(name) || isPreschoolDepartment(code))) {
+      return true;
+    }
+    const str = `${name} ${code} ${block}`.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return (
+      str.includes("mam non") ||
+      str.includes("nha tre") ||
+      str.includes("mau giao") ||
+      str.includes("bghmn") ||
+      str.includes("bgh mn") ||
+      str.includes("bgh_mn") ||
+      str.includes("ban giam hieu mam non") ||
+      str.includes("mgb") ||
+      str.includes("mgn") ||
+      str.includes("mgl") ||
+      str.includes("to_tactq_mn") ||
+      str.includes("nt")
+    );
+  }, [isPreschoolDepartment]);
+
+  // Danh sách Tổ chuyên môn phụ trách của người dùng
+  const myAssignedAllowedDepts = React.useMemo(() => {
+    if (Array.isArray(ttcmAllowedDepartments) && ttcmAllowedDepartments.length > 0) {
+      return ttcmAllowedDepartments;
+    }
+    if (currentTeacher?.departmentId && !isAdminUser) {
+      const myD = (departments || []).filter((d: any) => d.id === currentTeacher.departmentId);
+      if (myD.length > 0) return myD;
+    }
+    return departments || [];
+  }, [ttcmAllowedDepartments, departments, currentTeacher?.departmentId, isAdminUser]);
+
+  // Lọc TCM phụ trách theo Khối học: Khi chọn Phổ thông chỉ hiện TCM Phổ thông; khi chọn Mầm non chỉ hiện TCM & BGH Mầm non
+  const levelFilteredAssignedDepts = React.useMemo(() => {
+    return (myAssignedAllowedDepts || []).filter((d: any) => {
+      const isMN = isPreschoolDept(d);
+      if (assignedLevel === "Mầm non") {
+        return isMN;
+      } else {
+        return !isMN;
+      }
+    });
+  }, [myAssignedAllowedDepts, isPreschoolDept, assignedLevel]);
+
+  const levelFilteredDeptIds = React.useMemo(() => {
+    return new Set(levelFilteredAssignedDepts.map((d: any) => d.id));
+  }, [levelFilteredAssignedDepts]);
+
+  // Tự động reset và đồng bộ khi đổi Khối học hoặc Tổ chuyên môn không còn thuộc Khối đã chọn
+  React.useEffect(() => {
+    if (creationMode === "ASSIGNED") {
+      if (assignedDeptId && !levelFilteredDeptIds.has(assignedDeptId)) {
+        setAssignedDeptId("");
+        setAssignedTeacherId("");
+      }
+      if (observerFilterDeptId && !levelFilteredDeptIds.has(observerFilterDeptId)) {
+        setObserverFilterDeptId("");
+      }
+    }
+  }, [creationMode, assignedLevel, levelFilteredDeptIds, assignedDeptId, observerFilterDeptId]);
+
+  // Danh sách Giáo viên khả dụng cho việc phân công Người dự (đảm bảo đúng Khối học và TCM phụ trách)
+  const availableTeachersForObservation = React.useMemo(() => {
+    if (!Array.isArray(teachers)) return [];
+    const allowedDeptIds = levelFilteredDeptIds;
+
+    return teachers.filter((t: any) => {
+      // 1. Không trùng với GV được chỉ định dạy
+      if (t.id === assignedTeacherId) return false;
+
+      // 2. Không lặp lại người đã được chọn
+      if (assignedObserverIds.includes(t.id)) return false;
+
+      // 3. Phân quyền và lọc theo TCM thuộc khối đang chọn (Phổ thông vs Mầm non)
+      if (allowedDeptIds.size > 0) {
+        let inScope = false;
+        if (t.departmentId && allowedDeptIds.has(t.departmentId)) inScope = true;
+        if (!inScope && t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+          inScope = t.departmentAssignments.some((da: any) => allowedDeptIds.has(da.departmentId));
+        }
+        if (!inScope) return false;
+      }
+
+      // 4. Lọc theo Tổ chuyên môn được chọn ở dropdown bộ lọc người dự
+      if (observerFilterDeptId && observerFilterDeptId !== "all") {
+        let matchDept = (t.departmentId === observerFilterDeptId);
+        if (!matchDept && t.departmentAssignments && Array.isArray(t.departmentAssignments)) {
+          matchDept = t.departmentAssignments.some((da: any) => da.departmentId === observerFilterDeptId);
+        }
+        if (!matchDept) return false;
+      }
+
+      // 5. Lọc theo từ khóa tìm kiếm (Tên GV, Mã GV)
+      if (observerSearchQuery.trim()) {
+        const q = observerSearchQuery.toLowerCase().trim();
+        const nameMatch = (t.teacherName || "").toLowerCase().includes(q);
+        const codeMatch = (t.teacherCode || "").toLowerCase().includes(q);
+        const emailMatch = (t.email || "").toLowerCase().includes(q);
+        if (!nameMatch && !codeMatch && !emailMatch) return false;
+      }
+
+      return true;
+    });
+  }, [teachers, assignedTeacherId, assignedObserverIds, levelFilteredDeptIds, observerFilterDeptId, observerSearchQuery]);
+
+  // Tự động kiểm tra trùng phiên khi cán bộ quản lý chọn GV, Ngày, Tiết, Lớp
+  React.useEffect(() => {
+    if (creationMode === "ASSIGNED" && assignedTeacherId && assignedDate && assignedPeriod && (assignedClassId || assignedClassName)) {
+      setLoadingAssignedConflict(true);
+      checkObservationConflict({
+        teacherId: assignedTeacherId,
+        date: assignedDate,
+        period: assignedPeriod,
+        classId: assignedClassId,
+        className: assignedClassName,
+        campusId: assignedCampusId
+      })
+        .then((res: any) => {
+          if (res?.success && res.conflict) {
+            setAssignedConflict(res.slot);
+          } else {
+            setAssignedConflict(null);
+            setAssignedJoinExisting(false);
+            setAssignedForceNew(false);
+          }
+        })
+        .catch(err => console.error("Error checking conflict for assignment:", err))
+        .finally(() => setLoadingAssignedConflict(false));
+    } else {
+      setAssignedConflict(null);
+      setAssignedJoinExisting(false);
+      setAssignedForceNew(false);
+    }
+  }, [creationMode, assignedTeacherId, assignedDate, assignedPeriod, assignedClassId, assignedClassName, assignedCampusId]);
+
+  const handleAssignedFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignedTeacherId) {
+      alert("Vui lòng chọn Giáo viên được dự giờ.");
+      return;
+    }
+    if (!assignedDate) {
+      alert("Vui lòng chọn Ngày dự giờ.");
+      return;
+    }
+    if (!assignedPeriod) {
+      alert("Vui lòng chọn Tiết học / Khung thời gian.");
+      return;
+    }
+    if (!assignedClassName && !assignedClassId) {
+      alert("Vui lòng chọn hoặc nhập Lớp học.");
+      return;
+    }
+    if (assignedObserverIds.length === 0) {
+      alert("Vui lòng chọn ít nhất một người tham gia dự giờ.");
+      return;
+    }
+
+    if (assignedConflict && !assignedJoinExisting && !assignedForceNew) {
+      alert("Đã tồn tại phiên dự giờ của giáo viên này trong cùng thời gian và lớp. Vui lòng chọn 'Tham gia phiên hiện có' hoặc 'Tạo phiên riêng biệt'.");
+      return;
+    }
+
+    setAssignedSubmitting(true);
+    try {
+      const payload: any = {
+        level: assignedLevel,
+        grade: assignedGrade,
+        campusId: assignedCampusId,
+        targetDeptId: assignedDeptId,
+        teacherId: assignedTeacherId,
+        classId: assignedClassId || undefined,
+        className: assignedClassName || "Lớp học",
+        date: assignedDate,
+        period: assignedPeriod,
+        room: assignedRoom || "Phòng học",
+        subjectId: assignedSubjectId || undefined,
+        subjectName: assignedSubjectName || (assignedLevel === "Mầm non" ? "Chủ đề/Chuyên đề" : "Môn học"),
+        topic: assignedTopic || `Chỉ định dự giờ: ${assignedSubjectName || "Chuyên môn"} - ${assignedClassName}`,
+        notes: assignedNotes,
+        observerTeacherIds: assignedObserverIds,
+        academicYearId: assignedAcademicYearId || undefined
+      };
+
+      if (assignedJoinExisting && assignedConflict?.id) {
+        payload.existingSlotId = assignedConflict.id;
+      } else if (assignedForceNew) {
+        payload.forceNewSlot = true;
+      }
+
+      const res = await createAssignedObservation(payload);
+      if (res.success) {
+        alert(res.message || "Đã tạo lượt Chỉ định dự giờ thành công!");
+        setAssignedTeacherId("");
+        setAssignedObserverIds([]);
+        setAssignedTopic("");
+        setAssignedNotes("");
+        setAssignedConflict(null);
+        setAssignedJoinExisting(false);
+        setAssignedForceNew(false);
+
+        if (typeof onAssignedSuccess === "function") {
+          onAssignedSuccess();
+        } else if (typeof props.onClose === "function") {
+          props.onClose();
+        }
+      } else {
+        alert(res.error || "Không thể tạo lượt Chỉ định dự giờ.");
+      }
+    } catch (err: any) {
+      alert(err.message || "Đã xảy ra lỗi khi tạo chỉ định dự giờ.");
+    } finally {
+      setAssignedSubmitting(false);
+    }
+  };
+
   const effectiveScoresK12 = internalScoresK12;
   const effectiveScoresMN = internalScoresMN;
 
@@ -744,19 +1007,44 @@ export function ObservationRegistrationSection(props: any) {
             <span>Dự giờ đột xuất</span>
           </button>
         )}
+
+        {canAssignObservation && (
+          <button
+            type="button"
+            onClick={() => setCreationMode("ASSIGNED")}
+            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              creationMode === "ASSIGNED"
+                ? "bg-purple-700 text-white shadow-md shadow-purple-900/20 scale-[1.01]"
+                : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
+            }`}
+          >
+            <UserCheck className="w-4 h-4 text-purple-300" />
+            <span>Chỉ định dự giờ</span>
+          </button>
+        )}
       </div>
 
-      {/* 4. MAIN GRID: Form (8 cols or 12 cols if Surprise) + Right Guidance Column (4 cols) */}
-      <div className={`w-full ${creationMode === "SURPRISE" ? "block" : "grid grid-cols-1 lg:grid-cols-12 gap-6"}`}>
+      {/* 4. MAIN FORM: Mở rộng giao diện full-width 100% cho tất cả các thẻ tag như thẻ Đột xuất */}
+      <div className="w-full flex flex-col gap-6">
         {/* Main Form Column */}
-        <div className={creationMode === "SURPRISE" ? "w-full" : "lg:col-span-8"}>
+        <div className="w-full">
           <div className={`w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-7 flex flex-col gap-6 border-t-4 ${
             creationMode === "SURPRISE" ? "border-t-[#008B82]" : isMamNonTeacher ? "border-t-amber-500" : "border-t-[#008B82]"
           }`}>
             {/* Header Banner */}
             <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-              <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#008B82] flex items-center justify-center border border-teal-100 shrink-0">
-                {creationMode === "SURPRISE" ? <Zap className="w-5 h-5 text-amber-500" /> : <Calendar className="w-5 h-5" />}
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                creationMode === "ASSIGNED"
+                  ? "bg-purple-50 text-purple-700 border border-purple-200"
+                  : "bg-teal-50 text-[#008B82] border border-teal-100"
+              }`}>
+                {creationMode === "SURPRISE" ? (
+                  <Zap className="w-5 h-5 text-amber-500" />
+                ) : creationMode === "ASSIGNED" ? (
+                  <UserCheck className="w-5 h-5 text-purple-700" />
+                ) : (
+                  <Calendar className="w-5 h-5" />
+                )}
               </div>
               <div>
                 <h3 className="text-base font-black text-slate-800 tracking-tight">
@@ -764,11 +1052,15 @@ export function ObservationRegistrationSection(props: any) {
                     ? "THÔNG TIN ĐĂNG KÝ TIẾT DẠY"
                     : creationMode === "OBSERVER_REQUEST"
                     ? "THÔNG TIN XIN DỰ GIỜ"
+                    : creationMode === "ASSIGNED"
+                    ? "THÔNG TIN CHỈ ĐỊNH DỰ GIỜ"
                     : "THÔNG TIN DỰ GIỜ ĐỘT XUẤT"}
                 </h3>
                 <p className="text-xs text-slate-500 font-medium">
                   {creationMode === "SURPRISE"
                     ? "Hệ thống ghi nhận và đánh giá trực tiếp tiết dạy đột xuất một cách khách quan, thân thiện và đồng hành phát triển chuyên môn."
+                    : creationMode === "ASSIGNED"
+                    ? "Cán bộ quản lý chủ động chỉ định giáo viên được dự và phân công người dự theo kế hoạch. Tiết dạy có hiệu lực ngay mà không yêu cầu giáo viên xác nhận."
                     : "Vui lòng khai báo đầy đủ thông tin để gửi đăng ký tiết dạy. Hệ thống sẽ kiểm tra trùng lịch và tự động gửi email thông báo tới Giáo viên cùng Tổ chuyên môn."}
                 </p>
               </div>
@@ -1801,8 +2093,8 @@ export function ObservationRegistrationSection(props: any) {
                 {/* Quick Comment Presets for Surprise Observation */}
                 <QuickCommentPresets
                   isPreschool={surpriseLevel === "Mầm non"}
-                  onAddStrength={(text) => setSurpriseStrengths(prev => prev ? `${prev}\n• ${text}` : `• ${text}`)}
-                  onAddImprovement={(text) => setSurpriseImprovements(prev => prev ? `${prev}\n• ${text}` : `• ${text}`)}
+                  onAddStrength={(text) => setSurpriseStrengths((prev: string) => prev ? `${prev}\n• ${text}` : `• ${text}`)}
+                  onAddImprovement={(text) => setSurpriseImprovements((prev: string) => prev ? `${prev}\n• ${text}` : `• ${text}`)}
                 />
 
                 {/* Qualitative Feedback Textareas */}
@@ -2276,7 +2568,7 @@ export function ObservationRegistrationSection(props: any) {
                     className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">-- Chọn khối học --</option>
-                    {getGradesForLevel(reqLevel).map(g => (
+                    {getGradesForLevel(reqLevel).map((g: any) => (
                       <option key={g} value={g}>{g}</option>
                     ))}
                   </select>
@@ -2342,7 +2634,7 @@ export function ObservationRegistrationSection(props: any) {
                     required
                     className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
-                    {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                    {periodOptions.map((p: any) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
 
@@ -2390,6 +2682,593 @@ export function ObservationRegistrationSection(props: any) {
                   </>
                 )}
               </button>
+            </form>
+          ) : creationMode === "ASSIGNED" ? (
+            /* ===== FORM 4: CHỈ ĐỊNH DỰ GIỜ (BGH/GĐCS, QLCM, TTCM) ===== */
+            <form onSubmit={handleAssignedFormSubmit} className="flex flex-col gap-5 text-xs font-semibold bg-purple-50/20 p-5 sm:p-6 rounded-3xl border border-purple-100 shadow-sm animate-in fade-in duration-300">
+              
+              {/* Banner Hướng dẫn nghiệp vụ */}
+              <div className="bg-gradient-to-r from-purple-500/10 via-purple-500/5 to-indigo-500/10 border border-purple-200 rounded-2xl p-4 flex items-start gap-3.5">
+                <div className="size-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shrink-0">
+                  <UserCheck className="size-4" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-black text-purple-900 text-xs uppercase tracking-wide">
+                    Chỉ định dự giờ chuyên môn
+                  </h4>
+                  <p className="text-[11px] font-medium text-purple-950 leading-relaxed">
+                    Cán bộ quản lý (BGH/GĐCS, QLCM, TTCM) chủ động tạo lượt dự giờ cho giáo viên và phân công người dự. <strong>Lượt dự giờ này không yêu cầu giáo viên được dự phê duyệt</strong> và có hiệu lực ngay khi lưu thành công.
+                  </p>
+                </div>
+              </div>
+
+              {/* Nhóm 1: Năm học & Khối học */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    1. Năm học
+                  </label>
+                  <select
+                    value={assignedAcademicYearId}
+                    onChange={e => setAssignedAcademicYearId(e.target.value)}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                  >
+                    <option value="">-- Năm học hiện hành --</option>
+                    {(props.academicYears || []).map((ay: any) => (
+                      <option key={ay.id} value={ay.id}>{ay.name || ay.title} {ay.status === "ACTIVE" ? "(Đang diễn ra)" : ""}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    2. Khối học *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (assignedLevel !== "Phổ thông K-12") {
+                          setAssignedLevel("Phổ thông K-12");
+                          setAssignedPeriod("Tiết 1");
+                          setAssignedGrade("Khối 10");
+                          setAssignedDeptId("");
+                          setAssignedTeacherId("");
+                          setObserverFilterDeptId("");
+                          setAssignedClassId("");
+                          setAssignedClassName("");
+                          setAssignedSubjectId("");
+                          setAssignedSubjectName("");
+                        }
+                      }}
+                      className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
+                        assignedLevel === "Phổ thông K-12"
+                          ? "bg-purple-700 text-white border-purple-700 shadow-sm"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      Phổ thông (K-12)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (assignedLevel !== "Mầm non") {
+                          setAssignedLevel("Mầm non");
+                          setAssignedPeriod("HĐ Học sáng");
+                          setAssignedGrade("Mầm non");
+                          setAssignedDeptId("");
+                          setAssignedTeacherId("");
+                          setObserverFilterDeptId("");
+                          setAssignedClassId("");
+                          setAssignedClassName("");
+                          const khacChuyenDeId = typeof getKhacChuyenDeSubjectId === "function" ? getKhacChuyenDeSubjectId(subjects) : "";
+                          setAssignedSubjectId(khacChuyenDeId);
+                          setAssignedSubjectName("Chủ đề/Chuyên đề");
+                        }
+                      }}
+                      className={`py-2.5 px-3 rounded-xl font-bold text-xs transition-all border cursor-pointer ${
+                        assignedLevel === "Mầm non"
+                          ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      Mầm non
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nhóm 2: Cơ sở & Tổ chuyên môn */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    3. Cơ sở *
+                  </label>
+                  <select
+                    value={assignedCampusId}
+                    onChange={e => {
+                      setAssignedCampusId(e.target.value);
+                      setAssignedTeacherId("");
+                      setAssignedClassId("");
+                      setAssignedClassName("");
+                    }}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                  >
+                    <option value="">-- Chọn cơ sở --</option>
+                    {(campuses || []).map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.campusName || c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide flex items-center justify-between">
+                    <span>4. Tổ chuyên môn</span>
+                    <span className="text-[10px] text-purple-600 font-bold">
+                      {levelFilteredAssignedDepts.length} {assignedLevel === "Mầm non" ? "TCM/BGH Mầm non" : "TCM Phổ thông"}
+                    </span>
+                  </label>
+                  <select
+                    value={assignedDeptId}
+                    onChange={e => {
+                      setAssignedDeptId(e.target.value);
+                      setAssignedTeacherId("");
+                    }}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                  >
+                    <option value="">
+                      {assignedLevel === "Mầm non"
+                        ? `-- Tất cả TCM & BGH Mầm non (${levelFilteredAssignedDepts.length} tổ) --`
+                        : `-- Tất cả TCM Phổ thông (${levelFilteredAssignedDepts.length} tổ) --`}
+                    </option>
+                    {(levelFilteredAssignedDepts || []).map((d: any) => (
+                      <option key={d.id} value={d.id}>{d.name || d.departmentName}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Nhóm 3: Giáo viên được dự & Lớp học */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-purple-900 uppercase tracking-wide flex items-center justify-between">
+                    <span>5. Giáo viên được dự (Chỉ định) *</span>
+                    <span className="text-[10px] text-purple-600 font-semibold lowercase">Không cần GV duyệt</span>
+                  </label>
+                  <select
+                    value={assignedTeacherId}
+                    onChange={e => setAssignedTeacherId(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border-2 border-purple-300 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800 shadow-2xs"
+                  >
+                    <option value="">-- Chọn giáo viên được dự --</option>
+                    {(teachers || [])
+                      .filter((t: any) => {
+                        if (assignedCampusId && t.campusId && t.campusId !== assignedCampusId) return false;
+                        if (assignedDeptId) {
+                          if (t.departmentId === assignedDeptId) return true;
+                          const hasDa = t.departmentAssignments?.some((da: any) => da.departmentId === assignedDeptId);
+                          return Boolean(hasDa);
+                        }
+                        if (levelFilteredDeptIds.size > 0) {
+                          const inMainDept = t.departmentId && levelFilteredDeptIds.has(t.departmentId);
+                          if (inMainDept) return true;
+                          const inAssigned = t.departmentAssignments?.some((da: any) => levelFilteredDeptIds.has(da.departmentId));
+                          return Boolean(inAssigned);
+                        }
+                        return true;
+                      })
+                      .map((t: any) => (
+                        <option key={t.id} value={t.id}>
+                          {t.teacherName} ({t.teacherCode || "-"}) • {t.departmentRel?.name || (departments || []).find((d: any) => d.id === t.departmentId)?.name || "Tổ CM"}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    6. Lớp học *
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={assignedClassId}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setAssignedClassId(val);
+                        const found = (classes || []).find((c: any) => c.id === val);
+                        if (found) setAssignedClassName(found.name || found.className);
+                      }}
+                      className="w-1/2 text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                    >
+                      <option value="">-- Chọn lớp --</option>
+                      {(classes || [])
+                        .filter((c: any) => {
+                          if (assignedCampusId && c.campusId && c.campusId !== assignedCampusId) return false;
+                          const isMN = (() => {
+                            const n = (c.name || c.className || "").toLowerCase();
+                            const g = (c.grade || "").toLowerCase();
+                            return n.includes("mầm") || n.includes("mam") || n.includes("chồi") || n.includes("choi") || n.includes("lá") || n.includes("la") || n.includes("nhà trẻ") || n.includes("nha tre") || n.includes("mgb") || n.includes("mgn") || n.includes("mgl") || g.includes("mầm non") || g.includes("nhà trẻ");
+                          })();
+                          if (assignedLevel === "Mầm non") return isMN;
+                          return !isMN;
+                        })
+                        .map((c: any) => (
+                          <option key={c.id} value={c.id}>{c.name || c.className}</option>
+                        ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Hoặc nhập tên lớp..."
+                      value={assignedClassName}
+                      onChange={e => setAssignedClassName(e.target.value)}
+                      required
+                      className="w-1/2 text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Nhóm 4: Ngày & Tiết học */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    7. Ngày dự giờ *
+                  </label>
+                  <input
+                    type="date"
+                    value={assignedDate}
+                    min={minAllowedDate}
+                    onChange={e => setAssignedDate(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    8. Tiết học / Khung giờ *
+                  </label>
+                  <select
+                    value={assignedPeriod}
+                    onChange={e => setAssignedPeriod(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                  >
+                    {assignedLevel === "Mầm non" ? (
+                      <>
+                        <option value="HĐ Học sáng">HĐ Học sáng (08:30 - 09:15)</option>
+                        <option value="HĐ Tiếng Anh">HĐ Tiếng Anh (09:15 - 09:45)</option>
+                        <option value="HĐ Góc/Ngoài trời">HĐ Góc/Ngoài trời (09:45 - 10:30)</option>
+                        <option value="HĐ Chiều">HĐ Chiều (14:30 - 15:15)</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Tiết 1">Tiết 1 (07:30 - 08:15)</option>
+                        <option value="Tiết 2">Tiết 2 (08:25 - 09:10)</option>
+                        <option value="Tiết 3">Tiết 3 (09:30 - 10:15)</option>
+                        <option value="Tiết 4">Tiết 4 (10:25 - 11:10)</option>
+                        <option value="Tiết 5">Tiết 5 (13:00 - 13:45)</option>
+                        <option value="Tiết 6">Tiết 6 (13:55 - 14:40)</option>
+                        <option value="Tiết 7">Tiết 7 (15:00 - 15:45)</option>
+                        <option value="Tiết 8">Tiết 8 (15:55 - 16:40)</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    9. Phòng học / Địa điểm
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="VD: Phòng 204, Sân bóng..."
+                    value={assignedRoom}
+                    onChange={e => setAssignedRoom(e.target.value)}
+                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                  />
+                </div>
+              </div>
+
+              {/* Nhóm 5: Người dự (Multi-select có chọn TCM phụ trách và tìm kiếm theo Tên/Mã GV) */}
+              <div className="flex flex-col gap-3 p-4 bg-purple-50/50 rounded-2xl border-2 border-purple-200/90 shadow-2xs">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <label className="text-[11px] font-black text-purple-950 uppercase tracking-wide flex items-center gap-1.5">
+                    <Users className="size-4 text-purple-600" />
+                    <span>10. Người dự (Phân công cán bộ/GV đi dự) *</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    {/* Nút bấm nhanh phân công bản thân người tạo */}
+                    {currentTeacher?.id && currentTeacher.id !== assignedTeacherId && !assignedObserverIds.includes(currentTeacher.id) && (
+                      <button
+                        type="button"
+                        onClick={() => setAssignedObserverIds(prev => [...prev, currentTeacher.id])}
+                        className="px-2.5 py-1 rounded-lg bg-white text-purple-700 hover:bg-purple-100 border border-purple-300 text-[11px] font-bold transition-all shadow-2xs cursor-pointer flex items-center gap-1"
+                        title="Tự thêm mình vào danh sách tham gia dự giờ"
+                      >
+                        <UserCheck className="size-3.5 text-purple-600" />
+                        <span>+ Phân công tôi đi dự</span>
+                      </button>
+                    )}
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-purple-200/80 text-purple-900 border border-purple-300/80">
+                      {assignedObserverIds.length > 0 ? `Đã phân công ${assignedObserverIds.length} người` : "Chưa chọn người dự"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Danh sách người dự đã chọn */}
+                {assignedObserverIds.length > 0 && (
+                  <div className="p-3 bg-white rounded-xl border border-purple-200/80 space-y-1.5 shadow-2xs">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-bold">
+                      <span>Danh sách cán bộ / giáo viên được phân công dự ({assignedObserverIds.length}):</span>
+                      {assignedObserverIds.length >= 2 && (
+                        <button
+                          type="button"
+                          onClick={() => setAssignedObserverIds([])}
+                          className="text-rose-600 hover:text-rose-700 hover:underline cursor-pointer text-[10px]"
+                        >
+                          Xóa tất cả
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {assignedObserverIds.map(id => {
+                        const obsTeacher = (teachers || []).find((t: any) => t.id === id);
+                        const isMe = currentTeacher?.id === id;
+                        const tDept = obsTeacher?.departmentRel?.name || (departments || []).find((d: any) => d.id === obsTeacher?.departmentId)?.name || "Chuyên môn";
+                        return (
+                          <span
+                            key={id}
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
+                              isMe
+                                ? "bg-purple-100 text-purple-950 border-purple-300 ring-2 ring-purple-300/50"
+                                : "bg-white text-slate-800 border-purple-200 hover:border-purple-300"
+                            }`}
+                          >
+                            <span className="size-2 rounded-full bg-purple-500 shrink-0" />
+                            <div className="flex flex-col text-left">
+                              <span className="font-black text-slate-900 leading-tight">
+                                {obsTeacher?.teacherName || "Cán bộ"} {isMe ? "(Tôi)" : ""}
+                              </span>
+                              <span className="text-[10px] text-slate-500 font-medium">
+                                {obsTeacher?.teacherCode ? `Mã: ${obsTeacher.teacherCode}` : ""} • Tổ: {tDept}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setAssignedObserverIds(prev => prev.filter(x => x !== id))}
+                              className="size-5 rounded-full bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-600 flex items-center justify-center text-xs font-black transition-colors cursor-pointer ml-1"
+                              title="Xóa người này khỏi danh sách dự"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Khung điều khiển 2 cột: 1. Chọn TCM phụ trách | 2. Ô tìm kiếm Tên/Mã GV */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  {/* Cột 1: Chọn TCM phụ trách */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-purple-900 uppercase tracking-wide flex items-center gap-1">
+                      <Filter className="size-3 text-purple-600" />
+                      <span>1. Chọn Tổ chuyên môn phụ trách</span>
+                    </label>
+                    <select
+                      value={observerFilterDeptId}
+                      onChange={e => setObserverFilterDeptId(e.target.value)}
+                      className="w-full text-xs font-bold p-2.5 rounded-xl border border-purple-200 bg-white text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none shadow-2xs"
+                    >
+                      <option value="">
+                        {assignedLevel === "Mầm non"
+                          ? `-- Tất cả TCM & BGH Mầm non phụ trách (${levelFilteredAssignedDepts.length} tổ) --`
+                          : `-- Tất cả TCM Phổ thông phụ trách (${levelFilteredAssignedDepts.length} tổ) --`}
+                      </option>
+                      {levelFilteredAssignedDepts.map((d: any) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name || d.departmentName} {d.code ? `(${d.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Cột 2: Gõ tên Giáo viên hoặc Mã GV */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-black text-purple-900 uppercase tracking-wide flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Search className="size-3 text-purple-600" />
+                        <span>2. Gõ tên Giáo viên hoặc Mã GV</span>
+                      </span>
+                      {observerSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setObserverSearchQuery("")}
+                          className="text-[10px] text-slate-400 hover:text-purple-700 font-bold cursor-pointer"
+                        >
+                          Xóa tìm kiếm
+                        </button>
+                      )}
+                    </label>
+                    <div className="relative flex items-center">
+                      <Search className="size-3.5 text-slate-400 absolute left-3 pointer-events-none" />
+                      <input
+                        type="text"
+                        placeholder="Gõ tên GV hoặc mã GV (VD: Nam, GV012)..."
+                        value={observerSearchQuery}
+                        onChange={e => setObserverSearchQuery(e.target.value)}
+                        className="w-full text-xs font-bold pl-8.5 pr-8 py-2.5 rounded-xl border border-purple-200 bg-white text-slate-800 focus:ring-2 focus:ring-purple-500 outline-none shadow-2xs placeholder:font-normal placeholder:text-slate-400"
+                      />
+                      {observerSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setObserverSearchQuery("")}
+                          className="absolute right-2.5 text-slate-400 hover:text-slate-600 text-xs font-black cursor-pointer"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dropdown danh sách GV phù hợp để bấm chọn */}
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 font-bold px-1">
+                    <span>Chọn giáo viên để phân công:</span>
+                    <span>{availableTeachersForObservation.length} giáo viên phù hợp</span>
+                  </div>
+                  <select
+                    value=""
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val && !assignedObserverIds.includes(val)) {
+                        setAssignedObserverIds(prev => [...prev, val]);
+                        if (observerSearchQuery) setObserverSearchQuery("");
+                      }
+                    }}
+                    className="w-full text-xs font-bold p-3 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-500 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800 transition-all cursor-pointer shadow-2xs"
+                  >
+                    <option value="">
+                      {availableTeachersForObservation.length > 0
+                        ? `+ Bấm để chọn Giáo viên tham gia dự giờ (${availableTeachersForObservation.length} người)...`
+                        : (observerSearchQuery || observerFilterDeptId ? "Không tìm thấy giáo viên nào phù hợp bộ lọc" : "Không có giáo viên khả dụng")}
+                    </option>
+                    {availableTeachersForObservation.map((t: any) => {
+                      const deptName = t.departmentRel?.name || (departments || []).find((d: any) => d.id === t.departmentId)?.name || "Chuyên môn";
+                      return (
+                        <option key={t.id} value={t.id}>
+                          + {t.teacherName} ({t.teacherCode || "Mã: -"}) • Tổ: {deptName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              {/* Nhóm 6: Chuyên đề, Ghi chú & Hình thức */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    11. Tên chuyên đề / Nội dung trọng tâm
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="VD: Kiểm tra chuyên môn định kỳ phương pháp dạy học..."
+                    value={assignedTopic}
+                    onChange={e => setAssignedTopic(e.target.value)}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                    12. Hình thức dự giờ
+                  </label>
+                  <div className="p-2.5 rounded-xl bg-purple-50 border border-purple-200 flex items-center justify-between">
+                    <span className="font-black text-purple-900 text-xs">Chỉ định dự giờ</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-200 text-purple-800">
+                      Tự động gán (ASSIGNED)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">
+                  13. Ghi chú điều hành / Yêu cầu đối với giáo viên & người dự
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Ghi chú thêm về hồ sơ cần chuẩn bị, tiêu chí trọng tâm..."
+                  value={assignedNotes}
+                  onChange={e => setAssignedNotes(e.target.value)}
+                  className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-purple-500 outline-none bg-white text-slate-800"
+                />
+              </div>
+
+              {/* CẢNH BÁO TRÙNG PHIÊN (NẾU PHÁT HIỆN TRÙNG GV + NGÀY + TIẾT + LỚP) */}
+              {assignedConflict && (
+                <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 shadow-xs flex flex-col gap-3 animate-in fade-in duration-200">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-black text-amber-900 text-xs">
+                        ⚠️ Đã tồn tại phiên dự giờ của giáo viên này trong cùng thời gian và lớp!
+                      </h4>
+                      <p className="text-[11px] text-amber-800 mt-1">
+                        Phiên: <strong>"{assignedConflict.topic}"</strong> ({assignedConflict.period}, {new Date(assignedConflict.date).toLocaleDateString("vi-VN")}) tại <strong>{assignedConflict.className}</strong>. Hiện đã có <strong>{assignedConflict.participantCount} người tham gia</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-2 pt-1 border-t border-amber-200">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssignedJoinExisting(true);
+                        setAssignedForceNew(false);
+                      }}
+                      className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        assignedJoinExisting
+                          ? "bg-amber-600 text-white shadow-xs"
+                          : "bg-white text-amber-900 border border-amber-300 hover:bg-amber-100/60"
+                      }`}
+                    >
+                      ✓ Tham gia phiên hiện có (Gộp người dự)
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAssignedForceNew(true);
+                        setAssignedJoinExisting(false);
+                      }}
+                      className={`w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        assignedForceNew
+                          ? "bg-purple-700 text-white shadow-xs"
+                          : "bg-white text-slate-700 border border-slate-300 hover:bg-slate-50"
+                      }`}
+                    >
+                      Tạo phiên riêng biệt (Xác nhận)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Nút hành động Submit */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-purple-100">
+                <button
+                  type="button"
+                  onClick={props.onClose}
+                  className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Đóng
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={assignedSubmitting}
+                  className="px-7 py-3 rounded-xl bg-gradient-to-r from-purple-700 via-purple-600 to-indigo-700 hover:from-purple-800 hover:to-indigo-800 text-white font-extrabold text-xs transition-all shadow-md shadow-purple-900/20 flex items-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {assignedSubmitting ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin text-white" />
+                      <span>Đang lưu chỉ định...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="size-4 text-purple-200" />
+                      <span>{assignedJoinExisting ? "Xác nhận gộp vào phiên hiện có" : "Lưu Chỉ Định Dự Giờ"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
             </form>
           ) : (
             /* ===== FORM 1: GV DẠY TỰ MỞ TIẾT DẠY ===== */
@@ -2442,7 +3321,7 @@ export function ObservationRegistrationSection(props: any) {
                       className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
                     >
                       <option value="">Chọn cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                      {campuses.map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                     </select>
                   </div>
 
@@ -2455,7 +3334,7 @@ export function ObservationRegistrationSection(props: any) {
                       className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
                     >
                       <option value="">Chọn khối học</option>
-                      {mamNonGrades.map(g => <option key={g} value={g}>{g}</option>)}
+                      {mamNonGrades.map((g: any) => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
 
@@ -2483,7 +3362,7 @@ export function ObservationRegistrationSection(props: any) {
                           ? `-- Chọn tên lớp (${filteredClassesForCreation.length} lớp) --`
                           : (newCampusId ? "Không có lớp học phù hợp" : "-- Vui lòng chọn cơ sở trước --")}
                       </option>
-                      {filteredClassesForCreation.map(c => (
+                      {filteredClassesForCreation.map((c: any) => (
                         <option key={c.id} value={c.id}>
                           {c.className} {c.grade ? `(${c.grade})` : ""}
                         </option>
@@ -2533,7 +3412,7 @@ export function ObservationRegistrationSection(props: any) {
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800 disabled:opacity-50"
                     >
                       <option value="">Chọn khối lớp</option>
-                      {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
+                      {getGradesForLevel(newLevel).map((g: any) => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
 
@@ -2546,7 +3425,7 @@ export function ObservationRegistrationSection(props: any) {
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800"
                     >
                       <option value="">Chọn môn học</option>
-                      {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
+                      {subjects.map((sub: any) => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
                       <option value="other">Môn học khác / Chuyên đề</option>
                     </select>
                   </div>
@@ -2560,7 +3439,7 @@ export function ObservationRegistrationSection(props: any) {
                       className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800"
                     >
                       <option value="">Chọn cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                      {campuses.map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                     </select>
                   </div>
 
@@ -2600,7 +3479,7 @@ export function ObservationRegistrationSection(props: any) {
                           ? `-- Chọn lớp học (${filteredClassesForCreation.length} lớp) --`
                           : (newCampusId ? "Không có lớp học phù hợp" : "-- Vui lòng chọn cơ sở trước --")}
                       </option>
-                      {filteredClassesForCreation.map(c => {
+                      {filteredClassesForCreation.map((c: any) => {
                         const gLabel = c.grade ? `(Khối ${String(c.grade).replace(/Khối\s+/gi, "")})` : (c.level ? `(${c.level})` : "");
                         return (
                           <option key={c.id} value={c.id}>
@@ -2647,7 +3526,7 @@ export function ObservationRegistrationSection(props: any) {
                     onChange={e => handleStartTimeChange(e.target.value)}
                     className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 outline-none"
                   >
-                    {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                    {periodOptions.map((p: any) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
 
@@ -2659,7 +3538,7 @@ export function ObservationRegistrationSection(props: any) {
                     onChange={e => setNewEndTime(e.target.value)}
                     className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 outline-none disabled:opacity-50"
                   >
-                    {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                    {periodOptions.map((p: any) => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
 
@@ -2714,9 +3593,9 @@ export function ObservationRegistrationSection(props: any) {
           </div>
         </div>
 
-        {/* Right Guidance & Policy Column (4 cols) - Ẩn khi ở chế độ Dự giờ đột xuất để giao diện form rộng thoáng, thân thiện */}
-        {creationMode !== "SURPRISE" && (
-          <div className="lg:col-span-4 flex flex-col gap-5">
+        {/* Guidance & Policy Section - Dàn đều 4 cột phía dưới form khi xem trên trang (ẩn trong Modal) để giao diện các thẻ tag luôn mở rộng full-width như thẻ Đột xuất */}
+        {creationMode !== "SURPRISE" && !props.isOpen && !props.showCreateModal && (
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-2">
             {/* Card 1: Circular Progress Gauge for TIẾN ĐỘ THÁNG */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">

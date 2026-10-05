@@ -144,12 +144,11 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     ...(subjectId !== "ALL" ? { subjectId } : {})
   }
 
-  // Điều kiện lọc theo Lớp/Khối/Cơ sở
-  if (campusId !== "ALL" || grade !== "ALL") {
-    const classWhere: any = {}
-    if (campusId !== "ALL") classWhere.campusId = campusId
-    if (grade !== "ALL") classWhere.grade = grade
-    gradeEntryWhere.class = classWhere
+  // Điều kiện lọc theo Khối (nếu có)
+  // Lưu ý: Không lọc campusId ngay tại tầng database để luôn giữ dữ liệu TOÀN HỆ THỐNG
+  // phục vụ việc đối sánh chuẩn xác giữa Cơ sở được chọn với Mặt bằng Chung Toàn Hệ thống
+  if (grade !== "ALL") {
+    gradeEntryWhere.class = { grade }
   }
 
   const rawEntries = await prisma.subjectGradeEntry.findMany({
@@ -191,7 +190,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
 
   // Nếu không có dữ liệu trong SubjectGradeEntry hoặc kỳ là HK1/HK2 mà trống,
   // ta kiểm tra bổ sung từ StudentTermScore
-  let processedEntries = rawEntries.map(e => ({
+  let allSystemEntries = rawEntries.map(e => ({
     id: e.id,
     studentId: e.studentId,
     studentCode: e.student?.studentCode || "",
@@ -211,7 +210,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
   })).filter(e => e.score !== null && !isNaN(e.score))
 
   // Fallback nếu rỗng và evaluationPeriod là HK1 hoặc HK2
-  if (processedEntries.length === 0 && (evaluationPeriod === "HK1" || evaluationPeriod === "HK2" || evaluationPeriod === "ALL")) {
+  if (allSystemEntries.length === 0 && (evaluationPeriod === "HK1" || evaluationPeriod === "HK2" || evaluationPeriod === "ALL")) {
     const termScores = await prisma.studentTermScore.findMany({
       where: {
         student: { academicYearId },
@@ -237,7 +236,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
       }
     })
 
-    processedEntries = termScores.map(ts => ({
+    allSystemEntries = termScores.map(ts => ({
       id: ts.id,
       studentId: ts.studentId,
       studentCode: ts.student?.studentCode || "",
@@ -259,8 +258,13 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
 
   // Lọc thêm theo Level nếu filters.level !== "ALL"
   if (level !== "ALL") {
-    processedEntries = processedEntries.filter(e => e.level === level)
+    allSystemEntries = allSystemEntries.filter(e => e.level === level)
   }
+
+  // Dữ liệu đối tượng phân tích cụ thể (theo Cơ sở đã chọn hoặc Toàn hệ thống)
+  let processedEntries = campusId !== "ALL"
+    ? allSystemEntries.filter(e => e.campusId === campusId)
+    : allSystemEntries
 
   // 4. Tính toán Điểm trung bình Hệ thống & Cơ sở & Khối theo Môn học
   // Map key: [subjectId] -> { scores: [] }
@@ -272,23 +276,30 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
   const subjectGradeScores = new Map<string, number[]>()
   const subjectClassScores = new Map<string, { scores: number[]; info: any }>()
 
-  processedEntries.forEach(item => {
+  // 4.1 Tính toán điểm chuẩn Hệ thống, Cơ sở và Khối trên toàn hệ thống (allSystemEntries)
+  allSystemEntries.forEach(item => {
     const sId = item.subjectId
     const sScore = item.score
 
-    // System
+    // System: Mặt bằng chung toàn hệ thống theo môn
     if (!subjectSystemScores.has(sId)) subjectSystemScores.set(sId, [])
     subjectSystemScores.get(sId)!.push(sScore)
 
-    // Campus
+    // Campus: Mặt bằng từng cơ sở theo môn
     const campusKey = `${sId}_${item.campusId}`
     if (!subjectCampusScores.has(campusKey)) subjectCampusScores.set(campusKey, [])
     subjectCampusScores.get(campusKey)!.push(sScore)
 
-    // Grade
+    // Grade: Mặt bằng chung toàn hệ thống của môn đó theo Khối
     const gradeKey = `${sId}_${item.grade}`
     if (!subjectGradeScores.has(gradeKey)) subjectGradeScores.set(gradeKey, [])
     subjectGradeScores.get(gradeKey)!.push(sScore)
+  })
+
+  // 4.2 Class scores: Tính cho các lớp thuộc phạm vi đang chọn (processedEntries)
+  processedEntries.forEach(item => {
+    const sId = item.subjectId
+    const sScore = item.score
 
     // Class
     const classKey = `${sId}_${item.classId}`
@@ -357,7 +368,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
   const allGradesSet = new Set<string>()
   const allSubjectsMap = new Map<string, string>()
 
-  processedEntries.forEach(e => {
+  allSystemEntries.forEach(e => {
     if (e.grade) allGradesSet.add(e.grade)
     if (e.subjectId && e.subjectName) allSubjectsMap.set(e.subjectId, e.subjectName)
   })
@@ -368,9 +379,11 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     return na - nb
   })
 
-  // Cấu trúc cột Heatmap: Mỗi Campus có các Grade, và cột Toàn hệ thống có các Grade
+  // Cấu trúc cột Heatmap: Nếu chọn cơ sở cụ thể thì hiển thị Cơ sở đó và Toàn hệ thống để đối sánh trực tiếp
   const heatmapColumns: any[] = []
-  campuses.forEach(cp => {
+  const activeCampuses = campusId === "ALL" ? campuses : campuses.filter(cp => cp.id === campusId)
+
+  activeCampuses.forEach(cp => {
     sortedGrades.forEach(grd => {
       heatmapColumns.push({
         key: `${cp.id}_${grd}`,
@@ -383,7 +396,7 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     })
   })
 
-  // Cột Toàn hệ thống
+  // Cột Toàn hệ thống (Tính trên allSystemEntries để đối chuẩn toàn diện)
   sortedGrades.forEach(grd => {
     heatmapColumns.push({
       key: `SYSTEM_${grd}`,
@@ -403,9 +416,9 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     heatmapColumns.forEach(col => {
       let matchingEntries: any[] = []
       if (col.campusId === "SYSTEM") {
-        matchingEntries = processedEntries.filter(e => e.subjectId === subId && e.grade === col.grade)
+        matchingEntries = allSystemEntries.filter(e => e.subjectId === subId && e.grade === col.grade)
       } else {
-        matchingEntries = processedEntries.filter(
+        matchingEntries = allSystemEntries.filter(
           e => e.subjectId === subId && e.grade === col.grade && e.campusId === col.campusId
         )
       }
@@ -497,13 +510,22 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
       gradeLabel: formatGradeLabel(grd)
     }
 
-    campuses.forEach(cp => {
-      const items = processedEntries.filter(e => e.grade === grd && e.campusId === cp.id)
-      const avg = calcAvg(items.map(i => i.score))
-      row[cp.campusName] = avg
-    })
+    if (campusId === "ALL") {
+      // Khi chọn Toàn hệ thống: Hiển thị tất cả các cơ sở
+      campuses.forEach(cp => {
+        const items = allSystemEntries.filter(e => e.grade === grd && e.campusId === cp.id)
+        row[cp.campusName] = calcAvg(items.map(i => i.score))
+      })
+    } else {
+      // Khi chọn một Cơ sở cụ thể: Hiển thị Cơ sở đó để ĐỐI SÁNH TRỰC TIẾP với Toàn Hệ thống
+      const foundCampus = campuses.find(c => c.id === campusId)
+      const campusName = foundCampus?.campusName || "Cơ sở"
+      const items = allSystemEntries.filter(e => e.grade === grd && e.campusId === campusId)
+      row[campusName] = calcAvg(items.map(i => i.score))
+    }
 
-    const sysItems = processedEntries.filter(e => e.grade === grd)
+    // Cột Toàn hệ thống: TÍNH TRÊN TOÀN BỘ DỮ LIỆU CỦA KHỐI ĐÓ TRÊN TOÀN HỆ THỐNG
+    const sysItems = allSystemEntries.filter(e => e.grade === grd)
     row["Hệ thống"] = calcAvg(sysItems.map(i => i.score))
     return row
   })
@@ -511,13 +533,13 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
   // Biểu đồ B: So sánh chất lượng môn học của Cơ sở được chọn với Mặt bằng Hệ thống
   const chartSubjectSystem: any[] = []
   allSubjectsMap.forEach((subName, subId) => {
-    const sysItems = processedEntries.filter(e => e.subjectId === subId)
+    const sysItems = allSystemEntries.filter(e => e.subjectId === subId)
     const sysAvg = calcAvg(sysItems.map(i => i.score))
 
     let campusAvg = sysAvg
     let campusDisplayName = "Toàn hệ thống"
     if (campusId !== "ALL") {
-      const cItems = processedEntries.filter(e => e.subjectId === subId && e.campusId === campusId)
+      const cItems = allSystemEntries.filter(e => e.subjectId === subId && e.campusId === campusId)
       campusAvg = calcAvg(cItems.map(i => i.score))
       const foundCampus = campuses.find(c => c.id === campusId)
       campusDisplayName = foundCampus ? foundCampus.campusName : "Cơ sở"
@@ -624,6 +646,46 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
     targetStudents = targetStudents.filter(s => s.isPerfect10)
   }
 
+  // 10. Danh sách Môn học thuộc kỳ khảo sát đang chọn
+  const periodConfigs = await prisma.subjectGradeConfig.findMany({
+    where: {
+      academicYearId,
+      ...(evaluationPeriod !== "ALL" ? { evaluationPeriod: { in: [evaluationPeriod, "ALL"] } } : {}),
+      subjectId: { not: null }
+    },
+    include: {
+      subject: { select: { id: true, subjectCode: true, subjectName: true } }
+    }
+  })
+
+  const periodSubjectsMap = new Map<string, { id: string; subjectName: string; subjectCode: string }>()
+
+  // Thêm từ cấu hình SubjectGradeConfig
+  periodConfigs.forEach((cfg: any) => {
+    if (cfg.subject && cfg.subjectId) {
+      periodSubjectsMap.set(cfg.subjectId, {
+        id: cfg.subject.id,
+        subjectName: cfg.subject.subjectName,
+        subjectCode: cfg.subject.subjectCode
+      })
+    }
+  })
+
+  // Thêm từ các bài thi thực tế trong kỳ (allSystemEntries)
+  allSystemEntries.forEach(e => {
+    if (e.subjectId && e.subjectName && !periodSubjectsMap.has(e.subjectId)) {
+      periodSubjectsMap.set(e.subjectId, {
+        id: e.subjectId,
+        subjectName: e.subjectName,
+        subjectCode: e.subjectCode || ""
+      })
+    }
+  })
+
+  const periodSubjects = Array.from(periodSubjectsMap.values()).sort((a, b) =>
+    a.subjectName.localeCompare(b.subjectName)
+  )
+
   return {
     kpi,
     benchmarks: {
@@ -642,6 +704,8 @@ export async function getThkqAnalyticsData(filters: ThkqFilterParams) {
       bySubjectSystem: chartSubjectSystem,
       distribution
     },
+    periodSubjects,
+    subjects: periodSubjects,
     targetStudents: targetStudents.slice(0, 500), // Giới hạn 500 HS để tối ưu render ban đầu
     totalTargetStudentsCount: targetStudents.length,
     countsByTargetGroup: {

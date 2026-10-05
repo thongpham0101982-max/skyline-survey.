@@ -1,0 +1,3973 @@
+[
+  {
+    "idx": 1,
+    "name": "Hà Đặng Phước Huy",
+    "campus": "",
+    "classTurso": "1S_CS4",
+    "classTbl": "1S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý \\nphát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 10/30. Em nhận biết được một số từ vựng cơ bản như cat, dog, apple, orange, màu sắc và đếm số 1-11 nhưng phát âm chưa rõ. Em chưa nhận biết được chữ cái và các dạng hình. Em chưa hiểu và không trả lời được các câu hỏi về bản thân(tên, tuổi) và sở thích. \"]"
+      },
+      "TCI": {
+        "val": "2",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3.3,
+      "psy": 2
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 2,
+    "name": "Nguyễn Thị Thu Thúy",
+    "campus": "",
+    "classTurso": "10S_CS4",
+    "classTbl": "10S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý \\nphát triển bình thường. Chưa xác định được định hướng nghề nghiệp.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em có thể hiểu được phần lớn các câu hỏi từ cô, nhưng chưa thể sử dụng những mẫu câu đầy đủ chủ ngữ và vị ngữ để trả lời hoàn chỉnh các ý tưởng. Khả năng phát âm còn hạn chế. từ vựng còn giới hạn.\"]"
+      },
+      "TAv": {
+        "val": "8",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "5.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 5,
+      "viet": null,
+      "van": 5.5,
+      "eng": 1.8,
+      "psy": 2
+    },
+    "tursoKsdn": {
+      "math": 4.25,
+      "van": 4,
+      "eng": 1.9
+    },
+    "tblKsdn": {
+      "math": 4.25,
+      "viet": null,
+      "van": 4,
+      "eng": 1.9
+    }
+  },
+  {
+    "idx": 3,
+    "name": "HÀ ĐẶNG BẢO NGỌC",
+    "campus": "",
+    "classTurso": "3S_CS4",
+    "classTbl": "3S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý \\nphát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "5",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 5/30. Em chưa hiểu và không trả lời được các câu hỏi về bản thân(tên, tuổi) và sở thích. Em đếm được 1-11 nhưng phát âm chưa rõ. Em chưa nhận diện từ vựng các chủ đề động vật, màu sắc, đồ vật. \"]"
+      },
+      "TAv": {
+        "val": "35",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"35/70\"]"
+      },
+      "TOA": {
+        "val": "9",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "6",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 9,
+      "viet": 6,
+      "van": null,
+      "eng": 4,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 8.3,
+      "viet": 7,
+      "eng": 2.8
+    },
+    "tblKsdn": {
+      "math": 8.3,
+      "viet": 7,
+      "van": null,
+      "eng": 2.8
+    }
+  },
+  {
+    "idx": 4,
+    "name": "Phùng Đức Thiên Ân",
+    "campus": "",
+    "classTurso": "3.1INT_CS3",
+    "classTbl": "3.1INT_CS3",
+    "directorNote": "Cam kết môn Tiếng Anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/09/2026 08:22 | Trần Thị Thanh | ",
+    "commRaw": "",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "30",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em thể hiện tinh thần hợp tác rất tích cực với giáo viên. Em nghe hiểu được các chủ đề về con vật, trang phục, thời tiết khi có gợi ý, nhưng do vốn từ còn hạn chế nên em chưa tự gọi tên được qua tranh ảnh. Em chưa trả lời các câu hỏi về tuổi tác, sức khỏe, lớp học, sở thích và chưa đánh vần được tên của mình, thường lựa chọn trả lời bằng các từ đơn lẻ (như zebra, three, bedroom...). Dù phần phát âm của em chưa thật rõ ràng, việc truyền tải ý chính vẫn diễn ra thuận lợi và người nghe vẫn có thể hiểu được.\"]"
+      },
+      "EPT": {
+        "val": "36",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3.6,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "eng": 6.55,
+      "viet": 6,
+      "math": 5
+    },
+    "tblKsdn": {
+      "math": 5,
+      "viet": 6,
+      "van": null,
+      "eng": 6.55
+    }
+  },
+  {
+    "idx": 5,
+    "name": "Ayesha Mirza",
+    "campus": "",
+    "classTurso": "6S_CS4",
+    "classTbl": "6S_CS4",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Việt]  ",
+    "commRaw": "Môn Toán, Tiếng Việt",
+    "tblComms": "Tiếng Việt, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "25",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em nghe hiểu và trả lời tốt các câu hỏi về bản thân, có thể giới thiệu sở thích, tên, tuổi và một số kế hoạch trong tương lai và đưa ra lý do rõ ràng. Tuy nhiên em vẫn còn một số lỗi ngữ pháp nhỏ trong câu. Em có thể so sánh sự khác nhau giữa hai bữa tranh, dù bỏ sót một số ý và đọc giờ chưa đúng trên đồng hồ cơ. \"]"
+      },
+      "TAv": {
+        "val": "38",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "4",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 4,
+      "eng": 6.3,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 3.8,
+      "van": 2.25,
+      "eng": 5.25
+    },
+    "tblKsdn": {
+      "math": 3.8,
+      "viet": null,
+      "van": 2.25,
+      "eng": 5.25
+    }
+  },
+  {
+    "idx": 6,
+    "name": "Phùng Chí Nam Anh",
+    "campus": "",
+    "classTurso": "8.1INT_CS3",
+    "classTbl": "8.1INT_CS3",
+    "directorNote": "Cam kết môn Tiếng Anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/09/2026 08:25 | Trần Thị Thanh | ",
+    "commRaw": "",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 5,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"40/100: Dù còn đôi chút căng thẳng, em vẫn rất nỗ lực tương tác cùng giáo viên. Em có khả năng nghe hiểu tốt và luôn cố gắng trả lời bằng câu hoàn chỉnh. Tuy nhiên, do vốn từ vựng còn hạn chế nên em gặp chút khó khăn trong việc diễn đạt trọn vẹn ý tưởng, các câu trả lời đôi khi cũng chưa thật sự hoàn chỉnh và còn mắc các lỗi ngữ pháp cơ bản. Em phát âm các từ cơ bản khá tốt, đảm bảo không làm ảnh hưởng đến việc truyền đạt nội dung.\"]"
+      },
+      "EPT": {
+        "val": "30",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3,
+      "psy": 5
+    },
+    "tursoKsdn": {
+      "math": 2,
+      "van": 5,
+      "eng": 3.5
+    },
+    "tblKsdn": {
+      "math": 2,
+      "viet": null,
+      "van": 5,
+      "eng": 3.5
+    }
+  },
+  {
+    "idx": 7,
+    "name": "Nguyễn Daniil",
+    "campus": "CS1",
+    "classTurso": "1.1_CS1",
+    "classTbl": "1.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Việt]  Đạt cam kết Tiếng Việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/20",
+    "commRaw": "Tiếng Việt",
+    "tblComms": "Tiếng Việt",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"\\\"Các chỉ số tâm lý phát triển bình thường. \\nTuy nhiên ngôn ngữ sử dụng tiếng việt hơi khó khăn với trẻ \\\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "4",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Cô Hiên: Em trả lời còn khá hạn chế các câu hỏi của giáo viên, em cần cô gợi ý để trả lời các câu hỏi về bản thân. Em có thể trả lời về màu sắc, số đếm tuy nhiên chưa nhớ cách đọc bảng chữ cái, hình khối. Em cần chú ý học từ vựng các chủ đề cơ bản để mở rộng vốn từ. \"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"\\\"Em còn yếu Tiếng Việt nên gặp khó khăn khi trả lời câu hỏi và thực hiện các yêu cầu của GV\\nCác chỉ số chưa đạt:\\nChỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.\\nChỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.\\nChỉ số 41. Bắt chước hành vi “viết”\\\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 1.3,
+      "psy": -4
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 8,
+    "name": "Đỗ An Nhiên ",
+    "campus": "CS1",
+    "classTurso": "1.1_CS1",
+    "classTbl": "1.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường. Trẻ còn khá rụt rè, thiếu tự tin.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "3",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em gọi tên được hầu hết số đếm từ 1-20, nhận diện được một số từ vựng về động vật (dog, cat, fish, mouse) màu sắc và trái cây qua hình ảnh. Tuy nhiên, em còn gặp nhiều khó khăn trong kĩ năng nghe hiểu cũng như phản xạ với các mẫu câu hỏi. Em cần cố gắng trau dồi thêm để tự tin hơn khi giao tiếp.\"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 1,
+      "psy": 2
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 9,
+    "name": "Lê Hồ Gia Huy",
+    "campus": "CS1",
+    "classTurso": "10.2_CS1",
+    "classTbl": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại lần 3 Đạt cam kết Tiếng Anh  --- ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "7",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"7/20 | \\\"Khả năng nghe hiểu của em còn yếu, vốn từ vựng hạn chế nên em chưa đưa ra câu trả lời đáp ứng theo yêu cầu. Em chỉ có thể diễn đạt từ đơn, cụm từ đơn giản, không có khả năng diễn đạt câu hoàn chỉnh, đúng ngữ pháp. Nhìn chung, năng lực ngôn ngữ của em còn rất yếu. \\n(CẦN CAM KẾT TIẾNG ANH)\\\"\"]"
+      },
+      "TAv": {
+        "val": "20",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"20/80\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.7,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 4.5,
+      "van": 5,
+      "eng": 4.4
+    },
+    "tblKsdn": {
+      "math": 4.5,
+      "viet": null,
+      "van": 5,
+      "eng": 4.4
+    }
+  },
+  {
+    "idx": 10,
+    "name": "Lê Khánh Hà",
+    "campus": "CS1",
+    "classTurso": "10.2_CS1",
+    "classTbl": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số phát triển bình thường, cần hỗ trợ thêm về mặt định hướng và hướng dẫn xử lý cảm xúc\",\"\",\"Đa phần sẽ để cho tự hết chứ không để làm gì khác\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "8",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 8/20. Khả năng giao tiếp ngôn ngữ của em còn yếu. Em chỉ có thể hiểu được một số câu hỏi cơ bản và đơn giản, nhưng chưa đưa ra được câu trả lời hoàn chỉnh. Vốn từ vựng của em còn rất hạn chế và em cũng chưa biết sử dụng đúng cấu trúc câu và ngữ pháp để trả lời. Em cần nỗ lực hơn.\"]"
+      },
+      "TAv": {
+        "val": "4",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Note: 4/80\"]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "7",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 7,
+      "eng": 1.2,
+      "psy": 2
+    },
+    "tursoKsdn": {
+      "math": 7,
+      "van": 4.5,
+      "eng": 4
+    },
+    "tblKsdn": {
+      "math": 7,
+      "viet": null,
+      "van": 4.5,
+      "eng": 4
+    }
+  },
+  {
+    "idx": 11,
+    "name": "Nguyễn Bình Phương An",
+    "campus": "CS1",
+    "classTurso": "10.1_CS1",
+    "classTbl": "10.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết Anh",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em đáp ứng được các yêu cầu nghe hiểu ở mức cơ bản và có thể phản hồi các câu hỏi đơn giản. Tuy nhiên, khả năng diễn đạt còn hạn chế do vốn từ vựng chưa phong phú. Em cần rèn luyện kỹ năng phát triển ý và sử dụng đa dạng từ ngữ để nâng cao hiệu quả giao tiếp.\"]"
+      },
+      "TAv": {
+        "val": "5",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Em không làm phần viết đoạn. Ngữ pháp còn sai nhiều.\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 1.5,
+      "psy": 2
+    },
+    "tursoKsdn": {
+      "math": 6.25,
+      "van": 5,
+      "eng": 4.8
+    },
+    "tblKsdn": {
+      "math": 6.25,
+      "viet": null,
+      "van": 5,
+      "eng": 4.8
+    }
+  },
+  {
+    "idx": 12,
+    "name": "Nguyễn Đại Phúc ",
+    "campus": "CS1",
+    "classTurso": "10.1_CS1",
+    "classTbl": "10.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "12",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 12/20. Em có khả năng nghe hiểu Tiếng Anh khá tốt. Em có trả lời được các câu hỏi cơ bản về bản thân, gia đình và sở thích. Sử dụng được một số cấu trúc câu phức, đúng ngữ pháp. Tuy nhiên, đối với các câu hỏi liên quan đến miêu tả bức tranh, em chưa có đủ từ vựng để diễn đạt, chỉ sử dụng được một số từ, cụm từ đơn giản. Em cần chú ý phát âm đúng âm cuối.\"]"
+      },
+      "TAv": {
+        "val": "32",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Note: 32/80\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.4,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 6.25,
+      "van": 5,
+      "eng": 4.8
+    },
+    "tblKsdn": {
+      "math": 6.1,
+      "viet": null,
+      "van": 7,
+      "eng": 6.2
+    }
+  },
+  {
+    "idx": 13,
+    "name": "Phan Đình Phùng",
+    "campus": "CS1",
+    "classTurso": "10.1_CS1",
+    "classTbl": "10.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn",
+    "tblComms": "Ngữ Văn, Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số phát triển bình thường. Chưa xác định địnhn hướng học tập và nhận thức của bản thân.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "5",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 5/20. Cô Trung: Em nghe hiểu còn hạn chế và chỉ có thể trả lời bằng những từ đơn giản. Em chưa diễn đạt được bằng câu hoàn chỉnh do vốn từ vựng còn ít. Cần luyện tập thêm kỹ năng nghe và bổ sung từ vựng cơ bản.\"]"
+      },
+      "TAv": {
+        "val": "10",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Note:  10/80\"]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "3",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 3,
+      "eng": 1.5,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 4.75,
+      "van": 2,
+      "eng": 4.6
+    },
+    "tblKsdn": {
+      "math": 4.75,
+      "viet": null,
+      "van": 2,
+      "eng": 4.6
+    }
+  },
+  {
+    "idx": 14,
+    "name": "Phạm Gia Hương",
+    "campus": "CS1",
+    "classTurso": "10.2_CS1",
+    "classTbl": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]  Cần cam kết",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán",
+    "tblComms": "Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em nghe hiểu tương đối tốt, trả lời được các câu hỏi giao tiếp căn bản về tên, gia đình, sở thích... Tuy nhiên, vốn từ vựng của em khá ít, em chưa tự tin trong giao tiếp. Em miêu tả được tranh nhưng diễn đạt chưa trọn vẹn ý, chỉ dùng những câu đơn. Em mắc một số lỗi sai về ngữ pháp. Nhìn chung, năng lực tiếng Anh của em còn hạn chế.\"]"
+      },
+      "TAv": {
+        "val": "28",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "3",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "7.25",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 3,
+      "viet": null,
+      "van": 7.25,
+      "eng": 3.8,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 4,
+      "van": 6.5,
+      "eng": 5.1
+    },
+    "tblKsdn": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 5.1
+    }
+  },
+  {
+    "idx": 15,
+    "name": "Phạm Hải Như",
+    "campus": "CS1",
+    "classTurso": "10.2_CS1",
+    "classTbl": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (viết), Tiếng Anh (vấn đáp)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttj",
+    "commRaw": "Tiếng Anh (viết), Tiếng Anh (vấn đáp)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "8",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"8/20\"]"
+      },
+      "TAv": {
+        "val": "38",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"38/80\"]"
+      },
+      "NVA": {
+        "val": "5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 5,
+      "viet": null,
+      "van": 5,
+      "eng": 4.6,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 4.25,
+      "van": 4.3,
+      "eng": 4.6
+    },
+    "tblKsdn": {
+      "math": 4.25,
+      "viet": null,
+      "van": 4.3,
+      "eng": 4.6
+    }
+  },
+  {
+    "idx": 16,
+    "name": "Phạm Nguyễn Minh Anh",
+    "campus": "CS1",
+    "classTurso": "10.2_CS1",
+    "classTbl": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "8",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 8/20. Em nghe hiểu tương đối nhưng trả lời chưa tốt các câu hỏi giao tiếp căn bản. Em không đếm được lưu loát các số từ 1-20. Các câu trả lời chỉ dùng những từ đơn. Em nhìn và hiểu được bức tranh nhưng chưa diễn đạt được đầy đủ câu. Em mắc một số lỗi sai về phát âm và ngữ pháp. Nhìn chung năng lực ngôn ngữ của em còn hạn chế\"]"
+      },
+      "TAv": {
+        "val": "",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"45/80\"]"
+      },
+      "TOA": {
+        "val": "6",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "8.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 6,
+      "viet": null,
+      "van": 8.5,
+      "eng": 2.7,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 4.5,
+      "van": 5,
+      "eng": 0
+    },
+    "tblKsdn": {
+      "math": 4.5,
+      "viet": null,
+      "van": 5,
+      "eng": 0
+    }
+  },
+  {
+    "idx": 17,
+    "name": "Phạm Thùy Gia Hân ",
+    "campus": "CS1",
+    "classTurso": "10.2_CS1",
+    "classTbl": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 1,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường. \",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "9",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 9/20. Khả năng nghe hiểu Tiếng Anh của em chưa tốt. Đối với các câu hỏi cơ bản về cá nhân, gia đình, học tập, ...em chưa đưa ra câu trả lời hoàn chỉnh, chỉ dùng từ đơn. Vốn từ vựng của em còn nhiều hạn chế và em cũng chưa biết dùng các cấu trúc khác nhau để diễn đạt.\"]"
+      },
+      "TAv": {
+        "val": "11",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Note: 11/80\"]"
+      },
+      "TOA": {
+        "val": "5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "8",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 5,
+      "viet": null,
+      "van": 8,
+      "eng": 2,
+      "psy": 1
+    },
+    "tursoKsdn": {
+      "math": 7.25,
+      "van": 5.5,
+      "eng": 4.7
+    },
+    "tblKsdn": {
+      "math": 7.25,
+      "viet": null,
+      "van": 5.5,
+      "eng": 4.7
+    }
+  },
+  {
+    "idx": 18,
+    "name": "Trần Quang Thiên Ân",
+    "campus": "CS1",
+    "classTurso": "10.1_CS1",
+    "classTbl": "10.1_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán]  Đạt cam kết toán  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 10:45",
+    "commRaw": "Môn Toán",
+    "tblComms": "Toán",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường. \",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "15",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"15/20 | Em có khả năng nghe hiểu tốt, phản xạ nhanh, trả lời lưu loát các câu hỏi. Em có vốn từ vựng khá, phát âm rõ. Em miêu tả được tranh, triển khai được ý tưởng nhưng chưa diễn đạt được trọn vẹn ý. Nhìn chung, em có năng lực tiếng Anh khá.\"]"
+      },
+      "TAv": {
+        "val": "62",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"62/80\"]"
+      },
+      "TOA": {
+        "val": "3",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "6.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 3,
+      "viet": null,
+      "van": 6.5,
+      "eng": 7.7,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 7.25,
+      "van": 4,
+      "eng": 9
+    },
+    "tblKsdn": {
+      "math": 7.25,
+      "viet": null,
+      "van": 4,
+      "eng": 9
+    }
+  },
+  {
+    "idx": 19,
+    "name": "Đặng Hoàng Như Ý",
+    "campus": "CS1",
+    "classTurso": "10.2_CS1",
+    "classTbl": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttj",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"10/20\"]"
+      },
+      "TAv": {
+        "val": "36",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"'36/80\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.6,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 6.75,
+      "van": 6.8,
+      "eng": 0
+    },
+    "tblKsdn": {
+      "math": 6.75,
+      "viet": null,
+      "van": 6.8,
+      "eng": 0
+    }
+  },
+  {
+    "idx": 20,
+    "name": "Trương Lê Hưng Phát",
+    "campus": "CS1",
+    "classTurso": "12.1_CS1",
+    "classTbl": "12.1_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán]  Phát đạt cam kết toán. Phát đổi môn tổ hợp. Chưa gửi thư chúc mừng chờ ý ki",
+    "commRaw": "Môn Toán",
+    "tblComms": "Toán",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường. \",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "12",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"12/20 | Em nghe hiểu tương đối tốt, trả lời được các câu hỏi giao tiếp. Em có vốn từ vựng khá, biết cách miêu tả tranh, triển khai được ý tưởng nhưng diễn đạt chưa thật lưu loát. Em mắc một số lỗi sai về ngữ pháp và phát âm. Nhìn chung, em có năng lực tiếng Anh nhưng chưa linh hoạt.\"]"
+      },
+      "TAv": {
+        "val": "40",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"40/80\"]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "6.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 5.2,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 5.1,
+      "van": 3.5,
+      "eng": 5.5
+    },
+    "tblKsdn": {
+      "math": 5.1,
+      "viet": null,
+      "van": 3.5,
+      "eng": 5.5
+    }
+  },
+  {
+    "idx": 21,
+    "name": "Lê Nguyên Khang",
+    "campus": "CS1",
+    "classTurso": "2.1_CS1",
+    "classTbl": "2.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 1,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các mục đều đạt yêu cầu. \\nCác chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "20",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 4/10. Em có nhiều nỗ lực khi phản xạ trả lời các câu hỏi Tiếng Anh thông qua sự trợ giúp. Em nắm bắt từ vựng 1-10 và một số từ vựng về các chủ đề khác nhau. Tuy nhiên, em còn gặp khó khăn khi phản xạ cấu trúc câu hỏi cá nhân. Em cần cố gắng luyện tập thêm phát âm và trau dồi ngôn ngữ để diễn đạt tốt hơn trong giao tiếp.\"]"
+      },
+      "TAv": {
+        "val": "20",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Phiên từ 4/10 khảo sát vấn đáp\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4,
+      "psy": 1
+    },
+    "tursoKsdn": {
+      "math": 9,
+      "viet": 8,
+      "eng": 7.9
+    },
+    "tblKsdn": {
+      "math": 9,
+      "viet": 8,
+      "van": null,
+      "eng": 7.9
+    }
+  },
+  {
+    "idx": 22,
+    "name": "Nguyễn Ngọc Thiên Bảo",
+    "campus": "CS1",
+    "classTurso": "2.3INT_CS1",
+    "classTbl": "2.3INT_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "3",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em nắm bắt từ vựng về số đếm 1-10 và một số từ vựng thức ăn đơn giản. Em còn gặp nhiều khó khăn khi hiểu và phản xạ cấu trúc câu hỏi cá nhân cũng như các từ vựng về các chủ đề khác nhau. Em cần trau dồi ngôn ngữ để diễn đạt tốt hơn trong giao tiếp.\"]"
+      },
+      "TAv": {
+        "val": "36",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3.9,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "eng": 4,
+      "viet": 8,
+      "math": 10
+    },
+    "tblKsdn": {
+      "math": 10,
+      "viet": 8,
+      "van": null,
+      "eng": 4
+    }
+  },
+  {
+    "idx": 23,
+    "name": "LÊ ĐÌNH SĨ PHÚ",
+    "campus": "CS1",
+    "classTurso": null,
+    "classTbl": "6.1_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán]  ",
+    "commRaw": "Môn Toán",
+    "tblComms": "Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường. \",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "18",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em nghe hiểu tương đối tốt, trả lời được các câu hỏi giao tiếp căn bản. Em có vốn từ vựng nhưng chưa nhiều, phát âm tương đối to rõ. Em nhận biết được sự khác nhau giữa hai bức tranh nhưng chưa diễn đạt được câu đầy đủ. \"]"
+      },
+      "TAv": {
+        "val": "32",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "5",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": 5,
+      "van": 5,
+      "eng": 5,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": 6,
+      "viet": null,
+      "van": 6.25,
+      "eng": 5.1
+    }
+  },
+  {
+    "idx": 24,
+    "name": "Lương Bích Ngọc",
+    "campus": "CS1",
+    "classTurso": "6.3_CS1",
+    "classTbl": "6.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết TA  --- LỊCH SỬ XÉT DUYỆT & HIỆU C",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "16",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Cô Hiên:  Em có tinh thần hợp tác và nghiêm túc khi trả lời, tuy nhiên em còn gặp khó khăn khi đưa ra câu trả lời phù hợp. Phản xạ trả lời của em còn khá chậm và thường trả lời chưa đủ câu.. Nguyên nhân do em còn hạn chế về vốn từ vựng và ngữ pháp, chưa đủ luyện tập phản xạ giao tiếp. Em cần chú ý luyện tập trong hè em nhé. \"]"
+      },
+      "TAv": {
+        "val": "27",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "8.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 8.5,
+      "eng": 4.3,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 6.8,
+      "van": 7.25,
+      "eng": 5
+    },
+    "tblKsdn": {
+      "math": 6.8,
+      "viet": null,
+      "van": 7.25,
+      "eng": 5
+    }
+  },
+  {
+    "idx": 25,
+    "name": "Nguyễn Quỳnh Như",
+    "campus": "CS1",
+    "classTurso": "6.1_CS1",
+    "classTbl": "3.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết TA  --- LỊCH SỬ XÉT DUYỆT & HIỆU C",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "16",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Cô Hiên:  Em có tinh thần hợp tác và nghiêm túc khi trả lời, tuy nhiên em còn gặp khó khăn khi đưa ra câu trả lời phù hợp. Phản xạ trả lời của em còn khá chậm và thường trả lời chưa đủ câu. Nguyên nhân do em còn hạn chế về vốn từ vựng và ngữ pháp, chưa đủ luyện tập phản xạ giao tiếp. Em cần chú ý luyện tập trong hè em nhé. \"]"
+      },
+      "TAv": {
+        "val": "23",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "3",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "7",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 3,
+      "viet": null,
+      "van": 7,
+      "eng": 3.9,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 5,
+      "van": 7,
+      "eng": 4
+    },
+    "tblKsdn": {
+      "math": 9,
+      "viet": 9.5,
+      "van": 7,
+      "eng": 9.1
+    }
+  },
+  {
+    "idx": 26,
+    "name": "Trần Đăng Quang",
+    "campus": "CS1",
+    "classTurso": "6.3_CS1",
+    "classTbl": "6.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "21",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Cô Hiên: Em nghe hiểu tốt câu hỏi và cố gắng để có câu trả lời hoàn chỉnh, tuy nhiên khả năng diễn đạt của em còn chưa trôi chảy, phát âm cần rõ ràng hơn. Việc thiếu vốn từ vựng cũng làm em ngập ngừng và bí ý.  Em nên chú trọng phát triển vốn từ và nâng cao phản xạ giáo tiếp em nhé. \"]"
+      },
+      "TAv": {
+        "val": "22",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "10",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "7.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 10,
+      "viet": null,
+      "van": 7.5,
+      "eng": 4.3,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 6.5,
+      "van": 6.75,
+      "eng": 5.6
+    },
+    "tblKsdn": {
+      "math": 6.5,
+      "viet": null,
+      "van": 6.75,
+      "eng": 5.6
+    }
+  },
+  {
+    "idx": 27,
+    "name": "Lê Nguyệt Cát",
+    "campus": "CS1",
+    "classTurso": "7.4_CS1",
+    "classTbl": "7.4_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttj",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"10/20\"]"
+      },
+      "TAv": {
+        "val": "16",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "6.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 5,
+      "viet": null,
+      "van": 6.5,
+      "eng": 2.6,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 5.3,
+      "van": 8,
+      "eng": 3.7
+    },
+    "tblKsdn": {
+      "math": 5.3,
+      "viet": null,
+      "van": 8,
+      "eng": 3.7
+    }
+  },
+  {
+    "idx": 28,
+    "name": "Nguyễn Ngọc Minh",
+    "campus": "CS1",
+    "classTurso": "7.2_CS1",
+    "classTbl": "7.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (viết), Tiếng Anh (vấn đáp)]  ĐẠT CK  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---",
+    "commRaw": "Tiếng Anh (viết), Tiếng Anh (vấn đáp)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 3,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.Trẻ cần được hỗ trợ tăng cường khả năng tương tác và xây dựng các mối quan hệ xã hội để thuận lợi hơn trong quá trình hòa nhập. Đồng thời, cần hướng dẫn trẻ nhận diện và điều chỉnh các cảm xúc như lo lắng, bực bội theo cách phù hợp, khuyến khích trẻ chia sẻ và tìm kiếm sự hỗ trợ thay vì chủ yếu im lặng chịu đựng.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "5",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"5/20: Học sinh nghe hiểu tốt và có khả năng giao tiếp khá. Em sử dụng từ vựng ở mức ổn, diễn đạt được câu dài và truyền tải ý tương đối rõ ràng. Tuy nhiên, em còn ngập ngừng, đôi lúc nói lắp và phát âm thiếu âm cuối. Cần luyện thêm độ trôi chảy và chú ý phát âm đầy đủ các âm cuối để phần nói tự nhiên, rõ ràng hơn.\"]"
+      },
+      "TAv": {
+        "val": "18",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"18/80\"]"
+      },
+      "TOA": {
+        "val": "6",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "7",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 6,
+      "viet": null,
+      "van": 7,
+      "eng": 2.3,
+      "psy": 3
+    },
+    "tursoKsdn": {
+      "math": 8.75,
+      "van": 5.75,
+      "eng": 4.1
+    },
+    "tblKsdn": {
+      "math": 8.75,
+      "viet": 10,
+      "van": 5.75,
+      "eng": 4.1
+    }
+  },
+  {
+    "idx": 29,
+    "name": "Phạm Gia Hưng",
+    "campus": "CS1",
+    "classTurso": "7.3_CS1",
+    "classTbl": "2.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttj",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"10/20 | Cô Mai: Em trả lời được một số câu hỏi cơ bản như tên, tuổi và chào hỏi tuy nhiên câu trả lời của em còn ngắn, trả lời theo từng từ. Em chỉ ra được một số điểm khác biệt trong tranh nhưng cũng chỉ và nói từng từ, chưa hình thành được câu. Vốn từ vựng và khả năng nghe hiểu còn rất hạn chế. Em phát âm chưa đúng nhiều từ cơ bản.\"]"
+      },
+      "TAv": {
+        "val": "16",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"16/80\"]"
+      },
+      "TOA": {
+        "val": "2.3",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "4",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 2.3,
+      "viet": null,
+      "van": 4,
+      "eng": 2.6,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 5,
+      "van": 4.5,
+      "eng": 0.7
+    },
+    "tblKsdn": {
+      "math": 10,
+      "viet": 9.4,
+      "van": 4.5,
+      "eng": 9.1
+    }
+  },
+  {
+    "idx": 30,
+    "name": "Trần Thục Quyên",
+    "campus": "CS1",
+    "classTurso": "7.4_CS1",
+    "classTbl": "7.4_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết TA  --- LỊCH SỬ XÉT DUYỆT & HIỆU C",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "13",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Cô Hiên:  Em luôn cố gắng đưa ra câu trả lời phù hợp, tuy nhiên phản xạ trả lời của em còn khá chậm. Nguyên nhân do em còn bị hạn chế về vốn từ vựng và ngữ pháp, chưa đủ luyện tập phản xạ giao tiếp. Em cần chú ý ôn luyện trong hè em nhé. \"]"
+      },
+      "TAv": {
+        "val": "30",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.3,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 9,
+      "van": 7.5,
+      "eng": 6
+    },
+    "tblKsdn": {
+      "math": 9,
+      "viet": null,
+      "van": 7.5,
+      "eng": 6
+    }
+  },
+  {
+    "idx": 31,
+    "name": "Nguyễn Đặng Bảo Trâm ",
+    "campus": "CS1",
+    "classTurso": "8.2_CS1",
+    "classTbl": "8.2_CS1",
+    "directorNote": "Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 05/09/2026 09:",
+    "commRaw": "",
+    "tblComms": "Chung / Theo dõi",
+    "rawScores": {
+      "TLY": {
+        "val": 6,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"\\\"Học sinh có hoạt động nhận thức bình thường. Em \\ncó cảm xúc khá nhạy cảm. Bố mẹ li hôn từ năm 2019.\\nTrước đó em ở với mẹ nhưng xảy ra mâu thuẫn với mẹ nên chuyển vào Đà Nẵng ở cùng bố. Hiện tại tâm trạng của em có cải thiện nhưng cần tiếp tục theo dõi, hỗ trợ.\\\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"10/20 | Em có thể nghe hiểu các câu hỏi cơ bản về bản thân, sở thích, gia đình. Tuy nhiên, vốn từ vựng của em còn nhiều hạn chế và em chưa mạnh dạn trong giao tiếp nên em chưa diễn đạt câu trả lời hiệu quả.\"]"
+      },
+      "TAv": {
+        "val": "38",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "7",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "6.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 7,
+      "viet": null,
+      "van": 6.5,
+      "eng": 4.8,
+      "psy": 6
+    },
+    "tursoKsdn": {
+      "math": 3,
+      "van": 6.5,
+      "eng": 4
+    },
+    "tblKsdn": {
+      "math": 3,
+      "viet": null,
+      "van": 6.5,
+      "eng": 4
+    }
+  },
+  {
+    "idx": 32,
+    "name": "Hoàng Bảo Quyên",
+    "campus": "CS1",
+    "classTurso": "9.2_CS1",
+    "classTbl": "9.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"Kt thấp quá ko đạt Hỗ trợ nhập học đạt cam kế",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "8",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"8/20\"]"
+      },
+      "TAv": {
+        "val": "14",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"14/80\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.2,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 5.25,
+      "van": 4,
+      "eng": 4.6
+    },
+    "tblKsdn": {
+      "math": 5.25,
+      "viet": null,
+      "van": 4,
+      "eng": 4.6
+    }
+  },
+  {
+    "idx": 33,
+    "name": "Nguyễn Gia Bảo",
+    "campus": "CS1",
+    "classTurso": "9.2_CS1",
+    "classTbl": "9.2_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Treo KQ KTĐV đợi KQ học tập cuối năm",
+    "commRaw": "Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Em chưa xác định động lực học tập và mục tiêu học tập. Trong quá trình trao đổi, em có biểu hiện né tránh câu trả lời, thiếu tự tin. \",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "4",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 4/20. Em nghe hiểu chưa tốt, chưa trả lời được các câu hỏi giao tiếp căn bản như tuổi, sở thích. Em phát âm nhỏ, khó nghe. Vốn từ vựng của em khá ít, những từ vựng căn bản em cũng chưa nắm được như về gia đình, đồ vật, số đếm... Em chưa miêu tả được tranh.Nhìn chung, năng lực ngôn ngữ của em còn rất nhiều hạn chế.\"]"
+      },
+      "TAv": {
+        "val": "6",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"6/80\"]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "6.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 1,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 3.5,
+      "van": 4.25,
+      "eng": 2.3
+    },
+    "tblKsdn": {
+      "math": 3.5,
+      "viet": 8.5,
+      "van": 4.25,
+      "eng": 2.3
+    }
+  },
+  {
+    "idx": 34,
+    "name": "Nguyễn Thanh Thảo",
+    "campus": "CS1",
+    "classTurso": "9.4_CS1",
+    "classTbl": "9.4_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "2",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 2/20. Em nghe hiểu chưa tốt, chưa trả lời được các câu hỏi giao tiếp cơ bản về chủ đề cá nhân. Vốn từ vựng của em còn khá ít để diễn đạt thành câu. Em chưa miêu tả được tranh. Nhìn chung, năng lực ngôn ngữ của em còn rất nhiều hạn chế.\"]"
+      },
+      "TAv": {
+        "val": "21",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Note: 21/80\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 5,
+      "van": 5.5,
+      "eng": 4.6
+    },
+    "tblKsdn": {
+      "math": 5,
+      "viet": null,
+      "van": 5.5,
+      "eng": 4.6
+    }
+  },
+  {
+    "idx": 35,
+    "name": "Nguyễn Văn Tuấn Kiệt",
+    "campus": "CS1",
+    "classTurso": "9.2_CS1",
+    "classTbl": "9.2_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"HS trung bình, hk khá không đạt 02/",
+    "commRaw": "Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh, Toán",
+    "rawScores": {
+      "TAvd": {
+        "val": "7",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[]"
+      },
+      "TAv": {
+        "val": "28",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 5,
+      "viet": null,
+      "van": 5.5,
+      "eng": 3.5,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 3,
+      "van": 4.5,
+      "eng": 2.9
+    },
+    "tblKsdn": {
+      "math": 3,
+      "viet": null,
+      "van": 4.5,
+      "eng": 2.9
+    }
+  },
+  {
+    "idx": 36,
+    "name": "Ngô Thục Đan",
+    "campus": "CS1",
+    "classTurso": "9.1_CS1",
+    "classTbl": "9.1_CS1",
+    "directorNote": "Môn cam kết: [Tâm lý]  Đạt cam kết tâm lí. Mời PH gặp BGH và T. Đài khi làm thủ tục nhập học.",
+    "commRaw": "Tâm lý",
+    "tblComms": "Tâm lý",
+    "rawScores": {
+      "TLY": {
+        "val": 10,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Năng lực nhận thức của học sinh phát triển bình thường. Em thiếu hòa hợp với mọi người. Em cho rằng GVCN không thích em vì do em nghỉ học nhiều. Bị các bạn trong lớp cô lập, không cho chơi chung. Thường xuyên có ý nghĩ về cái chết nhưng đã ít hơn so với trước đây. Em được bệnh viện Tâm thần Đà Nẵng chẩn đoán trầm cảm, rối loạn kích ứng. Hiện đang điều trị tại BV Tâm thần Đà Nẵng.\",\"Tiếp tục thăm khám, điều trị tại bệnh viện.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "15",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em có khả năng nghe hiểu Tiếng Anh khá tốt, phản xạ nhanh đối với các câu hỏi cơ bản về bản thân, gia đình, sở thích. Em có phát âm khá rõ ràng và sử dụng được vốn từ vựng cơ bản. Tuy nhiên, khi mô tả về bức tranh, em chưa diễn đạt tốt vì chưa có đủ từ vựng.\"]"
+      },
+      "TAv": {
+        "val": "50",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 5,
+      "viet": null,
+      "van": null,
+      "eng": 6.5,
+      "psy": 10
+    },
+    "tursoKsdn": {
+      "math": 3,
+      "van": 8.5,
+      "eng": 7.5
+    },
+    "tblKsdn": {
+      "math": 3,
+      "viet": null,
+      "van": 8.5,
+      "eng": 7.5
+    }
+  },
+  {
+    "idx": 37,
+    "name": "Phạm Gia Bảo",
+    "campus": "CS1",
+    "classTurso": "9.3_CS1",
+    "classTbl": "9.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]  Đạt cam kết Toán; Anh Kiểm tra lại đ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán",
+    "tblComms": "Tiếng Anh, Toán",
+    "rawScores": {
+      "TAvd": {
+        "val": "4",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"4/20 | Cô Mai: Em có thái độ tốt, hợp tác với giáo viên song khả năng nghe hiểu và vốn từ vựng của em còn rất hạn chế. Em chưa hiểu và chưa trả lời được hầu như tất cả các câu hỏi của giáo viên, dù đó là các câu hỏi cơ bản như: \\\"how are you?\\\" hay các câu hỏi về sở thích. Một vài câu em hiểu được thì em chỉ trả lời từng từ, chưa trả lời thành câu hoàn chỉnh.\"]"
+      },
+      "TAv": {
+        "val": "6",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"\"]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "6.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 1,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 3.75,
+      "van": 3.5,
+      "eng": 3.6
+    },
+    "tblKsdn": {
+      "math": 3.75,
+      "viet": null,
+      "van": 3.5,
+      "eng": 3.6
+    }
+  },
+  {
+    "idx": 38,
+    "name": "Trần Hoàng Anh ",
+    "campus": "CS1",
+    "classTurso": "9.2_CS1",
+    "classTbl": "9.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán",
+    "tblComms": "Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "2",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 2/20. Em nghe hiểu chưa tốt, chưa trả lời được các câu hỏi giao tiếp cơ bản về chủ đề cá nhân. Vốn từ vựng của em còn khá ít để diễn đạt thành câu. Em chưa miêu tả được tranh. Nhìn chung, năng lực ngôn ngữ của em còn rất nhiều hạn chế.\"]"
+      },
+      "TAv": {
+        "val": "18",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Note: 18/80\"]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "6.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 2,
+      "psy": 4
+    },
+    "tursoKsdn": {
+      "math": 6.5,
+      "van": 6,
+      "eng": 4
+    },
+    "tblKsdn": {
+      "math": 6.5,
+      "viet": null,
+      "van": 6,
+      "eng": 4
+    }
+  },
+  {
+    "idx": 39,
+    "name": "Lê Gia Lân",
+    "campus": "CS2",
+    "classTurso": "1.3_CS2",
+    "classTbl": "1.3_CS2",
+    "directorNote": "Môn cam kết: [Tâm lý]  Đạt nhưng yc cam kết tâm lý",
+    "commRaw": "Tâm lý",
+    "tblComms": "Tâm lý",
+    "rawScores": {
+      "TLY": {
+        "val": 4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Năng lực nhận thức và hiểu biết chung của em phù hợp với độ tuổi. Tuy nhiên, khả năng tập trung chú ý chưa ổn định, em dễ bị sao nhãng và chưa duy trì sự chú ý trong thời gian dài. Mức độ tương tác mắt còn hạn chế và có xuất hiện hành vi nháy mắt trong quá trình tương tác. Khuyến nghị tiếp tục theo dõi và quan sát thêm trong quá trình học tập.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "7",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 7/10. Em nắm được từ vựng một số chủ đề con vật, màu sắc, hình dạng, số đếm từ 1-20 và bảng chữ cái. Em hiểu và trả lời được các câu hỏi của giáo viên. Tuy nhiên em chưa trả lời câu hỏi thành câu hoàn chinh và phát âm của em chưa rõ ràng và chưa có âm cuối.\"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"\",\"\",\"\",\"\",\"Khả năng tập trung chưa cao\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.3,
+      "psy": 4
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 40,
+    "name": "Lê Hồ Duy Khang",
+    "campus": "CS2",
+    "classTurso": "1.3_CS2",
+    "classTbl": "1.3_CS2",
+    "directorNote": "Đạt (GVCN theo dõi tâm lý)  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 15/08/2026 10:12 | Lê Thị Hoàng",
+    "commRaw": "",
+    "tblComms": "Tâm lý",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số phát triển bình thường (trẻ rất nhút nhát, ngại nói chuyện khi gặp người lạ. Lưu ý để hỗ trợ trẻ tốt hơn)\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "8.5",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Cô Hiên: Em trả lời rất dõng rạc, rõ ràng các câu hỏi của giáo viên. Em nhớ các từ vựng về các chủ đề thông dụng như màu sắc, số đếm, hình khối, các con vật. Tuy nhiên em cần ôn tập thêm về vị trí: in/on/under/next to và bảng chữ cái. Em tiếp tục ôn tập trong hè nhé. \"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.8,
+      "psy": -4
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 41,
+    "name": "Nguyễn Thanh Phúc",
+    "campus": "CS2",
+    "classTurso": "1.2INT_CS2",
+    "classTbl": "1.2INT_CS2",
+    "directorNote": "Cần theo dõi thêm mức độ tập trung chú ý Cần cải thiện thêm tiếng Anh (Không cần cam kết nhưng gvta ",
+    "commRaw": "",
+    "tblComms": "Chung / Theo dõi",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Em hiểu và trả lời được các câu hỏi và tình huống GV đưa ra, có sự hợp tác trong quá trình tương tác, nhận thức tốt. Khả năng tập trung chú ý chưa cao, dễ sao nhãng. Em chủ yếu diễn đạt câu ngắn, phát âm một số từ chư rõ ràng=> Cần tăng cường vôn từ diễn đạt.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "NLTD": {
+        "name": "Năng lực tư duy",
+        "code": "NLTD",
+        "comments": "[\"\\\"- Khả năng suy luận logic: A - Khả năng liên tưởng: A - Kĩ năng phản biện: A - Khả năng giải quyết vấn đề: A Em hoàn thành các thử thách của giáo viên đặt ra: 75%\\\"\"]"
+      },
+      "TAvd": {
+        "val": "5",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 5/10. Em vui vẻ, phản xạ tốt và tiếp thu nhanh. Tuy nhiên, em chỉ mới biết đếm trơn bằng tiếng Anh từ 1 đến 5 và trả lời được một số con vật quen thuộc.\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 1.7,
+      "psy": 2
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 42,
+    "name": "Phan Hải Đăng",
+    "campus": "CS2",
+    "classTurso": "1.3_CS2",
+    "classTbl": "1.3_CS2",
+    "directorNote": "theo dõi thêm khả năng phát triển ngôn ngữ  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 06/08/2026 16:2",
+    "commRaw": "",
+    "tblComms": "Chung / Theo dõi",
+    "rawScores": {
+      "TLY": {
+        "val": -1,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Em có sự hợp tác và trả lời đúng trọng tâm câu hỏi. Em phát âm chưa rõ ràng, còn ngọng nhiều âm, dễ sao nhãng trong quá trình tương tác và phản ứng còn chậm.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"Em chưa nhắc lại các nhân vật trong câu chuyện ngắn.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null,
+      "psy": -1
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 43,
+    "name": "Sangadziev Aron",
+    "campus": "CS2",
+    "classTurso": "1.2INT_CS2",
+    "classTbl": "1.2INT_CS2",
+    "directorNote": "Môn cam kết: [Tiếng Việt]  \"Đạt (cam kết Tiếng Việt => sau HK1 đánh giá lại, nếu không đạt yêu cầu m",
+    "commRaw": "Tiếng Việt",
+    "tblComms": "Tiếng Việt",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Đánh giá sàng lọc ghi nhận ở thời điểm hiện tại: \\n- Nhận thức tốt, phản hồi rõ và trọng tâm nội dung yêu cầu.\\n- Khả năng điều hòa cảm xúc, kiểm soát hành vi tốt.\\n- Có kỹ năng trong các hoạt động cá nhân, chăm sóc bản thân. \\n- Tương tác xã hội còn khá rụt rè (tiên lượng hoàn toàn có thể cải thiện qua môi trường học tập).\\n- Về học tập, học sinh tập trung tốt, tuy nhiên ngôn ngữ tiếng Việt còn hạn chế, vốn từ ít cần bổ trợ thường xuyên, liên tục trong thời gian tới.\\nKết luận: Hiện học sinh phát triển tâm lý bình thường theo lứa tuổi. \",\"Học sinh gặp tình trạng đầu và cổ nhô ra phía trước so với vai (Hội chứng cổ rùa), Phụ huynh cần theo dõi hỗ trợ thay đổi thói quen sinh hoạt hàng ngày cho trẻ (tư thế ngồi, dáng đứng, vận động phù hợp…) để hạn chế nguy cơ tiến triển nặng của tình trạng đang mắc phải và nguy cơ ảnh hưởng tâm lý về sau do ngoại hình.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "8",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em nắm vững các từ vựng về màu sắc, các số từ 1-10, bảng chữ cái, em nhận diện được các từ vựng thuộc chủ đề con vật và trái cây. Em hiểu và phản hồi câu hỏi một cách nhanh chóng. \"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"Hs không nói được Tiếng Việt. Quá trình kiểm tra phải cần sự hỗ trợ phiên dịch của GV Tiếng Anh. Sự đánh giá dựa trên HS thực hiện khi được yêu cầu bằng ngôn ngữ Tiếng Anh. \\nĐề xuất: Cần có sự cam kết Tiếng Việt đối với HS này.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.7,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 44,
+    "name": "Đào Trần Thảo Linh",
+    "campus": "CS2",
+    "classTurso": "1.3_CS2",
+    "classTbl": "1.3_CS2",
+    "directorNote": "Môn cam kết: [Tâm lý, Tiếng Việt]  Đạt (Cam kết tâm lý: rèn luyện thêm khả năng tập trung chú ý và n",
+    "commRaw": "Tâm lý, Tiếng Việt",
+    "tblComms": "Tiếng Việt, Tâm lý",
+    "rawScores": {
+      "TLY": {
+        "val": 1,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Em hoạt bát, tự tin, mạnh dạn chia sẻ các thông tin về bản thân và chủ động trong giao tiếp. Em có thể trả lời và xử lý được một số tình huống đơn giản. Tuy nhiên, phát âm của em còn chưa rõ ràng, diễn đạt câu còn lủng củng, khả năng tập trung chú ý chưa cao. Qua trao đổi với phụ huynh, em sinh ra ở Nhật và có sự thay đổi môi trường sống giữa Việt Nam và Nhật nên ảnh hưởng đến sự phát triển ngôn ngữ. Gia đình cần phối hợp và cam kết hỗ trợ tăng cường tiếng Việt cho em.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "9",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 9/10. Em nắm tốt các từ vựng về màu sắc, các số từ 1-20, chữ cái, một số từ thuộc chủ đề con vật, hình dạng, đồ vật. Em phát âm chuẩn, tự tin trả lời các câu hỏi của giáo viên.\"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3,
+      "psy": 1
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 45,
+    "name": "ĐỖ NGUYỄN AN KHÔI",
+    "campus": "CS2",
+    "classTurso": "1.3_CS2",
+    "classTbl": "1.3_CS2",
+    "directorNote": "(cần theo dõi mức độ tập trung chú ý)",
+    "commRaw": "",
+    "tblComms": "Chung / Theo dõi",
+    "rawScores": {
+      "TLY": {
+        "val": 1,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Em nhận thức tốt các thông tin về bản thân, trả lời được hầu hết các câu hỏi và có khả năng tư duy phù hợp, biết cân nhắc trước khi đưa ra câu trả lời hoặc thực hiện nhiệm vụ. Trong quá trình khảo sát, em chủ động trao đổi, đặt câu hỏi để làm rõ yêu cầu trước khi thực hiện. Khả năng ghi nhớ thông tin bằng lời nói còn ổn định, khó khăn khi nhắc lại nội dung câu chuyện ngắn. Trong quá trình khảo sát, em dễ bị phân tán sự chú ý bởi các kích thích từ môi trường xung quanh, có xu hướng thực hiện theo ý muốn cá nhân.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "7",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 7/10. Em có thể hiểu và trả lời các câu hỏi đơn giản về bản thân. Em nhận diện tốt từ vựng về động vật, đồ vật, hình dạng, chữ cái; nắm vững từ vựng về màu sắc và số từ 1–20. Em phát âm khá tốt, có chú ý đến âm cuối. Em trả lời được các câu hỏi dạng Yes/No, tuy nhiên cần luyện tập thêm để mở rộng câu trả lời thành các câu hoàn chỉnh.\"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.3,
+      "psy": 1
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 46,
+    "name": "Govorushko Mikhail",
+    "campus": "CS3",
+    "classTurso": "1.1INT_CS3",
+    "classTbl": "1.1INT_CS3",
+    "directorNote": "Môn cam kết: [Tiếng Việt]  Đạt cam kết Tiếng Việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 13/08/20",
+    "commRaw": "Tiếng Việt",
+    "tblComms": "Tiếng Việt",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường. Cần trau dồi vốn ngôn ngữ Tiếng Việt\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "NLTD": {
+        "name": "Năng lực tư duy",
+        "code": "NLTD",
+        "comments": "[\"\\\"- Khả năng suy luận logic: B\\n- Khả năng liên tưởng: A\\n- Kĩ năng phản biện: A\\n- Khả năng giải quyết vấn đề: A \\nEm hoàn thành các thử thách của giáo viên đặt ra: 85%\\\"\"]"
+      },
+      "TAvd": {
+        "val": "9.5",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"95/100\\nEm lanh lẹ, nghe hiểu các câu hỏi và yêu cầu từ giáo viên. Em phát âm rõ ràng, trả lời tốt các câu hỏi về cơ bản về cá nhân. Em có lượng từ vựng về các chủ đề động vật, trái cây, đồ chơi khá tốt. Em có thể mô tả nơi chốn theo cấu trúc câu đầy đủ, đúng ngữ pháp. Khả năng sử dụng ngôn ngữ tiếng Anh để giao tiếp các chủ đề hằng ngày khá tốt và lưu loát. \"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"Không nghe, hiểu, nói được Tiếng Việt, cần phiên dịch sang Tiếng Anh để trả lời các câu hỏi.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3.2,
+      "psy": -4
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 47,
+    "name": "Đoàn Ngọc Thảo Chloe",
+    "campus": "CS3",
+    "classTurso": "2.1INT_CS3",
+    "classTbl": "2.1INT_CS3",
+    "directorNote": "Cam kết Tiếng Việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/09/2026 15:26 | Trần Thị Thanh | Đạt",
+    "commRaw": "",
+    "tblComms": "Tiếng Việt",
+    "rawScores": {
+      "TLY": {
+        "val": 3,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Hoạt động nhận thức của học sinh bình thường. Có biểu hiện sao nhãng. Vốn tiếng Việt còn hạn chế nên học sinh chưa trả lời được các câu hỏi \\ncủa giáo viên.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 90/100. Em nhanh nhẹn, tự tin giao tiếp với giáo viên, có khả năng nghe hiểu, phản xạ tốt với các câu hỏi. Em trả lời khá tốt các câu hỏi về cá nhân, nắm được từ vựng các chủ đề: animal, food/drink, job, clothes, cũng như chỉ ra điểm khác biệt giữa 2 bức tranh. Song em cố gắng trả lời câu hỏi bằng câu hoàn chỉnh và luyện tập thêm từ vựng nói về thời gian nhé.\"]"
+      },
+      "EPT": {
+        "val": "84",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[\"84/100\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 8.4,
+      "psy": 3
+    },
+    "tursoKsdn": {
+      "eng": 9.8,
+      "viet": 4,
+      "math": 8
+    },
+    "tblKsdn": {
+      "math": 8,
+      "viet": 4,
+      "van": null,
+      "eng": 9.8
+    }
+  },
+  {
+    "idx": 48,
+    "name": "Hoàng Bữu Minh Hưng",
+    "campus": "CS3",
+    "classTurso": "3.4_CS2",
+    "classTbl": "3.4_CS2",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Ghi chú: PH hỗ trợ con bổ trợ thêm các kỹ năng",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt.Phần diễn đạt ý của học sinh còn gặp nhiều trúc trắc, có thực hiện theo nhiệm vụ yêu cầu của giáo viên nhưng có sao nhãng và đôi lúc quên hiệu lệnh\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "30",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"30/100 | Em hợp tác tốt với giáo viên. Em có thể trả lời các câu hỏi về thông tin cá nhân như tên, tuổi và sức khỏe. Em cũng nêu được một số từ vựng về đồ ăn, con vật, thời tiết, quần áo,... Tuy nhiên, khả năng phản xạ khi trả lời câu hỏi của em còn hạn chế. Em gặp khó khăn khi đánh vần tên, tìm ra điểm khác nhau giữa hai bức tranh và vẫn cần sự hỗ trợ của giáo viên trong suốt quá trình nghe và trả lời câu hỏi. Em cần trau dồi thêm vốn từ vựng, luyện tập phát âm nhiều hơn và cố gắng trả lời bằng các câu theo cấu trúc hoàn chỉnh.\"]"
+      },
+      "EPT": {
+        "val": "42",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.2,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 8,
+      "viet": 8,
+      "eng": 5.5
+    },
+    "tblKsdn": {
+      "math": 8,
+      "viet": 8,
+      "van": null,
+      "eng": 5.5
+    }
+  },
+  {
+    "idx": 49,
+    "name": "Hồ Hữu Bách",
+    "campus": "CS3",
+    "classTurso": "4UK_CS3",
+    "classTbl": "4UK_CS3",
+    "directorNote": "Môn cam kết: [Tiếng Việt]  ",
+    "commRaw": "Tiếng Việt",
+    "tblComms": "Tiếng Việt",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 95/100. Em có phản xạ giao tiếp nhanh và ngữ điệu tự nhiên. Em trả lời tốt các câu hỏi về thông tin cá nhân và biết cách so sánh sự khác biệt giữa hai bức tranh. Em có vốn từ vựng và ngữ pháp phong phú, áp dụng tốt cấu trúc câu khi trả lời. Em chú ý mở rộng ý trả lời, và luôn trả lời bằng một câu hoàn chỉnh. \"]"
+      },
+      "TVI": {
+        "val": "3",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      },
+      "EPT": {
+        "val": "82",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[\"82/100\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": 3,
+      "van": null,
+      "eng": 8.2,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "eng": 7.8,
+      "viet": 1.5,
+      "math": 3
+    },
+    "tblKsdn": {
+      "math": 3,
+      "viet": 1.5,
+      "van": null,
+      "eng": 7.8
+    }
+  },
+  {
+    "idx": 50,
+    "name": "Lecomte Mailys Mộc Yên",
+    "campus": "CS3",
+    "classTurso": "4INT_CS3",
+    "classTbl": "4INT_CS3",
+    "directorNote": "Đạt cam kết Tiếng Việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/09/2026 15:27 | Trần Thị Thanh |",
+    "commRaw": "",
+    "tblComms": "Tiếng Việt",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường. Cần trau dồi thêm vốn tiếng Việt.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"85/100 | Em hiểu và phản hồi khá tốt các câu hỏi được đưa ra. Em sở hữu vốn từ vựng tương đối phong phú và có thể vận dụng các từ vựng, mẫu câu đã học để nhận biết sự khác nhau giữa hai bức tranh cũng như miêu tả nội dung tranh khá rõ ràng. Em bước đầu cho thấy khả năng sử dụng tiếng Anh để diễn đạt suy nghĩ và ý tưởng của bản thân một cách phù hợp. Để tiếp tục tiến bộ hơn, em cần dành thêm thời gian luyện phát âm nhằm nâng cao độ chính xác, sự lưu loát và tự tin khi giao tiếp bằng tiếng Anh.\"]"
+      },
+      "EPT": {
+        "val": "96",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 9.6,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "eng": 7.3,
+      "viet": 5,
+      "math": 5
+    },
+    "tblKsdn": {
+      "math": 5,
+      "viet": 5,
+      "van": null,
+      "eng": 7.3
+    }
+  },
+  {
+    "idx": 51,
+    "name": "Hà Minh Khuê",
+    "campus": "CS3",
+    "classTurso": "5.1INT_CS3",
+    "classTbl": "5.1INT_CS3",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Phần năng lực ngôn ngữ còn hơi yếu so với yêu ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số tâm lý phát triển bình thường. Em hơi gặp khó khăn trong thiết lập và duy trì mối quan hệ với bạn bè cùng lớp.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"50/100 | Bạn hơi rụt rè, chưa có sự tự tin khi trả lời các câu hỏi về bản thân. Kỹ năng nghe câu hỏi của bạn khá yếu, cần được GV lặp lại và hỗ trợ để bạn có thể đưa ra câu trả lời. Bạn cần tặng cường cải thiện vốn từ vựng và ngữ pháp để diễn đạt câu đầy đủ ý hơn.\"]"
+      },
+      "TVI": {
+        "val": "7",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      },
+      "EPT": {
+        "val": "46",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": 7,
+      "van": null,
+      "eng": 4.6,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "eng": 3.6,
+      "viet": 9,
+      "math": 8
+    },
+    "tblKsdn": {
+      "math": 8,
+      "viet": 9,
+      "van": null,
+      "eng": 3.6
+    }
+  },
+  {
+    "idx": 52,
+    "name": "Lê Bảo Trâm",
+    "campus": "CS3",
+    "classTurso": "7.3_CS1",
+    "classTbl": "7.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết Anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "6",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em hợp tác tốt với giáo viên và có thể trả lời được một số câu hỏi cơ bản về tên, tuổi và các câu chào hỏi cơ bản. Tuy nhiên, câu trả lời của em còn ngắn, chủ yếu là từng từ, chưa trả lời thành câu hoàn chỉnh. Khả năng nghe hiểu của em cũng còn nhiều hạn chế, em chưa hiểu và chưa trả lời được nhiều câu hỏi của giáo viên dù đã được gợi ý và cho ví dụ. \"]"
+      },
+      "TAv": {
+        "val": "36",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Em chưa viết được bài viết. \"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.2,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 8.3,
+      "van": 7.5,
+      "eng": 4.9
+    },
+    "tblKsdn": {
+      "math": 8.3,
+      "viet": 7.8,
+      "van": 7.5,
+      "eng": 4.9
+    }
+  },
+  {
+    "idx": 53,
+    "name": "Mai Huy Thắng",
+    "campus": "CS3",
+    "classTurso": "7.1_CS1",
+    "classTbl": "7.1_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán]  Đạt cam kết Toán  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 12/08/2026 08:31",
+    "commRaw": "Môn Toán",
+    "tblComms": "Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "18",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em nhanh nhạy, nghe hiểu tốt và trả lời tốt các câu hỏi của giáo viên. Em có vốn từ vựng tốt và trả lời các câu hiỏi cũng như tìm ra các điểm khác biệt một cách dễ dàng, sử dụng ngữ pháp khi nói tốt. Em phát âm tốt, khá lưu loát và tự nhiên. Một số câu trả lời còn ngắn, cần mở rộng thêm ý để nói được nhiều ý hơn và tránh một số lỗi ngữ pháp nhỏ khi nói.\"]"
+      },
+      "TAv": {
+        "val": "62",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "4.5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "8",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4.5,
+      "viet": null,
+      "van": 8,
+      "eng": 8,
+      "psy": 2
+    },
+    "tursoKsdn": {
+      "math": 8,
+      "van": 7,
+      "eng": 8.8
+    },
+    "tblKsdn": {
+      "math": 8,
+      "viet": null,
+      "van": 7,
+      "eng": 8.8
+    }
+  },
+  {
+    "idx": 54,
+    "name": "Lê Bảo Châu",
+    "campus": "CS3",
+    "classTurso": "9.3_CS1",
+    "classTbl": "9.3_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết Toán; Anh  --- LỊCH SỬ X",
+    "commRaw": "Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "5",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em còn gặp nhiều khó khăn trong việc nghe hiểu và phản hồi bằng tiếng Anh. Em thường chỉ trả lời được bằng 1–2 từ đơn giản, chưa hình thành được câu hoàn chỉnh. Vốn từ vựng còn rất hạn chế, ảnh hưởng đến khả năng nghe hiểu và diễn đạt.\"]"
+      },
+      "TAv": {
+        "val": "14",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Em chưa viết được nội dung bài viết.\"]"
+      },
+      "TOA": {
+        "val": "2",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "6.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 2,
+      "viet": null,
+      "van": 6.5,
+      "eng": 1.9,
+      "psy": 2
+    },
+    "tursoKsdn": {
+      "math": 3.5,
+      "van": 4.5,
+      "eng": 5.2
+    },
+    "tblKsdn": {
+      "math": 3.5,
+      "viet": null,
+      "van": 4.5,
+      "eng": 5.2
+    }
+  },
+  {
+    "idx": 55,
+    "name": "Nguyễn Thành Long",
+    "campus": "CS3",
+    "classTurso": "9.3_CS1",
+    "classTbl": "9.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"Nên tư vấn học hệ S Thầy Long: Điểm theo học ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"20/100 | Em chưa có khả năng hiểu được câu hỏi cơ bản về các thông tin cá nhân, có xu hướng dùng tiếng Việt trả lời, hỏi lại giáo viên để giải thích câu hỏi. Phần câu hỏi liên quan đến tranh em chưa nắm được nội dung câu hỏi, trả lời bị lạc đề mặc dù đã dùng cấu trúc câu đơn giản so với đề để hỏi học sinh. \"]"
+      },
+      "NVA": {
+        "val": "8.25",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      },
+      "EPT": {
+        "val": "28",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[\"28/100\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": 8.25,
+      "eng": 2.8,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 4,
+      "van": 4.5,
+      "eng": 6
+    },
+    "tblKsdn": {
+      "math": 4,
+      "viet": null,
+      "van": 4.5,
+      "eng": 6
+    }
+  },
+  {
+    "idx": 56,
+    "name": "Phan Anh Quân",
+    "campus": "CS3",
+    "classTurso": "9INT_CS3",
+    "classTbl": "9INT_CS3",
+    "directorNote": "Môn cam kết: [EPT]  ESL, Maths, Science",
+    "commRaw": "EPT",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả các tiêu chí đều đạt. Câc chỉ số tâm lý \\nphát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 80/100. Thầy Phúc: Em tự tin trả lời tất cả câu hỏi của giáo viên một cách lưu loát, biết kết hợp các câu để khai triển ý của mình và em thể hiện rõ ràng quan điểm cá nhân của mình ở mỗi câu song một số câu hỏi em chưa trả lời đúng trọng tâm. Vốn từ vựng của em tốt nhưng chưa sử dụng chúng một cách thành thạo nên đôi lúc các từ dùng chưa đúng ngữ cảnh. Em biết kết hợp các câu song việc sử dụng thì và trật tự từ thì chưa thành thạo hoàn toàn, điều này ảnh hưởng đến sự mạch lạc trong câu trả lời. Em cũng nên chú ý trọng âm của một số từ và các phụ âm cuối khi nói của mình. \"]"
+      },
+      "NVA": {
+        "val": "5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      },
+      "EPT": {
+        "val": "41",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[\"41/100\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": 5,
+      "eng": 4.1,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 6.25,
+      "van": 6,
+      "eng": 5.6
+    },
+    "tblKsdn": {
+      "math": 6.25,
+      "viet": null,
+      "van": 6,
+      "eng": 5.6
+    }
+  },
+  {
+    "idx": 57,
+    "name": "Ngô Nhật Khang",
+    "campus": "CS4",
+    "classTurso": "10S_CS4",
+    "classTbl": "10S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn",
+    "tblComms": "Ngữ Văn, Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "7",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 7/20. Em có thể giới thiệu một số thông tin cơ bản bằng tiếng Anh, vốn từ vựng và phát âm còn hạn chế . Đối với một số câu hỏi về chủ đề sở thích, trường học, môn học có thể hiểu câu hỏi, tuy nhiên em vẫn chưa thể trả lời câu hỏi hoàn chỉnh với đúng cấu trúc ngữ pháp.\"]"
+      },
+      "TAv": {
+        "val": "10.8",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"10.8/80\"]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "4.5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 4.5,
+      "eng": 1.8,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 3.5,
+      "van": 5.75,
+      "eng": 3.1
+    },
+    "tblKsdn": {
+      "math": 3.5,
+      "viet": null,
+      "van": 5.75,
+      "eng": 3.1
+    }
+  },
+  {
+    "idx": 58,
+    "name": "Đỗ Thành Nguyên",
+    "campus": "CS4",
+    "classTurso": "10S_CS4",
+    "classTbl": "10S_CS4",
+    "directorNote": "Môn cam kết: [Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  --- LỊCH SỬ XÉT DUYỆT & HIỆ",
+    "commRaw": "Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Ngữ Văn, Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Mức độ tập trung của bạn khá thấp, còn lại các chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "2",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em chỉ trả lời được câu hỏi về tên, chưa trả lời được câu hỏi cơ bản như \\\"How are you? How old are you?\\\" và những câu hỏi quen thuộc khác. Năng lực TA rất hạn chế.\"]"
+      },
+      "TAv": {
+        "val": "8",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "1.5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 1.5,
+      "viet": null,
+      "van": 5,
+      "eng": 1,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 0
+    },
+    "tblKsdn": {
+      "math": 0,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 59,
+    "name": "Đặng Ngọc Bảo Ngân",
+    "campus": "CS4",
+    "classTurso": "10S_CS4",
+    "classTbl": "10S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số tâm lý phát triển bình thường  \",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "6",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Note: 6/20. Em có thể giới thiệu một số thông tin cơ bản bằng tiếng Anh, vốn từ vựng và phát âm còn hạn chế . Đối với một số câu hỏi về chủ đề sở thích, trường học, môn học chưa hiểu câu hỏi, tuy nhiên em vẫn chưa thể trả lời câu hỏi hoàn chỉnh với đúng cấu trúc ngữ pháp. Em chưa thành thạo số đếm và không trả lời được câu hỏi 'How old are you?'\"]"
+      },
+      "TAv": {
+        "val": "12.4",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"12.4/80\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 1.8,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 3.5,
+      "van": 2.5,
+      "eng": 2.5
+    },
+    "tblKsdn": {
+      "math": 3.5,
+      "viet": null,
+      "van": 2.5,
+      "eng": 2.5
+    }
+  },
+  {
+    "idx": 60,
+    "name": "Huỳnh Hoàng An",
+    "campus": "CS4",
+    "classTurso": "3S_CS4",
+    "classTbl": "3S_CS4",
+    "directorNote": "Cam kết Toán, Tiếng việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/09/2026 13:58 | Cao Thanh Trun",
+    "commRaw": "",
+    "tblComms": "Toán, Tiếng Việt",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý \\nphát triển bình thường. Ngôn ngữ tiếng Việt còn yếu.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "28",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"28/30. Em giới thiệu bản thân rõ ràng và đầy đủ thông tin. Em nghe- hiểu tất cả các câu hỏi về đồ ăn, con vật, các loại phòng... Em phát âm tốt và biết cách sử dụng các câu trả lời đầy đủ, tuy nhiên đôi lúc em chỉ thích trả lời ngắn gọn bằng từ.\"]"
+      },
+      "TAv": {
+        "val": "59",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"Em  có vốn từ vựng khá tốt, làm thành thạo các bài tập đảo từ và chọn đọc hiểu, chọn đáp án. Tuy nhiên, em cần trau dồi kĩ năng nghe nhiều hơn.\"]"
+      },
+      "TOA": {
+        "val": "5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "4.5",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 5,
+      "viet": 4.5,
+      "van": null,
+      "eng": 8.7,
+      "psy": 2
+    },
+    "tursoKsdn": {
+      "math": 8.3,
+      "viet": 3,
+      "eng": 9.8
+    },
+    "tblKsdn": {
+      "math": 8.3,
+      "viet": 3,
+      "van": null,
+      "eng": 9.8
+    }
+  },
+  {
+    "idx": 61,
+    "name": "Ngô Huỳnh Anh Minh",
+    "campus": "CS4",
+    "classTurso": "6S_CS4",
+    "classTbl": "6S_CS4",
+    "directorNote": "Môn cam kết: [Toán học, Ngữ Văn]  ĐẠT CK  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 22/09/2026 11:33 ",
+    "commRaw": "Toán học, Ngữ Văn",
+    "tblComms": "Ngữ Văn, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý \\nphát triển bình thường.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "29",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em có vốn từ vựng phong phú, trả lời được tất cả các câu hỏi của cô giáo, kể cả những câu hỏi mở rộng. Nghe tốt, phát âm rõ ràng, có thể sử dụng nhiều thì để trả lời các câu hỏi khác nhau về thời gian.\"]"
+      },
+      "TAv": {
+        "val": "67",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": null,
+      "van": 5,
+      "eng": 9.6,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 62,
+    "name": "Phạm Kiều Anh",
+    "campus": "CS4",
+    "classTurso": "6S_CS4",
+    "classTbl": "6S_CS4",
+    "directorNote": "Môn cam kết: [Ngữ Văn]  Đạt cam kết Ngữ văn  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/08/2026 14:",
+    "commRaw": "Ngữ Văn",
+    "tblComms": "Ngữ Văn",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Giao tiếp tiếng việt bạn còn hạn chế, kiểm tra online nên bạn vẫn còn nhờ sự trợ giúp từ phụ huynh để trả lời câu hỏi từ giáo viên, bạn biết tự nhận thức và kiểm soát được hành vi của mình.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "28",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Vốn từ vựng phong phú, phát âm tốt. Trả lời được hết các câu hỏi part 1, sử dụng đúng cấu trúc ngữ pháp và các mẫu câu phức tạp. \"]"
+      },
+      "TAv": {
+        "val": "58",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "8",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "4",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 8,
+      "viet": 4,
+      "van": 4,
+      "eng": 8.6,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 9.3,
+      "van": 7,
+      "eng": 9.25
+    },
+    "tblKsdn": {
+      "math": 9.3,
+      "viet": null,
+      "van": 7,
+      "eng": 9.25
+    }
+  },
+  {
+    "idx": 63,
+    "name": "Võ Hoàng Vi",
+    "campus": "CS4",
+    "classTurso": "6S_CS4",
+    "classTbl": "6S_CS4",
+    "directorNote": "Môn cam kết: [Môn Toán]  ",
+    "commRaw": "Môn Toán",
+    "tblComms": "Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số tâm lý phát triển bình thường  \",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "25",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em khá hoạt bát, nghe- hiểu và trả lời các câu hỏi về bản thân, môn học yêu thích... Em biết nhận biết tranh và tìm những điểm khác nhau. Vốn từ vựng của em ở mức khá, đôi lúc còn mắc vài lỗi nhỏ về ngữ pháp khi nói.\"]"
+      },
+      "TAv": {
+        "val": "60",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"60/70\"]"
+      },
+      "TOA": {
+        "val": "3",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "5.25",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 3,
+      "viet": null,
+      "van": 5.25,
+      "eng": 8.5,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 6.3,
+      "van": 4.75,
+      "eng": 8
+    },
+    "tblKsdn": {
+      "math": 6.3,
+      "viet": null,
+      "van": 4.75,
+      "eng": 8
+    }
+  },
+  {
+    "idx": 64,
+    "name": "Võ Như Quỳnh",
+    "campus": "CS4",
+    "classTurso": "7S_CS4",
+    "classTbl": "7S_CS4",
+    "directorNote": "Môn cam kết: [Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  --- LỊCH SỬ XÉT DUYỆT & HIỆ",
+    "commRaw": "Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Ngữ Văn, Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"\\\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý \\nphát triển bình thường. \\\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "14",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em nghe hiểu khá tốt, trả lời được các câu hỏi giao tiếp tự tin. Em có vốn từ vựng khá, phát âm tương đối rõ ràng. Em nhận biết được sự khác nhau giữa hai bức tranh. Tuy nhiên, em mắc nhiều lỗi sai về ngữ pháp, chưa nói hoàn thành câu chuẩn chỉnh. \"]"
+      },
+      "TAv": {
+        "val": "28",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "4.5",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "NVA": {
+        "val": "5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4.5,
+      "viet": null,
+      "van": 5,
+      "eng": 4.2,
+      "psy": 2
+    },
+    "tursoKsdn": {
+      "math": 6,
+      "van": 6,
+      "eng": 2.9
+    },
+    "tblKsdn": {
+      "math": 6,
+      "viet": null,
+      "van": 6,
+      "eng": 2.9
+    }
+  },
+  {
+    "idx": 65,
+    "name": "Võ Thị Anh Thư",
+    "campus": "CS4",
+    "classTurso": "7S_CS4",
+    "classTbl": "7S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttj",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TOA": {
+        "val": "8",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 8,
+      "viet": null,
+      "van": null,
+      "eng": 2.5,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 4.3,
+      "van": 7.5,
+      "eng": 2.6
+    },
+    "tblKsdn": {
+      "math": 4.3,
+      "viet": null,
+      "van": 7.5,
+      "eng": 2.6
+    }
+  },
+  {
+    "idx": 66,
+    "name": "Vũ Đức Thịnh",
+    "campus": "CS5",
+    "classTurso": "1.5_CS5",
+    "classTbl": "1.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"ĐẠT  Cam kết bổ sung tiếng anh \"  --- LỊCH SỬ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Cô Thanh: Em hoạt bát, có sự chủ động trong việc chia sẻ thông tin. Em chưa ghi nhớ một số thông tin liên quan đến trường và gia đình, trả lời chưa đúng trọng tâm một số câu hỏi.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "3",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Cô Dung: Em có thể hiểu và trả lời các câu hỏi đơn giản về bản thân. Em đọc được các số từ 1 đến 20 theo thứ tự, song cần luyện tập thêm khi đọc số bất kỳ. Em còn hạn chế về vốn từ vựng ở các chủ đề động vật, hình học, màu sắc và bảng chữ cái. Em cần nhiều sự hỗ trợ từ giáo viên. \"]"
+      },
+      "TCI": {
+        "val": "3",
+        "name": "Bộ chuẩn phát triển trẻ em 5-6 tuổi",
+        "code": "TCI",
+        "comments": "[\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 1,
+      "psy": -4
+    },
+    "tursoKsdn": {},
+    "tblKsdn": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "idx": 67,
+    "name": "Lâm Minh Khang",
+    "campus": "CS5",
+    "classTurso": "2.5_CS5",
+    "classTbl": "2.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em trả lời được các câu hỏi về tên, tuổi, sức khỏe. Tuy nhiên, vốn từ vựng của em còn hạn chế, để trả lời các câu hỏi trong bảng em còn cần sự hỗ trợ phần đa từ anh trai và giáo viên. Phát âm của em cũng chưa được rõ ràng và chưa có âm cuối.\"]"
+      },
+      "TAv": {
+        "val": "51",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"51/70\"]"
+      },
+      "TOA": {
+        "val": "7",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "9",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 7,
+      "viet": 9,
+      "van": null,
+      "eng": 6.1,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 9.5,
+      "viet": 7.3,
+      "eng": 6.1
+    },
+    "tblKsdn": {
+      "math": 9.5,
+      "viet": 7.3,
+      "van": null,
+      "eng": 6.1
+    }
+  },
+  {
+    "idx": 68,
+    "name": "Trần Minh Huy",
+    "campus": "CS5",
+    "classTurso": "2.6_CS5",
+    "classTbl": "2.6_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"Đạt  Cam kết tăng cường thêm Tiếng Anh \" Kiểm",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TAvd": {
+        "val": "20",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"20/100 | \\\"Em có cố gắng lắng nghe và lặp lại theo giáo viên, gọi tên một số từ vựng cơ bản như màu sắc, số đếm liên quan đến hình ảnh. Tuy nhiên, vốn từ rất hạn chế, khả năng nghe hiểu câu hỏi chưa tốt, trả lời rất nhỏ nên chưa thể hiện khả năng phát âm tốt. Chưa hình thành được câu trả lời hoàn chỉnh.\\n- Tư duy: ổn, giải quyết được vấn đề với hỗ trợ từ giáo viên: B\\n- Logic: B\\n- Diễn đạt: chưa có nhiều vốn từ để diễn dạt câu trả lời: C\\\"\"]"
+      },
+      "EPT": {
+        "val": "70",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 7,
+      "psy": null
+    },
+    "tursoKsdn": {
+      "math": 10,
+      "viet": 9.5,
+      "eng": 7.4
+    },
+    "tblKsdn": {
+      "math": 10,
+      "viet": 9.5,
+      "van": 7.1,
+      "eng": 7.4
+    }
+  },
+  {
+    "idx": 69,
+    "name": "Nguyễn Hoàng Đạt",
+    "campus": "CS5",
+    "classTurso": "3.2INT_CS5",
+    "classTbl": "3.2INT_CS5",
+    "directorNote": "\"ĐẠT cho ký thoã thuận cam kết như các hs đã từng học giao lưu\"  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ",
+    "commRaw": "",
+    "tblComms": "Chung / Theo dõi",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Khả năng sử dụng tiếng Việt của bạn còn hạn chế nên nhiều câu hỏi và nội dung trao đổi với giáo viên bạn chưa hiểu. Vì vậy, một số tiêu chí chưa thể đánh giá hoặc khai thác đầy đủ. Qua quan sát và trao đổi hiện tại thì trạng thái của bạn đang phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"60/100 | Em ngoan, có tinh thần hợp tác. Em phát âm tương đối tốt, có khả năng nghe hiểu và trả lời tương đối trôi chảy các câu hỏi. Tuy nhiên, các câu trả lời của em đa số là các câu đơn và chưa vận dụng tốt các cấu trúc vào trả lời câu hỏi.\"]"
+      },
+      "TAv": {
+        "val": "66",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[\"\"]"
+      },
+      "TOA": {
+        "val": "2",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "1",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      },
+      "EPT": {
+        "val": "66",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 2,
+      "viet": 1,
+      "van": null,
+      "eng": 6.6,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "eng": 7.8,
+      "viet": 2,
+      "math": 6
+    },
+    "tblKsdn": {
+      "math": 6,
+      "viet": 2,
+      "van": null,
+      "eng": 7.8
+    }
+  },
+  {
+    "idx": 70,
+    "name": "Đặng Ái Thiên Vân",
+    "campus": "CS5",
+    "classTurso": "3.6_CS5",
+    "classTbl": "3.6_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt, cam kết tăng cường thêm tiếng anh",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 2,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "2",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em tập trung, thể hiện sự cố gắng. Tuy nhiên, vốn từ vựng rất hạn chế nên em không thể trả lời được các câu hỏi vấn đáp ngoại trừ trả lời tên mình. Khả năng nghe và lặp lại theo giáo viên chưa tốt.\"]"
+      },
+      "TAv": {
+        "val": "37",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "10",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "8",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 10,
+      "viet": 8,
+      "van": null,
+      "eng": 3.9,
+      "psy": 2
+    },
+    "tursoKsdn": {
+      "math": 10,
+      "viet": 9,
+      "eng": 5.6
+    },
+    "tblKsdn": {
+      "math": 10,
+      "viet": 9,
+      "van": null,
+      "eng": 5.6
+    }
+  },
+  {
+    "idx": 71,
+    "name": "Nguyễn Hoàng Phúc",
+    "campus": "CS5",
+    "classTurso": "5.2INT_CS5",
+    "classTbl": "5.2INT_CS5",
+    "directorNote": "\"ĐẠT cho ký thoã thuận cam kết như các hs đã từng học giao lưu\"  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ",
+    "commRaw": "",
+    "tblComms": "Chung / Theo dõi",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Khả năng sử dụng tiếng Việt của bạn còn hạn chế nên nhiều câu hỏi và nội dung trao đổi với giáo viên bạn chưa hiểu. Vì vậy, một số tiêu chí chưa thể đánh giá hoặc khai thác đầy đủ. Qua quan sát thấy bạn có biểu hiện ngại giao tiếp mắt, thỉnh thoảng quên hiệu lệnh của giáo viên\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"80/100 | Em ngoan, có tinh thần hợp tác. Em phản ứng tốt với các câu hỏi được đặt ra và trả lời tương đối trôi chảy, có khả năng nghe hiểu. Tuy nhiên, em còn gặp một vài khó khăn khi vận dụng các cấu trúc vào trả lời câu hỏi, miêu tả tranh.\"]"
+      },
+      "TOA": {
+        "val": "1",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "1",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      },
+      "EPT": {
+        "val": "72",
+        "name": "EPT",
+        "code": "EPT",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 1,
+      "viet": 1,
+      "van": null,
+      "eng": 7.2,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "eng": 9.2,
+      "viet": 1,
+      "math": 3
+    },
+    "tblKsdn": {
+      "math": 3,
+      "viet": 1,
+      "van": null,
+      "eng": 9.2
+    }
+  },
+  {
+    "idx": 72,
+    "name": "Mai Minh Minh",
+    "campus": "CS5",
+    "classTurso": "6.5_CS5",
+    "classTbl": "6.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": 0,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Vốn từ vựng của em còn hạn chế, chỉ nghe hiểu và trả lời được các câu hỏi cơ bản về tên, tuổi. Phát âm của em còn nhỏ, chưa có âm cuối cũng như chưa đưa ra được câu trả lời đầy đủ, phần đa câu trả lời đang cần sự hỗ trợ từ giáo viên.\"]"
+      },
+      "TAv": {
+        "val": "24",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3.4,
+      "psy": "Đã khảo sát"
+    },
+    "tursoKsdn": {
+      "math": 4.25,
+      "van": 7.5,
+      "eng": 4.5
+    },
+    "tblKsdn": {
+      "math": 4.25,
+      "viet": null,
+      "van": 7.5,
+      "eng": 4.5
+    }
+  },
+  {
+    "idx": 73,
+    "name": "Nguyễn Minh Anh",
+    "campus": "CS5",
+    "classTurso": "6.5_CS5",
+    "classTbl": "6.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"Đạt - Tăng cường cam kết tiếng anh \"  --- LỊC",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em hợp tác với giáo viên, có thể trả lời được các câu hỏi với sự hỗ trợ của giáo viên. Vốn từ vựng của em còn ít, chưa biết sử dụng ngữ pháp khi nói cũng như tìm sự khác nhau giữa 2 bức tranh.\"]"
+      },
+      "TAv": {
+        "val": "20",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "9",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": 9,
+      "van": 9,
+      "eng": 3,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 6.75,
+      "van": 8.25,
+      "eng": 5.2
+    },
+    "tblKsdn": {
+      "math": 6.75,
+      "viet": 10,
+      "van": 8.25,
+      "eng": 5.2
+    }
+  },
+  {
+    "idx": 74,
+    "name": "Đỗ Duy Khôi",
+    "campus": "CS5",
+    "classTurso": "6.5_CS5",
+    "classTbl": "6.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]  \"ĐẠT Hỗ trợ thêm ở nhà\"  Kiểm tra lạ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán",
+    "tblComms": "Tiếng Anh, Toán",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "10",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em có phát âm to rõ, tuy nhiên, còn gặp khó khăn trong việc nghe hiểu câu hỏi và diễn đạt câu trả lời, còn nhờ hỗ trợ từ GV nhiều. Bên cạnh đó, vốn từ của em còn hạn chế, các câu trả lời chủ yếu là từ đơn, chưa nói được câu hoàn chỉnh.\"]"
+      },
+      "TAv": {
+        "val": "45",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      },
+      "TOA": {
+        "val": "4",
+        "name": "Toán học",
+        "code": "TOA",
+        "comments": "[]"
+      },
+      "TVI": {
+        "val": "7",
+        "name": "Tiếng Việt",
+        "code": "TVI",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": 4,
+      "viet": 7,
+      "van": 3,
+      "eng": 5.5,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 2.25,
+      "van": 6.75,
+      "eng": 4.5
+    },
+    "tblKsdn": {
+      "math": 2.25,
+      "viet": null,
+      "van": 6.75,
+      "eng": 4.5
+    }
+  },
+  {
+    "idx": 75,
+    "name": "Bùi Tuấn Anh",
+    "campus": "CS5",
+    "classTurso": "7.5_CS5",
+    "classTbl": "7.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt, cam kết tăng cường tiếng anh  --- LỊCH SỬ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Các tiêu chí đều đạt.\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "2",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em tập trung, có tinh thần hợp tác. Nhưng, vốn từ vựng rất hạn chế, khả năng nghe hiểu chưa tốt, chưa đưa ra được câu trả lời cho hầu hết bộ câu hỏi, chỉ trả lời một vài từ đơn, không vận dụng được cấu trúc câu trong các câu trả lời.\"]"
+      },
+      "TAv": {
+        "val": "18",
+        "name": "Tiếng Anh (viết)",
+        "code": "TAv",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 7.5,
+      "van": 7.5,
+      "eng": 3.5
+    },
+    "tblKsdn": {
+      "math": 7.5,
+      "viet": null,
+      "van": 7.5,
+      "eng": 3.5
+    }
+  },
+  {
+    "idx": 76,
+    "name": "Lê Nguyễn Hoàng Bảo",
+    "campus": "CS5",
+    "classTurso": "7.5_CS5",
+    "classTbl": "7.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt, cam kết tăng cường tiếng anh  --- LỊCH SỬ",
+    "commRaw": "Tiếng Anh (vấn đáp), Tiếng Anh (viết)",
+    "tblComms": "Tiếng Anh",
+    "rawScores": {
+      "TLY": {
+        "val": -4,
+        "name": "Tâm lý",
+        "code": "TLY",
+        "comments": "[\"Tất cả tiêu chí đều đạt. Các chỉ số tâm lý phát triển bình thường\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\",\"\"]"
+      },
+      "TAvd": {
+        "val": "5",
+        "name": "Tiếng Anh (vấn đáp)",
+        "code": "TAvd",
+        "comments": "[\"Em trả lời được 1 số câu giao tiếp cơ bản về tên, tuổi. Tuy nhiên, vốn từ vựng của em còn hạn chế, để nghe hiểu câu hỏi và đưa ra câu trả lời em cần sự hỗ trợ nhiều từ giáo viên. Bên cạnh đó các câu trả lời của em khá rời rạc và chưa đảm bảo cấu trúc. Em chưa đạt yêu cầu của bộ câu hỏi.\"]"
+      },
+      "NVA": {
+        "val": "5",
+        "name": "Ngữ Văn",
+        "code": "NVA",
+        "comments": "[]"
+      }
+    },
+    "tblKsdv": {
+      "math": null,
+      "viet": null,
+      "van": 5,
+      "eng": 1.7,
+      "psy": -4
+    },
+    "tursoKsdn": {
+      "math": 8.5,
+      "van": 7,
+      "eng": 3.2
+    },
+    "tblKsdn": {
+      "math": 8.5,
+      "viet": null,
+      "van": 7,
+      "eng": 3.2
+    }
+  }
+]

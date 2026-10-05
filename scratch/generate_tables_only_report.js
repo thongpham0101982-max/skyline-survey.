@@ -34,94 +34,208 @@ ckdvData.sort((a, b) => (campusOrder[a.campus] || 9) - (campusOrder[b.campus] ||
 // Filter missing or incomplete KSĐV students
 const missingKsdvStudents = ckdvData.filter(s => s.ksdvStatus !== 'Đủ điểm');
 
-const ckdvByCampus = {};
-ckdvData.forEach(st => {
-  const cmp = st.campus || 'CS1';
-  if (!ckdvByCampus[cmp]) ckdvByCampus[cmp] = [];
+// Helper rendering badges & synchronized color-coded scores
+function renderCommittedBadges(subs) {
+  if (!subs || subs.length === 0) return '—';
+  const arr = Array.isArray(subs) ? subs : [subs];
+  return arr.map(sub => {
+    const s = sub.trim();
+    if (s.includes('Anh')) return `<span class="badge-sub badge-eng">Tiếng Anh</span>`;
+    if (s.includes('Toán')) return `<span class="badge-sub badge-math">Toán</span>`;
+    if (s.includes('Tiếng Việt')) return `<span class="badge-sub badge-viet">Tiếng Việt</span>`;
+    if (s.includes('Văn')) return `<span class="badge-sub badge-van">Ngữ Văn</span>`;
+    if (s.includes('Tâm lý')) return `<span class="badge-sub badge-psy">Tâm lý</span>`;
+    return `<span class="badge-sub badge-other">${s}</span>`;
+  }).join(' ');
+}
 
-  let note = '';
-  let ksdvStr = '';
-  let ksdnStr = '';
+function renderScoreKsdv(st) {
+  const comms = st.committedSubjects || [];
+  const parts = [];
 
-  const ksdnParts = [];
-  if (st.ksdnMath != null) ksdnParts.push(`Toán: ${st.ksdnMath}`);
-  if (st.ksdnViet != null) ksdnParts.push(`Tiếng Việt: ${st.ksdnViet}`);
-  if (st.ksdnVan != null) ksdnParts.push(`Ngữ Văn: ${st.ksdnVan}`);
-  if (st.ksdnEng != null) ksdnParts.push(`Tiếng Anh: ${st.ksdnEng}`);
+  const hasMath = comms.some(c => c.includes('Toán'));
+  const hasViet = comms.some(c => c.includes('Tiếng Việt'));
+  const hasVan = comms.some(c => c.includes('Văn'));
+  const hasEng = comms.some(c => c.includes('Anh'));
 
-  if (st.isPsychology) {
-    const ksdvParts = [];
-    if (st.ksdvMath != null) ksdvParts.push(`Toán: ${st.ksdvMath}`);
-    if (st.ksdvViet != null) ksdvParts.push(`Tiếng Việt: ${st.ksdvViet}`);
-    if (st.ksdvVan != null) ksdvParts.push(`Ngữ Văn: ${st.ksdvVan}`);
-    if (st.ksdvEngScale10 != null) ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)}`);
-
-    if (ksdvParts.length > 0) {
-      ksdvStr = `${ksdvParts.join('; ')} <span class="badge badge-psychology">Theo dõi tâm lý</span>`;
-    } else {
-      ksdvStr = '<span class="badge badge-psychology">Theo dõi tâm lý lứa tuổi</span>';
-    }
-
-    if (ksdnParts.length > 0) {
-      ksdnStr = ksdnParts.join('; ');
-      note = `Đạt chuẩn KSĐN (Toán: ${st.ksdnMath}, Văn: ${st.ksdnVan}, Anh: ${st.ksdnEng})`;
-    } else {
-      ksdnStr = `Chưa có bài KSĐN (Khối ${st.grade || '1'})`;
-      note = 'Theo dõi phát triển tâm lý lứa tuổi';
-    }
-  } else {
-    const ksdvParts = [];
-
-    if (st.ksdvMath != null) ksdvParts.push(`Toán: ${st.ksdvMath}`);
-    if (st.ksdvViet != null) ksdvParts.push(`Tiếng Việt: ${st.ksdvViet}`);
-    if (st.ksdvVan != null) ksdvParts.push(`Ngữ Văn: ${st.ksdvVan}`);
-    if (st.ksdvEngScale10 != null) ksdvParts.push(`Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)}`);
-
-    // If completely missing
-    if (st.ksdvStatus === 'Chưa có điểm KSĐV') {
-      ksdvStr = `<span class="badge badge-warning">Chưa có điểm KSĐV</span>`;
-      if (st.missingReason.includes('Tuyển thẳng')) {
-        note = `Tuyển thẳng (KSĐN: Đạt xuất sắc)`;
-      } else if (st.missingReason.includes('ngôn ngữ')) {
-        note = `Theo dõi ngôn ngữ Khối 1`;
-      } else {
-        note = `Chờ cập nhật điểm bài thi KSĐV`;
-      }
-    } else {
-      ksdvStr = ksdvParts.join('; ');
-      if (st.missingCommitted && st.missingCommitted.length > 0) {
-        ksdvStr += ` <span style="color: #b45309; font-size: 11px;">(${st.missingCommitted.join(', ')}: Chưa có điểm)</span>`;
-      }
-    }
-
-    ksdnStr = ksdnParts.join('; ') || `Chưa có bài KSĐN (Khối ${st.grade || '1'})`;
-
-    if (st.ksdvStatus !== 'Chưa có điểm KSĐV') {
-      if (st.ksdnEng != null && st.ksdvEngScale10 != null) {
-        const diff = +(st.ksdnEng - st.ksdvEngScale10).toFixed(1);
-        if (diff >= 3.0) note = `Bứt phá ngoạn mục (+${diff})`;
-        else if (diff >= 1.0) note = `Tiến bộ rõ rệt (+${diff})`;
-        else if (st.ksdnEng < 5.0 && st.grade >= 6) note = `Dưới TB môn Anh (${st.ksdnEng})`;
-        else if (st.ksdnEng < 7.0 && st.grade <= 5) note = `Chưa đạt chuẩn Tiểu học (${st.ksdnEng})`;
-        else note = `Đạt chuẩn môn Anh (${st.ksdnEng})`;
-      } else if (st.ksdnMath != null && st.ksdvMath != null) {
-        const diff = +(st.ksdnMath - st.ksdvMath).toFixed(1);
-        if (diff >= 2.0) note = `Tiến bộ tốt môn Toán (+${diff})`;
-        else if (st.ksdnMath < 5.0 && st.grade >= 6) note = `Dưới TB môn Toán (${st.ksdnMath})`;
-        else note = `Đạt chuẩn môn Toán (${st.ksdnMath})`;
-      } else if (st.missingReason) {
-        note = st.missingReason;
-      }
-    }
+  if (hasMath) {
+    if (st.ksdvMath != null) parts.push(`<span class="score-highlight score-math">Toán: ${st.ksdvMath}</span>`);
+    else parts.push(`<span class="missing-text">Toán: Chưa có điểm</span>`);
+  }
+  if (hasViet) {
+    if (st.ksdvViet != null) parts.push(`<span class="score-highlight score-viet">Tiếng Việt: ${st.ksdvViet}</span>`);
+    else parts.push(`<span class="missing-text">Tiếng Việt: Chưa có điểm</span>`);
+  }
+  if (hasVan) {
+    if (st.ksdvVan != null) parts.push(`<span class="score-highlight score-van">Ngữ Văn: ${st.ksdvVan}</span>`);
+    else parts.push(`<span class="missing-text">Ngữ Văn: Chưa có điểm</span>`);
+  }
+  if (hasEng) {
+    if (st.ksdvEngScale10 != null) parts.push(`<span class="score-highlight score-eng">Tiếng Anh: ${st.ksdvEngScale10.toFixed(1)}</span>`);
+    else parts.push(`<span class="missing-text">Tiếng Anh: Chưa có điểm</span>`);
   }
 
-  ckdvByCampus[cmp].push({
-    ...st,
-    ksdvStr,
-    ksdnStr,
-    note
-  });
-});
+
+  if (st.isPsychology) {
+    if (parts.length > 0) {
+      return parts.join(' ') + ` <span class="score-highlight score-psy">Theo dõi tâm lý</span>`;
+    }
+    return `<span class="score-highlight score-psy">Theo dõi tâm lý lứa tuổi</span>`;
+  }
+
+  if (st.ksdvStatus === 'Chưa có điểm KSĐV' && parts.length === 0) {
+    return `<span class="badge badge-warning">Chưa có điểm KSĐV</span>`;
+  }
+
+  if (parts.length === 0) return '—';
+  return parts.join(' ');
+}
+
+function renderScoreKsdn(st) {
+  const comms = st.committedSubjects || [];
+  const parts = [];
+
+  const hasMath = comms.some(c => c.includes('Toán'));
+  const hasViet = comms.some(c => c.includes('Tiếng Việt'));
+  const hasVan = comms.some(c => c.includes('Văn'));
+  const hasEng = comms.some(c => c.includes('Anh'));
+
+  if (hasMath) {
+    if (st.ksdnMath != null) parts.push(`<span class="score-highlight score-math">Toán: ${st.ksdnMath}</span>`);
+    else parts.push(`<span class="missing-text">Toán: Chưa thi</span>`);
+  }
+  if (hasViet) {
+    if (st.ksdnViet != null) parts.push(`<span class="score-highlight score-viet">Tiếng Việt: ${st.ksdnViet}</span>`);
+    else parts.push(`<span class="missing-text">Tiếng Việt: Chưa thi</span>`);
+  }
+  if (hasVan) {
+    if (st.ksdnVan != null) parts.push(`<span class="score-highlight score-van">Ngữ Văn: ${st.ksdnVan}</span>`);
+    else parts.push(`<span class="missing-text">Ngữ Văn: Chưa thi</span>`);
+  }
+  if (hasEng) {
+    if (st.ksdnEng != null) parts.push(`<span class="score-highlight score-eng">Tiếng Anh: ${st.ksdnEng}</span>`);
+    else parts.push(`<span class="missing-text">Tiếng Anh: Chưa thi</span>`);
+  }
+
+  // Riêng học sinh diện Tâm lý nếu không cam kết môn cụ thể
+  if (st.isPsychology && parts.length === 0) {
+    const psyKsdn = [];
+    if (st.ksdnMath != null) psyKsdn.push(`Toán: ${st.ksdnMath}`);
+    if (st.ksdnViet != null) psyKsdn.push(`Tiếng Việt: ${st.ksdnViet}`);
+    if (st.ksdnVan != null) psyKsdn.push(`Ngữ Văn: ${st.ksdnVan}`);
+    if (st.ksdnEng != null) psyKsdn.push(`Tiếng Anh: ${st.ksdnEng}`);
+    if (psyKsdn.length > 0) return psyKsdn.map(s => `<span class="score-dim">${s}</span>`).join(' ');
+    return `<span style="color: #64748b; font-style: italic; font-size: 12px;">Chưa có bài KSĐN (Khối ${st.grade || '1'})</span>`;
+  }
+
+  if (parts.length > 0) {
+    return parts.join(' ');
+  }
+
+  if (st.grade === '1' || st.grade === 1) {
+    return `<span style="color: #64748b; font-style: italic; font-size: 12px;">Chưa có bài KSĐN (Khối 1)</span>`;
+  }
+  return `<span style="color: #94a3b8; font-style: italic; font-size: 12px;">Chưa có bài KSĐN</span>`;
+}
+
+function evalSubjectStatus(score, grade) {
+  if (score == null) return null;
+  const val = Number(score);
+  const g = parseInt(grade, 10);
+  if (g <= 5) {
+    // Tiểu học: Chuẩn Đạt >= 7.0
+    if (val < 5.0) return 'Dưới TB';
+    if (val < 7.0) return 'TB';
+    return 'Đạt chuẩn';
+  } else {
+    // THCS & THPT: Dưới TB (< 5.0), TB (5.0 - 6.4), Đạt chuẩn (>= 6.5)
+    if (val < 5.0) return 'Dưới TB';
+    if (val < 6.5) return 'TB';
+    return 'Đạt chuẩn';
+  }
+}
+
+function renderStudentStatusBadge(st) {
+  const comms = st.committedSubjects || [];
+  const grade = parseInt(st.grade, 10);
+
+  if (st.isPsychology && !comms.some(c => c.includes('Toán') || c.includes('Việt') || c.includes('Văn') || c.includes('Anh'))) {
+    if (st.ksdnMath != null || st.ksdnVan != null || st.ksdnEng != null) {
+      return `<span class="badge badge-success">Đạt chuẩn</span>`;
+    }
+    return `<span class="badge badge-psychology">Theo dõi tâm lý</span>`;
+  }
+
+  const results = [];
+  if (comms.some(c => c.includes('Toán'))) {
+    const stt = evalSubjectStatus(st.ksdnMath, grade);
+    if (stt) results.push({ sub: 'Toán', status: stt });
+  }
+  if (comms.some(c => c.includes('Tiếng Việt'))) {
+    const stt = evalSubjectStatus(st.ksdnViet, grade);
+    if (stt) results.push({ sub: 'Tiếng Việt', status: stt });
+  }
+  if (comms.some(c => c.includes('Văn'))) {
+    const stt = evalSubjectStatus(st.ksdnVan, grade);
+    if (stt) results.push({ sub: 'Ngữ Văn', status: stt });
+  }
+  if (comms.some(c => c.includes('Anh'))) {
+    const stt = evalSubjectStatus(st.ksdnEng, grade);
+    if (stt) results.push({ sub: 'Tiếng Anh', status: stt });
+  }
+
+  if (results.length === 0) {
+    if (grade === 1) return `<span class="badge badge-dim">Chưa KSĐN (Khối 1)</span>`;
+    if (st.missingReason && st.missingReason.includes('Tuyển thẳng')) return `<span class="badge badge-warning">Tuyển thẳng</span>`;
+    return `<span class="badge badge-dim">Chưa có bài KSĐN</span>`;
+  }
+
+  const badgeMap = {
+    'Đạt chuẩn': 'badge-success',
+    'TB': 'badge-warning',
+    'Dưới TB': 'badge-danger'
+  };
+
+  if (results.length === 1) {
+    const r = results[0];
+    return `<span class="badge ${badgeMap[r.status]}">${r.status}</span>`;
+  }
+
+  const uniqueStatuses = Array.from(new Set(results.map(r => r.status)));
+  if (uniqueStatuses.length === 1) {
+    return `<span class="badge ${badgeMap[uniqueStatuses[0]]}">${uniqueStatuses[0]}</span>`;
+  }
+
+  return results.map(r => `<span class="badge ${badgeMap[r.status]}">${r.sub}: ${r.status}</span>`).join(' ');
+}
+
+const { getPreparedCkdvData, computeCampusSummary } = require('./calculate_ckdv_progress_table.js');
+const ckdvByCampus = getPreparedCkdvData();
+
+function renderSubBadge(sub) {
+  const s = (sub || '').trim();
+  if (s.includes('Anh')) return `<span class="badge-sub badge-eng">Tiếng Anh</span>`;
+  if (s.includes('Toán')) return `<span class="badge-sub badge-math">Toán</span>`;
+  if (s.includes('Tiếng Việt')) return `<span class="badge-sub badge-viet">Tiếng Việt</span>`;
+  if (s.includes('Văn')) return `<span class="badge-sub badge-van">Ngữ Văn</span>`;
+  if (s.includes('Tâm lý')) return `<span class="badge-sub badge-psy">Tâm lý</span>`;
+  return `<span class="badge-sub badge-other">${s}</span>`;
+}
+
+function renderScoreCell(scoreStr, sub) {
+  const s = (sub || '').trim();
+  let cls = 'score-dim';
+  if (s.includes('Anh')) cls = 'score-eng';
+  else if (s.includes('Toán')) cls = 'score-math';
+  else if (s.includes('Tiếng Việt')) cls = 'score-viet';
+  else if (s.includes('Văn')) cls = 'score-van';
+  else if (s.includes('Tâm lý')) cls = 'score-psy';
+
+  if (!scoreStr || scoreStr.includes('Chưa') || scoreStr === '—') {
+    return `<span class="missing-text">${scoreStr || '—'}</span>`;
+  }
+  return `<span class="score-highlight ${cls}">${scoreStr}</span>`;
+}
 
 // Build HTML content
 let htmlBody = `
@@ -298,7 +412,7 @@ function renderLevelSection(lvlName, secId, secNum, benchDesc) {
     grandGood += cmpGood;
 
     htmlBody += `
-      <h3 class="campus-title">🏫 CƠ SỞ: ${cmp} - BẬC ${lvlName.toUpperCase()}</h3>
+      <h3 class="campus-title">CƠ SỞ: ${cmp} - BẬC ${lvlName.toUpperCase()}</h3>
       <div class="table-container">
         <table class="report-table">
           <thead>
@@ -359,7 +473,7 @@ function renderLevelSection(lvlName, secId, secNum, benchDesc) {
         <table class="report-table">
           <tbody>
             <tr class="total-row" style="font-size: 14.5px;">
-              <td style="width: 50px;">★</td>
+              <td style="width: 50px;">-</td>
               <td><strong>TỔNG TOÀN BẬC ${lvlName.toUpperCase()} (TẤT CẢ CƠ SỞ)</strong></td>
               <td><strong>Khối thuộc bậc</strong></td>
               <td><strong>${grandTotal}</strong> lượt</td>
@@ -392,25 +506,25 @@ htmlBody += `
 
       <!-- KPI Status Cards for Entrance Scores -->
       <div class="kpi-grid" style="margin-bottom: 24px;">
+        <div class="kpi-card kpi-indigo">
+          <div class="kpi-label">Tổng HS CKĐV & Theo Dõi Nhập Học</div>
+          <div class="kpi-number">76</div>
+          <div class="kpi-subtext">100.0% (Hoàn tất nhập học theo phê duyệt BGH)</div>
+        </div>
         <div class="kpi-card kpi-success">
-          <div class="kpi-label">Đủ Điểm Tất Cả Môn CKĐV</div>
-          <div class="kpi-number">58</div>
-          <div class="kpi-subtext">76.3% (Có đầy đủ điểm KSĐV & KSĐN)</div>
-        </div>
-        <div class="kpi-card kpi-warning">
-          <div class="kpi-label">Thiếu Điểm Môn Cam Kết</div>
-          <div class="kpi-number">11</div>
-          <div class="kpi-subtext">14.5% (HS quốc tế/ngoại ngữ/chưa nhập Anh)</div>
-        </div>
-        <div class="kpi-card kpi-danger">
-          <div class="kpi-label">Chưa Có Điểm KSĐV</div>
-          <div class="kpi-number">3</div>
-          <div class="kpi-subtext">3.9% (Tuyển thẳng 1, Lớp 1 theo dõi 1, Chưa nhập 1)</div>
+          <div class="kpi-label">HS Có Môn Cam Kết Học Thuật</div>
+          <div class="kpi-number">70</div>
+          <div class="kpi-subtext">92.1% (Thống kê đối sánh chi tiết tại Mục 2)</div>
         </div>
         <div class="kpi-card kpi-purple">
-          <div class="kpi-label">Cam Kết Tâm Lý Lứa Tuổi</div>
-          <div class="kpi-number">4</div>
-          <div class="kpi-subtext">5.3% (Chỉ theo dõi tâm lý, không khảo sát VH)</div>
+          <div class="kpi-label">HS Diện Theo Dõi Chung & Giao Lưu</div>
+          <div class="kpi-number">6</div>
+          <div class="kpi-subtext">7.9% (Thống kê chuyên đề riêng tại Mục 3)</div>
+        </div>
+        <div class="kpi-card kpi-growth">
+          <div class="kpi-label">Đủ Điểm KSĐV Môn Cam Kết</div>
+          <div class="kpi-number">62</div>
+          <div class="kpi-subtext">88.6% / 70 HS (Đầy đủ điểm KSĐV môn cam kết)</div>
         </div>
       </div>
 
@@ -433,226 +547,300 @@ htmlBody += `
               <td>1</td>
               <td><strong>CS1</strong></td>
               <td>90</td>
-              <td><strong>36</strong></td>
-              <td><span class="badge badge-growth">40.0%</span></td>
+              <td><strong>32</strong></td>
+              <td><span class="badge badge-growth">35.6%</span></td>
               <td>Tiếng Anh, Toán, Ngữ Văn, Tâm lý</td>
             </tr>
             <tr>
               <td>2</td>
               <td><strong>CS2</strong></td>
               <td>36</td>
-              <td><strong>8</strong></td>
-              <td><span class="badge badge-growth">22.2%</span></td>
-              <td>Tiếng Anh, Tiếng Việt, Tâm lý</td>
+              <td><strong>7</strong></td>
+              <td><span class="badge badge-growth">19.4%</span></td>
+              <td>Tiếng Việt, Tâm lý, Theo dõi tập trung/ngôn ngữ</td>
             </tr>
             <tr>
               <td>3</td>
               <td><strong>CS3</strong></td>
               <td>65</td>
-              <td><strong>8</strong></td>
-              <td><span class="badge badge-growth">12.3%</span></td>
+              <td><strong>13</strong></td>
+              <td><span class="badge badge-growth">20.0%</span></td>
               <td>Tiếng Việt, Tiếng Anh (ESL), Toán</td>
             </tr>
             <tr>
               <td>4</td>
               <td><strong>CS4</strong></td>
               <td>14</td>
-              <td><strong>12</strong></td>
-              <td><span class="badge badge-growth">85.7%</span></td>
+              <td><strong>13</strong></td>
+              <td><span class="badge badge-growth">92.9%</span></td>
               <td>Tiếng Anh, Toán, Ngữ Văn</td>
             </tr>
             <tr>
               <td>5</td>
               <td><strong>CS5</strong></td>
               <td>62</td>
-              <td><strong>12</strong></td>
-              <td><span class="badge badge-growth">19.4%</span></td>
-              <td>Tiếng Anh, Toán</td>
+              <td><strong>11</strong></td>
+              <td><span class="badge badge-growth">17.7%</span></td>
+              <td>Tiếng Anh, Toán, Thỏa thuận giao lưu</td>
             </tr>
             <tr class="total-row">
               <td>-</td>
               <td><strong>TỔNG TOÀN HỆ THỐNG</strong></td>
-              <td><strong>292</strong></td>
+              <td><strong>267</strong></td>
               <td><strong>76</strong></td>
-              <td><strong>26.0%</strong></td>
+              <td><strong>28.5%</strong></td>
               <td><strong>Toán, Tiếng Việt, Tiếng Anh, Ngữ Văn, Tâm lý</strong></td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <!-- BẢNG CHUYÊN ĐỀ MỚI: THỐNG KÊ HỌC SINH CHƯA CÓ / THIẾU ĐIỂM KSĐV -->
-      <h3 class="sub-section-title" style="margin-top: 36px; color: #b45309;">2. Bảng Thống kê Chi tiết Học sinh Chưa có Điểm KSĐV & Thiếu Điểm Môn Cam Kết (${missingKsdvStudents.length} học sinh)</h3>
-      
-      <div class="alert alert-note" style="border-left-color: #d97706; background-color: #fffbeb;">
-        <strong>Phân loại nguyên nhân hồ sơ khảo sát đầu vào:</strong><br>
-        • <strong>Hoàn toàn chưa có điểm KSĐV (3 HS):</strong> Gồm 01 HS diện Tuyển thẳng (Lê Nguyên Khang - KSĐN đạt loại Giỏi: Toán 9.0, Tiếng Việt 8.0, Tiếng Anh 7.9); 01 HS Khối 1 cam kết theo dõi phát triển ngôn ngữ (Phan Hải Đăng); và 01 HS chưa cập nhật điểm bài thi Tiếng Anh trên hệ thống (Nguyễn Thanh Thảo).<br>
-        • <strong>Thiếu môn cam kết đầu vào (11 HS):</strong> Gồm 05 HS quốc tịch nước ngoài / song ngữ nhập học cần bồi dưỡng Tiếng Việt (chưa qua thi khảo sát Tiếng Việt đầu vào); 04 HS chưa nhập điểm môn Tiếng Anh trên hệ thống (đã có điểm Toán, Văn); 01 HS hệ Quốc tế chỉ thi bài EPT (Phan Anh Quân); 01 HS diện bảo lưu/miễn thi Toán (Mai Huy Thắng).<br>
-        • <strong>Cam kết Tâm lý (4 HS):</strong> Học sinh chỉ cam kết theo dõi tâm lý lứa tuổi, không thuộc diện cam kết văn hóa.
-      </div>
-
-      <div class="table-container">
-        <table class="report-table">
-          <thead>
-            <tr style="background: #fef3c7;">
-              <th style="width: 45px;">STT</th>
-              <th>Cơ sở</th>
-              <th>Họ và tên</th>
-              <th>Lớp & Khối</th>
-              <th>Môn Cam Kết</th>
-              <th>Phân loại Tình trạng</th>
-              <th>Điểm KSĐV Hiện Có</th>
-              <th>Điểm KSĐN Thực Tế</th>
-              <th>Nguyên nhân / Căn cứ Hồ sơ Tuyển sinh</th>
-            </tr>
-          </thead>
-          <tbody>
-`;
-
-missingKsdvStudents.forEach((st, idx) => {
-  let statusBadge = '';
-  if (st.ksdvStatus === 'Chưa có điểm KSĐV') {
-    statusBadge = `<span class="badge badge-danger">Chưa có điểm KSĐV</span>`;
-  } else if (st.ksdvStatus === 'Thiếu môn CKĐV') {
-    statusBadge = `<span class="badge badge-warning">Thiếu môn CKĐV</span>`;
-  } else if (st.ksdvStatus === 'Cam kết Tâm lý') {
-    statusBadge = `<span class="badge badge-psychology">Cam kết Tâm lý</span>`;
-  }
-
-  // ksdv parts
-  const ksdvP = [];
-  if (st.ksdvMath != null) ksdvP.push(`Toán: ${st.ksdvMath}`);
-  if (st.ksdvViet != null) ksdvP.push(`Tiếng Việt: ${st.ksdvViet}`);
-  if (st.ksdvVan != null) ksdvP.push(`Ngữ Văn: ${st.ksdvVan}`);
-  if (st.ksdvEngScale10 != null) ksdvP.push(`Anh: ${st.ksdvEngScale10.toFixed(1)} (Tổng: ${st.ksdvEngTotal})`);
-  const currentKsdvText = ksdvP.length > 0 ? ksdvP.join('; ') : '—';
-
-  // ksdn parts
-  const ksdnP = [];
-  if (st.ksdnMath != null) ksdnP.push(`Toán: ${st.ksdnMath}`);
-  if (st.ksdnViet != null) ksdnP.push(`Tiếng Việt: ${st.ksdnViet}`);
-  if (st.ksdnVan != null) ksdnP.push(`Ngữ Văn: ${st.ksdnVan}`);
-  if (st.ksdnEng != null) ksdnP.push(`Anh: ${st.ksdnEng}`);
-  const currentKsdnText = ksdnP.length > 0 ? ksdnP.join('; ') : '—';
-
-  const commText = Array.isArray(st.committedSubjects) ? st.committedSubjects.join(', ') : (st.committedSubjects || '');
-
-  htmlBody += `
-            <tr>
-              <td>${idx + 1}</td>
-              <td><strong>${st.campus}</strong></td>
-              <td><strong>${st.fullName}</strong></td>
-              <td><code>${st.className || 'Chưa rõ'}</code> (${st.grade ? `Khối ${st.grade}` : ''})</td>
-              <td>${commText}</td>
-              <td>${statusBadge}</td>
-              <td><strong>${currentKsdvText}</strong></td>
-              <td><strong style="color: #1e3a8a;">${currentKsdnText}</strong></td>
-              <td>${st.missingReason || '—'}</td>
-            </tr>
-  `;
-});
-
-htmlBody += `
-          </tbody>
-        </table>
-      </div>
-
       <!-- Bảng chi tiết 76 học sinh -->
-      <h3 class="sub-section-title" style="margin-top: 36px;">3. Danh sách Chi tiết 76 Học sinh CKĐV Nhập học - Map Điểm KSĐV vs KSĐN theo Từng Cơ sở</h3>
+      <h3 class="sub-section-title" style="margin-top: 36px;">2. Danh sách Chi tiết 76 Học sinh CKĐV Nhập học - Map Điểm KSĐV vs KSĐN theo Từng Cơ sở</h3>
       
       <div class="alert alert-note">
-        • <strong>Điểm Tiếng Anh KSĐV:</strong> Được lấy trực tiếp từ <strong>Cột Tổng điểm</strong> (Thang 100) và <strong>quy đổi chuẩn xác về Thang 10 (Scale 10)</strong> theo công thức: <code>Scale 10 = Tổng điểm / 10</code> (hiển thị cả Scale 10 và Cột Tổng điểm gốc, ví dụ: <code>Tiếng Anh: 4.1 (Tổng: 41)</code>).<br>
-        • <strong>Học sinh diện Cam kết Tâm lý:</strong> Cột điểm hiển thị rõ diện theo dõi tâm lý lứa tuổi.<br>
+        • <strong>Quy ước màu sắc nhận diện đồng bộ (Visual Color-Coding):</strong> Học sinh cam kết môn nào thì <strong>bôi màu môn đó, và đồng màu với các môn KSĐV và KSĐN để nhận biết tức thì</strong>:<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-math">Môn Toán</span>: Đồng bộ sắc Xanh Ngọc (Emerald)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-viet">Tiếng Việt</span>: Đồng bộ sắc Cam (Amber)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-van">Ngữ Văn</span>: Đồng bộ sắc Đỏ Hồng (Rose)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-eng">Tiếng Anh</span>: Đồng bộ sắc Xanh Dương (Blue)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <span class="badge-sub badge-psy">Tâm lý</span>: Đồng bộ sắc Tím (Purple)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;• <em>Các môn khảo sát khác (không cam kết):</em> Hiển thị màu trung tính nhạt để người đọc tập trung tối đa vào môn cam kết.<br>
+        • <strong>Điểm Tiếng Anh KSĐV:</strong> Được lấy trực tiếp từ Cột Tổng điểm và <strong>quy đổi chuẩn xác về Thang 10 (Scale 10)</strong> theo công thức: <code>Scale 10 = Tổng điểm / 10</code> (ví dụ: <code>Tiếng Anh: 4.1</code>).<br>
+        • <strong>Học sinh diện Cam kết Tâm lý:</strong> Hiển thị đầy đủ điểm KSĐN thực tế của học sinh (nếu có tham gia kỳ khảo sát) để theo dõi sát sao sự tiến bộ toàn diện.<br>
         • <strong>Học sinh chưa có điểm / thiếu điểm môn cam kết:</strong> Được chú thích cụ thể lý do (tuyển thẳng, học sinh nước ngoài, chờ cập nhật bài thi...).
       </div>
 
-      <!-- Filter bar for 76 students -->
+      <!-- Ghi chú làm rõ về môn Cam kết / Chung theo dõi -->
+      <div class="alert alert-info" style="margin-top: 14px; margin-bottom: 20px; background: #f0f9ff; border-left: 4px solid #0284c7; padding: 12px 16px; border-radius: 8px; color: #0369a1; font-size: 13px;">
+        <strong>Lưu ý về chuẩn hóa Môn Cam Kết:</strong><br>
+        • Bảng chỉ hiển thị các học sinh có <strong>môn cam kết cụ thể</strong> (Toán, Tiếng Việt, Ngữ Văn, Tiếng Anh, Tâm lý) đúng theo mục xét duyệt <em>Môn Cam Kết (đã chọn)</em> trên hệ thống.<br>
+        • <strong>6 học sinh diện Chung / Theo dõi không có môn cam kết cụ thể</strong> không hiển thị trong bảng đối sánh môn cam kết (gồm 3 HS Lớp 1 CS2 diện theo dõi tập trung/ngôn ngữ; 1 HS CS1 diện theo dõi tâm lý; 2 HS CS5 diện học sinh Homeschooling ký thỏa thuận học giao lưu chung).
+      </div>
+
+      <!-- Filter bar for CKDV students -->
       <div class="filter-bar">
         <div class="filter-tabs">
-          <button class="filter-tab active" onclick="filterCampus('all', this)">Tất cả (76 HS)</button>
-          <button class="filter-tab" onclick="filterCampus('CS1', this)">CS1 (36)</button>
-          <button class="filter-tab" onclick="filterCampus('CS2', this)">CS2 (8)</button>
-          <button class="filter-tab" onclick="filterCampus('CS3', this)">CS3 (8)</button>
-          <button class="filter-tab" onclick="filterCampus('CS4', this)">CS4 (12)</button>
-          <button class="filter-tab" onclick="filterCampus('CS5', this)">CS5 (12)</button>
+          <button class="filter-tab active" onclick="filterCampus('all', this)">Tất cả (${Object.values(ckdvByCampus).reduce((s, l) => s + l.length, 0)} HS)</button>
+          <button class="filter-tab" onclick="filterCampus('CS1', this)">CS1 (${(ckdvByCampus['CS1'] || []).length})</button>
+          <button class="filter-tab" onclick="filterCampus('CS2', this)">CS2 (${(ckdvByCampus['CS2'] || []).length})</button>
+          <button class="filter-tab" onclick="filterCampus('CS3', this)">CS3 (${(ckdvByCampus['CS3'] || []).length})</button>
+          <button class="filter-tab" onclick="filterCampus('CS4', this)">CS4 (${(ckdvByCampus['CS4'] || []).length})</button>
+          <button class="filter-tab" onclick="filterCampus('CS5', this)">CS5 (${(ckdvByCampus['CS5'] || []).length})</button>
         </div>
         <div class="search-box">
-          <span>🔍&nbsp;</span>
           <input type="text" id="ckdvSearchInput" placeholder="Tìm tên học sinh, lớp, môn CKĐV..." onkeyup="searchStudent()">
         </div>
       </div>
 `;
 
-// Render 76 students by campus
+// Render students by campus
 const campusTitles = {
-  'CS1': 'CƠ SỞ CS1 (36 học sinh)',
-  'CS2': 'CƠ SỞ CS2 (8 học sinh)',
-  'CS3': 'CƠ SỞ CS3 (8 học sinh)',
-  'CS4': 'CƠ SỞ CS4 (12 học sinh)',
-  'CS5': 'CƠ SỞ CS5 (12 học sinh)'
+  'CS1': `CƠ SỞ CS1 (${(ckdvByCampus['CS1'] || []).length} học sinh)`,
+  'CS2': `CƠ SỞ CS2 (${(ckdvByCampus['CS2'] || []).length} học sinh)`,
+  'CS3': `CƠ SỞ CS3 (${(ckdvByCampus['CS3'] || []).length} học sinh)`,
+  'CS4': `CƠ SỞ CS4 (${(ckdvByCampus['CS4'] || []).length} học sinh)`,
+  'CS5': `CƠ SỞ CS5 (${(ckdvByCampus['CS5'] || []).length} học sinh)`
 };
 
 Object.keys(ckdvByCampus).sort().forEach(cmp => {
   const students = ckdvByCampus[cmp];
+  const summary = computeCampusSummary(students);
+
+  const subList = Object.entries(summary.subCounts)
+    .filter(([k, v]) => v > 0)
+    .map(([k, v]) => `<strong>${k}:</strong> ${v} HS`)
+    .join(' &nbsp;|&nbsp; ');
+
   htmlBody += `
       <div class="ckdv-campus-section" data-campus="${cmp}">
-        <h4 class="campus-title">🏫 ${campusTitles[cmp] || `CƠ SỞ ${cmp} (${students.length} học sinh)`}</h4>
+        <h4 class="campus-title">${campusTitles[cmp] || `CƠ SỞ ${cmp} (${students.length} học sinh)`}</h4>
         <div class="table-container">
           <table class="report-table ckdv-table">
             <thead>
               <tr>
-                <th style="width: 50px;">STT</th>
+                <th style="width: 45px;">STT</th>
                 <th>Họ và tên</th>
-                <th>Lớp</th>
-                <th>Khối</th>
-                <th>Môn CKĐV</th>
-                <th>Điểm KSĐV Môn Cam Kết (Thang 10 & Cột Tổng điểm)</th>
-                <th>Điểm KSĐN Môn Tương Ứng</th>
-                <th>Ghi chú & Trạng thái</th>
+                <th style="width: 90px;">Lớp</th>
+                <th style="width: 75px;">Khối</th>
+                <th style="width: 110px;">Môn CKĐV</th>
+                <th style="width: 130px;">Điểm KSĐV</th>
+                <th style="width: 120px;">Điểm KSĐN</th>
+                <th style="width: 130px;">Tiến bộ</th>
+                <th style="width: 110px;">Đạt chuẩn</th>
               </tr>
             </thead>
             <tbody>
   `;
 
   students.forEach((st, idx) => {
-    let noteBadge = st.note;
-    if (st.isPsychology) {
-      noteBadge = `<span class="badge badge-psychology">🧠 HS Cam kết tâm lý</span>`;
-    } else if (st.note.includes('Bứt phá') || st.note.includes('Tiến bộ')) {
-      noteBadge = `<span class="badge badge-growth">${st.note}</span>`;
-    } else if (st.note.includes('Dưới TB') || st.note.includes('Chưa đạt')) {
-      noteBadge = `<span class="badge badge-danger">${st.note}</span>`;
-    } else if (st.note.includes('Đạt chuẩn') || st.note.includes('Đạt xuất sắc')) {
-      noteBadge = `<span class="badge badge-success">${st.note}</span>`;
-    } else if (st.note.includes('Tuyển thẳng') || st.note.includes('nước ngoài') || st.note.includes('Hệ Quốc tế')) {
-      noteBadge = `<span class="badge badge-warning">${st.note}</span>`;
-    }
+    const rows = st.subjectRows || [];
+    rows.forEach((row, rIdx) => {
+      const subBadge = renderSubBadge(row.subjectName);
+      const ksdvCell = renderScoreCell(row.ksdvStr, row.subjectName);
+      const ksdnCell = renderScoreCell(row.ksdnStr, row.subjectName);
 
-    const subjectsStr = Array.isArray(st.committedSubjects) ? st.committedSubjects.join(', ') : (st.committedSubjects || '');
-
-    htmlBody += `
+      if (rIdx === 0) {
+        htmlBody += `
               <tr>
-                <td>${idx + 1}</td>
-                <td><strong>${st.fullName}</strong></td>
-                <td><code>${st.className || 'Chưa rõ'}</code></td>
-                <td>Khối ${st.grade || ''}</td>
-                <td>${subjectsStr}</td>
-                <td><strong>${st.ksdvStr}</strong></td>
-                <td><strong>${st.ksdnStr}</strong></td>
-                <td>${noteBadge}</td>
+                <td rowspan="${rows.length}" style="text-align: center; vertical-align: middle;">${idx + 1}</td>
+                <td rowspan="${rows.length}" style="vertical-align: middle;"><strong>${st.fullName}</strong></td>
+                <td rowspan="${rows.length}" style="text-align: center; vertical-align: middle;"><code>${st.className || 'Chưa rõ'}</code></td>
+                <td rowspan="${rows.length}" style="text-align: center; vertical-align: middle;">Khối ${st.grade || ''}</td>
+                <td>${subBadge}</td>
+                <td>${ksdvCell}</td>
+                <td>${ksdnCell}</td>
+                <td><span class="badge ${row.progressBadgeClass}">${row.progressText}</span></td>
+                <td><span class="badge ${row.benchmarkBadgeClass}">${row.benchmarkText}</span></td>
               </tr>
-    `;
+        `;
+      } else {
+        htmlBody += `
+              <tr>
+                <td>${subBadge}</td>
+                <td>${ksdvCell}</td>
+                <td>${ksdnCell}</td>
+                <td><span class="badge ${row.progressBadgeClass}">${row.progressText}</span></td>
+                <td><span class="badge ${row.benchmarkBadgeClass}">${row.benchmarkText}</span></td>
+              </tr>
+        `;
+      }
+    });
   });
 
   htmlBody += `
             </tbody>
+            <tfoot>
+              <tr class="summary-sub-row" style="background: #f8fafc; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e293b; text-align: right;">HS Cam kết theo môn:</td>
+                <td colspan="5" style="color: #334155; font-weight: 500;">${subList}</td>
+              </tr>
+              <tr class="summary-progress-row" style="background: #f0fdf4; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #166534; text-align: right;">Tổng số môn Tiến bộ:</td>
+                <td colspan="5" style="font-weight: 700; color: #15803d;">
+                  ${summary.totalProgress} / ${summary.totalEvaluated} lượt môn (${summary.progressRate})
+                </td>
+              </tr>
+              <tr class="summary-benchmark-row" style="background: #eff6ff; font-size: 12.5px;">
+                <td colspan="4" style="font-weight: 700; color: #1e40af; text-align: right;">Tổng số môn Đạt chuẩn:</td>
+                <td colspan="5" style="font-weight: 700; color: #1d4ed8;">
+                  ${summary.totalBenchmark} / ${summary.totalEvaluated} lượt môn (${summary.benchmarkRate})
+                  <span style="font-weight: 400; color: #64748b; font-size: 11.5px; margin-left: 8px;">(Đạt chuẩn: ${summary.totalBenchmark} | Trung bình: ${summary.totalAverage} | Dưới TB: ${summary.totalBelowAvg})</span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
   `;
 });
 
+// Mục riêng thống kê 6 học sinh diện Theo dõi chung & Thỏa thuận giao lưu
 htmlBody += `
+      <!-- 3. DANH SÁCH THỐNG KÊ 6 HỌC SINH DIỆN THEO DÕI CHUNG & THỎA THUẬN GIAO LƯU -->
+      <h3 class="sub-section-title" style="margin-top: 48px; color: #0f172a; border-left: 4px solid #8b5cf6; padding-left: 12px;">
+        3. Danh sách Thống kê 6 Học sinh Thuộc Diện Theo Dõi Chung & Thỏa Thuận Giao Lưu (Đảm bảo đủ 76 HS nhập học)
+      </h3>
+
+      <div class="alert alert-note" style="margin-top: 14px; margin-bottom: 20px; background: #fdf4ff; border-left: 4px solid #a855f7; padding: 14px 18px; border-radius: 8px; color: #7e22ce; font-size: 13px; line-height: 1.6;">
+        • <strong>Mục đích tách riêng:</strong> Nhóm 6 học sinh này không có môn cam kết học thuật cụ thể (không chọn môn trong mục xét duyệt <em>Môn Cam Kết</em> trên hệ thống) nên không đưa vào bảng đối sánh điểm theo môn ở Mục 2. Việc lập bảng mục riêng này nhằm <strong>bảo đảm thống kê đầy đủ, minh bạch đúng 76 học sinh</strong> diện cam kết / theo dõi / thỏa thuận đã nhập học được BGH và GĐCS phê duyệt.<br>
+        • <strong>Cơ cấu 6 học sinh:</strong> Gồm <strong>3 HS Lớp 1 (CS2)</strong> diện theo dõi tập trung chú ý & phát triển ngôn ngữ lứa tuổi; <strong>1 HS Khối 8 (CS1)</strong> diện theo dõi tư vấn tâm lý học đường; <strong>2 HS Khối 3 và Khối 5 (CS5)</strong> diện học sinh Homeschooling ký thỏa thuận học giao lưu chung.
+      </div>
+
+      <div class="table-container" style="box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 45px; text-align: center;">STT</th>
+              <th>Họ và tên</th>
+              <th style="width: 85px; text-align: center;">Lớp</th>
+              <th style="width: 65px; text-align: center;">Khối</th>
+              <th style="width: 65px; text-align: center;">Cơ sở</th>
+              <th style="min-width: 190px;">Diện hồ sơ & Ghi chú xét duyệt</th>
+              <th style="min-width: 170px;">Điểm KSĐV</th>
+              <th style="min-width: 170px;">Điểm KSĐN</th>
+              <th style="min-width: 250px;">Tình trạng thực tế & Định hướng theo dõi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="text-align: center; font-weight: bold;">1</td>
+              <td><strong>Nguyễn Đặng Bảo Trâm</strong></td>
+              <td style="text-align: center;"><code>8.2_CS1</code></td>
+              <td style="text-align: center;">Khối 8</td>
+              <td style="text-align: center;"><span class="badge badge-dim">CS1</span></td>
+              <td><span class="badge-sub badge-psy">Tư vấn tâm lý</span><br><small style="color: #64748b;">"Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí"</small></td>
+              <td>Toán: <strong>7.0</strong>; Văn: <strong>6.5</strong><br>Anh: <strong>4.8</strong>; Tâm lý: <strong>6</strong></td>
+              <td>Toán: <strong>3.0</strong>; Văn: <strong>6.5</strong><br>Anh: <strong>4.0</strong></td>
+              <td>Nhập học diện Đạt. BGH lưu ý GVCN và phòng tâm lý hỗ trợ tư vấn tâm lý học đường, không cam kết môn văn hóa.</td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-weight: bold;">2</td>
+              <td><strong>Nguyễn Thanh Phúc</strong></td>
+              <td style="text-align: center;"><code>1.2INT_CS2</code></td>
+              <td style="text-align: center;">Khối 1</td>
+              <td style="text-align: center;"><span class="badge badge-dim">CS2</span></td>
+              <td><span class="badge-sub" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">Tập trung chú ý</span><br><small style="color: #64748b;">"Không cần cam kết, GVTA tương tác kỹ với PH"</small></td>
+              <td>Anh: <strong>5.0</strong> (Vấn đáp: 5/30)<br>Tâm lý: <strong>2</strong></td>
+              <td><em>Khối 1 (Chưa thi KSĐN)</em></td>
+              <td>Học sinh Lớp 1 diện Đạt, kết quả xét duyệt ghi rõ "Không cần cam kết", GVCN và GVTA phối hợp PH tương tác sát sao trong năm học.</td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-weight: bold;">3</td>
+              <td><strong>ĐỖ NGUYỄN AN KHÔI</strong></td>
+              <td style="text-align: center;"><code>1.3_CS2</code></td>
+              <td style="text-align: center;">Khối 1</td>
+              <td style="text-align: center;"><span class="badge badge-dim">CS2</span></td>
+              <td><span class="badge-sub" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">Tập trung chú ý</span><br><small style="color: #64748b;">"(cần theo dõi mức độ tập trung chú ý)"</small></td>
+              <td>Anh: <strong>7.0</strong> (Vấn đáp: 7/30)<br>Tâm lý: <strong>1</strong></td>
+              <td><em>Khối 1 (Chưa thi KSĐN)</em></td>
+              <td>Học sinh Lớp 1 diện Đạt, GVCN theo dõi rèn luyện nền nếp và sự tập trung trong các hoạt động học tập đầu năm.</td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-weight: bold;">4</td>
+              <td><strong>Phan Hải Đăng</strong></td>
+              <td style="text-align: center;"><code>1.3_CS2</code></td>
+              <td style="text-align: center;">Khối 1</td>
+              <td style="text-align: center;"><span class="badge badge-dim">CS2</span></td>
+              <td><span class="badge-sub badge-viet">Phát triển ngôn ngữ</span><br><small style="color: #64748b;">"theo dõi thêm khả năng phát triển ngôn ngữ"</small></td>
+              <td>Tâm lý: <strong>-1</strong></td>
+              <td><em>Khối 1 (Chưa thi KSĐN)</em></td>
+              <td>Học sinh Lớp 1 diện Đạt, GVCN hỗ trợ rèn luyện phát triển ngôn ngữ Tiếng Việt trong sinh hoạt và học tập.</td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-weight: bold;">5</td>
+              <td><strong>Nguyễn Hoàng Đạt</strong></td>
+              <td style="text-align: center;"><code>3.2INT_CS5</code></td>
+              <td style="text-align: center;">Khối 3</td>
+              <td style="text-align: center;"><span class="badge badge-dim">CS5</span></td>
+              <td><span class="badge-sub" style="background: #fef3c7; color: #b45309; border-color: #fde68a;">Thỏa thuận Giao lưu</span><br><small style="color: #64748b;">"Ký thoả thuận cam kết như các HS đã từng học giao lưu"</small></td>
+              <td>Toán: <strong>2.0</strong>; TV: <strong>1.0</strong><br>Anh: <strong>6.6</strong> (Tổng 66)</td>
+              <td>Toán: <strong>6.0</strong>; TV: <strong>2.0</strong><br>Anh: <strong>7.8</strong></td>
+              <td>Học sinh từ KLIS Academy (Homeschooling TP.HCM) học diện giao lưu tại CS5, ký thỏa thuận giao lưu chung. KSĐN có tiến bộ tốt (Toán 6.0, Anh 7.8).</td>
+            </tr>
+            <tr>
+              <td style="text-align: center; font-weight: bold;">6</td>
+              <td><strong>Nguyễn Hoàng Phúc</strong></td>
+              <td style="text-align: center;"><code>5.2INT_CS5</code></td>
+              <td style="text-align: center;">Khối 5</td>
+              <td style="text-align: center;"><span class="badge badge-dim">CS5</span></td>
+              <td><span class="badge-sub" style="background: #fef3c7; color: #b45309; border-color: #fde68a;">Thỏa thuận Giao lưu</span><br><small style="color: #64748b;">"Ký thoả thuận cam kết như các HS đã từng học giao lưu"</small></td>
+              <td>Toán: <strong>1.0</strong>; TV: <strong>1.0</strong><br>Anh: <strong>7.2</strong> (Tổng 72)</td>
+              <td>Toán: <strong>3.0</strong>; TV: <strong>1.0</strong><br>Anh: <strong>9.2</strong></td>
+              <td>Học sinh Homeschooling học diện giao lưu tại CS5, ký thỏa thuận học giao lưu chung. Điểm KSĐN môn Tiếng Anh đạt xuất sắc 9.2.</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="total-row" style="background: #f8fafc; font-weight: bold;">
+              <td colspan="5" style="text-align: right; color: #0f172a;">TỔNG CỘNG MỤC 3:</td>
+              <td colspan="4" style="color: #0f172a;">
+                <strong>6 Học sinh diện Theo dõi chung & Thỏa thuận giao lưu</strong> 
+                (CS1: 1 HS | CS2: 3 HS | CS5: 2 HS) ➔ Cộng cùng 70 HS có Môn CKĐV tại Mục 2 = <strong style="color: #2563eb; text-decoration: underline;">ĐỦ 76 HỌC SINH NHẬP HỌC (100%)</strong>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </section>
 `;
 
@@ -936,6 +1124,88 @@ const fullHtml = `<!DOCTYPE html>
     .badge-growth { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
     .badge-psychology { background-color: var(--purple-bg); color: var(--purple); border: 1px solid #ddd6fe; font-weight: 700; }
 
+    /* Color coding for committed subjects & synchronized scores */
+    .badge-sub {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 11.5px;
+      margin: 2px 3px 2px 0;
+      white-space: nowrap;
+    }
+    .score-highlight {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 12.5px;
+      margin: 2px 3px 2px 0;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .score-dim {
+      display: inline-block;
+      padding: 2px 6px;
+      color: #64748b;
+      font-weight: 500;
+      font-size: 11.5px;
+      margin: 2px 2px;
+      white-space: nowrap;
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+
+    /* Tiếng Anh: Blue Theme */
+    .badge-eng, .score-eng {
+      background: #eff6ff !important;
+      color: #1d4ed8 !important;
+      border: 1.5px solid #93c5fd !important;
+    }
+
+    /* Toán: Emerald Theme */
+    .badge-math, .score-math {
+      background: #ecfdf5 !important;
+      color: #047857 !important;
+      border: 1.5px solid #86efac !important;
+    }
+
+    /* Tiếng Việt: Orange Theme */
+    .badge-viet, .score-viet {
+      background: #fff7ed !important;
+      color: #c2410c !important;
+      border: 1.5px solid #fdba74 !important;
+    }
+
+    /* Ngữ Văn: Rose Theme */
+    .badge-van, .score-van {
+      background: #fff1f2 !important;
+      color: #be123c !important;
+      border: 1.5px solid #fecdd3 !important;
+    }
+
+    /* Tâm lý: Purple Theme */
+    .badge-psy, .score-psy {
+      background: #faf5ff !important;
+      color: #7e22ce !important;
+      border: 1.5px solid #d8b4fe !important;
+    }
+
+    .badge-other {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border: 1px solid #cbd5e1 !important;
+    }
+    .missing-text {
+      color: #b45309;
+      font-size: 11px;
+      font-style: italic;
+      display: inline-block;
+      margin-left: 4px;
+    }
+
     /* Filter Bar */
     .filter-bar {
       background: white; border-radius: 10px; padding: 12px 16px; border: 1px solid var(--gray-200);
@@ -987,8 +1257,8 @@ const fullHtml = `<!DOCTYPE html>
       </div>
     </div>
     <div class="action-buttons">
-      <button class="btn btn-outline" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">⬆ Đầu trang</button>
-      <button class="btn btn-primary" onclick="window.print()">🖨 In Báo Cáo / Xuất PDF</button>
+      <button class="btn btn-outline" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">Lên đầu trang</button>
+      <button class="btn btn-primary" onclick="window.print()">In Báo Cáo / Xuất PDF</button>
     </div>
   </header>
 
@@ -1063,8 +1333,11 @@ const htmlOutWorkspace = 'd:\\SSM\\skyline-survey\\bao_cao_ksdn_va_ckdv_2026.htm
 const htmlOutDownloads = 'C:\\Users\\thongpn\\Downloads\\Bao_Cao_Khao_Sat_Dau_Nam_va_76_HS_CKDV_2026.html';
 const htmlOutDesktop = 'C:\\Users\\thongpn\\Desktop\\Bao_Cao_Khao_Sat_Dau_Nam_va_76_HS_CKDV_2026.html';
 
+const htmlOutArtifact = 'C:\\Users\\thongpn\\.gemini\\antigravity-ide\\brain\\bde4b516-a7ae-4e5a-ba06-cca3b42b7b51\\bao_cao_ksdn_va_ckdv_2026.html';
+
 fs.writeFileSync(htmlOutWorkspace, fullHtml, 'utf8');
 fs.writeFileSync(htmlOutDownloads, fullHtml, 'utf8');
 fs.writeFileSync(htmlOutDesktop, fullHtml, 'utf8');
+fs.writeFileSync(htmlOutArtifact, fullHtml, 'utf8');
 
 console.log("Successfully generated Tables-Only HTML report with verified English scores and missing entrance scores table!");

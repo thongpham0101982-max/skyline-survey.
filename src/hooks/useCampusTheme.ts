@@ -149,17 +149,48 @@ export const CAMPUS_THEMES: Record<CampusThemeType, CampusTheme> = {
 
 /**
  * Determine campus theme from campus code or name
+ * Quy định chuẩn hệ thống:
+ * - Hill: CS4 (Sky-Line Hill Hội An / Điện Ngọc)
+ * - Global: CS3 (Sky-Line Global / Quốc tế)
+ * - Hệ thống: CS1, CS2, CS5 (Sky-Line Riverside, Central, Beach-D)
  */
 export function resolveCampusTheme(campusCodeOrName?: string | null): CampusTheme {
   if (!campusCodeOrName) return CAMPUS_THEMES.STANDARD
   
-  const text = campusCodeOrName.toLowerCase()
-  if (text.includes("hill") || text.includes("hội an") || text.includes("đồi") || text.includes("dien ngoc")) {
+  const text = campusCodeOrName.toLowerCase().trim()
+
+  // 1. Hill <=> CS4
+  if (
+    text.includes("hill") ||
+    text.includes("cs4") ||
+    text.includes("cs 4") ||
+    text.includes("cơ sở 4") ||
+    text.includes("co so 4") ||
+    text.includes("hội an") ||
+    text.includes("hoi an") ||
+    text.includes("đồi") ||
+    text.includes("doi") ||
+    text.includes("dien ngoc") ||
+    text.includes("điện ngọc")
+  ) {
     return CAMPUS_THEMES.HILL
   }
-  if (text.includes("global") || text.includes("quốc tế") || text.includes("international")) {
+
+  // 2. Global <=> CS3
+  if (
+    text.includes("global") ||
+    text.includes("cs3") ||
+    text.includes("cs 3") ||
+    text.includes("cơ sở 3") ||
+    text.includes("co so 3") ||
+    text.includes("quốc tế") ||
+    text.includes("quoc te") ||
+    text.includes("international")
+  ) {
     return CAMPUS_THEMES.GLOBAL
   }
+
+  // 3. Hệ thống <=> CS1, CS2, CS5 (hoặc mặc định)
   return CAMPUS_THEMES.STANDARD
 }
 

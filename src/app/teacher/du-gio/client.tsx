@@ -17,6 +17,7 @@ import { TeacherObservationReportTab } from './components/TeacherObservationRepo
 import { AiObservationPopupTrigger } from '@/components/ai-growth/AiObservationPopupTrigger';
 import { useCampusTheme, CAMPUS_THEMES, CampusThemeType } from "@/hooks/useCampusTheme";
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
+import { createPortal } from "react-dom"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Zap, ShieldCheck, Save, Calendar, Clock, MapPin, User, Users, BookOpen, Plus, PlusCircle, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
@@ -226,7 +227,7 @@ import {
   approveRegistration, submitEvaluation, updateTeacherObservationTargets, sendPendingEvaluationReminder,
   confirmTeacherExperienceCategory,
   requestReEvaluation, approveReEvaluation, rejectReEvaluation, getReEvaluationRequests,
-  createSurpriseObservation, submitSupplementalEvaluation
+  createSurpriseObservation, submitSupplementalEvaluation, syncAndReconcileObservationStatuses, acknowledgeAndFeedbackEvaluation
 } from "./actions"
 import { ReviewSupplementalModal } from "./components/ReviewSupplementalModal"
 
@@ -244,6 +245,9 @@ interface TeacherInfo {
   email: string | null;
   departmentId: string | null;
   campusId: string;
+  campus?: any;
+  campusCode?: string;
+  campusName?: string;
   departmentRel?: any;
   user?: { role: string } | null;
   observerType?: string | null;
@@ -253,12 +257,15 @@ interface TeacherInfo {
   requiredTaught?: number | null;
   taughtUnit?: string | null;
   position?: string | null;
+  positions?: any;
   departmentAssignments?: any[];
   targetConfirmed?: boolean;
   targetConfirmedAt?: string | null;
+  divisionAssignments?: any[];
+  divisionCodes?: string[];
 }
 interface SubjectInfo { id: string; subjectCode: string; subjectName: string }
-interface DeptInfo { id: string; code: string; name: string }
+interface DeptInfo { id: string; code: string; name: string; divisionCode?: string }
 interface CampusInfo { id: string; campusCode: string; campusName: string }
 interface ClassInfo { id: string; classCode: string; className: string; level: string; grade: string; campusId: string; academicYearId?: string }
 
@@ -638,8 +645,24 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const isAdminRoute = (typeof pathname === "string" && pathname.startsWith("/admin")) || props.isAdminPage || false;
   const [campusOverride, setCampusOverride] = useState<CampusThemeType | null>(null);
-  const detectedCampusTheme = useCampusTheme(currentTeacher?.campus?.campusCode || currentTeacher?.campus?.campusName || currentTeacher?.campusId);
+
+  // Tự động nhận diện theme cơ sở theo biên chế của Giáo viên:
+  // Hill <=> CS4 | Global <=> CS3 | Hệ thống <=> CS1, CS2, CS5
+  const teacherCampusIdentifier = 
+    currentTeacher?.campus?.campusCode || 
+    currentTeacher?.campus?.campusName || 
+    (currentTeacher as any)?.campusCode || 
+    (currentTeacher as any)?.campusName || 
+    currentTeacher?.campusId || "";
+  const detectedCampusTheme = useCampusTheme(teacherCampusIdentifier);
   const campusTheme = campusOverride ? CAMPUS_THEMES[campusOverride] : detectedCampusTheme;
+
+  // Header Portal: Render các controls Cơ sở và Chế độ lên trên cùng dòng SQMS
+  const [headerPortalEl, setHeaderPortalEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = document.getElementById("teacher-top-header-slot");
+    if (el) setHeaderPortalEl(el);
+  }, []);
 
   const [viewMode, setViewMode] = useState<"ADMIN" | "TEACHER">(() => {
     if (props.initialViewMode) return props.initialViewMode;
@@ -677,7 +700,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE">("TEACHER_OPEN")
+  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST" | "SURPRISE" | "ASSIGNED">("TEACHER_OPEN")
 
   const minAllowedDate = useMemo(() => {
     const now = new Date();
@@ -760,9 +783,9 @@ export function ObservationClient(props: ObservationClientProps) {
   const [myScheduleSubTab, setMyScheduleSubTab] = useState<"register" | "all" | "taught" | "observed" | "requests">("all");
   type FilterTab = "all" | "self_open" | "expired" | "gbm_request" | "my_dept" | "other_dept";
   const [activeFilterTab, setActiveFilterTab] = useState<FilterTab>("all");
-  const [taughtOriginFilter, setTaughtOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
+  const [taughtOriginFilter, setTaughtOriginFilter] = useState<"all" | "PLAN" | "SURPRISE" | "ASSIGNED">("all");
   const [taughtCategoryFilter, setTaughtCategoryFilter] = useState<"all" | "MN" | "PT">("all");
-  const [observedOriginFilter, setObservedOriginFilter] = useState<"all" | "PLAN" | "SURPRISE">("all");
+  const [observedOriginFilter, setObservedOriginFilter] = useState<"all" | "PLAN" | "SURPRISE" | "ASSIGNED">("all");
   const [observedCategoryFilter, setObservedCategoryFilter] = useState<"all" | "GVNN" | "MN" | "PT">("all");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(true);
   const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
@@ -783,27 +806,12 @@ export function ObservationClient(props: ObservationClientProps) {
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade || "all")
   const [filterPeriod, setFilterPeriod] = useState(initialFilters.period || "all")
   const [filterDate, setFilterDate] = useState(initialFilters.date || "")
+  const [filterMonth, setFilterMonth] = useState<string>(initialFilters.month || "all");
   const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId || "all")
   const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId || "all")
   const [filterDivisionCode, setFilterDivisionCode] = useState(initialFilters.divisionCode || "all")
   const [filterClassId, setFilterClassId] = useState(initialFilters.classId || "all")
   const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
-
-  // Early activeAcademicYear to prevent Temporal Dead Zone ReferenceError
-  const activeAcademicYear = useMemo(() => {
-    const safeYears = Array.isArray(academicYears) ? academicYears : [];
-    if (safeYears.length === 0) return null;
-    return safeYears.find(y => y.id === filterAcademicYearId) || safeYears.find(y => y.status === "ACTIVE") || safeYears[0];
-  }, [academicYears, filterAcademicYearId]);
-
-  const handleAcademicYearChange = (yearId: string) => {
-    setFilterAcademicYearId(yearId)
-    const params = new URLSearchParams(window.location.search)
-    params.set("academicYearId", yearId)
-    router.push(`${pathname}?${params.toString()}`)
-  }
-
-  const [filterMonth, setFilterMonth] = useState<string>(initialFilters.month || "all");
 
   useEffect(() => {
     if (!initialFilters.month && typeof window !== "undefined") {
@@ -824,6 +832,131 @@ export function ObservationClient(props: ObservationClientProps) {
       }
     }
   };
+
+  // Tìm kiếm tiết dạy theo Họ tên Giáo viên hoặc Mã SKL
+  const [searchTeacherQuery, setSearchTeacherQuery] = useState("")
+  const [myScheduleSearchQuery, setMyScheduleSearchQuery] = useState("")
+
+  const matchTeacherSearch = useCallback((slot: any, query: string) => {
+    if (!query || !query.trim()) return true;
+    const cleanQ = query.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+
+    // Tìm kiếm chính xác theo GIÁO VIÊN DẠY của tiết học (Cột GIÁO VIÊN)
+    const t = slot.teacher;
+    const tName = (t?.teacherName || slot.teacherName || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+    const tCode = (t?.teacherCode || slot.teacherCode || "").toLowerCase().trim();
+
+    // 1. So khớp theo Mã SKL / Mã định danh của GV dạy
+    if (tCode && (tCode === cleanQ || tCode.includes(cleanQ) || cleanQ.includes(tCode))) {
+      return true;
+    }
+
+    // 2. So khớp theo Họ tên GV dạy
+    if (tName && (tName === cleanQ || tName.includes(cleanQ))) {
+      return true;
+    }
+
+    return false;
+  }, []);
+
+  // Lọc 1 hay nhiều điều kiện kết hợp cho chính xác 100% (Tháng, Cơ sở, Tổ CM, Bậc học, Tiết dạy, Họ tên/Mã SKL)
+  const matchAdvancedFilters = useCallback((slot: any) => {
+    if (!slot) return false;
+
+    // 1. Lọc theo Tháng (filterMonth)
+    if (filterMonth && filterMonth !== "all") {
+      const slotD = new Date(slot.date);
+      if (!isNaN(slotD.getTime())) {
+        const y = slotD.getFullYear();
+        const m = (slotD.getMonth() + 1).toString().padStart(2, "0");
+        const ym = `${y}-${m}`;
+        if (ym !== filterMonth) return false;
+      }
+    }
+
+    // 2. Lọc theo Ngày cụ thể (filterDate)
+    if (filterDate) {
+      const slotDateStr = typeof slot.date === "string" ? slot.date.split("T")[0] : new Date(slot.date).toISOString().split("T")[0];
+      const targetDateStr = filterDate.split("T")[0];
+      if (slotDateStr !== targetDateStr) return false;
+    }
+
+    // 3. Lọc theo Cơ sở (filterCampusId)
+    if (filterCampusId && filterCampusId !== "all") {
+      const targetCampus = campuses.find((c: any) => c.id === filterCampusId || c.campusCode === filterCampusId);
+      const targetId = filterCampusId.toLowerCase();
+      const targetCode = (targetCampus?.campusCode || "").toLowerCase();
+      const targetName = (targetCampus?.campusName || "").toLowerCase();
+
+      const slotCampusId = (slot.campusId || slot.teacher?.campusId || slot.teacher?.campus?.id || "").toLowerCase();
+      const slotCampusCode = (slot.teacher?.campus?.campusCode || "").toLowerCase();
+      const slotCampusName = (slot.campusName || slot.teacher?.campus?.campusName || "").toLowerCase();
+
+      const matchId = (slotCampusId && (slotCampusId === targetId || (targetCode && slotCampusId === targetCode)));
+      const matchCode = (slotCampusCode && (slotCampusCode === targetId || (targetCode && slotCampusCode === targetCode)));
+      const matchName = targetName && slotCampusName && (slotCampusName.includes(targetName) || targetName.includes(slotCampusName));
+
+      if (!matchId && !matchCode && !matchName) return false;
+    }
+
+    // 4. Lọc theo Tổ chuyên môn (filterDeptId)
+    if (filterDeptId && filterDeptId !== "all") {
+      const hostDeptId = slot.teacher?.departmentId;
+      const targetDeptId = slot.targetDeptId;
+      const hostDeptRelId = slot.teacher?.departmentRel?.id;
+      const hasAssignment = Array.isArray(slot.teacher?.departmentAssignments) &&
+        slot.teacher.departmentAssignments.some((da: any) => da.departmentId === filterDeptId);
+
+      if (hostDeptId !== filterDeptId && targetDeptId !== filterDeptId && hostDeptRelId !== filterDeptId && !hasAssignment) {
+        return false;
+      }
+    }
+
+    // 5. Lọc theo Bậc học (filterLevel)
+    if (filterLevel && filterLevel !== "all") {
+      const slotLevel = (slot.level || "").trim();
+      const slotDeptName = (slot.teacher?.departmentRel?.name || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const slotDeptBlock = ((slot.teacher?.departmentRel as any)?.blockCM || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      if (filterLevel === "Phổ thông K-12") {
+        const isK12 = ["Tiểu học", "THCS", "THPT", "Phổ thông K-12"].includes(slotLevel) ||
+          (!slotDeptBlock.includes("mam non") && !slotDeptName.includes("mam non"));
+        if (!isK12) return false;
+      } else if (filterLevel === "Mầm non") {
+        const isMN = slotLevel === "Mầm non" || slotDeptBlock.includes("mam non") || slotDeptName.includes("mầm non");
+        if (!isMN) return false;
+      } else {
+        const cleanTarget = filterLevel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const cleanSlotLevel = slotLevel.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        if (cleanSlotLevel !== cleanTarget && !cleanSlotLevel.includes(cleanTarget)) {
+          return false;
+        }
+      }
+    }
+
+    // 6. Lọc theo Tiết dạy (filterPeriod)
+    if (filterPeriod && filterPeriod !== "all") {
+      const start = (slot.startTime || "").trim();
+      if (start !== filterPeriod && !start.startsWith(filterPeriod)) {
+        return false;
+      }
+    }
+
+    // 7. Lọc theo Họ tên GV hoặc Mã SKL (searchTeacherQuery)
+    if (searchTeacherQuery.trim() && !matchTeacherSearch(slot, searchTeacherQuery)) {
+      return false;
+    }
+
+    return true;
+  }, [filterMonth, filterDate, filterCampusId, filterDeptId, filterLevel, filterPeriod, searchTeacherQuery, matchTeacherSearch, campuses]);
+
+  const handleAcademicYearChange = (yearId: string) => {
+    setFilterAcademicYearId(yearId)
+    const params = new URLSearchParams(window.location.search)
+    params.set("academicYearId", yearId)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
 
   const availableMonths = useMemo(() => {
     const monthsSet = new Set<string>();
@@ -1361,7 +1494,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const params = new URLSearchParams(window.location.search)
     if (filterSchoolBlock && filterSchoolBlock !== "all") params.set("schoolBlock", filterSchoolBlock); else params.delete("schoolBlock")
     if (filterCampusId && filterCampusId !== "all") params.set("campusId", filterCampusId); else params.delete("campusId")
-    if (filterDivisionCode && filterDivisionCode !== "all") params.set("divisionCode", filterDivisionCode); else params.delete("divisionCode")
+    params.delete("divisionCode")
     if (filterDeptId && filterDeptId !== "all") params.set("deptId", filterDeptId); else params.delete("deptId")
     if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
     if (filterGrade && filterGrade !== "all") params.set("grade", filterGrade); else params.delete("grade")
@@ -1378,7 +1511,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const res = await getObservationSlots({ 
         schoolBlock: filterSchoolBlock, 
         campusId: filterCampusId, 
-        divisionCode: filterDivisionCode,
+        divisionCode: "all",
         deptId: filterDeptId, 
         level: filterLevel, 
         grade: filterGrade, 
@@ -1402,7 +1535,7 @@ export function ObservationClient(props: ObservationClientProps) {
     } finally {
       setIsSearching(false)
     }
-  }, [filterSchoolBlock, filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, filterAcademicYearId, pathname, currentTeacher?.id])
+  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, filterAcademicYearId, pathname, currentTeacher?.id])
 
   useEffect(() => {
     // Prevent redundant fetch on initial component mount
@@ -1415,7 +1548,7 @@ export function ObservationClient(props: ObservationClientProps) {
       handleSearch();
     }, 300);
     return () => { if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current); };
-  }, [filterSchoolBlock, filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, handleSearch])
+  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterMonth, handleSearch])
 
   const filterAvailableClasses = useMemo(() => {
     return classes.filter(c => {
@@ -1445,8 +1578,8 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const activeFilterCount = useMemo(() => {
     let count = 0
+    if (searchTeacherQuery.trim()) count++
     if (filterCampusId && filterCampusId !== "all") count++
-    if (filterDivisionCode && filterDivisionCode !== "all") count++
     if (filterDeptId && filterDeptId !== "all") count++
     if (filterLevel && filterLevel !== "all") count++
     if (filterGrade && filterGrade !== "all") count++
@@ -1455,17 +1588,16 @@ export function ObservationClient(props: ObservationClientProps) {
     if (filterMonth && filterMonth !== "all") count++
     if (filterPeriod && filterPeriod !== "all") count++
     return count
-  }, [filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod])
+  }, [searchTeacherQuery, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod])
 
   const activeFilterTags = useMemo(() => {
     const tags: { key: string; label: string; value: string; onRemove: () => void }[] = []
+    if (searchTeacherQuery.trim()) {
+      tags.push({ key: "teacherSearch", label: "GV / Mã SKL", value: searchTeacherQuery.trim(), onRemove: () => setSearchTeacherQuery("") })
+    }
     if (filterCampusId && filterCampusId !== "all") {
       const campus = campuses.find(c => c.id === filterCampusId)
       tags.push({ key: "campus", label: "Cơ sở", value: campus?.campusName || filterCampusId, onRemove: () => { setFilterCampusId("all"); setFilterClassId("all"); } })
-    }
-    if (filterDivisionCode && filterDivisionCode !== "all") {
-      const div = (props.divisions || ACADEMIC_DIVISIONS).find((d: any) => d.code === filterDivisionCode)
-      tags.push({ key: "division", label: "Bộ phận", value: div?.name || filterDivisionCode, onRemove: () => { setFilterDivisionCode("all"); setFilterDeptId("all"); } })
     }
     if (filterDeptId && filterDeptId !== "all") {
       const dept = departments.find(d => d.id === filterDeptId)
@@ -1494,9 +1626,10 @@ export function ObservationClient(props: ObservationClientProps) {
       tags.push({ key: "period", label: "Tiết", value: filterPeriod, onRemove: () => setFilterPeriod("all") })
     }
     return tags
-  }, [filterCampusId, filterDivisionCode, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod, campuses, departments, classes, props.divisions])
+  }, [searchTeacherQuery, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterMonth, filterPeriod, campuses, departments, classes])
 
   const clearAllFilters = () => {
+    setSearchTeacherQuery("")
     setFilterCampusId("all")
     setFilterDivisionCode("all")
     setFilterDeptId("all")
@@ -1513,7 +1646,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const res = await getObservationSlots({ 
       schoolBlock: filterSchoolBlock, 
       campusId: filterCampusId, 
-      divisionCode: filterDivisionCode,
+      divisionCode: "all",
       deptId: filterDeptId, 
       level: filterLevel, 
       grade: filterGrade, 
@@ -2027,6 +2160,10 @@ export function ObservationClient(props: ObservationClientProps) {
     return managementScope !== "NONE" || isAdminUser;
   }, [managementScope, isAdminUser]);
 
+  const canAssignObservation = useMemo(() => {
+    return managementScope !== "NONE" || isAdminUser;
+  }, [managementScope, isAdminUser]);
+
   useEffect(() => {
     if (!isManagerRole && !isAdminRoute) {
       if (viewMode === "ADMIN") {
@@ -2042,30 +2179,15 @@ export function ObservationClient(props: ObservationClientProps) {
       if (managementScope === "GDCS" && myCampusId && filterCampusId !== myCampusId) {
         setFilterCampusId(myCampusId);
       }
-      // 2. TBP: Cố định bộ phận phụ trách
-      if (managementScope === "TBP" && myTBPDivCodes.size > 0) {
-        const firstDiv = Array.from(myTBPDivCodes)[0];
-        if (filterDivisionCode !== firstDiv) {
-          setFilterDivisionCode(firstDiv);
-        }
-      }
-      // 3. TTCM: Cố định vào Tổ chuyên môn của mình nếu bộ lọc đang là "all" hoặc không thuộc tổ mình
+      // 2. TTCM: Cố định vào Tổ chuyên môn của mình nếu bộ lọc đang là "all" hoặc không thuộc tổ mình
       if (managementScope === "TTCM" && myTTCMDeptIds.size > 0) {
         const firstDept = Array.from(myTTCMDeptIds)[0];
         if (filterDeptId === "all" || !myTTCMDeptIds.has(filterDeptId)) {
           setFilterDeptId(firstDept);
         }
       }
-    } else {
-      // 4. Chế độ Giáo viên (viewMode === "TEACHER"): Tự động gán bộ lọc theo Bộ phận của GV
-      if (myTeacherDivisionCodes.size > 0 && !isSuperOrBanDHCM) {
-        const firstDiv = Array.from(myTeacherDivisionCodes)[0];
-        if (filterDivisionCode === "all" || !myTeacherDivisionCodes.has(filterDivisionCode)) {
-          setFilterDivisionCode(firstDiv);
-        }
-      }
     }
-  }, [viewMode, managementScope, myCampusId, myTBPDivCodes, myTTCMDeptIds, myTeacherDivisionCodes, isSuperOrBanDHCM, filterCampusId, filterDivisionCode, filterDeptId]);
+  }, [viewMode, managementScope, myCampusId, myTTCMDeptIds, filterCampusId, filterDeptId]);
 
   const ttcmAllowedDepartments = useMemo(() => {
     const allDepts = departments;
@@ -3327,6 +3449,11 @@ export function ObservationClient(props: ObservationClientProps) {
     let otherDept = 0;
 
     (activeSlotsSource || []).forEach(slot => {
+      // Lọc chính xác 100% theo 1 hay nhiều điều kiện kết hợp (Tháng, Cơ sở, Tổ CM, Bậc học, Tiết dạy, Họ tên/Mã SKL)
+      if (!matchAdvancedFilters(slot)) {
+        return;
+      }
+
       const isSurprise = isSurpriseSlot(slot);
       const isReq = slot.requestOrigin === "OBSERVER_REQUEST";
       const isExpired = isSlotExpired(slot, todayStart);
@@ -3360,14 +3487,30 @@ export function ObservationClient(props: ObservationClientProps) {
       }
     });
 
-    return { all, selfOpen, expired, gbmRequest, myDept, otherDept };
-  }, [activeSlotsSource, filterMonth, checkIsMyDept]);
+    return {
+      all,
+      selfOpen,
+      self_open: selfOpen,
+      expired,
+      gbmRequest,
+      gbm_request: gbmRequest,
+      myDept,
+      my_dept: myDept,
+      otherDept,
+      other_dept: otherDept
+    };
+  }, [activeSlotsSource, checkIsMyDept, matchAdvancedFilters]);
 
   const tabFilteredSlots = useMemo(() => {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
     return (activeSlotsSource || []).filter(slot => {
+      // Lọc chính xác 100% theo 1 hay nhiều điều kiện kết hợp (Tháng, Cơ sở, Tổ CM, Bậc học, Tiết dạy, Họ tên/Mã SKL)
+      if (!matchAdvancedFilters(slot)) {
+        return false;
+      }
+
       const isSurprise = isSurpriseSlot(slot);
       const isReq = slot.requestOrigin === "OBSERVER_REQUEST";
       const isExpired = isSlotExpired(slot, todayStart);
@@ -3410,7 +3553,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (expiredDiff !== 0) return expiredDiff;
       return getPeriodOrder(slotA.startTime) - getPeriodOrder(slotB.startTime);
     });
-  }, [activeSlotsSource, activeFilterTab, checkIsMyDept]);
+  }, [activeSlotsSource, activeFilterTab, checkIsMyDept, matchAdvancedFilters]);
 
   const isAllCurrentSelected = useMemo(() => {
     if (!tabFilteredSlots || tabFilteredSlots.length === 0) return false;
@@ -3519,7 +3662,7 @@ export function ObservationClient(props: ObservationClientProps) {
         slot.date ? new Date(slot.date).toLocaleDateString("vi-VN") : "",
         slot.startTime || "",
         `"${(slot.room || "").replace(/"/g, '""')}"`,
-        isSurprise ? "Đột xuất ⚡" : "Theo kế hoạch",
+        slot.requestOrigin === "ASSIGNED" ? "Chỉ định dự giờ 📋" : (isSurprise ? "Đột xuất ⚡" : (slot.requestOrigin === "OBSERVER_REQUEST" ? "Xin dự giờ" : "Theo kế hoạch")),
         `${regs.length}/${slot.maxSeats || 4}`,
         `"${observerNames.replace(/"/g, '""')}"`,
         slot.status || "OPEN",
@@ -3547,9 +3690,15 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const displayedMyTaughtSlots = useMemo(() => {
     return myTaughtSlots.filter(slot => {
+      if (myScheduleSearchQuery.trim() && !matchTeacherSearch(slot, myScheduleSearchQuery)) {
+        return false;
+      }
       if (taughtOriginFilter !== "all") {
         const isSurprise = isSurpriseSlot(slot);
-        if (taughtOriginFilter === "SURPRISE" ? !isSurprise : isSurprise) return false;
+        const isAssigned = slot.requestOrigin === "ASSIGNED";
+        if (taughtOriginFilter === "SURPRISE" && !isSurprise) return false;
+        if (taughtOriginFilter === "ASSIGNED" && !isAssigned) return false;
+        if (taughtOriginFilter === "PLAN" && (isSurprise || isAssigned)) return false;
       }
       if (taughtCategoryFilter !== "all") {
         const cat = getSlotCategoryInfo(slot);
@@ -3558,7 +3707,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       return true;
     });
-  }, [myTaughtSlots, taughtOriginFilter, taughtCategoryFilter]);
+  }, [myTaughtSlots, taughtOriginFilter, taughtCategoryFilter, myScheduleSearchQuery, matchTeacherSearch]);
 
   const myObservedSlots = useMemo(() => {
     return (personalSlots || []).filter(slot => (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
@@ -3567,9 +3716,15 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const displayedMyObservedSlots = useMemo(() => {
     return myObservedSlots.filter(slot => {
+      if (myScheduleSearchQuery.trim() && !matchTeacherSearch(slot, myScheduleSearchQuery)) {
+        return false;
+      }
       if (observedOriginFilter !== "all") {
         const isSurprise = isSurpriseSlot(slot);
-        if (observedOriginFilter === "SURPRISE" ? !isSurprise : isSurprise) return false;
+        const isAssigned = slot.requestOrigin === "ASSIGNED";
+        if (observedOriginFilter === "SURPRISE" && !isSurprise) return false;
+        if (observedOriginFilter === "ASSIGNED" && !isAssigned) return false;
+        if (observedOriginFilter === "PLAN" && (isSurprise || isAssigned)) return false;
       }
       if (observedCategoryFilter !== "all") {
         const cat = getSlotCategoryInfo(slot);
@@ -3578,7 +3733,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       return true;
     });
-  }, [myObservedSlots, observedOriginFilter, observedCategoryFilter]);
+  }, [myObservedSlots, observedOriginFilter, observedCategoryFilter, myScheduleSearchQuery, matchTeacherSearch]);
 
   // Các tiết dự hợp lệ (bản thân GV đã có phiếu đánh giá / nhận xét được duyệt chính thức)
   const myValidObservedSlots = useMemo(() => {
@@ -3757,65 +3912,15 @@ export function ObservationClient(props: ObservationClientProps) {
         <div className="absolute top-0 right-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none -mr-16 -mt-16" />
         <div className="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           
-          {/* Left: Branding, Title & Teacher info */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Campus Identity Badge */}
-                <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-black flex items-center gap-1.5 shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
-                  <span>{campusTheme.name}</span>
-                  <span className="text-white/60">•</span>
-                  <span className="text-white/90">{campusTheme.locationName}</span>
-                </span>
-
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 backdrop-blur-md border border-white/15 text-white/90">
-                  {(viewMode === "ADMIN" || props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))
-                    ? (managementScope === "BAN_DHCM"
-                        ? "TRUNG TÂM ĐIỀU HÀNH DỰ GIỜ TOÀN TRƯỜNG"
-                        : managementScope === "GDCS"
-                        ? `ĐIỀU HÀNH DỰ GIỜ ${myCampusName.toUpperCase()}`
-                        : managementScope === "TBP"
-                        ? `ĐIỀU HÀNH BỘ PHẬN ${myTBPDivisionName.toUpperCase()}`
-                        : `ĐIỀU HÀNH TỔ ${myTTCMDeptNames.toUpperCase()}`)
-                    : ((isTTCM || isTBP || activeMainTab === "ttcm_summary")
-                        ? "ĐIỀU HÀNH TỔ CHUYÊN MÔN"
-                        : "PHÁT TRIỂN CHUYÊN MÔN")}
-                </span>
-
-                {isMamNonTeacher && (
+            <div className="space-y-1">
+              {isMamNonTeacher && (
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-400 text-amber-950 shadow-xs">
                     BẬC MẦM NON
                   </span>
-                )}
-                {(viewMode === "ADMIN" || props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin"))) ? (
-                  managementScope === "BAN_DHCM" ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-indigo-500 text-white border border-indigo-400/30">
-                      👑 BAN ĐIỀU HÀNH CHUYÊN MÔN
-                    </span>
-                  ) : managementScope === "GDCS" ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-purple-600 text-white border border-purple-400/30">
-                      🏢 GIÁM ĐỐC CƠ SỞ
-                    </span>
-                  ) : managementScope === "TBP" ? (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-600 text-white border border-blue-400/30">
-                      👔 TRƯỞNG BỘ PHẬN
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-teal-500 text-white border border-teal-400/30">
-                      📌 TỔ TRƯỞNG CHUYÊN MÔN
-                    </span>
-                  )
-                ) : (isTTCM || isTBP || activeMainTab === "ttcm_summary") ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-teal-500 text-white border border-teal-400/30">
-                    📌 TỔ TRƯỞNG CHUYÊN MÔN
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-600/80 text-white border border-emerald-400/30">
-                    👩‍🏫 GIÁO VIÊN BỘ MÔN
-                  </span>
-                )}
-              </div>
+                </div>
+              )}
               <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
                 {(viewMode === "ADMIN" || props.isAdminPage || (typeof pathname === "string" && pathname.startsWith("/admin")))
                   ? (managementScope === "BAN_DHCM"
@@ -3833,7 +3938,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
             <div className="hidden sm:block w-px h-10 bg-white/20" />
 
-            {/* Teacher Chip & Year selector */}
+            {/* Teacher Chip */}
             <div className="flex items-center gap-2.5">
               <div className="flex items-center gap-2.5 bg-white/12 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 shadow-inner">
                 <div className="text-left">
@@ -3843,100 +3948,164 @@ export function ObservationClient(props: ObservationClientProps) {
                   </span>
                 </div>
               </div>
-
-              {academicYears && academicYears.length > 0 && (
-                <div className="bg-white/12 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 flex items-center gap-1.5 shadow-inner">
-                  <span className="text-[11px] font-bold text-white/80 uppercase">Năm:</span>
-                  <select
-                    value={filterAcademicYearId}
-                    onChange={e => handleAcademicYearChange(e.target.value)}
-                    className="bg-transparent text-xs font-bold text-white outline-none cursor-pointer"
-                  >
-                    {academicYears.map(y => (
-                      <option key={y.id} value={y.id} className="text-slate-800 font-semibold">{y.name}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Right: Campus Demo Switcher, Mode Switcher & Primary Quick Actions */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Quick Campus Switcher for previewing brand themes */}
-            <div className="flex items-center bg-black/25 backdrop-blur-md rounded-xl p-1 border border-white/20 text-xs font-bold shadow-inner">
-              <span className="px-2 text-white/70 hidden sm:inline text-[11px]">Cơ sở:</span>
-              <button
-                type="button"
-                onClick={() => setCampusOverride("HILL")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
-                }`}
-                title="Xem giao diện theo chuẩn Sky-Line Hill (Hội An - Điện Ngọc)"
-              >
-                Hill
-              </button>
-              <button
-                type="button"
-                onClick={() => setCampusOverride("GLOBAL")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  campusTheme.type === "GLOBAL" ? "bg-[#6E3D89] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
-                }`}
-                title="Xem giao diện theo chuẩn Sky-Line Global (Quốc tế)"
-              >
-                Global
-              </button>
-              <button
-                type="button"
-                onClick={() => setCampusOverride("STANDARD")}
-                className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                  campusTheme.type === "STANDARD" ? "bg-[#00A19A] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
-                }`}
-                title="Xem giao diện theo chuẩn Sky-Line Toàn hệ thống"
-              >
-                Hệ thống
-              </button>
-            </div>
+            {/* Top Header Portal: Render cụm Cơ sở và Chế độ Quản lý/Cá nhân lên trên cùng dòng SQMS */}
+            {headerPortalEl && createPortal(
+              <div className="flex items-center gap-2 flex-wrap animate-in fade-in duration-200">
+                {/* 1. Quick Campus Switcher */}
+                <div className="flex items-center bg-slate-100/90 rounded-xl p-0.5 border border-slate-200/90 text-xs font-bold shadow-2xs">
+                  <span className="px-2 text-slate-500 hidden md:inline text-[11px] font-semibold">Cơ sở:</span>
+                  <button
+                    type="button"
+                    onClick={() => setCampusOverride("HILL")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+                      campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-xs font-black scale-105" : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                    }`}
+                    title="Sky-Line Hill (CS4)"
+                  >
+                    Hill
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCampusOverride("GLOBAL")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+                      campusTheme.type === "GLOBAL" ? "bg-[#6E3D89] text-white shadow-xs font-black scale-105" : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                    }`}
+                    title="Sky-Line Global (CS3)"
+                  >
+                    Global
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCampusOverride("STANDARD")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer text-xs ${
+                      campusTheme.type === "STANDARD" ? "bg-[#008B82] text-white shadow-xs font-black scale-105" : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                    }`}
+                    title="Sky-Line Hệ thống (CS1, CS2, CS5)"
+                  >
+                    Hệ thống
+                  </button>
+                </div>
 
-            {/* Mode Switcher for Management Roles */}
-            {isManagerRole && (
-              <div className="bg-black/25 backdrop-blur-md p-1 rounded-xl border border-white/20 flex items-center gap-1 shadow-inner">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("ADMIN");
-                    if (activeMainTab === "my_schedule" || activeMainTab === "register_request") {
-                      setActiveMainTab("overview_slots");
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === "ADMIN"
-                      ? "bg-white text-slate-900 shadow-md font-black scale-105"
-                      : "text-white/80 hover:text-white hover:bg-white/10"
-                  }`}
-                  title="Chuyển sang Chế độ Quản trị & Điều hành"
-                >
-                  <span>Chế độ Quản lý</span>
-                </button>
+                {/* 2. Mode Switcher for Management Roles */}
+                {isManagerRole && (
+                  <div className="bg-slate-100/90 p-0.5 rounded-xl border border-slate-200/90 flex items-center gap-0.5 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("ADMIN");
+                        if (activeMainTab === "my_schedule" || activeMainTab === "register_request") {
+                          setActiveMainTab("overview_slots");
+                        }
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                        viewMode === "ADMIN"
+                          ? "bg-purple-700 text-white shadow-xs font-black scale-105"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                      }`}
+                      title="Chuyển sang Chế độ Quản trị & Điều hành"
+                    >
+                      <span>Chế độ Quản lý</span>
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode("TEACHER");
-                    if (activeMainTab === "ttcm_summary") {
-                      setActiveMainTab("my_schedule");
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === "TEACHER"
-                      ? "bg-white text-slate-900 shadow-md font-black scale-105"
-                      : "text-white/80 hover:text-white hover:bg-white/10"
-                  }`}
-                  title="Chuyển sang Chế độ Cá nhân (Giáo viên)"
-                >
-                  <span>Chế độ Cá nhân</span>
-                </button>
-              </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("TEACHER");
+                        if (activeMainTab === "ttcm_summary") {
+                          setActiveMainTab("my_schedule");
+                        }
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                        viewMode === "TEACHER"
+                          ? "bg-[#008B82] text-white shadow-xs font-black scale-105"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/70"
+                      }`}
+                      title="Chuyển sang Chế độ Cá nhân (Giáo viên)"
+                    >
+                      <span>Chế độ Cá nhân</span>
+                    </button>
+                  </div>
+                )}
+              </div>,
+              headerPortalEl
+            )}
+
+            {/* Fallback khi chưa mount portal vào header dòng SQMS */}
+            {!headerPortalEl && (
+              <>
+                <div className="flex items-center bg-black/25 backdrop-blur-md rounded-xl p-1 border border-white/20 text-xs font-bold shadow-inner">
+                  <span className="px-2 text-white/70 hidden sm:inline text-[11px]">Cơ sở:</span>
+                  <button
+                    type="button"
+                    onClick={() => setCampusOverride("HILL")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                      campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
+                    }`}
+                  >
+                    Hill
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCampusOverride("GLOBAL")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                      campusTheme.type === "GLOBAL" ? "bg-[#6E3D89] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
+                    }`}
+                  >
+                    Global
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCampusOverride("STANDARD")}
+                    className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                      campusTheme.type === "STANDARD" ? "bg-[#00A19A] text-white shadow-sm font-black scale-105" : "text-white/80 hover:text-white"
+                    }`}
+                  >
+                    Hệ thống
+                  </button>
+                </div>
+
+                {isManagerRole && (
+                  <div className="bg-black/25 backdrop-blur-md p-1 rounded-xl border border-white/20 flex items-center gap-1 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("ADMIN");
+                        if (activeMainTab === "my_schedule" || activeMainTab === "register_request") {
+                          setActiveMainTab("overview_slots");
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        viewMode === "ADMIN"
+                          ? "bg-white text-slate-900 shadow-md font-black scale-105"
+                          : "text-white/80 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <span>Chế độ Quản lý</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setViewMode("TEACHER");
+                        if (activeMainTab === "ttcm_summary") {
+                          setActiveMainTab("my_schedule");
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        viewMode === "TEACHER"
+                          ? "bg-white text-slate-900 shadow-md font-black scale-105"
+                          : "text-white/80 hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      <span>Chế độ Cá nhân</span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Primary Action Button: Đăng ký tiết dạy */}
@@ -3979,6 +4148,22 @@ export function ObservationClient(props: ObservationClientProps) {
               >
                 <span>⚡</span>
                 <span>Đột xuất</span>
+              </button>
+            )}
+
+            {/* Chỉ định dự giờ */}
+            {canAssignObservation && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCreationMode("ASSIGNED");
+                  setShowCreateModal(true);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-purple-500/30 hover:bg-purple-500/40 text-purple-100 border border-purple-400/40 font-bold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+                title="Chỉ định dự giờ đối với giáo viên (Dành cho Quản lý / BGH / TTCM)"
+              >
+                <UserCheck className="w-3.5 h-3.5 text-purple-200" />
+                <span>Chỉ định dự giờ</span>
               </button>
             )}
 
@@ -4279,6 +4464,10 @@ export function ObservationClient(props: ObservationClientProps) {
           isAdminUser={isAdminUser}
           isTTCM={isTTCM}
           canCreateSurprise={canCreateSurprise}
+          canAssignObservation={canAssignObservation}
+          onAssignedSuccess={() => {
+            refreshSlots();
+          }}
           currentTeacher={currentTeacher}
           monthlyLimitCount={monthlyLimitCount}
           myTaughtCount={myTaughtCount}
@@ -4301,7 +4490,7 @@ export function ObservationClient(props: ObservationClientProps) {
           onResetForm={() => {
             setNewTopic("");
             setNewDescription("");
-            setNewNotes("");
+            setReqNotes("");
             setNewLessonPlanName("");
             setNewLessonPlanData("");
             if (fileInputRef.current) fileInputRef.current.value = "";
@@ -4508,54 +4697,73 @@ export function ObservationClient(props: ObservationClientProps) {
                     const today = new Date();
                     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
+                    const getScore = (slot: any) => {
+                      let score = 0;
+                      const sRegs = slot.registrations || [];
+                      const slotDate = new Date(slot.date);
+                      const isPast = slotDate < todayStart || slot.status === "EXPIRED";
+                      const isFull = sRegs.length >= (slot.maxSeats || 4);
+
+                      // Tiết đã hết hạn hoặc đã đủ người bị hạ điểm cực thấp
+                      if (isPast || isFull) {
+                        return -999999;
+                      }
+
+                      // MỨC ƯU TIÊN 1: Thuộc Tổ chuyên môn của GV đăng nhập (10,000 điểm)
+                      const isSameDept = checkIsMyDept(slot);
+                      if (isSameDept) {
+                        score += 10000;
+                      }
+
+                      // MỨC ƯU TIÊN 2: Thuộc cùng Bộ phận của GV đăng nhập (1,000 điểm)
+                      const isSameDivision = myTeacherDivisionCodes.size > 0 
+                        ? checkSlotMatchesDivision(slot, myTeacherDivisionCodes)
+                        : false;
+                      if (isSameDivision) {
+                        score += 1000;
+                      }
+
+                      // MỨC ƯU TIÊN 3: Thuộc cùng Cơ sở của GV đăng nhập (100 điểm)
+                      const myCId = currentTeacher?.campusId || myCampusId;
+                      const slotCId = slot.campusId || slot.teacher?.campusId;
+                      const isSameCampus = Boolean(myCId && slotCId && (slotCId === myCId || slotCId === myCampus?.campusCode));
+                      if (isSameCampus) {
+                        score += 100;
+                      }
+
+                      // Khối học tương đồng (Mầm non vs Phổ thông)
+                      const isSlotMamNon = slot.level === "Mầm non" ||
+                        (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+                      if ((isMamNonTeacher && isSlotMamNon) || (!isMamNonTeacher && !isSlotMamNon)) {
+                        score += 50;
+                      }
+
+                      return score;
+                    };
+
                     const suggested = (slots || [])
                       .filter(s => {
                         if (s.teacherId === currentTeacher?.id) return false;
                         if ((s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)) return false;
                         if (s.requestOrigin === "OBSERVER_REQUEST") return false;
+                        if (s.status === "CANCELLED") return false;
                         return true;
                       })
                       .sort((a, b) => {
-                        const aDate = new Date(a.date);
-                        const bDate = new Date(b.date);
-                        const aRegs = a.registrations || [];
-                        const bRegs = b.registrations || [];
-                        const aIsExpired = aDate < todayStart || a.status === "EXPIRED" || aRegs.length >= (a.maxSeats || 4);
-                        const bIsExpired = bDate < todayStart || b.status === "EXPIRED" || bRegs.length >= (b.maxSeats || 4);
+                        const aScore = getScore(a);
+                        const bScore = getScore(b);
+                        if (bScore !== aScore) {
+                          return bScore - aScore;
+                        }
 
-                        if (!aIsExpired && bIsExpired) return -1;
-                        if (aIsExpired && !bIsExpired) return 1;
+                        // Cùng mức ưu tiên: Tiết có ngày dạy gần nhất từ hôm nay xếp trước
+                        const aDate = new Date(a.date).getTime();
+                        const bDate = new Date(b.date).getTime();
+                        if (aDate !== bDate) {
+                          return aDate - bDate;
+                        }
 
-                        const getScore = (slot: any) => {
-                          let score = 0;
-                          const isSlotMamNon = slot.level === "Mầm non" ||
-                            (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-                          
-                          if (isMamNonTeacher) {
-                            if (isSlotMamNon) {
-                              score += 500;
-                              const isSameDept = checkIsMyDept(slot);
-                              const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                              if (isSameCampus && isSameDept) score += 300;
-                              else if (isSameCampus) score += 200;
-                              else if (isSameDept) score += 100;
-                            }
-                          } else {
-                            if (!isSlotMamNon) {
-                              score += 500;
-                              const isSameDept = checkIsMyDept(slot);
-                              const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                              if (isSameCampus && isSameDept) score += 300;
-                              else if (isSameCampus) score += 200;
-                              else if (isSameDept) score += 100;
-                            }
-                          }
-                          return score;
-                        };
-
-                        const scoreDiff = getScore(b) - getScore(a);
-                        if (scoreDiff !== 0) return scoreDiff;
-
+                        // Cùng ngày dạy: Tiết tạo mới nhất xếp trước
                         const aTime = new Date(a.createdAt || a.date).getTime();
                         const bTime = new Date(b.createdAt || b.date).getTime();
                         return bTime - aTime;
@@ -4579,6 +4787,8 @@ export function ObservationClient(props: ObservationClientProps) {
                           const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
                           const remainingSeats = Math.max(0, (slot.maxSeats || 4) - sRegs.length);
                           const tName = slot.teacher?.teacherName || slot.teacherName || "GV";
+                          const isSameDept = checkIsMyDept(slot);
+                          const isSameDivision = myTeacherDivisionCodes.size > 0 ? checkSlotMatchesDivision(slot, myTeacherDivisionCodes) : false;
 
                           return (
                             <div 
@@ -4586,20 +4796,34 @@ export function ObservationClient(props: ObservationClientProps) {
                               className="flex items-center justify-between gap-2.5 p-2.5 px-3 bg-white hover:bg-teal-50/50 border border-slate-200/90 hover:border-teal-400 rounded-xl transition-all shadow-2xs hover:shadow-xs text-xs"
                             >
                               <div className="min-w-0 flex-1 space-y-0.5">
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   {campusDisplay && (
                                     <span className="px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900 font-extrabold text-[10px] shrink-0 border border-amber-200">
                                       {campusDisplay}
                                     </span>
                                   )}
+                                  {isSameDept ? (
+                                    <span className="px-1.5 py-0.2 rounded-md bg-teal-100 text-teal-900 font-black text-[10px] shrink-0 border border-teal-300">
+                                      Tổ CM
+                                    </span>
+                                  ) : isSameDivision ? (
+                                    <span className="px-1.5 py-0.2 rounded-md bg-indigo-100 text-indigo-900 font-black text-[10px] shrink-0 border border-indigo-200">
+                                      Bộ phận
+                                    </span>
+                                  ) : null}
                                   <div className="flex items-center gap-1.5 min-w-0">
                                     <span className="font-black text-slate-900 truncate text-xs" title={slot.topic}>
                                       {slot.topic}
                                     </span>
                                     {isSurpriseSlot(slot) && (
                                       <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
-                                    Đột xuất
-                                  </span>
+                                        Đột xuất
+                                      </span>
+                                    )}
+                                    {slot.requestOrigin === "ASSIGNED" && (
+                                      <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                        Chỉ định
+                                      </span>
                                     )}
                                   </div>
                                 </div>
@@ -4645,12 +4869,12 @@ export function ObservationClient(props: ObservationClientProps) {
               <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
                 {viewMode === "ADMIN" 
                   ? (managementScope === "BAN_DHCM"
-                      ? "Bảng Điều hành Tiết dạy Dự giờ Toàn trường"
+                      ? "Quản lý Tiết Dự giờ"
                       : managementScope === "GDCS"
-                      ? `Bảng Điều hành Tiết dạy Dự giờ ${myCampusName}`
+                      ? `Quản lý Tiết Dự giờ - ${myCampusName}`
                       : managementScope === "TBP"
-                      ? `Bảng Điều hành Tiết dạy Dự giờ Bộ phận ${myTBPDivisionName}`
-                      : `Bảng Điều hành Tiết dạy Dự giờ Tổ ${myTTCMDeptNames}`)
+                      ? `Quản lý Tiết Dự giờ - Bộ phận ${myTBPDivisionName}`
+                      : `Quản lý Tiết Dự giờ - Tổ ${myTTCMDeptNames}`)
                   : (myTeacherDivisionCodes.size > 0 && !isSuperOrBanDHCM
                       ? `Danh sách đăng ký tiết dạy - ${myTeacherDivisionName}`
                       : "Danh sách đăng ký tiết dạy")}
@@ -4798,8 +5022,46 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
         
-        {/* Compact Advanced Filter Bar (6 Filters) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+        {/* Thanh tìm kiếm theo Họ tên Giáo viên hoặc Mã SKL */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-gradient-to-r from-teal-50/70 via-slate-50 to-indigo-50/70 p-3 rounded-2xl border border-teal-200/80 shadow-2xs">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-teal-600 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchTeacherQuery}
+              onChange={e => setSearchTeacherQuery(e.target.value)}
+              placeholder="Điền Họ tên Giáo viên, hoặc Mã SKL..."
+              className="w-full pl-10 pr-9 py-2 text-xs font-bold rounded-xl bg-white border border-teal-300/80 text-slate-800 placeholder:text-slate-400 placeholder:font-normal outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-2xs transition-all"
+            />
+            {searchTeacherQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchTeacherQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Xóa tìm kiếm"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          {searchTeacherQuery.trim() && (
+            <div className="flex items-center gap-2 text-xs font-bold text-teal-900 bg-white px-3.5 py-1.5 rounded-xl border border-teal-200 shadow-2xs shrink-0 animate-in fade-in duration-200">
+              <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+              <span>Đang lọc: <span className="text-teal-700 underline underline-offset-2">"{searchTeacherQuery.trim()}"</span></span>
+              <button
+                type="button"
+                onClick={() => setSearchTeacherQuery("")}
+                className="ml-1 text-slate-400 hover:text-rose-500 p-0.5 rounded-full cursor-pointer"
+                title="Hủy lọc"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Compact Advanced Filter Bar (5 Filters: Tháng, Cơ sở, Tổ chuyên môn, Bậc học, Tiết dạy) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
           {/* 1. Tháng */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tháng</span>
@@ -4817,6 +5079,7 @@ export function ObservationClient(props: ObservationClientProps) {
               })}
             </select>
           </div>
+
           {/* 2. Cơ sở */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Cơ sở</span>
@@ -4838,59 +5101,7 @@ export function ObservationClient(props: ObservationClientProps) {
             )}
           </div>
 
-          {/* 3. Bộ phận (Ban ĐHCM) */}
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-indigo-500 uppercase flex items-center gap-1">
-              <span>Bộ phận</span>
-            </span>
-            {viewMode === "ADMIN" && managementScope === "TBP" ? (
-              <select 
-                value={Array.from(myTBPDivCodes)[0] || "all"} 
-                disabled 
-                className="w-full text-xs font-bold rounded-xl border border-blue-200 p-2 bg-blue-50 text-blue-900 outline-none cursor-not-allowed"
-                title={`Trưởng bộ phận quản lý ${myTBPDivisionName}`}
-              >
-                <option value={Array.from(myTBPDivCodes)[0] || "all"}>{myTBPDivisionName}</option>
-              </select>
-            ) : viewMode === "TEACHER" && !isSuperOrBanDHCM && myTeacherDivisionCodes.size > 0 ? (
-              myTeacherDivisionCodes.size === 1 ? (
-                <select 
-                  value={Array.from(myTeacherDivisionCodes)[0]} 
-                  disabled 
-                  className="w-full text-xs font-bold rounded-xl border border-indigo-200 p-2 bg-indigo-50/50 text-indigo-900 outline-none cursor-not-allowed"
-                  title={`Danh sách tiết dạy được giới hạn theo ${myTeacherDivisionName}`}
-                >
-                  <option value={Array.from(myTeacherDivisionCodes)[0]}>{myTeacherDivisionName}</option>
-                </select>
-              ) : (
-                <select 
-                  value={filterDivisionCode} 
-                  onChange={e => { setFilterDivisionCode(e.target.value); setFilterDeptId("all"); }}
-                  className="w-full text-xs font-bold rounded-xl border border-indigo-200 p-2 bg-indigo-50/30 text-indigo-950 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                >
-                  <option value="all">Tất cả {myTeacherDivisionCodes.size} Bộ phận trực thuộc</option>
-                  {(props.divisions || ACADEMIC_DIVISIONS)
-                    .filter(div => myTeacherDivisionCodes.has(normalizeDivisionCode(div.code)))
-                    .map(div => (
-                      <option key={div.code} value={div.code}>{div.name}</option>
-                    ))}
-                </select>
-              )
-            ) : (
-              <select 
-                value={filterDivisionCode} 
-                onChange={e => { setFilterDivisionCode(e.target.value); setFilterDeptId("all"); }}
-                className="w-full text-xs font-bold rounded-xl border border-indigo-200 p-2 bg-indigo-50/30 text-indigo-950 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-              >
-                <option value="all">Tất cả 6 Bộ phận</option>
-                {(props.divisions || ACADEMIC_DIVISIONS).map(div => (
-                  <option key={div.code} value={div.code}>{div.name}</option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {/* 4. Tổ chuyên môn */}
+          {/* 3. Tổ chuyên môn */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tổ chuyên môn</span>
             <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
@@ -4915,9 +5126,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   {(
                     departments
                       .filter(d => {
-                        if (filterDivisionCode && filterDivisionCode !== "all") {
-                          return (d as any).divisionCode === filterDivisionCode;
-                        }
                         if (isMamNonTeacher) {
                           return isPreschoolDepartment(d.name || d.code || "") || ((d as any).blockCM || "").toLowerCase().includes("mam non") || (d.code && ["TO_TACTQ_MN.S", "TO_TACTQ_PT.G"].includes(d.code));
                         }
@@ -4929,7 +5137,7 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
-          {/* 5. Bậc học */}
+          {/* 4. Bậc học */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Bậc học</span>
             <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); setFilterClassId("all"); }}
@@ -4943,7 +5151,7 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
-          {/* 9. Tiết dạy */}
+          {/* 5. Tiết dạy */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tiết dạy</span>
             <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
@@ -5075,10 +5283,24 @@ export function ObservationClient(props: ObservationClientProps) {
                         )}
                         <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
                         <td className="p-4 font-bold text-slate-800">
-                          <span className="font-semibold text-indigo-950">{observerName}</span>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-indigo-950">{observerName}</span>
+                            {(observerReg?.teacher?.teacherCode || observerReg?.teacherCode) && (
+                              <span className="text-[10px] font-mono text-indigo-600 font-bold">
+                                {observerReg?.teacher?.teacherCode || observerReg?.teacherCode}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-4 font-bold text-slate-800">
-                          <span className="font-semibold text-slate-800">{slot.teacher?.teacherName}</span>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-slate-800">{slot.teacher?.teacherName}</span>
+                            {(slot.teacher?.teacherCode || slot.teacherCode) && (
+                              <span className="text-[10px] font-mono text-teal-700 font-bold">
+                                {slot.teacher?.teacherCode || slot.teacherCode}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         {/* Thời gian đăng ký */}
                         <td className="p-4 whitespace-nowrap">
@@ -5212,9 +5434,16 @@ export function ObservationClient(props: ObservationClientProps) {
                       
                       {/* Cột GIÁO VIÊN */}
                       <td className="p-4">
-                        <span className="font-semibold text-slate-900 text-xs tracking-tight">
-                          {slot.teacher.teacherName}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-900 text-xs tracking-tight">
+                            {slot.teacher?.teacherName || slot.teacherName}
+                          </span>
+                          {(slot.teacher?.teacherCode || slot.teacherCode) && (
+                            <span className="text-[10px] font-mono text-teal-700 font-bold">
+                              {slot.teacher?.teacherCode || slot.teacherCode}
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       {/* Cột THỜI GIAN ĐĂNG KÝ */}
@@ -5266,6 +5495,11 @@ export function ObservationClient(props: ObservationClientProps) {
                             <div className="flex flex-col gap-1 text-xs">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-amber-100 text-amber-900 border border-amber-200">Mầm non</span>
+                                {slot.requestOrigin === "ASSIGNED" && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                    Chỉ định
+                                  </span>
+                                )}
                                 <span className="text-xs font-bold text-amber-950 truncate">Chủ đề: {chuDe}</span>
                               </div>
                               <p className="font-black text-amber-950 text-xs leading-snug">Đề tài: {deTai}</p>
@@ -5276,7 +5510,19 @@ export function ObservationClient(props: ObservationClientProps) {
                           );
                         })() : (
                           <div className="space-y-1">
-                            <p className="font-black text-[#003B3A] text-xs leading-snug cursor-pointer hover:underline flex items-center gap-1" onClick={() => setDrawerSlot(slot)} title="Bấm để xem chi tiết tiết dạy">{slot.topic}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-black text-[#003B3A] text-xs leading-snug cursor-pointer hover:underline flex items-center gap-1" onClick={() => setDrawerSlot(slot)} title="Bấm để xem chi tiết tiết dạy">{slot.topic}</p>
+                              {isSurpriseSlot(slot) && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
+                                  Đột xuất
+                                </span>
+                              )}
+                              {slot.requestOrigin === "ASSIGNED" && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                  Chỉ định
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-1.5 flex-wrap text-slate-500 font-medium text-[11px]">
                               <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60 font-bold">
                                 {slot.subjectName}
@@ -5577,62 +5823,108 @@ export function ObservationClient(props: ObservationClientProps) {
           />
           
           {/* Sub-navigation inside My Workspace */}
-          <div className="flex flex-wrap items-center gap-2 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200">
-            <button
-              type="button"
-              onClick={() => setMyScheduleSubTab("all")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
-                myScheduleSubTab === "all"
-                  ? (campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-xs" : campusTheme.type === "GLOBAL" ? "bg-[#6E3D89] text-white shadow-xs" : "bg-[#003B3A] text-white shadow-xs")
-                  : "text-slate-600 hover:text-slate-900 bg-white/70 hover:bg-white"
-              }`}
-            >
-              <span>Tất cả</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
-                myScheduleSubTab === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
-              }`}>
-                {myTaughtSlots.length + myObservedSlots.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMyScheduleSubTab("taught")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
-                myScheduleSubTab === "taught"
-                  ? "bg-amber-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-amber-800 bg-white/70 hover:bg-white"
-              }`}
-            >
-              <span>Tiết tôi dạy</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
-                myScheduleSubTab === "taught" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"
-              }`}>
-                {myTaughtSlots.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setMyScheduleSubTab("observed")}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
-                myScheduleSubTab === "observed"
-                  ? (campusTheme.type === "HILL" ? "bg-[#01A49D] text-white shadow-xs" : "bg-[#00A19A] text-white shadow-xs")
-                  : "text-slate-600 hover:text-teal-800 bg-white/70 hover:bg-white"
-              }`}
-            >
-              <span>Tiết tôi đi dự</span>
-              <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
-                myScheduleSubTab === "observed" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-900"
-              }`}>
-                {myObservedSlots.length}
-              </span>
-              {myPendingEvaluationsCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-md bg-rose-500 text-white text-[9px] font-black animate-pulse">
-                  {myPendingEvaluationsCount} chưa nộp phiếu
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-100/90 p-2 rounded-2xl border border-slate-200">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMyScheduleSubTab("all")}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+                  myScheduleSubTab === "all"
+                    ? (campusTheme.type === "HILL" ? "bg-[#AE882E] text-white shadow-xs" : campusTheme.type === "GLOBAL" ? "bg-[#6E3D89] text-white shadow-xs" : "bg-[#003B3A] text-white shadow-xs")
+                    : "text-slate-600 hover:text-slate-900 bg-white/70 hover:bg-white"
+                }`}
+              >
+                <span>Tất cả</span>
+                <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
+                  myScheduleSubTab === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                }`}>
+                  {myTaughtSlots.length + myObservedSlots.length}
                 </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMyScheduleSubTab("taught")}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+                  myScheduleSubTab === "taught"
+                    ? "bg-amber-600 text-white shadow-xs"
+                    : "text-slate-600 hover:text-amber-800 bg-white/70 hover:bg-white"
+                }`}
+              >
+                <span>Tiết tôi dạy</span>
+                <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
+                  myScheduleSubTab === "taught" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"
+                }`}>
+                  {myTaughtSlots.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setMyScheduleSubTab("observed")}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
+                  myScheduleSubTab === "observed"
+                    ? (campusTheme.type === "HILL" ? "bg-[#01A49D] text-white shadow-xs" : "bg-[#00A19A] text-white shadow-xs")
+                    : "text-slate-600 hover:text-teal-800 bg-white/70 hover:bg-white"
+                }`}
+              >
+                <span>Tiết tôi đi dự</span>
+                <span className={`px-2 py-0.5 text-[10px] rounded-full font-bold ${
+                  myScheduleSubTab === "observed" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-900"
+                }`}>
+                  {myObservedSlots.length}
+                </span>
+                {myPendingEvaluationsCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-md bg-rose-500 text-white text-[9px] font-black animate-pulse">
+                    {myPendingEvaluationsCount} chưa nộp phiếu
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Right: Tìm kiếm theo GV / Mã SKL & Selector Năm học */}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Ô TÌM KIẾM THEO GV HOẶC MÃ SKL */}
+              <div className="relative min-w-[220px]">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={myScheduleSearchQuery}
+                  onChange={e => setMyScheduleSearchQuery(e.target.value)}
+                  placeholder="Tìm theo GV hoặc Mã SKL..."
+                  className="w-full pl-8 pr-7 py-1.5 text-xs font-semibold rounded-xl bg-white border border-slate-200 text-slate-800 placeholder:text-slate-400 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 shadow-2xs"
+                />
+                {myScheduleSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setMyScheduleSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-rose-500 rounded-full hover:bg-slate-100 cursor-pointer"
+                    title="Xóa tìm kiếm"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
+              {/* BỘ CHỌN & HIỂN THỊ NĂM HỌC TRỰC TIẾP TRONG BẢNG TIẾT DẠY & DỰ GIỜ */}
+              {academicYears && academicYears.length > 0 && (
+                <div className="flex items-center gap-2 bg-white px-3.5 py-1.5 rounded-xl border border-slate-200/90 shadow-2xs">
+                  <Calendar className="w-3.5 h-3.5 text-[#008B82] shrink-0" />
+                  <span className="text-[11px] font-black text-slate-500 uppercase tracking-wide">Năm học:</span>
+                  <select
+                    value={filterAcademicYearId}
+                    onChange={e => handleAcademicYearChange(e.target.value)}
+                    className="bg-transparent text-xs font-black text-slate-800 outline-none cursor-pointer pr-1"
+                  >
+                    {academicYears.map(y => (
+                      <option key={y.id} value={y.id} className="text-slate-800 font-bold">
+                        {y.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               )}
-            </button>
+            </div>
           </div>
           
           {/* SECTION 1: TIẾT DẠY CỦA TÔI (TÔI DẠY) - DATA TABLE */}
@@ -5648,12 +5940,20 @@ export function ObservationClient(props: ObservationClientProps) {
                     <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
                       Tiết dạy của tôi (Tôi trực tiếp giảng dạy)
                     </h3>
+                    <span className="px-2.5 py-0.5 text-xs font-black bg-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-2xs">
+                      Năm học {activeAcademicYear?.name || "2026-2027"}
+                    </span>
                     <span className="px-2.5 py-0.5 text-xs font-black bg-amber-100 text-amber-900 rounded-full border border-amber-300">
                       {myTaughtSlots.length} tiết
                     </span>
                     {myTaughtSlots.filter(s => isSurpriseSlot(s)).length > 0 && (
                       <span className="px-2.5 py-0.5 text-xs font-semibold bg-rose-50 text-rose-700 rounded-full border border-rose-200 inline-block shadow-2xs">
                         {myTaughtSlots.filter(s => isSurpriseSlot(s)).length} đột xuất
+                      </span>
+                    )}
+                    {myTaughtSlots.filter(s => s.requestOrigin === "ASSIGNED").length > 0 && (
+                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-purple-50 text-purple-700 rounded-full border border-purple-200 inline-block shadow-2xs">
+                        {myTaughtSlots.filter(s => s.requestOrigin === "ASSIGNED").length} chỉ định
                       </span>
                     )}
                   </div>
@@ -5688,7 +5988,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       }`}
                     >
                       <span>Kế hoạch</span>
-                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => !isSurpriseSlot(s)).length})</span>
+                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => !isSurpriseSlot(s) && s.requestOrigin !== "ASSIGNED").length})</span>
                     </button>
                     <button
                       type="button"
@@ -5701,6 +6001,18 @@ export function ObservationClient(props: ObservationClientProps) {
                     >
                       <span>Đột xuất</span>
                       <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => isSurpriseSlot(s)).length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaughtOriginFilter("ASSIGNED")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        taughtOriginFilter === "ASSIGNED"
+                          ? "bg-white text-purple-700 shadow-xs"
+                          : "text-slate-500 hover:text-purple-700"
+                      }`}
+                    >
+                      <span>Chỉ định</span>
+                      <span className="text-[11px] opacity-75">({myTaughtSlots.filter(s => s.requestOrigin === "ASSIGNED").length})</span>
                     </button>
                   </div>
 
@@ -5841,6 +6153,11 @@ export function ObservationClient(props: ObservationClientProps) {
                                     Đột xuất
                                   </span>
                                 )}
+                                {slot.requestOrigin === "ASSIGNED" && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                    Chỉ định
+                                  </span>
+                                )}
                                 {slot.isDoublePeriod && (
                                   <span className="px-1.5 py-0.5 text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-300 rounded shrink-0">
                                     Tiết đôi (x2)
@@ -5862,11 +6179,16 @@ export function ObservationClient(props: ObservationClientProps) {
                             <div className="space-y-0.5">
                               <p className="font-extrabold text-slate-800 flex items-center gap-1">
                                 <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                                <span>{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                               </p>
-                              <p className="text-xs font-bold text-teal-700">
-                                {slot.startTime} • Phòng {slot.room || "học"}
-                              </p>
+                              <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                                <span className="font-bold text-teal-700">
+                                  {slot.startTime} • Phòng {slot.room || "học"}
+                                </span>
+                                <span className="px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200/80 text-[10px]">
+                                  NH {slot.academicYear?.name || activeAcademicYear?.name || slotDate.getFullYear()}
+                                </span>
+                              </div>
                             </div>
                           </td>
 
@@ -5887,10 +6209,17 @@ export function ObservationClient(props: ObservationClientProps) {
                                     const regName = reg.teacher?.teacherName || reg.teacherName || "Giáo viên";
                                     return (
                                       <div key={reg.id} className="flex items-center justify-between gap-2 p-1.5 bg-slate-50 rounded-xl border border-slate-200/80 shadow-2xs">
-                                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                                          <span className="font-semibold text-slate-800 text-xs truncate" title={regName}>
-                                            {regName}
-                                          </span>
+                                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                          <div className="flex flex-col min-w-0">
+                                            <span className="font-semibold text-slate-800 text-xs truncate" title={regName}>
+                                              {regName}
+                                            </span>
+                                            {(reg.teacher?.teacherCode || reg.teacherCode) && (
+                                              <span className="text-[10px] font-mono text-teal-700 font-bold">
+                                                {reg.teacher?.teacherCode || reg.teacherCode}
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
                                         <div className="flex items-center gap-1 shrink-0">
                                           {reg.isApproved ? (
@@ -6035,20 +6364,28 @@ export function ObservationClient(props: ObservationClientProps) {
                           {/* Thao tác */}
                           <td className="p-3.5 text-right">
                             <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(slot)}
-                                className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer"
-                              >
-                                Sửa
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteSlot(slot.id)}
-                                className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all shadow-2xs cursor-pointer"
-                              >
-                                Hủy tiết
-                              </button>
+                              {slot.requestOrigin === "ASSIGNED" && !canAssignObservation ? (
+                                <span className="text-[11px] text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-1 rounded-xl font-bold" title="Tiết do Cán bộ quản lý chỉ định, GV không thể tự sửa hoặc hủy">
+                                  Tiết chỉ định
+                                </span>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditModal(slot)}
+                                    className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-all shadow-2xs cursor-pointer"
+                                  >
+                                    Sửa
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteSlot(slot.id)}
+                                    className="px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all shadow-2xs cursor-pointer"
+                                  >
+                                    Hủy tiết
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -6074,12 +6411,20 @@ export function ObservationClient(props: ObservationClientProps) {
                     <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">
                       Tiết tôi dự (Đã đăng ký tham gia)
                     </h3>
+                    <span className="px-2.5 py-0.5 text-xs font-black bg-blue-50 text-blue-700 rounded-full border border-blue-200 shadow-2xs">
+                      Năm học {activeAcademicYear?.name || "2026-2027"}
+                    </span>
                     <span className="px-2.5 py-0.5 text-xs font-black bg-teal-100 text-teal-900 rounded-full border border-teal-300">
                       {myObservedSlots.length} tiết
                     </span>
                     {myObservedSlots.filter(s => isSurpriseSlot(s)).length > 0 && (
                       <span className="px-2.5 py-0.5 text-xs font-semibold bg-rose-50 text-rose-700 rounded-full border border-rose-200 inline-block shadow-2xs">
                         {myObservedSlots.filter(s => isSurpriseSlot(s)).length} đột xuất
+                      </span>
+                    )}
+                    {myObservedSlots.filter(s => s.requestOrigin === "ASSIGNED").length > 0 && (
+                      <span className="px-2.5 py-0.5 text-xs font-semibold bg-purple-50 text-purple-700 rounded-full border border-purple-200 inline-block shadow-2xs">
+                        {myObservedSlots.filter(s => s.requestOrigin === "ASSIGNED").length} chỉ định
                       </span>
                     )}
                   </div>
@@ -6114,7 +6459,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       }`}
                     >
                       <span>Kế hoạch</span>
-                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => !isSurpriseSlot(s)).length})</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => !isSurpriseSlot(s) && s.requestOrigin !== "ASSIGNED").length})</span>
                     </button>
                     <button
                       type="button"
@@ -6127,6 +6472,18 @@ export function ObservationClient(props: ObservationClientProps) {
                     >
                       <span>Đột xuất</span>
                       <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => isSurpriseSlot(s)).length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setObservedOriginFilter("ASSIGNED")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                        observedOriginFilter === "ASSIGNED"
+                          ? "bg-white text-purple-700 shadow-xs"
+                          : "text-slate-500 hover:text-purple-700"
+                      }`}
+                    >
+                      <span>Chỉ định</span>
+                      <span className="text-[11px] opacity-75">({myObservedSlots.filter(s => s.requestOrigin === "ASSIGNED").length})</span>
                     </button>
                   </div>
 
@@ -6314,11 +6671,17 @@ export function ObservationClient(props: ObservationClientProps) {
                           <td className="p-3.5">
                             <div>
                               <span className="font-semibold text-slate-900 text-xs tracking-tight block">
-                                {slot.teacher.teacherName}
+                                {slot.teacher?.teacherName || slot.teacherName}
                               </span>
-                              <span className="text-[11px] text-slate-400 font-medium">
-                                {slot.teacher?.departmentRel?.name || (departments.find((d: any) => d.id === slot.teacher?.departmentId)?.name) || "TCM"}
-                              </span>
+                              <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                                {(slot.teacher?.teacherCode || slot.teacherCode) && (
+                                  <span className="text-teal-700 font-bold font-mono">
+                                    {slot.teacher?.teacherCode || slot.teacherCode}
+                                  </span>
+                                )}
+                                {(slot.teacher?.teacherCode || slot.teacherCode) && <span>•</span>}
+                                <span>{slot.teacher?.departmentRel?.name || (departments.find((d: any) => d.id === slot.teacher?.departmentId)?.name) || "TCM"}</span>
+                              </div>
                             </div>
                           </td>
 
@@ -6332,6 +6695,11 @@ export function ObservationClient(props: ObservationClientProps) {
                                 {isSurpriseSlot(slot) && (
                                   <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 rounded shrink-0">
                                     Đột xuất
+                                  </span>
+                                )}
+                                {slot.requestOrigin === "ASSIGNED" && (
+                                  <span className="px-1.5 py-0.5 text-[9px] font-semibold bg-purple-50 text-purple-700 border border-purple-200 rounded shrink-0">
+                                    Chỉ định
                                   </span>
                                 )}
                                 {slot.isDoublePeriod && (
@@ -6355,11 +6723,16 @@ export function ObservationClient(props: ObservationClientProps) {
                             <div className="space-y-0.5">
                               <p className="font-extrabold text-slate-800 flex items-center gap-1">
                                 <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                                <span>{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                               </p>
-                              <p className="text-xs font-bold text-teal-700">
-                                {slot.startTime} • Phòng {slot.room || "học"}
-                              </p>
+                              <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                                <span className="font-bold text-teal-700">
+                                  {slot.startTime} • Phòng {slot.room || "học"}
+                                </span>
+                                <span className="px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200/80 text-[10px]">
+                                  NH {slot.academicYear?.name || activeAcademicYear?.name || slotDate.getFullYear()}
+                                </span>
+                              </div>
                             </div>
                           </td>
 
@@ -6704,7 +7077,7 @@ export function ObservationClient(props: ObservationClientProps) {
         const isDraft = evalModal.registration.evaluation?.reEvaluationStatus === "DRAFT";
         const isReadOnly = !!evalModal.registration.evaluation && !isApprovedForReEval && !isDraft;
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget && !savingEvaluation) setEvalModal(null); }}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto" onClick={(e) => { if (e.target === e.currentTarget && !evalSubmitting) setEvalModal(null); }}>
             <div className="bg-white w-full max-w-3xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] my-auto animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
               <div className="px-6 py-5 bg-gradient-to-r from-[#003B3A] to-[#007068] text-white flex items-center justify-between shrink-0">
                 <div>
@@ -8190,7 +8563,7 @@ export function ObservationClient(props: ObservationClientProps) {
         }}
         onRegister={(s) => {
           setDrawerSlot(null);
-          handleRegisterSlot(s);
+          handleRegister(s.id);
         }}
       />
 
@@ -8215,6 +8588,11 @@ export function ObservationClient(props: ObservationClientProps) {
         isAdminUser={isAdminUser}
         isTTCM={isTTCM}
         canCreateSurprise={canCreateSurprise}
+        canAssignObservation={canAssignObservation}
+        onAssignedSuccess={() => {
+          setShowCreateModal(false);
+          refreshSlots();
+        }}
         currentTeacher={currentTeacher}
         monthlyLimitCount={monthlyLimitCount}
         myTaughtCount={myTaughtCount}
@@ -8243,7 +8621,7 @@ export function ObservationClient(props: ObservationClientProps) {
         onResetForm={() => {
           setNewTopic("");
           setNewDescription("");
-          setNewNotes("");
+          setReqNotes("");
           setNewLessonPlanName("");
           setNewLessonPlanData("");
           if (fileInputRef.current) fileInputRef.current.value = "";

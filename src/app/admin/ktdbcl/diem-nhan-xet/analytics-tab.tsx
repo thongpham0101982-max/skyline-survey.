@@ -53,20 +53,6 @@ export function GradeAnalyticsTab({
 }: Props) {
   const router = useRouter()
 
-  // Danh sách Khối lọc tương ứng theo Cấp học đã chọn
-  const availableGradesForLevel = useMemo(() => {
-    if (selectedLevelFilter === "TieuHoc") {
-      return ["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"]
-    }
-    if (selectedLevelFilter === "THCS") {
-      return ["Khối 6", "Khối 7", "Khối 8", "Khối 9"]
-    }
-    if (selectedLevelFilter === "THPT") {
-      return ["Khối 10", "Khối 11", "Khối 12"]
-    }
-    return GRADES
-  }, [selectedLevelFilter])
-
   // Sub-view navigation state: "teachers" | "below_benchmark" | "below_average" | "ksdv_matrix" | "charts"
   const [activeSubView, setActiveSubView] = useState<"teachers" | "below_benchmark" | "below_average" | "ksdv_matrix" | "charts">("teachers")
 
@@ -83,6 +69,20 @@ export function GradeAnalyticsTab({
   // Tracking view sub-filter
   const [trackingCategory, setTrackingCategory] = useState<"ALL" | "BELOW_AVG" | "BELOW_BENCHMARK" | "ADMISSION_COMMITMENT" | "LEARNING_COMMITMENT">("ALL")
   const [ksdvSubjectFilter, setKsdvSubjectFilter] = useState<"ALL" | "MATH" | "LIT" | "ENG" | "PSY">("ALL")
+
+  // Danh sách Khối lọc tương ứng theo Cấp học đã chọn
+  const availableGradesForLevel = useMemo(() => {
+    if (selectedLevelFilter === "TieuHoc") {
+      return ["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"]
+    }
+    if (selectedLevelFilter === "THCS") {
+      return ["Khối 6", "Khối 7", "Khối 8", "Khối 9"]
+    }
+    if (selectedLevelFilter === "THPT") {
+      return ["Khối 10", "Khối 11", "Khối 12"]
+    }
+    return GRADES
+  }, [selectedLevelFilter])
 
   // Data states
   const [loading, setLoading] = useState(false)
@@ -739,7 +739,7 @@ export function GradeAnalyticsTab({
             <span className="text-[11px] font-bold text-amber-600">học sinh</span>
           </div>
           <div className="text-[11px] text-amber-700/80 mt-1 font-medium">
-            &lt; 7.0 (TH) hoặc &lt; 6.0 (TrH)
+            Dưới chuẩn điểm môn học
           </div>
         </div>
 
@@ -900,9 +900,9 @@ export function GradeAnalyticsTab({
               className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
             >
               <option value="ALL">-- Tất cả Cấp học --</option>
-              <option value="TieuHoc">Tiểu học (Khối 1 - 5, Chuẩn 7.0đ)</option>
-              <option value="THCS">Trung học cơ sở (Khối 6 - 9, Chuẩn 6.0đ)</option>
-              <option value="THPT">Trung học phổ thông (Khối 10 - 12, Chuẩn 6.0đ)</option>
+              <option value="TieuHoc">Tiểu học</option>
+              <option value="THCS">THCS</option>
+              <option value="THPT">THPT</option>
             </select>
           </div>
 
@@ -1215,7 +1215,7 @@ export function GradeAnalyticsTab({
                 <span>Danh sách Học sinh Dưới chuẩn môn học</span>
               </h3>
               <p className="text-xs text-amber-700/80 mt-0.5 font-medium">
-                Tiêu chuẩn kiểm định: Tiểu học &lt; 7.0đ | Trung học &lt; 6.0đ (Hoặc theo cấu hình Chuẩn môn học cụ thể)
+                Tiêu chuẩn kiểm định: Theo cấu hình Chuẩn điểm từng môn học / cấp học
               </p>
             </div>
 
