@@ -156,7 +156,7 @@ export async function POST(req: Request) {
 
         <!-- HEADER -->
         <tr>
-          <td bgcolor="#003B3A" style="background-color:#003B3A; background:linear-gradient(135deg, #003B3A 0%, #064E3B 60%, #007A72 100%); padding:28px 32px; text-align:center; border-bottom:4px solid #00A19A; color:#FFFFFF;">
+          <td bgcolor="#003B3A" style="background-color:#003B3A; background:linear-gradient(135deg, #003B3A 0%, #064E3B 60%, #00A19A 100%); padding:28px 32px; text-align:center; border-bottom:4px solid #00A19A; color:#FFFFFF;">
             <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 10px auto;">
               <tr>
                 <td bgcolor="#0B4A47" style="background-color:#0B4A47; border:1px solid #00A19A; border-radius:20px; padding:3px 14px; font-size:10.5px; font-weight:800; color:#5EEAD4; letter-spacing:1px; text-transform:uppercase;">

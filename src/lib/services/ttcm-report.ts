@@ -449,7 +449,7 @@ export async function sendReportForDepartment(
         <table width="720" border="0" cellpadding="0" cellspacing="0" bgcolor="#FFFFFF" style="max-width:720px; width:100%; background-color:#FFFFFF; border-radius:16px; overflow:hidden; box-shadow:0 4px 16px rgba(0,59,58,0.12); border:1px solid #CBD5E1;">
           
           <tr>
-            <td bgcolor="#003B3A" style="background-color:#003B3A; background:linear-gradient(135deg, #003B3A 0%, #064E3B 60%, #007A72 100%); padding:28px 32px; color:#FFFFFF; border-bottom:4px solid #00A19A;">
+            <td bgcolor="#003B3A" style="background-color:#003B3A; background:linear-gradient(135deg, #003B3A 0%, #064E3B 60%, #00A19A 100%); padding:28px 32px; color:#FFFFFF; border-bottom:4px solid #00A19A;">
               <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>

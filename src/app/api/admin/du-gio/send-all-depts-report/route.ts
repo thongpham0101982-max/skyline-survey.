@@ -273,7 +273,7 @@ export async function POST(req: Request) {
           
           <!-- Sky-Line Branded Header Banner -->
           <tr>
-            <td bgcolor="#003B3A" style="background-color:#003B3A; background:linear-gradient(135deg, #003B3A 0%, #064E3B 60%, #007A72 100%); padding:28px 32px; color:#FFFFFF; border-bottom:4px solid #00A19A;">
+            <td bgcolor="#003B3A" style="background-color:#003B3A; background:linear-gradient(135deg, #003B3A 0%, #064E3B 60%, #00A19A 100%); padding:28px 32px; color:#FFFFFF; border-bottom:4px solid #00A19A;">
               <table width="100%" border="0" cellpadding="0" cellspacing="0">
                 <tr>
                   <td>
