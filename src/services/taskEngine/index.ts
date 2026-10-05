@@ -91,8 +91,7 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       // 2. Observer registrations approved/confirmed
       const upcomingObserverRegs = await prisma.observationRegistration.findMany({
         where: {
-          observerTeacherId: teacherId,
-          status: { in: ["APPROVED", "CONFIRMED", "REGISTERED"] },
+          teacherId: teacherId,
           slot: {
             date: { gte: startOfToday, lte: endOfWeek }
           }
@@ -131,9 +130,11 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       // 3. Attended observation slots needing evaluation
       const pendingEvaluations = await prisma.observationRegistration.findMany({
         where: {
-          observerTeacherId: teacherId,
-          status: "ATTENDED",
-          evaluations: { none: {} }
+          teacherId: teacherId,
+          evaluation: null,
+          slot: {
+            date: { lte: endOfToday }
+          }
         },
         include: { slot: true },
         take: 5
