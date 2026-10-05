@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { SSMTask, TaskSummaryCounts, SourceModule } from "./types"
 
 export async function aggregateUserTasks(userId: string, userRole: string = "TEACHER"): Promise<{
@@ -54,7 +54,7 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       // 1. Host teaching slots coming up
       const upcomingHostSlots = await prisma.observationSlot.findMany({
         where: {
-          hostTeacherId: teacherId,
+          teacherId: teacherId,
           date: { gte: startOfToday, lte: endOfWeek },
           status: { notIn: ["CANCELLED", "COMPLETED"] }
         },
@@ -224,8 +224,8 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       })
 
       pendingUnlocks.forEach(unlock => {
-        const stName = unlock.goal?.student?.fullName || "Học sinh"
-        const clsName = unlock.goal?.student?.class?.name || "Lớp"
+        const stName = unlock.goal?.student?.studentName || "Học sinh"
+        const clsName = unlock.goal?.student?.class?.className || "Lớp"
         tasks.push({
           taskId: `goal-unlock-${unlock.id}`,
           taskType: "UNLOCK_GOAL",
@@ -261,8 +261,8 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       })
 
       openHelpRequests.forEach(req => {
-        const stName = req.student?.fullName || "Học sinh"
-        const clsName = req.student?.class?.name || "Lớp"
+        const stName = req.student?.studentName || "Học sinh"
+        const clsName = req.student?.class?.className || "Lớp"
         tasks.push({
           taskId: `help-request-${req.id}`,
           taskType: "STUDENT_HELP_REQUEST",
@@ -295,7 +295,7 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       const supportAssignments = await prisma.learningSupportAssignment.findMany({
         where: {
           teacherId: teacherId,
-          status: "ACTIVE"
+          target: { status: "ACTIVE" }
         },
         include: {
           target: {
@@ -308,8 +308,8 @@ export async function aggregateUserTasks(userId: string, userRole: string = "TEA
       })
 
       supportAssignments.forEach(assign => {
-        const stName = assign.target?.student?.fullName || "Học sinh"
-        const clsName = assign.target?.student?.class?.name || "Lớp"
+        const stName = assign.target?.student?.studentName || "Học sinh"
+        const clsName = assign.target?.student?.class?.className || "Lớp"
         tasks.push({
           taskId: `support-assign-${assign.id}`,
           taskType: "LEARNING_SUPPORT",
