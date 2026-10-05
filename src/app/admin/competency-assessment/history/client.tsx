@@ -92,7 +92,7 @@ export function HistoryClient({ currentUser }: HistoryClientProps) {
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#007A72] uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#00A19A] uppercase tracking-wider">
             <Clock className="w-4 h-4" />
             <span>Audit Trail & Data Integrity</span>
           </div>
@@ -106,7 +106,7 @@ export function HistoryClient({ currentUser }: HistoryClientProps) {
 
         <Link
           href="/admin/competency-assessment/import"
-          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider text-white bg-[#007A72] hover:bg-[#003B3A] shadow-md transition-all"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider text-white bg-[#00A19A] hover:bg-[#003B3A] shadow-md transition-all"
         >
           <ArrowLeft className="w-4 h-4" /> Trở về Import Wizard
         </Link>
@@ -144,7 +144,7 @@ export function HistoryClient({ currentUser }: HistoryClientProps) {
                 batches.map((b) => (
                   <tr key={b.id} className="hover:bg-slate-50/60">
                     <td className="py-3 px-4">
-                      <div className="font-mono font-black text-[#007A72] text-xs">{b.batchCode}</div>
+                      <div className="font-mono font-black text-[#00A19A] text-xs">{b.batchCode}</div>
                       <div className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                         <FileSpreadsheet className="w-3 h-3 text-slate-400" />
                         <span className="truncate max-w-[220px]" title={b.fileName}>

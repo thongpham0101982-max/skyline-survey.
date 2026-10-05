@@ -316,7 +316,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
+            <div className="bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-white/10 rounded-lg">
                   <Tag className="w-5 h-5 text-teal-200" />
@@ -403,7 +403,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
+            <div className="bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-white/10 rounded-lg">
                   <Tag className="w-5 h-5 text-teal-200" />

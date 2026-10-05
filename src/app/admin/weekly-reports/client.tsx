@@ -1114,7 +1114,7 @@ export function WeeklyReportClient({
               <button
                 onClick={handleSaveAssignedTeachers}
                 disabled={submittingAssign || selectedTeacherIdsToAdd.length === 0}
-                className="bg-[#48BFE3] hover:bg-[#007A72] disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all"
+                className="bg-[#48BFE3] hover:bg-[#00A19A] disabled:opacity-50 text-white px-5 py-2 rounded-xl text-xs font-bold shadow-sm transition-all"
               >
                 {submittingAssign ? "Đang gán..." : `Gán ${selectedTeacherIdsToAdd.length} GV vào Tổ`}
               </button>
@@ -1228,7 +1228,7 @@ export function WeeklyReportClient({
                     <button
                       onClick={handleSaveModalComment}
                       disabled={modalSavingComment}
-                      className="bg-[#48BFE3] hover:bg-[#007A72] text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                      className="bg-[#48BFE3] hover:bg-[#00A19A] text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
                     >
                       <Save className="w-4 h-4" /> {modalSavingComment ? "Đang lưu..." : "Lưu nhận xét chỉ đạo"}
                     </button>
@@ -1629,7 +1629,7 @@ export function WeeklyReportClient({
 
                   <button
                     onClick={handleOpenAddTeacherModal}
-                    className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#007A72] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all"
+                    className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#00A19A] text-white px-4 py-2.5 rounded-xl font-bold text-xs shadow-sm transition-all"
                   >
                     <UserPlus className="w-4 h-4" /> Thêm / Gán Giáo Viên Vào Tổ Này
                   </button>
@@ -2135,7 +2135,7 @@ export function WeeklyReportClient({
                             onClick={() => setFilterConsolidatedGroup(gName)}
                             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                               filterConsolidatedGroup === gName
-                                ? "bg-[#007A72] text-white shadow-sm"
+                                ? "bg-[#00A19A] text-white shadow-sm"
                                 : "bg-slate-100 hover:bg-slate-200 text-slate-700"
                             }`}
                           >
@@ -2721,7 +2721,7 @@ export function WeeklyReportClient({
                   <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#007A72] text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-md"
+                    className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#00A19A] text-white px-5 py-2 rounded-xl text-xs font-bold transition-all shadow-md"
                   >
                     <Save className="w-4 h-4" /> {saving ? "Đang lưu..." : "Lưu Báo Cáo"}
                   </button>

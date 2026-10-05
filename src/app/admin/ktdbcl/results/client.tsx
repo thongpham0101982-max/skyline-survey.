@@ -1591,7 +1591,7 @@ export function ResultsClient({
             {/* Search Banner Container */}
             <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
               {/* Card Banner Header */}
-              <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3] text-white p-5 px-6 flex items-center justify-between">
+              <div className="bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3] text-white p-5 px-6 flex items-center justify-between">
                 <div className="flex items-center gap-3.5">
                   <div className="p-3 bg-white/10 rounded-xl backdrop-blur-xs shadow-inner">
                     <BookOpen className="w-6 h-6 text-teal-200" />

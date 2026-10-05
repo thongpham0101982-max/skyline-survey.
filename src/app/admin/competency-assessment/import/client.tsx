@@ -350,7 +350,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
       {/* Header & Breadcrumb */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#007A72] uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#00A19A] uppercase tracking-wider">
             <Sparkles className="w-4 h-4" />
             <span>Quy trình Import Thông minh 8 Bước</span>
           </div>
@@ -372,7 +372,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
           </Link>
           <Link
             href="/admin/competency-assessment/aliases"
-            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#007A72] bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-2xl transition-all"
+            className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#00A19A] bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-2xl transition-all"
           >
             <Settings className="w-4 h-4" />
             Từ điển Alias
@@ -453,7 +453,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
           {/* Target Period & Year Selector */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <Database className="w-4 h-4 text-[#007A72]" />
+              <Database className="w-4 h-4 text-[#00A19A]" />
               1. Cấu hình Đợt Đánh Giá & Năm Học Nhận Dữ Liệu
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -462,7 +462,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                 <select
                   value={selectedYearId}
                   onChange={(e) => setSelectedYearId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#007A72]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
                 >
                   {academicYears.map((y) => (
                     <option key={y.id} value={y.id}>
@@ -477,7 +477,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                 <select
                   value={selectedSemester}
                   onChange={(e) => setSelectedSemester(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#007A72]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
                 >
                   <option value={1}>Học kỳ I</option>
                   <option value={2}>Học kỳ II</option>
@@ -489,7 +489,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                 <select
                   value={selectedPeriod}
                   onChange={(e) => setSelectedPeriod(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#007A72]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
                 >
                   <option value="GIUA_KY_1">Giữa Học kỳ I</option>
                   <option value="CUOI_KY_1">Cuối Học kỳ I</option>
@@ -504,13 +504,13 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
           {/* Drag & Drop Upload Card */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <Upload className="w-4 h-4 text-[#007A72]" />
+              <Upload className="w-4 h-4 text-[#00A19A]" />
               2. Tải lên File Excel (.xlsx, .xls, .csv)
             </h3>
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-teal-300 hover:border-[#007A72] bg-teal-50/20 hover:bg-teal-50/40 p-8 rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all gap-3 text-center"
+              className="border-2 border-dashed border-teal-300 hover:border-[#00A19A] bg-teal-50/20 hover:bg-teal-50/40 p-8 rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all gap-3 text-center"
             >
               <input
                 ref={fileInputRef}
@@ -519,7 +519,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                 onChange={handleFileChange}
                 className="hidden"
               />
-              <div className="w-14 h-14 rounded-2xl bg-teal-100 flex items-center justify-center text-[#007A72] shadow-xs">
+              <div className="w-14 h-14 rounded-2xl bg-teal-100 flex items-center justify-center text-[#00A19A] shadow-xs">
                 <FileSpreadsheet className="w-7 h-7" />
               </div>
               <div>
@@ -531,7 +531,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                 </p>
               </div>
               {file && (
-                <span className="text-[11px] font-mono font-bold bg-[#007A72] text-white px-3 py-1 rounded-full">
+                <span className="text-[11px] font-mono font-bold bg-[#00A19A] text-white px-3 py-1 rounded-full">
                   {(file.size / 1024 / 1024).toFixed(2)} MB • {rawRows.length} dòng
                 </span>
               )}
@@ -554,7 +554,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
             <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
               <div className="flex justify-between items-center">
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-[#007A72]" />
+                  <Layers className="w-4 h-4 text-[#00A19A]" />
                   3. Ánh Xạ Cột (Column Mapping)
                 </h3>
                 <span className="text-[10px] font-bold text-slate-400">
@@ -582,7 +582,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                     <select
                       value={mapping[field.key] || ""}
                       onChange={(e) => setMapping({ ...mapping, [field.key]: e.target.value })}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#007A72]"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
                     >
                       <option value="">-- Bỏ qua / Không có --</option>
                       {headers.map((h) => (
@@ -601,7 +601,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                 <button
                   disabled={isValidating || !file}
                   onClick={handleRunValidation}
-                  className="flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-white bg-[#007A72] hover:bg-[#003B3A] shadow-md transition-all cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider text-white bg-[#00A19A] hover:bg-[#003B3A] shadow-md transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isValidating ? (
                     <>Đang nạp Staging & Kiểm tra...</>
@@ -666,7 +666,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
           {/* Quick Alias Action Bar */}
           <div className="bg-teal-50/50 p-4 rounded-2xl border border-teal-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div className="flex items-center gap-2 text-xs font-bold text-teal-900">
-              <Sparkles className="w-4 h-4 text-[#007A72]" />
+              <Sparkles className="w-4 h-4 text-[#00A19A]" />
               <span>Phát hiện tên môn học hoặc năng lực chưa khớp? Bạn có thể thêm Alias trực tiếp tại đây:</span>
             </div>
             <div className="flex items-center gap-2">
@@ -675,7 +675,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                   setAliasType("SUBJECT_ALIAS");
                   setAliasModalOpen(true);
                 }}
-                className="px-3 py-1.5 bg-white border border-teal-300 hover:border-[#007A72] text-[#007A72] rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="px-3 py-1.5 bg-white border border-teal-300 hover:border-[#00A19A] text-[#00A19A] rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 + Ánh xạ Môn học (Alias)
               </button>
@@ -684,7 +684,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                   setAliasType("COMPETENCY_ALIAS");
                   setAliasModalOpen(true);
                 }}
-                className="px-3 py-1.5 bg-white border border-teal-300 hover:border-[#007A72] text-[#007A72] rounded-xl text-xs font-bold transition-all cursor-pointer"
+                className="px-3 py-1.5 bg-white border border-teal-300 hover:border-[#00A19A] text-[#00A19A] rounded-xl text-xs font-bold transition-all cursor-pointer"
               >
                 + Ánh xạ Năng lực (Alias)
               </button>
@@ -753,7 +753,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                         <td className="py-2.5 px-3 text-center font-mono text-slate-400 font-bold">
                           {item.rowNumber}
                         </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-[#007A72]">{item.studentCode}</td>
+                        <td className="py-2.5 px-3 font-mono font-bold text-[#00A19A]">{item.studentCode}</td>
                         <td className="py-2.5 px-3 text-slate-800">{item.studentName || "—"}</td>
                         <td className="py-2.5 px-3 font-bold">{item.subject}</td>
                         <td className="py-2.5 px-3">{item.competency || "—"}</td>
@@ -805,7 +805,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                     name="dupAction"
                     checked={duplicateAction === "OVERWRITE"}
                     onChange={() => setDuplicateAction("OVERWRITE")}
-                    className="text-[#007A72] focus:ring-[#007A72]"
+                    className="text-[#00A19A] focus:ring-[#00A19A]"
                   />
                   Ghi đè bản ghi cũ (Cập nhật điểm mới nhất)
                 </label>
@@ -815,7 +815,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
                     name="dupAction"
                     checked={duplicateAction === "SKIP"}
                     onChange={() => setDuplicateAction("SKIP")}
-                    className="text-[#007A72] focus:ring-[#007A72]"
+                    className="text-[#00A19A] focus:ring-[#00A19A]"
                   />
                   Bỏ qua dòng trùng (Giữ nguyên dữ liệu cũ)
                 </label>
@@ -865,7 +865,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
           <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
             <div>
               <span className="text-slate-400 font-bold uppercase block text-[10px]">Số bản ghi đã lưu</span>
-              <span className="text-xl font-black text-[#007A72]">{commitResult.committedCount}</span>
+              <span className="text-xl font-black text-[#00A19A]">{commitResult.committedCount}</span>
             </div>
             <div>
               <span className="text-slate-400 font-bold uppercase block text-[10px]">Môn học đã tổng hợp Radar</span>
@@ -888,7 +888,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
 
             <Link
               href="/admin/ho-so-hoc-sinh"
-              className="px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider text-white bg-[#007A72] hover:bg-[#003B3A] shadow-md transition-all flex items-center gap-2"
+              className="px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider text-white bg-[#00A19A] hover:bg-[#003B3A] shadow-md transition-all flex items-center gap-2"
             >
               Xem Hồ Sơ Năng Lực Học Sinh <ArrowRight className="w-4 h-4" />
             </Link>
@@ -901,7 +901,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 w-full max-w-md space-y-4">
             <h3 className="text-sm font-black text-slate-850 uppercase tracking-tight flex items-center gap-2">
-              <Plus className="w-4 h-4 text-[#007A72]" />
+              <Plus className="w-4 h-4 text-[#00A19A]" />
               {aliasType === "SUBJECT_ALIAS"
                 ? "Thêm Alias Môn Học"
                 : aliasType === "COMPETENCY_ALIAS"
@@ -979,7 +979,7 @@ export function ImportWizardClient({ currentUser }: ImportWizardClientProps) {
               <button
                 disabled={aliasLoading}
                 onClick={handleSaveAlias}
-                className="px-5 py-2 rounded-xl text-xs font-black text-white bg-[#007A72] hover:bg-[#003B3A]"
+                className="px-5 py-2 rounded-xl text-xs font-black text-white bg-[#00A19A] hover:bg-[#003B3A]"
               >
                 {aliasLoading ? "Đang lưu..." : "Lưu & Khớp Lại"}
               </button>

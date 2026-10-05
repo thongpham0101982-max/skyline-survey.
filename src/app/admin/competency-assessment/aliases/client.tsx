@@ -90,7 +90,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#007A72] uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#00A19A] uppercase tracking-wider">
             <Layers className="w-4 h-4" />
             <span>Từ Điển Chuẩn Hóa Danh Mục</span>
           </div>
@@ -105,7 +105,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/competency-assessment/import"
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider text-white bg-[#007A72] hover:bg-[#003B3A] shadow-md transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider text-white bg-[#00A19A] hover:bg-[#003B3A] shadow-md transition-all"
           >
             <ArrowLeft className="w-4 h-4" /> Trở về Trình Import
           </Link>
@@ -141,7 +141,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
               placeholder="Tìm kiếm môn/năng lực..."
               value={searchKey}
               onChange={(e) => setSearchKey(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-hidden focus:ring-2 focus:ring-[#007A72]"
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-hidden focus:ring-2 focus:ring-[#00A19A]"
             />
           </div>
 
@@ -151,7 +151,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
                 setModalType("SUBJECT_ALIAS");
                 setModalOpen(true);
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-[#007A72] hover:bg-[#003B3A] text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2 bg-[#00A19A] hover:bg-[#003B3A] text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-4 h-4" /> Thêm Alias Môn
             </button>
@@ -162,7 +162,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
                   setModalType("NEW_COMPETENCY");
                   setModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#007A72] border border-teal-200 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#00A19A] border border-teal-200 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap"
               >
                 <Plus className="w-3.5 h-3.5" /> Thêm Năng Lực
               </button>
@@ -171,7 +171,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
                   setModalType("COMPETENCY_ALIAS");
                   setModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-2 bg-[#007A72] hover:bg-[#003B3A] text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 bg-[#00A19A] hover:bg-[#003B3A] text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
               >
                 <Plus className="w-4 h-4" /> Thêm Alias Năng Lực
               </button>
@@ -191,7 +191,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
                 <div key={s.id} className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#007A72] flex items-center justify-center font-black text-xs">
+                      <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#00A19A] flex items-center justify-center font-black text-xs">
                         <BookOpen className="w-4 h-4" />
                       </div>
                       <div>
@@ -248,7 +248,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
                   return (
                     <tr key={c.id} className="hover:bg-slate-50/60">
                       <td className="py-3 px-4 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
-                      <td className="py-3 px-4 font-bold text-[#007A72]">{c.subject?.subjectName}</td>
+                      <td className="py-3 px-4 font-bold text-[#00A19A]">{c.subject?.subjectName}</td>
                       <td className="py-3 px-4">
                         <div className="font-extrabold text-slate-800">{c.name}</div>
                         <div className="font-mono text-[10px] text-slate-400">{c.code}</div>
@@ -388,7 +388,7 @@ export function AliasesClient({ currentUser }: AliasesClientProps) {
               <button
                 disabled={modalLoading}
                 onClick={handleSave}
-                className="px-5 py-2 rounded-xl text-xs font-black text-white bg-[#007A72] hover:bg-[#003B3A]"
+                className="px-5 py-2 rounded-xl text-xs font-black text-white bg-[#00A19A] hover:bg-[#003B3A]"
               >
                 {modalLoading ? "Đang lưu..." : "Lưu vào Danh mục"}
               </button>
