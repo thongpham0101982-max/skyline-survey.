@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useMemo } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
@@ -18,11 +18,18 @@ import {
   Send,
   Building2,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  Sparkles,
+  Award,
+  Layers,
+  Check,
+  RotateCcw,
+  GraduationCap,
+  Globe
 } from "lucide-react"
 import { PwaBottomNav } from "@/components/pwa/PwaBottomNav"
 
-interface ObservationSlotItem {
+export interface ObservationSlotItem {
   id: string
   date: string
   slotIndex: number | string
@@ -32,6 +39,10 @@ interface ObservationSlotItem {
   subjectName: string
   className: string
   room: string
+  level?: string
+  departmentName?: string
+  requestOrigin?: string
+  topic?: string
   roleType: "TEACHING" | "OBSERVING"
   status: string
   hasEvaluated: boolean
@@ -49,6 +60,107 @@ interface ObservationMobileViewProps {
   currentTeacher?: any
 }
 
+// ==========================================
+// 1. CRITERIA CONFIGURATIONS
+// ==========================================
+
+// --- Phổ thông (K-12): 11 Tiêu chí theo chuẩn Sky-Line (Thang 20 điểm) ---
+export const K12_CRITERIA = [
+  { id: "Y1", label: "Y1. Chuẩn bị giáo án, bám sát kiến thức kỹ năng", max: 1.5, isKey: true, options: [0, 0.5, 1.0, 1.25, 1.5] },
+  { id: "Y2", label: "Y2. Đồ dùng, thiết bị dạy học phù hợp", max: 1.5, isKey: false, options: [0, 0.5, 1.0, 1.25, 1.5] },
+  { id: "Y3", label: "Y3. Nội dung bài giảng chính xác, khoa học", max: 2.0, isKey: true, options: [0, 0.5, 1.0, 1.5, 2.0] },
+  { id: "Y4", label: "Y4. Tính hệ thống, trọng tâm bài dạy", max: 2.0, isKey: false, options: [0, 0.5, 1.0, 1.5, 2.0] },
+  { id: "Y5", label: "Y5. Liên hệ thực tế đời sống, tính giáo dục", max: 1.0, isKey: false, options: [0, 0.25, 0.5, 0.75, 1.0] },
+  { id: "Y6", label: "Y6. Không đọc chép, hỗ trợ kịp thời học sinh", max: 2.0, isKey: true, options: [0, 0.5, 1.0, 1.5, 2.0] },
+  { id: "Y7", label: "Y7. Tổ chức học tập chủ động, hợp tác nhóm", max: 3.0, isKey: true, options: [0, 1.0, 1.5, 2.0, 2.5, 3.0] },
+  { id: "Y8", label: "Y8. Linh hoạt các khâu, phân phối thời gian hợp lý", max: 2.0, isKey: false, options: [0, 0.5, 1.0, 1.5, 2.0] },
+  { id: "Y9", label: "Y9. Kết hợp phương pháp, khuyến khích tư duy", max: 2.0, isKey: false, options: [0, 0.5, 1.0, 1.5, 2.0] },
+  { id: "Y10", label: "Y10. Đánh giá quá trình học, học sinh nắm vững bài", max: 2.0, isKey: false, options: [0, 0.5, 1.0, 1.5, 2.0] },
+  { id: "Y11", label: "Y11. Tiết dạy nhuần nhuyễn, sinh động, sáng tạo", max: 1.0, isKey: false, options: [0, 0.25, 0.5, 0.75, 1.0] }
+]
+
+// --- Mầm non: 5 Tiêu chí cốt lõi (Thang 10 điểm) ---
+export const MAMNON_CRITERIA = [
+  { id: "T1", label: "T1. Nội dung bài dạy phù hợp, chính xác", max: 2.0, options: [0.5, 1.0, 1.5, 2.0] },
+  { id: "T2", label: "T2. Phương pháp giảng dạy hiệu quả, sáng tạo", max: 2.0, options: [0.5, 1.0, 1.5, 2.0] },
+  { id: "T3", label: "T3. Tổ chức hoạt động học tập tích cực", max: 2.0, options: [0.5, 1.0, 1.5, 2.0] },
+  { id: "T4", label: "T4. Sử dụng CNTT và đồ chơi, học liệu", max: 2.0, options: [0.5, 1.0, 1.5, 2.0] },
+  { id: "T5", label: "T5. Kết quả học tập và tương tác của trẻ", max: 2.0, options: [0.5, 1.0, 1.5, 2.0] }
+]
+
+// --- GVNN (Foreign Teachers Walkthrough): 6 Tiêu chuẩn ESL cốt lõi (Thang 4 mức) ---
+export const GVNN_CRITERIA = [
+  { id: "D14", label: "D14. Appropriate Content Level (Nội dung phù hợp trình độ)", max: 4 },
+  { id: "D15", label: "D15. Realistic Lesson Pacing (Khối lượng & thời lượng tiết dạy)", max: 4 },
+  { id: "D16", label: "D16. Effective Teaching Media & Realia (Học liệu & đồ dùng trực quan)", max: 4 },
+  { id: "D17", label: "D17. Curriculum Implementation & CLT (Định hướng chương trình & CLT)", max: 4 },
+  { id: "E18", label: "E18. Formative Assessment & Checks (Đánh giá thường xuyên & CCQs/ICQs)", max: 4 },
+  { id: "E19", label: "E19. Meaningful & Timely Feedback (Nhận xét phản hồi học sinh)", max: 4 }
+]
+
+// Feedback Presets
+const PRESET_STRENGTHS = [
+  "Chuẩn bị bài chu đáo, phương tiện trực quan sinh động",
+  "Học sinh hào hứng, tích cực tham gia tương tác",
+  "Phương pháp linh hoạt, phân bổ thời gian hợp lý",
+  "Ứng dụng CNTT và học liệu hiệu quả",
+  "Lớp học nề nếp, giáo viên quan sát bao quát tốt"
+]
+
+const PRESET_IMPROVEMENTS = [
+  "Bao quát và hỗ trợ học sinh ở các góc lớp kỹ hơn",
+  "Dành thêm 3-5 phút cho phần củng cố và dặn dò",
+  "Tăng cường hoạt động thảo luận nhóm cho học sinh",
+  "Điều chỉnh nhịp độ giảng dạy cho học sinh tiếp thu chậm",
+  "Phân hóa bài tập phù hợp hơn với từng nhóm năng lực"
+]
+
+// Helper: Auto-detect evaluation type
+function detectEvaluationType(slot: ObservationSlotItem | null): "K12" | "MAM_NON" | "GVNN" {
+  if (!slot) return "K12"
+  const lvl = (slot.level || "").toLowerCase()
+  const cls = (slot.className || "").toLowerCase()
+  const subj = (slot.subjectName || "").toLowerCase()
+  const origin = (slot.requestOrigin || "").toUpperCase()
+  const dept = (slot.departmentName || "").toLowerCase()
+
+  // 1. GVNN / Foreign Walkthrough
+  if (
+    origin === "FOREIGN_WALKTHROUGH" ||
+    subj.includes("esl") ||
+    subj.includes("gvnn") ||
+    subj.includes("nước ngoài") ||
+    subj.includes("nuoc ngoai") ||
+    subj.includes("foreign") ||
+    dept.includes("tiếng anh nước ngoài") ||
+    dept.includes("gvnn")
+  ) {
+    return "GVNN"
+  }
+
+  // 2. Mầm non
+  if (
+    lvl.includes("mầm non") ||
+    lvl.includes("mam non") ||
+    lvl.includes("preschool") ||
+    cls.startsWith("mầm") ||
+    cls.startsWith("chồi") ||
+    cls.startsWith("lá") ||
+    cls.startsWith("mam") ||
+    cls.startsWith("choi") ||
+    cls.startsWith("la") ||
+    cls.includes("pre-k") ||
+    cls.includes("kindergarten") ||
+    dept.includes("mầm non") ||
+    dept.includes("mam non")
+  ) {
+    return "MAM_NON"
+  }
+
+  // 3. Phổ thông K-12
+  return "K12"
+}
+
 export function ObservationMobileView({ initialSlots, currentTeacher }: ObservationMobileViewProps) {
   const [activeTab, setActiveTab] = useState<"MY_SLOTS" | "QUICK_EVAL" | "BROWSE">("MY_SLOTS")
   const [mySlots, setMySlots] = useState<ObservationSlotItem[]>([])
@@ -58,7 +170,8 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
 
   // Evaluation Sheet state
   const [evaluatingSlot, setEvaluatingSlot] = useState<ObservationSlotItem | null>(null)
-  const [scores, setScores] = useState<number[]>([4, 4, 4, 4])
+  const [evalType, setEvalType] = useState<"K12" | "MAM_NON" | "GVNN">("K12")
+  const [scores, setScores] = useState<number[]>([])
   const [strengths, setStrengths] = useState("")
   const [weaknesses, setWeaknesses] = useState("")
   const [savingEval, setSavingEval] = useState(false)
@@ -93,6 +206,10 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
         subjectName: s.subjectName || "Môn học",
         className: s.className || "Lớp học",
         room: s.room || "Phòng học",
+        level: s.level || "",
+        departmentName: s.teacher?.departmentRel?.name || "",
+        requestOrigin: s.requestOrigin || "",
+        topic: s.topic || "",
         roleType: isMyTeaching ? "TEACHING" : "OBSERVING",
         status: myReg ? (myReg.isApproved ? "Đã duyệt" : "Đã đăng ký") : (s.status || "ACTIVE"),
         hasEvaluated: Boolean(myEval),
@@ -115,48 +232,68 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
     return { my, avail }
   }, [])
 
-  // Initialize from initialSlots if provided
-  useEffect(() => {
-    if (initialSlots && initialSlots.length > 0) {
-      const { my, avail } = parseRawSlots(initialSlots, currentTeacher?.id)
-      setMySlots(my)
-      setAvailableSlots(avail)
-      setLoading(false)
-    }
-  }, [initialSlots, currentTeacher, parseRawSlots])
-
-  // Fetch fresh data from API
   const loadData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
     try {
       const res = await fetch("/api/pwa/observations")
       if (res.ok) {
         const json = await res.json()
-        if (json.success) {
-          setMySlots(json.mySlots || [])
-          setAvailableSlots(json.availableSlots || [])
-        }
+        setMySlots(json.mySlots || [])
+        setAvailableSlots(json.availableSlots || [])
+      } else if (initialSlots) {
+        const parsed = parseRawSlots(initialSlots, currentTeacher?.id)
+        setMySlots(parsed.my)
+        setAvailableSlots(parsed.avail)
       }
     } catch (err) {
-      console.error("[ObservationMobileView] Error loading data:", err)
+      if (initialSlots) {
+        const parsed = parseRawSlots(initialSlots, currentTeacher?.id)
+        setMySlots(parsed.my)
+        setAvailableSlots(parsed.avail)
+      }
     } finally {
       setLoading(false)
       if (isManual) setTimeout(() => setRefreshing(false), 300)
     }
-  }, [])
+  }, [initialSlots, currentTeacher?.id, parseRawSlots])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
+  // Open evaluation sheet and initialize scores
   const handleOpenEvaluate = (slot: ObservationSlotItem) => {
     setEvaluatingSlot(slot)
-    setScores([4, 4, 4, 4])
+    const detected = detectEvaluationType(slot)
+    setEvalType(detected)
+
+    // Set initial scores
+    if (detected === "MAM_NON") {
+      setScores(MAMNON_CRITERIA.map(c => c.max))
+    } else if (detected === "GVNN") {
+      setScores(GVNN_CRITERIA.map(() => 4))
+    } else {
+      setScores(K12_CRITERIA.map(c => c.max))
+    }
+
     setStrengths("")
     setWeaknesses("")
     setEvalSuccess(false)
   }
 
+  // Switch type manually
+  const handleSwitchEvalType = (type: "K12" | "MAM_NON" | "GVNN") => {
+    setEvalType(type)
+    if (type === "MAM_NON") {
+      setScores(MAMNON_CRITERIA.map(c => c.max))
+    } else if (type === "GVNN") {
+      setScores(GVNN_CRITERIA.map(() => 4))
+    } else {
+      setScores(K12_CRITERIA.map(c => c.max))
+    }
+  }
+
+  // Handle single score change
   const handleScoreChange = (index: number, val: number) => {
     setScores(prev => {
       const next = [...prev]
@@ -165,21 +302,87 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
     })
   }
 
-  const totalScore = scores.reduce((a, b) => a + b, 0)
-  const calculatedRating = totalScore >= 14 ? "Tốt" : totalScore >= 11 ? "Khá" : "Đạt"
+  // Quick Max
+  const handleSetMaxScores = () => {
+    if (evalType === "MAM_NON") {
+      setScores(MAMNON_CRITERIA.map(c => c.max))
+    } else if (evalType === "GVNN") {
+      setScores(GVNN_CRITERIA.map(() => 4))
+    } else {
+      setScores(K12_CRITERIA.map(c => c.max))
+    }
+  }
+
+  // Reset 0
+  const handleResetScores = () => {
+    if (evalType === "MAM_NON") {
+      setScores(MAMNON_CRITERIA.map(() => 0))
+    } else if (evalType === "GVNN") {
+      setScores(GVNN_CRITERIA.map(() => 1))
+    } else {
+      setScores(K12_CRITERIA.map(() => 0))
+    }
+  }
+
+  // Computed Rankings & Details
+  const rankingDetails = useMemo(() => {
+    if (evalType === "MAM_NON") {
+      const sum = Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100
+      if (sum === 0) return { rating: "Chưa xếp loại", scoreStr: "0.00/10đ", color: "slate", reason: "Vui lòng chọn điểm các tiêu chí" }
+      if (sum >= 9.0) return { rating: "Tốt", scoreStr: `${sum.toFixed(2)}/10đ`, color: "emerald", reason: "Từ 9.0đ trở lên - Đạt chuẩn TỐT Mầm non" }
+      if (sum >= 8.0) return { rating: "Khá", scoreStr: `${sum.toFixed(2)}/10đ`, color: "sky", reason: "Từ 8.0đ đến dưới 9.0đ - Đạt chuẩn KHÁ Mầm non" }
+      if (sum >= 7.0) return { rating: "Đạt", scoreStr: `${sum.toFixed(2)}/10đ`, color: "amber", reason: "Từ 7.0đ đến dưới 8.0đ - Đạt chuẩn ĐẠT Mầm non" }
+      return { rating: "Không đạt", scoreStr: `${sum.toFixed(2)}/10đ`, color: "rose", reason: "Dưới 7.0đ - Chưa đạt chuẩn Mầm non" }
+    } else if (evalType === "GVNN") {
+      const avg = scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 100) / 100 : 0
+      if (avg >= 3.5) return { rating: "Strong Practice", scoreStr: `${avg.toFixed(2)}/4.0`, color: "emerald", reason: "ĐTB ≥ 3.5 - Xuất sắc / Vượt chuẩn" }
+      if (avg >= 2.8) return { rating: "Effective", scoreStr: `${avg.toFixed(2)}/4.0`, color: "sky", reason: "ĐTB ≥ 2.8 - Đạt chuẩn giảng dạy hiệu quả" }
+      if (avg >= 2.0) return { rating: "Developing", scoreStr: `${avg.toFixed(2)}/4.0`, color: "amber", reason: "ĐTB ≥ 2.0 - Đang phát triển / Cần cải thiện" }
+      return { rating: "Needs Support", scoreStr: `${avg.toFixed(2)}/4.0`, color: "rose", reason: "ĐTB < 2.0 - Cần hỗ trợ chuyên môn" }
+    } else {
+      // K12
+      const sum = Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100
+      if (sum === 0) return { rating: "Chưa xếp loại", scoreStr: "0.00/20đ", color: "slate", reason: "Vui lòng chọn điểm các tiêu chí" }
+
+      const y1 = scores[0] || 0
+      const y3 = scores[2] || 0
+      const y6 = scores[5] || 0
+      const y7 = scores[6] || 0
+
+      const maxArr = [1.5, 1.5, 2.0, 2.0, 1.0, 2.0, 3.0, 2.0, 2.0, 2.0, 1.0]
+      const hasSub50 = scores.some((s, idx) => s < maxArr[idx] * 0.5)
+      const hasZero = scores.some(s => s === 0)
+
+      if (sum >= 17.0 && y1 === 1.5 && y3 === 2.0 && y6 === 2.0 && y7 === 3.0 && !hasSub50) {
+        return { rating: "Giỏi", scoreStr: `${sum.toFixed(2)}/20đ`, color: "emerald", reason: "Tổng ≥ 17.0đ & đạt Max 4 tiêu chí then chốt (Y1, Y3, Y6, Y7)" }
+      }
+      if (sum >= 14.0 && y1 === 1.5 && y3 === 2.0 && y6 === 2.0 && !hasSub50) {
+        return { rating: "Khá", scoreStr: `${sum.toFixed(2)}/20đ`, color: "sky", reason: "Tổng ≥ 14.0đ & đạt Max 3 tiêu chí then chốt (Y1, Y3, Y6)" }
+      }
+      if (sum >= 10.0 && y1 === 1.5 && y3 === 2.0 && !hasZero) {
+        return { rating: "Đạt", scoreStr: `${sum.toFixed(2)}/20đ`, color: "amber", reason: "Tổng ≥ 10.0đ & đạt Max 2 tiêu chí then chốt (Y1, Y3)" }
+      }
+      return { rating: "Chưa đạt", scoreStr: `${sum.toFixed(2)}/20đ`, color: "rose", reason: "Tổng < 10.0đ hoặc chưa đạt Max tiêu chí bắt buộc" }
+    }
+  }, [evalType, scores])
 
   const handleSaveEvaluation = async () => {
     if (!evaluatingSlot) return
     setSavingEval(true)
     try {
+      const totalScoreNum = evalType === "GVNN"
+        ? Math.round((scores.reduce((a, b) => a + b, 0) / (scores.length || 1)) * 100) / 100
+        : Math.round(scores.reduce((a, b) => a + b, 0) * 100) / 100
+
       const res = await fetch("/api/pwa/observations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           slotId: evaluatingSlot.id,
+          evaluationType: evalType,
           scores,
-          totalScore,
-          rating: calculatedRating,
+          totalScore: totalScoreNum,
+          rating: rankingDetails.rating,
           strengths,
           weaknesses
         })
@@ -232,8 +435,8 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-base font-extrabold tracking-tight text-white">
-                Dự Giờ & Thao Giảng
+              <h1 className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                <span>Dự Giờ & Thao Giảng</span>
               </h1>
               <p className="text-[11px] text-[#5EEAD4] font-medium">SSM Mobile Workspace</p>
             </div>
@@ -248,41 +451,39 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
           </button>
         </div>
 
-        {/* 2. PILL TABS */}
-        <div className="flex items-center gap-1.5 mt-3 overflow-x-auto no-scrollbar pb-1">
+        {/* Action Tabs */}
+        <div className="flex items-center gap-1.5 mt-3.5 bg-black/20 p-1 rounded-xl">
           <button
             onClick={() => setActiveTab("MY_SLOTS")}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
               activeTab === "MY_SLOTS"
-                ? "bg-white text-[#003B3A] shadow-sm"
-                : "bg-white/10 text-white/80 hover:bg-white/15"
+                ? "bg-[#00A19A] text-white shadow-xs"
+                : "text-slate-300 hover:text-white"
             }`}
           >
             Lịch của tôi ({mySlots.length})
           </button>
-
           <button
             onClick={() => setActiveTab("QUICK_EVAL")}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center relative ${
               activeTab === "QUICK_EVAL"
-                ? "bg-[#00A19A] text-white shadow-sm"
-                : "bg-white/10 text-white/80 hover:bg-white/15"
+                ? "bg-[#00A19A] text-white shadow-xs"
+                : "text-slate-300 hover:text-white"
             }`}
           >
-            <span>Cần đánh giá</span>
+            Cần đánh giá
             {needsEvalSlots.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-500 text-white font-extrabold">
+              <span className="ml-1.5 px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[10px] font-black">
                 {needsEvalSlots.length}
               </span>
             )}
           </button>
-
           <button
             onClick={() => setActiveTab("BROWSE")}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer ${
+            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
               activeTab === "BROWSE"
-                ? "bg-white text-[#003B3A] shadow-sm"
-                : "bg-white/10 text-white/80 hover:bg-white/15"
+                ? "bg-[#00A19A] text-white shadow-xs"
+                : "text-slate-300 hover:text-white"
             }`}
           >
             Đăng ký dự ({availableSlots.length})
@@ -290,161 +491,181 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
         </div>
       </div>
 
-      {/* 3. CONTENT LIST */}
-      <div className="p-4 max-w-2xl mx-auto space-y-3">
+      {/* 2. MAIN CONTENT LIST */}
+      <div className="p-4 space-y-3.5 max-w-lg mx-auto">
         {loading ? (
-          <div className="py-20 text-center">
-            <RefreshCw className="w-8 h-8 text-[#00A19A] animate-spin mx-auto mb-2" />
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Đang tải lịch dự giờ...
-            </p>
+          <div className="py-16 text-center text-slate-400">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#00A19A]" />
+            <p className="text-xs font-medium">Đang tải danh sách tiết dự giờ...</p>
           </div>
         ) : activeTab === "MY_SLOTS" ? (
           mySlots.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center border border-[#E6ECEA] shadow-xs my-6">
-              <Eye className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-slate-800">Chưa có tiết dự giờ nào</h3>
-              <p className="text-xs text-slate-500 mt-1">Thầy/Cô chưa có lịch dạy hoặc đăng ký dự giờ nào gần đây.</p>
+            <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-2xs">
+              <Eye className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <h4 className="text-sm font-bold text-slate-700">Chưa có lịch dự giờ</h4>
+              <p className="text-xs text-slate-400 mt-1">
+                Chuyển qua tab "Đăng ký dự" để tìm tiết thao giảng phù hợp.
+              </p>
             </div>
           ) : (
             mySlots.map(slot => (
               <div
                 key={slot.id}
-                className="bg-white rounded-2xl p-4 border border-[#E6ECEA] shadow-xs space-y-3 relative overflow-hidden"
+                className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs space-y-3 transition-all hover:border-[#00A19A]/40"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                      slot.roleType === "TEACHING"
-                        ? "bg-teal-50 text-[#00A19A] border-teal-200"
-                        : "bg-indigo-50 text-indigo-700 border-indigo-200"
-                    }`}>
-                      {slot.roleType === "TEACHING" ? "TIẾT DẠY CỦA TÔI" : "TÔI DỰ GIỜ"}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 inline-block mb-1">
+                      {slot.roleType === "TEACHING" ? "👤 Tiết dạy của tôi" : "👁️ Tôi đi dự giờ"}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      {slot.status}
-                    </span>
+                    <h3 className="text-sm font-black text-slate-900 leading-snug">
+                      {slot.subjectName} · {slot.className}
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">
+                      GV: {slot.teacherName} {slot.level && `(${slot.level})`}
+                    </p>
                   </div>
 
-                  {slot.hasEvaluated && (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>{slot.myEvaluation?.rating || "Đã đánh giá"}</span>
-                    </span>
-                  )}
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                      slot.status === "Đã duyệt" || slot.status === "ACTIVE"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                    }`}
+                  >
+                    {slot.status}
+                  </span>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800 tracking-tight">
-                    {slot.subjectName} · {slot.className}
-                  </h3>
-                  <p className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
-                    <User className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Giáo viên: <strong>{slot.teacherName}</strong></span>
-                  </p>
-                </div>
-
-                <div className="bg-slate-50 rounded-xl p-2.5 flex items-center justify-between text-xs text-slate-600">
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50/80 p-2.5 rounded-xl border border-slate-100">
                   <div className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-[#00A19A]" />
                     <span>{slot.date}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Clock3 className="w-3.5 h-3.5 text-[#00A19A]" />
+                    <Clock className="w-3.5 h-3.5 text-[#00A19A]" />
                     <span>{slot.time}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 font-medium text-slate-500">
-                    <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{slot.room}</span>
                   </div>
                 </div>
 
-                {/* Action button */}
                 {slot.roleType === "OBSERVING" && !slot.hasEvaluated && (
                   <button
                     onClick={() => handleOpenEvaluate(slot)}
-                    className="w-full h-10 rounded-xl bg-[#00A19A] hover:bg-[#008B85] active:bg-[#00736E] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-[#00A19A] hover:bg-[#008B85] active:bg-[#00736E] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <Star className="w-3.5 h-3.5" />
-                    <span>Chấm điểm tiết dạy ngay</span>
+                    <Star className="w-3.5 h-3.5 fill-current" />
+                    <span>Chấm điểm & Đánh giá ngay</span>
                   </button>
+                )}
+
+                {slot.hasEvaluated && slot.myEvaluation && (
+                  <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-xl p-2.5 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-bold text-emerald-900 block">Đã hoàn thành đánh giá</span>
+                      <span className="text-[11px] text-emerald-700">
+                        Xếp loại: {slot.myEvaluation.rating} ({slot.myEvaluation.totalScore}đ)
+                      </span>
+                    </div>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  </div>
                 )}
               </div>
             ))
           )
         ) : activeTab === "QUICK_EVAL" ? (
           needsEvalSlots.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center border border-[#E6ECEA] shadow-xs my-6">
+            <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-2xs">
               <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-slate-800">Tuyệt vời!</h3>
-              <p className="text-xs text-slate-500 mt-1">Thầy/Cô đã hoàn tất đánh giá cho tất cả các tiết dự giờ gần đây.</p>
+              <h4 className="text-sm font-bold text-slate-700">Đã hoàn thành đánh giá!</h4>
+              <p className="text-xs text-slate-400 mt-1">
+                Bạn không còn tiết dự giờ nào đang chờ gửi phiếu đánh giá.
+              </p>
             </div>
           ) : (
             needsEvalSlots.map(slot => (
               <div
                 key={slot.id}
-                className="bg-white rounded-2xl p-4 border border-teal-200 shadow-xs space-y-3"
+                className="bg-white rounded-2xl p-4 border border-amber-200 shadow-2xs space-y-3"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                    CHỜ ĐÁNH GIÁ
-                  </span>
-                  <span className="text-xs font-mono text-slate-400">{slot.date}</span>
-                </div>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">
+                      {slot.subjectName} · {slot.className}
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Giáo viên: {slot.teacherName}
+                    </p>
+                    <p className="text-[11px] text-amber-700 font-bold mt-1">
+                      📅 {slot.date} • ⏰ {slot.time}
+                    </p>
+                  </div>
 
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">
-                    {slot.subjectName} · {slot.className}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Giáo viên dạy: <strong>{slot.teacherName}</strong> · {slot.time}
-                  </p>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-300">
+                    Chờ đánh giá
+                  </span>
                 </div>
 
                 <button
                   onClick={() => handleOpenEvaluate(slot)}
-                  className="w-full h-11 rounded-xl bg-gradient-to-r from-[#00A19A] to-[#008B85] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm cursor-pointer active:scale-[0.99] transition-all"
+                  className="w-full py-2.5 rounded-xl bg-[#00A19A] hover:bg-[#008B85] active:bg-[#00736E] text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Star className="w-4 h-4 fill-white" />
-                  <span>Đánh giá nhanh 4 tiêu chí chuẩn</span>
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span>Mở phiếu chấm điểm</span>
                 </button>
               </div>
             ))
           )
         ) : (
           availableSlots.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center border border-[#E6ECEA] shadow-xs my-6">
-              <Clock className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-slate-800">Không có tiết mở nào</h3>
-              <p className="text-xs text-slate-500 mt-1">Hiện không có tiết dự giờ nào đang mở cho việc đăng ký.</p>
+            <div className="bg-white rounded-2xl p-8 text-center border border-slate-200 shadow-2xs">
+              <Clock3 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <h4 className="text-sm font-bold text-slate-700">Chưa có tiết mở đăng ký</h4>
+              <p className="text-xs text-slate-400 mt-1">
+                Các tiết dự giờ mở đăng ký của đồng nghiệp sẽ hiển thị tại đây.
+              </p>
             </div>
           ) : (
             availableSlots.map(slot => (
               <div
                 key={slot.id}
-                className="bg-white rounded-2xl p-4 border border-[#E6ECEA] shadow-xs space-y-3"
+                className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs space-y-3"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#003B3A]">
-                    {slot.subjectName} · {slot.className}
-                  </span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    ĐANG MỞ ĐĂNG KÝ
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900">
+                      {slot.subjectName} · {slot.className}
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium">
+                      GV đứng lớp: {slot.teacherName}
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    Mở đăng ký
                   </span>
                 </div>
 
-                <div className="text-xs text-slate-600 space-y-1">
-                  <p>Giáo viên dạy: <strong>{slot.teacherName}</strong></p>
-                  <p>Thời gian: {slot.date} · {slot.time} ({slot.room})</p>
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-[#00A19A]" />
+                    <span>{slot.date}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#00A19A]" />
+                    <span>{slot.time}</span>
+                  </div>
                 </div>
 
                 <button
                   onClick={() => handleRegisterSlot(slot.id)}
                   disabled={registeringId === slot.id}
-                  className="w-full h-10 rounded-xl bg-[#003B3A] hover:bg-[#002B2A] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                  className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 active:bg-black text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>{registeringId === slot.id ? "Đang đăng ký..." : "Đăng ký tham dự"}</span>
+                  {registeringId === slot.id ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="w-3.5 h-3.5" />
+                  )}
+                  <span>Đăng ký tham gia dự giờ</span>
                 </button>
               </div>
             ))
@@ -452,10 +673,12 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
         )}
       </div>
 
-      {/* 4. QUICK EVALUATION BOTTOM SHEET */}
+      {/* 3. MULTI-RUBRIC EVALUATION BOTTOM SHEET */}
       {evaluatingSlot && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-[#E6ECEA] max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-[#E6ECEA] max-h-[92vh] overflow-y-auto">
+            
+            {/* Header */}
             <div className="flex items-start justify-between pb-3 border-b border-slate-100">
               <div>
                 <h3 className="text-sm font-extrabold text-[#003B3A]">
@@ -474,72 +697,271 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
               </button>
             </div>
 
-            <div className="space-y-4 pt-4">
-              {/* Score header */}
-              <div className="bg-teal-50 border border-teal-200 rounded-2xl p-3.5 flex items-center justify-between">
-                <div>
-                  <span className="text-[11px] font-bold text-teal-800 uppercase block">Tổng điểm & Xếp loại</span>
-                  <span className="text-xs text-teal-700 font-medium mt-0.5 block">Quy đổi thang chuẩn SSM</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-2xl font-black text-[#003B3A]">{totalScore}/16</span>
-                  <span className="text-xs font-bold text-[#00A19A] block mt-0.5">Xếp loại {calculatedRating}</span>
-                </div>
+            {/* Rubric Selector Tabs (Phổ thông | Mầm non | GVNN) */}
+            <div className="pt-3">
+              <label className="text-[11px] font-bold text-slate-500 uppercase block mb-1.5">
+                Đối tượng & Bộ tiêu chí đánh giá:
+              </label>
+              <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => handleSwitchEvalType("K12")}
+                  className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1 ${
+                    evalType === "K12"
+                      ? "bg-white text-[#003B3A] shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-[#00A19A]" />
+                  <span>Phổ thông</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSwitchEvalType("MAM_NON")}
+                  className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1 ${
+                    evalType === "MAM_NON"
+                      ? "bg-white text-[#003B3A] shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <span>🧸 Mầm non</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSwitchEvalType("GVNN")}
+                  className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1 ${
+                    evalType === "GVNN"
+                      ? "bg-white text-[#003B3A] shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5 text-blue-600" />
+                  <span>GVNN (ESL)</span>
+                </button>
               </div>
+            </div>
 
-              {/* 4 Criteria Sliders / Pickers */}
-              <div className="space-y-3">
-                {[
-                  "1. Chuẩn bị bài dạy & thiết bị",
-                  "2. Phương pháp & nội dung giảng dạy",
-                  "3. Hoạt động tích cực của học sinh",
-                  "4. Hiệu quả tiết dạy & tương tác"
-                ].map((title, idx) => (
-                  <div key={idx} className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-bold text-slate-700">{title}</span>
-                      <span className="text-xs font-extrabold text-[#003B3A]">{scores[idx]} đ</span>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-1.5">
-                      {[1, 2, 3, 4].map(val => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => handleScoreChange(idx, val)}
-                          className={`h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                            scores[idx] === val
-                              ? "bg-[#00A19A] text-white shadow-xs"
-                              : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
-                          }`}
-                        >
-                          {val} đ
-                        </button>
-                      ))}
-                    </div>
+            <div className="space-y-4 pt-3.5">
+              {/* Score & Ranking Header Card */}
+              <div className={`p-4 rounded-2xl border flex flex-col gap-2 ${
+                rankingDetails.color === "emerald"
+                  ? "bg-emerald-50/80 border-emerald-200"
+                  : rankingDetails.color === "sky"
+                  ? "bg-sky-50/80 border-sky-200"
+                  : rankingDetails.color === "amber"
+                  ? "bg-amber-50/80 border-amber-200"
+                  : "bg-rose-50/80 border-rose-200"
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-600 block">
+                      {evalType === "K12" ? "Thang điểm chuẩn Phổ thông (20đ)" : evalType === "MAM_NON" ? "Thang điểm chuẩn Mầm non (10đ)" : "Thang điểm chuẩn GVNN (4.0)"}
+                    </span>
+                    <span className="text-2xl font-black text-slate-900 mt-0.5 block">
+                      {rankingDetails.scoreStr}
+                    </span>
                   </div>
-                ))}
+
+                  <div className="text-right">
+                    <span className={`inline-block px-3 py-1 rounded-xl text-xs font-black shadow-xs ${
+                      rankingDetails.color === "emerald"
+                        ? "bg-emerald-600 text-white"
+                        : rankingDetails.color === "sky"
+                        ? "bg-sky-600 text-white"
+                        : rankingDetails.color === "amber"
+                        ? "bg-amber-500 text-white"
+                        : "bg-rose-600 text-white"
+                    }`}>
+                      Xếp loại: {rankingDetails.rating}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Reason Explanation */}
+                <p className="text-[11px] text-slate-700 font-medium leading-relaxed border-t border-black/5 pt-2">
+                  <strong>Quy chuẩn: </strong>{rankingDetails.reason}
+                </p>
+
+                {/* Quick Max / Reset Buttons */}
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSetMaxScores}
+                    className="flex-1 py-1.5 px-2 rounded-lg bg-white/90 hover:bg-white text-slate-800 text-[11px] font-bold border border-slate-200/80 flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3 text-amber-500" />
+                    <span>Chấm nhanh Max</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetScores}
+                    className="py-1.5 px-3 rounded-lg bg-white/90 hover:bg-white text-slate-600 text-[11px] font-bold border border-slate-200/80 flex items-center justify-center gap-1 shadow-2xs cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3 text-slate-400" />
+                    <span>Đặt lại</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Comments */}
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Ưu điểm nổi bật:</label>
-                <textarea
-                  value={strengths}
-                  onChange={e => setStrengths(e.target.value)}
-                  placeholder="Ghi nhận điểm sáng của tiết dạy..."
-                  className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#00A19A] min-h-[60px]"
-                />
+              {/* CRITERIA LIST BASED ON SELECTED RUBRIC */}
+              <div className="space-y-3">
+                {evalType === "K12" ? (
+                  // --- K-12: 11 Tiêu chí ---
+                  K12_CRITERIA.map((crit, idx) => (
+                    <div key={crit.id} className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-slate-800">{crit.label}</span>
+                          {crit.isKey && (
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-300 shrink-0">
+                              Bắt buộc
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-black text-[#00A19A] shrink-0">
+                          {scores[idx] ?? 0}/{crit.max}đ
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-5 gap-1">
+                        {crit.options.map(val => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => handleScoreChange(idx, val)}
+                            className={`h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              scores[idx] === val
+                                ? "bg-[#00A19A] text-white shadow-xs"
+                                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                            }`}
+                          >
+                            {val}đ
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : evalType === "MAM_NON" ? (
+                  // --- Mầm non: 5 Tiêu chí ---
+                  MAMNON_CRITERIA.map((crit, idx) => (
+                    <div key={crit.id} className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-xs font-bold text-slate-800">{crit.label}</span>
+                        <span className="text-xs font-black text-amber-700 shrink-0">
+                          {scores[idx] ?? 0}/{crit.max}đ
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {crit.options.map(val => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => handleScoreChange(idx, val)}
+                            className={`h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                              scores[idx] === val
+                                ? "bg-amber-600 text-white shadow-xs"
+                                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                            }`}
+                          >
+                            {val}đ
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  // --- GVNN: 6 Tiêu chuẩn ESL Walkthrough (Thang 4 mức) ---
+                  GVNN_CRITERIA.map((crit, idx) => (
+                    <div key={crit.id} className="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-xs font-bold text-slate-800">{crit.label}</span>
+                        <span className="text-xs font-black text-blue-700 shrink-0">
+                          {scores[idx] === 4 ? "4 (Strong)" : scores[idx] === 3 ? "3 (Effective)" : scores[idx] === 2 ? "2 (Developing)" : "1 (Needs)"}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-1">
+                        {[
+                          { val: 1, label: "1 (Needs)" },
+                          { val: 2, label: "2 (Dev)" },
+                          { val: 3, label: "3 (Effect)" },
+                          { val: 4, label: "4 (Strong)" }
+                        ].map(opt => (
+                          <button
+                            key={opt.val}
+                            type="button"
+                            onClick={() => handleScoreChange(idx, opt.val)}
+                            className={`h-8 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                              scores[idx] === opt.val
+                                ? "bg-blue-600 text-white shadow-xs"
+                                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Góp ý hoàn thiện:</label>
-                <textarea
-                  value={weaknesses}
-                  onChange={e => setWeaknesses(e.target.value)}
-                  placeholder="Khuyến nghị cho đồng nghiệp..."
-                  className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#00A19A] min-h-[60px]"
-                />
+              {/* COMMENTS & PRESETS */}
+              <div className="space-y-3 pt-2">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700">Ưu điểm nổi bật:</label>
+                    <span className="text-[10px] text-slate-400">Chọn nhanh gợi ý:</span>
+                  </div>
+                  {/* Preset Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 mb-1.5 scrollbar-none">
+                    {PRESET_STRENGTHS.map((ps, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setStrengths(prev => prev ? `${prev}. ${ps}` : ps)}
+                        className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-lg shrink-0 border border-slate-200 cursor-pointer"
+                      >
+                        + {ps.slice(0, 25)}...
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={strengths}
+                    onChange={e => setStrengths(e.target.value)}
+                    placeholder="Ghi nhận điểm sáng của tiết dạy..."
+                    className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#00A19A] min-h-[60px]"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-slate-700">Góp ý hoàn thiện:</label>
+                    <span className="text-[10px] text-slate-400">Chọn nhanh gợi ý:</span>
+                  </div>
+                  {/* Preset Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 mb-1.5 scrollbar-none">
+                    {PRESET_IMPROVEMENTS.map((pi, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setWeaknesses(prev => prev ? `${prev}. ${pi}` : pi)}
+                        className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-1 rounded-lg shrink-0 border border-slate-200 cursor-pointer"
+                      >
+                        + {pi.slice(0, 25)}...
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={weaknesses}
+                    onChange={e => setWeaknesses(e.target.value)}
+                    placeholder="Khuyến nghị cho đồng nghiệp..."
+                    className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#00A19A] min-h-[60px]"
+                  />
+                </div>
               </div>
 
               {evalSuccess && (
@@ -549,28 +971,27 @@ export function ObservationMobileView({ initialSlots, currentTeacher }: Observat
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={handleSaveEvaluation}
-                  disabled={savingEval}
-                  className="flex-1 h-11 rounded-xl bg-[#00A19A] hover:bg-[#008B85] active:bg-[#00736E] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer disabled:opacity-50"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{savingEval ? "Đang lưu..." : "Lưu & Hoàn tất"}</span>
-                </button>
-                <button
-                  onClick={() => setEvaluatingSlot(null)}
-                  className="h-11 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
-                >
-                  Hủy
-                </button>
-              </div>
+              {/* Submit Button */}
+              <button
+                type="button"
+                onClick={handleSaveEvaluation}
+                disabled={savingEval || evalSuccess}
+                className="w-full py-3 rounded-xl bg-[#00A19A] hover:bg-[#008B85] active:bg-[#00736E] text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              >
+                {savingEval ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                <span>Hoàn tất & Gửi kết quả đánh giá</span>
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <PwaBottomNav role="TEACHER" />
+      {/* 4. BOTTOM NAVIGATION */}
+      <PwaBottomNav role={currentTeacher?.user?.role || "TEACHER"} />
     </div>
   )
 }

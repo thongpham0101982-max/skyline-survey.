@@ -95,6 +95,10 @@ export async function GET(req: Request) {
         subjectName: s.subjectName || "Môn học",
         className: s.className || "Lớp học",
         room: s.room || "Phòng học",
+        level: s.level || "",
+        departmentName: s.teacher?.departmentRel?.name || "",
+        requestOrigin: s.requestOrigin || "",
+        topic: s.topic || "",
         roleType,
         status: statusLabel,
         hasEvaluated: Boolean(myEval),
@@ -135,15 +139,16 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}))
-    const { slotId, scores, strengths, weaknesses, rating } = body
+    const { slotId, evaluationType = "K12", scores, strengths, weaknesses, rating, generalComment } = body
 
     if (!slotId) {
       return NextResponse.json({ error: "Missing slotId" }, { status: 400 })
     }
 
-    const totalScore = Array.isArray(scores)
-      ? scores.reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
-      : (parseFloat(body.totalScore) || 0)
+    const numScores = Array.isArray(scores) ? scores.map(Number) : []
+    const totalScore = typeof body.totalScore === "number"
+      ? body.totalScore
+      : numScores.reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
 
     // Ensure registration exists for this evaluator
     let reg = await prisma.observationRegistration.findUnique({
@@ -167,20 +172,53 @@ export async function POST(req: Request) {
     }
 
     const overallRating = rating || (totalScore >= 14 ? "Tốt" : totalScore >= 11 ? "Khá" : "Đạt")
-    const numScores = Array.isArray(scores) ? scores.map(Number) : []
 
-    const evalData = {
+    // Map fields accurately according to evaluationType (K12, MAM_NON, GVNN)
+    const evalData: any = {
       slotId,
       evaluatorId: teacher.id,
       totalScore,
       overallRating,
       strengths: strengths || "",
       improvements: weaknesses || "",
-      score1: numScores[0] ?? null,
-      score2: numScores[1] ?? null,
-      score3: numScores[2] ?? null,
-      score4: numScores[3] ?? null,
+      generalComment: generalComment || `[Mobile Evaluation - ${evaluationType}] ${strengths || ""}`,
       submittedAt: new Date()
+    }
+
+    if (evaluationType === "MAM_NON") {
+      // 5 criteria for preschool
+      evalData.criterion1 = Math.round(numScores[0] || 0)
+      evalData.criterion2 = Math.round(numScores[1] || 0)
+      evalData.criterion3 = Math.round(numScores[2] || 0)
+      evalData.criterion4 = Math.round(numScores[3] || 0)
+      evalData.criterion5 = Math.round(numScores[4] || 0)
+
+      evalData.score1 = numScores[0] ?? null
+      evalData.score2 = numScores[1] ?? null
+      evalData.score3 = numScores[2] ?? null
+      evalData.score4 = numScores[3] ?? null
+      evalData.score5 = numScores[4] ?? null
+    } else if (evaluationType === "GVNN") {
+      // 6 criteria for foreign teachers walkthrough
+      evalData.score1 = numScores[0] ?? null
+      evalData.score2 = numScores[1] ?? null
+      evalData.score3 = numScores[2] ?? null
+      evalData.score4 = numScores[3] ?? null
+      evalData.score5 = numScores[4] ?? null
+      evalData.score6 = numScores[5] ?? null
+    } else {
+      // Default: K-12 (11 criteria Y1 - Y11)
+      evalData.score1 = numScores[0] ?? null
+      evalData.score2 = numScores[1] ?? null
+      evalData.score3 = numScores[2] ?? null
+      evalData.score4 = numScores[3] ?? null
+      evalData.score5 = numScores[4] ?? null
+      evalData.score6 = numScores[5] ?? null
+      evalData.score7 = numScores[6] ?? null
+      evalData.score8 = numScores[7] ?? null
+      evalData.score9 = numScores[8] ?? null
+      evalData.score10 = numScores[9] ?? null
+      evalData.score11 = numScores[10] ?? null
     }
 
     await prisma.observationEvaluation.upsert({
