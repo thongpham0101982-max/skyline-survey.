@@ -221,7 +221,7 @@ export function LoginClient() {
             <div className="flex items-center gap-2 mt-1">
               <span className="size-2.5 rounded-full bg-[#00D2C4] animate-pulse" />
               <span className="size-2.5 rounded-full bg-[#48BFE3]" />
-              <span className="size-2.5 rounded-full bg-[#007068]" />
+              <span className="size-2.5 rounded-full bg-[#00A19A]" />
             </div>
 
             {/* Feature Drawer for Mobile/Tablet inside Left Panel */}

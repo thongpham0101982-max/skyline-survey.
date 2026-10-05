@@ -701,7 +701,7 @@ export function TeachingAssignmentClient({
                               </div>
                               <div className="flex flex-wrap gap-1">
                                 {Array.from(g.subjects).map(sub => (
-                                  <span key={sub} className="bg-teal-50/50 text-[#007068] text-[9.5px] font-extrabold px-1.5 py-0.5 rounded border border-teal-100/50">
+                                  <span key={sub} className="bg-teal-50/50 text-[#00736E] text-[9.5px] font-extrabold px-1.5 py-0.5 rounded border border-teal-100/50">
                                     {sub}
                                   </span>
                                 ))}

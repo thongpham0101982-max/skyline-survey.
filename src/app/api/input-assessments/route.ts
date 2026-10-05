@@ -265,7 +265,7 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
       recipientEmails.push(fbEmail);
     }
 
-        const emailHtml = `
+    const emailHtml = `
       <!DOCTYPE html>
       <html lang="vi">
       <head>
@@ -273,80 +273,123 @@ async function notifyBatchAssignment(batch: any, appUrl?: string) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Thông báo phân công khảo sát</title>
       </head>
-      <body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 12px;">
+      <body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F1F5F9" style="table-layout: fixed;">
           <tr>
-            <td align="center">
-              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 660px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 166, 169, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.04); border: 1px solid #e2e8f0;">
-                <!-- Header -->
+            <td align="center" style="padding: 28px 12px;">
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 640px; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0;">
+                
+                <!-- HEADER BANNER -->
                 <tr>
-                  <td style="background: #ffffff; padding: 32px 28px 24px; text-align: center; border-bottom: 3px solid #00A6A9;">
-                    <div style="display: inline-block; background: rgba(0, 166, 169, 0.08); padding: 5px 16px; border-radius: 50px; margin-bottom: 12px; border: 1px solid rgba(0, 166, 169, 0.25);">
-                      <span style="color: #00A6A9; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;">HỆ PHỔ THÔNG • HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                    </div>
-                    <h1 style="margin: 0; color: #1E1B4B; font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.3px; line-height: 1.3;">THÔNG BÁO PHÂN CÔNG KHẢO SÁT</h1>
-                    <p style="margin: 8px 0 0 0; color: #007A87; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;">ĐỢT ${batchCode}</p>
-                  </td>
-                </tr>
-                <!-- Body -->
-                <tr>
-                  <td style="padding: 28px 32px 16px 32px;">
-                    <p style="margin: 0; font-size: 15px; font-weight: 800; color: #1E1B4B;">Kính gửi Quý Thầy/Cô Giáo vụ Cơ sở,</p>
-                    <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
-                      Hệ thống trân trọng thông báo thông tin đợt khảo sát mới đã được giao trách nhiệm phụ trách. Chi tiết đợt khảo sát như sau:
-                    </p>
-                  </td>
-                </tr>
-                <!-- Info Card -->
-                <tr>
-                  <td style="padding: 0 32px 20px 32px;">
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f0fdfa; border-radius: 14px; border: 1px solid #ccfbf1; padding: 18px 20px;">
+                  <td bgcolor="#003B3A" style="padding: 30px 24px; text-align: center; background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #005B58 60%, #00A19A 100%);">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto;">
                       <tr>
-                        <td style="padding-bottom: 10px; width: 35%; font-size: 11px; font-weight: 800; color: #008899; text-transform: uppercase; letter-spacing: 0.5px;">MÃ ĐỢT:</td>
-                        <td style="padding-bottom: 10px; font-size: 14px; font-weight: 800; color: #1E1B4B;"><strong>${batchCode}</strong> (${batch.name || ""})</td>
+                        <td align="center" style="padding-bottom: 8px;">
+                          <span style="display: inline-block; padding: 4px 14px; background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                            🏫 HỆ PHỔ THÔNG • HỆ THỐNG GIÁO DỤC SKY-LINE
+                          </span>
+                        </td>
                       </tr>
                       <tr>
-                        <td style="padding-bottom: 10px; font-size: 11px; font-weight: 800; color: #008899; text-transform: uppercase; letter-spacing: 0.5px;">NỘI DUNG:</td>
-                        <td style="padding-bottom: 10px; font-size: 14px; font-weight: 800; color: #1E1B4B;">${surveyContent}</td>
+                        <td align="center">
+                          <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.3px; line-height: 1.3; text-transform: uppercase;">
+                            THÔNG BÁO PHÂN CÔNG KHẢO SÁT
+                          </h1>
+                        </td>
                       </tr>
                       <tr>
-                        <td style="padding-bottom: 10px; font-size: 11px; font-weight: 800; color: #008899; text-transform: uppercase; letter-spacing: 0.5px;">CƠ SỞ:</td>
-                        <td style="padding-bottom: 10px; font-size: 14px; font-weight: 800; color: #1E1B4B;">${campusName}</td>
-                      </tr>
-                      <tr>
-                        <td style="font-size: 11px; font-weight: 800; color: #008899; text-transform: uppercase; letter-spacing: 0.5px;">THỜI GIAN:</td>
-                        <td style="font-size: 14px; font-weight: 800; color: #1E1B4B;">${timeDisplay}</td>
+                        <td align="center" style="padding-top: 6px;">
+                          <div style="font-size: 13px; font-weight: 700; color: #FDE047; letter-spacing: 0.8px; text-transform: uppercase;">
+                            ĐỢT ${batchCode}
+                          </div>
+                        </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
-                <!-- Notice Card -->
+
+                <!-- MAIN BODY -->
                 <tr>
-                  <td style="padding: 0 32px 24px 32px;">
-                    <div style="background-color: #f8fafc; border-left: 4px solid #00A6A9; border-radius: 8px; padding: 14px 18px;">
-                      <p style="margin: 0; font-size: 13.5px; color: #334155; line-height: 1.6;">
-                        <strong style="color: #007A87;">Lưu ý:</strong> Kính nhờ Thầy/Cô Giáo vụ Cơ sở thực hiện phân công giáo viên khảo sát trên hệ thống để đảm bảo tiến độ.
-                      </p>
-                    </div>
+                  <td style="padding: 28px 28px 16px 28px; color: #1E293B;">
+                    <p style="margin: 0 0 10px 0; font-size: 15px; font-weight: 700; color: #003B3A;">
+                      Kính gửi Quý Thầy/Cô Giáo vụ Cơ sở,
+                    </p>
+                    <p style="margin: 0 0 18px 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                      Ban Khảo thí trân trọng thông báo thông tin đợt khảo sát năng lực đầu vào mới đã được chuyển giao phụ trách tại cơ sở. Chi tiết đợt khảo sát như sau:
+                    </p>
                   </td>
                 </tr>
-                <!-- Action Link -->
+
+                <!-- INFO CARD -->
                 <tr>
-                  <td style="padding: 0 32px 30px 32px; text-align: center;">
-                    <a href="${loginUrl}/admin/phan-cong-khao-sat?tab=k12" target="_blank" style="display: inline-block; padding: 13px 32px; border-radius: 12px; font-size: 14px; font-weight: 800; color: #ffffff; background: linear-gradient(135deg, #00A6A9 0%, #48BFE3 100%); text-decoration: none; box-shadow: 0 4px 14px rgba(0, 166, 169, 0.35); text-transform: uppercase; letter-spacing: 0.5px;">
-                      Thực hiện Phân công Giáo viên
-                    </a>
+                  <td style="padding: 0 28px 20px 28px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0FDFA" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #CCFBF1; border-left: 4px solid #00A19A; padding: 18px 20px;">
+                      <tr>
+                        <td style="padding: 6px 0; width: 32%; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">MÃ ĐỢT:</td>
+                        <td style="padding: 6px 0; font-size: 14px; font-weight: 800; color: #003B3A;"><strong>${batchCode}</strong> (${batch.name || ""})</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">NỘI DUNG:</td>
+                        <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: #1E293B;">${surveyContent}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">CƠ SỞ:</td>
+                        <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: #1E293B;">${campusName}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 6px 0; font-size: 11px; font-weight: 800; color: #007A87; text-transform: uppercase; letter-spacing: 0.5px;">THỜI GIAN:</td>
+                        <td style="padding: 6px 0; font-size: 14px; font-weight: 800; color: #047857;">${timeDisplay}</td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
-                <!-- Footer -->
+
+                <!-- NOTICE CARD -->
                 <tr>
-                  <td style="background-color: #f8fafc; padding: 24px 32px; text-align: center; border-top: 1px solid #e2e8f0;">
-                    <img src="${loginUrl}/images/logo.png" alt="Sky-Line" style="height: 32px; margin-bottom: 10px;" onerror="this.style.display='none'">
-                    <p style="margin: 0; font-size: 12px; font-weight: 800; color: #1E1B4B; text-transform: uppercase; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</p>
-                    <p style="margin: 4px 0 0 0; font-size: 11px; color: #64748b;">Nơi học sinh học cách yêu thương, chia sẻ, tự lập &amp; có trách nhiệm.</p>
-                    <p style="margin: 6px 0 0 0; font-size: 10px; color: #94a3b8;">Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
+                  <td style="padding: 0 28px 24px 28px;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#FFFBEB" style="background-color: #FFFBEB; border-left: 4px solid #D97706; border-radius: 8px;">
+                      <tr>
+                        <td style="padding: 12px 16px; font-size: 13px; color: #78350F; line-height: 1.55;">
+                          <strong style="color: #92400E;">📌 Lưu ý quan trọng:</strong> Kính nhờ Quý Thầy/Cô Giáo vụ Cơ sở truy cập hệ thống để thực hiện phân công giáo viên khảo sát cho các lớp/khối theo đúng tiến độ kế hoạch.
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
+
+                <!-- BULLETPROOF CTA BUTTON -->
+                <tr>
+                  <td style="padding: 0 28px 28px 28px; text-align: center;">
+                    <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                      <tr>
+                        <td align="center" bgcolor="#00A19A" style="border-radius: 10px; background-color: #00A19A;">
+                          <a href="${loginUrl}/admin/phan-cong-khao-sat?tab=k12" target="_blank" style="display: inline-block; padding: 14px 34px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; font-size: 13.5px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #00A19A;">
+                            THỰC HIỆN PHÂN CÔNG GIÁO VIÊN &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- OFFICIAL BRAND FOOTER -->
+                <tr>
+                  <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 24px; text-align: center; border-top: 3px solid #00A19A;">
+                    <p style="margin: 0 0 4px 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                      HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                    </p>
+                    <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: 600; color: #CCFBF1;">
+                      BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                    </p>
+                    <p style="margin: 0; font-size: 10px; color: rgba(255, 255, 255, 0.65); line-height: 1.5;">
+                      Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+                    </p>
+                    <p style="margin: 6px 0 0 0; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
+                      Đây là thư điện tử được gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.
+                    </p>
+                  </td>
+                </tr>
+
               </table>
             </td>
           </tr>

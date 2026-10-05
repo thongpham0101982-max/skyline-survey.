@@ -297,15 +297,17 @@ export function renderSkylineEmail(options: SkylineEmailOptions): string {
 
           <!-- Card Footer -->
           <tr>
-            <td bgcolor="#F8FAFC" style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 20px 24px; text-align: center; font-size: 11px; color: #64748B; line-height: 1.6;">
-              <div style="font-weight: 800; color: #003B3A; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-                BAN KHẢO THÍ & ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC SKY-LINE
+            <td bgcolor="#003B3A" style="background-color: #003B3A; border-top: 3px solid #00A19A; padding: 22px 24px; text-align: center; font-size: 11px; color: #CCFBF1; line-height: 1.6;">
+              <div style="font-weight: 800; color: #FFFFFF; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
               </div>
-              <div style="color: #475569; font-weight: 600;">Hệ thống Quản trị Giáo dục Sky-line SMS</div>
-              <div style="margin-top: 6px; color: #94A3B8;">
-                Email thông báo tự động từ Hệ thống Sky-line SMS (<a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #00A19A; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a>)
+              <div style="color: #CCFBF1; font-weight: 600; font-size: 11px;">
+                BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
               </div>
-              <div style="margin-top: 6px; font-size: 10px; color: #CBD5E1;">
+              <div style="margin-top: 6px; color: rgba(255, 255, 255, 0.75); font-size: 10.5px;">
+                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #FDE047; text-decoration: none; font-weight: 600;">bankhaothi@skylineschool.edu.vn</a> • Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #FDE047; text-decoration: none; font-weight: 600;">skylineschool.edu.vn</a>
+              </div>
+              <div style="margin-top: 6px; font-size: 10px; color: rgba(255, 255, 255, 0.4);">
                 © ${currentYear} Sky-Line Education System. All rights reserved.
               </div>
             </td>

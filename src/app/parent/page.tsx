@@ -134,7 +134,7 @@ export default async function ParentDashboard() {
 
             <Link 
               href="/parent/grades"
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#005B58] to-[#008c82] hover:from-[#004745] hover:to-[#007068] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-teal-900/15 transition-all active:scale-95 text-center"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#003B3A] to-[#00A19A] hover:from-[#002B2A] hover:to-[#008B85] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-teal-900/15 transition-all active:scale-95 text-center"
             >
               <span>Xem bảng điểm & Trao đổi</span>
               <ArrowRight className="w-4 h-4" />

@@ -596,62 +596,70 @@ export async function POST(req) {
 
       const emailHtml = `
       <!DOCTYPE html>
-      <html>
+      <html lang="vi">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Kết Quả Khảo Sát Năng Lực Đầu Vào Mầm Non</title>
       </head>
-      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; color: #1e293b;">
-        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 25px 0;" className="border border-slate-200 border-collapse">
+      <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
           <tr>
-            <td align="center" className="p-2 border border-slate-200">
-              <table width="700" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;" className="border border-slate-200 border-collapse">
+            <td align="center">
+              <table role="presentation" width="680" border="0" cellspacing="0" cellpadding="0" style="max-width: 680px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
                 <!-- Header -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #6366f1 0%, #ec4899 60%, #f59e0b 100%); padding: 35px 30px; text-align: center;" className="p-2 border border-slate-200">
-                    <h1 style="margin: 0; color: #ffffff; font-size: 21px; font-weight: 800; letter-spacing: -0.5px; text-transform: uppercase; line-height: 1.3;">KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO</h1>
-                    <p style="margin: 6px 0 0 0; color: #e0e7ff; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
+                  <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
+                    <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
+                      🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                    </div>
+                    <h1 style="margin: 0; color: #FFFFFF; font-size: 20px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
+                      KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO
+                    </h1>
+                    <p style="margin: 8px 0 0 0; color: #99F6E4; font-size: 13px; font-weight: 500;">
+                      Bậc Mầm non • Báo cáo Đánh giá Sự Phát triển của Trẻ
+                    </p>
                   </td>
                 </tr>
                 
                 <!-- Intro -->
                 <tr>
-                  <td style="padding: 25px 30px 15px 30px;" className="p-2 border border-slate-200">
-                    <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #334155;">
-                      Kính gửi bộ phận Tuyển sinh,
+                  <td style="padding: 26px 30px 15px 30px;">
+                    <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">
+                      Kính gửi Bộ phận Tuyển sinh,
                     </p>
                     <p style="margin: 8px 0 0 0; font-size: 14px; line-height: 1.6; color: #475569;">
-                      Hội đồng tuyển sinh xin gửi báo cáo kết quả khảo sát năng lực đầu vào mầm non của học sinh <strong>${student.fullName}</strong>. Chi tiết báo cáo như sau:
+                      Hội đồng Tuyển sinh trân trọng gửi báo cáo kết quả khảo sát năng lực đầu vào mầm non của học sinh <strong>${student.fullName}</strong>. Chi tiết kết quả và đề xuất tiếp nhận như sau:
                     </p>
                   </td>
                 </tr>
                 
                 <!-- Student Profile Table -->
                 <tr>
-                  <td style="padding: 0 30px 15px 30px;" className="p-2 border border-slate-200">
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;" className="border border-slate-200 border-collapse">
-                      <tr style="background-color: #f8fafc;">
-                        <td colspan="4" style="padding: 10px 15px; font-weight: bold; font-size: 13px; color: #4f46e5; border-bottom: 1px solid #e2e8f0; text-transform: uppercase;">
-                          Thông tin học sinh
+                  <td style="padding: 0 30px 18px 30px;">
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; border-collapse: collapse;">
+                      <tr bgcolor="#F0FDFA" style="background-color: #F0FDFA;">
+                        <td colspan="4" style="padding: 10px 15px; font-weight: 700; font-size: 12px; color: #003B3A; border-bottom: 1px solid #CCFBF1; text-transform: uppercase; letter-spacing: 0.5px;">
+                          Hồ sơ học sinh
                         </td>
                       </tr>
                       <tr>
-                        <td width="20%" style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">Mã học sinh:</td>
-                        <td width="30%" style="padding: 12px 15px; font-size: 13px; color: #1e293b; font-weight: bold; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">${student.studentCode}</td>
-                        <td width="20%" style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">Họ và tên:</td>
-                        <td width="30%" style="padding: 12px 15px; font-size: 13px; color: #1e293b; font-weight: bold; border-bottom: 1px solid #f1f5f9;">${student.fullName}</td>
+                        <td width="20%" style="padding: 10px 14px; font-size: 12px; font-weight: 600; color: #64748B; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9;">Mã học sinh:</td>
+                        <td width="30%" style="padding: 10px 14px; font-size: 13px; color: #003B3A; font-weight: 700; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9;">${student.studentCode}</td>
+                        <td width="20%" style="padding: 10px 14px; font-size: 12px; font-weight: 600; color: #64748B; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9;">Họ và tên:</td>
+                        <td width="30%" style="padding: 10px 14px; font-size: 13px; color: #1E293B; font-weight: 700; border-bottom: 1px solid #F1F5F9;">${student.fullName}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">Ngày sinh:</td>
-                        <td style="padding: 12px 15px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">${dobStr}</td>
-                        <td style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9;">Giới tính:</td>
-                        <td style="padding: 12px 15px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #f1f5f9;">${genderStr}</td>
+                        <td style="padding: 10px 14px; font-size: 12px; font-weight: 600; color: #64748B; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9;">Ngày sinh:</td>
+                        <td style="padding: 10px 14px; font-size: 13px; color: #334155; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9;">${dobStr}</td>
+                        <td style="padding: 10px 14px; font-size: 12px; font-weight: 600; color: #64748B; border-bottom: 1px solid #F1F5F9; border-right: 1px solid #F1F5F9;">Giới tính:</td>
+                        <td style="padding: 10px 14px; font-size: 13px; color: #334155; border-bottom: 1px solid #F1F5F9;">${genderStr}</td>
                       </tr>
                       <tr>
-                        <td style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-right: 1px solid #f1f5f9;">Lớp/Nhóm tuổi:</td>
-                        <td style="padding: 12px 15px; font-size: 13px; color: #1e293b; border-right: 1px solid #f1f5f9;">${student.grade || "-"}</td>
-                        <td style="padding: 12px 15px; font-size: 13px; font-weight: 600; color: #64748b; border-right: 1px solid #f1f5f9;">Cơ sở đăng ký:</td>
-                        <td style="padding: 12px 15px; font-size: 13px; color: #1e293b; font-weight: 600;" className="p-2 border border-slate-200">${student.admissionCampus || "-"}</td>
+                        <td style="padding: 10px 14px; font-size: 12px; font-weight: 600; color: #64748B; border-right: 1px solid #F1F5F9;">Lớp/Nhóm tuổi:</td>
+                        <td style="padding: 10px 14px; font-size: 13px; color: #334155; border-right: 1px solid #F1F5F9;">${student.grade || "-"}</td>
+                        <td style="padding: 10px 14px; font-size: 12px; font-weight: 600; color: #64748B; border-right: 1px solid #F1F5F9;">Cơ sở đăng ký:</td>
+                        <td style="padding: 10px 14px; font-size: 13px; color: #003B3A; font-weight: 700;">${student.admissionCampus || "-"}</td>
                       </tr>
                     </table>
                   </td>
@@ -659,20 +667,20 @@ export async function POST(req) {
 
                 <!-- Physical Measurements and BMI Card -->
                 <tr>
-                  <td style="padding: 0 30px 20px 30px;" className="p-2 border border-slate-200">
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 15px;" className="border border-slate-200 border-collapse">
+                  <td style="padding: 0 30px 18px 30px;">
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; padding: 14px; border-collapse: separate;">
                       <tr>
-                        <td width="33%" style="text-align: center; border-right: 1px solid #e2e8f0; padding: 5px 0;">
-                          <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Chiều cao</div>
-                          <div style="font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 4px;">${heightStr}</div>
+                        <td width="33%" style="text-align: center; border-right: 1px solid #E2E8F0; padding: 4px 0;">
+                          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Chiều cao</div>
+                          <div style="font-size: 16px; font-weight: 800; color: #003B3A; margin-top: 4px;">${heightStr}</div>
                         </td>
-                        <td width="33%" style="text-align: center; border-right: 1px solid #e2e8f0; padding: 5px 0;">
-                          <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Cân nặng</div>
-                          <div style="font-size: 16px; font-weight: 800; color: #1e293b; margin-top: 4px;">${weightStr}</div>
+                        <td width="33%" style="text-align: center; border-right: 1px solid #E2E8F0; padding: 4px 0;">
+                          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase;">Cân nặng</div>
+                          <div style="font-size: 16px; font-weight: 800; color: #003B3A; margin-top: 4px;">${weightStr}</div>
                         </td>
-                        <td width="34%" style="text-align: center; padding: 5px 0;" className="p-2 border border-slate-200">
-                          <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 2px;">Chỉ số BMI</div>
-                          <div style="font-size: 16px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">${bmiVal ? bmiVal : "-"}</div>
+                        <td width="34%" style="text-align: center; padding: 4px 0;">
+                          <div style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 2px;">Chỉ số BMI</div>
+                          <div style="font-size: 16px; font-weight: 800; color: #1E293B; margin-bottom: 4px;">${bmiVal ? bmiVal : "-"}</div>
                           ${bmiBadgeHtml}
                         </td>
                       </tr>
@@ -682,15 +690,18 @@ export async function POST(req) {
 
                 <!-- Developmental Criteria Table -->
                 <tr>
-                  <td style="padding: 0 30px 20px 30px;" className="p-2 border border-slate-200">
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;" className="border border-slate-200 border-collapse">
+                  <td style="padding: 0 30px 20px 30px;">
+                    <div style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                      🧩 CÁC LĨNH VỰC PHÁT TRIỂN CỦA TRẺ
+                    </div>
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden; border-collapse: collapse;">
                       <thead>
-                        <tr style="background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%); color: #ffffff;">
-                          <th align="left" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 45%;" className="p-2 border border-slate-200">Lĩnh vực phát triển</th>
-                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 15%; text-align: center;" className="p-2 border border-slate-200">Tổng tiêu chí</th>
-                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 13%; text-align: center; color: #a7f3d0;" className="p-2 border border-slate-200">Đạt</th>
-                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 13%; text-align: center; color: #fecdd3;" className="p-2 border border-slate-200">K.Đạt</th>
-                          <th align="center" style="padding: 12px 15px; font-size: 13px; font-weight: bold; width: 14%; text-align: center;" className="p-2 border border-slate-200">Kết quả</th>
+                        <tr bgcolor="#003B3A" style="background-color: #003B3A; color: #FFFFFF;">
+                          <th align="left" style="padding: 10px 14px; font-size: 11px; font-weight: 700; width: 45%; text-transform: uppercase; letter-spacing: 0.5px;">Lĩnh vực phát triển</th>
+                          <th align="center" style="padding: 10px 14px; font-size: 11px; font-weight: 700; width: 15%; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;">Tổng tiêu chí</th>
+                          <th align="center" style="padding: 10px 14px; font-size: 11px; font-weight: 700; width: 13%; text-align: center; color: #A7F3D0; text-transform: uppercase; letter-spacing: 0.5px;">Đạt</th>
+                          <th align="center" style="padding: 10px 14px; font-size: 11px; font-weight: 700; width: 13%; text-align: center; color: #FECDD3; text-transform: uppercase; letter-spacing: 0.5px;">K.Đạt</th>
+                          <th align="center" style="padding: 10px 14px; font-size: 11px; font-weight: 700; width: 14%; text-align: center; text-transform: uppercase; letter-spacing: 0.5px;">Kết quả</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -702,26 +713,26 @@ export async function POST(req) {
 
                 <!-- Comments Segment -->
                 <tr>
-                  <td style="padding: 0 30px 20px 30px;" className="p-2 border border-slate-200">
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;" className="border border-slate-200 border-collapse">
-                      <tr style="background-color: #f8fafc;">
-                        <td style="padding: 10px 15px; font-weight: bold; font-size: 13px; color: #4f46e5; border-bottom: 1px solid #e2e8f0; text-transform: uppercase;">
+                  <td style="padding: 0 30px 20px 30px;">
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; border-collapse: collapse;">
+                      <tr bgcolor="#F0FDFA" style="background-color: #F0FDFA;">
+                        <td style="padding: 10px 15px; font-weight: 700; font-size: 12px; color: #003B3A; border-bottom: 1px solid #CCFBF1; text-transform: uppercase; letter-spacing: 0.5px;">
                           Nhận xét của Giáo viên khảo sát
                         </td>
                       </tr>
                       <tr>
-                        <td style="padding: 15px; font-size: 13px; color: #334155; line-height: 1.6;" className="p-2 border border-slate-200">
+                        <td style="padding: 15px; font-size: 13px; color: #334155; line-height: 1.6;">
                           <div style="margin-bottom: 10px;">
-                            <strong style="color: #1e293b;">• Nhận xét Chuyên môn:</strong>
-                            <div style="margin-top: 3px; color: #475569; padding-left: 10px; border-left: 2px solid #e2e8f0;">${proComment}</div>
+                            <strong style="color: #003B3A;">• Nhận xét Chuyên môn:</strong>
+                            <div style="margin-top: 3px; color: #475569; padding-left: 10px; border-left: 3px solid #00A19A;">${proComment}</div>
                           </div>
                           <div style="margin-bottom: 10px;">
-                            <strong style="color: #1e293b;">• Nhận xét Tâm lý:</strong>
-                            <div style="margin-top: 3px; color: #475569; padding-left: 10px; border-left: 2px solid #e2e8f0;">${psyComment}</div>
+                            <strong style="color: #003B3A;">• Nhận xét Tâm lý:</strong>
+                            <div style="margin-top: 3px; color: #475569; padding-left: 10px; border-left: 3px solid #00A19A;">${psyComment}</div>
                           </div>
                           <div>
-                            <strong style="color: #1e293b;">• Lưu ý đặc biệt:</strong>
-                            <div style="margin-top: 3px; color: #b45309; font-weight: 500; padding-left: 10px; border-left: 2px solid #f59e0b;">${impNote}</div>
+                            <strong style="color: #92400E;">• Lưu ý đặc biệt:</strong>
+                            <div style="margin-top: 3px; color: #92400E; font-weight: 500; padding-left: 10px; border-left: 3px solid #F59E0B;">${impNote}</div>
                           </div>
                         </td>
                       </tr>
@@ -731,35 +742,35 @@ export async function POST(req) {
 
                 <!-- 2-Step Approval Segment -->
                 <tr>
-                  <td style="padding: 0 30px 20px 30px;" className="p-2 border border-slate-200">
-                    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;" className="border border-slate-200 border-collapse">
-                      <tr style="background-color: #f8fafc;">
-                        <td colspan="2" style="padding: 10px 15px; font-weight: bold; font-size: 13px; color: #4f46e5; border-bottom: 1px solid #e2e8f0; text-transform: uppercase;">
+                  <td style="padding: 0 30px 20px 30px;">
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; border-collapse: collapse;">
+                      <tr bgcolor="#F0FDFA" style="background-color: #F0FDFA;">
+                        <td colspan="2" style="padding: 10px 15px; font-weight: 700; font-size: 12px; color: #003B3A; border-bottom: 1px solid #CCFBF1; text-transform: uppercase; letter-spacing: 0.5px;">
                           Ý kiến Phê duyệt &amp; Đề xuất
                         </td>
                       </tr>
                       <tr>
-                        <td width="50%" valign="top" style="padding: 15px; font-size: 13px; color: #334155; border-right: 1px solid #e2e8f0; line-height: 1.6;">
+                        <td width="50%" valign="top" style="padding: 15px; font-size: 13px; color: #334155; border-right: 1px solid #E2E8F0; line-height: 1.6;">
                           <div style="margin-bottom: 8px;">
-                            <strong style="color: #1e293b;">Ban Giám hiệu Mầm non:</strong>
+                            <strong style="color: #003B3A;">Ban Giám hiệu Mầm non:</strong>
                           </div>
                           <div style="margin-bottom: 8px;">
                             ${bghBadge}
                           </div>
                           <div>
-                            <span style="font-size: 12px; color: #64748b; font-style: italic;">Ý kiến:</span>
+                            <span style="font-size: 12px; color: #64748B; font-style: italic;">Ý kiến:</span>
                             <div style="margin-top: 2px; color: #475569; font-size: 13px;">${bghComment}</div>
                           </div>
                         </td>
-                        <td width="50%" valign="top" style="padding: 15px; font-size: 13px; color: #334155; line-height: 1.6;" className="p-2 border border-slate-200">
+                        <td width="50%" valign="top" style="padding: 15px; font-size: 13px; color: #334155; line-height: 1.6;">
                           <div style="margin-bottom: 8px;">
-                            <strong style="color: #1e293b;">Giám đốc Cơ sở:</strong>
+                            <strong style="color: #003B3A;">Giám đốc Cơ sở:</strong>
                           </div>
                           <div style="margin-bottom: 8px;">
                             ${gdcsBadge}
                           </div>
                           <div>
-                            <span style="font-size: 12px; color: #64748b; font-style: italic;">Ý kiến:</span>
+                            <span style="font-size: 12px; color: #64748B; font-style: italic;">Ý kiến:</span>
                             <div style="margin-top: 2px; color: #475569; font-size: 13px;">${gdcsComment}</div>
                           </div>
                         </td>
@@ -770,26 +781,40 @@ export async function POST(req) {
 
                 <!-- Final Result & Call to Action -->
                 <tr>
-                  <td style="padding: 10px 30px 35px 30px; text-align: center; border-bottom: 1px solid #f1f5f9;">
-                    <div style="font-size: 12px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">KẾT LUẬN CUỐI CÙNG</div>
-                    <div style="margin-bottom: 25px;">
+                  <td style="padding: 10px 30px 24px 30px; text-align: center;">
+                    <div style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;">KẾT LUẬN CUỐI CÙNG</div>
+                    <div style="margin-bottom: 20px;">
                       ${finalResultBadgeHtml}
                     </div>
-                    <p style="margin: 0 0 15px 0; font-size: 13px; color: #64748b; font-style: italic; line-height: 1.5;">
-                      Báo cáo này được tự động định tuyến đến Tư vấn Tuyển sinh của Cơ sở dựa trên hồ sơ nhập học của bé. Vui lòng liên hệ phụ huynh để thông báo kết quả.
+                    <p style="margin: 0 0 20px 0; font-size: 13px; color: #64748B; font-style: italic; line-height: 1.5;">
+                      Báo cáo này được tự động định tuyến đến Tuyển sinh của Cơ sở để hỗ trợ Quý Phụ huynh hoàn thiện thủ tục nhập học cho bé.
                     </p>
-                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 12px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%); text-decoration: none; border: 1px solid #d946ef; box-shadow: 0 4px 10px -1px rgba(236, 72, 153, 0.35);">
-                      Quản lý trên Hệ thống Portal
-                    </a>
+
+                    <!-- Bulletproof CTA Button -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                      <tr>
+                        <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
+                          <a href="${baseUrl}/admin/preschool-input-assessments" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                            Quản lý trên Hệ thống Portal &rarr;
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
                 
                 <!-- Footer -->
                 <tr>
-                  <td style="background-color: #f8fafc; padding: 24px 30px; text-align: center; font-size: 11px; color: #64748b;" className="p-2 border border-slate-200">
-                    <p style="margin: 0;">Email gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
-                    <p style="margin: 4px 0 0 0; font-weight: bold; color: #334155;">HỘI ĐỒNG TUYỂN SINH - HỆ THỐNG GIÁO DỤC SKY-LINE</p>
-                    <p style="margin: 8px 0 0 0; color: #4f46e5; font-weight: 600;">Mọi thắc mắc vui lòng liên hệ Ban Khảo thí qua email: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #4f46e5; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a></p>
+                  <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                    <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                      HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                    </p>
+                    <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                      BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                      Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                    </p>
                   </td>
                 </tr>
               </table>
@@ -910,29 +935,108 @@ export async function POST(req) {
           if (u.email && u.email.includes("@")) {
             const emailBody = `
               <!DOCTYPE html>
-              <html>
+              <html lang="vi">
               <head>
                 <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Yêu Cầu Phê Duyệt Khảo Sát Mầm Non</title>
               </head>
-              <body style="margin: 0; padding: 20px; font-family: 'Segoe UI', sans-serif; background-color: #f1f5f9; color: #1e293b;">
-                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 25px;">
-                  <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 20px; border-radius: 12px; text-align: center; color: #ffffff; margin-bottom: 20px;">
-                     <h2 style="margin: 0; font-size: 18px; text-transform: uppercase;">Yêu Cầu Phê Duyệt Khảo Sát</h2>
-                     <p style="margin: 4px 0 0 0; font-size: 12px; opacity: 0.9;">Bậc Mầm non - Hệ thống Trường Sky-Line</p>
-                  </div>
-                  <p style="font-size: 14px; line-height: 1.6;">Kính gửi thầy/cô <strong>${u.fullName}</strong>,</p>
-                  <p style="font-size: 14px; line-height: 1.6;">Học sinh <strong>${student.fullName}</strong> (Mã HS: <strong>${student.studentCode}</strong>) thuộc <strong>Cơ sở ${campusName}</strong> đã hoàn thành các bài khảo sát năng lực đầu vào và nhận xét từ giáo viên chuyên môn.</p>
-                  <p style="font-size: 14px; line-height: 1.6; color: #d97706; font-weight: bold; background-color: #fffbeb; padding: 10px; border-radius: 8px; border-left: 4px solid #f59e0b;">
-                     ⚠️ Kính đề xuất Ban Giám Hiệu và Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến để Tuyển sinh có thể xuất báo cáo kết quả gửi phụ huynh.
-                  </p>
-                  <div style="text-align: center; margin: 25px 0;">
-                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: bold; color: #ffffff; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); text-decoration: none; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
-                      Đi tới phê duyệt trên Portal
-                    </a>
-                  </div>
-                  <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;">
-                  <p style="font-size: 11px; color: #64748b; margin: 0; text-align: center;">Email được gửi tự động từ Hệ thống Khảo sát Tuyển sinh Sky-Line.</p>
-                </div>
+              <body style="margin: 0; padding: 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #334155;">
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F8FAFC; padding: 30px 10px;">
+                  <tr>
+                    <td align="center">
+                      <table role="presentation" width="600" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0, 59, 58, 0.08); border: 1px solid #E2E8F0; border-collapse: separate;">
+                        <!-- Header -->
+                        <tr>
+                          <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 32px 28px; text-align: center;">
+                            <div style="display: inline-block; padding: 4px 14px; background-color: rgba(255,255,255,0.12); border-radius: 20px; color: #CCFBF1; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
+                              🏫 HỆ THỐNG GIÁO DỤC SKY-LINE
+                            </div>
+                            <h1 style="margin: 0; color: #FFFFFF; font-size: 20px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; line-height: 1.3;">
+                              YÊU CẦU PHÊ DUYỆT KHẢO SÁT
+                            </h1>
+                            <p style="margin: 8px 0 0 0; color: #99F6E4; font-size: 13px; font-weight: 500;">
+                              Bậc Mầm non • ${campusName}
+                            </p>
+                          </td>
+                        </tr>
+
+                        <!-- Body Content -->
+                        <tr>
+                          <td style="padding: 26px 30px 16px 30px;">
+                            <p style="margin: 0; font-size: 15px; font-weight: 700; color: #003B3A;">Kính gửi Thầy/Cô ${u.fullName},</p>
+                            <p style="margin: 10px 0 0 0; font-size: 14px; color: #475569; line-height: 1.6;">
+                              Học sinh <strong>${student.fullName}</strong> đã hoàn thành các nội dung khảo sát năng lực đầu vào và được giáo viên chuyên môn cập nhật nhận xét đánh giá. Kính chuyển Thầy/Cô thông tin học sinh:
+                            </p>
+                          </td>
+                        </tr>
+
+                        <!-- Student Card -->
+                        <tr>
+                          <td style="padding: 0 30px 20px 30px;">
+                            <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F0FDFA; border-radius: 12px; border: 1px solid #99F6E4; padding: 16px 20px; border-collapse: separate;">
+                              <tr>
+                                <td style="padding-bottom: 8px; width: 38%; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Họ và tên học sinh:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 800; color: #003B3A;">${student.fullName}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Mã HS khảo sát:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 700; color: #1E293B;">${student.studentCode}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding-bottom: 8px; font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Lớp / Độ tuổi:</td>
+                                <td style="padding-bottom: 8px; font-size: 14px; font-weight: 600; color: #334155;">${student.grade || "—"}</td>
+                              </tr>
+                              <tr>
+                                <td style="font-size: 12px; font-weight: 700; color: #00A19A; text-transform: uppercase;">Cơ sở tiếp nhận:</td>
+                                <td style="font-size: 14px; font-weight: 700; color: #003B3A;">${campusName}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+
+                        <!-- Urgent Alert Callout -->
+                        <tr>
+                          <td style="padding: 0 30px 24px 30px;">
+                            <div style="background-color: #FEF9C3; border-left: 4px solid #CA8A04; padding: 12px 16px; border-radius: 0 8px 8px 0; font-size: 13px; color: #854D0E; line-height: 1.5;">
+                              📌 <strong>Lưu ý:</strong> Kính đề xuất Ban Giám Hiệu và Giám Đốc Cơ sở tiến hành xem xét phê duyệt trực tuyến để Tuyển sinh có thể xuất báo cáo kết quả gửi phụ huynh.
+                            </div>
+                          </td>
+                        </tr>
+
+                        <!-- Bulletproof Button -->
+                        <tr>
+                          <td align="center" style="padding: 0 30px 32px 30px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto; border-collapse: separate;">
+                              <tr>
+                                <td align="center" bgcolor="#00A19A" style="background-color: #00A19A; border-radius: 10px;">
+                                  <a href="${baseUrl}/admin/preschool-input-assessments" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: #FFFFFF; text-decoration: none; border-radius: 10px; letter-spacing: 0.3px;">
+                                    Đi tới Phê duyệt trên Portal &rarr;
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+
+                        <!-- Footer -->
+                        <tr>
+                          <td bgcolor="#003B3A" style="background-color: #003B3A; padding: 22px 28px; text-align: center; border-top: 3px solid #00A19A;">
+                            <p style="margin: 0; font-size: 12px; font-weight: 800; color: #FFFFFF; letter-spacing: 0.5px; text-transform: uppercase;">
+                              HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+                            </p>
+                            <p style="margin: 4px 0 0 0; font-size: 11px; font-weight: 600; color: #99F6E4;">
+                              BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+                            </p>
+                            <p style="margin: 8px 0 0 0; font-size: 11px; color: #94A3B8;">
+                              Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #99F6E4; text-decoration: underline;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" target="_blank" style="color: #99F6E4; text-decoration: none;">skylineschool.edu.vn</a>
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
               </body>
               </html>
             `;
