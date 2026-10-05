@@ -16,7 +16,7 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
     }
     
     if (!yearId) {
-      const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }).catch(() => null);
+      const activeYear = await prisma.academicYear.findFirst({ where: { OR: [{ status: "ACTIVE" }, { name: "2026-2027" }] }, orderBy: { startDate: "desc" } }).catch(() => null);
       yearId = activeYear?.id;
     }
 

@@ -28,7 +28,7 @@ const targetNames = [
 ];
 
 async function main() {
-  const classesRes = await client.execute("SELECT id, className, grade, campusId FROM Class");
+  const classesRes = await client.execute("SELECT id, className, grade, campusId FROM Class WHERE academicYearId = 'cmnseevbh0000wjbmoigji2zd'");
   const classMap = {};
   classesRes.rows.forEach(c => classMap[c.id] = c);
 

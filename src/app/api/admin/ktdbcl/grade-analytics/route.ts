@@ -14,21 +14,38 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
 
-    const academicYearId = searchParams.get("academicYearId") || ""
-    const campusId = searchParams.get("campusId") || "ALL"
-    const levelFilter = searchParams.get("levelFilter") || "ALL"
-    const gradeFilter = searchParams.get("gradeFilter") || "ALL"
-    const systemFilter = searchParams.get("systemFilter") || "ALL"
-    const classId = searchParams.get("classId") || "ALL"
-    const subjectId = searchParams.get("subjectId") || "ALL"
-    const currentPeriod = searchParams.get("currentPeriod") || "GK1"
-    const baselinePeriod = searchParams.get("baselinePeriod") || "KSĐN"
+    let academicYearId = searchParams.get("academicYearId") || ""
+
+    if (academicYearId) {
+      const yearObj = await prisma.academicYear.findFirst({
+        where: {
+          OR: [
+            { id: academicYearId },
+            { name: academicYearId }
+          ]
+        }
+      })
+      if (yearObj) {
+        academicYearId = yearObj.id
+      }
+    } else {
+      const activeYear = await prisma.academicYear.findFirst({
+        where: {
+          OR: [
+            { status: "ACTIVE" },
+            { name: "2026-2027" }
+          ]
+        },
+        orderBy: { startDate: "desc" }
+      })
+      academicYearId = activeYear?.id || ""
+    }
 
     if (!academicYearId) {
       return NextResponse.json({ success: false, error: "Thiếu thông tin Năm học" }, { status: 400 })
     }
 
-    // 1. Build class query filter
+    // 1. Build class query filter (lấy đúng lớp của năm học 2026-2027)
     const classWhere: any = {
       academicYearId,
       status: "ACTIVE"
@@ -1242,7 +1259,14 @@ export async function GET(request: Request) {
         return
       }
 
-      const resolvedClass = matchingSt.class || filteredClasses.find(c => c.id === matchingSt.classId) || allClasses.find(c => c.id === matchingSt.classId)
+      // Đảm bảo resolvedClass thuộc đúng năm học 2026-2027
+      let resolvedClass = filteredClasses.find(c => c.id === matchingSt.classId) || allClasses.find(c => c.id === matchingSt.classId)
+      if (!resolvedClass && matchingSt.class) {
+        resolvedClass = allClasses.find(c => 
+          c.className === matchingSt.class.className && 
+          (c.campusId === matchingSt.class.campusId || c.campus?.campusCode === matchingSt.class.campus?.campusCode)
+        ) || (matchingSt.class.academicYearId === academicYearId ? matchingSt.class : null)
+      }
       if (!resolvedClass) {
         return
       }

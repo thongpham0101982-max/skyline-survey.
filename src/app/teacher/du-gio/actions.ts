@@ -279,8 +279,8 @@ export async function getObservationData(academicYearId?: string) {
     )
 
     const selectedYear = academicYearId
-      ? rawAcademicYears.find(y => y.id === academicYearId)
-      : rawAcademicYears.find(y => y.status === "ACTIVE") || rawAcademicYears[0];
+      ? rawAcademicYears.find(y => y.id === academicYearId || y.name === academicYearId)
+      : rawAcademicYears.find(y => y.status === "ACTIVE") || rawAcademicYears.find(y => y.name === "2026-2027") || rawAcademicYears[0];
 
     const activeYearId = selectedYear?.id || null;
 
@@ -404,7 +404,8 @@ export async function getObservationData(academicYearId?: string) {
           }),
           prisma.class.findMany({
             where: {
-              status: "ACTIVE"
+              status: "ACTIVE",
+              ...(activeYearId ? { academicYearId: activeYearId } : {})
             },
             select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true, homeroomTeacherId: true },
             orderBy: { className: "asc" }

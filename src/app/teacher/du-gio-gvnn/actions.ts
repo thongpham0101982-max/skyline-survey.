@@ -169,7 +169,10 @@ export async function getForeignObservationData(academicYearId?: string) {
         orderBy: { campusName: "asc" }
       }),
       prisma.class.findMany({
-        where: { status: "ACTIVE" },
+        where: {
+          status: "ACTIVE",
+          ...(activeYearId ? { academicYearId: activeYearId } : {})
+        },
         select: {
           id: true,
           classCode: true,
