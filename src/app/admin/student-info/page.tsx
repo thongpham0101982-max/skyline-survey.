@@ -6,7 +6,13 @@ import { StudentInfoClient } from "./client"
 export const metadata = { title: "Nhập TT HS, KQKS | Admin Portal" }
 export const dynamic = "force-dynamic";
 
-export default async function StudentInfoPage() {
+export default async function StudentInfoPage(props: {
+  searchParams?: Promise<{ tab?: string; subTab?: string }> | { tab?: string; subTab?: string };
+}) {
+  const resolvedParams = props.searchParams ? await props.searchParams : {};
+  const initialTab = resolvedParams?.tab === "preschool" ? "preschool" : "general";
+  const initialSubTab = resolvedParams?.subTab || "students";
+
   let session: any = null;
   try {
     session = await auth();
@@ -251,14 +257,9 @@ export default async function StudentInfoPage() {
 
   return (
     <div className="space-y-6">
-      <div className="mb-4">
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Nhập TT HS, KQKS</h1>
-        <p className="text-slate-500 mt-1 text-sm font-medium">
-          Năm học đang hoạt động: <span className="text-[#48BFE3] font-bold">{activeYear ? activeYear.name : "Không xác định"}</span>. 
-          Tra cứu thông tin, kết quả khảo sát đầu vào của học sinh Phổ thông và Mầm non.
-        </p>
-      </div>
       <StudentInfoClient 
+        initialTab={initialTab}
+        initialSubTab={initialSubTab}
         initialGeneralStudents={safeJson(generalStudents)} 
         initialPreschoolStudents={safeJson(preschoolStudents)} 
         generalPeriods={safeJson(generalPeriods)}

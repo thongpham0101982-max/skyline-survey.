@@ -194,14 +194,14 @@ export default function TeacherStudentProfilesPrintPage() {
       {/* Control bar (hidden in print mode) */}
       <div className="no-print-layout max-w-4xl mx-auto mb-4 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center justify-between text-xs font-bold text-slate-700">
         <div className="flex items-center gap-2">
-          <GraduationCap className="w-5 h-5 text-[#007A72]" />
+          <GraduationCap className="w-5 h-5 text-[#00A19A]" />
           <span>Bản in Hồ sơ Học sinh A4 Chuẩn: </span>
-          <span className="text-[#007A72] font-black text-sm">{students.length} học sinh</span>
+          <span className="text-[#00A19A] font-black text-sm">{students.length} học sinh</span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#007A72] hover:bg-[#005B55] text-white rounded-xl shadow-xs transition-all cursor-pointer font-extrabold"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#00A19A] hover:bg-[#005B55] text-white rounded-xl shadow-xs transition-all cursor-pointer font-extrabold"
           >
             <Printer className="w-4 h-4" />
             <span>Lưu file PDF / In Ngay</span>
@@ -293,20 +293,20 @@ export default function TeacherStudentProfilesPrintPage() {
               className="print-cv-page bg-white border border-slate-300 shadow-md rounded-2xl p-8 font-sans relative overflow-hidden space-y-5 text-slate-800"
             >
               {/* Top Accent Strip */}
-              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3]" />
+              <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3]" />
 
               {/* CV Header */}
               <div className="border-b-2 border-slate-200 pb-4 pt-1 flex justify-between items-center gap-4">
                 <div className="flex items-center gap-3">
                   <img src="/logo.png" alt="Sky-Line" className="h-10 w-auto object-contain" />
                   <div className="space-y-0.5">
-                    <span className="font-black text-xs tracking-wider text-[#007A72] block uppercase">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                    <span className="font-black text-xs tracking-wider text-[#00A19A] block uppercase">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                     <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">Hồ sơ Năng lực Học sinh</h2>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Student Comprehensive Profile &amp; Portfolio</p>
                   </div>
                 </div>
                 <div className="text-right text-xs text-slate-500 font-semibold space-y-0.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
-                  <div>Năm học: <span className="text-[#007A72] font-black">{student.yearName || "2025-2026"}</span></div>
+                  <div>Năm học: <span className="text-[#00A19A] font-black">{student.yearName || "2025-2026"}</span></div>
                   <div>Cơ sở: <span className="text-slate-800 font-bold">{student.campusName || "Sky-Line"}</span></div>
                 </div>
               </div>
@@ -314,8 +314,8 @@ export default function TeacherStudentProfilesPrintPage() {
               {/* SECTION I: THÔNG TIN HỌC SINH */}
               <div className="bg-slate-50/90 p-4 rounded-xl border border-slate-200/90 space-y-3 print-section-avoid">
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#007A72]" />
-                  <User className="w-4 h-4 text-[#007A72]" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#00A19A]" />
+                  <User className="w-4 h-4 text-[#00A19A]" />
                   I. THÔNG TIN HỌC SINH
                 </h3>
                 <div className="flex items-center gap-5">
@@ -341,7 +341,7 @@ export default function TeacherStudentProfilesPrintPage() {
                     </div>
                     <div>
                       <div className="text-[10px] text-slate-400 uppercase font-black">Lớp học</div>
-                      <div className="font-black text-[#007A72] text-sm">{student.className || "N/A"}</div>
+                      <div className="font-black text-[#00A19A] text-sm">{student.className || "N/A"}</div>
                     </div>
                     <div>
                       <div className="text-[10px] text-slate-400 uppercase font-black">Mã học sinh</div>
@@ -359,7 +359,7 @@ export default function TeacherStudentProfilesPrintPage() {
                     </div>
                     <div>
                       <div className="text-[10px] text-slate-400 uppercase font-black">Giáo viên chủ nhiệm</div>
-                      <div className="font-black text-[#007A72] text-xs">
+                      <div className="font-black text-[#00A19A] text-xs">
                         {student.homeroomTeacherName || "Giáo viên Chủ nhiệm"}
                       </div>
                     </div>
@@ -593,8 +593,8 @@ export default function TeacherStudentProfilesPrintPage() {
               <div className="space-y-3 print-section-avoid">
                 <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-200 pb-1.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#007A72]" />
-                    <ClipboardCheck className="w-4 h-4 text-[#007A72]" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#00A19A]" />
+                    <ClipboardCheck className="w-4 h-4 text-[#00A19A]" />
                     <span>III. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET)</span>
                   </div>
                   <span className="text-[9px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
@@ -619,7 +619,7 @@ export default function TeacherStudentProfilesPrintPage() {
                           <tr>
                             <th className="py-1.5 px-2.5 text-center w-8">STT</th>
                             <th className="py-1.5 px-2.5">Môn học</th>
-                            <th className="py-1.5 px-2 text-center bg-teal-50/50 text-[#007A72]">KSĐN</th>
+                            <th className="py-1.5 px-2 text-center bg-teal-50/50 text-[#00A19A]">KSĐN</th>
                             <th className="py-1.5 px-2 text-center">Giữa kỳ 1</th>
                             <th className="py-1.5 px-2 text-center">Cuối kỳ 1</th>
                             <th className="py-1.5 px-2 text-center">Giữa kỳ 2</th>
@@ -631,7 +631,7 @@ export default function TeacherStudentProfilesPrintPage() {
                             <tr key={idx}>
                               <td className="py-1.5 px-2.5 text-center font-mono text-slate-400">{idx + 1}</td>
                               <td className="py-1.5 px-2.5 font-bold text-slate-900">{r.name}</td>
-                              <td className="py-1.5 px-2 text-center font-black text-[#007A72] bg-teal-50/20">{r.ksdn || "—"}</td>
+                              <td className="py-1.5 px-2 text-center font-black text-[#00A19A] bg-teal-50/20">{r.ksdn || "—"}</td>
                               <td className="py-1.5 px-2 text-center font-black text-slate-800">{r.gk1 || "—"}</td>
                               <td className="py-1.5 px-2 text-center font-black text-slate-800">{r.ck1 || "—"}</td>
                               <td className="py-1.5 px-2 text-center font-black text-slate-800">{r.gk2 || "—"}</td>
@@ -663,7 +663,7 @@ export default function TeacherStudentProfilesPrintPage() {
                             <th className="py-1.5 px-2.5">Môn học</th>
                             <th className="py-1.5 px-2.5 text-center">Học kỳ 1 (CK1)</th>
                             <th className="py-1.5 px-2.5 text-center">Học kỳ 2 (CK2)</th>
-                            <th className="py-1.5 px-2.5 text-center bg-teal-50/60 text-[#007A72]">Cả năm (CN)</th>
+                            <th className="py-1.5 px-2.5 text-center bg-teal-50/60 text-[#00A19A]">Cả năm (CN)</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
@@ -673,7 +673,7 @@ export default function TeacherStudentProfilesPrintPage() {
                               <td className="py-1.5 px-2.5 font-bold text-slate-900">{r.name}</td>
                               <td className="py-1.5 px-2.5 text-center font-black text-slate-800">{r.hk1 || "—"}</td>
                               <td className="py-1.5 px-2.5 text-center font-black text-slate-800">{r.hk2 || "—"}</td>
-                              <td className="py-1.5 px-2.5 text-center font-black text-[#007A72] bg-teal-50/30">{r.cn || "—"}</td>
+                              <td className="py-1.5 px-2.5 text-center font-black text-[#00A19A] bg-teal-50/30">{r.cn || "—"}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -801,7 +801,7 @@ export default function TeacherStudentProfilesPrintPage() {
                             <tr key={idx}>
                               <td className="py-1.5 px-2.5 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
                               <td className="py-1.5 px-2.5 font-bold text-slate-800">{ach.name || "Giải thưởng"}</td>
-                              <td className="py-1.5 px-2.5 text-[9px] font-black text-[#007A72] uppercase">{getCategoryLabel(ach.category || ach.examCategoryName)}</td>
+                              <td className="py-1.5 px-2.5 text-[9px] font-black text-[#00A19A] uppercase">{getCategoryLabel(ach.category || ach.examCategoryName)}</td>
                               <td className="py-1.5 px-2.5 text-center">
                                 <span className="text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded">
                                   {getLevelLabel(ach.level)}
@@ -922,7 +922,7 @@ export default function TeacherStudentProfilesPrintPage() {
                       <div className="font-bold text-[10px] uppercase text-slate-600 tracking-wider">CỐ VẤN / GVCN</div>
                       <div className="text-[9px] text-slate-400 italic">(Ký &amp; ghi rõ họ tên)</div>
                     </div>
-                    <div className="font-black text-xs text-[#007A72]">
+                    <div className="font-black text-xs text-[#00A19A]">
                       {student.homeroomTeacherName || "Thầy/Cô Chủ nhiệm"}
                     </div>
                   </div>
@@ -947,7 +947,7 @@ export default function TeacherStudentProfilesPrintPage() {
               <div style={{ pageBreakBefore: "always", breakBefore: "page" }} className="pt-6 border-t-2 border-slate-300 print:break-before-page print:page-break-before-always space-y-4">
                 <div className="border-b-2 border-slate-200 pb-3 flex justify-between items-center">
                   <div className="space-y-0.5">
-                    <span className="font-black text-[10px] tracking-wider text-[#007A72] block uppercase">PHỤ LỤC HỒ SƠ HỌC SINH</span>
+                    <span className="font-black text-[10px] tracking-wider text-[#00A19A] block uppercase">PHỤ LỤC HỒ SƠ HỌC SINH</span>
                     <h3 className="text-base font-black text-slate-800 uppercase tracking-tight flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-teal-600" />
                       <span>PHỤ LỤC: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°)</span>
@@ -955,7 +955,7 @@ export default function TeacherStudentProfilesPrintPage() {
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Khung 5 Phẩm chất - 10 Năng lực cốt lõi theo CT GDPT 2018</p>
                   </div>
                   <div className="text-right text-xs text-slate-500 font-semibold space-y-0.5 bg-slate-50 border border-slate-200 px-3 py-1 rounded-xl">
-                    <div>Học sinh: <span className="text-[#007A72] font-black">{student.studentName}</span></div>
+                    <div>Học sinh: <span className="text-[#00A19A] font-black">{student.studentName}</span></div>
                     <div>Mã HS: <span className="font-mono font-bold text-slate-800">{student.studentCode}</span></div>
                   </div>
                 </div>
@@ -971,7 +971,7 @@ export default function TeacherStudentProfilesPrintPage() {
                         <div key={idx} className="bg-slate-50 border border-slate-200 p-2.5 rounded-lg space-y-1">
                           <div className="flex justify-between items-center">
                             <span className="font-bold text-slate-800">{cs.subject?.subjectName || cs.subjectName || "Môn học"}</span>
-                            <span className="font-black text-[#007A72] text-xs">{cs.subjectScore ? `${cs.subjectScore}%` : "Đạt"}</span>
+                            <span className="font-black text-[#00A19A] text-xs">{cs.subjectScore ? `${cs.subjectScore}%` : "Đạt"}</span>
                           </div>
                           <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
                             <div

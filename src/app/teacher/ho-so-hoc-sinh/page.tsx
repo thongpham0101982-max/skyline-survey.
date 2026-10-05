@@ -389,7 +389,7 @@ export default function TeacherStudentProfilePage() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <User className="w-5 h-5 text-[#007A72]" />
+              <User className="w-5 h-5 text-[#00A19A]" />
               Hồ sơ Học sinh Lớp Chủ nhiệm
             </h1>
             <p className="text-slate-500 mt-0.5 text-xs font-medium">
@@ -400,14 +400,14 @@ export default function TeacherStudentProfilePage() {
           <div className="flex flex-wrap items-center gap-2">
             <div className="bg-slate-50 border border-slate-200/80 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 flex items-center gap-1.5 shadow-2xs">
               <span className="text-slate-400 font-semibold">Năm học:</span>
-              <span className="text-[#007A72] font-black">{selectedStudent?.yearName || "2025-2026"}</span>
+              <span className="text-[#00A19A] font-black">{selectedStudent?.yearName || "2025-2026"}</span>
             </div>
 
             {/* Slide-over Drawer Trigger button */}
             <button
               type="button"
               onClick={() => setIsStudentDrawerOpen(true)}
-              className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100/80 text-[#007A72] border border-teal-200/90 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer"
+              className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100/80 text-[#00A19A] border border-teal-200/90 px-3 py-1.5 rounded-xl text-xs font-bold shadow-2xs transition-all cursor-pointer"
               title="Mở danh sách học sinh cả lớp dạng thanh trượt"
             >
               <LayoutList className="w-3.5 h-3.5" />
@@ -459,22 +459,22 @@ export default function TeacherStudentProfilePage() {
             <button
               type="button"
               onClick={() => setIsStudentDropdownOpen(!isStudentDropdownOpen)}
-              className="flex items-center gap-2.5 bg-white hover:bg-teal-50/50 border border-slate-200/90 hover:border-[#007A72] px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs cursor-pointer group"
+              className="flex items-center gap-2.5 bg-white hover:bg-teal-50/50 border border-slate-200/90 hover:border-[#00A19A] px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-800 transition-all shadow-2xs cursor-pointer group"
               title="Bấm để chọn học sinh khác trong lớp"
             >
-              <div className="w-6 h-6 rounded-lg bg-[#007A72] text-white flex items-center justify-center font-black text-[11px] shadow-2xs">
+              <div className="w-6 h-6 rounded-lg bg-[#00A19A] text-white flex items-center justify-center font-black text-[11px] shadow-2xs">
                 {selectedStudent?.studentName ? selectedStudent.studentName.split(" ").pop()?.charAt(0) : "H"}
               </div>
               <div className="text-left">
                 <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Học sinh đang xem:</span>
-                <span className="font-extrabold text-slate-900 group-hover:text-[#007A72] text-xs transition-colors">
+                <span className="font-extrabold text-slate-900 group-hover:text-[#00A19A] text-xs transition-colors">
                   {selectedStudent?.studentName || "Chọn học sinh..."}
                   {selectedStudent?.studentCode && (
                     <span className="font-mono text-slate-400 font-normal ml-1.5 text-[11px]">({selectedStudent.studentCode})</span>
                   )}
                 </span>
               </div>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isStudentDropdownOpen ? "rotate-180 text-[#007A72]" : ""}`} />
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isStudentDropdownOpen ? "rotate-180 text-[#00A19A]" : ""}`} />
             </button>
 
             {/* Smart Dropdown Menu */}
@@ -482,10 +482,10 @@ export default function TeacherStudentProfilePage() {
               <div className="absolute left-0 top-full mt-2 w-84 max-w-[92vw] bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-3 space-y-2.5 animate-in fade-in zoom-in-95 duration-100">
                 <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
                   <span className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-[#007A72]" />
+                    <Users className="w-3.5 h-3.5 text-[#00A19A]" />
                     Chọn học sinh
                   </span>
-                  <span className="text-[10px] font-bold bg-teal-50 text-[#007A72] px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold bg-teal-50 text-[#00A19A] px-2 py-0.5 rounded-full">
                     {filteredStudentsList.length} HS
                   </span>
                 </div>
@@ -498,7 +498,7 @@ export default function TeacherStudentProfilePage() {
                     placeholder="Tìm theo tên hoặc mã HS..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#007A72]"
+                    className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A19A]"
                     autoFocus
                   />
                   {searchQuery && (
@@ -525,13 +525,13 @@ export default function TeacherStudentProfilePage() {
                         }}
                         className={`w-full text-left p-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
                           isSelected
-                            ? "bg-teal-50 text-[#007A72] border-[#007A72] shadow-2xs"
+                            ? "bg-teal-50 text-[#00A19A] border-[#00A19A] shadow-2xs"
                             : "hover:bg-slate-50 border-transparent text-slate-700"
                         }`}
                       >
                         <div className="flex items-center gap-2 min-w-0 pr-1">
                           <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-black text-[10px] flex-shrink-0 ${
-                            isSelected ? "bg-[#007A72] text-white" : "bg-slate-100 text-slate-600"
+                            isSelected ? "bg-[#00A19A] text-white" : "bg-slate-100 text-slate-600"
                           }`}>
                             {s.studentName ? s.studentName.split(" ").pop()?.charAt(0) : "H"}
                           </div>
@@ -542,7 +542,7 @@ export default function TeacherStudentProfilePage() {
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           <span className="font-mono text-[10px] text-slate-400 font-semibold">{s.studentCode}</span>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-[#007A72]" />}
+                          {isSelected && <Check className="w-3.5 h-3.5 text-[#00A19A]" />}
                         </div>
                       </button>
                     );
@@ -567,7 +567,7 @@ export default function TeacherStudentProfilePage() {
                   <ChevronLeft className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Trước</span>
                 </button>
-                <span className="px-2 text-xs font-mono font-black text-[#007A72] bg-teal-50 py-0.5 rounded-lg border border-teal-100">
+                <span className="px-2 text-xs font-mono font-black text-[#00A19A] bg-teal-50 py-0.5 rounded-lg border border-teal-100">
                   {cIdx + 1} / {filteredStudentsList.length}
                 </span>
                 <button
@@ -599,7 +599,7 @@ export default function TeacherStudentProfilePage() {
           <div className="relative w-full max-w-sm bg-white h-full shadow-2xl z-50 p-5 flex flex-col space-y-4 animate-in slide-in-from-left duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-[#007A72]" />
+                <Users className="w-5 h-5 text-[#00A19A]" />
                 <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider">Danh sách học sinh lớp</h3>
               </div>
               <button
@@ -618,7 +618,7 @@ export default function TeacherStudentProfilePage() {
                 placeholder="Tìm kiếm theo tên, mã HS..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#007A72]/20 focus:border-[#007A72]"
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A]"
               />
               {searchQuery && (
                 <button
@@ -643,13 +643,13 @@ export default function TeacherStudentProfilePage() {
                     }}
                     className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
                       isSelected
-                        ? "bg-teal-50 text-[#007A72] border-[#007A72] shadow-xs"
+                        ? "bg-teal-50 text-[#00A19A] border-[#00A19A] shadow-xs"
                         : "bg-slate-50/50 hover:bg-slate-100/70 border-slate-200/60 text-slate-700"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-2">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs uppercase flex-shrink-0 ${
-                        isSelected ? "bg-[#007A72] text-white shadow-2xs" : "bg-slate-200 text-slate-700"
+                        isSelected ? "bg-[#00A19A] text-white shadow-2xs" : "bg-slate-200 text-slate-700"
                       }`}>
                         {s.studentName ? s.studentName.split(" ").pop()?.charAt(0) : "H"}
                       </div>
@@ -678,10 +678,10 @@ export default function TeacherStudentProfilePage() {
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-[#007A72]" />
+                    <Users className="w-4 h-4 text-[#00A19A]" />
                     Danh sách Học sinh
                   </h3>
-                  <span className="text-[10px] font-extrabold bg-teal-50 text-[#007A72] px-2.5 py-0.5 rounded-full border border-teal-200/80">
+                  <span className="text-[10px] font-extrabold bg-teal-50 text-[#00A19A] px-2.5 py-0.5 rounded-full border border-teal-200/80">
                     {filteredStudentsList.length} học sinh
                   </span>
                 </div>
@@ -692,7 +692,7 @@ export default function TeacherStudentProfilePage() {
                     placeholder="Tìm theo mã hoặc tên học sinh..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-8 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#007A72]/20 focus:border-[#007A72] transition-all text-slate-700"
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#00A19A]/20 focus:border-[#00A19A] transition-all text-slate-700"
                   />
                   {searchQuery && (
                     <button
@@ -708,7 +708,7 @@ export default function TeacherStudentProfilePage() {
               <div className="space-y-1 max-h-[560px] overflow-y-auto pr-1 custom-scrollbar">
                 {loadingStudents ? (
                   <div className="flex flex-col items-center justify-center py-10 space-y-2">
-                    <Loader2 className="w-6 h-6 text-[#007A72] animate-spin opacity-60" />
+                    <Loader2 className="w-6 h-6 text-[#00A19A] animate-spin opacity-60" />
                     <span className="text-[10px] text-slate-400 font-bold uppercase">Đang tải...</span>
                   </div>
                 ) : filteredStudentsList.length === 0 ? (
@@ -733,13 +733,13 @@ export default function TeacherStudentProfilePage() {
                         onClick={() => setSelectedStudentId(s.id)}
                         className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
                           selectedStudentId === s.id
-                            ? "bg-teal-50/80 text-[#007A72] border-[#007A72] shadow-xs"
+                            ? "bg-teal-50/80 text-[#00A19A] border-[#00A19A] shadow-xs"
                             : "bg-slate-50/40 hover:bg-slate-100/60 border-slate-200/60 text-slate-700"
                         }`}
                       >
                       <div className="flex items-center gap-3 min-w-0 pr-2">
                         <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs uppercase flex-shrink-0 ${
-                          selectedStudentId === s.id ? "bg-[#007A72] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
+                          selectedStudentId === s.id ? "bg-[#00A19A] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
                         }`}>
                           {s.studentName ? s.studentName.split(" ").pop()?.charAt(0) : "H"}
                         </div>
@@ -767,12 +767,12 @@ export default function TeacherStudentProfilePage() {
               
               {/* Profile Details Header with Student Switcher & Fullscreen Mode */}
               <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-50 via-teal-50/20 to-slate-100/70 border-b border-slate-200/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[#007A72]/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#00A19A]/5 rounded-full blur-3xl pointer-events-none"></div>
                 
                 <div className="flex items-center gap-3.5 z-10">
                   <div
                     onClick={() => fileInputRef.current?.click()}
-                    className="relative group w-13 h-13 rounded-2xl overflow-hidden bg-gradient-to-br from-[#003B3A] to-[#007A72] border-2 border-white shadow-md flex items-center justify-center text-white font-black text-base cursor-pointer flex-shrink-0"
+                    className="relative group w-13 h-13 rounded-2xl overflow-hidden bg-gradient-to-br from-[#003B3A] to-[#00A19A] border-2 border-white shadow-md flex items-center justify-center text-white font-black text-base cursor-pointer flex-shrink-0"
                     title="Bấm để tải lên / thay đổi ảnh đại diện"
                   >
                     <img
@@ -791,7 +791,7 @@ export default function TeacherStudentProfilePage() {
                         if (fallback && fallback.style) fallback.style.display = 'none';
                       }}
                     />
-                    <div style={{ display: 'none' }} className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#003B3A] to-[#007A72] text-white font-black text-base">
+                    <div style={{ display: 'none' }} className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#003B3A] to-[#00A19A] text-white font-black text-base">
                       {selectedStudent?.studentName ? selectedStudent.studentName.split(" ").pop()?.charAt(0) : "S"}
                     </div>
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -809,7 +809,7 @@ export default function TeacherStudentProfilePage() {
                         {selectedStudent?.studentName}
                       </h3>
                       {selectedStudent?.className && (
-                        <span className="bg-teal-50 text-[#007A72] border border-teal-200/80 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                        <span className="bg-teal-50 text-[#00A19A] border border-teal-200/80 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
                           Lớp {selectedStudent.className}
                         </span>
                       )}
@@ -880,7 +880,7 @@ export default function TeacherStudentProfilePage() {
                     type="button"
                     onClick={handleDownloadPDF}
                     disabled={isDownloadingPDF}
-                    className="flex items-center gap-1.5 bg-[#007A72] hover:bg-[#005B55] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm hover:shadow-md transition-all cursor-pointer transform active:scale-95 disabled:opacity-75"
+                    className="flex items-center gap-1.5 bg-[#00A19A] hover:bg-[#005B55] text-white px-3.5 py-1.5 rounded-xl text-xs font-black shadow-sm hover:shadow-md transition-all cursor-pointer transform active:scale-95 disabled:opacity-75"
                     title="Tải trực tiếp file PDF về máy tính"
                   >
                     {isDownloadingPDF ? (
@@ -899,7 +899,7 @@ export default function TeacherStudentProfilePage() {
                   <button
                     type="button"
                     onClick={() => window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${yearId}&autoprint=1`, "_blank")}
-                    className="hidden sm:flex items-center gap-1.5 bg-white border border-teal-400 text-[#007A72] hover:bg-teal-50 px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-2xs transition-all cursor-pointer"
+                    className="hidden sm:flex items-center gap-1.5 bg-white border border-teal-400 text-[#00A19A] hover:bg-teal-50 px-3 py-1.5 rounded-xl text-xs font-extrabold shadow-2xs transition-all cursor-pointer"
                     title="Mở hộp thoại in / Lưu dưới dạng PDF chuẩn vector"
                   >
                     <Printer className="w-3.5 h-3.5" />
@@ -919,7 +919,7 @@ export default function TeacherStudentProfilePage() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                         isActive
-                          ? "bg-gradient-to-r from-[#003B3A] to-[#007A72] text-white shadow-sm shadow-teal-900/20 font-black scale-[1.02]"
+                          ? "bg-gradient-to-r from-[#003B3A] to-[#00A19A] text-white shadow-sm shadow-teal-900/20 font-black scale-[1.02]"
                           : "bg-white/80 hover:bg-white text-slate-600 hover:text-teal-900 border border-slate-200/60 shadow-2xs"
                       }`}
                     >
@@ -934,7 +934,7 @@ export default function TeacherStudentProfilePage() {
               <div className="p-6 flex-grow">
                 {loadingProfile && !selectedStudent?.termScores ? (
                   <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                    <Loader2 className="w-8 h-8 text-[#007A72] animate-spin opacity-70" />
+                    <Loader2 className="w-8 h-8 text-[#00A19A] animate-spin opacity-70" />
                     <p className="text-slate-400 font-bold text-xs">Đang tải toàn bộ hồ sơ dữ liệu học sinh...</p>
                   </div>
                 ) : selectedStudent ? (
@@ -944,7 +944,7 @@ export default function TeacherStudentProfilePage() {
                         {/* Standard A4 Page Container (210mm x 297mm proportions) */}
                         <div id="a4-student-portfolio" className="w-full max-w-[210mm] min-h-[297mm] bg-white border border-slate-300 shadow-2xl rounded-2xl sm:rounded-3xl p-6 sm:p-10 font-sans relative overflow-hidden space-y-6 text-slate-800">
                           {/* TOP DECORATIVE BANNER */}
-                          <div className="absolute top-0 left-0 right-0 h-3.5 bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3]" />
+                          <div className="absolute top-0 left-0 right-0 h-3.5 bg-gradient-to-r from-[#003B3A] via-[#00A19A] to-[#48BFE3]" />
 
                           {/* SECTION 1: HEADER & ADMINISTRATIVE INFO */}
                           <div className="border-b-2 border-slate-100 pb-5 pt-2">
@@ -954,13 +954,13 @@ export default function TeacherStudentProfilePage() {
                                   <img src="/logo.png" alt="Sky-Line School" className="h-9 w-auto object-contain" />
                                 </div>
                                 <div>
-                                  <div className="font-black text-[11px] tracking-widest text-[#007A72] uppercase">HỆ THỐNG GIÁO DỤC SKY-LINE</div>
+                                  <div className="font-black text-[11px] tracking-widest text-[#00A19A] uppercase">HỆ THỐNG GIÁO DỤC SKY-LINE</div>
                                   <h2 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight">HỒ SƠ NĂNG LỰC HỌC SINH</h2>
                                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Student Comprehensive Profile &amp; Portfolio</p>
                                 </div>
                               </div>
                               <div className="bg-slate-50 border border-slate-200/80 px-4 py-2 rounded-2xl text-right text-xs font-semibold text-slate-600 self-start sm:self-auto shadow-2xs">
-                                <div>Năm học: <span className="text-[#007A72] font-black">{selectedStudent?.yearName || "2025-2026"}</span></div>
+                                <div>Năm học: <span className="text-[#00A19A] font-black">{selectedStudent?.yearName || "2025-2026"}</span></div>
                                 <div>Cơ sở: <span className="text-slate-800 font-bold">{selectedStudent?.campusName || "Sky-Line"}</span></div>
                               </div>
                             </div>
@@ -971,8 +971,8 @@ export default function TeacherStudentProfilePage() {
                               {/* SECTION I: THÔNG TIN HỌC SINH */}
                               <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200/80 space-y-4">
                                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-200/60 pb-2.5">
-                                  <div className="w-2.5 h-2.5 rounded-full bg-[#007A72]" />
-                                  <User className="w-4 h-4 text-[#007A72]" />
+                                  <div className="w-2.5 h-2.5 rounded-full bg-[#00A19A]" />
+                                  <User className="w-4 h-4 text-[#00A19A]" />
                                   I. THÔNG TIN HỌC SINH
                                 </h3>
                                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -1017,7 +1017,7 @@ export default function TeacherStudentProfilePage() {
                                       <button
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="flex items-center gap-1 text-[10px] font-bold text-[#007A72] hover:text-[#005B55] bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 cursor-pointer transition-all shadow-2xs"
+                                        className="flex items-center gap-1 text-[10px] font-bold text-[#00A19A] hover:text-[#005B55] bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-lg border border-teal-200 cursor-pointer transition-all shadow-2xs"
                                       >
                                         <Upload className="w-3 h-3" />
                                         <span>Tải ảnh lên</span>
@@ -1039,7 +1039,7 @@ export default function TeacherStudentProfilePage() {
                                     </div>
                                     <div className="space-y-0.5">
                                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Mã học sinh</span>
-                                      <span className="font-mono font-black text-[#007A72] text-sm block">{selectedStudent?.studentCode}</span>
+                                      <span className="font-mono font-black text-[#00A19A] text-sm block">{selectedStudent?.studentCode}</span>
                                     </div>
                                     <div className="space-y-0.5">
                                       <span className="text-[10px] text-slate-400 font-bold uppercase block">Lớp học</span>
@@ -1375,8 +1375,8 @@ export default function TeacherStudentProfilePage() {
                                     <div className="space-y-4">
                                       <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2">
                                         <div className="flex items-center gap-2">
-                                          <div className="w-2.5 h-2.5 rounded-full bg-[#007A72]" />
-                                          <ClipboardCheck className="w-4 h-4 text-[#007A72]" />
+                                          <div className="w-2.5 h-2.5 rounded-full bg-[#00A19A]" />
+                                          <ClipboardCheck className="w-4 h-4 text-[#00A19A]" />
                                           <span>III. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET)</span>
                                         </div>
                                         <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
@@ -1401,7 +1401,7 @@ export default function TeacherStudentProfilePage() {
                                                 <tr>
                                                   <th className="py-2 px-3 text-center w-8">STT</th>
                                                   <th className="py-2 px-3">Môn học</th>
-                                                  <th className="py-2 px-2 text-center bg-teal-50/50 text-[#007A72]">KSĐN</th>
+                                                  <th className="py-2 px-2 text-center bg-teal-50/50 text-[#00A19A]">KSĐN</th>
                                                   <th className="py-2 px-2 text-center">Giữa kỳ 1</th>
                                                   <th className="py-2 px-2 text-center">Cuối kỳ 1</th>
                                                   <th className="py-2 px-2 text-center">Giữa kỳ 2</th>
@@ -1413,7 +1413,7 @@ export default function TeacherStudentProfilePage() {
                                                   <tr key={idx} className="hover:bg-slate-50/80">
                                                     <td className="py-2 px-3 text-center font-mono text-slate-400">{idx + 1}</td>
                                                     <td className="py-2 px-3 font-bold text-slate-900">{r.name}</td>
-                                                    <td className="py-2 px-2 text-center font-black text-[#007A72] bg-teal-50/20">{r.ksdn || "—"}</td>
+                                                    <td className="py-2 px-2 text-center font-black text-[#00A19A] bg-teal-50/20">{r.ksdn || "—"}</td>
                                                     <td className="py-2 px-2 text-center font-black text-slate-800">{r.gk1 || "—"}</td>
                                                     <td className="py-2 px-2 text-center font-black text-slate-800">{r.ck1 || "—"}</td>
                                                     <td className="py-2 px-2 text-center font-black text-slate-800">{r.gk2 || "—"}</td>
@@ -1445,7 +1445,7 @@ export default function TeacherStudentProfilePage() {
                                                   <th className="py-2 px-3">Môn học</th>
                                                   <th className="py-2 px-3 text-center">Học kỳ 1 (CK1)</th>
                                                   <th className="py-2 px-3 text-center">Học kỳ 2 (CK2)</th>
-                                                  <th className="py-2 px-3 text-center bg-teal-50/60 text-[#007A72]">Cả năm (CN)</th>
+                                                  <th className="py-2 px-3 text-center bg-teal-50/60 text-[#00A19A]">Cả năm (CN)</th>
                                                 </tr>
                                               </thead>
                                               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
@@ -1455,7 +1455,7 @@ export default function TeacherStudentProfilePage() {
                                                     <td className="py-2 px-3 font-bold text-slate-900">{r.name}</td>
                                                     <td className="py-2 px-3 text-center font-black text-slate-800">{r.hk1 || "—"}</td>
                                                     <td className="py-2 px-3 text-center font-black text-slate-800">{r.hk2 || "—"}</td>
-                                                    <td className="py-2 px-3 text-center font-black text-[#007A72] bg-teal-50/30">{r.cn || "—"}</td>
+                                                    <td className="py-2 px-3 text-center font-black text-[#00A19A] bg-teal-50/30">{r.cn || "—"}</td>
                                                   </tr>
                                                 ))}
                                               </tbody>
@@ -1586,7 +1586,7 @@ export default function TeacherStudentProfilePage() {
                                                   <tr key={idx} className="hover:bg-amber-50/20">
                                                     <td className="py-2.5 px-3 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
                                                     <td className="py-2.5 px-3 font-bold text-slate-800">{achName}</td>
-                                                    <td className="py-2.5 px-3 text-[10px] font-black text-[#007A72] uppercase">{catName}</td>
+                                                    <td className="py-2.5 px-3 text-[10px] font-black text-[#00A19A] uppercase">{catName}</td>
                                                     <td className="py-2.5 px-3 text-center">
                                                       <span className="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md">
                                                         {levelName}
@@ -1713,7 +1713,7 @@ export default function TeacherStudentProfilePage() {
                                             <div className="font-bold text-xs uppercase text-slate-700 tracking-wider">CỐ VẤN / GVCN</div>
                                             <div className="text-[10px] text-slate-400 italic">(Ký &amp; ghi rõ họ tên)</div>
                                           </div>
-                                          <div className="font-black text-xs text-[#007A72]">
+                                          <div className="font-black text-xs text-[#00A19A]">
                                             {selectedStudent?.homeroomTeacherName || "Thầy/Cô Chủ nhiệm"}
                                           </div>
                                         </div>
@@ -1739,9 +1739,9 @@ export default function TeacherStudentProfilePage() {
                                       <div className="mt-8 pt-6 border-t-2 border-dashed border-teal-300 space-y-4">
                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 p-4 rounded-2xl">
                                           <div className="flex items-center gap-3">
-                                            <div className="w-3 h-3 rounded-full bg-[#007A72]" />
+                                            <div className="w-3 h-3 rounded-full bg-[#00A19A]" />
                                             <div>
-                                              <span className="text-[10px] font-black uppercase text-[#007A72] tracking-wider block">PHỤ LỤC HỒ SƠ</span>
+                                              <span className="text-[10px] font-black uppercase text-[#00A19A] tracking-wider block">PHỤ LỤC HỒ SƠ</span>
                                               <h3 className="text-xs sm:text-sm font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
                                                 <Sparkles className="w-4 h-4 text-teal-600" />
                                                 <span>PHỤ LỤC: KẾT QUẢ ĐÁNH GIÁ NĂNG LỰC TOÀN DIỆN (RADAR 360°)</span>
@@ -1755,7 +1755,7 @@ export default function TeacherStudentProfilePage() {
                                             <button
                                               type="button"
                                               onClick={() => setActiveTab("competencies")}
-                                              className="text-[11px] font-bold text-[#007A72] hover:text-[#005B55] flex items-center gap-1 hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs transition-all"
+                                              className="text-[11px] font-bold text-[#00A19A] hover:text-[#005B55] flex items-center gap-1 hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs transition-all"
                                             >
                                               <span>Mở rộng</span>
                                               <ChevronRight className="w-3.5 h-3.5" />

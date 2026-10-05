@@ -5728,7 +5728,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             ) : (
                               <button 
                                 onClick={() => setRegisterDetailSlot(slot)}
-                                className="px-4 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-md shadow-teal-800/15 bg-gradient-to-r from-[#00A19A] to-[#007068] hover:from-[#007068] hover:to-[#005c56] text-white cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                                className="px-4 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-md shadow-teal-800/15 bg-gradient-to-r from-[#00A19A] to-[#008B85] hover:from-[#008B85] hover:to-[#005854] text-white cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
                               >
                                 Đăng ký
                               </button>

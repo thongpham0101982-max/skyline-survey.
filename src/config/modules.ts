@@ -91,6 +91,12 @@ export const APP_CATEGORIES = [
         href: "/admin/ktdbcl/diem-nhan-xet"
       },
       {
+        code: "KTDBCL_GRADE_CTQT",
+        name: "Quản lý Điểm CTQT",
+        icon: Globe,
+        href: "/admin/ktdbcl/diem-ctqt"
+      },
+      {
         code: "KTDBCL_THONG_KE_BAO_CAO",
         name: "Thống kê báo cáo",
         icon: BarChart3,
@@ -219,8 +225,8 @@ export const APP_CATEGORIES = [
         icon: Users2,
         href: "/admin/student-info",
         subModules: [
-          { code: "STUDENT_INFO_K12", name: "Phổ thông K-12" },
-          { code: "STUDENT_INFO_MAM_NON", name: "Mầm non" }
+          { code: "STUDENT_INFO_K12", name: "Phổ thông K-12", href: "/admin/student-info?tab=general" },
+          { code: "STUDENT_INFO_MAM_NON", name: "Mầm non", href: "/admin/student-info?tab=preschool" }
         ]
       },
       {
