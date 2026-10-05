@@ -193,6 +193,8 @@ const defaultDanangSchools = [
 ];
 
 export function StudentInfoClient({ 
+  initialTab = "general",
+  initialSubTab = "students",
   initialGeneralStudents = [], 
   initialPreschoolStudents = [],
   generalPeriods: rawGeneralPeriods = [],
@@ -220,6 +222,15 @@ export function StudentInfoClient({
     console.log("--- StudentInfoClient VERSION 3.0 LOADED ---");
   }, []);
 
+  const updateUrlParams = useCallback((newTab: string, newSubTab: string) => {
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", newTab);
+      url.searchParams.set("subTab", newSubTab);
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, []);
+
   const generalPeriods = useMemo(() => {
     return rawGeneralPeriods.map((p: any) => ({
       ...p,
@@ -234,7 +245,13 @@ export function StudentInfoClient({
     }));
   }, [rawPreschoolPeriods]);
 
-  const [activeTab, setActiveTab] = useState<"general" | "preschool">("general");
+  const [activeTab, setActiveTab] = useState<"general" | "preschool">(initialTab);
+
+  useEffect(() => {
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const [devAreas, setDevAreas] = useState<any[]>([]);
   const [devAreasLoading, setDevAreasLoading] = useState(false);
