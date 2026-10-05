@@ -32,8 +32,10 @@ import {
   Printer,
   Clock,
   UserCheck,
-  Heart
+  Heart,
+  Globe
 } from "lucide-react"
+import { isCtqtClass } from "@/lib/ctqt/config"
 import {
   ResponsiveContainer,
   BarChart,
@@ -257,6 +259,10 @@ export function HomeroomGradesClient({
   const currentClass = useMemo(() => {
     return homeroomClasses.find(c => c.id === selectedClassId) || homeroomClasses[0] || null
   }, [homeroomClasses, selectedClassId])
+
+  const isCtqt = useMemo(() => {
+    return isCtqtClass(currentClass?.className, currentClass?.educationSystem)
+  }, [currentClass])
 
   // Filtered student matrix by search
   const filteredStudents = useMemo(() => {
@@ -570,6 +576,16 @@ export function HomeroomGradesClient({
 
           {/* Quick Actions & Year */}
           <div className="flex items-center gap-2.5 flex-wrap">
+            {isCtqt && (
+              <Link
+                href={`/teacher/so-diem-ctqt?tab=consolidated&classId=${selectedClassId}&academicYearId=${selectedYearId}`}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shadow-md transition-all border border-amber-300"
+              >
+                <Globe className="w-4 h-4" />
+                <span>Sổ Điểm &amp; Report Card CTQT</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
             <select
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
@@ -723,6 +739,18 @@ export function HomeroomGradesClient({
       {/* Tabs Navigation */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
         <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl flex-wrap">
+          {isCtqt && (
+            <Link
+              href={`/teacher/so-diem-ctqt?tab=consolidated&classId=${selectedClassId}&academicYearId=${selectedYearId}`}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black transition-all bg-gradient-to-r from-amber-100 to-amber-50 text-amber-900 border border-amber-300 hover:brightness-95 shadow-2xs"
+              title="Mở Sổ điểm CTQT, đánh giá 6 năng lực cốt lõi và xuất Report Card song ngữ"
+            >
+              <Sparkles className="w-4 h-4 text-amber-600" />
+              <span>Sổ Điểm CTQT (Song ngữ)</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-amber-700" />
+            </Link>
+          )}
+
           <button
             onClick={() => setActiveTab("matrix")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-extrabold transition-all ${

@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { CTQT_LEVEL_CONFIGS, detectCtqtLevel, CORE_COMPETENCIES_DEF, CORE_COMPETENCY_RATINGS } from "@/lib/ctqt/config";
 import puppeteer from "puppeteer";
 
-function generateReportCardHtml(
+export function generateReportCardHtml(
   schoolYear: string,
   semester: number,
   student: any,

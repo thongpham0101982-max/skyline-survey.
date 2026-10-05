@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Globe,
   CheckCircle2,
@@ -36,9 +37,16 @@ export function SoDiemCtqtTeacherClient({
   ctqtClasses,
   isSuperAdmin,
 }: Props) {
-  const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""));
+  const searchParams = useSearchParams();
+  const urlTab = searchParams?.get("tab");
+  const urlClassId = searchParams?.get("classId");
+  const urlYearId = searchParams?.get("academicYearId");
+
+  const [selectedYearId, setSelectedYearId] = useState(urlYearId || activeYearId || (academicYears[0]?.id || ""));
   const [selectedSemester, setSelectedSemester] = useState(2);
-  const [activeTab, setActiveTab] = useState<"entry" | "review" | "consolidated">("entry");
+  const [activeTab, setActiveTab] = useState<"entry" | "review" | "consolidated">(
+    (urlTab === "consolidated" || urlTab === "review" || urlTab === "entry") ? (urlTab as any) : "entry"
+  );
 
   // Assignments for this teacher
   const [assignmentsData, setAssignmentsData] = useState<any>({
@@ -61,10 +69,21 @@ export function SoDiemCtqtTeacherClient({
   const [actioningReview, setActioningReview] = useState(false);
 
   // Selected for Consolidated Tab (GVCN / Class View)
-  const [consolidatedClassId, setConsolidatedClassId] = useState<string>(ctqtClasses[0]?.id || "");
+  const [consolidatedClassId, setConsolidatedClassId] = useState<string>(urlClassId || ctqtClasses[0]?.id || "");
   const [consolidatedData, setConsolidatedData] = useState<any>(null);
   const [loadingConsolidated, setLoadingConsolidated] = useState(false);
   const [savingCompetencies, setSavingCompetencies] = useState(false);
+
+  useEffect(() => {
+    if (urlTab === "consolidated") {
+      setActiveTab("consolidated");
+    } else if (urlTab === "review") {
+      setActiveTab("review");
+    }
+    if (urlClassId) {
+      setConsolidatedClassId(urlClassId);
+    }
+  }, [urlTab, urlClassId]);
 
   // Fetch teacher's CTQT assignments
   const fetchTeacherAssignments = async () => {
