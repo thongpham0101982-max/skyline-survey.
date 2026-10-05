@@ -813,6 +813,13 @@ export function ObservationClient(props: ObservationClientProps) {
   const [filterClassId, setFilterClassId] = useState(initialFilters.classId || "all")
   const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
 
+  // Active academic year definition to prevent ReferenceError
+  const activeAcademicYear = useMemo(() => {
+    const safeYears = Array.isArray(academicYears) ? academicYears : [];
+    if (safeYears.length === 0) return null;
+    return safeYears.find((y: any) => y.id === filterAcademicYearId) || safeYears.find((y: any) => y.status === "ACTIVE") || safeYears[0] || null;
+  }, [academicYears, filterAcademicYearId]);
+
   useEffect(() => {
     if (!initialFilters.month && typeof window !== "undefined") {
       const stored = localStorage.getItem("skyline_du_gio_filter_month");
