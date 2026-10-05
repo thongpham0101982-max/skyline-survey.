@@ -3601,102 +3601,261 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {tab === "children" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {latestBatchInfo && (
-            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
-            
-            <div className="relative flex items-start sm:items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-            <AlertCircle className="w-6 h-6 text-amber-600 animate-pulse" />
-            </div>
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-            <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
-            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm mr-2 flex items-center gap-1.5">
-            Thông báo
-            </span>
-            <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold shadow-md shadow-amber-900/10 mx-0.5 text-xs tracking-wide">
-            {latestBatchInfo.name}
-            </span> 
-            <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-black border border-orange-200/60 shadow-sm mx-0.5 text-xs">
-            {latestBatchInfo.periodName}
-            </span>
-            <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
-            </div>
-            </div>
-            </div>
+            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-xs animate-in fade-in slide-in-from-top-3 duration-300 mb-5 bg-gradient-to-r from-teal-50/90 via-white to-amber-50/70 border border-teal-200/70 group hover:shadow-md transition-all">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00A19A] to-[#003B3A] text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <Sparkles className="w-5 h-5 text-teal-200" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-[#00736E] bg-teal-100/70 border border-teal-200/80 px-2 py-0.5 rounded-md">
+                        Thông báo khảo sát
+                      </span>
+                    </div>
+                    <div className="text-xs font-semibold text-slate-700 flex flex-wrap items-center gap-1.5">
+                      <span className="text-slate-500">Đợt khảo sát mới nhất:</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-[#003B3A] text-white font-mono font-bold text-xs shadow-2xs">
+                        {latestBatchInfo.name}
+                      </span>
+                      <span className="text-slate-400">•</span>
+                      <span className="text-slate-500">Kỳ KS:</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-200/80 font-bold text-xs">
+                        {latestBatchInfo.periodName}
+                      </span>
+                      <span className="text-slate-600 font-medium">— Vui lòng xét duyệt kết quả.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  <button
+                    onClick={() => {
+                      if (latestBatchInfo.periodId) setCPeriodId(latestBatchInfo.periodId);
+                      if (latestBatchInfo.id) setCBatchId(latestBatchInfo.id);
+                      fetchChildren();
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#00A19A] hover:bg-[#008B85] text-white text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                  >
+                    <Search className="w-3.5 h-3.5" />
+                    Xem đợt này
+                  </button>
+                </div>
+              </div>
             </div>
           )}
-          <div className="bg-white rounded-none border border-slate-300 shadow-none p-4 flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>
-              <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[160px]">
-                <option value="">-- Chọn Kỳ --</option>
-                <option value="all">-- Tất cả các kỳ --</option>
-                {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+
+          {/* Filters Bar */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#00A19A]" />
+                  Kỳ KS:
+                </span>
+                <select
+                  value={cPeriodId}
+                  onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }}
+                  className="h-10 px-3 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 rounded-xl text-xs font-semibold text-slate-700 outline-none transition-all cursor-pointer min-w-[170px]"
+                >
+                  <option value="">-- Chọn Kỳ --</option>
+                  <option value="all">-- Tất cả các kỳ --</option>
+                  {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5 text-[#00A19A]" />
+                  Đợt:
+                </span>
+                <select
+                  value={cBatchId}
+                  onChange={e => setCBatchId(e.target.value)}
+                  disabled={!cPeriodId}
+                  className="h-10 px-3 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 rounded-xl text-xs font-semibold text-slate-700 outline-none transition-all cursor-pointer min-w-[150px] disabled:opacity-50"
+                >
+                  <option value="">Tất cả đợt</option>
+                  {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+
+              <button
+                onClick={fetchChildren}
+                className="h-10 px-4 bg-[#00A19A] hover:bg-[#008B85] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Search className="w-3.5 h-3.5" /> Tìm kiếm
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
-              <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
-                <option value="">Tất cả đợt</option>
-                {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
+
+            <div className="relative min-w-[220px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                value={cSearch}
+                onChange={e => setCSearch(e.target.value)}
+                placeholder="Tìm tên hoặc mã bé..."
+                className="w-full h-10 pl-9 pr-8 bg-slate-50/80 hover:bg-white focus:bg-white border border-slate-200 focus:border-[#00A19A] focus:ring-4 focus:ring-[#00A19A]/10 rounded-xl text-xs font-medium text-slate-700 outline-none transition-all"
+              />
+              {cSearch && (
+                <button
+                  onClick={() => setCSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-            <button onClick={fetchChildren} className="flex items-center gap-1.5 text-sm font-bold text-[#48BFE3] hover:bg-teal-100 text-xs font-semibold"><Search className="w-4 h-4" /> Tìm</button>
-            <div className="ml-auto relative"><Search className="w-4 h-4 text-slate-300 absolute left-3 top-1/2 -translate-y-1/2" /><input value={cSearch} onChange={e => setCSearch(e.target.value)} placeholder="Tìm bé..." className="pl-9 pr-4 py-2 border border-slate-300 rounded-none text-sm outline-none focus:ring-2 focus:ring-violet-300 min-w-[200px]" /></div>
           </div>
 
-          <div className="bg-white rounded-none border border-slate-300 shadow-none p-4 flex items-center justify-between gap-4">
+          {/* Action Header Card */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-black text-slate-600">Danh sách Trẻ Mầm non</span>
-              {cSelected.length > 0 && <button onClick={() => setConfirm({ msg: `Xóa ${cSelected.length} bé?`, fn: doDeleteSelected })} className="flex items-center gap-1.5 text-xs font-black text-rose-600 hover:bg-rose-100 transition-all text-xs font-semibold"><Trash2 className="w-3.5 h-3.5" /> Xóa {cSelected.length}</button>}
+              <div className="w-9 h-9 rounded-xl bg-teal-50 border border-teal-200/70 flex items-center justify-center text-[#00A19A] shrink-0">
+                <Baby className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-slate-800">Danh sách Trẻ Mầm non</span>
+                  <span className="text-[11px] font-bold text-[#00736E] bg-teal-50 border border-teal-200/60 px-2 py-0.5 rounded-full">
+                    {filtChildren.length} trẻ
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium">Khảo sát năng lực phát triển và thông tin nhập học</p>
+              </div>
+
+              {cSelected.length > 0 && (
+                <div className="flex items-center gap-2 pl-3 border-l border-slate-200 ml-1">
+                  <button
+                    onClick={() => setConfirm({ msg: `Xóa ${cSelected.length} bé đã chọn?`, fn: doDeleteSelected })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Xóa ({cSelected.length})
+                  </button>
+                  <button
+                    onClick={() => setIsMoveBatchModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-[#00736E] bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Chuyển đợt ({cSelected.length})
+                  </button>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-xs font-black text-blue-600 hover:bg-blue-100 transition-all text-xs font-semibold"><Download className="w-4 h-4" /> Tải mẫu</button>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={downloadTemplate}
+                className="flex items-center gap-1.5 h-9 px-3 text-xs font-bold text-slate-650 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-slate-500" /> Tải mẫu
+              </button>
               <input type="file" ref={fileRef} onChange={handleImport} accept=".xlsx,.xls,.csv" className="hidden" />
-              <button onClick={() => fileRef.current?.click()} disabled={importing || periods.length === 0} className="flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50 text-xs font-semibold"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
-                            <button 
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={importing || periods.length === 0}
+                className="flex items-center gap-1.5 h-9 px-3.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/70 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
+              >
+                <Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}
+              </button>
+              <button 
                 onClick={() => {
                   if (cPeriodId) {
                     openAddBatch(cPeriodId);
                   }
                 }} 
                 disabled={!cPeriodId} 
-                className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-none transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 h-9 px-3.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 rounded-xl transition-all disabled:opacity-50 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Tạo đợt
               </button>
-<button onClick={openAddChild} disabled={periods.length === 0} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#48BFE3] hover:bg-[#48BFE3]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm trẻ</button>
+              <button
+                onClick={openAddChild}
+                disabled={periods.length === 0}
+                className="flex items-center gap-1.5 h-9 px-4 text-xs font-bold text-white bg-[#00A19A] hover:bg-[#008B85] rounded-xl shadow-sm shadow-[#00A19A]/20 transition-all disabled:opacity-50 cursor-pointer active:scale-95"
+              >
+                <Plus className="w-4 h-4" /> Thêm trẻ
+              </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
+          {/* Table Card */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col min-h-[350px]">
             {cLoading ? <Spin /> : filtChildren.length === 0 ? (
-              <Empty text={cPeriodId ? "Chưa có trẻ nào" : "Vui lòng chọn Kỳ và bấm Tìm"} sub={cPeriodId ? "Bấm Thêm trẻ hoặc Import Excel" : ""} />
+              <Empty text={cPeriodId ? "Chưa có trẻ nào trong đợt này" : "Vui lòng chọn Kỳ khảo sát và bấm Tìm kiếm"} sub={cPeriodId ? "Bấm Thêm trẻ hoặc Import Excel để bắt đầu" : ""} />
             ) : (
               <>
                 <div className="overflow-x-auto custom-scrollbar flex-1">
-                <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
-                  <thead className="bg-[#48BFE3]/5 border-b border-slate-300">
+                <table className="w-full text-left text-xs whitespace-nowrap border-collapse">
+                  <thead className="bg-slate-50/90 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-wider">
                     <tr>
-                      <th className="px-5 py-3.5 w-12 border-b border-slate-200/80"><input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
-                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Vắng", "Thao tác"].map(h => <th key={h} className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80 text-center">{h}</th>)}
+                      <th className="px-4 py-3.5 w-12 text-center border-b border-slate-200/80">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 rounded accent-[#00A19A]"
+                          checked={filtChildren.length > 0 && cSelected.length === filtChildren.length}
+                          onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])}
+                        />
+                      </th>
+                      <th className="px-3 py-3.5 w-12 text-center">STT</th>
+                      <th className="px-4 py-3.5 w-28 text-left">Mã bé</th>
+                      <th className="px-4 py-3.5 text-left">Họ và tên</th>
+                      <th className="px-4 py-3.5 w-24 text-center">Ngày sinh</th>
+                      <th className="px-4 py-3.5 w-24 text-center">Giới tính</th>
+                      <th className="px-4 py-3.5 w-28 text-center">Nhóm tuổi</th>
+                      <th className="px-4 py-3.5 w-28 text-center">Cơ sở</th>
+                      <th className="px-4 py-3.5 w-20 text-center">Vắng</th>
+                      <th className="px-4 py-3.5 w-24 text-center">Thao tác</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-slate-100">
                     {paginatedFiltChildren.map((child, i) => (
-                      <tr key={child.id} className={`hover:bg-[#48BFE3]/5/30 transition-colors ${cSelected.includes(child.id) ? "bg-[#48BFE3]/5/50" : ""}`}>
-                        <td className="px-5 py-4 border-b border-slate-100"><input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={cSelected.includes(child.id)} onChange={e => setCSelected(e.target.checked ? [...cSelected, child.id] : cSelected.filter(id => id !== child.id))} /></td>
-                        <td className="px-5 py-4 border-b border-slate-100 text-slate-500 text-sm">{(childrenCurrentPage - 1) * childrenPageSize + i + 1}</td>
-                        <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{child.studentCode}</td>
-                        <td className="px-5 py-4 border-b border-slate-100 text-sm font-bold text-slate-800">{child.fullName}</td>
-                        <td className="px-5 py-4 border-b border-slate-100 text-sm text-slate-600">{child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                        <td className="px-5 py-4 border-b border-slate-100 text-sm text-slate-650">{child.gender === "M" || child.gender === "Nam" ? "Nam" : child.gender === "F" || child.gender === "Nữ" ? "Nữ" : child.gender || "—"}</td>
-                        <td className="p-2 border border-slate-300 text-sm text-slate-700">{child.grade || "—"}</td>
-                        <td className="px-5 py-4 border-b border-slate-100 text-xs font-semibold text-slate-600">{child.admissionCampus || "—"}</td>
-                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                      <tr
+                        key={child.id}
+                        className={`hover:bg-teal-50/40 transition-colors ${cSelected.includes(child.id) ? "bg-teal-50/60" : i % 2 === 1 ? "bg-slate-50/30" : "bg-white"}`}
+                      >
+                        <td className="px-4 py-3 text-center">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 rounded accent-[#00A19A]"
+                            checked={cSelected.includes(child.id)}
+                            onChange={e => setCSelected(e.target.checked ? [...cSelected, child.id] : cSelected.filter(id => id !== child.id))}
+                          />
+                        </td>
+                        <td className="px-3 py-3 text-center text-slate-400 font-bold">{(childrenCurrentPage - 1) * childrenPageSize + i + 1}</td>
+                        <td className="px-4 py-3">
+                          <span className="font-mono text-[11px] font-black text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
+                            {child.studentCode}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 font-bold text-slate-800 text-xs">
+                          {child.fullName}
+                        </td>
+                        <td className="px-4 py-3 text-center text-slate-600 font-medium">
+                          {child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {child.gender === "M" || child.gender === "Nam" ? (
+                            <span className="bg-sky-50 text-sky-700 border border-sky-200/60 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              Nam
+                            </span>
+                          ) : child.gender === "F" || child.gender === "Nữ" ? (
+                            <span className="bg-rose-50 text-rose-700 border border-rose-200/60 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              Nữ
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="bg-slate-100 text-slate-700 font-semibold px-2 py-0.5 rounded-md text-[11px] border border-slate-200/50">
+                            {child.grade || "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="bg-teal-50 text-[#00736E] border border-teal-200/60 px-2 py-0.5 rounded-md text-[11px] font-bold">
+                            {child.admissionCampus || "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
@@ -3707,7 +3866,24 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             }}
                           />
                         </td>
-                        <td className="px-5 py-4 border-b border-slate-100 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => openEditChild(child)}
+                              className="p-1.5 text-slate-400 hover:text-[#00A19A] hover:bg-teal-50 rounded-lg transition-all cursor-pointer"
+                              title="Chỉnh sửa thông tin"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })}
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                              title="Xóa bé"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -3716,17 +3892,17 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               
               {/* Pagination Controls */}
               {filtChildren.length > 0 && (
-                <div className="p-4 flex items-center justify-between text-xs font-semibold border-t border-slate-300 bg-slate-50/50">
+                <div className="p-3.5 flex items-center justify-between text-xs font-semibold border-t border-slate-200/80 bg-slate-50/60">
                   <span className="text-xs text-slate-500 font-medium">
                     Hiển thị {Math.min(filtChildren.length, (childrenCurrentPage - 1) * childrenPageSize + 1)}-
                     {Math.min(filtChildren.length, childrenCurrentPage * childrenPageSize)} trong tổng số{" "}
                     {filtChildren.length} trẻ
                   </span>
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => setChildrenCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={childrenCurrentPage === 1}
-                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-white text-slate-700 text-xs font-bold disabled:opacity-40 transition-all cursor-pointer"
                     >
                       Trước
                     </button>
@@ -3744,11 +3920,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <button
                             key={pageNum}
                             onClick={() => setChildrenCurrentPage(pageNum)}
-                            className={"h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black " + (
+                            className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer font-bold text-xs ${
                               childrenCurrentPage === pageNum
-                                ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/20"
+                                ? "bg-[#00A19A] text-white shadow-sm shadow-[#00A19A]/20"
                                 : "text-slate-655 hover:bg-slate-100"
-                            )}
+                            }`}
                           >
                             {pageNum}
                           </button>

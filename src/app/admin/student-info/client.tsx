@@ -45,6 +45,8 @@ import { InputAssessmentsClient } from "../input-assessments/client";
 import { PreschoolInputAssessmentsClient } from "../preschool-input-assessments/client";
 
 interface StudentInfoClientProps {
+  initialTab?: "general" | "preschool";
+  initialSubTab?: "periods" | "students" | "info" | "result";
   initialGeneralStudents: any[];
   initialPreschoolStudents: any[];
   generalPeriods: any[];
