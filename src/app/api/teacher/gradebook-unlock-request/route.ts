@@ -121,7 +121,7 @@ export async function POST(request: Request) {
           userId: admin.id,
           title: "Yêu cầu mở sổ điểm mới",
           message: `Giáo viên ${teacherName} gửi yêu cầu mở sổ môn ${sub?.subjectName || ''} - lớp ${cls?.className || ''} (${evaluationPeriod}): "${reason.trim().slice(0, 80)}..."`,
-          link: "/admin/ktdbcl/diem-nhan-xet"
+          link: "/admin/ktdbcl/thong-ke-bao-cao?tab=requests"
         }))
         await prisma.notification.createMany({ data: notifData })
       }

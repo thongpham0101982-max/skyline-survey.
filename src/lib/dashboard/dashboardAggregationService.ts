@@ -452,7 +452,7 @@ export function aggregateQADashboard(
   }
 
   const dataQualityIssues = [
-    { category: "Sổ điểm quá hạn nộp", count: 4, severity: "WARNING" as const, detailUrl: "/admin/ktdbcl/diem-nhan-xet" },
+    { category: "Sổ điểm quá hạn nộp", count: 4, severity: "WARNING" as const, detailUrl: "/admin/ktdbcl/thong-ke-bao-cao?tab=progress" },
     { category: "Học sinh vắng thi chưa cập nhật lý do", count: 12, severity: "INFO" as const, detailUrl: "/admin/ktdbcl/results" },
     { category: "Câu hỏi thư viện thiếu mạch kiến thức", count: 3, severity: "INFO" as const, detailUrl: "/admin/ktdbcl/exams" }
   ]

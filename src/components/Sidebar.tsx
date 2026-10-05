@@ -111,6 +111,9 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     if (module === "KTDBCL_EXAMS") {
       hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
     }
+    if (module === "KTDBCL_THONG_KE_BAO_CAO") {
+      hasParent = hasParent || permissionModules?.includes("KTDBCL_GRADE_REMARKS") || permissionModules?.includes("KTDBCL_PHAN_TICH_THKQ") || false
+    }
     if (module === "TEACHER_TRANSFERS") {
       hasParent = hasParent || permissionModules?.includes("TEACHERS") || permissionModules?.includes("STUDENT_TRANSFERS") || false
     }
@@ -300,7 +303,8 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         {hasSubModules && isSubExpanded && (
                           <div className="pl-9 pr-1 space-y-1 py-1 border-l-2 border-teal-500/30 ml-4 animate-in fade-in slide-in-from-top-1 duration-200">
                             {m.subModules.map((sub: any) => {
-                              const isSubActive = pathname === sub.href;
+                              const currentTab = searchParams?.get("tab");
+                              const isSubActive = pathname === sub.href || (sub.href?.includes("?") && pathname === sub.href.split("?")[0] && currentTab && sub.href.includes(`tab=${currentTab}`));
                               return (
                                 <Link
                                   key={sub.code}

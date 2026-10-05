@@ -1134,53 +1134,23 @@ export async function GET(req: Request) {
 
       if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 })
 
-      // Aggregate real term scores, summaries and grade entries by studentCode across school years if current record is incomplete
+      // Aggregate advisory goals, goal trackings and term evaluations by studentCode across school years
       if (student.studentCode) {
         try {
           const crossRecords = await prisma.student.findMany({
             where: { studentCode: student.studentCode },
             select: {
               id: true,
-              termScores: { include: { subject: true } },
-              termSummaries: true,
-              subjectGradeEntries: { include: { subject: true }, orderBy: { createdAt: "desc" } },
               goals: { include: { actions: true }, orderBy: { createdAt: "desc" } },
               goalTrackings: { orderBy: { createdAt: "desc" } },
               termEvaluations: { orderBy: { createdAt: "desc" } }
             }
           });
-          const allTs: any[] = [];
-          const allSm: any[] = [];
-          const allGe: any[] = [];
           const allGoals: any[] = [];
           const allGt: any[] = [];
           const allTe: any[] = [];
-          const seenTsKey = new Set<string>();
-          const seenGeKey = new Set<string>();
-          const seenSmKey = new Set<string>();
 
           for (const cr of crossRecords) {
-            (cr.termScores || []).forEach((ts: any) => {
-              const k = `${ts.subjectId || ts.subject?.subjectName}_${ts.semester}`;
-              if (!seenTsKey.has(k) && (ts.score !== null || ts.evaluationGrade !== null)) {
-                seenTsKey.add(k);
-                allTs.push(ts);
-              }
-            });
-            (cr.subjectGradeEntries || []).forEach((ge: any) => {
-              const k = `${ge.subjectId || ge.subject?.subjectName}_${ge.evaluationPeriod}`;
-              if (!seenGeKey.has(k) && ge.compositeScore !== null) {
-                seenGeKey.add(k);
-                allGe.push(ge);
-              }
-            });
-            (cr.termSummaries || []).forEach((sm: any) => {
-              const k = `${sm.semester}`;
-              if (!seenSmKey.has(k) && (sm.gpa !== null || sm.academicRating || sm.conductRating)) {
-                seenSmKey.add(k);
-                allSm.push(sm);
-              }
-            });
             (cr.goals || []).forEach((g: any) => {
               if (!allGoals.some((ex: any) => ex.id === g.id || (ex.category === g.category && ex.targetText === g.targetText))) allGoals.push(g);
             });
@@ -1192,14 +1162,11 @@ export async function GET(req: Request) {
             });
           }
 
-          if (allTs.length > 0) student.termScores = allTs;
-          if (allGe.length > 0) student.subjectGradeEntries = allGe;
-          if (allSm.length > 0) student.termSummaries = allSm;
           if (allGoals.length > 0 && (!student.goals || student.goals.length === 0)) student.goals = allGoals;
           if (allGt.length > 0 && (!student.goalTrackings || student.goalTrackings.length === 0)) student.goalTrackings = allGt;
           if (allTe.length > 0 && (!student.termEvaluations || student.termEvaluations.length === 0)) student.termEvaluations = allTe;
         } catch (crErr) {
-          console.error("Error aggregating cross-record scores for studentCode:", crErr);
+          console.error("Error aggregating cross-record advisory for studentCode:", crErr);
         }
       }
 
@@ -1278,12 +1245,25 @@ export async function GET(req: Request) {
           console.error("Error fetching achievements:", err)
         }
 
-        // Fetch career orientation
+        // Fetch career orientation strictly scoped to academicYear
         let orientation: any = null
         try {
-          orientation = await prisma.studentCareerOrientation.findFirst({
-            where: { studentId }
-          })
+          const targetYearId = student.academicYearId || student.class?.academicYearId
+          if (targetYearId) {
+            orientation = await prisma.studentCareerOrientation.findFirst({
+              where: {
+                studentId,
+                academicYearId: targetYearId
+              },
+              orderBy: { updatedAt: "desc" }
+            })
+          }
+          if (!orientation) {
+            orientation = await prisma.studentCareerOrientation.findFirst({
+              where: { studentId },
+              orderBy: { updatedAt: "desc" }
+            })
+          }
         } catch (err) {
           console.error("Error fetching orientation:", err)
         }
@@ -1694,6 +1674,7 @@ export async function GET(req: Request) {
           competencySummaries: student?.competencySummaries || [],
           achievements: achievements || [],
           orientation: orientation || null,
+          careerOrientation: orientation || null,
           projects: projects || [],
           experientialActivities: experientialActivities || [],
           commitment: commitment || null,
@@ -1873,17 +1854,14 @@ export async function GET(req: Request) {
       const studentIds = students.map(s => s.id)
       const studentCodes = students.map(s => s.studentCode).filter(Boolean)
 
-      // Pre-aggregate cross-record scores, summaries & grade entries by studentCode
-      const crossScoreMap = new Map<string, { termScores: any[]; termSummaries: any[]; subjectGradeEntries: any[]; goals: any[]; goalTrackings: any[]; termEvaluations: any[] }>();
+      // Pre-aggregate cross-record advisory (goals, trackings, evaluations) by studentCode
+      const crossScoreMap = new Map<string, { goals: any[]; goalTrackings: any[]; termEvaluations: any[] }>();
       if (studentCodes.length > 0) {
         try {
           const crossRecs = await prisma.student.findMany({
             where: { studentCode: { in: studentCodes } },
             select: {
               studentCode: true,
-              termScores: { include: { subject: true } },
-              termSummaries: true,
-              subjectGradeEntries: { include: { subject: true }, orderBy: { createdAt: "desc" } },
               goals: { include: { actions: true }, orderBy: { createdAt: "desc" } },
               goalTrackings: { orderBy: { createdAt: "desc" } },
               termEvaluations: { orderBy: { createdAt: "desc" } }
@@ -1891,32 +1869,9 @@ export async function GET(req: Request) {
           });
           for (const cr of crossRecs) {
             if (!crossScoreMap.has(cr.studentCode)) {
-              crossScoreMap.set(cr.studentCode, { termScores: [], termSummaries: [], subjectGradeEntries: [], goals: [], goalTrackings: [], termEvaluations: [] });
+              crossScoreMap.set(cr.studentCode, { goals: [], goalTrackings: [], termEvaluations: [] });
             }
             const b = crossScoreMap.get(cr.studentCode)!;
-            (cr.termScores || []).forEach((ts: any) => {
-              if (ts.score !== null || ts.evaluationGrade !== null) {
-                const k = `${ts.subjectId || ts.subject?.subjectName}_${ts.semester}`;
-                if (!b.termScores.some(existing => `${existing.subjectId || existing.subject?.subjectName}_${existing.semester}` === k)) {
-                  b.termScores.push(ts);
-                }
-              }
-            });
-            (cr.termSummaries || []).forEach((sm: any) => {
-              if (sm.gpa !== null || sm.academicRating || sm.conductRating) {
-                if (!b.termSummaries.some(existing => existing.semester === sm.semester)) {
-                  b.termSummaries.push(sm);
-                }
-              }
-            });
-            (cr.subjectGradeEntries || []).forEach((ge: any) => {
-              if (ge.compositeScore !== null) {
-                const k = `${ge.subjectId || ge.subject?.subjectName}_${ge.evaluationPeriod}`;
-                if (!b.subjectGradeEntries.some(existing => `${existing.subjectId || existing.subject?.subjectName}_${existing.evaluationPeriod}` === k)) {
-                  b.subjectGradeEntries.push(ge);
-                }
-              }
-            });
             (cr.goals || []).forEach((g: any) => {
               if (!b.goals.some((ex: any) => ex.id === g.id || (ex.category === g.category && ex.targetText === g.targetText))) b.goals.push(g);
             });
@@ -1928,7 +1883,7 @@ export async function GET(req: Request) {
             });
           }
         } catch (crErr) {
-          console.error("Error pre-aggregating cross scores in getProfiles:", crErr);
+          console.error("Error pre-aggregating cross advisory in getProfiles:", crErr);
         }
       }
 
@@ -2108,7 +2063,14 @@ export async function GET(req: Request) {
           commitment: s.learningCommitments?.[0] || null,
           commitmentContent,
           commitmentStatus,
-          orientation: s.careerOrientations?.[0] || null,
+          orientation: (() => {
+            const targetYearId = s.academicYearId || s.class?.academicYearId || academicYearId;
+            return (s.careerOrientations || []).find((co: any) => co.academicYearId === targetYearId) || s.careerOrientations?.[0] || null;
+          })(),
+          careerOrientation: (() => {
+            const targetYearId = s.academicYearId || s.class?.academicYearId || academicYearId;
+            return (s.careerOrientations || []).find((co: any) => co.academicYearId === targetYearId) || s.careerOrientations?.[0] || null;
+          })(),
           achievements: s.achievements || [],
           projects: s.projectExperiences || [],
           experientialActivities: (() => {
@@ -2226,9 +2188,9 @@ export async function GET(req: Request) {
           oralEnglishScore,
           devAssessment,
           probationaryComment,
-          termScores: (s.termScores && s.termScores.length > 0) ? s.termScores : (crossScoreMap.get(studentCode)?.termScores || []),
-          termSummaries: (s.termSummaries && s.termSummaries.length > 0) ? s.termSummaries : (crossScoreMap.get(studentCode)?.termSummaries || []),
-          subjectGradeEntries: (s.subjectGradeEntries && s.subjectGradeEntries.length > 0) ? s.subjectGradeEntries : (crossScoreMap.get(studentCode)?.subjectGradeEntries || []),
+          termScores: s.termScores || [],
+          termSummaries: s.termSummaries || [],
+          subjectGradeEntries: s.subjectGradeEntries || [],
           competencySummaries: s.competencySummaries || [],
           goals: (s.goals && s.goals.length > 0) ? s.goals : (crossScoreMap.get(studentCode)?.goals || []),
           goalTrackings: (s.goalTrackings && s.goalTrackings.length > 0) ? s.goalTrackings : (crossScoreMap.get(studentCode)?.goalTrackings || []),

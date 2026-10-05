@@ -23,11 +23,15 @@ export function CreateObservationModal(props: any) {
                   ? "Đăng Ký Tiết Dạy Mới"
                   : props.creationMode === "OBSERVER_REQUEST"
                   ? "Gửi Yêu Cầu Xin Dự Giờ"
+                  : props.creationMode === "ASSIGNED"
+                  ? "Chỉ Định Dự Giờ Chuyên Môn"
                   : "Lập Biên Bản Dự Giờ Đột Xuất"}
               </h3>
               <p className="text-xs text-teal-100/80 font-medium">
                 {props.creationMode === "SURPRISE"
                   ? "Đánh giá trực tiếp tiết dạy đột xuất một cách khách quan, thân thiện và đồng hành phát triển chuyên môn"
+                  : props.creationMode === "ASSIGNED"
+                  ? "Cán bộ quản lý chủ động chỉ định giáo viên được dự và phân công người dự theo kế hoạch (không cần GV duyệt)"
                   : "Khai báo thông tin tiết dạy và hệ thống sẽ tự động gửi email thông báo tới Giáo viên cùng Tổ chuyên môn"}
               </p>
             </div>

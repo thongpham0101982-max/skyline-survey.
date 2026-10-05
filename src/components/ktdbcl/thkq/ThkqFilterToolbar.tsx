@@ -43,6 +43,7 @@ interface Props {
 
   campuses: any[]
   subjects: any[]
+  availableSubjects?: any[]
   loading: boolean
   onRefresh: () => void
   onExportExcel: () => void
@@ -95,10 +96,13 @@ export function ThkqFilterToolbar({
   setSearchKeyword,
   campuses,
   subjects,
+  availableSubjects,
   loading,
   onRefresh,
   onExportExcel
 }: Props) {
+  const displaySubjects = availableSubjects && availableSubjects.length > 0 ? availableSubjects : subjects
+
   // Lọc danh sách khối dựa trên Bậc học đã chọn
   const availableGrades = useMemo(() => {
     if (selectedLevel === "TIEU_HOC") return ["K1", "K2", "K3", "K4", "K5"]
@@ -235,19 +239,26 @@ export function ThkqFilterToolbar({
 
         {/* Môn học */}
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <BookOpen className="h-3.5 w-3.5 text-amber-500" />
-            Môn học
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="h-3.5 w-3.5 text-amber-500" />
+              Môn học:
+            </span>
+            <span className="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+              {displaySubjects.length} môn
+            </span>
           </label>
           <select
             value={selectedSubjectId}
             onChange={e => setSelectedSubjectId(e.target.value)}
             className="w-full text-xs font-medium rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition"
           >
-            <option value="ALL">Tất cả các môn học</option>
-            {subjects.map(s => (
+            <option value="ALL">
+              {selectedPeriod === "ALL" ? "Tất cả các môn học" : `Tất cả môn theo kỳ (${displaySubjects.length} môn)`}
+            </option>
+            {displaySubjects.map(s => (
               <option key={s.id} value={s.id}>
-                {s.subjectName || s.subjectCode}
+                {s.subjectName || s.name} {s.subjectCode || s.code ? `(${s.subjectCode || s.code})` : ""}
               </option>
             ))}
           </select>

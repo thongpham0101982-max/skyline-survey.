@@ -49,6 +49,7 @@ import toast from "react-hot-toast"
 import { StudentSurveyReportModal } from "./components/StudentSurveyReportModal"
 import { HomeroomFeedbackModal } from "./components/HomeroomFeedbackModal"
 import { ForwardToGvbmModal } from "./components/ForwardToGvbmModal"
+import { TermGradesTab } from "@/app/admin/ktdbcl/diem-nhan-xet/term-grades-tab"
 
 const EVAL_PERIODS = [
   { code: "KSĐN", label: "Khảo sát đầu năm (KSĐN)", short: "KSĐN" },
@@ -63,20 +64,24 @@ interface Props {
   activeYearId: string
   homeroomClasses: any[]
   teacherName: string
+  campuses?: any[]
+  subjects?: any[]
 }
 
 export function HomeroomGradesClient({
   academicYears,
   activeYearId,
   homeroomClasses,
-  teacherName
+  teacherName,
+  campuses = [],
+  subjects = []
 }: Props) {
   // Filters
   const [selectedYearId, setSelectedYearId] = useState(activeYearId)
   const [selectedClassId, setSelectedClassId] = useState<string>(homeroomClasses[0]?.id || "")
   const [selectedPeriod, setSelectedPeriod] = useState<string>("KSĐN")
   const [selectedScope, setSelectedScope] = useState<string>("campus") // "campus" | "all"
-  const [activeTab, setActiveTab] = useState<"matrix" | "comparative" | "tracking" | "feedback">("matrix")
+  const [activeTab, setActiveTab] = useState<"matrix" | "term-grades" | "comparative" | "tracking" | "feedback">("matrix")
   const [searchTerm, setSearchTerm] = useState("")
   const [trackingFilter, setTrackingFilter] = useState<string>("ALL") // "ALL" | "BELOW_AVG" | "BELOW_BENCHMARK" | "ENTRANCE_COMMITMENT" | "LEARNING_COMMITMENT"
 
@@ -580,140 +585,144 @@ export function HomeroomGradesClient({
         </div>
 
         {/* Filter Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-white/10 text-xs">
-          {/* Homeroom Class selector */}
-          <div>
-            <label className="block text-[11px] font-bold text-teal-200 mb-1">Lớp chủ nhiệm:</label>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full bg-white text-slate-800 font-extrabold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
-            >
-              {homeroomClasses.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.className} - {c.campus?.name || "Cơ sở"} ({c._count?.students || 0} HS)
-                </option>
-              ))}
-            </select>
-          </div>
+        {activeTab !== "term-grades" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-6 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-white/10 text-xs">
+            {/* Homeroom Class selector */}
+            <div>
+              <label className="block text-[11px] font-bold text-teal-200 mb-1">Lớp chủ nhiệm:</label>
+              <select
+                value={selectedClassId}
+                onChange={(e) => setSelectedClassId(e.target.value)}
+                className="w-full bg-white text-slate-800 font-extrabold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
+              >
+                {homeroomClasses.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.className} - {c.campus?.name || "Cơ sở"} ({c._count?.students || 0} HS)
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Evaluation Period selector */}
-          <div>
-            <label className="block text-[11px] font-bold text-teal-200 mb-1">Kỳ khảo sát / Đánh giá:</label>
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
-            >
-              {EVAL_PERIODS.map(p => (
-                <option key={p.code} value={p.code}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Evaluation Period selector */}
+            <div>
+              <label className="block text-[11px] font-bold text-teal-200 mb-1">Kỳ khảo sát / Đánh giá:</label>
+              <select
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+                className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
+              >
+                {EVAL_PERIODS.map(p => (
+                  <option key={p.code} value={p.code}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Comparative Scope */}
-          <div>
-            <label className="block text-[11px] font-bold text-teal-200 mb-1">Phạm vi đối sánh Khối:</label>
-            <select
-              value={selectedScope}
-              onChange={(e) => setSelectedScope(e.target.value)}
-              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
-            >
-              <option value="campus">Khối cùng Cơ sở ({currentClass?.campus?.name || "Cơ sở"})</option>
-              <option value="all">Toàn bộ Khối trong Hệ thống (Toàn trường)</option>
-            </select>
-          </div>
+            {/* Comparative Scope */}
+            <div>
+              <label className="block text-[11px] font-bold text-teal-200 mb-1">Phạm vi đối sánh Khối:</label>
+              <select
+                value={selectedScope}
+                onChange={(e) => setSelectedScope(e.target.value)}
+                className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
+              >
+                <option value="campus">Khối cùng Cơ sở ({currentClass?.campus?.name || "Cơ sở"})</option>
+                <option value="all">Toàn bộ Khối trong Hệ thống (Toàn trường)</option>
+              </select>
+            </div>
 
-          {/* Search */}
-          <div>
-            <label className="block text-[11px] font-bold text-teal-200 mb-1">Tìm học sinh:</label>
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tên hoặc mã học sinh..."
-                className="w-full bg-white text-slate-800 rounded-xl pl-8 pr-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-teal-300 outline-none"
-              />
-              {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
+            {/* Search */}
+            <div>
+              <label className="block text-[11px] font-bold text-teal-200 mb-1">Tìm học sinh:</label>
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Tên hoặc mã học sinh..."
+                  className="w-full bg-white text-slate-800 rounded-xl pl-8 pr-3 py-2 text-xs font-semibold focus:ring-2 focus:ring-teal-300 outline-none"
+                />
+                {searchTerm && (
+                  <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Sỹ số lớp</div>
-          <div className="text-2xl font-black text-slate-900 mt-1 flex items-baseline gap-1.5">
-            <span>{data?.summary?.totalStudents || 0}</span>
-            <span className="text-xs font-semibold text-slate-500">học sinh</span>
+      {activeTab !== "term-grades" && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Sỹ số lớp</div>
+            <div className="text-2xl font-black text-slate-900 mt-1 flex items-baseline gap-1.5">
+              <span>{data?.summary?.totalStudents || 0}</span>
+              <span className="text-xs font-semibold text-slate-500">học sinh</span>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+              <Users className="w-3 h-3 text-teal-500" />
+              <span>Lớp {currentClass?.className}</span>
+            </div>
           </div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-            <Users className="w-3 h-3 text-teal-500" />
-            <span>Lớp {currentClass?.className}</span>
-          </div>
-        </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Điểm TB Chung lớp</div>
-          <div className="text-2xl font-black text-[#0284C7] mt-1 flex items-baseline gap-1.5">
-            <span>{overallClassGpa > 0 ? overallClassGpa.toFixed(1) : "-"}</span>
-            <span className="text-xs font-semibold text-slate-500">/ 10</span>
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Điểm TB Chung lớp</div>
+            <div className="text-2xl font-black text-[#0284C7] mt-1 flex items-baseline gap-1.5">
+              <span>{overallClassGpa > 0 ? overallClassGpa.toFixed(1) : "-"}</span>
+              <span className="text-xs font-semibold text-slate-500">/ 10</span>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+              <Award className="w-3 h-3 text-sky-500" />
+              <span>Tổng hợp {data?.summary?.totalSubjects || 0} môn</span>
+            </div>
           </div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-            <Award className="w-3 h-3 text-sky-500" />
-            <span>Tổng hợp {data?.summary?.totalSubjects || 0} môn</span>
-          </div>
-        </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Đối sánh lớp trong Khối</div>
-          <div className="text-2xl font-black text-purple-700 mt-1 flex items-baseline gap-1.5">
-            <span>{data?.siblingClassesCount || 0}</span>
-            <span className="text-xs font-semibold text-slate-500">lớp cùng khối</span>
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Đối sánh lớp trong Khối</div>
+            <div className="text-2xl font-black text-purple-700 mt-1 flex items-baseline gap-1.5">
+              <span>{data?.siblingClassesCount || 0}</span>
+              <span className="text-xs font-semibold text-slate-500">lớp cùng khối</span>
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
+              <Layers className="w-3 h-3 text-purple-500" />
+              <span>{selectedScope === "campus" ? "Cùng cơ sở" : "Toàn trường"}</span>
+            </div>
           </div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-            <Layers className="w-3 h-3 text-purple-500" />
-            <span>{selectedScope === "campus" ? "Cùng cơ sở" : "Toàn trường"}</span>
-          </div>
-        </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">HS Cần quan tâm</div>
-          <div className="text-2xl font-black text-rose-600 mt-1 flex items-baseline gap-1.5">
-            <span>{data?.summary?.trackingStudentsCount || 0}</span>
-            <span className="text-xs font-semibold text-slate-500">HS</span>
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">HS Cần quan tâm</div>
+            <div className="text-2xl font-black text-rose-600 mt-1 flex items-baseline gap-1.5">
+              <span>{data?.summary?.trackingStudentsCount || 0}</span>
+              <span className="text-xs font-semibold text-slate-500">HS</span>
+            </div>
+            <div className="text-[11px] text-rose-600 font-bold mt-1 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              <span>Có môn &lt; TB hoặc &lt; Chuẩn</span>
+            </div>
           </div>
-          <div className="text-[11px] text-rose-600 font-bold mt-1 flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            <span>Có môn &lt; TB hoặc &lt; Chuẩn</span>
-          </div>
-        </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">HS Cam kết & Hỗ trợ</div>
-          <div className="text-2xl font-black text-amber-600 mt-1 flex items-baseline gap-1.5">
-            <span>{(data?.summary?.entranceCommittedCount || 0) + (data?.summary?.learningCommittedCount || 0) + (data?.summary?.psychologySupportCount || 0)}</span>
-            <span className="text-xs font-semibold text-slate-500">HS</span>
-          </div>
-          <div className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1 flex-wrap">
-            <Target className="w-3 h-3 text-amber-500 shrink-0" />
-            <span>Đầu vào ({data?.summary?.entranceCommittedCount || 0}) • SLC ({data?.summary?.learningCommittedCount || 0}) • Tâm lý ({data?.summary?.psychologySupportCount || 0})</span>
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">HS Cam kết & Hỗ trợ</div>
+            <div className="text-2xl font-black text-amber-600 mt-1 flex items-baseline gap-1.5">
+              <span>{(data?.summary?.entranceCommittedCount || 0) + (data?.summary?.learningCommittedCount || 0) + (data?.summary?.psychologySupportCount || 0)}</span>
+              <span className="text-xs font-semibold text-slate-500">HS</span>
+            </div>
+            <div className="text-[11px] text-amber-700 font-semibold mt-1 flex items-center gap-1 flex-wrap">
+              <Target className="w-3 h-3 text-amber-500 shrink-0" />
+              <span>Đầu vào ({data?.summary?.entranceCommittedCount || 0}) • SLC ({data?.summary?.learningCommittedCount || 0}) • Tâm lý ({data?.summary?.psychologySupportCount || 0})</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Tabs Navigation */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-xs">
-        <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl">
+        <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl flex-wrap">
           <button
             onClick={() => setActiveTab("matrix")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-extrabold transition-all ${
@@ -726,6 +735,21 @@ export function HomeroomGradesClient({
             <span>Bảng Điểm Tổng Hợp Các Môn</span>
             <span className="px-1.5 py-0.2 bg-teal-100 text-teal-800 rounded-full text-[10px]">
               {data?.subjects?.length || 0} môn
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("term-grades")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-extrabold transition-all ${
+              activeTab === "term-grades"
+                ? "bg-white text-indigo-900 shadow-xs ring-1 ring-indigo-200"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Award className="w-4 h-4 text-indigo-600" />
+            <span>Tổng Kết Môn Học (TT27 &amp; TT22)</span>
+            <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 rounded-full text-[10px] font-bold">
+              Chính thức
             </span>
           </button>
 
@@ -822,7 +846,18 @@ export function HomeroomGradesClient({
       </div>
 
       {/* TAB CONTENT */}
-      {loading ? (
+      {activeTab === "term-grades" ? (
+        <TermGradesTab
+          campuses={campuses}
+          classes={homeroomClasses}
+          subjects={subjects}
+          academicYears={academicYears}
+          activeYearId={selectedYearId}
+          initialClassId={selectedClassId}
+          isHomeroomView={true}
+          homeroomClasses={homeroomClasses}
+        />
+      ) : loading ? (
         <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center space-y-3">
           <div className="w-8 h-8 border-3 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-xs font-bold text-slate-500">Đang tải và tổng hợp dữ liệu bảng điểm lớp chủ nhiệm...</p>

@@ -1,0 +1,366 @@
+import fs from "fs";
+import path from "path";
+
+// Mock data matching the user's screenshot exactly:
+const item = {
+  name: "Phạm Thị Khánh",
+  position: "Giám đốc Cơ sở (GĐCS)",
+  teacherCode: "0101000043",
+  campus: "CS2",
+  reqObserved: 4,
+  totalAttended: 1,
+  totalTaught: 0,
+  reqTaught: 0,
+  internalCount: 1,
+  crossCount: 0,
+  surpriseCount: 1,
+  evaluatedCount: 1,
+  pendingCount: 0,
+  avgScore: 16.25,
+  progressPct: 25,
+  statusLabel: "Đang thực hiện (1/4)",
+  details: [
+    {
+      date: "30/9/2026",
+      period: "Tiết 5 - 10B5",
+      hostTeacherName: "Đinh Thị Phương Thanh",
+      hostTeacherCode: "0201000175",
+      subjectName: "Cảm xúc xã hội (SEL)",
+      className: "Lớp 1.3_CS2",
+      campusName: "CS2",
+      isCross: false,
+      isSurprise: true,
+      evalScore: 16.25,
+      evalRating: "Giỏi",
+      evalStatus: "FINAL"
+    }
+  ]
+};
+
+const customNote = "Kính gửi Thầy/Cô Phạm Thị Khánh (CS2). Ban Đào tạo & Khảo thí ĐBCL xin gửi thông báo cập nhật tiến độ số tiết dự giờ và tiết dạy trong kỳ.";
+const monthLabel = "Tháng 09/2026";
+const directLink = "https://ssm.skylineschool.edu.vn/admin/tong-hop-du-gio";
+
+const progressColor = item.progressPct >= 100 ? "#059669" : (item.progressPct > 0 ? "#00A19A" : "#DC2626");
+const crossPct = item.totalAttended > 0 ? Math.round(((item.crossCount || 0) / item.totalAttended) * 100) : 0;
+
+const detailsRows = (item.details || []).map((d, idx) => {
+  const isCross = d.isCross;
+  const isSurprise = d.isSurprise;
+  const scoreText = d.evalScore !== null && d.evalScore !== undefined ? `${d.evalScore}/20đ` : "—";
+  const ratingBadge = d.evalRating 
+    ? `<span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:700;background-color:#F0FDF4;color:#166534;border:1px solid #BBF7D0;margin-top:2px;">${d.evalRating}</span>` 
+    : `<span style="color:#94A3B8;">—</span>`;
+  const originBadge = isCross 
+    ? `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background-color:#EEF2FF;color:#4338CA;border:1px solid #C7D2FE;">Dự chéo CS</span>`
+    : `<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;background-color:#F0FDFA;color:#00736E;border:1px solid #99F6E4;">Nội bộ CS</span>`;
+  const surpriseBadge = isSurprise
+    ? `<span style="display:inline-block;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;background-color:#FEF3C7;color:#92400E;border:1px solid #FDE68A;margin-top:2px;">⚡ Đột xuất</span>`
+    : "";
+
+  const rowBg = idx % 2 === 0 ? "#FFFFFF" : "#F8FAFC";
+
+  return `
+    <tr bgcolor="${rowBg}" style="background-color: ${rowBg}; border-bottom: 1px solid #E2E8F0; font-size: 12px;">
+      <td align="center" style="padding: 10px 6px; color: #64748B; font-weight: 700;">${idx + 1}</td>
+      <td style="padding: 10px 8px;">
+        <strong style="color: #0F172A;">${d.date || "—"}</strong><br/>
+        <span style="color: #64748B; font-size: 11px;">Tiết ${d.period || "—"}</span>
+      </td>
+      <td style="padding: 10px 8px;">
+        <strong style="color: #003B3A;">${d.hostTeacherName || "—"}</strong><br/>
+        <span style="color: #64748B; font-size: 11px; font-family: monospace;">${d.hostTeacherCode || ""}</span>
+      </td>
+      <td style="padding: 10px 8px;">
+        <span style="font-weight: 700; color: #1E293B;">${d.subjectName || "—"}</span><br/>
+        <span style="color: #64748B; font-size: 11px;">Lớp ${d.className || "—"}</span>
+      </td>
+      <td align="center" style="padding: 10px 6px; color: #003B3A; font-weight: 700;">
+        ${d.campusName || "—"}
+      </td>
+      <td align="center" style="padding: 10px 6px;">
+        ${originBadge} ${surpriseBadge ? `<br/>${surpriseBadge}` : ""}
+      </td>
+      <td align="center" style="padding: 10px 6px;">
+        <strong style="color: #0F172A; font-size: 12px;">${scoreText}</strong><br/>
+        ${ratingBadge}
+      </td>
+      <td align="center" style="padding: 10px 6px;">
+        ${d.evalStatus === "FINAL" || d.evalStatus === "COMPLETED" 
+          ? '<span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:10.5px;font-weight:800;background-color:#ECFDF5;color:#047857;border:1px solid #A7F3D0;">✓ Đã nộp</span>' 
+          : '<span style="display:inline-block;padding:3px 8px;border-radius:12px;font-size:10.5px;font-weight:800;background-color:#FFFBEB;color:#B45309;border:1px solid #FDE68A;">⏳ Chờ nộp</span>'}
+      </td>
+    </tr>
+  `;
+}).join("");
+
+const emailHtml = `
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="vi">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo Tiến Độ Dự Giờ & Dạy - Giám Đốc Cơ Sở</title>
+  <!--[if mso]>
+  <style type="text/css">
+    body, table, td, p, a, span, h1, h2, h3 { font-family: 'Segoe UI', Arial, sans-serif !important; }
+  </style>
+  <![endif]-->
+</head>
+<body style="margin: 0; padding: 0; background-color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Open Sans', Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; -webkit-text-size-adjust: 100%; color: #1E293B;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F1F5F9" style="background-color: #F1F5F9; padding: 28px 12px;">
+    <tr>
+      <td align="center" style="padding: 0;">
+        
+        <!-- Main Card Container -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="max-width: 760px; background-color: #FFFFFF; border-radius: 18px; overflow: hidden; border: 1px solid #CBD5E1; box-shadow: 0 10px 28px rgba(0, 59, 58, 0.08);">
+          
+          <!-- Brand Header Banner (Solid bgcolor for Outlook + Gradient for modern clients) -->
+          <tr>
+            <td bgcolor="#003B3A" style="background-color: #003B3A; background: linear-gradient(135deg, #002625 0%, #003B3A 50%, #005E59 100%); padding: 32px 32px 28px 32px; border-bottom: 4px solid #00A19A; text-align: left;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td>
+                    <!-- Pill Tag -->
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px;">
+                      <tr>
+                        <td bgcolor="#005854" style="background-color: #005854; border: 1px solid rgba(72, 191, 227, 0.45); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 800; color: #48BFE3; letter-spacing: 1.2px; text-transform: uppercase;">
+                          🏫 HỆ THỐNG GIÁO DỤC SKY-LINE &bull; BAN ĐIỀU HÀNH CHUYÊN MÔN
+                        </td>
+                      </tr>
+                    </table>
+
+                    <h1 style="margin: 0; font-size: 21px; font-weight: 900; line-height: 1.35; color: #FFFFFF; text-transform: uppercase; letter-spacing: 0.3px;">
+                      BÁO CÁO TIẾN ĐỘ DỰ GIỜ & DẠY &mdash; GIÁM ĐỐC CƠ SỞ
+                    </h1>
+
+                    <div style="font-size: 13px; color: #CCFBF1; margin-top: 8px; font-weight: 500;">
+                      Kỳ báo cáo: <strong style="color: #FDE047;">${monthLabel}</strong> &bull; Đơn vị: <strong style="color: #FDE047;">${item.campus || "Cơ sở"}</strong>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Card Body Content -->
+          <tr>
+            <td style="padding: 28px 32px; background-color: #FFFFFF;">
+              
+              <!-- Greeting & Info Card -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F8FAFC" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-left: 5px solid #00A19A; border-radius: 12px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 18px 22px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td valign="middle" align="left">
+                          <div style="font-size: 16px; font-weight: 900; color: #003B3A;">
+                            Kính gửi: Thầy/Cô ${item.name}
+                          </div>
+                          <div style="font-size: 12.5px; color: #475569; margin-top: 4px; line-height: 1.4;">
+                            Chức vụ: <strong style="color: #005854;">${item.position || "Giám đốc Cơ sở"}</strong> &bull; 
+                            Mã NV: <strong style="color: #1E293B; font-family: monospace;">${item.teacherCode || "—"}</strong> &bull; 
+                            Cơ sở: <strong style="color: #003B3A;">${item.campus || "—"}</strong>
+                          </div>
+                        </td>
+                        <td valign="middle" align="right" style="padding-left: 12px;">
+                          <span style="display: inline-block; padding: 6px 14px; border-radius: 20px; font-size: 11.5px; font-weight: 800; text-transform: uppercase; background-color: ${item.progressPct >= 100 ? '#ECFDF5' : '#FFFBEB'}; color: ${item.progressPct >= 100 ? '#047857' : '#B45309'}; border: 1px solid ${item.progressPct >= 100 ? '#A7F3D0' : '#FDE68A'};">
+                            ${item.statusLabel || (item.progressPct >= 100 ? "Đạt chỉ tiêu" : "Đang thực hiện")}
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Custom Notes / Notice Box -->
+              ${customNote ? `
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFBEB" style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-left: 4px solid #F59E0B; border-radius: 10px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 14px 18px; font-size: 13px; color: #92400E; line-height: 1.6;">
+                    <div style="font-weight: 800; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                      🔔 Ghi chú / Nhắc nhở từ Ban Đào tạo & Khảo thí ĐBCL:
+                    </div>
+                    ${customNote.replace(/\n/g, '<br/>')}
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
+
+              <!-- 4 KPI Stat Boxes (Bulletproof Outlook 4-columns) -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 26px;">
+                <tr>
+                  <!-- Card 1: Tiết dự giờ -->
+                  <td width="23.5%" valign="top" bgcolor="#F0FDFA" style="background-color: #F0FDFA; border: 1px solid #99F6E4; border-radius: 12px; padding: 14px 10px; text-align: center;">
+                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #0D9488;">Tiết đã dự</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #003B3A; margin: 4px 0 2px 0;">
+                      ${item.totalAttended} <span style="font-size: 12px; font-weight: 600; color: #64748B;">/ ${item.reqObserved} tiết</span>
+                    </div>
+                    <table role="presentation" width="100%" height="5" cellpadding="0" cellspacing="0" border="0" bgcolor="#E2E8F0" style="background-color: #E2E8F0; border-radius: 3px; overflow: hidden; margin: 6px auto;">
+                      <tr>
+                        <td width="${Math.min(item.progressPct, 100)}%" bgcolor="${progressColor}" style="background-color: ${progressColor}; font-size: 1px; line-height: 1px;">&nbsp;</td>
+                        <td width="${100 - Math.min(item.progressPct, 100)}%" style="font-size: 1px; line-height: 1px;">&nbsp;</td>
+                      </tr>
+                    </table>
+                    <div style="font-size: 11px; font-weight: 800; color: ${progressColor};">
+                      Đạt ${item.progressPct}% chỉ tiêu
+                    </div>
+                  </td>
+
+                  <td width="2%"></td>
+
+                  <!-- Card 2: Tiết dạy -->
+                  <td width="23.5%" valign="top" bgcolor="#F8FAFC" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 10px; text-align: center;">
+                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #64748B;">Tiết đã dạy</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #0F172A; margin: 4px 0 2px 0;">
+                      ${item.totalTaught || 0} <span style="font-size: 12px; font-weight: 600; color: #64748B;">tiết</span>
+                    </div>
+                    <div style="font-size: 11px; color: #64748B; margin-top: 10px;">
+                      ${item.reqTaught ? `Chỉ tiêu: ${item.reqTaught} tiết` : "Hoàn thành nhiệm vụ"}
+                    </div>
+                  </td>
+
+                  <td width="2%"></td>
+
+                  <!-- Card 3: Phân bổ dự chéo -->
+                  <td width="23.5%" valign="top" bgcolor="#EEF2FF" style="background-color: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 12px; padding: 14px 10px; text-align: center;">
+                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #4338CA;">Dự chéo cơ sở</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #3730A3; margin: 4px 0 2px 0;">
+                      ${item.crossCount || 0} <span style="font-size: 12px; font-weight: 600; color: #64748B;">/ ${item.totalAttended} tiết</span>
+                    </div>
+                    <div style="font-size: 10.5px; font-weight: 700; color: #4338CA; margin-top: 10px;">
+                      Nội bộ: ${item.internalCount || 0} &bull; Chéo: ${crossPct}%
+                    </div>
+                  </td>
+
+                  <td width="2%"></td>
+
+                  <!-- Card 4: Phiếu đánh giá -->
+                  <td width="23.5%" valign="top" bgcolor="${item.pendingCount > 0 ? '#FFFBEB' : '#F0FDF4'}" style="background-color: ${item.pendingCount > 0 ? '#FFFBEB' : '#F0FDF4'}; border: 1px solid ${item.pendingCount > 0 ? '#FDE68A' : '#BBF7D0'}; border-radius: 12px; padding: 14px 10px; text-align: center;">
+                    <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: ${item.pendingCount > 0 ? '#B45309' : '#15803D'};">Phiếu đánh giá</div>
+                    <div style="font-size: 24px; font-weight: 900; color: ${item.pendingCount > 0 ? '#B45309' : '#15803D'}; margin: 4px 0 2px 0;">
+                      ${item.evaluatedCount || 0} <span style="font-size: 12px; font-weight: 600; color: #64748B;">đã nộp</span>
+                    </div>
+                    <div style="font-size: 10.5px; font-weight: 800; color: ${item.pendingCount > 0 ? '#DC2626' : '#15803D'}; margin-top: 10px;">
+                      ${item.pendingCount > 0 ? `⚠️ Còn ${item.pendingCount} phiếu chờ` : (item.avgScore ? `ĐTB: ${item.avgScore}/20đ` : "100% hoàn tất")}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Detailed Observation Table -->
+              <div style="margin-bottom: 24px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 10px;">
+                  <tr>
+                    <td>
+                      <div style="font-size: 13.5px; font-weight: 900; text-transform: uppercase; color: #003B3A; letter-spacing: 0.5px;">
+                        📋 BẢNG CHI TIẾT CÁC TIẾT DỰ GIỜ (${(item.details || []).length} TIẾT)
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+
+                ${(item.details || []).length === 0 ? `
+                  <div style="padding: 28px; text-align: center; background-color: #F8FAFC; border-radius: 12px; border: 1px dashed #CBD5E1; color: #64748B; font-size: 12.5px;">
+                    Chưa ghi nhận tiết dự giờ nào của Giám đốc Cơ sở trong kỳ báo cáo này.
+                  </div>
+                ` : `
+                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; border: 1px solid #CBD5E1; border-radius: 10px; overflow: hidden;">
+                    <thead>
+                      <tr bgcolor="#003B3A" style="background-color: #003B3A; color: #FFFFFF; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <th style="padding: 11px 6px; text-align: center; width: 34px; border-bottom: 2px solid #005854;">STT</th>
+                        <th style="padding: 11px 8px; text-align: left; width: 85px; border-bottom: 2px solid #005854;">Ngày & Tiết</th>
+                        <th style="padding: 11px 8px; text-align: left; border-bottom: 2px solid #005854;">Giáo viên được dự</th>
+                        <th style="padding: 11px 8px; text-align: left; border-bottom: 2px solid #005854;">Môn & Lớp</th>
+                        <th style="padding: 11px 6px; text-align: center; width: 55px; border-bottom: 2px solid #005854;">Cơ sở</th>
+                        <th style="padding: 11px 6px; text-align: center; width: 95px; border-bottom: 2px solid #005854;">Hình thức</th>
+                        <th style="padding: 11px 6px; text-align: center; width: 85px; border-bottom: 2px solid #005854;">Điểm / Xếp loại</th>
+                        <th style="padding: 11px 6px; text-align: center; width: 80px; border-bottom: 2px solid #005854;">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${detailsRows}
+                    </tbody>
+                  </table>
+                `}
+              </div>
+
+              <!-- Regulations / Guidance Card -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F0FDFA" style="background-color: #F0FDFA; border: 1px solid #99F6E4; border-left: 4px solid #00A19A; border-radius: 12px; margin-bottom: 24px;">
+                <tr>
+                  <td style="padding: 16px 20px; font-size: 12px; color: #004D47; line-height: 1.6;">
+                    <div style="font-weight: 800; text-transform: uppercase; color: #003B3A; letter-spacing: 0.5px; margin-bottom: 6px; font-size: 12.5px;">
+                      📋 Quy chế dự giờ cấp Giám đốc Cơ sở:
+                    </div>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td valign="top" style="width: 18px; color: #00A19A; font-weight: bold;">✔</td>
+                        <td style="padding-bottom: 4px; color: #004D47;">
+                          Định mức dự giờ tối thiểu đối với GĐCS là <strong>4 tiết/tháng</strong> (hoặc tương đương 36 tiết/năm học).
+                        </td>
+                      </tr>
+                      <tr>
+                        <td valign="top" style="width: 18px; color: #00A19A; font-weight: bold;">✔</td>
+                        <td style="padding-bottom: 4px; color: #004D47;">
+                          Khuyến khích kết hợp giữa dự giờ nội bộ tại cơ sở và <strong>dự giờ chéo liên cơ sở</strong> để tăng cường học hỏi, chuẩn hóa chất lượng chuyên môn toàn trường.
+                        </td>
+                      </tr>
+                      <tr>
+                        <td valign="top" style="width: 18px; color: #00A19A; font-weight: bold;">✔</td>
+                        <td style="color: #004D47;">
+                          Phiếu dự giờ cần được hoàn thiện đánh giá và nộp trên hệ thống trong vòng <strong>48 giờ</strong> sau khi tiết dạy kết thúc.
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Call To Action Button (Truy cập hệ thống) -->
+              <table role="presentation" border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 20px auto 10px auto;">
+                <tr>
+                  <td align="center" bgcolor="#00A19A" style="border-radius: 10px; background-color: #00A19A;">
+                    <a href="${directLink}" target="_blank" style="display: inline-block; padding: 13px 30px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 13px; color: #FFFFFF; font-weight: 800; text-decoration: none; border-radius: 10px; letter-spacing: 0.5px; text-transform: uppercase;">
+                      👉 TRUY CẬP CỔNG DỰ GIỜ SKY-LINE SMS
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Official Brand Footer -->
+          <tr>
+            <td bgcolor="#F8FAFC" style="background-color: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 22px 32px; font-size: 11px; color: #64748B; text-align: center; line-height: 1.6;">
+              <div style="font-weight: 900; color: #003B3A; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">
+                HỆ THỐNG GIÁO DỤC SKY-LINE (SKY-LINE EDUCATION SYSTEM)
+              </div>
+              <div style="color: #00736E; font-weight: 700; margin-bottom: 6px;">
+                BAN ĐÀO TẠO & KHẢO THÍ ĐẢM BẢO CHẤT LƯỢNG GIÁO DỤC
+              </div>
+              <div style="color: #475569;">
+                Email hỗ trợ: <a href="mailto:bankhaothi@skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;">bankhaothi@skylineschool.edu.vn</a> &bull; Website: <a href="https://skylineschool.edu.vn" style="color: #00A19A; font-weight: 700; text-decoration: none;" target="_blank">skylineschool.edu.vn</a>
+              </div>
+              <div style="margin-top: 6px; color: #94A3B8; font-size: 10.5px;">
+                Email này được gửi tự động từ <strong>Hệ thống Quản trị Giáo dục Sky-line SMS</strong> phục vụ công tác điều hành chuyên môn.
+              </div>
+              <div style="margin-top: 4px; font-size: 10px; color: #CBD5E1;">
+                &copy; 2026 Sky-Line Education System. All rights reserved.
+              </div>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+const outputPath = path.join(process.cwd(), "scratch", "test_gdcs_email.html");
+fs.writeFileSync(outputPath, emailHtml, "utf8");
+console.log("Written test email to:", outputPath);

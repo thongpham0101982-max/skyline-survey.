@@ -123,6 +123,10 @@ export function ThkqComparativeCharts({ charts, selectedCampusName = "Cơ sở",
                       fontSize: "12px",
                       boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
                     }}
+                    formatter={(val: any, name: string) => [
+                      `${Number(val || 0).toFixed(2)}đ`,
+                      name === "Hệ thống" ? "Mặt bằng Chung Toàn Hệ thống" : name
+                    ]}
                   />
                   <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }} />
 

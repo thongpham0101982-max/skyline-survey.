@@ -65,6 +65,7 @@ import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { after } from "next/server"
 import { sendEmail } from "@/lib/mail"
+import { logActivity } from "@/lib/audit"
 import {
   renderObservationRequestSubmittedForObserver,
   renderObservationRequestForHost,
@@ -1345,7 +1346,13 @@ async function canUserManageSlot(userId: string, userRole: string, slot: any): P
   if (!currentTeacher) return false;
 
   // Nếu là chính GV tạo slot:
-  if (slot.teacherId === currentTeacher.id) return true;
+  if (slot.teacherId === currentTeacher.id) {
+    if (slot.requestOrigin === "ASSIGNED") {
+      // Giáo viên được chỉ định không có quyền tự xóa/sửa lượt chỉ định dự giờ
+    } else {
+      return true;
+    }
+  }
 
   const pos = (currentTeacher.position || "").toUpperCase();
   const allPositions: string[] = [pos];
@@ -1445,6 +1452,37 @@ export async function deleteObservationSlot(slotId: string) {
       if (hasEvaluations > 0) {
         return { success: false, error: "Tiết dạy đã có phiếu đánh giá dự giờ. Không thể xóa." };
       }
+    }
+
+    if (slot.requestOrigin === "ASSIGNED") {
+      // Soft-delete: update status to CANCELLED and log audit activity
+      await logActivity(
+        session.user.id,
+        session.user.email || "manager@skyline.edu.vn",
+        "OBSERVATION_ASSIGNED_CANCEL",
+        "ObservationSlot",
+        slotId,
+        {
+          id: slot.id,
+          teacherId: slot.teacherId,
+          topic: slot.topic,
+          date: slot.date,
+          status: slot.status
+        },
+        { status: "CANCELLED" }
+      );
+
+      await prisma.observationSlot.update({
+        where: { id: slotId },
+        data: { status: "CANCELLED" }
+      });
+
+      revalidatePath("/teacher/du-gio");
+      revalidatePath("/teacher/du-gio-mam-non");
+      revalidatePath("/admin/du-gio-mam-non");
+      revalidatePath("/admin/du-gio");
+      revalidatePath("/admin/tong-hop-du-gio");
+      return { success: true };
     }
 
     // Delete evaluations & registrations linked to this slot first
@@ -2582,7 +2620,13 @@ export async function updateObservationSlot(slotId: string, data: {
       return { success: false, error: "Observation slot not found" }
     }
 
-    if (slot.teacherId !== currentTeacher.id) {
+    if (slot.requestOrigin === "ASSIGNED") {
+      const roleCode = (session.user as any)?.role || "TEACHER";
+      const hasManagePerm = await canUserManageSlot(session.user.id, roleCode, slot);
+      if (!hasManagePerm || slot.teacherId === currentTeacher.id) {
+        return { success: false, error: "Giáo viên không có quyền chỉnh sửa lượt Chỉ định dự giờ của cán bộ quản lý." };
+      }
+    } else if (slot.teacherId !== currentTeacher.id) {
       return { success: false, error: "You can only edit your own observation slots" }
     }
 
@@ -2636,6 +2680,18 @@ export async function updateObservationSlot(slotId: string, data: {
         academicYearId: yearId
       }
     })
+
+    if (slot.requestOrigin === "ASSIGNED") {
+      await logActivity(
+        session.user.id,
+        session.user.email || "manager@skyline.edu.vn",
+        "OBSERVATION_ASSIGNED_UPDATE",
+        "ObservationSlot",
+        slotId,
+        { topic: slot.topic, date: slot.date, room: slot.room, className: slot.className, description: slot.description },
+        { topic: data.topic, date: slotDate, room: data.room, className: data.className, description: data.description }
+      );
+    }
 
     revalidatePath("/teacher/du-gio"); revalidatePath("/teacher/du-gio-mam-non"); revalidatePath("/admin/du-gio-mam-non")
     revalidatePath("/admin/du-gio")
@@ -5587,4 +5643,595 @@ export async function reviewSupplementalEvaluation(data: {
     return { success: false, error: e.message || "Lỗi khi xét duyệt phiếu bổ sung" };
   }
 }
+
+/**
+ * =========================================================================
+ * CHỨC NĂNG: CHỈ ĐỊNH DỰ GIỜ (ASSIGNED OBSERVATION)
+ * Áp dụng cho cả Khối Mầm non và Khối Phổ thông
+ * =========================================================================
+ */
+
+/**
+ * Kiểm tra trùng phiên dự giờ dựa trên:
+ * - Năm học (academicYearId)
+ * - Giáo viên được dự (teacherId)
+ * - Ngày dự (date)
+ * - Tiết / Khung thời gian (period / startTime)
+ * - Lớp (classId / className)
+ */
+export async function checkObservationConflict(params: {
+  academicYearId?: string;
+  teacherId: string;
+  date: string;
+  period: string;
+  classId?: string;
+  className?: string;
+  campusId?: string;
+}) {
+  try {
+    if (!params.teacherId || !params.date || !params.period) {
+      return { success: true, conflict: false };
+    }
+
+    const targetDate = new Date(params.date);
+    if (isNaN(targetDate.getTime())) {
+      return { success: true, conflict: false };
+    }
+
+    const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0);
+    const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+
+    const periodMap: Record<string, { start: string; end: string }> = {
+      "Tiết 1": { start: "07:30", end: "08:15" },
+      "Tiết 2": { start: "08:25", end: "09:10" },
+      "Tiết 3": { start: "09:30", end: "10:15" },
+      "Tiết 4": { start: "10:25", end: "11:10" },
+      "Tiết 5": { start: "13:00", end: "13:45" },
+      "Tiết 6": { start: "13:55", end: "14:40" },
+      "Tiết 7": { start: "15:00", end: "15:45" },
+      "Tiết 8": { start: "15:55", end: "16:40" },
+      "HĐ Học sáng": { start: "08:30", end: "09:15" },
+      "HĐ Tiếng Anh": { start: "09:15", end: "09:45" },
+      "HĐ Góc/Ngoài trời": { start: "09:45", end: "10:30" },
+      "HĐ Chiều": { start: "14:30", end: "15:15" }
+    };
+    const timeRange = periodMap[params.period] || { start: params.period, end: "" };
+
+    const candidates = await prisma.observationSlot.findMany({
+      where: {
+        teacherId: params.teacherId,
+        date: { gte: startOfDay, lte: endOfDay },
+        status: { not: "CANCELLED" }
+      },
+      include: {
+        teacher: { select: { teacherName: true } },
+        registrations: {
+          include: {
+            teacher: { select: { teacherName: true, position: true } }
+          }
+        }
+      }
+    });
+
+    const conflictSlot = candidates.find(slot => {
+      // 1. Kiểm tra tiết học / khung giờ
+      const sStart = String(slot.startTime || "").trim().toLowerCase();
+      const pNorm = String(params.period || "").trim().toLowerCase();
+      const tStartNorm = String(timeRange.start || "").trim().toLowerCase();
+      const descNorm = String(slot.description || "").trim().toLowerCase();
+
+      const timeMatches =
+        sStart === pNorm ||
+        sStart === tStartNorm ||
+        descNorm.includes(pNorm) ||
+        (slot.startTime && timeRange.start && (slot.startTime.includes(timeRange.start) || timeRange.start.includes(slot.startTime)));
+
+      if (!timeMatches) return false;
+
+      // 2. Kiểm tra lớp
+      if (params.classId && slot.classId && params.classId === slot.classId) return true;
+      if (params.className && slot.className) {
+        const cleanA = params.className.trim().toLowerCase();
+        const cleanB = slot.className.trim().toLowerCase();
+        if (cleanA === cleanB || cleanA.includes(cleanB) || cleanB.includes(cleanA)) return true;
+      }
+      return false;
+    });
+
+    if (conflictSlot) {
+      return {
+        success: true,
+        conflict: true,
+        slot: {
+          id: conflictSlot.id,
+          topic: conflictSlot.topic,
+          subjectName: conflictSlot.subjectName,
+          className: conflictSlot.className,
+          period: conflictSlot.startTime || params.period,
+          date: conflictSlot.date,
+          teacherName: conflictSlot.teacher?.teacherName || "",
+          participantCount: conflictSlot.registrations.length,
+          participants: conflictSlot.registrations.map(r => ({
+            teacherName: r.teacher?.teacherName || "Cán bộ dự",
+            position: r.teacher?.position || ""
+          }))
+        },
+        message: "Đã tồn tại phiên dự giờ của giáo viên này trong cùng thời gian và lớp."
+      };
+    }
+
+    return { success: true, conflict: false };
+  } catch (e: any) {
+    console.error("[checkObservationConflict Error]:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+/**
+ * Server Action: Tạo lượt Chỉ định dự giờ
+ * BGH/GĐCS, QLCM, TTCM, Ban ĐHCM, Admin
+ */
+export async function createAssignedObservation(data: {
+  academicYearId?: string;
+  level: string; // "Mầm non" | "Phổ thông K-12"
+  grade: string;
+  campusId?: string;
+  targetDeptId?: string;
+  teacherId: string; // Giáo viên được dự (Host Teacher)
+  classId?: string;
+  className: string;
+  date: string;
+  period: string;
+  startTime?: string;
+  endTime?: string;
+  room?: string;
+  subjectId?: string;
+  subjectName?: string;
+  topic?: string;
+  notes?: string;
+  observerTeacherIds: string[]; // Danh sách ID người dự được chỉ định
+  forceNewSlot?: boolean;
+  existingSlotId?: string;
+}) {
+  try {
+    invalidateObservationSlotsCache();
+    const session = await auth();
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const roleCode = (session.user as any)?.role || "TEACHER";
+    const cleanRole = (roleCode || "").toUpperCase().trim();
+
+    // 1. Kiểm tra vai trò của người khởi tạo
+    let currentTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        departmentRel: true,
+        departmentAssignments: { include: { department: true } },
+        divisionAssignments: true,
+        campus: true,
+        user: true
+      }
+    });
+
+    const isSuperOrBanDHCM = ["ADMIN", "ADMINISTRATOR", "SUPER_ADMIN", "SUPERADMIN", "KT_DBCL", "BAN_DHCM", "DHCM"].includes(cleanRole);
+    if (!currentTeacher && isSuperOrBanDHCM) {
+      const adminTeacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { user: { role: { in: ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS"] } } },
+            { position: { in: ["ADMIN", "BGH", "GDCS", "KT_DBCL"] } }
+          ]
+        },
+        include: { departmentRel: true, departmentAssignments: { include: { department: true } }, divisionAssignments: true, campus: true, user: true }
+      });
+      if (adminTeacher) currentTeacher = adminTeacher;
+    }
+
+    const pos = (currentTeacher?.position || "").toUpperCase();
+    const allPositions: string[] = [pos];
+    if (currentTeacher?.positions) {
+      try {
+        const parsed = typeof currentTeacher.positions === "string" ? JSON.parse(currentTeacher.positions) : currentTeacher.positions;
+        if (Array.isArray(parsed)) parsed.forEach((p: string) => allPositions.push(String(p).toUpperCase()));
+      } catch {}
+    }
+    currentTeacher?.departmentAssignments?.forEach((da: any) => { if (da.position) allPositions.push(String(da.position).toUpperCase()); });
+    currentTeacher?.divisionAssignments?.forEach((da: any) => { if (da.position) allPositions.push(String(da.position).toUpperCase()); });
+
+    const isBGH = ["BGH", "BGH_MN", "BGHMN", "BGMMN", "BAN GIAM HIEU"].some(k => allPositions.some(p => p.includes(k)) || cleanRole.includes(k));
+    const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAM_DOC_CO_SO", "PGDCS", "PGĐCS"].some(k => allPositions.some(p => p.includes(k)) || cleanRole.includes(k));
+    const isQLCM = ["QLCM", "QUAN_LY_CM", "QUẢN LÝ CHUYÊN MÔN"].some(k => allPositions.some(p => p.includes(k)) || cleanRole.includes(k));
+    const isTTCM = ["TTCM", "TO_TRUONG", "TỔ TRƯỞNG", "TỔ TRƯỞNG CM", "TO_PHO", "TỔ PHÓ", "TPCM"].some(k => allPositions.some(p => p.includes(k)) || cleanRole.includes(k));
+    const isTBP = ["TBP", "TRUONG_BO_PHAN", "TRƯỞNG BỘ PHẬN"].some(k => allPositions.some(p => p.includes(k)) || cleanRole.includes(k));
+
+    const canAssign = isSuperOrBanDHCM || isBGH || isGDCS || isQLCM || isTTCM || isTBP;
+    if (!canAssign) {
+      return { success: false, error: "Bạn không có quyền sử dụng chức năng Chỉ định dự giờ. Chức năng chỉ dành cho BGH/GĐCS, QLCM, TTCM và Ban quản lý." };
+    }
+
+    // 2. Kiểm tra thông tin giáo viên được dự
+    if (!data.teacherId) {
+      return { success: false, error: "Vui lòng chọn Giáo viên được dự giờ." };
+    }
+
+    const hostTeacher = await prisma.teacher.findUnique({
+      where: { id: data.teacherId },
+      include: {
+        campus: true,
+        departmentRel: true,
+        departmentAssignments: { include: { department: true } },
+        divisionAssignments: true,
+        user: true
+      }
+    });
+
+    if (!hostTeacher) {
+      return { success: false, error: "Không tìm thấy hồ sơ giáo viên được chỉ định." };
+    }
+
+    // 3. Phân quyền phạm vi (IDOR check)
+    // TTCM / QLCM: Chỉ được chỉ định GV trong Tổ chuyên môn của mình
+    if (!isSuperOrBanDHCM && !isBGH && !isGDCS && (isTTCM || isQLCM) && currentTeacher) {
+      const myDeptIds = new Set<string>();
+      if (currentTeacher.departmentId) myDeptIds.add(currentTeacher.departmentId);
+      currentTeacher.departmentAssignments?.forEach((da: any) => {
+        if (["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "Tổ phó", "TO_PHO", "TPCM", "QLCM", "QUAN_LY_CM"].some(k => (da.position || "").toUpperCase().includes(k.toUpperCase())) && da.departmentId) {
+          myDeptIds.add(da.departmentId);
+        }
+      });
+
+      const hostDeptIds = new Set<string>();
+      if (hostTeacher.departmentId) hostDeptIds.add(hostTeacher.departmentId);
+      hostTeacher.departmentAssignments?.forEach((da: any) => {
+        if (da.departmentId) hostDeptIds.add(da.departmentId);
+      });
+
+      const hasCommonDept = Array.from(myDeptIds).some(id => hostDeptIds.has(id));
+      if (!hasCommonDept) {
+        return { success: false, error: "Tổ trưởng / Quản lý chuyên môn chỉ có quyền chỉ định Giáo viên thuộc Tổ chuyên môn phụ trách." };
+      }
+    }
+
+    // BGH / GĐCS: Chỉ được chỉ định GV thuộc Cơ sở phụ trách
+    if (!isSuperOrBanDHCM && (isBGH || isGDCS) && currentTeacher?.campusId && hostTeacher.campusId) {
+      if (currentTeacher.campusId !== hostTeacher.campusId) {
+        return { success: false, error: "Cán bộ quản lý chỉ có quyền chỉ định Giáo viên thuộc Cơ sở của mình." };
+      }
+    }
+
+    // 4. Kiểm tra danh sách người dự
+    if (!data.observerTeacherIds || !Array.isArray(data.observerTeacherIds) || data.observerTeacherIds.length === 0) {
+      return { success: false, error: "Vui lòng chọn ít nhất một người tham gia dự giờ." };
+    }
+
+    // 5. Chuẩn hóa thời gian và ngày tháng
+    const periodMap: Record<string, { start: string; end: string }> = {
+      "Tiết 1": { start: "07:30", end: "08:15" },
+      "Tiết 2": { start: "08:25", end: "09:10" },
+      "Tiết 3": { start: "09:30", end: "10:15" },
+      "Tiết 4": { start: "10:25", end: "11:10" },
+      "Tiết 5": { start: "13:00", end: "13:45" },
+      "Tiết 6": { start: "13:55", end: "14:40" },
+      "Tiết 7": { start: "15:00", end: "15:45" },
+      "Tiết 8": { start: "15:55", end: "16:40" },
+      "HĐ Học sáng": { start: "08:30", end: "09:15" },
+      "HĐ Tiếng Anh": { start: "09:15", end: "09:45" },
+      "HĐ Góc/Ngoài trời": { start: "09:45", end: "10:30" },
+      "HĐ Chiều": { start: "14:30", end: "15:15" }
+    };
+    const timeRange = periodMap[data.period || "Tiết 1"] || { start: data.period || "07:30", end: "08:15" };
+
+    const rawDateStr = String(data.date || "").trim();
+    const slotDate = new Date(rawDateStr.includes("T") ? rawDateStr : `${rawDateStr}T07:00:00+07:00`);
+    if (isNaN(slotDate.getTime())) {
+      return { success: false, error: "Ngày dự giờ không hợp lệ." };
+    }
+
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (slotDate < currentMonthStart) {
+      return { success: false, error: "Không thể chỉ định dự giờ các tiết thuộc các tháng trước. Vui lòng chọn ngày trong tháng hiện tại hoặc các tháng sau!" };
+    }
+
+    // 6. Năm học
+    let academicYearId = data.academicYearId;
+    if (!academicYearId) {
+      const activeYear = await prisma.academicYear.findFirst({
+        where: { status: "ACTIVE" },
+        orderBy: { startDate: "desc" }
+      });
+      academicYearId = activeYear?.id || null;
+    }
+
+    // 7. Xử lý trùng phiên hoặc tham gia phiên hiện có
+    if (data.existingSlotId) {
+      // ===== THAM GIA PHIÊN HIỆN CÓ (GỘP NGƯỜI DỰ) =====
+      const existingSlot = await prisma.observationSlot.findUnique({
+        where: { id: data.existingSlotId },
+        include: { registrations: true, teacher: true }
+      });
+
+      if (!existingSlot) {
+        return { success: false, error: "Không tìm thấy phiên dự giờ hiện có để tham gia." };
+      }
+
+      // Thêm các người dự mới vào phiên đã có
+      let newlyAddedCount = 0;
+      for (const obsId of data.observerTeacherIds) {
+        if (!obsId) continue;
+        const alreadyReg = existingSlot.registrations.some(r => r.teacherId === obsId);
+        if (!alreadyReg) {
+          await prisma.observationRegistration.create({
+            data: {
+              slotId: existingSlot.id,
+              teacherId: obsId,
+              isApproved: true,
+              approvedAt: new Date()
+            }
+          });
+          newlyAddedCount++;
+        }
+      }
+
+      // Mở rộng maxSeats nếu cần
+      const totalRegs = (existingSlot.registrations?.length || 0) + newlyAddedCount;
+      if (totalRegs >= (existingSlot.maxSeats || 1)) {
+        await prisma.observationSlot.update({
+          where: { id: existingSlot.id },
+          data: { maxSeats: totalRegs + 2 }
+        });
+      }
+
+      // Ghi AuditLog
+      await logActivity(
+        session.user.id,
+        session.user.email || "manager@skyline.edu.vn",
+        "OBSERVATION_ASSIGNED_JOIN",
+        "ObservationSlot",
+        existingSlot.id,
+        null,
+        {
+          joinedBy: currentTeacher?.teacherName,
+          assignedObservers: data.observerTeacherIds,
+          slotId: existingSlot.id,
+          topic: existingSlot.topic,
+          date: existingSlot.date
+        }
+      );
+
+      revalidatePath("/teacher/du-gio");
+      revalidatePath("/teacher/du-gio-mam-non");
+      revalidatePath("/admin/du-gio-mam-non");
+      revalidatePath("/admin/du-gio");
+      revalidatePath("/admin/tong-hop-du-gio");
+
+      return {
+        success: true,
+        slot: existingSlot,
+        joined: true,
+        message: "Đã phân công người dự vào phiên dự giờ hiện có thành công!"
+      };
+    }
+
+    // Kiểm tra trùng nếu chưa xác nhận tạo mới
+    if (!data.forceNewSlot) {
+      const conflictCheck = await checkObservationConflict({
+        teacherId: hostTeacher.id,
+        date: data.date,
+        period: data.period,
+        classId: data.classId,
+        className: data.className,
+        campusId: data.campusId || hostTeacher.campusId || undefined,
+        academicYearId: academicYearId || undefined
+      });
+
+      if (conflictCheck.conflict && conflictCheck.slot) {
+        return {
+          success: false,
+          conflict: true,
+          existingSlot: conflictCheck.slot,
+          message: "Đã tồn tại phiên dự giờ của giáo viên này trong cùng thời gian và lớp."
+        };
+      }
+    }
+
+    // 8. TẠO PHIÊN CHỈ ĐỊNH DỰ GIỜ MỚI
+    const subjectName = data.subjectName || (data.level === "Mầm non" ? "Chủ đề/Chuyên đề" : "Môn học");
+    const topic = data.topic ? data.topic.trim() : `Chỉ định dự giờ: ${subjectName} - ${data.className}`;
+
+    const newSlot = await prisma.observationSlot.create({
+      data: {
+        teacherId: hostTeacher.id,
+        targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+        classId: data.classId || null,
+        className: data.className || "Lớp học",
+        level: data.level || (data.period.includes("HĐ") ? "Mầm non" : "Phổ thông K-12"),
+        grade: data.grade || "Khối",
+        subjectId: data.subjectId || null,
+        subjectName,
+        topic,
+        date: slotDate,
+        startTime: data.period || timeRange.start,
+        endTime: timeRange.end,
+        room: data.room || "Phòng học",
+        description: data.notes ? `[ASSIGNED] ${data.notes.trim()}` : "Chỉ định dự giờ từ Cán bộ quản lý",
+        visibilityType: "PUBLIC",
+        maxSeats: Math.max(4, data.observerTeacherIds.length + 2),
+        status: "ACTIVE",
+        requestOrigin: "ASSIGNED",
+        academicYearId: academicYearId || null,
+        campusId: data.campusId || hostTeacher.campusId || null,
+        campusName: hostTeacher.campus?.campusName || null
+      }
+    });
+
+    // 9. Tự động duyệt người dự được chỉ định (isApproved: true, không cần GV duyệt)
+    for (const obsId of data.observerTeacherIds) {
+      if (!obsId || obsId.startsWith("admin-")) continue;
+      await prisma.observationRegistration.create({
+        data: {
+          slotId: newSlot.id,
+          teacherId: obsId,
+          isApproved: true,
+          approvedAt: new Date()
+        }
+      });
+    }
+
+    // 10. Ghi AuditLog
+    await logActivity(
+      session.user.id,
+      session.user.email || "manager@skyline.edu.vn",
+      "OBSERVATION_ASSIGNED_CREATE",
+      "ObservationSlot",
+      newSlot.id,
+      null,
+      {
+        creatorId: currentTeacher?.id,
+        creatorName: currentTeacher?.teacherName,
+        creatorRole: roleCode,
+        hostTeacherId: hostTeacher.id,
+        hostTeacherName: hostTeacher.teacherName,
+        observerIds: data.observerTeacherIds,
+        campusId: hostTeacher.campusId,
+        campusName: hostTeacher.campus?.campusName,
+        classId: data.classId,
+        className: data.className,
+        date: data.date,
+        period: data.period,
+        topic: newSlot.topic,
+        requestOrigin: "ASSIGNED"
+      }
+    );
+
+    // 11. Gửi thông báo trong hệ thống và Email qua Next.js after()
+    after(async () => {
+      try {
+        const formattedDate = `${String(slotDate.getDate()).padStart(2, "0")}/${String(slotDate.getMonth() + 1).padStart(2, "0")}/${slotDate.getFullYear()}`;
+        const slotLink = `/teacher/du-gio?tab=my_schedule&slotId=${newSlot.id}`;
+
+        // 11.1. Thông báo cho Giáo viên được dự (Host Teacher)
+        if (hostTeacher.user?.id) {
+          const hostNotifTitle = "Lịch Chỉ định dự giờ mới 📌";
+          const hostNotifMsg = `Thầy/Cô có một lượt Chỉ định dự giờ vào ngày ${formattedDate}, ${data.period}, tại lớp ${data.className}. Lượt dự giờ này không yêu cầu giáo viên xác nhận.`;
+
+          await prisma.notification.create({
+            data: {
+              userId: hostTeacher.user.id,
+              title: hostNotifTitle,
+              message: hostNotifMsg,
+              link: slotLink,
+              isRead: false
+            }
+          }).catch(e => console.error("[createAssignedObservation] Host in-app notif error:", e));
+        }
+
+        const hostEmail = getTeacherResolvedEmail(hostTeacher);
+        if (hostEmail && hostEmail.includes("@")) {
+          const emailSubject = `[Sky-line SMS - Dự Giờ] Thông báo Lịch Chỉ định dự giờ: "${newSlot.topic}"`;
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+              <div style="background: linear-gradient(135deg, #003B3A 0%, #007068 100%); padding: 18px; border-radius: 8px; color: #fff; text-align: center;">
+                <h2 style="margin: 0; font-size: 18px; letter-spacing: 0.5px;">THÔNG BÁO CHỈ ĐỊNH DỰ GIỜ CHUYÊN MÔN</h2>
+                <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Phân hệ Quản lý Dự giờ & Phát triển Chuyên môn Sky-Line</p>
+              </div>
+              <div style="padding: 20px 0; color: #334155; font-size: 14px; line-height: 1.6;">
+                <p>Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
+                <p>Ban Quản lý Chuyên môn thông báo Thầy/Cô có một lượt <strong>Chỉ định dự giờ</strong> chính thức theo kế hoạch với thông tin chi tiết như sau:</p>
+                <div style="background-color: #f8fafc; border-left: 4px solid #7c3aed; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
+                  <p style="margin: 4px 0;"><strong>Chuyên đề / Nội dung:</strong> ${newSlot.topic}</p>
+                  <p style="margin: 4px 0;"><strong>Ngày dự giờ:</strong> ${formattedDate}</p>
+                  <p style="margin: 4px 0;"><strong>Khung thời gian / Tiết:</strong> ${data.period}</p>
+                  <p style="margin: 4px 0;"><strong>Lớp học:</strong> ${data.className}</p>
+                  <p style="margin: 4px 0;"><strong>Hình thức:</strong> <span style="color: #7c3aed; font-weight: bold;">Chỉ định dự giờ</span></p>
+                  ${data.notes ? `<p style="margin: 4px 0;"><strong>Ghi chú điều hành:</strong> ${data.notes}</p>` : ""}
+                </div>
+                <p style="background: #faf5ff; border: 1px dashed #c084fc; padding: 10px 14px; border-radius: 6px; color: #6b21a8; font-size: 13px;">
+                  ℹ️ <strong>Lưu ý:</strong> Lượt dự giờ này đã có hiệu lực chính thức và <strong>không yêu cầu giáo viên xác nhận</strong>. Kính đề nghị Thầy/Cô chuẩn bị kế hoạch bài dạy theo quy định.
+                </p>
+              </div>
+              <div style="text-align: center; padding-top: 10px;">
+                <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=my_schedule" style="display: inline-block; background-color: #008B82; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px;">Xem Lịch Chi Tiết Trên SSM</a>
+              </div>
+            </div>
+          `;
+          await sendEmail({ to: hostEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("[createAssignedObservation] Email to host error:", e));
+        }
+
+        // 11.2. Thông báo cho từng Người dự (Observers)
+        const observerTeachers = await prisma.teacher.findMany({
+          where: { id: { in: data.observerTeacherIds } },
+          include: { user: true }
+        });
+
+        for (const obs of observerTeachers) {
+          if (obs.user?.id) {
+            const obsNotifTitle = "Phân công tham gia dự giờ chuyên môn 📋";
+            const obsNotifMsg = `Thầy/Cô được chỉ định tham gia dự giờ giáo viên ${hostTeacher.teacherName} vào ngày ${formattedDate}, ${data.period}, tại lớp ${data.className}.`;
+
+            await prisma.notification.create({
+              data: {
+                userId: obs.user.id,
+                title: obsNotifTitle,
+                message: obsNotifMsg,
+                link: `/teacher/du-gio?tab=overview_slots&slotId=${newSlot.id}`,
+                isRead: false
+              }
+            }).catch(e => console.error("[createAssignedObservation] Observer notif error:", e));
+          }
+
+          const obsEmail = getTeacherResolvedEmail(obs);
+          if (obsEmail && obsEmail.includes("@")) {
+            const obsEmailSubject = `[Sky-line SMS - Dự Giờ] Phân công dự giờ giáo viên: ${hostTeacher.teacherName}`;
+            const obsEmailHtml = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="background: linear-gradient(135deg, #003B3A 0%, #007068 100%); padding: 18px; border-radius: 8px; color: #fff; text-align: center;">
+                  <h2 style="margin: 0; font-size: 18px; letter-spacing: 0.5px;">PHÂN CÔNG THAM GIA DỰ GIỜ CHUYÊN MÔN</h2>
+                  <p style="margin: 5px 0 0 0; font-size: 13px; opacity: 0.9;">Phân hệ Quản lý Dự giờ & Phát triển Chuyên môn Sky-Line</p>
+                </div>
+                <div style="padding: 20px 0; color: #334155; font-size: 14px; line-height: 1.6;">
+                  <p>Kính gửi Thầy/Cô <strong>${obs.teacherName}</strong>,</p>
+                  <p>Thầy/Cô được phân công tham gia dự giờ giáo viên <strong>${hostTeacher.teacherName}</strong> theo kế hoạch chỉ định chuyên môn:</p>
+                  <div style="background-color: #f8fafc; border-left: 4px solid #008B82; padding: 12px 16px; margin: 15px 0; border-radius: 4px;">
+                    <p style="margin: 4px 0;"><strong>Giáo viên dạy:</strong> ${hostTeacher.teacherName}</p>
+                    <p style="margin: 4px 0;"><strong>Chuyên đề / Nội dung:</strong> ${newSlot.topic}</p>
+                    <p style="margin: 4px 0;"><strong>Ngày dự giờ:</strong> ${formattedDate}</p>
+                    <p style="margin: 4px 0;"><strong>Khung thời gian / Tiết:</strong> ${data.period}</p>
+                    <p style="margin: 4px 0;"><strong>Lớp học:</strong> ${data.className}</p>
+                    <p style="margin: 4px 0;"><strong>Hình thức:</strong> <span style="color: #7c3aed; font-weight: bold;">Chỉ định dự giờ</span></p>
+                  </div>
+                  <p>Kính đề nghị Thầy/Cô sắp xếp thời gian tham dự và hoàn thành phiếu đánh giá sau tiết dự theo đúng quy định.</p>
+                </div>
+                <div style="text-align: center; padding-top: 10px;">
+                  <a href="${SKYLINE_SSM_LOGIN_URL}/teacher/du-gio?tab=overview_slots" style="display: inline-block; background-color: #008B82; color: #ffffff; padding: 10px 22px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 13px;">Mở Phiếu Đánh Giá Dự Giờ</a>
+                </div>
+              </div>
+            `;
+            await sendEmail({ to: obsEmail, subject: obsEmailSubject, html: obsEmailHtml }).catch(e => console.error("[createAssignedObservation] Email to observer error:", e));
+          }
+        }
+      } catch (bgErr) {
+        console.error("[createAssignedObservation] Background notification/email dispatch error:", bgErr);
+      }
+    });
+
+    revalidatePath("/teacher/du-gio");
+    revalidatePath("/teacher/du-gio-mam-non");
+    revalidatePath("/admin/du-gio-mam-non");
+    revalidatePath("/admin/du-gio");
+    revalidatePath("/admin/tong-hop-du-gio");
+
+    return {
+      success: true,
+      slot: newSlot,
+      message: "Đã tạo lượt Chỉ định dự giờ thành công!"
+    };
+  } catch (e: any) {
+    console.error("[createAssignedObservation Error]:", e);
+    return { success: false, error: e.message || "Lỗi khi tạo lượt Chỉ định dự giờ" };
+  }
+}
+
 

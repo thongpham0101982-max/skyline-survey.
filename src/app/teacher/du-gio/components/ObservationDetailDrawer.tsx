@@ -25,7 +25,8 @@ import {
   Layers,
   Building2,
   ChevronRight,
-  Info
+  Info,
+  UserCheck
 } from "lucide-react"
 import { DetailDrawer } from "@/components/ui/drawer"
 import { StatusBadge, Badge } from "@/components/ui/badge"
@@ -100,6 +101,7 @@ export function ObservationDetailDrawer({
   const canRegisterMore = registrations.length < 4;
   const isExpired = slot.status === "EXPIRED" || (slot.date && new Date(slot.date) < new Date(new Date().setHours(0, 0, 0, 0)));
   const isSurprise = slot.requestOrigin === "SURPRISE" || (typeof slot.description === "string" && slot.description.includes("[SURPRISE]"));
+  const isAssigned = slot.requestOrigin === "ASSIGNED";
 
   // Phân loại danh mục chuyên môn (Mầm non, Phổ thông K12, hoặc GVNN ESL)
   const slotSubj = (slot?.subjectName || "").toLowerCase();
@@ -190,12 +192,30 @@ export function ObservationDetailDrawer({
                   <span>Dự giờ đột xuất</span>
                 </Badge>
               )}
+              {isAssigned && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-purple-100 text-purple-800 border border-purple-300">
+                  <UserCheck className="size-3 text-purple-600" />
+                  <span>Chỉ định dự giờ</span>
+                </span>
+              )}
               {slot.level && (
                 <Badge variant="secondary">{slot.level}</Badge>
               )}
             </div>
             <span className="text-[11px] font-mono text-slate-500">Mã: #{slot.id?.slice(-6) || "SLOT"}</span>
           </div>
+
+          {isAssigned && (
+            <div className="p-3 bg-purple-50/90 rounded-xl border border-purple-200/80 flex items-start gap-2.5 text-purple-950">
+              <Info className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 text-xs">
+                <p className="font-black text-purple-900">Lượt dự giờ được Chỉ định bởi Cán bộ Quản lý</p>
+                <p className="text-purple-700 text-[11px] leading-relaxed">
+                  Lượt dự giờ này được khởi tạo trực tiếp từ BGH / QLCM / TTCM. Giáo viên được dự không cần phê duyệt và danh sách người dự đã được hệ thống xác nhận tham gia.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-200/60 text-slate-800">
             <div>

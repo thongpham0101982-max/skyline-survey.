@@ -1,57 +1,23 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const { createClient } = require('@libsql/client');
+require('dotenv').config();
+
+const client = createClient({ url: 'file:local.db' });
 
 async function main() {
-  const users = await prisma.user.findMany({
-    where: {
-      OR: [
-        { fullName: { contains: 'Vân' } },
-        { email: { contains: 'van' } },
-        { role: { contains: 'QLCM' } }
-      ]
-    },
-    include: {
-      teacher: {
-        include: {
-          departmentRel: true,
-          campus: true,
-          departmentAssignments: true
-        }
-      }
-    }
+  const teachers = await client.execute(`
+    SELECT t.teacherCode, t.teacherName, t.position, u.role, d.name as deptName, d.code as deptCode, d.divisionCode, d.blockCM
+    FROM Teacher t
+    JOIN User u ON t.userId = u.id
+    LEFT JOIN Department d ON t.departmentId = d.id
+    JOIN Campus c ON t.campusId = c.id
+    WHERE c.campusCode = 'CS4'
+    ORDER BY d.divisionCode, d.name, t.teacherName
+  `);
+
+  console.log("=== CS4 TEACHERS BY DEPT & DIVISION ===");
+  teachers.rows.forEach(t => {
+    console.log(`${t.teacherCode} | ${t.teacherName} | Role: ${t.role} | Pos: ${t.position} | Dept: ${t.deptName} | Div: ${t.divisionCode} | Block: ${t.blockCM}`);
   });
-  console.log("USERS:", JSON.stringify(users.map(u => ({
-    id: u.id,
-    username: u.username,
-    name: u.name,
-    email: u.email,
-    role: u.role,
-    teacher: u.teacher ? {
-      id: u.teacher.id,
-      code: u.teacher.code,
-      name: u.teacher.name,
-      position: u.teacher.position,
-      campus: u.teacher.campus,
-      campusId: u.teacher.campusId,
-      departmentRel: u.teacher.departmentRel,
-      departmentAssignments: u.teacher.departmentAssignments
-    } : null
-  })), null, 2));
-
-  // Also check campuses
-  const campuses = await prisma.campus.findMany();
-  console.log("CAMPUSES:", JSON.stringify(campuses, null, 2));
-
-  // Check teachers with Vân
-  const teachersWithVan = await prisma.teacher.findMany({
-    where: { name: { contains: 'Vân' } },
-    include: { user: true, campus: true, departmentRel: true, departmentAssignments: true }
-  });
-  console.log("TEACHERS WITH VÂN:", JSON.stringify(teachersWithVan, null, 2));
-
-  // Check roles
-  const roles = await prisma.role.findMany();
-  console.log("ROLES:", JSON.stringify(roles, null, 2));
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main().catch(console.error);

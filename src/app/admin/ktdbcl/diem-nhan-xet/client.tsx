@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef, Suspense } from "react"
+import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import * as XLSX from "xlsx"
 import { 
   FileSpreadsheet, 
@@ -36,13 +38,13 @@ import {
   Square,
   Lock,
   Unlock,
-  MessageSquare
+  MessageSquare,
+  BarChart3,
+  ChevronRight,
+  ExternalLink
 } from "lucide-react"
-import { GradeAnalyticsTab } from "./analytics-tab"
-import { GradeProgressTab } from "./progress-tab"
-import { GradeUnlockRequestsTab } from "./requests-tab"
-import { FeedbackTrackingTab } from "./feedback-tracking-tab"
 import { BulkExportModal } from "./bulk-export-modal"
+import { TermGradesTab } from "./term-grades-tab"
 import { ClipboardCheck } from "lucide-react"
 import { isGradeMatching } from "./grade-utils"
 import {
@@ -104,28 +106,21 @@ const GRADES = [
   "Khối 10", "Khối 11", "Khối 12"
 ]
 
-export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, subjects, campuses = [] }: Props) {
+export function DiemNhanXetAdminClient(props: Props) {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Đang tải Sổ điểm & Cấu hình...</div>}>
+      <DiemNhanXetAdminClientInner {...props} />
+    </Suspense>
+  )
+}
+
+function DiemNhanXetAdminClientInner({ academicYears, activeYearId, classes, subjects, campuses = [] }: Props) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   // Common filters
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
-  const [activeTab, setActiveTab] = useState<"config" | "grades" | "analytics" | "progress" | "requests" | "feedback">("config")
-  const [pendingUnlockCount, setPendingUnlockCount] = useState(0)
-
-  const fetchPendingUnlockCount = async () => {
-    if (!selectedYearId) return
-    try {
-      const res = await fetch(`/api/admin/ktdbcl/gradebook-unlock-requests?academicYearId=${selectedYearId}&status=PENDING`)
-      const data = await res.json()
-      if (data.success) {
-        setPendingUnlockCount(data.pendingCount || 0)
-      }
-    } catch (e) {
-      console.error("Lỗi lấy số lượng yêu cầu mở sổ:", e)
-    }
-  }
-
-  useEffect(() => {
-    fetchPendingUnlockCount()
-  }, [selectedYearId])
+  const [activeTab, setActiveTab] = useState<"config" | "grades" | "term-grades">("config")
 
   // --- TAB 1: Config Form states ---
   const [configGrade, setConfigGrade] = useState("ALL")
@@ -674,6 +669,26 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     }
   }, [filteredClasses, selectedClassId])
 
+  // Sync state with search params (e.g. from redirect or external link)
+  useEffect(() => {
+    const tab = searchParams?.get("tab")
+    if (tab === "grades" || tab === "config") {
+      setActiveTab(tab)
+    } else if (tab === "analytics" || tab === "progress" || tab === "requests" || tab === "feedback") {
+      router.replace(`/admin/ktdbcl/thong-ke-bao-cao?tab=${tab}`)
+    }
+    const cId = searchParams?.get("campusId")
+    if (cId) setSelectedCampusId(cId)
+    const gr = searchParams?.get("grade")
+    if (gr) setSelectedGradeFilter(gr)
+    const clId = searchParams?.get("classId")
+    if (clId) setSelectedClassId(clId)
+    const subId = searchParams?.get("subjectId")
+    if (subId) setSelectedSubjectId(subId)
+    const pr = searchParams?.get("period")
+    if (pr) setSelectedPeriod(pr)
+  }, [searchParams])
+
   // Available subjects for Tab 2 (Quản lý & Nhập Sổ điểm)
   // LẤY ĐÚNG CÁC MÔN ĐƯỢC GÁN THEO KỲ KHẢO SÁT & KHỐI
   const availableSubjectsForTab2 = useMemo(() => {
@@ -1114,81 +1129,54 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-2 mt-6 border-t border-white/10 pt-4">
-          <button
-            onClick={() => setActiveTab("config")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "config"
-                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
-                : "text-white/80 hover:bg-white/10 hover:text-white"
-            }`}
+        <div className="flex flex-wrap items-center justify-between gap-3 mt-6 border-t border-white/10 pt-4">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("config")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "config"
+                  ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
+                  : "text-white/80 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Settings className="w-4 h-4" />
+              1. Cấu hình Mẫu File & Cột điểm theo Khối
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("grades")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "grades"
+                  ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
+                  : "text-white/80 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              2. Quản lý & Nhập Sổ điểm Học sinh
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("term-grades")}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "term-grades"
+                  ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
+                  : "text-white/80 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <Award className="w-4 h-4" />
+              3. Điểm tổng kết (Tiểu học, THCS & THPT)
+            </button>
+          </div>
+
+          <Link
+            href="/admin/ktdbcl/thong-ke-bao-cao"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 border border-white/20 text-white transition-all backdrop-blur-sm shadow-sm hover:scale-105 group"
           >
-            <Settings className="w-4 h-4" />
-            1. Cấu hình Mẫu File & Cột điểm theo Khối
-          </button>
-          <button
-            onClick={() => setActiveTab("grades")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "grades"
-                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
-                : "text-white/80 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            2. Quản lý & Nhập Sổ điểm Học sinh
-          </button>
-          <button
-            onClick={() => setActiveTab("analytics")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "analytics"
-                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
-                : "text-white/80 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            3. Phân tích kết quả & Phổ điểm
-          </button>
-          <button
-            onClick={() => setActiveTab("progress")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === "progress"
-                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
-                : "text-white/80 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <ClipboardCheck className="w-4 h-4" />
-            4. Thống kê tiến độ nhập điểm
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("requests")
-              fetchPendingUnlockCount()
-            }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
-              activeTab === "requests"
-                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
-                : "text-white/80 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <Unlock className="w-4 h-4" />
-            <span>5. Duyệt yêu cầu mở sổ</span>
-            {pendingUnlockCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-900 shadow-xs animate-pulse">
-                {pendingUnlockCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("feedback")}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all relative ${
-              activeTab === "feedback"
-                ? "bg-white text-[#003B3A] shadow-lg shadow-black/10 scale-105"
-                : "text-white/80 hover:bg-white/10 hover:text-white"
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>6. Theo dõi Phản hồi PHHS & Trao đổi GV</span>
-          </button>
+            <BarChart3 className="w-4 h-4 text-teal-300 group-hover:scale-110 transition-transform" />
+            <span>Thống kê báo cáo & Tiến độ</span>
+            <ChevronRight className="w-3.5 h-3.5 text-white/70 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
         </div>
       </div>
 
@@ -2082,6 +2070,26 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
         return (
           <div className="space-y-4">
+            {/* BANNER ĐIỀU HƯỚNG NHANH SANG THỐNG KÊ BÁO CÁO */}
+            <div className="bg-gradient-to-r from-teal-50 via-sky-50 to-emerald-50 border border-teal-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-teal-600/10 text-teal-700 flex items-center justify-center shrink-0">
+                  <BarChart3 className="w-4 h-4 text-teal-700" />
+                </div>
+                <div>
+                  <span className="font-bold text-slate-800">Cần xem Báo cáo ĐTB môn, Phổ điểm, Tiến độ nộp điểm hoặc Duyệt mở sổ?</span>
+                  <p className="text-[11px] text-slate-500">Các tính năng báo cáo thống kê chuyên sâu và giám sát nhập điểm đã được chuyển sang phân hệ chuyên biệt.</p>
+                </div>
+              </div>
+              <Link
+                href="/admin/ktdbcl/thong-ke-bao-cao"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#005B58] hover:bg-[#004845] text-white font-bold text-xs shrink-0 shadow-sm transition-all"
+              >
+                <span>Xem Thống kê báo cáo</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
             {/* THANH HEADER BỘ LỌC CHUẨN SIS TRƯỜNG HỌC */}
             <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
               {/* Dòng 1: Bộ lọc chính */}
@@ -2660,73 +2668,14 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         )
       })()}
 
-      {/* TAB 3: ANALYTICS & SCORE DISTRIBUTION */}
-      {activeTab === "analytics" && (
-        <GradeAnalyticsTab
-          academicYears={academicYears}
-          selectedYearId={selectedYearId}
+      {/* TAB 3: ĐIỂM TỔNG KẾT THCS & THPT */}
+      {activeTab === "term-grades" && (
+        <TermGradesTab
           campuses={campuses}
           classes={classes}
           subjects={subjects}
-          savedConfigs={savedConfigs}
-          onNavigateToGradebook={(params) => {
-            if (params.campusId) setSelectedCampusId(params.campusId)
-            if (params.grade) setSelectedGradeFilter(params.grade)
-            if (params.classId) setSelectedClassId(params.classId)
-            if (params.subjectId) setSelectedSubjectId(params.subjectId)
-            if (params.period) setSelectedPeriod(params.period)
-            setActiveTab("grades")
-          }}
-        />
-      )}
-
-      {/* TAB 4: GRADE ENTRY PROGRESS & AUDIT STATISTICS */}
-      {activeTab === "progress" && (
-        <GradeProgressTab
           academicYears={academicYears}
-          selectedYearId={selectedYearId}
-          campuses={campuses}
-          classes={classes}
-          subjects={subjects}
-          onNavigateToGradebook={(params) => {
-            if (params.campusId) setSelectedCampusId(params.campusId)
-            if (params.grade) setSelectedGradeFilter(params.grade)
-            if (params.classId) setSelectedClassId(params.classId)
-            if (params.subjectId) setSelectedSubjectId(params.subjectId)
-            if (params.period) setSelectedPeriod(params.period)
-            setActiveTab("grades")
-          }}
-        />
-      )}
-
-      {/* TAB 5: GRADEBOOK UNLOCK REQUESTS AUDIT */}
-      {activeTab === "requests" && (
-        <GradeUnlockRequestsTab
-          academicYears={academicYears}
-          selectedYearId={selectedYearId}
-          campuses={campuses}
-          classes={classes}
-          subjects={subjects}
-          onNavigateToGradebook={(params) => {
-            if (params.campusId) setSelectedCampusId(params.campusId)
-            if (params.grade) setSelectedGradeFilter(params.grade)
-            if (params.classId) setSelectedClassId(params.classId)
-            if (params.subjectId) setSelectedSubjectId(params.subjectId)
-            if (params.period) setSelectedPeriod(params.period)
-            setActiveTab("grades")
-          }}
-          onRequestsUpdated={fetchPendingUnlockCount}
-        />
-      )}
-
-      {/* TAB 6: THEO DÕI PHẢN HỒI PHHS & NỘI DUNG TRAO ĐỔI GVCN - GVBM */}
-      {activeTab === "feedback" && (
-        <FeedbackTrackingTab
-          academicYears={academicYears}
-          selectedYearId={selectedYearId}
-          campuses={campuses}
-          classes={classes}
-          subjects={subjects}
+          activeYearId={selectedYearId}
         />
       )}
     

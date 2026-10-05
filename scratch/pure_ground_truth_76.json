@@ -1,0 +1,2060 @@
+[
+  {
+    "stt": 1,
+    "id": "cmqywy60d0005se5dh2i8rs86",
+    "fullName": "Hà Đặng Phước Huy",
+    "studentCode": "0602040631",
+    "campus": "",
+    "grade": "1",
+    "className": "1S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 10,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 2,
+    "id": "cmr4peyic00013uqa02511mdz",
+    "fullName": "Nguyễn Thị Thu Thúy",
+    "studentCode": "0601012397",
+    "campus": "",
+    "grade": "10",
+    "className": "10S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 5,
+      "viet": null,
+      "van": 5.5,
+      "eng": 1.8,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": 4.25,
+      "viet": null,
+      "van": 4,
+      "eng": 1.9
+    }
+  },
+  {
+    "stt": 3,
+    "id": "cmqywz7ey0005m8o2u1z32gu4",
+    "fullName": "HÀ ĐẶNG BẢO NGỌC",
+    "studentCode": "0602040630",
+    "campus": "",
+    "grade": "3",
+    "className": "3S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 9,
+      "viet": 6,
+      "van": null,
+      "eng": 4,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 8.3,
+      "viet": 7,
+      "van": null,
+      "eng": 2.8
+    }
+  },
+  {
+    "stt": 4,
+    "id": "cmtb9vzeo0001b367pgpfdfqp",
+    "fullName": "Phùng Đức Thiên Ân",
+    "studentCode": "0701030415",
+    "campus": "",
+    "grade": "3",
+    "className": "3.1INT_CS3",
+    "directorNote": "Cam kết môn Tiếng Anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/09/2026 08:22 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Cam kết môn Tiếng Anh",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3.6,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 5,
+      "viet": 6,
+      "van": null,
+      "eng": 6.55
+    }
+  },
+  {
+    "stt": 5,
+    "id": "cmqa9eifk0029qkru6t8wgdol",
+    "fullName": "Ayesha Mirza",
+    "studentCode": "0602040593",
+    "campus": "",
+    "grade": "6",
+    "className": "6S_CS4",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Việt]",
+    "committedSubjects": [
+      "Toán",
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 4,
+      "eng": 6.3,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 3.8,
+      "viet": null,
+      "van": 2.25,
+      "eng": 5.25
+    }
+  },
+  {
+    "stt": 6,
+    "id": "cmtcg8r4200012csibdl65mvs",
+    "fullName": "Phùng Chí Nam Anh",
+    "studentCode": "0701030416",
+    "campus": "",
+    "grade": "8",
+    "className": "8.1INT_CS3",
+    "directorNote": "Cam kết môn Tiếng Anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/09/2026 08:25 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Cam kết môn Tiếng Anh",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3,
+      "psy": 5
+    },
+    "ksdnScores": {
+      "math": 2,
+      "viet": null,
+      "van": 5,
+      "eng": 3.5
+    }
+  },
+  {
+    "stt": 7,
+    "id": "cmsyejwnv00035lcxu45kr1vq",
+    "fullName": "Nguyễn Daniil",
+    "studentCode": "0601012303",
+    "campus": "CS1",
+    "grade": "1",
+    "className": "1.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Việt]  Đạt cam kết Tiếng Việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 16:05 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+    "committedSubjects": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 8,
+    "id": "cmqumepcf0003bopcuf5ecgpr",
+    "fullName": "Đỗ An Nhiên ",
+    "studentCode": "0601012390",
+    "campus": "CS1",
+    "grade": "1",
+    "className": "1.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 9,
+    "id": "cmsy2ot0g0001ry9qr1de3m9y",
+    "fullName": "Lê Hồ Gia Huy",
+    "studentCode": "0601012312",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại lần 3 Đạt cam kết Tiếng Anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 10:42 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại lần 3 Đạt cam kết Tiếng Anh",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.7,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 4.5,
+      "viet": null,
+      "van": 5,
+      "eng": 4.4
+    }
+  },
+  {
+    "stt": 10,
+    "id": "cmrilevdj0003pcj4ykwin8w9",
+    "fullName": "Lê Khánh Hà",
+    "studentCode": "0601011617",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 7,
+      "eng": 1.2,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": 7,
+      "viet": null,
+      "van": 4.5,
+      "eng": 4
+    }
+  },
+  {
+    "stt": 11,
+    "id": "cmqav8ywl0003srxummzrf7d2",
+    "fullName": "Nguyễn Bình Phương An",
+    "studentCode": "0601012381",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết Anh",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 1.5,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": 6.25,
+      "viet": null,
+      "van": 5,
+      "eng": 4.8
+    }
+  },
+  {
+    "stt": 12,
+    "id": "cmrk1a14p0003zmpmnrq7dham",
+    "fullName": "Nguyễn Đại Phúc ",
+    "studentCode": "0601012394",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.4,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 6.1,
+      "viet": null,
+      "van": 7,
+      "eng": 6.2
+    }
+  },
+  {
+    "stt": 13,
+    "id": "cmqangnky00033fsf60yngijh",
+    "fullName": "Phan Đình Phùng",
+    "studentCode": "0601012372",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn]",
+    "committedSubjects": [
+      "Tiếng Anh",
+      "Toán",
+      "Ngữ Văn"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 3,
+      "eng": 1.5,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 4.75,
+      "viet": null,
+      "van": 2,
+      "eng": 4.6
+    }
+  },
+  {
+    "stt": 14,
+    "id": "cmqk9bk3d0001faz3o4xv4x83",
+    "fullName": "Phạm Gia Hương",
+    "studentCode": "0601012376",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]  Cần cam kết",
+    "committedSubjects": [
+      "Tiếng Anh",
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 3,
+      "viet": null,
+      "van": 7.25,
+      "eng": 3.8,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 5.1
+    }
+  },
+  {
+    "stt": 15,
+    "id": "cmstudnnz000311mlhnnik78v",
+    "fullName": "Phạm Hải Như",
+    "studentCode": "0601012334",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (viết), Tiếng Anh (vấn đáp)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/08/2026 08:23 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": 5,
+      "eng": 4.6,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 4.25,
+      "viet": null,
+      "van": 4.3,
+      "eng": 4.6
+    }
+  },
+  {
+    "stt": 16,
+    "id": "cmq9a9i15002r13z4yz434bf6",
+    "fullName": "Phạm Nguyễn Minh Anh",
+    "studentCode": "0601012314",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 6,
+      "viet": null,
+      "van": 8.5,
+      "eng": 8,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 4.5,
+      "viet": null,
+      "van": 5,
+      "eng": 0
+    }
+  },
+  {
+    "stt": 17,
+    "id": "cmqapr2pi0005k49ucnlm0y27",
+    "fullName": "Phạm Thùy Gia Hân ",
+    "studentCode": "0601012363",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 5,
+      "viet": null,
+      "van": 8,
+      "eng": 2,
+      "psy": 1
+    },
+    "ksdnScores": {
+      "math": 7.25,
+      "viet": null,
+      "van": 5.5,
+      "eng": 4.7
+    }
+  },
+  {
+    "stt": 18,
+    "id": "cmsy2fc270003vsyucpbev32h",
+    "fullName": "Trần Quang Thiên Ân",
+    "studentCode": "0601012369",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.1_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán]  Đạt cam kết toán  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 10:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết toán",
+    "committedSubjects": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 3,
+      "viet": null,
+      "van": 6.5,
+      "eng": 7.7,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 7.25,
+      "viet": null,
+      "van": 4,
+      "eng": 9
+    }
+  },
+  {
+    "stt": 19,
+    "id": "cmstud0i2000111ml5bd2wiiu",
+    "fullName": "Đặng Hoàng Như Ý",
+    "studentCode": "0601012318",
+    "campus": "CS1",
+    "grade": "10",
+    "className": "10.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/08/2026 08:23 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.6,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 6.75,
+      "viet": null,
+      "van": 6.8,
+      "eng": 0
+    }
+  },
+  {
+    "stt": 20,
+    "id": "cmsy2s3c40001114l9pwd7dsi",
+    "fullName": "Trương Lê Hưng Phát",
+    "studentCode": "0601012400",
+    "campus": "CS1",
+    "grade": "12",
+    "className": "12.1_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán]  Phát đạt cam kết toán. Phát đổi môn tổ hợp. Chưa gửi thư chúc mừng chờ ý kiến Sở  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 10:44 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Phát đạt cam kết toán. Phát đổi môn tổ hợp. Chưa gửi thư chúc mừng chờ ý kiến Sở",
+    "committedSubjects": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 5.2,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 5.1,
+      "viet": null,
+      "van": 3.5,
+      "eng": 5.5
+    }
+  },
+  {
+    "stt": 21,
+    "id": "cmq9a9ghi002f13z4qf1qvu4q",
+    "fullName": "Lê Nguyên Khang",
+    "studentCode": "0601011426",
+    "campus": "CS1",
+    "grade": "2",
+    "className": "2.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4,
+      "psy": 1
+    },
+    "ksdnScores": {
+      "math": 9,
+      "viet": 8,
+      "van": null,
+      "eng": 7.9
+    }
+  },
+  {
+    "stt": 22,
+    "id": "cmrfpn7110001qbh85z8qq365",
+    "fullName": "Nguyễn Ngọc Thiên Bảo",
+    "studentCode": "0701010055",
+    "campus": "CS1",
+    "grade": "2",
+    "className": "2.3INT_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3.9,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 10,
+      "viet": 8,
+      "van": null,
+      "eng": 4
+    }
+  },
+  {
+    "stt": 23,
+    "id": "cmrmwjd5s00017t091py6xdbt",
+    "fullName": "LÊ ĐÌNH SĨ PHÚ",
+    "studentCode": "HS331",
+    "campus": "CS1",
+    "grade": "6",
+    "className": null,
+    "directorNote": "Môn cam kết: [Môn Toán]",
+    "committedSubjects": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": 5,
+      "van": null,
+      "eng": 5,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 24,
+    "id": "cmsygk2xp0003j1ngvpqeybuk",
+    "fullName": "Lương Bích Ngọc",
+    "studentCode": "0601012348",
+    "campus": "CS1",
+    "grade": "6",
+    "className": "6.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết TA  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 8.5,
+      "eng": 4.3,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 6.8,
+      "viet": null,
+      "van": 7.25,
+      "eng": 5
+    }
+  },
+  {
+    "stt": 25,
+    "id": "cmsygoq7k0005j1ngk0abtv8g",
+    "fullName": "Nguyễn Quỳnh Như",
+    "studentCode": "0601011972",
+    "campus": "CS1",
+    "grade": "6",
+    "className": "2.1_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết TA  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 3,
+      "viet": null,
+      "van": 7,
+      "eng": 3.9,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 26,
+    "id": "cmsyga5uo0001o72056qfw5jh",
+    "fullName": "Trần Đăng Quang",
+    "studentCode": "0601012340",
+    "campus": "CS1",
+    "grade": "6",
+    "className": "6.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 16:52 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 10,
+      "viet": null,
+      "van": 7.5,
+      "eng": 4.3,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 6.5,
+      "viet": null,
+      "van": 6.75,
+      "eng": 5.6
+    }
+  },
+  {
+    "stt": 27,
+    "id": "cmstub33f0001590l5uiqc4rv",
+    "fullName": "Lê Nguyệt Cát",
+    "studentCode": "0601012317",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.4_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/08/2026 11:22 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 5,
+      "viet": null,
+      "van": 6.5,
+      "eng": 2.6,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 5.3,
+      "viet": null,
+      "van": 8,
+      "eng": 3.7
+    }
+  },
+  {
+    "stt": 28,
+    "id": "cmt9jhnpw0004jhkfya6npywn",
+    "fullName": "Nguyễn Ngọc Minh",
+    "studentCode": "0601012418",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (viết), Tiếng Anh (vấn đáp)]  ĐẠT CK  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/09/2026 14:12 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: ĐẠT CK",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 6,
+      "viet": null,
+      "van": 7,
+      "eng": 2.3,
+      "psy": 3
+    },
+    "ksdnScores": {
+      "math": 8.75,
+      "viet": null,
+      "van": 5.75,
+      "eng": 4.1
+    }
+  },
+  {
+    "stt": 29,
+    "id": "cmstu8q7o000163i3tif32ee3",
+    "fullName": "Phạm Gia Hưng",
+    "studentCode": "0601012371",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/08/2026 11:22 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 2.3,
+      "viet": null,
+      "van": 4,
+      "eng": 2.6,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 5,
+      "viet": null,
+      "van": 4.5,
+      "eng": 0.7
+    }
+  },
+  {
+    "stt": 30,
+    "id": "cmsyger10000fubp2yj6dkps4",
+    "fullName": "Trần Thục Quyên",
+    "studentCode": "0601012347",
+    "campus": "CS1",
+    "grade": "7",
+    "className": "7.4_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết TA  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 16:53 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết TA",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.3,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 9,
+      "viet": null,
+      "van": 7.5,
+      "eng": 6
+    }
+  },
+  {
+    "stt": 31,
+    "id": "cmtkwv7h00005buokyyvajmzx",
+    "fullName": "Nguyễn Đặng Bảo Trâm ",
+    "studentCode": "0601012421",
+    "campus": "CS1",
+    "grade": "8",
+    "className": "8.2_CS1",
+    "directorNote": "Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 05/09/2026 09:17 | Tống Thiên Long | Chưa duyệt ➔ Đạt | Lý do: Bảo Trâm đạt, có thể theo dõi tư vấn tâm lí",
+    "committedSubjects": [],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 7,
+      "viet": null,
+      "van": 6.5,
+      "eng": 4.8,
+      "psy": 6
+    },
+    "ksdnScores": {
+      "math": 3,
+      "viet": null,
+      "van": 6.5,
+      "eng": 4
+    }
+  },
+  {
+    "stt": 32,
+    "id": "cmstubssv00019a76czsz7hkc",
+    "fullName": "Hoàng Bảo Quyên",
+    "studentCode": "0601012338",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"Kt thấp quá ko đạt Hỗ trợ nhập học đạt cam kết để 3 chị em làm thủ tục nhập học sớm\" Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/08/2026 11:46 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Kt thấp quá ko đạt Hỗ trợ nhập học đạt cam kết để 3 chị em làm thủ tục nhập học sớm\" Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.2,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 5.25,
+      "viet": null,
+      "van": 4,
+      "eng": 4.6
+    }
+  },
+  {
+    "stt": 33,
+    "id": "cmq9a9ffz002713z4ab48ghaa",
+    "fullName": "Nguyễn Gia Bảo",
+    "studentCode": "0601012301",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.2_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Treo KQ KTĐV đợi KQ học tập cuối năm lớp 8 mới quyết địn",
+    "committedSubjects": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 10,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 3.5,
+      "viet": null,
+      "van": 4.25,
+      "eng": 2.3
+    }
+  },
+  {
+    "stt": 34,
+    "id": "cmrfpp46l0003qbh8rv5g2wm8",
+    "fullName": "Nguyễn Thanh Thảo",
+    "studentCode": "0601012393",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.4_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2.3,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 5,
+      "viet": null,
+      "van": 5.5,
+      "eng": 4.6
+    }
+  },
+  {
+    "stt": 35,
+    "id": "cmsy4hdrn0001kkem6semba2f",
+    "fullName": "Nguyễn Văn Tuấn Kiệt",
+    "studentCode": "0601012351",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.2_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"HS trung bình, hk khá không đạt 02/06/2026: HS Nguyễn Văn Tuấn Kiệt vừa rồi KTL nhưng kết quả Không Đạt => sau anh Long cân nhắc lại vì gia đình cho nhập học cả 2 bạn nên sẽ hỗ trợ cho bạn Kiệt Đạt cam kết các môn Toán, Anh  Hiện tại PH đã hoàn tất thủ tục nhập học cho 2 bạn, và có lịch hẹn gặp anh Long vào sáng mai\" Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 10:56 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"HS trung bình, hk khá không đạt 02/06/2026: HS Nguyễn Văn Tuấn Kiệt vừa rồi KTL nhưng kết quả Không Đạt => sau anh Long cân nhắc lại vì gia đình cho nhập học cả 2 bạn nên sẽ hỗ trợ cho bạn Kiệt Đạt cam kết các môn Toán, Anh  Hiện tại PH đã hoàn tất thủ tục nhập học cho 2 bạn, và có lịch hẹn gặp anh Long vào sáng mai\" Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 5,
+      "viet": null,
+      "van": null,
+      "eng": 3.5,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 3,
+      "viet": null,
+      "van": 4.5,
+      "eng": 2.9
+    }
+  },
+  {
+    "stt": 36,
+    "id": "cmrtz6ywz0003usvobumsgdcb",
+    "fullName": "Ngô Thục Đan",
+    "studentCode": "0601012399",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.1_CS1",
+    "directorNote": "Môn cam kết: [Tâm lý]  Đạt cam kết tâm lí. Mời PH gặp BGH và T. Đài khi làm thủ tục nhập học.",
+    "committedSubjects": [
+      "Tâm lý"
+    ],
+    "isPsychology": true,
+    "ksdvScores": {
+      "math": 5,
+      "viet": null,
+      "van": null,
+      "eng": 6.5,
+      "psy": 10
+    },
+    "ksdnScores": {
+      "math": 3,
+      "viet": null,
+      "van": 8.5,
+      "eng": 7.5
+    }
+  },
+  {
+    "stt": 37,
+    "id": "cmstucfk30003590lp2a24r7b",
+    "fullName": "Phạm Gia Bảo",
+    "studentCode": "0601012280",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "6.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]  Đạt cam kết Toán; Anh Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/08/2026 11:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán; Anh Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Tiếng Anh",
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 10,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 38,
+    "id": "cmrbk5mnu0006ze67iezug4cj",
+    "fullName": "Trần Hoàng Anh ",
+    "studentCode": "0601012396",
+    "campus": "CS1",
+    "grade": "9",
+    "className": "9.2_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]",
+    "committedSubjects": [
+      "Tiếng Anh",
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 6.5,
+      "eng": 2,
+      "psy": 4
+    },
+    "ksdnScores": {
+      "math": 6.5,
+      "viet": null,
+      "van": 6,
+      "eng": 4
+    }
+  },
+  {
+    "stt": 39,
+    "id": "cmq9a1r82000713z4g10iq90a",
+    "fullName": "Lê Gia Lân",
+    "studentCode": "0601021777",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "1.3_CS2",
+    "directorNote": "Môn cam kết: [Tâm lý]  Đạt nhưng yc cam kết tâm lý",
+    "committedSubjects": [
+      "Tâm lý"
+    ],
+    "isPsychology": true,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 7,
+      "psy": 4
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 40,
+    "id": "cmstsaue20001g0q3fdi6c055",
+    "fullName": "Lê Hồ Duy Khang",
+    "studentCode": "0601021795",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "1.3_CS2",
+    "directorNote": "Đạt (GVCN theo dõi tâm lý)  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 15/08/2026 10:12 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: Đạt (GVCN theo dõi tâm lý)",
+    "committedSubjects": [],
+    "isPsychology": true,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 8.5,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 41,
+    "id": "cmq9a1weg001713z4409owljj",
+    "fullName": "Nguyễn Thanh Phúc",
+    "studentCode": "0701020104",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "1.2INT_CS2",
+    "directorNote": "Cần theo dõi thêm mức độ tập trung chú ý Cần cải thiện thêm tiếng Anh (Không cần cam kết nhưng gvta sẽ phải tương tác kĩ với PH)  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 06/08/2026 15:57 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: Cần theo dõi thêm mức độ tập trung chú ý Cần cải thiện thêm tiếng Anh (Không cần cam kết nhưng gvta sẽ phải tương tác kĩ với PH)",
+    "committedSubjects": [],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 5,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 42,
+    "id": "cmrynnuyx000h9fun5btuwlc2",
+    "fullName": "Phan Hải Đăng",
+    "studentCode": "0601021828",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "1.3_CS2",
+    "directorNote": "theo dõi thêm khả năng phát triển ngôn ngữ  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 06/08/2026 16:25 | Lê Thị Hoàng Yến | Chưa duyệt ➔ Đạt | Lý do: theo dõi thêm khả năng phát triển ngôn ngữ",
+    "committedSubjects": [],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null,
+      "psy": -1
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 43,
+    "id": "cmtmpbm6c000512yks2sh1wdh",
+    "fullName": "Sangadziev Aron",
+    "studentCode": "0701020109",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "1.2INT_CS2",
+    "directorNote": "Môn cam kết: [Tiếng Việt]  \"Đạt (cam kết Tiếng Việt => sau HK1 đánh giá lại, nếu không đạt yêu cầu môn Tiếng Việt xem xét dừng HĐĐT) p.s. Lưu ý bổ sung nhận xét của GV Tiếng Việt đối với hs người NN\"  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 22/09/2026 11:35 | Phạm Thị Khánh | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt (cam kết Tiếng Việt => sau HK1 đánh giá lại, nếu không đạt yêu cầu môn Tiếng Việt xem xét dừng HĐĐT) p.s. Lưu ý bổ sung nhận xét của GV Tiếng Việt đối với hs người NN\"",
+    "committedSubjects": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 8,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 44,
+    "id": "cmq9a1v9l000z13z4i0j4dx3v",
+    "fullName": "Đào Trần Thảo Linh",
+    "studentCode": "0601021457",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "1.3_CS2",
+    "directorNote": "Môn cam kết: [Tâm lý, Tiếng Việt]  Đạt (Cam kết tâm lý: rèn luyện thêm khả năng tập trung chú ý và ngôn ngữ Tiếng Việt)",
+    "committedSubjects": [
+      "Tâm lý",
+      "Tiếng Việt"
+    ],
+    "isPsychology": true,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 9,
+      "psy": 1
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 45,
+    "id": "cmrbfkbrn00012rhyr4u2s8ut",
+    "fullName": "ĐỖ NGUYỄN AN KHÔI",
+    "studentCode": "0601021794",
+    "campus": "CS2",
+    "grade": "1",
+    "className": "1.3_CS2",
+    "directorNote": "(cần theo dõi mức độ tập trung chú ý)",
+    "committedSubjects": [],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 7,
+      "psy": 1
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 46,
+    "id": "cmsr002m600013kj3fmxpdkj4",
+    "fullName": "Govorushko Mikhail",
+    "studentCode": "0701030397",
+    "campus": "CS3",
+    "grade": "1",
+    "className": "1.1INT_CS3",
+    "directorNote": "Môn cam kết: [Tiếng Việt]  Đạt cam kết Tiếng Việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 13/08/2026 13:54 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+    "committedSubjects": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 9.5,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 47,
+    "id": "cmqa9bnk8001bqkruvwzsixsb",
+    "fullName": "Đoàn Ngọc Thảo Chloe",
+    "studentCode": "0701030387",
+    "campus": "CS3",
+    "grade": "2",
+    "className": "2.1INT_CS3",
+    "directorNote": "Cam kết Tiếng Việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/09/2026 15:26 | Trần Thị Thanh | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Cam kết Tiếng Việt • 09:18 28/09/2026 | Dương Xuân Thắng | Giao lưu ➔ Chính khóa | Lý do: 20/09/2026: hoàn thành hồ sơ chuyển học chính khóa",
+    "committedSubjects": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 90,
+      "psy": 3
+    },
+    "ksdnScores": {
+      "math": 8,
+      "viet": 4,
+      "van": null,
+      "eng": 9.8
+    }
+  },
+  {
+    "stt": 48,
+    "id": "cmssrof9g000613yefuh4bk07",
+    "fullName": "Hoàng Bữu Minh Hưng",
+    "studentCode": "0601012037",
+    "campus": "CS3",
+    "grade": "3",
+    "className": "3.4_CS2",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Ghi chú: PH hỗ trợ con bổ trợ thêm các kỹ năng tiếng Anh trong dịp Hè!  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/08/2026 16:59 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Ghi chú: PH hỗ trợ con bổ trợ thêm các kỹ năng tiếng Anh trong dịp Hè!",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.2,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 8,
+      "viet": 8,
+      "van": null,
+      "eng": 5.5
+    }
+  },
+  {
+    "stt": 49,
+    "id": "cmqa9bqzq001zqkru9243a3eh",
+    "fullName": "Hồ Hữu Bách",
+    "studentCode": "0501030625",
+    "campus": "CS3",
+    "grade": "4",
+    "className": "4UK_CS3",
+    "directorNote": "Môn cam kết: [Tiếng Việt]",
+    "committedSubjects": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": 3,
+      "van": null,
+      "eng": 95,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 3,
+      "viet": 1.5,
+      "van": null,
+      "eng": 7.8
+    }
+  },
+  {
+    "stt": 50,
+    "id": "cmssdgsq10001eo12h7dghd58",
+    "fullName": "Lecomte Mailys Mộc Yên",
+    "studentCode": "0701030402",
+    "campus": "CS3",
+    "grade": "4",
+    "className": "4INT_CS3",
+    "directorNote": "Đạt cam kết Tiếng Việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 17/09/2026 15:27 | Trần Thị Thanh | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Đạt cam kết Tiếng Việt • 14/08/2026 10:40 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Tiếng Việt",
+    "committedSubjects": [
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 9.6,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 5,
+      "viet": 5,
+      "van": null,
+      "eng": 7.3
+    }
+  },
+  {
+    "stt": 51,
+    "id": "cmssk8zaw0001fnej7o3mi960",
+    "fullName": "Hà Minh Khuê",
+    "studentCode": "0701030384",
+    "campus": "CS3",
+    "grade": "5",
+    "className": "5.1INT_CS3",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Phần năng lực ngôn ngữ còn hơi yếu so với yêu cầu của chương trình. Nếu theo học hệ S sẽ phù hợp hơn. Trường hợp PH mong muốn học hệ INT, em cần luyện thêm nhiều về từ vựng & ngữ pháp để theo kịp tiến độ chương trình  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/08/2026 13:35 | Trần Thị Thanh | Chưa duyệt ➔ Đạt cam kết | Lý do: Phần năng lực ngôn ngữ còn hơi yếu so với yêu cầu của chương trình. Nếu theo học hệ S sẽ phù hợp hơn. Trường hợp PH mong muốn học hệ INT, em cần luyện thêm nhiều về từ vựng & ngữ pháp để theo kịp tiến độ chương trình",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": 7,
+      "van": null,
+      "eng": 4.6,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 8,
+      "viet": 9,
+      "van": null,
+      "eng": 3.6
+    }
+  },
+  {
+    "stt": 52,
+    "id": "cmqavg7db0005srxuu2uok43h",
+    "fullName": "Lê Bảo Trâm",
+    "studentCode": "0601012375",
+    "campus": "CS3",
+    "grade": "7",
+    "className": "7.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết Anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 12/08/2026 08:48 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Anh",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 4.2,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 8.3,
+      "viet": null,
+      "van": 7.5,
+      "eng": 4.9
+    }
+  },
+  {
+    "stt": 53,
+    "id": "cmqapk1os0007nz6c3clpte3j",
+    "fullName": "Mai Huy Thắng",
+    "studentCode": "0601011201",
+    "campus": "CS3",
+    "grade": "7",
+    "className": "7.1_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán]  Đạt cam kết Toán  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 12/08/2026 08:31 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán",
+    "committedSubjects": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4.5,
+      "viet": null,
+      "van": 8,
+      "eng": 8,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": 8,
+      "viet": null,
+      "van": 7,
+      "eng": 8.8
+    }
+  },
+  {
+    "stt": 54,
+    "id": "cmqavh57f0001t6k9crbcq4eu",
+    "fullName": "Lê Bảo Châu",
+    "studentCode": "0601012374",
+    "campus": "CS3",
+    "grade": "9",
+    "className": "9.3_CS1",
+    "directorNote": "Môn cam kết: [Môn Toán, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt cam kết Toán; Anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 13:45 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Toán; Anh",
+    "committedSubjects": [
+      "Toán",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 2,
+      "viet": null,
+      "van": 6.5,
+      "eng": 1.9,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": 3.5,
+      "viet": null,
+      "van": 4.5,
+      "eng": 5.2
+    }
+  },
+  {
+    "stt": 55,
+    "id": "cmsy03zh80001elqr6mudq1xr",
+    "fullName": "Nguyễn Thành Long",
+    "studentCode": "0701030403",
+    "campus": "CS3",
+    "grade": "9",
+    "className": "9.3_CS1",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"Nên tư vấn học hệ S Thầy Long: Điểm theo học bạ và ktra như này thì đạt cam kết toán anh (hệ S)\"  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/08/2026 08:57 | Tống Thiên Long | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Nên tư vấn học hệ S Thầy Long: Điểm theo học bạ và ktra như này thì đạt cam kết toán anh (hệ S)\"",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": 8.25,
+      "eng": 2.8,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 4,
+      "viet": null,
+      "van": 4.5,
+      "eng": 6
+    }
+  },
+  {
+    "stt": 56,
+    "id": "cmqa9bjp0000hqkrutbz27w85",
+    "fullName": "Phan Anh Quân",
+    "studentCode": "0701030370",
+    "campus": "CS3",
+    "grade": "9",
+    "className": "9INT_CS3",
+    "directorNote": "Môn cam kết: [EPT]  ESL, Maths, Science",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": 5,
+      "eng": 80,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 6.25,
+      "viet": null,
+      "van": 6,
+      "eng": 5.6
+    }
+  },
+  {
+    "stt": 57,
+    "id": "cmryndh8k0005a81h02oc3tex",
+    "fullName": "Ngô Nhật Khang",
+    "studentCode": "0602040623",
+    "campus": "CS4",
+    "grade": "10",
+    "className": "10S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán, Ngữ Văn]",
+    "committedSubjects": [
+      "Tiếng Anh",
+      "Toán",
+      "Ngữ Văn"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 4.5,
+      "eng": 1.8,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 3.5,
+      "viet": null,
+      "van": 5.75,
+      "eng": 3.1
+    }
+  },
+  {
+    "stt": 58,
+    "id": "cmsocj9qe0001nqfoa5d8n9ie",
+    "fullName": "Đỗ Thành Nguyên",
+    "studentCode": "0602040613",
+    "campus": "CS4",
+    "grade": "10",
+    "className": "10S_CS4",
+    "directorNote": "Môn cam kết: [Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/08/2026 14:51 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+    "committedSubjects": [
+      "Toán",
+      "Ngữ Văn",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 1.5,
+      "viet": null,
+      "van": 5,
+      "eng": 10,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 0,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 59,
+    "id": "cmryncwmi0003a81hfqskkw1h",
+    "fullName": "Đặng Ngọc Bảo Ngân",
+    "studentCode": "0602040624",
+    "campus": "CS4",
+    "grade": "10",
+    "className": "10S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 1.8,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 3.5,
+      "viet": null,
+      "van": 2.5,
+      "eng": 2.5
+    }
+  },
+  {
+    "stt": 60,
+    "id": "cmrcxbu5x00026g6vqsx1pdvf",
+    "fullName": "Huỳnh Hoàng An",
+    "studentCode": "0602040636",
+    "campus": "CS4",
+    "grade": "3",
+    "className": "3S_CS4",
+    "directorNote": "Cam kết Toán, Tiếng việt  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 18/09/2026 13:58 | Cao Thanh Trung | Đạt - Giao lưu ➔ Đạt - Giao lưu | Lý do: Cam kết Toán, Tiếng việt • 17/09/2026 15:19 | Cao Thanh Trung | Đạt cam kết ➔ Đạt - Giao lưu | Lý do: Cam kết Toán, Tiếng việt • 06:57 18/09/2026 | Dương Xuân Thắng | Chính khóa ➔ Giao lưu | Lý do: 03/08/2026\t2026-2027\t3S_CS4",
+    "committedSubjects": [
+      "Toán",
+      "Tiếng Việt"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 5,
+      "viet": 4.5,
+      "van": null,
+      "eng": 8.7,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": 8.3,
+      "viet": 3,
+      "van": null,
+      "eng": 9.8
+    }
+  },
+  {
+    "stt": 61,
+    "id": "cmtxv0xdg000d10nuglzf3vl6",
+    "fullName": "Ngô Huỳnh Anh Minh",
+    "studentCode": "0602040655",
+    "campus": "CS4",
+    "grade": "6",
+    "className": "6S_CS4",
+    "directorNote": "Môn cam kết: [Toán học, Ngữ Văn]  ĐẠT CK  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 22/09/2026 11:33 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: ĐẠT CK",
+    "committedSubjects": [
+      "Toán",
+      "Ngữ Văn"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": null,
+      "van": 5,
+      "eng": 9.6,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 62,
+    "id": "cmsocoo9t0007nqfowy9nkme7",
+    "fullName": "Phạm Kiều Anh",
+    "studentCode": "0602040586",
+    "campus": "CS4",
+    "grade": "6",
+    "className": "6S_CS4",
+    "directorNote": "Môn cam kết: [Ngữ Văn]  Đạt cam kết Ngữ văn  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/08/2026 14:27 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt cam kết Ngữ văn",
+    "committedSubjects": [
+      "Ngữ Văn"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 8,
+      "viet": 4,
+      "van": null,
+      "eng": 8.6,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 9.3,
+      "viet": null,
+      "van": 7,
+      "eng": 9.25
+    }
+  },
+  {
+    "stt": 63,
+    "id": "cmrynfkgx0001fvn7ztdigds0",
+    "fullName": "Võ Hoàng Vi",
+    "studentCode": "0602040627",
+    "campus": "CS4",
+    "grade": "6",
+    "className": "6S_CS4",
+    "directorNote": "Môn cam kết: [Môn Toán]",
+    "committedSubjects": [
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 3,
+      "viet": null,
+      "van": 5.25,
+      "eng": 8.5,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 6.3,
+      "viet": null,
+      "van": 4.75,
+      "eng": 8
+    }
+  },
+  {
+    "stt": 64,
+    "id": "cmsoc2gkb0001fzahcjjeyf4t",
+    "fullName": "Võ Như Quỳnh",
+    "studentCode": "0602040642",
+    "campus": "CS4",
+    "grade": "7",
+    "className": "7S_CS4",
+    "directorNote": "Môn cam kết: [Môn Toán, Ngữ Văn, Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/08/2026 14:42 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Xét duyệt kết quả",
+    "committedSubjects": [
+      "Toán",
+      "Ngữ Văn",
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4.5,
+      "viet": null,
+      "van": 5,
+      "eng": 4.2,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": 6,
+      "viet": null,
+      "van": 6,
+      "eng": 2.9
+    }
+  },
+  {
+    "stt": 65,
+    "id": "cmssnr9f000055iyeufa3xrqs",
+    "fullName": "Võ Thị Anh Thư",
+    "studentCode": "0602040621",
+    "campus": "CS4",
+    "grade": "7",
+    "className": "7S_CS4",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/08/2026 15:11 | Cao Thanh Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 8,
+      "viet": null,
+      "van": null,
+      "eng": null,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 4.3,
+      "viet": null,
+      "van": 7.5,
+      "eng": 2.6
+    }
+  },
+  {
+    "stt": 66,
+    "id": "cmt2o1ibb0001t81ckhoko2tp",
+    "fullName": "Vũ Đức Thịnh",
+    "studentCode": "0601051050",
+    "campus": "CS5",
+    "grade": "1",
+    "className": "1.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"ĐẠT  Cam kết bổ sung tiếng anh \"  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 21/08/2026 15:44 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"ĐẠT  Cam kết bổ sung tiếng anh \"",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 67,
+    "id": "cmqa9g745005rqkru1yw41ia2",
+    "fullName": "Lâm Minh Khang",
+    "studentCode": "0601051137",
+    "campus": "CS5",
+    "grade": "2",
+    "className": "2.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 7,
+      "viet": 9,
+      "van": null,
+      "eng": 6.1,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 9.5,
+      "viet": 7.3,
+      "van": null,
+      "eng": 6.1
+    }
+  },
+  {
+    "stt": 68,
+    "id": "cmt6l475w0002gzo197zwrv2b",
+    "fullName": "Trần Minh Huy",
+    "studentCode": "0601051052",
+    "campus": "CS5",
+    "grade": "2",
+    "className": "2.6_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"Đạt  Cam kết tăng cường thêm Tiếng Anh \" Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 24/08/2026 09:06 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt  Cam kết tăng cường thêm Tiếng Anh \" Kiểm tra lại đợt trước từ kỳ: cmpwaj0um0001ttji6c2yrbau",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 7,
+      "psy": null
+    },
+    "ksdnScores": {
+      "math": 10,
+      "viet": 9.5,
+      "van": null,
+      "eng": 7.4
+    }
+  },
+  {
+    "stt": 69,
+    "id": "cmt3vcaow000595s07wg9ivoe",
+    "fullName": "Nguyễn Hoàng Đạt",
+    "studentCode": "0701050069",
+    "campus": "CS5",
+    "grade": "3",
+    "className": "3.2INT_CS5",
+    "directorNote": "\"ĐẠT cho ký thoã thuận cam kết như các hs đã từng học giao lưu\"  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/09/2026 16:08 | Đỗ Quang Trung | Đạt ➔ Đạt - Giao lưu | Lý do: \"ĐẠT cho ký thoã thuận cam kết như các hs đã từng học giao lưu\" • 24/08/2026 08:56 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt | Lý do: \"ĐẠT",
+    "committedSubjects": [],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 2,
+      "viet": 1,
+      "van": null,
+      "eng": 6.6,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 6,
+      "viet": 2,
+      "van": null,
+      "eng": 7.8
+    }
+  },
+  {
+    "stt": 70,
+    "id": "cmrnbzd8f0001g2eblgv255ta",
+    "fullName": "Đặng Ái Thiên Vân",
+    "studentCode": "0601051161",
+    "campus": "CS5",
+    "grade": "3",
+    "className": "3.6_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt, cam kết tăng cường thêm tiếng anh",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 10,
+      "viet": 8,
+      "van": null,
+      "eng": 3.9,
+      "psy": 2
+    },
+    "ksdnScores": {
+      "math": 10,
+      "viet": 9,
+      "van": null,
+      "eng": 5.6
+    }
+  },
+  {
+    "stt": 71,
+    "id": "cmt3vj3uk000b95s04kwikoq8",
+    "fullName": "Nguyễn Hoàng Phúc",
+    "studentCode": "0701050068",
+    "campus": "CS5",
+    "grade": "5",
+    "className": "5.2INT_CS5",
+    "directorNote": "\"ĐẠT cho ký thoã thuận cam kết như các hs đã từng học giao lưu\"  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 14/09/2026 16:07 | Đỗ Quang Trung | Đạt ➔ Đạt - Giao lưu | Lý do: \"ĐẠT cho ký thoã thuận cam kết như các hs đã từng học giao lưu\" • 24/08/2026 08:56 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt | Lý do: \"ĐẠT",
+    "committedSubjects": [],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 1,
+      "viet": 1,
+      "van": null,
+      "eng": 7.2,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 3,
+      "viet": 1,
+      "van": null,
+      "eng": 9.2
+    }
+  },
+  {
+    "stt": 72,
+    "id": "cmqa9g1mk004jqkruqlpgs4wx",
+    "fullName": "Mai Minh Minh",
+    "studentCode": "0601051095",
+    "campus": "CS5",
+    "grade": "6",
+    "className": "6.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 3.4,
+      "psy": 0
+    },
+    "ksdnScores": {
+      "math": 4.25,
+      "viet": null,
+      "van": 7.5,
+      "eng": 4.5
+    }
+  },
+  {
+    "stt": 73,
+    "id": "cmt2r2kn70001cdjymo1sjv1u",
+    "fullName": "Nguyễn Minh Anh",
+    "studentCode": "0601050795",
+    "campus": "CS5",
+    "grade": "6",
+    "className": "2.2INT_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  \"Đạt - Tăng cường cam kết tiếng anh \"  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 21/08/2026 16:53 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"Đạt - Tăng cường cam kết tiếng anh \"",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": 9,
+      "van": null,
+      "eng": 3,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": null
+    }
+  },
+  {
+    "stt": 74,
+    "id": "cmt2rsvyv0031mq3ztosp760s",
+    "fullName": "Đỗ Duy Khôi",
+    "studentCode": "0601051037",
+    "campus": "CS5",
+    "grade": "6",
+    "className": "6.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết), Môn Toán]  \"ĐẠT Hỗ trợ thêm ở nhà\"  Kiểm tra lại đợt trước từ kỳ: cmpwam1ub0007ttjirpq54536  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 22/08/2026 08:48 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: \"ĐẠT Hỗ trợ thêm ở nhà\"  Kiểm tra lại đợt trước từ kỳ: cmpwam1ub0007ttjirpq54536",
+    "committedSubjects": [
+      "Tiếng Anh",
+      "Toán"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": 4,
+      "viet": 7,
+      "van": null,
+      "eng": 5.5,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 2.25,
+      "viet": null,
+      "van": 6.75,
+      "eng": 4.5
+    }
+  },
+  {
+    "stt": 75,
+    "id": "cmryk2rua000113tlcvwiyuok",
+    "fullName": "Bùi Tuấn Anh",
+    "studentCode": "HS701020024",
+    "campus": "CS5",
+    "grade": "7",
+    "className": "7.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt, cam kết tăng cường tiếng anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 19/08/2026 16:46 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt, cam kết tăng cường tiếng anh",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": null,
+      "eng": 2,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 7.5,
+      "viet": null,
+      "van": 7.5,
+      "eng": 3.5
+    }
+  },
+  {
+    "stt": 76,
+    "id": "cmt3urnx30001c9fz60g0x805",
+    "fullName": "Lê Nguyễn Hoàng Bảo",
+    "studentCode": "0601051152",
+    "campus": "CS5",
+    "grade": "7",
+    "className": "7.5_CS5",
+    "directorNote": "Môn cam kết: [Tiếng Anh (vấn đáp), Tiếng Anh (viết)]  Đạt, cam kết tăng cường tiếng anh  --- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH --- • 24/08/2026 08:55 | Đỗ Quang Trung | Chưa duyệt ➔ Đạt cam kết | Lý do: Đạt, cam kết tăng cường tiếng anh",
+    "committedSubjects": [
+      "Tiếng Anh"
+    ],
+    "isPsychology": false,
+    "ksdvScores": {
+      "math": null,
+      "viet": null,
+      "van": 5,
+      "eng": 5,
+      "psy": -4
+    },
+    "ksdnScores": {
+      "math": 8.5,
+      "viet": null,
+      "van": 7,
+      "eng": 3.2
+    }
+  }
+]

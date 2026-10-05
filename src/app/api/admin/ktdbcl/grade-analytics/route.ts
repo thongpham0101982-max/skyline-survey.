@@ -1085,7 +1085,7 @@ export async function GET(request: Request) {
       const litTeacher = litTa?.teacher?.teacherName || homeroomTeacherName
 
       // 3. Môn Tiếng Anh (Tổng điểm KSĐV Tiếng Anh)
-      const engSub = findSubject(["tiếng anh", "english"], ["TA", "TAV", "ESL"])
+      const engSub = findSubject(["tiếng anh", "english"], ["TA", "TAV", "ESL", "INT-ENG"])
       const isEngCommitted = isSubjectMatchingCommitment(committedSubs, { id: "", name: "Tiếng Anh", code: "TA" })
       if (isEngCommitted) ksdvEngCommittedTotal++
 

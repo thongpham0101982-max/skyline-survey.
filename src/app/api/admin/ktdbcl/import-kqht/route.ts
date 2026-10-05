@@ -20,6 +20,7 @@ function normalizeSheetToClassCode(sheetName: string, availableClasses: any[] = 
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { normalizeKey } from "@/lib/competency-service"
 
 const ALLOWED_ROLES = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GIAO_VU_CS", "GIAO_VU"]
 
@@ -208,16 +209,23 @@ export async function POST(req: NextRequest) {
       }
     })
 
-    // 1. Auto-create new subjects if requested
-    const subjectMap = new Map() // key: subjectCode/subjectName, value: subjectId
+    // 1. Build comprehensive subject & alias map to protect DB catalog integrity
+    const subjectMap = new Map<string, string>() // key: subjectCode / subjectName / alias / normalizedKey -> subjectId
     
-    // Load existing subjects
-    const existingSubjects = await prisma.subject.findMany({
-      where: { status: "ACTIVE" }
-    })
+    const [existingSubjects, subjectAliases] = await Promise.all([
+      prisma.subject.findMany({ where: { status: "ACTIVE" } }),
+      prisma.subjectAlias.findMany({ select: { subjectId: true, normalizedKey: true, aliasPattern: true } })
+    ])
     existingSubjects.forEach((sub) => {
       subjectMap.set(sub.subjectCode.toUpperCase(), sub.id)
       subjectMap.set(sub.subjectName.normalize("NFC").toLowerCase().trim(), sub.id)
+      subjectMap.set(normalizeKey(sub.subjectCode), sub.id)
+      subjectMap.set(normalizeKey(sub.subjectName), sub.id)
+    })
+    subjectAliases.forEach((alias) => {
+      subjectMap.set(alias.normalizedKey, alias.subjectId)
+      subjectMap.set(alias.aliasPattern.toUpperCase(), alias.subjectId)
+      subjectMap.set(alias.aliasPattern.normalize("NFC").toLowerCase().trim(), alias.subjectId)
     })
 
     // Pre-fetch and cache all campuses, classes and students
@@ -404,49 +412,33 @@ export async function POST(req: NextRequest) {
               const cleanSubKey = subKey.normalize("NFC").toLowerCase().trim()
               const cleanBaseName = baseName.normalize("NFC").toLowerCase().trim()
 
+              const normSubKey = normalizeKey(subKey)
+              const normBaseName = normalizeKey(baseName)
+
               let subId = subjectMap.get(subKey.toUpperCase()) || 
                           subjectMap.get(cleanSubKey) ||
+                          (normSubKey ? subjectMap.get(normSubKey) : undefined) ||
                           subjectMap.get(baseName.toUpperCase()) ||
-                          subjectMap.get(cleanBaseName)
+                          subjectMap.get(cleanBaseName) ||
+                          (normBaseName ? subjectMap.get(normBaseName) : undefined)
 
               if (!subId) {
                 // Fallback search in existingSubjects
                 const found = existingSubjects.find(sub => {
                   const sName = sub.subjectName.normalize("NFC").toLowerCase().trim()
                   const sCode = sub.subjectCode.normalize("NFC").toLowerCase().trim()
-                  return sName === cleanBaseName || sCode === cleanBaseName || cleanBaseName.includes(sName) || sName.includes(cleanBaseName)
+                  const sNorm = normalizeKey(sub.subjectName)
+                  return sName === cleanBaseName || sCode === cleanBaseName || 
+                         (normBaseName && sNorm === normBaseName) ||
+                         (normBaseName && sNorm.includes(normBaseName)) ||
+                         (normBaseName && normBaseName.includes(sNorm))
                 })
                 if (found) subId = found.id
               }
 
-              if (!subId && baseName && baseName.length > 1) {
-                // Failsafe auto-create missing Primary subject in DB so no scores are ever dropped
-                const subCode = baseName
-                  .toUpperCase()
-                  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                  .replace(/[^A-Z0-9]/g, "_")
-                  .replace(/_+/g, "_")
-                  .slice(0, 18) || "SUB_" + Date.now()
-
-                try {
-                  const uniqueCode = subCode + "_" + Math.floor(Math.random() * 9000 + 1000)
-                  const newSub = await prisma.subject.create({
-                    data: {
-                      subjectCode: uniqueCode,
-                      subjectName: baseName,
-                      status: "ACTIVE"
-                    }
-                  })
-                  subId = newSub.id
-                  existingSubjects.push(newSub)
-                  subjectMap.set(cleanBaseName, subId)
-                  console.log(`Auto-created missing Primary subject in DB: ${baseName} (${subId})`)
-                } catch (createErr) {
-                  const existing = await prisma.subject.findFirst({
-                    where: { subjectName: baseName }
-                  })
-                  if (existing) subId = existing.id
-                }
+              if (!subId) {
+                console.warn(`[Import KQHT] Không tìm thấy môn học khớp với "${subKey}" (base: "${baseName}"). Bỏ qua điểm này.`)
+                continue
               }
 
               if (!subId) continue

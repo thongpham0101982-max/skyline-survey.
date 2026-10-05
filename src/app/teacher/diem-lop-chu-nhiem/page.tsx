@@ -43,9 +43,20 @@ export default async function HomeroomGradesPage() {
     }).catch(() => null)
   }
 
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
-  })
+  const [academicYears, campuses, subjects] = await Promise.all([
+    prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" }
+    }),
+    prisma.campus.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { campusName: "asc" },
+      select: { id: true, campusCode: true, campusName: true }
+    }),
+    prisma.subject.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { subjectName: "asc" }
+    })
+  ])
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
 
   const cookieStore = await cookies()
@@ -110,6 +121,8 @@ export default async function HomeroomGradesPage() {
       activeYearId={targetYearId}
       homeroomClasses={JSON.parse(JSON.stringify(homeroomClasses))}
       teacherName={teacher?.teacherName || session?.user?.name || "Giáo viên"}
+      campuses={JSON.parse(JSON.stringify(campuses))}
+      subjects={JSON.parse(JSON.stringify(subjects))}
     />
   )
 }

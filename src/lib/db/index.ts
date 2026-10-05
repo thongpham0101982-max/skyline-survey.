@@ -66,7 +66,16 @@ function getLocalPrisma(): PrismaClient {
   return localPrismaInstance
 }
 
+let lastCloudFailoverTime = 0
+const CLOUD_RECOVERY_COOLDOWN_MS = 60 * 1000 // 60s cooldown
+
 function getActivePrisma(): PrismaClient {
+  if (currentEngine === 'LOCAL' && configuredEngine !== 'LOCAL') {
+    if (Date.now() - lastCloudFailoverTime > CLOUD_RECOVERY_COOLDOWN_MS) {
+      currentEngine = 'CLOUD'
+      console.log('[SmartPrisma] Cooldown elapsed. Automatically trying Turso CLOUD engine...')
+    }
+  }
   return currentEngine === 'LOCAL' ? getLocalPrisma() : getCloudPrisma()
 }
 
@@ -98,6 +107,7 @@ function createSmartPrisma(): PrismaClient {
                 err.message
               )
               currentEngine = 'LOCAL'
+              lastCloudFailoverTime = Date.now()
               return await (getLocalPrisma() as any)[prop](...args)
             }
             throw err
@@ -123,6 +133,7 @@ function createSmartPrisma(): PrismaClient {
                       err.message
                     )
                     currentEngine = 'LOCAL'
+                    lastCloudFailoverTime = Date.now()
                     return await (getLocalPrisma() as any)[prop][modelProp](...args)
                   }
                   throw err
