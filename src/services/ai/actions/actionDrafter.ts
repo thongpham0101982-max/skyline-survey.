@@ -53,11 +53,11 @@ export async function draftAction(
 
     const parentLink = student.parents?.[0]?.parent;
     const recipientEmail = parentLink?.email || "phuhuynh@skylineschool.edu.vn";
-    const recipientName = parentLink?.parentName || `Phụ huynh em ${student.fullName}`;
+    const recipientName = parentLink?.parentName || `Phụ huynh em ${student.studentName}`;
 
-    const subject = `[Sky-line SMS] Thông tin Cố vấn Học tập & Kế hoạch Phát triển - Học sinh ${student.fullName}`;
-    const plainText = `Kính gửi Quý Phụ huynh em ${student.fullName},\n\n` +
-      `Thầy/Cô Giáo viên Chủ nhiệm xin gửi thông tin cập nhật về tình hình học tập và sổ mục tiêu SMART của em ${student.fullName}.\n` +
+    const subject = `[Sky-line SMS] Thông tin Cố vấn Học tập & Kế hoạch Phát triển - Học sinh ${student.studentName}`;
+    const plainText = `Kính gửi Quý Phụ huynh em ${student.studentName},\n\n` +
+      `Thầy/Cô Giáo viên Chủ nhiệm xin gửi thông tin cập nhật về tình hình học tập và sổ mục tiêu SMART của em ${student.studentName}.\n` +
       `Nhà trường kính đề nghị Quý Phụ huynh cùng đồng hành, theo dõi Kế hoạch 7 ngày gỡ rào cản học tập của con trên Cổng Phụ huynh (Sky-Line Parent Portal).\n\n` +
       `Trân trọng,\nGiáo viên Chủ nhiệm Sky-Line`;
 
@@ -119,7 +119,7 @@ export async function draftAction(
               <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#F0FDFA" style="background-color: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 10px; margin: 0 0 16px 0;">
                 <tr>
                   <td style="padding: 12px 16px; font-size: 13px; color: #134E4A;">
-                    <strong>Học sinh:</strong> <span style="font-size: 14px; font-weight: 800; color: #003B3A;">${student.fullName}</span> &nbsp;|&nbsp; <strong>Mã HS:</strong> <code>${student.studentCode}</code>
+                    <strong>Học sinh:</strong> <span style="font-size: 14px; font-weight: 800; color: #003B3A;">${student.studentName}</span> &nbsp;|&nbsp; <strong>Mã HS:</strong> <code>${student.studentCode}</code>
                   </td>
                 </tr>
               </table>
@@ -180,7 +180,7 @@ export async function draftAction(
 
     const payload: AdvisoryEmailPayload = {
       studentId: student.id,
-      studentName: student.fullName,
+      studentName: student.studentName,
       recipientEmail,
       recipientName,
       subject,
@@ -206,14 +206,14 @@ export async function draftAction(
         actionId: pendingRecord.id,
         actionType,
         title: "Gửi Email Cố Vấn Học Tập Cho Phụ Huynh",
-        description: `Soạn và gửi email trao đổi định hướng học tập của học sinh ${student.fullName} đến Phụ huynh.`,
+        description: `Soạn và gửi email trao đổi định hướng học tập của học sinh ${student.studentName} đến Phụ huynh.`,
         targetEntityId: student.id,
         preview: {
           recipient: `${recipientName} <${recipientEmail}>`,
           subject,
-          summary: `Gửi email cập nhật tình hình học tập và sổ mục tiêu SMART của em ${student.fullName}.`,
+          summary: `Gửi email cập nhật tình hình học tập và sổ mục tiêu SMART của em ${student.studentName}.`,
           details: {
-            studentName: student.fullName,
+            studentName: student.studentName,
             studentCode: student.studentCode,
             recipientEmail
           }

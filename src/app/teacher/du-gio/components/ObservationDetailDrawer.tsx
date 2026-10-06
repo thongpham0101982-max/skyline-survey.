@@ -32,6 +32,7 @@ import { DetailDrawer } from "@/components/ui/drawer"
 import { StatusBadge, Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { PdfReaderModal } from "@/components/textbooks/PdfReaderModal"
 
 export interface ObservationDetailDrawerProps {
   open: boolean
@@ -102,6 +103,30 @@ export function ObservationDetailDrawer({
   const isExpired = slot.status === "EXPIRED" || (slot.date && new Date(slot.date) < new Date(new Date().setHours(0, 0, 0, 0)));
   const isSurprise = slot.requestOrigin === "SURPRISE" || (typeof slot.description === "string" && slot.description.includes("[SURPRISE]"));
   const isAssigned = slot.requestOrigin === "ASSIGNED";
+
+  // State for Digital Textbook integration (Mục XIV)
+  const [readerOpen, setReaderOpen] = React.useState(false);
+  const [textbookData, setTextbookData] = React.useState<any | null>(null);
+
+  React.useEffect(() => {
+    if (open && slot) {
+      const params = new URLSearchParams();
+      if (slot.subjectId) params.append("subjectId", slot.subjectId);
+      if (slot.grade) params.append("grade", slot.grade);
+      params.append("processingStatus", "READY");
+
+      fetch(`/api/learning-resources/textbooks?${params.toString()}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setTextbookData(data.data[0]);
+          } else {
+            setTextbookData(null);
+          }
+        })
+        .catch(() => setTextbookData(null));
+    }
+  }, [open, slot?.id, slot?.subjectId, slot?.grade]);
 
   // Phân loại danh mục chuyên môn (Mầm non, Phổ thông K12, hoặc GVNN ESL)
   const slotSubj = (slot?.subjectName || "").toLowerCase();
@@ -257,6 +282,44 @@ export function ObservationDetailDrawer({
                 {slot.description}
               </p>
             )}
+          </div>
+        </div>
+
+        {/* NỘI DUNG BÀI HỌC SGK (MỤC XIV) */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <h4 className="text-[11px] font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-[#00A19A]" />
+              Nội dung bài học Sách giáo khoa
+            </h4>
+            {textbookData && (
+              <span className="text-[10px] font-medium text-teal-700 bg-teal-50 border border-teal-200 px-2 py-0.5 rounded-full">
+                {textbookData.series?.name || "SGK"}
+              </span>
+            )}
+          </div>
+          <div className="p-3.5 bg-gradient-to-r from-teal-50/80 via-emerald-50/40 to-white rounded-xl border border-teal-200/80 shadow-2xs space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-bold text-xs text-[#003B3A]">
+                  {textbookData?.title || `SGK ${slot.subjectName || "Môn học"} Khối ${slot.grade || ""}`}
+                </p>
+                <p className="text-[11px] text-slate-600 mt-0.5">
+                  Chủ đề bài dạy: <strong>{slot.topic || "Bài học chuẩn"}</strong>
+                  {slot.lessonPageNumber ? ` • Trang ${slot.lessonPageNumber}` : ""}
+                </p>
+              </div>
+              {textbookData && (
+                <Button
+                  size="sm"
+                  onClick={() => setReaderOpen(true)}
+                  className="bg-[#00A19A] hover:bg-[#008B85] text-white text-xs h-8 shrink-0 font-medium rounded-lg shadow-xs"
+                >
+                  <BookOpen className="w-3.5 h-3.5 mr-1" />
+                  Xem nội dung SGK
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -588,6 +651,16 @@ export function ObservationDetailDrawer({
         );
       })()}
       </div>
+
+      {/* Tích hợp Trình đọc PDF SGK trực tiếp trong SSM (Mục XIV) */}
+      {textbookData && (
+        <PdfReaderModal
+          open={readerOpen}
+          onOpenChange={setReaderOpen}
+          textbook={textbookData}
+          initialPage={slot.lessonPageNumber || 1}
+        />
+      )}
     </DetailDrawer>
   );
 }

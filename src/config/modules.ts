@@ -153,7 +153,26 @@ export const APP_CATEGORIES = [
       }
     ]
   },
-
+  {
+    id: "LEARNING_RESOURCES",
+    name: "Học liệu",
+    color: "teal",
+    icon: BookOpen,
+    modules: [
+      {
+        code: "TEXTBOOKS",
+        name: "Sách giáo khoa",
+        icon: BookOpen,
+        href: "/learning-resources/textbooks",
+        subModules: [
+          { code: "TEXTBOOK_LIST", name: "Thư viện SGK", href: "/learning-resources/textbooks" },
+          { code: "TEXTBOOK_MY_BOOKS", name: "Học liệu của tôi", href: "/learning-resources/textbooks?tab=my-books" },
+          { code: "TEXTBOOK_CATEGORIES", name: "Bộ sách & NXB", href: "/learning-resources/textbooks/categories" },
+          { code: "TEXTBOOK_SOURCES", name: "Nguồn Whitelist", href: "/learning-resources/textbooks/sources" }
+        ]
+      }
+    ]
+  },
   {
     id: "TRAINING",
     name: "Quản lý Đào tạo",

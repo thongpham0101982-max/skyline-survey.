@@ -95,10 +95,10 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   const categoryCounts = useMemo(() => {
     return {
       all: subjects.length,
-      moet: subjects.filter((s: any) => s.category === "MOET").length,
-      skl: subjects.filter((s: any) => s.category === "SKL").length,
-      bilingual: subjects.filter((s: any) => s.category === "BILINGUAL" || s.category === "INTERNATIONAL").length,
-      ksdv: subjects.filter((s: any) => s.category === "KSDV").length
+      moet: subjects.filter((s: any) => s.category && s.category.includes("MOET")).length,
+      skl: subjects.filter((s: any) => s.category && s.category.includes("SKL")).length,
+      bilingual: subjects.filter((s: any) => s.category && (s.category.includes("BILINGUAL") || s.category === "INTERNATIONAL")).length,
+      ksdv: subjects.filter((s: any) => s.category && s.category.includes("KSDV")).length
     };
   }, [subjects]);
 
@@ -279,7 +279,9 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         s.subjectName.toLowerCase().includes(searchQuery.toLowerCase().trim());
       const matchLevel = filterLevel === "ALL_LEVELS" || (s.level && s.level.includes(filterLevel));
       const matchProgram = filterProgram === "ALL_PROGRAMS" || (s.studyPrograms && s.studyPrograms.includes(filterProgram));
-      const matchCategory = filterCategory === "ALL_CATEGORIES" || s.category === filterCategory || (filterCategory === "BILINGUAL" && s.category === "INTERNATIONAL");
+      const matchCategory = filterCategory === "ALL_CATEGORIES" || 
+        (s.category && s.category.includes(filterCategory)) || 
+        (filterCategory === "BILINGUAL" && s.category === "INTERNATIONAL");
       const matchEvalType = filterEvalType === "ALL_EVALS" || (s.evaluationType || "SCORE") === filterEvalType;
 
       return matchSearch && matchLevel && matchProgram && matchCategory && matchEvalType;
@@ -320,14 +322,21 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   const highRows = sortRowsAsTree(explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("HIGH"))));
 
   const renderCategoryBadge = (cat?: string) => {
-    const c = cat || "MOET";
-    const found = CATEGORIES_CONFIG.find(item => item.id === c) || 
-                  (c === "INTERNATIONAL" ? CATEGORIES_CONFIG.find(item => item.id === "BILINGUAL") : null) ||
-                  CATEGORIES_CONFIG[0];
+    const raw = cat || "MOET";
+    const parts = raw.split(",").map(p => p.trim()).filter(Boolean);
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${found.badgeClass}`}>
-        {found.shortLabel}
-      </span>
+      <div className="inline-flex items-center gap-1 flex-wrap">
+        {parts.map(c => {
+          const found = CATEGORIES_CONFIG.find(item => item.id === c) || 
+                        (c === "INTERNATIONAL" ? CATEGORIES_CONFIG.find(item => item.id === "BILINGUAL") : null) ||
+                        CATEGORIES_CONFIG[0];
+          return (
+            <span key={c} className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border ${found.badgeClass}`}>
+              {found.shortLabel}
+            </span>
+          );
+        })}
+      </div>
     );
   };
 
@@ -784,7 +793,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
       {/* Main Tables Container grouped by Category */}
       <div className="space-y-8 pt-2">
         {CATEGORIES_CONFIG.filter(c => filterCategory === "ALL_CATEGORIES" || filterCategory === c.id || (filterCategory === "BILINGUAL" && c.id === "BILINGUAL")).map(catConfig => {
-          const catRows = explodedRows.filter((r: any) => r.subject.category === catConfig.id || (catConfig.id === "BILINGUAL" && r.subject.category === "INTERNATIONAL"));
+          const catRows = explodedRows.filter((r: any) => (r.subject.category && r.subject.category.includes(catConfig.id)) || (catConfig.id === "BILINGUAL" && r.subject.category === "INTERNATIONAL"));
           if (catRows.length === 0) return null;
 
           const primaryRows = sortRowsAsTree(catRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("PRIMARY"))));
@@ -896,6 +905,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       <option value="SKL">Môn học Sky-Line (Đặc thù)</option>
                       <option value="BILINGUAL">Môn học Song ngữ</option>
                       <option value="KSDV">Môn Học KSĐV (Khảo sát đầu vào)</option>
+                      <option value="MOET, KSDV">Môn học MOET & KSĐV (Dùng chung cho cả 2)</option>
                     </select>
                   </div>
 

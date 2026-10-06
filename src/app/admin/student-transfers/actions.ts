@@ -846,7 +846,7 @@ export async function importTransfersOutAction(records: any[], selectedYearId?: 
             if (typeof rawStart === "number") reserveStartDate = new Date((rawStart - 25569) * 86400 * 1000)
             else {
               const str = String(rawStart).trim()
-              reserveStartDate = str.includes("/") ? new Date(str.split("/")[2], str.split("/")[1] - 1, str.split("/")[0]) : new Date(str)
+              reserveStartDate = str.includes("/") ? new Date(Number(str.split("/")[2]), Number(str.split("/")[1]) - 1, Number(str.split("/")[0])) : new Date(str)
             }
           }
 
@@ -854,7 +854,7 @@ export async function importTransfersOutAction(records: any[], selectedYearId?: 
             if (typeof rawEnd === "number") reserveEndDate = new Date((rawEnd - 25569) * 86400 * 1000)
             else {
               const str = String(rawEnd).trim()
-              reserveEndDate = str.includes("/") ? new Date(str.split("/")[2], str.split("/")[1] - 1, str.split("/")[0]) : new Date(str)
+              reserveEndDate = str.includes("/") ? new Date(Number(str.split("/")[2]), Number(str.split("/")[1]) - 1, Number(str.split("/")[0])) : new Date(str)
             }
           }
         }
@@ -940,7 +940,7 @@ async function notifyGVCNOfNewStudent(tx: any, student: any, classId: string) {
       where: { id: classId }
     });
     if (destClass && destClass.homeroomTeacherId) {
-      const teacherIds = destClass.homeroomTeacherId.split(',').map((id) => id.trim()).filter(Boolean);
+      const teacherIds = destClass.homeroomTeacherId.split(',').map((id: string) => id.trim()).filter(Boolean);
       const teachers = await tx.teacher.findMany({
         where: { id: { in: teacherIds } },
         select: { userId: true }

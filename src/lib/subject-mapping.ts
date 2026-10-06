@@ -72,9 +72,8 @@ export const SYSTEM_SUBJECTS: SubjectSystemDefinition[] = [
     evaluationType: "SCORE",
     aliases: ["ept", "english placement test", "test ept", "dg_ept"],
     assessmentCodes: ["EPT", "DG_EPT"],
-    isSubSubject: true,
-    parentCode: "TA",
-    description: "Bài kiểm tra xếp lớp tiếng Anh đầu vào"
+    isSubSubject: false,
+    description: "Bài kiểm tra xếp lớp tiếng Anh đầu vào độc lập (không thuộc môn TA)"
   },
 
   // ==========================================
@@ -525,7 +524,10 @@ export function getAssessmentCodesForMainSubject(mainCode: string): string[] {
   if (!mainCode) return [];
   const code = mainCode.trim().toUpperCase();
   if (code === "TA" || code === "TAV") {
-    return ["TAv", "TAvd", "EPT", "TA", "DG_TIENG_ANH"];
+    return ["TAv", "TAvd", "TA", "DG_TIENG_ANH"];
+  }
+  if (code === "EPT") {
+    return ["EPT", "DG_EPT"];
   }
   const match = SYSTEM_SUBJECTS.find(s => s.code.toUpperCase() === code);
   if (match) {

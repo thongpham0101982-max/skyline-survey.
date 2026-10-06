@@ -160,3 +160,105 @@ export async function getTeacherObservationAnalysis(
     return { markdown: `⚠️ Đã xảy ra lỗi khi trích xuất dữ liệu dự giờ: ${err.message}` };
   }
 }
+
+/**
+ * AI Hỗ trợ Phân tích & Gợi ý Dự giờ kết hợp nội dung Sách giáo khoa (Mục XV)
+ * Đối chiếu nội dung tiết học với chuẩn SGK, gợi ý sư phạm mà không thay đổi điểm số.
+ */
+export async function getObservationSlotPedagogicalAiAdvice(slotId: string): Promise<{
+  markdown: string;
+  textbookReference?: {
+    bookTitle: string;
+    chapter: string;
+    lesson: string;
+    pageStart: number;
+    pageEnd: number;
+  };
+}> {
+  try {
+    const slot = await prisma.observationSlot.findUnique({
+      where: { id: slotId },
+      include: {
+        teacher: { select: { teacherName: true, position: true } }
+      }
+    });
+
+    if (!slot) {
+      return { markdown: "Không tìm thấy thông tin phiên dự giờ." };
+    }
+
+    // Tìm SGK tương ứng môn và khối
+    let textbook = null;
+    if (slot.subjectId) {
+      textbook = await prisma.textbook.findFirst({
+        where: {
+          subjectId: slot.subjectId,
+          grade: slot.grade,
+          processingStatus: "READY"
+        },
+        include: {
+          series: true,
+          chapters: { include: { lessons: true } }
+        }
+      });
+    }
+
+    let lessonMatch = null;
+    let chapterMatch = null;
+
+    if (textbook) {
+      const topicLower = (slot.topic || "").toLowerCase();
+      for (const ch of textbook.chapters) {
+        for (const les of ch.lessons) {
+          if (topicLower.includes(les.title.toLowerCase()) || les.title.toLowerCase().includes(topicLower)) {
+            lessonMatch = les;
+            chapterMatch = ch;
+            break;
+          }
+        }
+        if (lessonMatch) break;
+      }
+      if (!lessonMatch && textbook.chapters[0]?.lessons[0]) {
+        chapterMatch = textbook.chapters[0];
+        lessonMatch = textbook.chapters[0].lessons[0];
+      }
+    }
+
+    let md = `### 💡 AI Gợi Ý Sư Phạm & Đối Chiếu SGK cho Tiết Dự Giờ\n\n`;
+    md += `- **Giáo viên giảng dạy**: ${slot.teacher?.teacherName || "Giáo viên"}\n`;
+    md += `- **Môn học**: ${slot.subjectName} | **Khối lớp**: ${slot.grade} | **Lớp**: ${slot.className || "-"}\n`;
+    md += `- **Chủ đề bài dạy**: **${slot.topic || "Tiết dạy theo kế hoạch"}**\n\n`;
+
+    if (textbook && lessonMatch) {
+      md += `#### 📖 Đối chiếu Nội Dung Sách Giáo Khoa:\n`;
+      md += `- **Sách tham chiếu**: ${textbook.title} (${textbook.series.name})\n`;
+      md += `- **Cấu trúc**: ${chapterMatch?.chapterNumber}: ${chapterMatch?.title} • **${lessonMatch.lessonNumber}: ${lessonMatch.title}**\n`;
+      md += `- **Phạm vi trang**: Từ **Trang ${lessonMatch.pageStart} đến Trang ${lessonMatch.pageEnd}**\n`;
+      if (lessonMatch.summary) {
+        md += `- **Kiến thức cốt lõi SGK**: ${lessonMatch.summary}\n`;
+      }
+      md += `\n`;
+    }
+
+    md += `#### 🎯 Gợi Ý Điểm Cần Lưu Ý Khi Dự Giờ:\n`;
+    md += `1. **Bám sát mục tiêu bài học (Y1 & Y2)**: Kiểm tra học sinh có nắm chắc các khái niệm trọng tâm của bài học và vận dụng đúng phương pháp hay không.\n`;
+    md += `2. **Tương tác sư phạm & Phân hóa (Y5 & Y7)**: Khuyến khích giáo viên tổ chức hoạt động nhóm nhỏ hoặc câu hỏi gợi mở cho các nhóm học sinh có tốc độ tiếp thu khác nhau.\n`;
+    md += `3. **Thời lượng thực hành (Y11)**: Dành tối thiểu 15-20 phút cho học sinh luyện tập giải quyết bài tập hoặc thảo luận thực tế.\n\n`;
+
+    md += `> 📌 *Lưu ý quan trọng: Phân tích AI chỉ đóng vai trò tham khảo sư phạm đồng hành. Điểm số và xếp loại tiết dạy do Ban giám khảo/Người dự giờ quyết định theo đúng 11 tiêu chí quy định.*`;
+
+    return {
+      markdown: md,
+      textbookReference: textbook && lessonMatch ? {
+        bookTitle: textbook.title,
+        chapter: `${chapterMatch?.chapterNumber}: ${chapterMatch?.title}`,
+        lesson: `${lessonMatch.lessonNumber}: ${lessonMatch.title}`,
+        pageStart: lessonMatch.pageStart,
+        pageEnd: lessonMatch.pageEnd
+      } : undefined
+    };
+  } catch (e: any) {
+    return { markdown: "Lỗi phân tích: " + e.message };
+  }
+}
+

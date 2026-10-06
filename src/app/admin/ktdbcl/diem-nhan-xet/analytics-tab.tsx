@@ -628,7 +628,7 @@ export function GradeAnalyticsTab({
             )}
           </button>
 
-          {/* Tab 4: Đối sánh KSĐV (Cam kết đầu vào) */}
+          {/* Tab 4: Đối sánh KSĐV (Cam kết đầu vào) - Chỉ áp dụng Khối 2 đến Khối 12 */}
           <button
             onClick={() => setActiveSubView("ksdv_matrix")}
             className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
@@ -638,7 +638,7 @@ export function GradeAnalyticsTab({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Đối sánh KSĐV (Cam kết đầu vào)</span>
+            <span>Đối sánh KSĐV (Khối 2 - 12)</span>
             {(data.ksdvMatrix?.summary?.totalCommittedStudents || 0) > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-800">
                 {data.ksdvMatrix?.summary?.totalCommittedStudents}
@@ -866,11 +866,48 @@ export function GradeAnalyticsTab({
           </div>
         </div>
 
+        {/* LƯỚI BỘ LỌC 6 TIÊU CHÍ: KỲ KHẢO SÁT -> MÔN HỌC -> CƠ SỞ -> CẤP HỌC -> KHỐI -> LỚP */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          {/* 1. Cơ sở */}
+          {/* 1. Kỳ khảo sát */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Cơ sở:
+            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Kỳ khảo sát:</span>
+              <span className="text-[10px] font-bold text-[#005B58]">Bước 1</span>
+            </label>
+            <select
+              value={currentPeriod}
+              onChange={e => setCurrentPeriod(e.target.value)}
+              className="w-full border border-teal-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#003B3A] focus:ring-2 focus:ring-[#005B58] outline-none bg-teal-50/40"
+            >
+              {EVAL_PERIODS.map(p => (
+                <option key={p.code} value={p.code}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. Môn học (đúng theo kỳ) */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Môn học ({availableSubjectsForPeriod.length} môn):</span>
+              <span className="text-[10px] font-bold text-slate-400">Bước 2</span>
+            </label>
+            <select
+              value={selectedSubjectId}
+              onChange={e => setSelectedSubjectId(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
+            >
+              <option value="ALL">⭐ Tất cả môn theo kỳ</option>
+              {availableSubjectsForPeriod.map(s => (
+                <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Cơ sở */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Cơ sở:</span>
+              <span className="text-[10px] font-bold text-slate-400">Bước 3</span>
             </label>
             <select
               value={selectedCampusId}
@@ -886,10 +923,11 @@ export function GradeAnalyticsTab({
             </select>
           </div>
 
-          {/* 2. Cấp học */}
+          {/* 4. Cấp học */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Cấp học:
+            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Cấp học:</span>
+              <span className="text-[10px] font-bold text-slate-400">Bước 4</span>
             </label>
             <select
               value={selectedLevelFilter}
@@ -906,27 +944,31 @@ export function GradeAnalyticsTab({
             </select>
           </div>
 
-          {/* 3. Khối (Tùy biến theo Cấp học) */}
+          {/* 5. Khối (Tùy biến theo Cấp học & Chú thích KSĐV Khối 2-12) */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Khối:
+            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Khối:</span>
+              <span className="text-[10px] font-bold text-slate-400">Bước 5</span>
             </label>
             <select
               value={selectedGradeFilter}
               onChange={e => setSelectedGradeFilter(e.target.value)}
               className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
             >
-              <option value="ALL">-- Tất cả Khối --</option>
+              <option value="ALL">{activeSubView === "ksdv_matrix" ? "-- Tất cả Khối (Khối 2 - 12) --" : "-- Tất cả Khối --"}</option>
               {availableGradesForLevel.map(g => (
-                <option key={g} value={g}>{g}</option>
+                <option key={g} value={g}>
+                  {g}{activeSubView === "ksdv_matrix" && g === "Khối 1" ? " (Không áp dụng KSĐV)" : ""}
+                </option>
               ))}
             </select>
           </div>
 
-          {/* 3. Lớp học (hỗ trợ chế độ "Tất cả") */}
+          {/* 6. Lớp học (hỗ trợ chế độ "Tất cả") */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Lớp học ({filteredClasses.length} lớp):
+            <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+              <span>Lớp học ({filteredClasses.length} lớp):</span>
+              <span className="text-[10px] font-bold text-slate-400">Bước 6</span>
             </label>
             <select
               value={selectedClassId}
@@ -939,56 +981,37 @@ export function GradeAnalyticsTab({
               ))}
             </select>
           </div>
+        </div>
 
-          {/* 4. Kỳ khảo sát */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Kỳ khảo sát:
-            </label>
-            <select
-              value={currentPeriod}
-              onChange={e => setCurrentPeriod(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
-            >
-              {EVAL_PERIODS.map(p => (
-                <option key={p.code} value={p.code}>{p.name}</option>
-              ))}
-            </select>
+        {/* HÀNG TÌM NHANH & GHI CHÚ ĐIỀU HƯỚNG */}
+        <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-slate-100 flex-wrap sm:flex-nowrap">
+          <div className="relative flex-1 min-w-[260px]">
+            <input
+              type="text"
+              placeholder="Tìm nhanh giáo viên, mã GV, tên lớp, môn học, họ tên HS..."
+              value={searchKeyword}
+              onChange={e => setSearchKeyword(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl pl-8 pr-8 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white placeholder:text-slate-400"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            {searchKeyword && (
+              <button
+                type="button"
+                onClick={() => setSearchKeyword("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold px-1"
+                title="Xóa tìm kiếm"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
-          {/* 5. Môn học (đúng theo kỳ) */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Môn học ({availableSubjectsForPeriod.length} môn):
-            </label>
-            <select
-              value={selectedSubjectId}
-              onChange={e => setSelectedSubjectId(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
-            >
-              <option value="ALL">⭐ Tất cả môn theo kỳ</option>
-              {availableSubjectsForPeriod.map(s => (
-                <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
-              ))}
-            </select>
-          </div>
-
-          {/* 6. Tìm nhanh Giáo viên, Lớp, Môn */}
-          <div>
-            <label className="block text-[11px] font-bold text-slate-700 mb-1">
-              Tìm nhanh:
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Tên GV, mã GV, lớp, môn..."
-                value={searchKeyword}
-                onChange={e => setSearchKeyword(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl pl-8 pr-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#005B58] outline-none bg-white"
-              />
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          {activeSubView === "ksdv_matrix" && (
+            <div className="text-[11px] font-bold text-indigo-700 bg-indigo-50/80 px-3 py-1.5 rounded-xl border border-indigo-200 flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
+              <span>KSĐV chỉ áp dụng từ Khối 2 đến Khối 12 (không tính Khối 1)</span>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -1428,6 +1451,36 @@ export function GradeAnalyticsTab({
       {/* 5.1 VIEW 4: MA TRẬN ĐỐI SÁNH VỚI KHẢO SÁT ĐẦU VÀO (KSĐV) */}
       {activeSubView === "ksdv_matrix" && (
         <div className="space-y-4 animate-fadeIn">
+          {/* Cảnh báo lưu ý nghiệp vụ khi người dùng lọc Khối 1 */}
+          {selectedGradeFilter === "Khối 1" && (
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex items-start gap-3.5 text-amber-900 shadow-sm animate-fadeIn">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-xs space-y-1">
+                <h4 className="font-extrabold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span>Lưu ý nghiệp vụ:</span>
+                  <span>Kỳ Khảo sát đầu vào (KSĐV) chỉ áp dụng từ Khối 2 đến Khối 12</span>
+                </h4>
+                <p className="text-amber-700 leading-relaxed">
+                  Học sinh tuyển sinh đầu cấp Khối 1 (Tiểu học) không thi bài khảo sát môn văn hóa chuẩn hóa (Toán, Tiếng Việt, Tiếng Anh) như học sinh chuyển trường từ Khối 2 đến Khối 12. Do đó, hệ thống <strong>không tính Khối 1</strong> vào Ma trận đối sánh KSĐV và danh mục diện cam kết học tập đầu vào.
+                </p>
+                <div className="pt-1 font-semibold text-amber-800">
+                  👉 Vui lòng chọn <strong>Khối 2 đến Khối 12</strong> hoặc <strong>-- Tất cả Khối (Khối 2 - 12) --</strong> ở bộ lọc phía trên để xem số liệu phân tích.
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Dải thông tin nhận diện phạm vi áp dụng */}
+          <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 text-xs font-extrabold shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Phạm vi đối sánh Ma trận KSĐV: Khối 2 đến Khối 12</span>
+              <span className="text-[11px] font-bold text-indigo-600 bg-white px-2 py-0.5 rounded-full border border-indigo-100">
+                Không tính Khối 1
+              </span>
+            </div>
+          </div>
+
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <div className="bg-white p-3.5 rounded-2xl border border-indigo-100 shadow-sm bg-gradient-to-br from-white to-indigo-50/30">

@@ -5245,9 +5245,9 @@ export function ObservationClient(props: ObservationClientProps) {
                     <th className="p-4 text-right">Thao tác</th>
                   </tr>
                 ) : (
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
+                  <tr className="bg-slate-50/90 border-b border-slate-200/90 text-slate-700 font-extrabold uppercase text-[11px] tracking-wider">
                     {canDeleteAnySlot && (
-                      <th className="p-4 text-center w-10">
+                      <th className="py-3.5 px-3 text-center w-10">
                         <input
                           type="checkbox"
                           checked={isAllCurrentSelected}
@@ -5257,21 +5257,17 @@ export function ObservationClient(props: ObservationClientProps) {
                         />
                       </th>
                     )}
-                    <th className="p-4 text-center w-12">TT</th>
-                    <th className="p-4">Giáo viên</th>
-                    <th className="p-4">Thời gian đăng ký</th>
-                    <th className="p-4">Cơ sở</th>
-                    <th className="p-4">Tổ chuyên môn</th>
-                    <th className="p-4">Môn học & Chủ đề</th>
-                    <th className="p-4">Thời gian / Phòng</th>
-                    <th className="p-4 text-center">Số chỗ</th>
-                    <th className="p-4">GV Đăng ký</th>
-                    <th className="p-4">Trạng thái</th>
-                    <th className="p-4 text-right">{canDeleteAnySlot ? "Thao tác Quản trị" : "Đăng ký"}</th>
+                    <th className="py-3.5 px-3 text-center w-12 text-slate-400">TT</th>
+                    <th className="py-3.5 px-4">Giáo viên & Đơn vị</th>
+                    <th className="py-3.5 px-4">Tiết dạy & Môn học</th>
+                    <th className="py-3.5 px-4">Lịch dạy & Phòng</th>
+                    <th className="py-3.5 px-4">Người dự & Chỗ trống</th>
+                    <th className="py-3.5 px-4 text-center">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right">{canDeleteAnySlot ? "Thao tác Quản trị" : "Thao tác"}</th>
                   </tr>
                 )}
               </thead>
-              <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
+              <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700 bg-white">
                 {tabFilteredSlots.map((slot, index) => {
                   const isHost = slot.teacherId === currentTeacher?.id;
                   const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);

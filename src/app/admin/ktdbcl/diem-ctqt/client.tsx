@@ -55,6 +55,10 @@ export function DiemCtqtAdminClient({
   const [selectedClassId, setSelectedClassId] = useState<string>(initialClasses[0]?.id || "");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const selectedClass = initialClasses.find(c => c.id === selectedClassId);
+  const currentLevel = selectedClass ? detectCtqtLevel(selectedClass.className, selectedClass.grade, selectedClass.level) : "PRIMARY";
+  const currentConfig = CTQT_LEVEL_CONFIGS[currentLevel] || CTQT_LEVEL_CONFIGS.PRIMARY;
+
   // Assignment tab state
   const [assignmentClasses, setAssignmentClasses] = useState<any[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
@@ -292,10 +296,6 @@ export function DiemCtqtAdminClient({
       setGeneratingPdf(false);
     }
   };
-
-  const selectedClass = initialClasses.find(c => c.id === selectedClassId);
-  const currentLevel = selectedClass ? detectCtqtLevel(selectedClass.className, selectedClass.grade, selectedClass.level) : "PRIMARY";
-  const currentConfig = CTQT_LEVEL_CONFIGS[currentLevel];
 
   const currentSubjectDef = useMemo(() => {
     return currentConfig?.subjects?.find(s => s.code === selectedSubjectCode) || currentConfig?.subjects?.[0];

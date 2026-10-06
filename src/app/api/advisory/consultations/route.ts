@@ -128,7 +128,12 @@ export async function POST(req: Request) {
           difficulties,
           nextActions,
           deadline: deadline ? new Date(deadline) : null,
-          notes
+          notes,
+          subjectId: body.subjectId !== undefined ? body.subjectId : undefined,
+          textbookId: body.textbookId !== undefined ? body.textbookId : undefined,
+          chapterId: body.chapterId !== undefined ? body.chapterId : undefined,
+          lessonId: body.lessonId !== undefined ? body.lessonId : undefined,
+          academicTopic: body.academicTopic !== undefined ? body.academicTopic : undefined
         }
       })
     } else {
@@ -142,7 +147,12 @@ export async function POST(req: Request) {
           difficulties,
           nextActions,
           deadline: deadline ? new Date(deadline) : null,
-          notes
+          notes,
+          subjectId: body.subjectId || null,
+          textbookId: body.textbookId || null,
+          chapterId: body.chapterId || null,
+          lessonId: body.lessonId || null,
+          academicTopic: body.academicTopic || null
         }
       })
     }

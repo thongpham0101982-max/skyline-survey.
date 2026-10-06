@@ -933,7 +933,11 @@ export async function createObservationSlot(data: {
           className: data.className || null,
           lessonPlanName: data.lessonPlanName || null,
           lessonPlanData: data.lessonPlanData || null,
-          academicYearId: yearId
+          academicYearId: yearId,
+          textbookId: data.textbookId || null,
+          chapterId: data.chapterId || null,
+          lessonId: data.lessonId || null,
+          lessonPageNumber: data.lessonPageNumber ? Number(data.lessonPageNumber) : null
         }
       })
     })
@@ -6156,7 +6160,11 @@ export async function createAssignedObservation(data: {
         requestOrigin: "ASSIGNED",
         academicYearId: academicYearId || null,
         campusId: data.campusId || hostTeacher.campusId || null,
-        campusName: hostTeacher.campus?.campusName || null
+        campusName: hostTeacher.campus?.campusName || null,
+        textbookId: (data as any).textbookId || null,
+        chapterId: (data as any).chapterId || null,
+        lessonId: (data as any).lessonId || null,
+        lessonPageNumber: (data as any).lessonPageNumber ? Number((data as any).lessonPageNumber) : null
       }
     });
 

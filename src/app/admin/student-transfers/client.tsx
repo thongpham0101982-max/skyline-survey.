@@ -1321,7 +1321,7 @@ export function StudentTransfersClient() {
     const privateDaNangTransfers = baseOutTransfers.filter(t =>
       t.destinationProvince === "Thành phố Đà Nẵng" && t.destinationType === "PRIVATE"
     );
-    const privateDaNangSchoolMap = {};
+    const privateDaNangSchoolMap: Record<string, number> = {};
     privateDaNangTransfers.forEach(t => {
       const school = t.destinationSchool || "Khác / Chưa rõ";
       privateDaNangSchoolMap[school] = (privateDaNangSchoolMap[school] || 0) + 1;

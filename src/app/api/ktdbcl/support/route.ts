@@ -1395,7 +1395,11 @@ export async function POST(req: Request) {
               terminationStatus: "ACTIVE",
               reason: reason || existing.reason,
               notes: notes || existing.notes,
-              createdById: existing.createdById || (teacher ? teacher.id : null)
+              createdById: existing.createdById || (teacher ? teacher.id : null),
+              textbookId: body.textbookId !== undefined ? body.textbookId : existing.textbookId,
+              chapterId: body.chapterId !== undefined ? body.chapterId : existing.chapterId,
+              lessonId: body.lessonId !== undefined ? body.lessonId : existing.lessonId,
+              academicTopic: body.academicTopic !== undefined ? body.academicTopic : existing.academicTopic
             }
           })
           if (teacher) {
@@ -1429,7 +1433,11 @@ export async function POST(req: Request) {
             academicYearId,
             startDate: startDate ? new Date(startDate) : new Date(),
             terminationStatus: "ACTIVE",
-            createdById: teacher ? teacher.id : null
+            createdById: teacher ? teacher.id : null,
+            textbookId: body.textbookId || null,
+            chapterId: body.chapterId || null,
+            lessonId: body.lessonId || null,
+            academicTopic: body.academicTopic || null
           }
         })
         if (teacher) {

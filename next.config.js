@@ -35,7 +35,20 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/:path*",
+        source: "/api/learning-resources/textbooks/:id/file",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self' https://ssm.skylineschool.edu.vn http://localhost:3000 http://192.168.10.239:3000 https://*.skylineschool.edu.vn",
+          },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "*",
+          },
+        ],
+      },
+      {
+        source: "/((?!api/learning-resources).*)",
         headers: [
           {
             key: "X-Frame-Options",
