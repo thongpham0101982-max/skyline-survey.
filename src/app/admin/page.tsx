@@ -1,3 +1,4 @@
+import Link from "next/link"
 "use client"
 import { useEffect, useState, useCallback } from "react"
 import { useSession } from "next-auth/react"
@@ -467,7 +468,7 @@ export default function AdminDashboard() {
       {/* BIỂU ĐỒ SỸ SỐ HỌC SINH THEO THÁNG */}
       {finalMetrics.monthlyHeadcount && finalMetrics.monthlyHeadcount.length > 0 && (
         <div className="bg-white rounded-2xl border-2 border-slate-100 p-6 shadow-xs space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 text-[#48BFE3] flex items-center justify-center bg-teal-50 rounded-xl font-bold">
                 <TrendingUp className="w-5 h-5" />
@@ -479,6 +480,13 @@ export default function AdminDashboard() {
                 </p>
               </div>
             </div>
+            <Link
+              href="/admin/sy-so"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-[#00A19A] text-xs font-black transition-all border border-teal-200/70 shadow-xs shrink-0 self-start sm:self-auto cursor-pointer"
+            >
+              <span>Quản lý & Chốt Sỹ số</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
           <div className="h-80 w-full pr-4">
             <ResponsiveContainer width="100%" height="100%">

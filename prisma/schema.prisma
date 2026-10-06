@@ -2991,3 +2991,56 @@ model TextbookProcessingJob {
   @@index([status])
 }
 
+
+model MonthlyEnrollmentSnapshot {
+  id               String                   @id @default(cuid())
+  academicYearId   String
+  campusId         String                   @default("ALL")
+  year             Int
+  month            Int
+  periodLabel      String
+  snapshotDate     DateTime
+  status           String                   @default("LOCKED") // DRAFT, LOCKED, OFFICIAL
+  openingCount     Int                      @default(0)
+  increaseCount    Int                      @default(0)
+  decreaseCount    Int                      @default(0)
+  closingCount     Int                      @default(0)
+  preschoolCount   Int                      @default(0)
+  primaryCount     Int                      @default(0)
+  secondaryCount   Int                      @default(0)
+  highSchoolCount  Int                      @default(0)
+  retentionRate    Float?
+  notes            String?
+  lockedById       String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  classEnrollments ClassMonthlyEnrollment[]
+
+  @@unique([academicYearId, campusId, year, month], name: "uq_snapshot_comp")
+  @@index([year, month])
+}
+
+model ClassMonthlyEnrollment {
+  id             String                    @id @default(cuid())
+  snapshotId     String
+  classId        String
+  className      String
+  grade          String                    @default("")
+  level          String                    @default("")
+  campusId       String                    @default("")
+  openingCount   Int                       @default(0)
+  newStudents    Int                       @default(0)
+  transferredIn  Int                       @default(0)
+  transferredOut Int                       @default(0)
+  droppedOut     Int                       @default(0)
+  reservedCount  Int                       @default(0)
+  closingCount   Int                       @default(0)
+  maxCapacity    Int?                      @default(30)
+  occupancyRate  Float?
+  createdAt      DateTime                  @default(now())
+  snapshot       MonthlyEnrollmentSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, classId], name: "uq_class_snapshot")
+  @@index([snapshotId])
+  @@index([classId])
+}

@@ -198,6 +198,7 @@ export const APP_CATEGORIES = [
       { code: "ASSIGNMENTS", name: "Phân công giảng dạy", icon: Layout, href: "/admin/teaching-assignments" },
       { code: "TIMETABLE", name: "Thời khóa biểu (Kéo & Thả)", icon: Calendar, href: "/admin/thoi-khoa-bieu" },
       { code: "STUDENT_TRANSFERS", name: "Quản lý HS lưu chuyển", icon: ArrowRightLeft, href: "/admin/student-transfers" },
+      { code: "MONTHLY_ENROLLMENT", name: "Theo dõi Sỹ số Tháng", icon: TrendingUp, href: "/admin/sy-so" },
       { code: "DESTINATION_SCHOOLS", name: "Danh mục Trường học", icon: Building2, href: "/admin/truong-lien-ket" },
       { code: "TEACHER_TRANSFERS", name: "Kết chuyển Nhân sự", icon: RefreshCcw, href: "/admin/teacher-transfers" },
     ]

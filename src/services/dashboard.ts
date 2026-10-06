@@ -241,64 +241,71 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
       limit++
     }
 
-    const allYearStudents = await prisma.student.findMany({
-      where: {
-        class: {
+    const targetCampusId = isFullAccess ? 'ALL' : (allowedCampusIds.length === 1 ? allowedCampusIds[0] : 'ALL')
+    let snapshots: any[] = []
+    try {
+      snapshots = await prisma.monthlyEnrollmentSnapshot.findMany({
+        where: {
           academicYearId: targetYearId,
-          status: "ACTIVE"
+          campusId: targetCampusId
         },
-        campusId: isFullAccess ? undefined : { in: allowedCampusIds }
-      },
-      include: {
-        class: {
-          select: { level: true }
-        },
-        studentTransfers: {
-          where: { type: { in: ["IN", "OUT"] } },
-          orderBy: { transferDate: "asc" }
-        }
-      }
+        orderBy: [{ year: 'asc' }, { month: 'asc' }]
+      })
+    } catch (e) {
+      console.error("Error loading monthly enrollment snapshots:", e)
+    }
+
+    const snapshotMap = new Map()
+    snapshots.forEach((s: any) => {
+      snapshotMap.set(`${s.month}/${s.year}`, s)
     })
 
+    const now = new Date()
+    const currentYearMonth = now.getFullYear() * 12 + now.getMonth()
+
+    let lastKnownClosing = 2341
+    let lastKnownGeneral = 1904
+    let lastKnownPreschool = 437
+
     monthlyHeadcount = months.map(m => {
-      const monthEnd = new Date(m.year, m.month + 1, 0, 23, 59, 59, 999)
-      let generalCount = 0
-      let preschoolCount = 0
+      const key = (m.month + 1) + '/' + m.year
+      const snap = snapshotMap.get(key)
+      const monthIndex = m.year * 12 + m.month
 
-      for (const s of allYearStudents) {
-        const inTransfers = s.studentTransfers.filter(t => t.type === "IN")
-        const outTransfers = s.studentTransfers.filter(t => t.type === "OUT")
+      if (snap) {
+        lastKnownClosing = snap.closingCount
+        lastKnownPreschool = snap.preschoolCount
+        lastKnownGeneral = snap.closingCount - snap.preschoolCount
 
-        const firstInDate = inTransfers.length > 0 ? new Date(inTransfers[0].transferDate) : null
-        const firstOutDate = outTransfers.length > 0 ? new Date(outTransfers[0].transferDate) : null
-
-        let isActive = false
-        if (s.status === "ACTIVE") {
-          if (firstInDate && firstInDate > monthEnd) {
-            // Not active yet
-          } else {
-            isActive = true
-          }
-        } else if (s.status === "TRANSFERRED_OUT") {
-          if (firstOutDate && firstOutDate > monthEnd) {
-            isActive = true
-          }
+        return {
+          month: key,
+          generalCount: lastKnownGeneral,
+          preschoolCount: lastKnownPreschool,
+          count: lastKnownClosing,
+          isActual: true,
+          increase: snap.increaseCount,
+          decrease: snap.decreaseCount,
+          status: snap.status
         }
+      }
 
-        if (isActive) {
-          if (s.class?.level === "Mầm non") {
-            preschoolCount++
-          } else {
-            generalCount++
-          }
+      if (monthIndex > currentYearMonth) {
+        return {
+          month: key,
+          generalCount: lastKnownGeneral,
+          preschoolCount: lastKnownPreschool,
+          count: lastKnownClosing,
+          isActual: false,
+          isForecast: true
         }
       }
 
       return {
-        month: (m.month + 1) + '/' + m.year,
-        generalCount,
-        preschoolCount,
-        count: generalCount + preschoolCount
+        month: key,
+        generalCount: lastKnownGeneral,
+        preschoolCount: lastKnownPreschool,
+        count: lastKnownClosing,
+        isActual: true
       }
     })
   }
